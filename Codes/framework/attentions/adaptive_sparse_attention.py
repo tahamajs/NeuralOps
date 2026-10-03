@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -22,7 +22,6 @@ from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
-from framework.core.triton_kernels import triton_dispatch
 from framework.utils.model_family import ModelAdapter
 
 
@@ -37,8 +36,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -84,8 +83,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -170,14 +169,14 @@ class AdaptiveSparseAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        sparsity_ratio: Optional[float] = None,
+        config: Any | None = None,
+        rank: int | None = None,
+        sparsity_ratio: float | None = None,
         dropout: float = 0.1,
         lora_rank: int = 16,
-        comp_config: Optional[Any] = None,
-        pretrained_attn: Optional[nn.Module] = None,
-        old_attn: Optional[nn.Module] = None,
+        comp_config: Any | None = None,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
@@ -221,9 +220,7 @@ class AdaptiveSparseAttention(BaseAttention):
         is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False))) if config else False
         _mt = (model_type or '').lower()
         _decoder_prefixes = ('gpt', 'qwen', 'llama', 'mistral', 'gemma', 'phi', 'opt', 'bloom', 'falcon', 'olmo', 'mpt', 'stablelm')
-        if any(_mt.startswith(p) for p in _decoder_prefixes):
-            is_dec = True
-        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+        if any(_mt.startswith(p) for p in _decoder_prefixes) or hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
@@ -241,7 +238,7 @@ class AdaptiveSparseAttention(BaseAttention):
 
         # Head dim fallback from source_attn if head_dim <= 0 or not resolved properly
         if source_attn is not None and getattr(source_attn, "head_dim", 0):
-            head_dim = getattr(source_attn, "head_dim")
+            head_dim = source_attn.head_dim
             self.head_dim = head_dim
             self.all_head_size = self.num_heads * self.head_dim
             self.kv_head_size = self.num_kv_heads * self.head_dim
@@ -249,7 +246,7 @@ class AdaptiveSparseAttention(BaseAttention):
 
         # Default sparsity: lower for bidirectional encoders (0.1) than decoders (0.5)
         # Check explicit parameter, kwargs, comp_config, config
-        cfg_encoder_sparsity = getattr(comp_config, "adaptive_sparse_encoder_sparsity", kwargs.get("adaptive_sparse_encoder_sparsity", None))
+        cfg_encoder_sparsity = getattr(comp_config, "adaptive_sparse_encoder_sparsity", kwargs.get("adaptive_sparse_encoder_sparsity"))
         if cfg_encoder_sparsity is None and config is not None:
             cfg_encoder_sparsity = getattr(config, "adaptive_sparse_encoder_sparsity", None)
 
@@ -314,7 +311,7 @@ class AdaptiveSparseAttention(BaseAttention):
         self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
 
         self.has_relative_attention_bias: bool = False
-        self.relative_attention_bias: Optional[nn.Embedding] = None
+        self.relative_attention_bias: nn.Embedding | None = None
         if config is not None:
             self.relative_attention_num_buckets: int = getattr(config, "relative_attention_num_buckets", 32)
             self.relative_attention_max_distance: int = getattr(config, "relative_attention_max_distance", 128)
@@ -374,7 +371,7 @@ class AdaptiveSparseAttention(BaseAttention):
         relative_buckets += torch.where(is_small, relative_position, relative_position_if_large)
         return relative_buckets
 
-    def compute_bias(self, query_length: int, key_length: int, device: Optional[torch.device] = None) -> torch.Tensor:
+    def compute_bias(self, query_length: int, key_length: int, device: torch.device | None = None) -> torch.Tensor:
         if self.relative_attention_bias is not None:
             context_position = torch.arange(query_length, dtype=torch.long, device=device)[:, None]
             memory_position = torch.arange(key_length, dtype=torch.long, device=device)[None, :]
@@ -391,7 +388,7 @@ class AdaptiveSparseAttention(BaseAttention):
         return torch.zeros((1, self.num_heads, query_length, key_length), device=device)
 
     def copy_weights(self, src: Any) -> None:
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -436,13 +433,13 @@ class AdaptiveSparseAttention(BaseAttention):
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            s = getattr(src, "self")
+            s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
                     extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
 
-        if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and extracted["o"][0] is None:
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             dense = src.output.dense
             extracted["o"] = (dense.weight.data.clone(), dense.bias.data.clone() if dense.bias is not None else None)
 
@@ -537,18 +534,18 @@ class AdaptiveSparseAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
         is_cross_attention = key_value_states is not None
         kv_input = key_value_states if is_cross_attention else hidden_states
@@ -564,13 +561,13 @@ class AdaptiveSparseAttention(BaseAttention):
         V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # Apply RoPE (accept from position_embeddings or fallback to rotary_emb)
-        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings", None)
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
         elif self.rotary_emb is not None:
             rotary_mod = self.rotary_emb
-            pos_ids = kwargs.get("position_ids", None)
+            pos_ids = kwargs.get("position_ids")
             if pos_ids is None:
                 pos_ids = torch.arange(N_q, device=device).unsqueeze(0).expand(B, -1)
             # 1. Try rotary_module(Q, position_ids)
@@ -610,11 +607,11 @@ class AdaptiveSparseAttention(BaseAttention):
         scale = d ** -0.5
 
         # Handle T5 position bias
-        position_bias = kwargs.get("position_bias", None)
+        position_bias = kwargs.get("position_bias")
         if position_bias is None and self.has_relative_attention_bias:
             position_bias = self.compute_bias(N_q, N_k, device=device)
 
-        mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
+        mask = attention_mask if attention_mask is not None else kwargs.get("mask")
 
         is_decoder = (
             self.is_decoder
@@ -715,9 +712,9 @@ def inject_adaptive_sparse(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
-) -> Optional[Union[AdaptiveSparseAttention, nn.Module]]:
+) -> AdaptiveSparseAttention | nn.Module | None:
     r"""Safe injection factory for AdaptiveSparseAttention across diverse transformer architectures."""
     target = layer if layer is not None else model
     if target is None:
@@ -797,7 +794,7 @@ def inject_adaptive_sparse(
         getattr(cfg, 'num_attention_heads', getattr(cfg, 'n_heads', 4))
     )
 
-    sparsity_ratio = getattr(comp_config, "adaptive_sparsity_ratio", kwargs.get("sparsity_ratio", None))
+    sparsity_ratio = getattr(comp_config, "adaptive_sparsity_ratio", kwargs.get("sparsity_ratio"))
     dropout = getattr(comp_config, "dropout", kwargs.get("dropout", 0.1))
 
     try:

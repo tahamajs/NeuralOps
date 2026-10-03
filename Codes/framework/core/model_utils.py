@@ -4,7 +4,7 @@ activation collection.
 """
 
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -13,8 +13,8 @@ import torch.nn as nn
 def run_calibration_forward(
     model: nn.Module,
     tokenizer,
-    texts: List[str],
-    device: Optional[torch.device] = None,
+    texts: list[str],
+    device: torch.device | None = None,
     max_length: int = 128,
 ) -> nn.Module:
     """Run a single forward pass on calibration texts; return model (in eval)."""
@@ -44,7 +44,7 @@ ATTENTION_WEIGHT_MAP = {
 def copy_attention_weights(
     src_module: nn.Module,
     dst_module: nn.Module,
-    source_map: Optional[Dict[str, List[str]]] = None,
+    source_map: dict[str, list[str]] | None = None,
 ) -> None:
     """
     Copy pretrained attention weights from src to dst.
@@ -120,7 +120,7 @@ def activation_hooks(
     collect_output: bool = False,
 ) -> Any:
     """Context manager that collects activations for all modules of a given type."""
-    activations: Dict[str, Any] = {}
+    activations: dict[str, Any] = {}
     hooks = []
 
     def make_hook(name) -> Any:

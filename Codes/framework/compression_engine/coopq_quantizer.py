@@ -14,7 +14,7 @@ Mathematical Formulation:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 import math
 import logging
 import torch
@@ -24,9 +24,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
-from framework.compression_engine.astro_quantizer import AstroLinear
 from framework.core.pruning_utils import (
-    get_calibration_tensors,
     recalibrate_layernorms,
 )
 
@@ -59,7 +57,7 @@ class CoopQSTEFakeQuantize(torch.autograd.Function):
         return dq
 
     @staticmethod
-    def backward(ctx: Any, grad_output: torch.Tensor) -> Tuple[torch.Tensor, None, None, None, None]:
+    def backward(ctx: Any, grad_output: torch.Tensor) -> tuple[torch.Tensor, None, None, None, None]:
         # STE passes gradient uninhibited to parameter tensor
         grad_x = grad_output.clone()
         return grad_x, None, None, None, None
@@ -273,11 +271,11 @@ class CoopQQuantizer(BaseCompressor):
         use_ste: bool = True,
         recalibrate_ln: bool = True,
         target_attention_only: bool = False,
-        tokenizer: Optional[Any] = None,
-        calibration_loader: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
-        device: Optional[Union[str, torch.device]] = None,
-        cfg: Optional[Any] = None,
+        tokenizer: Any | None = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="coopq", **kwargs)
@@ -308,7 +306,7 @@ class CoopQQuantizer(BaseCompressor):
             if device is not None
             else (next(model.parameters(), torch.tensor(0.0)).device)
         )
-        self.stats: Dict[str, Any] = {}
+        self.stats: dict[str, Any] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         """Identify candidate linear/Conv1D/LoRALinear modules."""
@@ -353,9 +351,9 @@ class CoopQQuantizer(BaseCompressor):
 
         return True
 
-    def _calculate_layer_sensitivities(self) -> Dict[str, float]:
+    def _calculate_layer_sensitivities(self) -> dict[str, float]:
         """Compute sensitivity metric per target layer based on normalized Frobenius energy and variance."""
-        sensitivities: Dict[str, float] = {}
+        sensitivities: dict[str, float] = {}
         for name, module in self.model.named_modules():
             if self._is_target_module(name, module):
                 target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
@@ -368,7 +366,7 @@ class CoopQQuantizer(BaseCompressor):
                 sensitivities[name] = float(frob_norm + std_val)
         return sensitivities
 
-    def _allocate_bits(self, sensitivities: Dict[str, float]) -> Dict[str, int]:
+    def _allocate_bits(self, sensitivities: dict[str, float]) -> dict[str, int]:
         """Allocate discrete integer bit-widths satisfying mean(bits) <= self.bits with floor >= min_bits (>= 4)."""
         if not sensitivities:
             return {}
@@ -383,14 +381,14 @@ class CoopQQuantizer(BaseCompressor):
             allowed_bits = [self.min_bits]
 
         # Continuous allocation proportional to sensitivity
-        raw_allocations: Dict[str, float] = {}
+        raw_allocations: dict[str, float] = {}
         mean_sens = total_sens / num_layers
         for name, sens in sensitivities.items():
             sens_ratio = sens / mean_sens
             raw_bits = self.bits + (sens_ratio - 1.0) * (self.max_bits - self.min_bits) / 2.0
             raw_allocations[name] = max(float(self.min_bits), min(float(self.max_bits), raw_bits))
 
-        discrete_allocations: Dict[str, int] = {}
+        discrete_allocations: dict[str, int] = {}
         for name, raw_b in raw_allocations.items():
             closest_b = min(allowed_bits, key=lambda b: abs(b - raw_b))
             discrete_allocations[name] = closest_b
@@ -424,7 +422,7 @@ class CoopQQuantizer(BaseCompressor):
 
         return discrete_allocations
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Quantize linear layers with layer-specific bit allocation (>= 4 bits) and per-channel asymmetric calibration."""
         sensitivities = self._calculate_layer_sensitivities()
         bit_allocations = self._allocate_bits(sensitivities)

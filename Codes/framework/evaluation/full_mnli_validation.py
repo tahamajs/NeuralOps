@@ -13,14 +13,17 @@ Usage (from project root):
 """
 from __future__ import annotations
 
-import argparse, csv, json, math, sys, time
+import argparse
+import csv
+import json
+import math
+import time
 from collections import Counter
 from pathlib import Path
 
 import torch
 from datasets import load_from_disk, load_dataset
 from sklearn.metrics import (
-    classification_report,
     f1_score, precision_score, recall_score,
     precision_recall_fscore_support,
 )
@@ -281,7 +284,7 @@ def main():
     print(f"\nSummary on full MNLI (N={len(val_full)}, threshold={threshold_full}%):")
     print(f"  PASS: {len(pass_full)}/{len(results)}")
     print(f"  FAIL: {len(fail_full)}/{len(results)}")
-    print(f"\nModules that PASS on full set:")
+    print("\nModules that PASS on full set:")
     for r in sorted(pass_full, key=lambda x: -float(x.get("full_acc", 0))):
         print(f"  {r['module']:35} {r['full_acc']:.2f}% [{r['ci95_lo']:.2f}%–{r['ci95_hi']:.2f}%]")
 

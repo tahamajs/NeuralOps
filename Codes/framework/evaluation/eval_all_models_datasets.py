@@ -25,20 +25,17 @@ Fixes applied (2026-09-27):
 """
 
 
-import copy
 import gc
 import json
 import logging
 import math
-import os
-import random
 import sys
 import tempfile
 import time
 import traceback
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import torch
@@ -64,8 +61,6 @@ from transformers import (
 )
 
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-import framework.attentions
-import framework.compression_engine
 from framework.core.attention_utils import inject_attention
 from framework.utils.replace_attention import UniversalAttentionWrapper
 
@@ -80,7 +75,7 @@ logger = logging.getLogger("EvalEngine")
 # Constants
 # =============================================================================
 
-MODEL_TOKENIZER_MAPPING: Dict[str, str] = {
+MODEL_TOKENIZER_MAPPING: dict[str, str] = {
     "bert": "bert-base-uncased",
     "roberta": "roberta-base",
     "t5": "t5-small",
@@ -175,7 +170,7 @@ class BenchmarkResult:
     model_family: str
     dataset: str
     status: str
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
     # Latency & Throughput
     forward_latency_ms: float = 0.0
@@ -206,25 +201,25 @@ class BenchmarkResult:
     flops_macs: float = 0.0
     throughput_tokens_sec: float = 0.0
     latency_variance_ms: float = 0.0
-    ci_lower: Optional[float] = None
-    ci_upper: Optional[float] = None
-    p_value_vs_baseline: Optional[float] = None
-    mean_seed_acc: Optional[float] = None
-    std_seed_acc: Optional[float] = None
+    ci_lower: float | None = None
+    ci_upper: float | None = None
+    p_value_vs_baseline: float | None = None
+    mean_seed_acc: float | None = None
+    std_seed_acc: float | None = None
 
     # Diagnostics (FIX-10)
     calibration_used: bool = False
-    calibration_source: Optional[str] = None
+    calibration_source: str | None = None
     num_compressed_layers: int = 0
     num_fallback_layers: int = 0
-    avg_reconstruction_error: Optional[float] = None
+    avg_reconstruction_error: float | None = None
     params_before: int = 0
     params_after: int = 0
 
-    trajectories: Dict[str, List[float]] = field(default_factory=dict)
+    trajectories: dict[str, list[float]] = field(default_factory=dict)
     timestamp: str = field(default_factory=lambda: time.strftime("%Y-%m-%d %H:%M:%S"))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         # JSON cannot serialize NaN/inf
         for k, v in list(d.items()):
@@ -237,7 +232,7 @@ class BenchmarkResult:
 # Track registry
 # =============================================================================
 
-TRACK_MODULES: Dict[str, Dict[str, List[str]]] = {
+TRACK_MODULES: dict[str, dict[str, list[str]]] = {
     "track1_svd": {
         "attentions": [
             "svd_linear_attention", "adaptive_svd_attention", "asvd_attention",
@@ -313,10 +308,10 @@ def build_model_instance(
     hidden_size: int = 128,
     num_heads: int = 4,
     num_layers: int = 2,
-    vocab_size: Optional[int] = None,
+    vocab_size: int | None = None,
     seq_len: int = 32,
     device: torch.device = torch.device("cpu"),
-) -> Tuple[nn.Module, Any]:
+) -> tuple[nn.Module, Any]:
     family = model_family.lower()
     if vocab_size is None or vocab_size == 30522:
         if family == "roberta":
@@ -389,10 +384,10 @@ def build_model_instance(
 # =============================================================================
 
 def _filter_batch(
-    batch: Dict[str, torch.Tensor],
+    batch: dict[str, torch.Tensor],
     model_family: str,
     model: nn.Module,
-) -> Dict[str, torch.Tensor]:
+) -> dict[str, torch.Tensor]:
     """Strip keys invalid for the given architecture. FIX-7: never drop labels."""
     import inspect
     family = model_family.lower()
@@ -427,9 +422,9 @@ def _filter_batch(
 def _extract_logits_and_loss(
     outputs: Any,
     num_labels: int = 2,
-    labels: Optional[torch.Tensor] = None,
+    labels: torch.Tensor | None = None,
     is_lm: bool = False,
-) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+) -> tuple[torch.Tensor | None, torch.Tensor | None]:
     """
     Unified logit/loss extraction.
 
@@ -482,10 +477,10 @@ def apply_module_to_model(
     module_type: str = "auto",
     rank: int = 16,
     device: torch.device = torch.device("cpu"),
-    calibration_data: Optional[Any] = None,
-    calibration_loader: Optional[Any] = None,
-    tokenizer: Optional[Any] = None,
-) -> Tuple[nn.Module, float]:
+    calibration_data: Any | None = None,
+    calibration_loader: Any | None = None,
+    tokenizer: Any | None = None,
+) -> tuple[nn.Module, float]:
     """
     Inject or compress the model.
 
@@ -594,7 +589,7 @@ def apply_module_to_model(
                     if "attention" in name.lower() and hasattr(sub, "self"):
                         new_inner = target_cls(cfg)
                         wrapped = UniversalAttentionWrapper(new_inner)
-                        setattr(sub, "self", wrapped)
+                        sub.self = wrapped
 
     # ========================================================================
     # COMPRESSOR PATH
@@ -619,7 +614,7 @@ def apply_module_to_model(
         )
         cfg = getattr(model, "config", None)
 
-        c_kwargs: Dict[str, Any] = {}
+        c_kwargs: dict[str, Any] = {}
         if cfg is not None:
             for k in (
                 "rank_ratio", "max_error", "lora_rank", "target_attention_only",
@@ -637,7 +632,7 @@ def apply_module_to_model(
         if calibration_data is not None:
             c_kwargs["calibration_data"] = calibration_data
 
-        def _invoke(instance: Any) -> Optional[nn.Module]:
+        def _invoke(instance: Any) -> nn.Module | None:
             for method_name in ("compress", "apply", "prune"):
                 if not hasattr(instance, method_name):
                     continue
@@ -744,11 +739,11 @@ def apply_module_to_model(
 
 _MAX_CACHE_SIZE = 16
 
-_TOKENIZED_BATCH_CACHE: Dict[Tuple[str, str, int, int, str], Dict[str, torch.Tensor]] = {}
-_PREPARED_DATASET_CACHE: Dict[Tuple[str, str, int], Any] = {}
+_TOKENIZED_BATCH_CACHE: dict[tuple[str, str, int, int, str], dict[str, torch.Tensor]] = {}
+_PREPARED_DATASET_CACHE: dict[tuple[str, str, int], Any] = {}
 
 
-def _evict_if_needed(cache: Dict, max_size: int = _MAX_CACHE_SIZE) -> None:
+def _evict_if_needed(cache: dict, max_size: int = _MAX_CACHE_SIZE) -> None:
     if len(cache) <= max_size:
         return
     # Drop oldest entries (dicts preserve insertion order in Python 3.7+)
@@ -768,7 +763,7 @@ def _generate_synthetic_batch(
     vocab_size: int = 30522,
     num_labels: int = 2,
     device: torch.device = torch.device("cpu"),
-) -> Dict[str, torch.Tensor]:
+) -> dict[str, torch.Tensor]:
     ds = dataset_name.lower()
     torch.manual_seed(42)
     input_ids = torch.randint(
@@ -808,7 +803,7 @@ def get_dataset_batch(
     num_labels: int = 2,
     device: torch.device = torch.device("cpu"),
     allow_synthetic: bool = False,   # FIX-12
-) -> Dict[str, torch.Tensor]:
+) -> dict[str, torch.Tensor]:
     ds = dataset_name.lower()
     family = model_family.lower()
     dev_str = str(device)
@@ -941,9 +936,9 @@ def get_dataset_batch(
 # Base model cache (FIX-5)
 # =============================================================================
 
-_BASE_MODEL_TEMPLATE_CACHE: Dict[
-    Tuple[str, int, int, int, int, str],
-    Tuple[Dict[str, torch.Tensor], Any],
+_BASE_MODEL_TEMPLATE_CACHE: dict[
+    tuple[str, int, int, int, int, str],
+    tuple[dict[str, torch.Tensor], Any],
 ] = {}
 
 
@@ -954,7 +949,7 @@ def get_base_model_cached(
     num_heads: int = 4,
     num_layers: int = 2,
     device: torch.device = torch.device("cpu"),
-) -> Tuple[nn.Module, Any]:
+) -> tuple[nn.Module, Any]:
     """
     FIX-5: replace deepcopy with fresh build + state_dict load.
     Avoids 2x memory and deepcopy failures.
@@ -1189,21 +1184,21 @@ def evaluate_single_combination_opt(
     t_calib = 0.0
     t_comp = 0.0
     t_eval = 0.0
-    mem_phases: Dict[str, Dict[str, float]] = {}
-    run_log_lines: List[str] = [
+    mem_phases: dict[str, dict[str, float]] = {}
+    run_log_lines: list[str] = [
         f"Command: evaluate_single_combination(module={module_name}, model={model_family}, dataset={dataset}, rank={rank})",
         f"Environment: python={sys.version.split()[0]} torch={torch.__version__} cuda={torch.version.cuda if torch.cuda.is_available() else 'None'}",
     ]
-    exc_traceback: Optional[str] = None
-    exc_type: Optional[str] = None
-    comp_stats: Dict[str, Any] = {}
-    per_layer_errors: Dict[str, float] = {}
-    per_layer_list: List[Dict[str, Any]] = []
+    exc_traceback: str | None = None
+    exc_type: str | None = None
+    comp_stats: dict[str, Any] = {}
+    per_layer_errors: dict[str, float] = {}
+    per_layer_list: list[dict[str, Any]] = []
     num_compressed = 0
     num_fallback = 0
-    baseline_logits_samples: List[List[float]] = []
-    compressed_logits_samples: List[List[float]] = []
-    sample_cosines: List[float] = []
+    baseline_logits_samples: list[list[float]] = []
+    compressed_logits_samples: list[list[float]] = []
+    sample_cosines: list[float] = []
 
     current_batch_size = batch_size
     max_retries = 6
@@ -1383,9 +1378,8 @@ def evaluate_single_combination_opt(
                 with profile(
                     activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
                     record_shapes=True, with_flops=True,
-                ) as prof:
-                    with torch.amp.autocast("cuda") if is_cuda else contextlib.nullcontext():
-                        _ = model(**filtered_batch)
+                ) as prof, torch.amp.autocast("cuda") if is_cuda else contextlib.nullcontext():
+                    _ = model(**filtered_batch)
                 result.flops_macs = sum(
                     (e.flops or 0) for e in prof.key_averages()
                 )
@@ -2055,10 +2049,10 @@ def run_track(
     rank: int = 64,
     seq_len: int = 128,
     batch_size: int = 8,
-    device: Optional[torch.device] = None,
+    device: torch.device | None = None,
     results_dir: str = "./results",
     allow_synthetic: bool = False,
-) -> List[BenchmarkResult]:
+) -> list[BenchmarkResult]:
     """
     Run every module in the given track against the given model/dataset.
     """
@@ -2069,7 +2063,7 @@ def run_track(
     if modules_cfg is None:
         raise ValueError(f"Unknown track: {track}")
 
-    results: List[BenchmarkResult] = []
+    results: list[BenchmarkResult] = []
 
     for mtype_key in ("attentions", "compressors"):
         for module_name in modules_cfg.get(mtype_key, []):

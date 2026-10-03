@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -38,11 +38,11 @@ class GFWSLoRALinear(nn.Module):
         in_features: int,
         out_features: int,
         weight: torch.Tensor,
-        bias: Optional[torch.Tensor] = None,
+        bias: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -144,15 +144,15 @@ class GFWSCompressor(BaseCompressor):
         lora_alpha: float = 1.0,
         skip_attention_qkv: bool = True,
         target_attention_only: bool = False,
-        tokenizer: Optional[Any] = None,
-        calibration_loader: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
-        device: Optional[Union[str, torch.device]] = None,
-        target_modules: Optional[List[str]] = None,
+        tokenizer: Any | None = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
+        target_modules: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="gfws", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = getattr(cfg, "gfws_rank", getattr(cfg, "rank", rank))
             damping = getattr(cfg, "gfws_damping", getattr(cfg, "damping", damping))
@@ -185,12 +185,12 @@ class GFWSCompressor(BaseCompressor):
             else next(model.parameters(), torch.tensor(0.0)).device
         )
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
-        self.used_covariance: Dict[str, bool] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+        self.used_covariance: dict[str, bool] = {}
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         if not self.skip_attention_qkv:
@@ -222,15 +222,15 @@ class GFWSCompressor(BaseCompressor):
             return any(t in name for t in self.target_modules)
         return True
 
-    def _collect_activation_covariances(self) -> Dict[str, torch.Tensor]:
+    def _collect_activation_covariances(self) -> dict[str, torch.Tensor]:
         """Collect empirical input activation covariances across target modules."""
         self.model.eval()
-        running_cov: Dict[str, torch.Tensor] = {}
-        sample_counts: Dict[str, int] = {}
+        running_cov: dict[str, torch.Tensor] = {}
+        sample_counts: dict[str, int] = {}
         hooks = []
 
         def make_hook(layer_name: str) -> Any:
-            def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any) -> None:
+            def hook(module: nn.Module, inp: tuple[torch.Tensor, ...], outp: Any) -> None:
                 if len(inp) > 0 and isinstance(inp[0], torch.Tensor):
                     x = inp[0].detach().float()
                     cls_name = module.__class__.__name__.lower()
@@ -281,14 +281,14 @@ class GFWSCompressor(BaseCompressor):
         for h in hooks:
             h.remove()
 
-        covariances: Dict[str, torch.Tensor] = {}
+        covariances: dict[str, torch.Tensor] = {}
         for name, cov_sum in running_cov.items():
             n = float(max(sample_counts.get(name, 1), 1))
             covariances[name] = cov_sum / n
 
         return covariances
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Compress layers via activation covariance whitening + low-rank SVD, with standard SVD fallback."""
         from framework.core.model_utils import replace_module
 

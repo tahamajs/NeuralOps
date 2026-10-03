@@ -2,7 +2,7 @@
 Model‑family adapters. Extracts projection weights and biases cleanly across all Transformer architectures.
 """
 
-from typing import Any, Optional
+from typing import Any
 import torch
 
 
@@ -183,7 +183,7 @@ class UniversalAdapter:
         raise ValueError(f"Could not extract '{proj}' projection weights from {type(old_attn).__name__}")
 
     @staticmethod
-    def get_rotary_emb(old_attn: Any) -> Optional[Any]:
+    def get_rotary_emb(old_attn: Any) -> Any | None:
         """Return rotary embeddings if present."""
         return getattr(old_attn, "rotary_emb", None)
 

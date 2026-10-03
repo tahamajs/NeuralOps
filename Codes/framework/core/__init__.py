@@ -13,7 +13,7 @@ from typing import Any, Dict
 logger = logging.getLogger(__name__)
 
 # Map symbol names to their module filename within framework.core
-_MODULE_MAP: Dict[str, str] = {
+_MODULE_MAP: dict[str, str] = {
     "ADAPTER_MAP": "adapters",
     "get_adapter": "adapters",
     "detect_architecture": "architecture",

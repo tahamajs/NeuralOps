@@ -7,13 +7,12 @@ activation statistics. Registered as 'faq'.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
 
 from framework.compression_engine.astro_quantizer import (
-    STEFakeQuantize,
     quantize_dequantize_tensor,
 )
 from framework.core.base import BaseCompressor
@@ -56,8 +55,8 @@ class FAQLinear(nn.Module):
         symmetric: bool = True,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ):
         super().__init__()
         self.in_features = in_features
@@ -110,13 +109,13 @@ class FAQLinear(nn.Module):
     @classmethod
     def from_linear(
         cls,
-        module: Union[nn.Linear, Any],
-        act_scale: Optional[torch.Tensor] = None,   # FQ-FIX-11: optional
+        module: nn.Linear | Any,
+        act_scale: torch.Tensor | None = None,   # FQ-FIX-11: optional
         bits: int = 8,
         symmetric: bool = True,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-    ) -> "FAQLinear":
+    ) -> FAQLinear:
         target_mod = getattr(module, "base_layer", module)
         cls_name = target_mod.__class__.__name__.lower()
         is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
@@ -251,10 +250,10 @@ class FAQQuantizer(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        tokenizer: Optional[Any] = None,
+        tokenizer: Any | None = None,
         bits: int = 8,
-        calibration_texts: Optional[List[str]] = None,
-        calibration_data: Optional[Any] = None,
+        calibration_texts: list[str] | None = None,
+        calibration_data: Any | None = None,
         alpha: float = 0.5,
         symmetric: bool = True,
         use_ste: bool = True,
@@ -264,12 +263,12 @@ class FAQQuantizer(BaseCompressor):
         target_attention_only: bool = False,
         fallback_to_original: bool = True,
         skip_attention_qkv: bool = False,
-        cfg: Optional[Any] = None,
+        cfg: Any | None = None,
         num_calibration_batches: int = 8,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="faq", **kwargs)
-        cfg = cfg or kwargs.get("comp_config", None)
+        cfg = cfg or kwargs.get("comp_config")
         self.tokenizer = tokenizer
         self.bits = int(_cfg_get(cfg, "faq_bits", _cfg_get(cfg, "bits", bits)))
         self.calibration_texts = calibration_texts
@@ -294,10 +293,10 @@ class FAQQuantizer(BaseCompressor):
             _cfg_get(cfg, "num_calibration_batches", num_calibration_batches)
         ))
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
         self._compressed_params: int = 0   # FQ-FIX-10
         self._injected: bool = False        # FQ-FIX-14
 
@@ -352,7 +351,7 @@ class FAQQuantizer(BaseCompressor):
     # FQ-FIX-13: DataLoader support.
     # ------------------------------------------------------------------
     @staticmethod
-    def _normalize_calibration_batches(data: Any) -> List[Any]:
+    def _normalize_calibration_batches(data: Any) -> list[Any]:
         """FQ-FIX-13: convert DataLoader / list / tensor / dict into a list of batches."""
         if data is None:
             return []
@@ -366,14 +365,14 @@ class FAQQuantizer(BaseCompressor):
             return list(data)
         return [data]
 
-    def _collect_activation_scales(self) -> Dict[str, torch.Tensor]:
+    def _collect_activation_scales(self) -> dict[str, torch.Tensor]:
         """
         FQ-FIX-12: accumulate E[x^2] per input feature.
         This is the diagonal of the input covariance; sufficient for
         per-channel quantization.
         """
-        running_sq: Dict[str, torch.Tensor] = {}
-        sample_counts: Dict[str, int] = {}
+        running_sq: dict[str, torch.Tensor] = {}
+        sample_counts: dict[str, int] = {}
         hooks = []
 
         def make_hook(layer_name: str):
@@ -458,7 +457,7 @@ class FAQQuantizer(BaseCompressor):
             for h in hooks:
                 h.remove()
 
-        act_scales: Dict[str, torch.Tensor] = {}
+        act_scales: dict[str, torch.Tensor] = {}
         for name, module in self.model.named_modules():
             target_mod = getattr(module, "base_layer", module)
             cls_name = target_mod.__class__.__name__.lower()
@@ -483,7 +482,7 @@ class FAQQuantizer(BaseCompressor):
     # ------------------------------------------------------------------
     # Main compress
     # ------------------------------------------------------------------
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         # FQ-FIX-14: double-injection guard.
         if self._injected:
             logger.warning("FAQQuantizer.compress called twice; returning current stats.")

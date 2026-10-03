@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +47,8 @@ class NMFLinear(nn.Module):
         out_features: int,
         rank: int = 64,
         bias: bool = True,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> None:
@@ -148,7 +148,7 @@ class NMFLinear(nn.Module):
         max_iter: int = 30,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-    ) -> "NMFLinear":
+    ) -> NMFLinear:
         """
         Fit sign-aware NMF on the given Linear / Conv1D / LoRALinear module
         using multiplicative updates (Lee & Seung 2001) with NNDSVD init.
@@ -335,13 +335,13 @@ class NMFCompressor(BaseCompressor):
 
     def __init__(
         self,
-        model: Optional[nn.Module] = None,
+        model: nn.Module | None = None,
         rank: int = 64,
         max_iter: int = 100,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        cfg: Optional[Any] = None,
-        target_layers: Optional[List[str]] = None,
+        cfg: Any | None = None,
+        target_layers: list[str] | None = None,
         target_attention_only: bool = False,
         max_error: float = 0.70,
         fallback_to_original: bool = True,
@@ -349,7 +349,7 @@ class NMFCompressor(BaseCompressor):
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(),
                          name="nmf", **kwargs)
-        conf = cfg or kwargs.get("comp_config", None)
+        conf = cfg or kwargs.get("comp_config")
 
         self.rank = int(rank or _cfg_get(conf, "nmf_rank",
                                           _cfg_get(conf, "rank", 64)))
@@ -367,9 +367,9 @@ class NMFCompressor(BaseCompressor):
         self.fallback_to_original = bool(
             _cfg_get(conf, "fallback_to_original", fallback_to_original)
         )
-        self.compressed_layers: List[Dict[str, Any]] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
+        self.compressed_layers: list[dict[str, Any]] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
 
     # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
@@ -409,7 +409,7 @@ class NMFCompressor(BaseCompressor):
         return any(t in name for t in self.target_layers)
 
     # ------------------------------------------------------------------
-    def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         if model is not None:
             self.model = model
             try:
@@ -596,10 +596,10 @@ class NMFCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("nmf_factory")
 def nmf_factory(
     model: nn.Module,
-    comp_config: Optional[Any] = None,
-    rank: Optional[int] = None,
+    comp_config: Any | None = None,
+    rank: int | None = None,
     **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     effective_rank = rank or _cfg_get(comp_config, "nmf_rank",
                                       _cfg_get(comp_config, "rank", 64))
     max_iter = _cfg_get(comp_config, "nmf_max_iter", 100)

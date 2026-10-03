@@ -20,12 +20,11 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
@@ -68,7 +67,7 @@ class AstroQuantizer:
             torch.abs(k - mid) / denom, 1.4
         )
 
-    def quantize(self, w: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def quantize(self, w: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Symmetric per-tensor quantization.
 
@@ -123,7 +122,7 @@ class RotationalSliceGPTINT4Linear(nn.Module):
         W_indices: torch.Tensor,      # (D_out, r) int8
         W_centroids: torch.Tensor,    # (C,) fp32
         Q_P_r: torch.Tensor,          # (D_in, r) float
-        bias: Optional[torch.Tensor] = None,
+        bias: torch.Tensor | None = None,
     ) -> None:
         super().__init__()
         self.register_buffer("Q_P_r", Q_P_r)
@@ -170,18 +169,18 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
 
     def __init__(
         self,
-        model: Optional[nn.Module] = None,
+        model: nn.Module | None = None,
         r_ratio: float = 0.4,                # RS-FIX-03: lower default
         lambda_reg: float = 1e-2,
-        slice_ratio: Optional[float] = None,
+        slice_ratio: float | None = None,
         quant_bits: int = 4,
         max_error: float = 0.20,
         fallback_to_original: bool = True,
-        tokenizer: Optional[Any] = None,
-        calibration_loader: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
-        device: Optional[Union[str, torch.device]] = None,
-        target_modules: Optional[List[str]] = None,
+        tokenizer: Any | None = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
+        target_modules: list[str] | None = None,
         target_attention_only: bool = False,
         seed: int = 42,                      # RS-FIX-05
         **kwargs: Any,
@@ -192,7 +191,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         target_model = model if model is not None else nn.Identity()
         super().__init__(target_model, name="rotational_slicegpt_int4", **kwargs)
 
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         r_ratio = _cfg_get(cfg, "rotational_slicegpt_r_ratio", _cfg_get(cfg, "r_ratio", r_ratio))
         lambda_reg = _cfg_get(cfg, "lambda_reg", lambda_reg)
         quant_bits = _cfg_get(cfg, "quant_bits", quant_bits)
@@ -226,8 +225,8 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             else (next(target_model.parameters(), torch.tensor(0.0)).device
                   if model is not None else torch.device("cpu"))
         )
-        self.layer_errors: Dict[str, float] = {}
-        self.stats: Dict[str, Any] = {}
+        self.layer_errors: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
         self._orig_bytes = 0
         self._comp_bytes = 0
 
@@ -283,7 +282,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         self,
         W: torch.Tensor,
         X: torch.Tensor,
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, float, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, float, torch.Tensor]:
         """
         Returns:
             W_quant_indices:  (D_out, r) int8
@@ -376,9 +375,9 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
 
         activations_map = self._collect_layer_activations()
         compressed_layers_count = 0
-        fallback_layers: List[str] = []
+        fallback_layers: list[str] = []
         self.layer_errors = {}
-        layer_shapes: Dict[str, Tuple[int, int]] = {}
+        layer_shapes: dict[str, tuple[int, int]] = {}
         self._orig_bytes = 0
         self._comp_bytes = 0
 
@@ -537,13 +536,13 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         return self.model, stats
 
     # ------------------------------------------------------------------
-    def _collect_layer_activations(self) -> Dict[str, torch.Tensor]:
+    def _collect_layer_activations(self) -> dict[str, torch.Tensor]:
         """
         RS-FIX-07: store per-channel mean |x| instead of full activation
         tensors to avoid OOM on large models.
         """
         self.model.eval()
-        activations: Dict[str, List[torch.Tensor]] = {}
+        activations: dict[str, list[torch.Tensor]] = {}
         hooks = []
 
         def make_hook(layer_name: str):
@@ -584,7 +583,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             for h in hooks:
                 h.remove()
 
-        aggregated: Dict[str, torch.Tensor] = {}
+        aggregated: dict[str, torch.Tensor] = {}
         for name, lst in activations.items():
             if lst:
                 aggregated[name] = torch.stack([t.float() for t in lst], dim=0).mean(dim=0)
@@ -594,7 +593,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
     def compress_linear(
         self,
         linear_layer: nn.Linear,
-        X: Optional[torch.Tensor] = None,
+        X: torch.Tensor | None = None,
     ) -> RotationalSliceGPTINT4Linear:
         """Convenience wrapper for compressing a single nn.Linear."""
         W = linear_layer.weight.data.float()

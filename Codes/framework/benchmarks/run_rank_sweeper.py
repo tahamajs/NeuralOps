@@ -25,7 +25,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 # ============================================================================
@@ -55,7 +55,7 @@ def log(msg: str) -> None:
 # ============================================================================
 # Arg parsing
 # ============================================================================
-def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description="Run rank sweep for compressor modules.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -100,11 +100,11 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
 # ============================================================================
 # Helpers
 # ============================================================================
-def read_summary_row(summary_csv: Path) -> Optional[Dict[str, str]]:
+def read_summary_row(summary_csv: Path) -> dict[str, str] | None:
     if not summary_csv.exists():
         return None
     try:
-        with open(summary_csv, "r", encoding="utf-8") as f:
+        with open(summary_csv, encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 return row
@@ -113,7 +113,7 @@ def read_summary_row(summary_csv: Path) -> Optional[Dict[str, str]]:
     return None
 
 
-def auto_detect_parent_checkpoint(model: str, dataset: str) -> Optional[str]:
+def auto_detect_parent_checkpoint(model: str, dataset: str) -> str | None:
     safe_model = Path(model).name.replace("-", "_").lower()
     candidates = [
         Path("results") / f"{safe_model}_{dataset}_baseline" / "finetuned_model.pt",
@@ -127,7 +127,7 @@ def auto_detect_parent_checkpoint(model: str, dataset: str) -> Optional[str]:
     return None
 
 
-def auto_detect_cached_batches(model: str, dataset: str) -> Optional[str]:
+def auto_detect_cached_batches(model: str, dataset: str) -> str | None:
     safe_model = Path(model).name.replace("-", "_").lower()
     candidates = [
         Path("results") / f"{safe_model}_{dataset}_baseline" / f"batch_cache_{dataset}",
@@ -141,7 +141,7 @@ def auto_detect_cached_batches(model: str, dataset: str) -> Optional[str]:
 
 
 def build_cmd(module: str, rank: int, args: argparse.Namespace,
-              rank_dir: Path, vram_fraction: Optional[float]) -> List[str]:
+              rank_dir: Path, vram_fraction: float | None) -> list[str]:
     rank_dir.mkdir(parents=True, exist_ok=True)
     cmd = [
         sys.executable, "-u",
@@ -172,7 +172,7 @@ def build_cmd(module: str, rank: int, args: argparse.Namespace,
 
 
 def run_single_rank(module: str, rank: int, args: argparse.Namespace,
-                    vram_fraction: Optional[float]) -> Dict[str, Any]:
+                    vram_fraction: float | None) -> dict[str, Any]:
     """Run one (module, rank) evaluation. Returns a result row dict."""
     rank_dir = Path(args.output_base) / module / f"rank_{rank}"
     summary_csv = rank_dir / "summary.csv"
@@ -233,7 +233,7 @@ def run_single_rank(module: str, rank: int, args: argparse.Namespace,
     return _error_row(module, rank, f"ERROR_CODE_{rc}", elapsed)
 
 
-def _error_row(module: str, rank: int, status: str, elapsed: float) -> Dict[str, Any]:
+def _error_row(module: str, rank: int, status: str, elapsed: float) -> dict[str, Any]:
     return {
         "module_name": module, "rank": rank, "status": status,
         "accuracy_pct": 0.0, "f1_score": 0.0, "val_loss": 99.0,
@@ -279,7 +279,7 @@ def auto_git_commit(module: str, output_base: str) -> None:
         log(f"[{module}] Git auto-commit notice: {e}")
 
 
-def write_rank_curve(module: str, rows: List[Dict[str, Any]], output_base: str) -> Path:
+def write_rank_curve(module: str, rows: list[dict[str, Any]], output_base: str) -> Path:
     module_dir = Path(output_base) / module
     module_dir.mkdir(parents=True, exist_ok=True)
     curve_csv = module_dir / "rank_curve.csv"
@@ -294,7 +294,7 @@ def write_rank_curve(module: str, rows: List[Dict[str, Any]], output_base: str) 
     return curve_csv
 
 
-def write_combined_curve(all_rows: List[Dict[str, Any]], output_base: str) -> Path:
+def write_combined_curve(all_rows: list[dict[str, Any]], output_base: str) -> Path:
     out_path = Path(output_base) / "all_rank_curves.csv"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w", newline="", encoding="utf-8") as f:
@@ -311,7 +311,7 @@ def write_combined_curve(all_rows: List[Dict[str, Any]], output_base: str) -> Pa
     return out_path
 
 
-def print_rank_table(module: str, rows: List[Dict[str, Any]]) -> None:
+def print_rank_table(module: str, rows: list[dict[str, Any]]) -> None:
     rows_sorted = sorted(rows, key=lambda r: int(r.get("rank", 0)))
     print(f"\n### Rank Sweep Results: `{module}`")
     print("| Rank | Status | Acc (%) | F1 | Val Loss | VRAM (MB) | Comp Rate | Layers (C/F) | Time (s) |")
@@ -335,11 +335,11 @@ def print_rank_table(module: str, rows: List[Dict[str, Any]]) -> None:
         )
 
 
-def print_summary(all_rows: List[Dict[str, Any]]) -> None:
+def print_summary(all_rows: list[dict[str, Any]]) -> None:
     if not all_rows:
         return
     from collections import defaultdict
-    by_mod: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+    by_mod: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for r in all_rows:
         by_mod[r.get("module_name", "?")].append(r)
     print("\n" + "=" * 72)
@@ -378,7 +378,7 @@ def _install_sigint_handler() -> None:
 # ============================================================================
 # Main
 # ============================================================================
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     # Ensure we're running from project root
     if not Path("Codes/framework/run_quality_sweep.py").exists():
         print("[FATAL] Must run from the project root directory. "
@@ -432,7 +432,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     log(f"  fresh           : {args.fresh}")
     log("=" * 72)
 
-    all_rows: List[Dict[str, Any]] = []
+    all_rows: list[dict[str, Any]] = []
     total_t0 = time.time()
 
     for mod in modules:
@@ -444,7 +444,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         log(f"Module: {mod}  |  {len(ranks)} ranks  |  parallel={n_par}")
         log(f"{'=' * 72}")
 
-        module_rows: List[Dict[str, Any]] = []
+        module_rows: list[dict[str, Any]] = []
         mod_t0 = time.time()
 
         if n_par <= 1:
@@ -455,7 +455,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 module_rows.append(run_single_rank(mod, rank, args, vram_frac))
         else:
             with ThreadPoolExecutor(max_workers=n_par) as ex:
-                futures: Dict[Any, int] = {}
+                futures: dict[Any, int] = {}
                 for rank in ranks:
                     if _interrupted.is_set():
                         break

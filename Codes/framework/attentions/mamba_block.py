@@ -9,13 +9,12 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 try:
@@ -39,7 +38,7 @@ logger = logging.getLogger(__name__)
 # =========================================================================
 # Helpers
 # =========================================================================
-def _detect_return_format(source_attn: Optional[nn.Module], is_nested: bool) -> str:
+def _detect_return_format(source_attn: nn.Module | None, is_nested: bool) -> str:
     """MB-12: choose output tuple layout for the host model."""
     if is_nested:
         return "bert"   # (out, attn_weights)  [2-tuple]
@@ -54,10 +53,10 @@ def _detect_return_format(source_attn: Optional[nn.Module], is_nested: bool) -> 
 
 
 def _infer_d_model(
-    config: Optional[Any],
-    source_attn: Optional[nn.Module],
-    target: Optional[nn.Module],
-    kwargs: Dict[str, Any],
+    config: Any | None,
+    source_attn: nn.Module | None,
+    target: nn.Module | None,
+    kwargs: dict[str, Any],
 ) -> int:
     """MB-11: robust dimension inference with explicit error on failure."""
     # 1. explicit kwargs
@@ -116,16 +115,16 @@ class MambaBlock(nn.Module):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        d_model: Optional[int] = None,
+        config: Any | None = None,
+        d_model: int | None = None,
         d_state: int = 16,
         d_conv: int = 4,
         expand: int = 2,
-        dt_rank: Optional[int] = None,
+        dt_rank: int | None = None,
         conv_bias: bool = True,
         bias: bool = False,
         bidirectional: bool = False,
-        is_decoder_override: Optional[bool] = None,
+        is_decoder_override: bool | None = None,
         freeze_base: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -249,7 +248,7 @@ class MambaBlock(nn.Module):
         if src is None:
             return
 
-        extracted: Dict[str, Optional[torch.Tensor]] = {
+        extracted: dict[str, torch.Tensor | None] = {
             "q": None, "k": None, "v": None, "o": None
         }
 
@@ -339,7 +338,7 @@ class MambaBlock(nn.Module):
         dtype = self.in_proj.weight.dtype
         device = self.in_proj.weight.device
 
-        def _to_t(x: Optional[torch.Tensor], r: int, c: int) -> Optional[torch.Tensor]:
+        def _to_t(x: torch.Tensor | None, r: int, c: int) -> torch.Tensor | None:
             """Project W (any shape) to target shape (r, c) via SVD."""
             if x is None:
                 return None
@@ -349,26 +348,26 @@ class MambaBlock(nn.Module):
             M, N = x.shape
             u, s, vh = torch.linalg.svd(x, full_matrices=False)
             k = min(r, c, s.numel())
-            
+
             u_r = u[:min(r, M), :k]
             vh_c = vh[:k, :min(c, N)]
             core = (u_r * s[:k].unsqueeze(0)) @ vh_c
-            
+
             out = torch.zeros(r, c, dtype=torch.float32, device=x.device)
             out[:core.size(0), :core.size(1)] = core
-            
+
             if r > core.size(0):
                 rem_r = r - core.size(0)
                 reps_r = (rem_r + core.size(0) - 1) // core.size(0)
                 tiled_r = core.repeat(reps_r, 1)[:rem_r, :]
                 out[core.size(0):, :core.size(1)] = tiled_r
-                
+
             if c > core.size(1):
                 rem_c = c - core.size(1)
                 reps_c = (rem_c + core.size(1) - 1) // core.size(1)
                 tiled_c = out[:, :core.size(1)].repeat(1, reps_c)[:, :rem_c]
                 out[:, core.size(1):] = tiled_c
-                
+
             return out.to(device=device, dtype=dtype)
 
         with torch.no_grad():
@@ -438,9 +437,9 @@ class MambaBlock(nn.Module):
     # ------------------------------------------------------------------
     # State helpers
     # ------------------------------------------------------------------
-    def _read_state(self, past_state: Any) -> Tuple[Optional[torch.Tensor],
-                                                     Optional[torch.Tensor],
-                                                     Optional[torch.Tensor],
+    def _read_state(self, past_state: Any) -> tuple[torch.Tensor | None,
+                                                     torch.Tensor | None,
+                                                     torch.Tensor | None,
                                                      int]:
         """Returns (h, conv_state, dt_state, past_len)."""
         if past_state is None:
@@ -470,9 +469,9 @@ class MambaBlock(nn.Module):
         B_ssm: torch.Tensor,   # (B, d_state, L)
         C_ssm: torch.Tensor,   # (B, d_state, L)
         D: torch.Tensor,       # (d_inner,)
-        state: Optional[torch.Tensor],  # (B, d_inner, d_state)
+        state: torch.Tensor | None,  # (B, d_inner, d_state)
         chunk_size: int = 32,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Recurrent selective scan with chunked activation checkpointing and bmm.
         
@@ -501,7 +500,7 @@ class MambaBlock(nn.Module):
             da_c: torch.Tensor,
             dbu_c: torch.Tensor,
             c_c: torch.Tensor,
-        ) -> Tuple[torch.Tensor, torch.Tensor]:
+        ) -> tuple[torch.Tensor, torch.Tensor]:
             L_c = da_c.shape[2]
             ys_c = []
             curr_h = h_init
@@ -607,10 +606,10 @@ class MambaBlock(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
+        attention_mask: torch.Tensor | None = None,
         *args: Any,
-        past_state: Optional[Any] = None,
-        past_key_value: Optional[Any] = None,
+        past_state: Any | None = None,
+        past_key_value: Any | None = None,
         output_attentions: bool = False,
         **kwargs: Any,
     ):
@@ -647,7 +646,7 @@ class MambaBlock(nn.Module):
         x_conv = x_conv_full[..., -L:].transpose(1, 2)      # (B, L, d_inner)
 
         # New conv state: last (d_conv - 1) tokens of input
-        if L >= self.d_conv - 1:
+        if self.d_conv - 1 <= L:
             conv_next = x_cat[:, -(self.d_conv - 1):, :].transpose(1, 2).contiguous()
         else:
             # pad with zero if sequence shorter than kernel
@@ -756,10 +755,10 @@ def inject_mamba(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
-) -> Optional[Union[nn.Module, Any]]:
+) -> nn.Module | Any | None:
     if _depth > 8:
         logger.warning("inject_mamba: max recursion depth exceeded.")
         return None

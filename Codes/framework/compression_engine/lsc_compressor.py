@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -90,11 +90,11 @@ class LSCPrunedLoRALinear(nn.Module):
         in_features: int,
         out_features: int,
         weight: torch.Tensor,
-        bias: Optional[torch.Tensor] = None,
+        bias: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -142,7 +142,7 @@ class LSCPrunedLoRALinear(nn.Module):
         weight: torch.Tensor,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-    ) -> "LSCPrunedLoRALinear":
+    ) -> LSCPrunedLoRALinear:
         base_layer = getattr(linear, "base_layer", linear)
         bias = (
             base_layer.bias.detach()
@@ -215,20 +215,20 @@ class LSCCompressor(BaseCompressor):
         self,
         model: nn.Module,
         rank: int = 32,
-        energy_ratio: Optional[float] = None,
+        energy_ratio: float | None = None,
         max_error: float = 0.85,
         fallback_to_original: bool = True,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         skip_attention_qkv: bool = False,
         target_attention_only: bool = False,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         min_layer_dim: int = 8,
         skip_should_compress_filter: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="lsc", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = _cfg_get(cfg, "lsc_rank", _cfg_get(cfg, "rank", rank))
             energy_ratio = _cfg_get(cfg, "lsc_energy_ratio",
@@ -260,11 +260,11 @@ class LSCCompressor(BaseCompressor):
         self.min_layer_dim = max(1, int(min_layer_dim))
         self.skip_should_compress_filter = bool(skip_should_compress_filter)
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
         self._compressed_params: int = 0
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
@@ -353,15 +353,15 @@ class LSCCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     # Main compress
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers = []
         self.fallback_layers = []
         self.skipped_layers = []
         self.layer_errors = {}
-        layer_details: Dict[str, Any] = {}
+        layer_details: dict[str, Any] = {}
 
-        seen_weights: Set[int] = set()
-        seen_param_ids: Set[int] = set()
+        seen_weights: set[int] = set()
+        seen_param_ids: set[int] = set()
         total_orig_params = 0
         total_comp_params = 0
 
@@ -371,7 +371,7 @@ class LSCCompressor(BaseCompressor):
                 seen_param_ids.add(id(p))
                 total_orig_params += p.numel()
 
-        count_param_ids: Set[int] = set()
+        count_param_ids: set[int] = set()
 
         def _add_params(mod: nn.Module) -> None:
             nonlocal total_comp_params

@@ -4,14 +4,15 @@ All framework components (attentions, compressors, trainers, visualizers, etc.)
 are stored in registries, enabling dynamic discovery and plug‑and‑play integration.
 """
 
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
+from collections.abc import Callable
 
 
 import logging
 
 logger = logging.getLogger(__name__)
 
-_ATTENTION_FILE_MAP: Dict[str, str] = {
+_ATTENTION_FILE_MAP: dict[str, str] = {
     "gqa": "gqa_attention",
     "galerkin": "galerkin_attention",
     "galerkin_inject": "galerkin_attention",
@@ -43,7 +44,7 @@ _ATTENTION_FILE_MAP: Dict[str, str] = {
     "upi_mamba": "upi_stuffed_mamba",
 }
 
-_COMPRESSOR_FILE_MAP: Dict[str, str] = {
+_COMPRESSOR_FILE_MAP: dict[str, str] = {
     "aasvd": "aa_svd_compressor",
     "adasvd": "adasvd_compressor",
     "cur_moe": "cur_moe_compressor",
@@ -70,17 +71,17 @@ class Registry:
 
     def __init__(self, name: str) -> None:
         self.name = name
-        self._dict: Dict[str, Callable] = {}
-        self._metadata: Dict[str, Dict[str, Any]] = {}
+        self._dict: dict[str, Callable] = {}
+        self._metadata: dict[str, dict[str, Any]] = {}
         self._loaded: bool = False
 
     def register(
         self,
-        key: Optional[str] = None,
-        supports_causal: Optional[bool] = None,
-        supports_bidirectional: Optional[bool] = None,
-        supports_cross_attention: Optional[bool] = None,
-        supports_gqa: Optional[bool] = None,
+        key: str | None = None,
+        supports_causal: bool | None = None,
+        supports_bidirectional: bool | None = None,
+        supports_cross_attention: bool | None = None,
+        supports_gqa: bool | None = None,
         **extra_metadata: Any,
     ) -> Callable:
         """
@@ -114,7 +115,7 @@ class Registry:
 
         return decorator
 
-    def get_metadata(self, key: str) -> Dict[str, Any]:
+    def get_metadata(self, key: str) -> dict[str, Any]:
         """Retrieve capability metadata for a registered component."""
         self._try_lazy_load(key)
         k = key.lower()
@@ -166,7 +167,7 @@ class Registry:
                     raise
                 logger.warning("Error during lazy loading of attention '%s': %s", key, e)
 
-    def get(self, key: str) -> Optional[Callable]:
+    def get(self, key: str) -> Callable | None:
         """Safely retrieve a registered component, or None if not found."""
         self._try_lazy_load(key)
         return self._dict.get(key.lower())
@@ -187,7 +188,7 @@ class Registry:
         if self._loaded: return
         if self.name == "compressors":
             try:
-                import framework.compression_engine
+                pass
             except Exception as e:
                 import os
                 if os.environ.get("SVD_DEBUG") == "1":
@@ -195,23 +196,23 @@ class Registry:
                 logger.warning("Error loading compression_engine: %s", e)
         elif self.name == "attentions":
             try:
-                import framework.attentions
+                pass
             except Exception as e:
                 import os
                 if os.environ.get("SVD_DEBUG") == "1":
                     raise
                 logger.warning("Error loading attentions: %s", e)
 
-    def keys(self) -> List[str]:
+    def keys(self) -> list[str]:
         """Return a list of all registered keys (in original casing)."""
         self._load_all()
         return list(self._dict.keys())
 
-    def list_available(self) -> List[str]:
+    def list_available(self) -> list[str]:
         """Return a list of all registered keys."""
         return self.keys()
 
-    def list(self) -> List[str]:
+    def list(self) -> list[str]:
         """Return a list of all registered keys."""
         return self.keys()
 
@@ -297,14 +298,14 @@ def list_all_components() -> dict:
     }
 
 
-def get_evaluatable_modules(include_compressors: bool = True) -> List[str]:
+def get_evaluatable_modules(include_compressors: bool = True) -> list[str]:
     """Returns all genuine registered attention and compressor architectures, excluding helper aliases."""
     attns = [k for k in ATTENTION_REGISTRY.keys() if not is_helper_module(k)]
     comps = [k for k in COMPRESSOR_REGISTRY.keys() if not is_helper_module(k)] if include_compressors else []
     return sorted(list(set(attns + comps)))
 
 
-def get_module_capabilities(name: str) -> Dict[str, Any]:
+def get_module_capabilities(name: str) -> dict[str, Any]:
     """Return capability flags for either attention or compressor module."""
     k = name.lower()
     if k in ATTENTION_REGISTRY:
@@ -314,7 +315,7 @@ def get_module_capabilities(name: str) -> Dict[str, Any]:
     return {}
 
 
-def is_module_declared_compatible(name: str, family: str) -> Tuple[bool, str]:
+def is_module_declared_compatible(name: str, family: str) -> tuple[bool, str]:
     """Check whether a module's declared capabilities satisfy a model family's architectural requirements."""
     if name == "full":
         return True, ""

@@ -10,17 +10,15 @@ from __future__ import annotations
 
 import json
 import logging
-import math
 import os
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import torch
 
 LOG = logging.getLogger("HFGitExporter")
-import os
 os.environ["HF_XET_HIGH_PERFORMANCE"] = "1"   # قبل از import
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning, module="huggingface_hub")
@@ -32,7 +30,7 @@ def sanitize_slug(text: str) -> str:
     return text.lower().replace("/", "_").replace("\\", "_").replace(" ", "-").replace("_", "-")
 
 
-def find_documentation_file(module_name: str, docs_dir: Optional[Path] = None) -> Optional[Path]:
+def find_documentation_file(module_name: str, docs_dir: Path | None = None) -> Path | None:
     """Locate the corresponding Markdown documentation file in Docs/content/."""
     if docs_dir is None:
         docs_dir = Path(__file__).resolve().parents[3] / "Docs" / "content"
@@ -74,7 +72,7 @@ def generate_model_card(
     dataset_name: str,
     perf_metrics: dict,
     comp_metrics: dict,
-    config_dict: Optional[dict] = None,
+    config_dict: dict | None = None,
 ) -> str:
     """Generate a publication-grade README.md model card for Hugging Face."""
     acc = float(perf_metrics.get("accuracy_pct", 0.0))
@@ -151,7 +149,7 @@ Trained and factorized via the Unified SVD Linear Attention Framework.
     return card
 
 
-def find_git_root(start: Optional[Path] = None) -> Path:
+def find_git_root(start: Path | None = None) -> Path:
     """Find the root Git repository directory."""
     p = (start or Path(__file__)).resolve()
     for parent in [p] + list(p.parents):
@@ -166,12 +164,12 @@ def update_documentation_table(
     module_name: str,
     dataset_name: str,
     status: str,
-    baseline_acc: Optional[float],
+    baseline_acc: float | None,
     acc: float,
     f1: Any,
     comp_rate: Any,
     num_compressed: Any,
-    hf_repo_url: Optional[str] = None,
+    hf_repo_url: str | None = None,
 ) -> bool:
     """Add or update an empirical benchmark row in the relevant documentation file."""
     try:
@@ -258,8 +256,8 @@ def upload_to_huggingface(
     dataset_name: str,
     perf_metrics: dict,
     comp_metrics: dict,
-    config_dict: Optional[dict] = None,
-) -> Optional[str]:
+    config_dict: dict | None = None,
+) -> str | None:
     """Upload model directory to a private Hugging Face repository."""
     # Temporarily remove any offline switches to ensure Hugging Face Hub connectivity
     old_offline = os.environ.pop("HF_HUB_OFFLINE", None)
@@ -329,15 +327,16 @@ def upload_to_huggingface(
 
 def commit_and_push_git(
     commit_message: str,
-    cwd: Optional[Path] = None,
-    branch: Optional[str] = None,
-) -> Optional[str]:
+    cwd: Path | None = None,
+    branch: str | None = None,
+) -> str | None:
     """Stage modified documentation, summaries, and CSVs, commit, and push to Git.
 
     Handles concurrent pushes from parallel workers with retry + backoff.
     If branch is specified, commits to that branch and pushes upstream.
     """
-    import time, random
+    import time
+    import random
     cwd = find_git_root(cwd)
     try:
         subprocess.run(["git", "add", "Docs/", "results/"], cwd=cwd, check=False)
@@ -410,7 +409,7 @@ def commit_and_push_git(
 
 
 def handle_benchmark_run_export(
-    model: Optional[torch.nn.Module],
+    model: torch.nn.Module | None,
     tokenizer: Any,
     model_name: str,
     module_name: str,
@@ -419,11 +418,11 @@ def handle_benchmark_run_export(
     comp_metrics: dict,
     status: str,
     pass_threshold_pct: float,
-    baseline_acc: Optional[float] = None,
-    config_dict: Optional[dict] = None,
-    out_dir: Optional[Path] = None,
+    baseline_acc: float | None = None,
+    config_dict: dict | None = None,
+    out_dir: Path | None = None,
     allow_pass_low: bool = False,
-    export_dir: Optional[Path] = None,
+    export_dir: Path | None = None,
 ) -> dict:
     """Main orchestration entry point for successful run export."""
     acc = float(perf_metrics.get("accuracy_pct", 0.0))

@@ -1,5 +1,6 @@
 import json
-from typing import Any, Callable, Dict, Optional
+from typing import Any
+from collections.abc import Callable
 
 import pandas as pd
 
@@ -17,9 +18,9 @@ class HyperparameterOptimizer:
         self,
         train_fn: Callable,
         eval_fn: Callable,
-        config_template: Dict[str, Any],
+        config_template: dict[str, Any],
         study_name: str = "svd_attention_opt",
-        storage: Optional[str] = None,
+        storage: str | None = None,
         direction: str = "maximize",
     ) -> None:
         if not _HAS_OPTUNA:
@@ -59,10 +60,10 @@ class HyperparameterOptimizer:
     def run(
         self,
         n_trials: int = 20,
-        timeout: Optional[int] = None,
+        timeout: int | None = None,
         n_jobs: int = 1,
         show_progress_bar: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute the run operation and return results."""
         self.study = optuna.create_study(
             direction=self.direction,
@@ -92,7 +93,7 @@ class HyperparameterOptimizer:
             raise ValueError("Run optimization first")
         return self.study.trials_dataframe()
 
-    def get_importance(self) -> Dict[str, float]:
+    def get_importance(self) -> dict[str, float]:
         """Return the importance."""
         if self.study is None:
             raise ValueError("Run optimization first")
@@ -141,7 +142,7 @@ class PrunedHyperparameterOptimizer(HyperparameterOptimizer):
 
 def quick_optimize(
     train_fn, eval_fn, n_trials=10, study_name="quick_opt"
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Quick optimize."""
     config_template = {
         "learning_rate": 2e-5,

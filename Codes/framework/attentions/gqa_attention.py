@@ -31,15 +31,14 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -53,7 +52,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
     if module is None:
         return None, None
     if hasattr(module, "base_layer"):
@@ -90,8 +89,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -209,16 +208,16 @@ class GroupedQueryAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        dim: Optional[int] = None,
-        num_heads: Optional[int] = None,
-        num_kv_heads: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = None,
+        dim: int | None = None,
+        num_heads: int | None = None,
+        num_kv_heads: int | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        pretrained_attn: Optional[nn.Module] = None,
-        old_attn: Optional[nn.Module] = None,
-        is_decoder: Optional[bool] = None,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         try:
@@ -302,7 +301,7 @@ class GroupedQueryAttention(BaseAttention):
 
         if resolved_kv_heads is None:
             kwargs_kv = kwargs.get("num_key_value_heads",
-                          kwargs.get("num_kv_heads", None))
+                          kwargs.get("num_kv_heads"))
             if kwargs_kv is not None:
                 resolved_kv_heads = int(kwargs_kv)
                 source = "kwargs"
@@ -414,7 +413,7 @@ class GroupedQueryAttention(BaseAttention):
         except Exception:
             pass
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None),
             "v": (None, None), "o": (None, None),
         }
@@ -445,7 +444,7 @@ class GroupedQueryAttention(BaseAttention):
 
         # Nested BERT/RoBERTa
         if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            s = getattr(src, "self")
+            s = src.self
             if hasattr(s, "query") and extracted["q"][0] is None:
                 extracted["q"] = _unpack_weight_bias(s.query)
             if hasattr(s, "key") and extracted["k"][0] is None:
@@ -453,7 +452,7 @@ class GroupedQueryAttention(BaseAttention):
             if hasattr(s, "value") and extracted["v"][0] is None:
                 extracted["v"] = _unpack_weight_bias(s.value)
 
-        if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and extracted["o"][0] is None:
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             extracted["o"] = _unpack_weight_bias(src.output.dense)
 
         # Flat modules
@@ -601,24 +600,24 @@ class GroupedQueryAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         while isinstance(hidden_states, (tuple, list)):
             hidden_states = hidden_states[0]
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
-        key_value_states = kwargs.get("key_value_states", None)
+        key_value_states = kwargs.get("key_value_states")
         is_cross = key_value_states is not None or encoder_hidden_states is not None
         kv_input = encoder_hidden_states if encoder_hidden_states is not None else (
             key_value_states if key_value_states is not None else hidden_states
@@ -636,7 +635,7 @@ class GroupedQueryAttention(BaseAttention):
 
         # ---- RoPE ----
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
@@ -664,7 +663,7 @@ class GroupedQueryAttention(BaseAttention):
         # ---- Padding mask ----
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is None:
-            eff_mask = kwargs.get("mask", None)
+            eff_mask = kwargs.get("mask")
         valid_mask = self._prepare_valid_mask(eff_mask, B, N_k, device)
         if valid_mask is not None:
             scores = scores.masked_fill(~valid_mask[:, None, None, :], -1e4)
@@ -702,7 +701,7 @@ class GroupedQueryAttention(BaseAttention):
     def get_ortho_loss(self):
         return torch.zeros((), device=self.query.weight.device)
 
-    def storage_bytes(self) -> Dict[str, int]:
+    def storage_bytes(self) -> dict[str, int]:
         def _sz(p):
             if isinstance(p, (nn.Parameter, torch.Tensor)):
                 return p.numel() * p.element_size()
@@ -727,14 +726,14 @@ def inject_gqa(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     lora_rank: int = 16,
     lora_alpha: float = 32.0,
-    rank: Optional[int] = None,
-    num_kv_heads: Optional[int] = None,
+    rank: int | None = None,
+    num_kv_heads: int | None = None,
     _depth: int = 0,
     **kwargs: Any,
-) -> Optional[Any]:
+) -> Any | None:
     if _depth > 8:
         logger.warning("inject_gqa: max recursion depth exceeded.")
         return None

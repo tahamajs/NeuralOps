@@ -8,13 +8,11 @@ with 100% exact bit-identical restoration and zero weight/state drift.
 
 from __future__ import annotations
 
-import copy
 import gc
-from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
-from framework.core.model_utils import replace_module, get_parent_and_child_name
+from framework.core.model_utils import replace_module
 
 
 class ModelStateSnapshot:
@@ -23,8 +21,8 @@ class ModelStateSnapshot:
     def __init__(self, model: nn.Module):
         self.model = model
         # 1. Structural snapshot: save references to all attention modules and their parent dotted paths
-        self.swapped_layer_paths: List[str] = []
-        self.original_submodules: Dict[str, nn.Module] = {}
+        self.swapped_layer_paths: list[str] = []
+        self.original_submodules: dict[str, nn.Module] = {}
         for name, sub in model.named_modules():
             # Match transformer attention layers
             lname = name.lower()
@@ -39,7 +37,7 @@ class ModelStateSnapshot:
 
         # 2. Tensor snapshot: exact deep-copied state_dict in CPU host memory to preserve VRAM
         # and prevent any in-place mutation or optimizer gradient corruption.
-        self.clean_state_dict: Dict[str, torch.Tensor] = {
+        self.clean_state_dict: dict[str, torch.Tensor] = {
             k: v.detach().clone().cpu() for k, v in model.state_dict().items()
         }
 
@@ -72,7 +70,7 @@ class ModelStateSnapshot:
                     delattr(self.model, attr)
                 except Exception:
                     pass
-        
+
         # Reset LoRA merge state
         for m in self.model.modules():
             if hasattr(m, "merged"):
@@ -83,7 +81,7 @@ class ModelStateSnapshot:
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
-    def verify_bit_identical(self) -> Tuple[bool, float]:
+    def verify_bit_identical(self) -> tuple[bool, float]:
         """Verify that current model state is bit-identical to snapshot. Returns (is_identical, max_diff)."""
         max_diff = 0.0
         current_st = self.model.state_dict()

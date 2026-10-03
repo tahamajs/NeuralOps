@@ -19,7 +19,7 @@ Hardened for production across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA a
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -77,8 +77,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     r"""Applies rotary position embeddings with partial-RoPE dimension slicing."""
     if cos is None or sin is None:
         return q, k
@@ -118,8 +118,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -193,15 +193,15 @@ class FactorisedMatrixState(BaseAttention):
     is_custom_attention: bool = True
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = 32,
-        d_model: Optional[Union[int, Any]] = None,
-        num_heads: Optional[int] = None,
-        pretrained_attn: Optional[nn.Module] = None,
-        old_attn: Optional[nn.Module] = None,
-        comp_config: Optional[Any] = None,
-        layer_id: Optional[int] = None,
-        layer_idx: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = 32,
+        d_model: int | Any | None = None,
+        num_heads: int | None = None,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
+        comp_config: Any | None = None,
+        layer_id: int | None = None,
+        layer_idx: int | None = None,
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
@@ -257,9 +257,7 @@ class FactorisedMatrixState(BaseAttention):
         is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False)))
         _mt = (model_type or '').lower()
         _decoder_prefixes = ('gpt', 'qwen', 'llama', 'mistral', 'gemma', 'phi', 'opt', 'bloom', 'falcon', 'olmo', 'mpt', 'stablelm')
-        if any(_mt.startswith(p) for p in _decoder_prefixes):
-            is_dec = True
-        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+        if any(_mt.startswith(p) for p in _decoder_prefixes) or hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
@@ -282,7 +280,7 @@ class FactorisedMatrixState(BaseAttention):
 
         self.beta = nn.Parameter(torch.ones(self.num_heads, 1, 1) * 2.0)
         self.rotary_emb = None
-        self.comp_config: Optional[Any] = comp_config
+        self.comp_config: Any | None = comp_config
 
         if source_attn is not None:
             self.copy_weights(source_attn)
@@ -327,12 +325,10 @@ class FactorisedMatrixState(BaseAttention):
         is_nested = False
         if (
             hasattr(old_attn, "self")
-            and hasattr(getattr(old_attn, "self"), "query")
+            and hasattr(old_attn.self, "query")
             and hasattr(old_attn, "output")
-            and hasattr(getattr(old_attn, "output"), "dense")
-        ):
-            is_nested = True
-        elif (
+            and hasattr(old_attn.output, "dense")
+        ) or (
             cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
             or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
         ) and not has_out_lin:
@@ -342,7 +338,7 @@ class FactorisedMatrixState(BaseAttention):
         if hasattr(old_attn, "rotary_emb"):
             self.rotary_emb = old_attn.rotary_emb
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -383,13 +379,13 @@ class FactorisedMatrixState(BaseAttention):
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
         # 2. RoBERTa / BERT nested self-attention
-        elif hasattr(old_attn, "self") and hasattr(getattr(old_attn, "self"), "query"):
-            s = getattr(old_attn, "self")
+        elif hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
+            s = old_attn.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
                     extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
-            if hasattr(old_attn, "output") and hasattr(getattr(old_attn, "output"), "dense"):
+            if hasattr(old_attn, "output") and hasattr(old_attn.output, "dense"):
                 out_mod = old_attn.output.dense
                 extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
 
@@ -476,7 +472,7 @@ class FactorisedMatrixState(BaseAttention):
         k: torch.Tensor,
         v: torch.Tensor,
         decay: torch.Tensor,
-        mask: Optional[torch.Tensor] = None,
+        mask: torch.Tensor | None = None,
         reverse: bool = False,
         chunk_size: int = 64,
     ) -> torch.Tensor:
@@ -512,7 +508,7 @@ class FactorisedMatrixState(BaseAttention):
             k_f = k_f.flip(dims=[2])
             v_f = v_f.flip(dims=[2])
 
-        if L <= chunk_size:
+        if chunk_size >= L:
             log_decay = torch.log(decay_f)
             idx = torch.arange(L, device=q.device, dtype=torch.float32)
             dist = idx.unsqueeze(1) - idx.unsqueeze(0)
@@ -528,7 +524,7 @@ class FactorisedMatrixState(BaseAttention):
         else:
             num_chunks = math.ceil(L / chunk_size)
             y_chunks = []
-            
+
             S = torch.zeros(B, H, d, d, device=q.device, dtype=torch.float32)
             z = torch.zeros(B, H, d, 1, device=q.device, dtype=torch.float32)
 
@@ -539,9 +535,9 @@ class FactorisedMatrixState(BaseAttention):
                 end = min(start + chunk_size, L)
                 curr_c = end - start
 
-                qc = q_f[:, :, start:end, :]  
-                kc = k_f[:, :, start:end, :]  
-                vc = v_f[:, :, start:end, :]  
+                qc = q_f[:, :, start:end, :]
+                kc = k_f[:, :, start:end, :]
+                vc = v_f[:, :, start:end, :]
 
                 idx_c = torch.arange(curr_c, device=q.device, dtype=torch.float32)
                 dist_c = idx_c.unsqueeze(1) - idx_c.unsqueeze(0)
@@ -550,22 +546,22 @@ class FactorisedMatrixState(BaseAttention):
 
                 # Intra-chunk
                 scores_c = torch.matmul(qc, kc.transpose(-1, -2)) * Dc
-                num_intra = torch.matmul(scores_c, vc)  
-                denom_intra = scores_c.sum(dim=-1, keepdim=True)  
+                num_intra = torch.matmul(scores_c, vc)
+                denom_intra = scores_c.sum(dim=-1, keepdim=True)
 
-                # Inter-chunk 
+                # Inter-chunk
                 decay_from_prev = torch.exp((idx_c + 1).view(1, 1, curr_c, 1) * log_decay)  # (1, H, curr_c, 1)
-                
+
                 # MEMORY FIX: Use einsum instead of expanding S to (B, H, curr_c, d, d)
                 # num_inter = (qc @ S) * decay_from_prev
                 # qc: (B, H, C, d), S: (B, H, d, d) -> output: (B, H, C, d)
                 num_inter = torch.einsum('bhcd,bhde->bhce', qc, S)
-                num_inter = num_inter * decay_from_prev 
-                
+                num_inter = num_inter * decay_from_prev
+
                 # denom_inter = (qc @ z) * decay_from_prev
                 # qc: (B, H, C, d), z: (B, H, d, 1) -> output: (B, H, C, 1)
                 denom_inter = torch.einsum('bhcd,bhde->bhce', qc, z)
-                denom_inter = denom_inter * decay_from_prev 
+                denom_inter = denom_inter * decay_from_prev
 
                 num_c = num_intra + num_inter
                 denom_c = (denom_intra + denom_inter).clamp_min(1e-5)
@@ -573,18 +569,18 @@ class FactorisedMatrixState(BaseAttention):
 
                 # Update state (S, z) for next chunk
                 decay_chunk = torch.exp(float(curr_c) * log_decay)  # (1, H, 1, 1)
-                
+
                 dist_to_end = (curr_c - 1 - idx_c).view(1, 1, curr_c, 1)
                 decay_to_end = torch.exp(dist_to_end * log_decay)  # (1, H, curr_c, 1)
 
                 # MEMORY FIX: Apply decay to keys BEFORE outer product!
                 # Instead of computing a huge (B,H,C,d,d) tensor, we scale kc first.
                 kc_decayed = kc * decay_to_end  # (B, H, C, d)
-                
+
                 # Now compute the accumulated state over the chunk directly into (B,H,d,d) using einsum
                 # chunk_S = sum_{c} (kc_decayed_c \otimes vc_c)
                 chunk_S = torch.einsum('bhcd,bhce->bhde', kc_decayed, vc)
-                
+
                 # chunk_z = sum_{c} kc_decayed_c
                 chunk_z = kc_decayed.sum(dim=2).unsqueeze(-1)  # (B, H, d, 1)
 
@@ -600,19 +596,19 @@ class FactorisedMatrixState(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_ids: Optional[torch.Tensor] = None,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_ids: torch.Tensor | None = None,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, L, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
 
@@ -698,12 +694,12 @@ def inject_factorised_matrix_state(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
 ):
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

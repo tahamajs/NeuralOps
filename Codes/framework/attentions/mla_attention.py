@@ -43,14 +43,14 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.triton_kernels import triton_dispatch
 
@@ -71,7 +71,7 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -123,8 +123,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         fk = {"device": device, "dtype": dtype}
@@ -213,11 +213,11 @@ class MLAAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = 128,
+        config: Any | None = None,
+        rank: int | None = 128,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         max_error: float = 0.35,
         fallback_to_original: bool = True,
         **kwargs: Any,
@@ -305,13 +305,13 @@ class MLAAttention(BaseAttention):
         # ---- storage accounting (MLA-FIX-08) ----
         self._orig_storage_bytes: int = 0
         self._comp_storage_bytes: int = 0
-        self._reconstruction_error_kv: Optional[float] = None
+        self._reconstruction_error_kv: float | None = None
 
         # ---- source attention (for injector) ----
-        self._source_attn_id: Optional[int] = None
+        self._source_attn_id: int | None = None
         self.triton_kwargs = {}
 
-        pretrained_attn = kwargs.get("pretrained_attn", None)
+        pretrained_attn = kwargs.get("pretrained_attn")
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
@@ -349,7 +349,7 @@ class MLAAttention(BaseAttention):
             return
 
         # --- extract weights ---
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
@@ -402,7 +402,7 @@ class MLAAttention(BaseAttention):
             or extracted["k"][0] is None
             or extracted["v"][0] is None
         ):
-            s = getattr(src, "self")
+            s = src.self
             if hasattr(s, "query") and extracted["q"][0] is None:
                 extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
             if hasattr(s, "key") and extracted["k"][0] is None:
@@ -410,7 +410,7 @@ class MLAAttention(BaseAttention):
             if hasattr(s, "value") and extracted["v"][0] is None:
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if (hasattr(src, "output") and hasattr(getattr(src, "output"), "dense")
+        if (hasattr(src, "output") and hasattr(src.output, "dense")
                 and extracted["o"][0] is None):
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
@@ -437,14 +437,8 @@ class MLAAttention(BaseAttention):
                             ("dense", "out_proj", "c_proj", "out_lin", "o_proj",
                              "wo", "o", "proj"))
         is_nested = False
-        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            is_nested = True
-        elif cls_name in ("BertSelfAttention", "RobertaSelfAttention",
-                           "XLMRobertaSelfAttention"):
-            is_nested = True
-        elif cls_name.endswith("SelfAttention") and not has_out_proj:
-            is_nested = True
-        elif cls_name.endswith("Attention") and not has_out_proj:
+        if hasattr(src, "self") and hasattr(src.self, "query") or cls_name in ("BertSelfAttention", "RobertaSelfAttention",
+                           "XLMRobertaSelfAttention") or cls_name.endswith("SelfAttention") and not has_out_proj or cls_name.endswith("Attention") and not has_out_proj:
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -632,7 +626,7 @@ class MLAAttention(BaseAttention):
             return True
         return self._reconstruction_error_kv <= self.max_error
 
-    def storage_bytes(self) -> Dict[str, int]:
+    def storage_bytes(self) -> dict[str, int]:
         def _sz(p):
             return p.numel() * p.element_size() if isinstance(p, torch.Tensor) else 0
         return {
@@ -647,15 +641,15 @@ class MLAAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -676,7 +670,7 @@ class MLAAttention(BaseAttention):
 
         # ---- RoPE ----
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
@@ -757,8 +751,8 @@ class MLAAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("mla_inject")
 @ATTENTION_REGISTRY.register("inject_mla")
 def inject_mla(
-    model: Optional[nn.Module] = None,
-    layer: Optional[nn.Module] = None,
+    model: nn.Module | None = None,
+    layer: nn.Module | None = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
@@ -766,7 +760,7 @@ def inject_mla(
     old_attn: Any = None,
     _depth: int = 0,
     **kwargs: Any,
-) -> Optional[Union[MLAAttention, nn.Module]]:
+) -> MLAAttention | nn.Module | None:
     if _depth > 8:
         logger.warning("inject_mla: max recursion depth exceeded.")
         return None

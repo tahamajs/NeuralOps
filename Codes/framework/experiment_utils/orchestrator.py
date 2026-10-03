@@ -7,7 +7,8 @@ import logging
 import threading
 import traceback
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any
+from collections.abc import Callable
 
 from framework.config import Config, load_config
 from framework.data import DataConfig, TaskType, load_dataset, preprocess_function
@@ -37,13 +38,13 @@ class MegaOrchestrator:
 
     def __init__(
         self,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         run_id: str,
         base_dir: Path,
-        progress_callback: Optional[Callable] = None,
-        log_callback: Optional[Callable] = None,
-        final_callback: Optional[Callable] = None,
-        stop_event: Optional[threading.Event] = None,
+        progress_callback: Callable | None = None,
+        log_callback: Callable | None = None,
+        final_callback: Callable | None = None,
+        stop_event: threading.Event | None = None,
     ) -> None:
         self.raw_config = config
         self.run_id = run_id
@@ -66,11 +67,11 @@ class MegaOrchestrator:
         self.model = None
         self.tokenizer = None
         self.trainer_state = None
-        self.final_metrics: Dict[str, float] = {}
+        self.final_metrics: dict[str, float] = {}
 
         logger.info("MegaOrchestrator created: run_id=%s", run_id)
 
-    def run(self) -> Dict[str, Any]:
+    def run(self) -> dict[str, Any]:
         """Execute the full experiment pipeline."""
         try:
             self._log("Starting experiment…")

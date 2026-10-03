@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -60,13 +60,13 @@ class MoDeGPTLowRankLinear(nn.Module):
         out_features: int,
         rank: int,
         U: torch.Tensor,                     # (out, r)
-        V: Optional[torch.Tensor] = None,    # (r, in) — may be None if shared
-        shared_V: Optional[torch.Tensor] = None,
-        bias: Optional[torch.Tensor] = None,
+        V: torch.Tensor | None = None,    # (r, in) — may be None if shared
+        shared_V: torch.Tensor | None = None,
+        bias: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = int(in_features)
@@ -221,11 +221,11 @@ class MoDeGPTCompressor(BaseCompressor):
         skip_attention_qkv: bool = False,
         target_attention_only: bool = False,
         min_rank: int = 4,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="modegpt", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = _cfg_get(cfg, "modegpt_rank", _cfg_get(cfg, "rank", rank))
             method = _cfg_get(cfg, "modegpt_method", _cfg_get(cfg, "method", method))
@@ -259,12 +259,12 @@ class MoDeGPTCompressor(BaseCompressor):
             target_modules = None
         self.target_modules = target_modules
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+        self.stats: dict[str, Any] = {}
         self._orig_storage_bytes: int = 0
         self._comp_storage_bytes: int = 0
 
@@ -325,7 +325,7 @@ class MoDeGPTCompressor(BaseCompressor):
         return any(t in name for t in self.target_modules)
 
     # ------------------------------------------------------------------
-    def _get_weight(self, module: nn.Module) -> Tuple[torch.Tensor, bool]:
+    def _get_weight(self, module: nn.Module) -> tuple[torch.Tensor, bool]:
         target_layer = getattr(module, "base_layer", module)
         raw_w = target_layer.weight.data
         cls_name = target_layer.__class__.__name__.lower()
@@ -352,7 +352,7 @@ class MoDeGPTCompressor(BaseCompressor):
         self,
         W1: torch.Tensor,
         W2: torch.Tensor,
-    ) -> Optional[Tuple[torch.Tensor, torch.Tensor, torch.Tensor, int]]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, int] | None:
         out1, in_f = W1.shape
         out2, in2 = W2.shape
         if in_f != in2:
@@ -385,7 +385,7 @@ class MoDeGPTCompressor(BaseCompressor):
 
     def _decompose_single(
         self, W: torch.Tensor,
-    ) -> Optional[Tuple[torch.Tensor, torch.Tensor, int]]:
+    ) -> tuple[torch.Tensor, torch.Tensor, int] | None:
         out_f, in_f = W.shape
         r = self._select_rank(out_f, in_f)
         try:
@@ -411,14 +411,14 @@ class MoDeGPTCompressor(BaseCompressor):
         return total
 
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers = []
         self.fallback_layers = []
         self.skipped_layers = []
         self.layer_errors = {}
         self.layer_ranks = {}
-        seen_weights: Set[int] = set()
-        processed_names: Set[str] = set()
+        seen_weights: set[int] = set()
+        processed_names: set[str] = set()
         self._orig_storage_bytes = 0
         self._comp_storage_bytes = 0
 

@@ -6,16 +6,15 @@ Registered as 'moba', 'moba_attention', 'moba_inject'.
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
-from framework.core.triton_kernels import triton_dispatch
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +33,7 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -164,10 +163,10 @@ class MoBAAttention(BaseAttention):
         config: Any,
         block_size: int = 64,
         top_k: int = 4,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         # MB-FIX-03
@@ -246,7 +245,7 @@ class MoBAAttention(BaseAttention):
         self._comp_storage_bytes = 0
         self.triton_kwargs = {"block_size": self.block_size, "eps": 1e-6}
 
-        pretrained_attn = kwargs.get("pretrained_attn", None)
+        pretrained_attn = kwargs.get("pretrained_attn")
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
@@ -285,7 +284,7 @@ class MoBAAttention(BaseAttention):
         except Exception:
             pass
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
@@ -347,7 +346,7 @@ class MoBAAttention(BaseAttention):
                     v_l.bias.data if getattr(v_l, "bias", None) is not None else None,
                 )
 
-        if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and extracted["o"][0] is None:
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             d = getattr(src.output.dense, "base_layer", src.output.dense)
             extracted["o"] = (
                 d.weight.data,
@@ -377,13 +376,7 @@ class MoBAAttention(BaseAttention):
         has_out_proj = any(hasattr(src, a) for a in
                             ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
         is_nested = False
-        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            is_nested = True
-        elif cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention"):
-            is_nested = True
-        elif cls_name.endswith("SelfAttention") and not has_out_proj:
-            is_nested = True
-        elif cls_name.endswith("Attention") and not has_out_proj:
+        if hasattr(src, "self") and hasattr(src.self, "query") or cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention") or cls_name.endswith("SelfAttention") and not has_out_proj or cls_name.endswith("Attention") and not has_out_proj:
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -478,18 +471,18 @@ class MoBAAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, L, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
         device = hidden_states.device
@@ -504,7 +497,7 @@ class MoBAAttention(BaseAttention):
         V = self.v_proj(kv_input).view(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
@@ -519,7 +512,7 @@ class MoBAAttention(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross else attention_mask
 
         # ---- Normalize mask to bool (B, L_kv) ----
-        valid_mask: Optional[torch.Tensor] = None
+        valid_mask: torch.Tensor | None = None
         if eff_mask is not None:
             if eff_mask.dim() == 2:
                 if eff_mask.dtype == torch.bool:
@@ -550,7 +543,7 @@ class MoBAAttention(BaseAttention):
                 valid_mask = None  # shape mismatch → ignore
 
         # ---- Fast path: short sequence or cross-attention ----
-        if L <= self.block_size or is_cross:
+        if self.block_size >= L or is_cross:
             if valid_mask is None and head_mask is None and not output_attentions:
                 try:
                     _qs = Q.half() if Q.dtype == torch.float32 else Q
@@ -698,7 +691,7 @@ class MoBAAttention(BaseAttention):
         return final_out, None
 
     # ------------------------------------------------------------------
-    def storage_bytes(self) -> Dict[str, int]:
+    def storage_bytes(self) -> dict[str, int]:
         def _sz(p):
             if p is None:
                 return 0
@@ -727,7 +720,7 @@ def inject_moba(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):
@@ -737,7 +730,7 @@ def inject_moba(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

@@ -6,13 +6,13 @@ from __future__ import annotations
 
 import math
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 GLUE_METRIC_MAP = {
     "cola": "mcc",
-    "stsb": "pearson_spearman", 
+    "stsb": "pearson_spearman",
     "sts-b": "pearson_spearman",
     "mrpc": "f1_accuracy",
     "qqp": "f1_accuracy",
@@ -28,15 +28,15 @@ GLUE_METRIC_MAP = {
 }
 
 
-def compute_metrics(task_name: str, predictions: List[Any], labels: List[Any], mean_loss: float = 0.0) -> Dict[str, Any]:
+def compute_metrics(task_name: str, predictions: list[Any], labels: list[Any], mean_loss: float = 0.0) -> dict[str, Any]:
     """Compute dataset-specific metrics using sklearn/scipy."""
     return compute_dataset_metrics(task_name, labels, predictions, mean_loss)
 
 
-def compute_dataset_metrics(dataset: str, all_labels: List[Any], all_preds: List[Any], mean_loss: float = 0.0) -> Dict[str, Any]:
+def compute_dataset_metrics(dataset: str, all_labels: list[Any], all_preds: list[Any], mean_loss: float = 0.0) -> dict[str, Any]:
     """Compute the correct metrics for each GLUE task."""
     metrics = {"accuracy_pct": 0.0, "f1_score": 0.0, "mcc": 0.0, "pearson": 0.0, "spearman": 0.0, "perplexity": 0.0}
-    
+
     if not all_labels or not all_preds:
         return metrics
 
@@ -86,7 +86,7 @@ def compute_dataset_metrics(dataset: str, all_labels: List[Any], all_preds: List
     return metrics
 
 
-def compute_fidelity(baseline_logits_list: List[Any], compressed_logits_list: List[Any]) -> float:
+def compute_fidelity(baseline_logits_list: list[Any], compressed_logits_list: list[Any]) -> float:
     """Compute cosine-similarity fidelity between baseline and compressed logits."""
     if not baseline_logits_list or not compressed_logits_list:
         return 0.0

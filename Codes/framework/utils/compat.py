@@ -16,7 +16,7 @@ Bug fixes (2026-09-25):
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
 
 from .model_family import ModelAdapter, detect_family, CAUSAL_FAMILIES
 from .qwen_compat import QwenIncompatibleError
-from framework.core.model_utils import replace_module
 
 
 def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
@@ -90,7 +89,7 @@ def should_compress_qwen3_5(name: str) -> bool:
     return any(p in n for p in ALLOWED_FFN_PATTERNS)
 
 
-def should_compress_linear(model: Any, name: str, family: Optional[str] = None) -> bool:
+def should_compress_linear(model: Any, name: str, family: str | None = None) -> bool:
     """
     Family-aware check for whether a linear layer should be compressed.
 
@@ -145,7 +144,7 @@ def get_dynamic_compression_rank(
     out_features: int,
     model_or_family: Any = None,
     default_rank: int = 16,
-    comp_config: Optional[dict] = None,
+    comp_config: dict | None = None,
 ) -> int:
     """
     Compute architecture-aware dynamic compression rank.
@@ -162,11 +161,11 @@ def get_dynamic_compression_rank(
             return int(comp_config["rank"])
     elif comp_config is not None:
         if getattr(comp_config, "qwen3_5_rank", None) is not None:
-            return int(getattr(comp_config, "qwen3_5_rank"))
+            return int(comp_config.qwen3_5_rank)
         if getattr(comp_config, "dynamic_rank", None) is not None:
-            return int(getattr(comp_config, "dynamic_rank"))
+            return int(comp_config.dynamic_rank)
         if getattr(comp_config, "rank", None) is not None:
-            return int(getattr(comp_config, "rank"))
+            return int(comp_config.rank)
 
     if isinstance(model_or_family, str):
         fam = model_or_family
@@ -363,21 +362,15 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
             or any(f".{x}." in n_low or n_low.endswith(f".{x}") for x in (
                 "u", "v", "weight_u", "weight_v",
             ))
-        ):
-            trainable_params.append(param)
-        elif any(tag in n_low for tag in (
+        ) or any(tag in n_low for tag in (
             ".down.", ".up.", ".u_proj", ".v_proj", ".u_matrix", ".v_matrix",
             ".w_a", ".w_b", ".weight_u", ".weight_v", ".factor", ".factors",
             ".comp_", ".svd_", ".cur_", ".salr", ".direct_svd", ".sparse_proj",
             ".cores", ".centroids", ".weight_table", ".alpha",
             ".proj_k", ".proj_v",
-        )):
-            trainable_params.append(param)
-        elif not (n_low.endswith(".weight") or n_low.endswith(".bias")) and any(
+        )) or not (n_low.endswith(".weight") or n_low.endswith(".bias")) and any(
             tag in n_low for tag in ("attention.", "self_attn.", ".attn.")
-        ):
-            trainable_params.append(param)
-        elif any(tag in n_low for tag in (
+        ) or any(tag in n_low for tag in (
             ".gate.", ".beta.", ".input_gate.",
             ".forget_gate.", ".alpha_gate.",
         )):
@@ -498,7 +491,7 @@ def maybe_apply_rotary(
     k: torch.Tensor,
     adapter: ModelAdapter,
     rotary_emb: Any,
-    position_ids: Optional[torch.Tensor],
+    position_ids: torch.Tensor | None,
 ):
     """Apply a native rotary module when required; never silently drop RoPE."""
     if adapter.position_embedding != "rotary":
@@ -537,7 +530,7 @@ def maybe_apply_rotary(
 
 
 def causal_mask_from_attention_mask(
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     adapter: ModelAdapter,
 ):
     """Return the mask without discarding decoder causal visibility semantics."""
@@ -597,10 +590,10 @@ def install_projection_aliases(module: nn.Module) -> nn.Module:
 
 
 def convert_mask(
-    mask: Optional[torch.Tensor],
+    mask: torch.Tensor | None,
     adapter: ModelAdapter,
     expects_bidirectional: bool = False,
-) -> Optional[torch.Tensor]:
+) -> torch.Tensor | None:
     if mask is None or not expects_bidirectional:
         return mask
     if mask.dim() == 2:
@@ -660,7 +653,7 @@ class FamilyModuleWrapper(nn.Module):
         return self.module(*args, **kwargs)
 
 
-def wrap_for_family(module: nn.Module, model_family: Optional[str] = None) -> nn.Module:
+def wrap_for_family(module: nn.Module, model_family: str | None = None) -> nn.Module:
     family = model_family or detect_family(module)
     install_projection_aliases(module)
     family_aliases = globals().get("FAMILY_ALIASES", {})

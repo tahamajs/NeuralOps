@@ -38,7 +38,7 @@ Fixes (v2):
 
 import logging
 import math
-from typing import Any, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -92,8 +92,8 @@ class AdaptiveSVDLinear(nn.Module):
         residual_rank: int = 16,
         bias: bool = True,
         trainable_svd: bool = False,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = int(in_features)
@@ -159,11 +159,11 @@ class AdaptiveSVDLinear(nn.Module):
 
     # ---- aliases for framework compatibility ----
     @property
-    def A(self) -> Optional[nn.Parameter]:
+    def A(self) -> nn.Parameter | None:
         return self.lora_A
 
     @property
-    def B(self) -> Optional[nn.Parameter]:
+    def B(self) -> nn.Parameter | None:
         return self.lora_B
 
     @property
@@ -212,11 +212,11 @@ class AdaptiveSVDAttention(BaseAttention):
     def __init__(
         self,
         config: Any,
-        svd_rank: Optional[int] = None,
+        svd_rank: int | None = None,
         residual_rank: int = 16,
         energy_threshold: float = 0.999,   # ASVD-FIX-02
-        pretrained_attn: Optional[nn.Module] = None,
-        is_decoder: Optional[bool] = None,
+        pretrained_attn: nn.Module | None = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, **kwargs)
@@ -346,7 +346,7 @@ class AdaptiveSVDAttention(BaseAttention):
 
         # Relative attention bias (T5)
         self.has_relative_attention_bias = False
-        self.relative_attention_bias: Optional[nn.Embedding] = None
+        self.relative_attention_bias: nn.Embedding | None = None
         self.relative_attention_num_buckets = int(
             getattr(config, "relative_attention_num_buckets", 32) if config else 32
         )
@@ -529,15 +529,15 @@ class AdaptiveSVDAttention(BaseAttention):
                 extracted["o"] = (wo, bo.data.clone() if bo is not None else None)
 
         # ---- BERT / RoBERTa nested ----
-        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            s = getattr(src, "self")
+        if hasattr(src, "self") and hasattr(src.self, "query"):
+            s = src.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 if extracted[key][0] is None and hasattr(s, sub):
                     m = getattr(s, sub)
                     b = getattr(m, "bias", None)
                     extracted[key] = (m.weight.data, b.data if b is not None else None)
 
-        if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") \
+        if hasattr(src, "output") and hasattr(src.output, "dense") \
                 and extracted["o"][0] is None:
             d = getattr(src.output.dense, "base_layer", src.output.dense)
             b = getattr(d, "bias", None)
@@ -565,10 +565,8 @@ class AdaptiveSVDAttention(BaseAttention):
         has_out_proj = any(hasattr(src, a) for a in
                             ("dense", "out_proj", "c_proj", "out_lin", "o_proj"))
         is_nested = False
-        if (hasattr(src, "self") and hasattr(getattr(src, "self"), "query")
-                and hasattr(src, "output") and hasattr(getattr(src, "output"), "dense")):
-            is_nested = True
-        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
+        if (hasattr(src, "self") and hasattr(src.self, "query")
+                and hasattr(src, "output") and hasattr(src.output, "dense")) or (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
                             "XLMRobertaSelfAttention", "ElectraSelfAttention",
                             "DebertaSelfAttention")
               or (cls_name.endswith("SelfAttention") and not has_out_proj)) \
@@ -646,17 +644,17 @@ class AdaptiveSVDAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         # ASVD-FIX-06: always return (output, attn_weights)
         key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
         is_cross = key_value_states is not None
@@ -671,7 +669,7 @@ class AdaptiveSVDAttention(BaseAttention):
         V = self.value(kv_input).view(B, N_k, self.num_kv_heads, D).transpose(1, 2).contiguous()
 
         # ---- RoPE (ASVD-FIX-05: uses module-level helper) ----
-        position_embeddings = kwargs.get("position_embeddings", None)
+        position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) \
                 and len(position_embeddings) >= 2:
             cos, sin = position_embeddings[0], position_embeddings[1]
@@ -705,11 +703,11 @@ class AdaptiveSVDAttention(BaseAttention):
         scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
 
         # ---- Relative attention bias (T5) ----
-        position_bias = kwargs.get("position_bias", None)
+        position_bias = kwargs.get("position_bias")
         if position_bias is None and self.has_relative_attention_bias:
             position_bias = self.compute_bias(N_q, N_k, device=hidden_states.device)
 
-        mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
+        mask = attention_mask if attention_mask is not None else kwargs.get("mask")
 
         if position_bias is not None:
             if mask is not None and mask.dim() == 4:
@@ -780,7 +778,7 @@ def inject_adaptive_svd(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):

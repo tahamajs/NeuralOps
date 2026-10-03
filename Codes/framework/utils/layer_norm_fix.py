@@ -8,7 +8,6 @@ mean, variance, and reduction accumulators into torch.float32 prior to reciproca
 
 from __future__ import annotations
 
-from typing import List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -28,11 +27,11 @@ class RMSNorm(nn.Module):
 
     def __init__(
         self,
-        normalized_shape: Union[int, Tuple[int, ...], List[int], torch.Size],
+        normalized_shape: int | tuple[int, ...] | list[int] | torch.Size,
         eps: float = 1e-6,
         elementwise_affine: bool = True,
-        device: Optional[Union[torch.device, str]] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | str | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         if isinstance(normalized_shape, int):
@@ -61,11 +60,11 @@ class RMSNorm(nn.Module):
         """
         input_dtype = x.dtype
         reduction_dims = tuple(range(-len(self.normalized_shape), 0))
-        
+
         # FIX: Explicitly cast accumulators to torch.float32 to avoid FP16 sum-of-squares overflow/underflow
         variance = torch.mean(x.float() ** 2, dim=reduction_dims, keepdim=True)
         x_normed = (x.float() * torch.rsqrt(variance + self.eps)).to(input_dtype)
-        
+
         if self.weight is not None:
             x_normed = x_normed * self.weight.to(input_dtype)
         return x_normed.to(input_dtype)
@@ -85,12 +84,12 @@ class LayerNorm(nn.Module):
 
     def __init__(
         self,
-        normalized_shape: Union[int, Tuple[int, ...], List[int], torch.Size],
+        normalized_shape: int | tuple[int, ...] | list[int] | torch.Size,
         eps: float = 1e-5,
         elementwise_affine: bool = True,
         bias: bool = True,
-        device: Optional[Union[torch.device, str]] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | str | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         if isinstance(normalized_shape, int):
@@ -126,7 +125,7 @@ class LayerNorm(nn.Module):
         """
         input_dtype = x.dtype
         reduction_dims = tuple(range(-len(self.normalized_shape), 0))
-        
+
         # FIX: Explicitly cast accumulators to torch.float32 for mean and variance to prevent FP16 variance underflow
         x_fp32 = x.float()
         mean = torch.mean(x_fp32, dim=reduction_dims, keepdim=True)

@@ -9,17 +9,15 @@ Singular Value Decomposition (SVD) low-rank factor copying.
 from __future__ import annotations
 
 import logging
-import math
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from .adapters import get_adapter
 from .architecture import detect_architecture, get_attention_modules
-from .gqa_utils import get_qkv_projection_dims, repeat_kv, reshape_for_attention
+from .gqa_utils import repeat_kv
 from .model_utils import replace_module
 from .registry import ATTENTION_REGISTRY
 from framework.utils.model_family import ModelAdapter, detect_family
@@ -28,7 +26,7 @@ from framework.utils.qwen_compat import QwenIncompatibleError
 logger = logging.getLogger(__name__)
 
 # Canonical projection search patterns
-PROJ_REGEX_PATTERNS: Dict[str, List[re.Pattern]] = {
+PROJ_REGEX_PATTERNS: dict[str, list[re.Pattern]] = {
     "q": [
         re.compile(r"^q_proj$", re.I),
         re.compile(r"^query_proj$", re.I),
@@ -69,7 +67,7 @@ FUSED_QKV_REGEX: re.Pattern = re.compile(
 )
 
 
-def _find_submodule_by_regex(module: nn.Module, patterns: List[re.Pattern]) -> Optional[nn.Module]:
+def _find_submodule_by_regex(module: nn.Module, patterns: list[re.Pattern]) -> nn.Module | None:
     """Find the first submodule matching any compiled regex pattern."""
     for name, sub in module.named_children():
         for pattern in patterns:
@@ -121,12 +119,12 @@ def compute_reconstruction_error(src_weight: torch.Tensor, target_mod: nn.Module
 
 def _slice_fused_qkv_weights(
     fused_weight: torch.Tensor,
-    fused_bias: Optional[torch.Tensor],
+    fused_bias: torch.Tensor | None,
     num_heads: int,
-    num_kv_heads: Optional[int] = None,
-    head_dim: Optional[int] = None,
-    source_mod: Optional[nn.Module] = None,
-) -> Dict[str, Tuple[torch.Tensor, Optional[torch.Tensor]]]:
+    num_kv_heads: int | None = None,
+    head_dim: int | None = None,
+    source_mod: nn.Module | None = None,
+) -> dict[str, tuple[torch.Tensor, torch.Tensor | None]]:
     """
     Slices fused QKV projection tensors into separate Q, K, and V weight and bias tensors
     supporting Standard Multi-Head Attention (MHA), Grouped-Query Attention (GQA), and Multi-Query Attention (MQA).
@@ -190,7 +188,7 @@ slice_fused_qkv = _slice_fused_qkv_weights
 def _copy_projection_weights(
     target_mod: nn.Module,
     src_weight: torch.Tensor,
-    src_bias: Optional[torch.Tensor],
+    src_bias: torch.Tensor | None,
 ) -> None:
     """
     Copies projection weights and biases into target module (nn.Linear, Conv1D, SVD, or low-rank factors).
@@ -357,8 +355,8 @@ def apply_rope_after_up_projection(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     FIX: Applies Rotary Position Embeddings (RoPE) AFTER low-rank up-projection to full
     head dimensions, preserving spatial coordinate geometry and relative frequency angles.
@@ -410,7 +408,7 @@ def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
 def inject_attention(
     model: nn.Module,
     attention_type: str,
-    rank: Optional[int] = None,
+    rank: int | None = None,
     copy_weights: bool = True,
     **kwargs: Any,
 ) -> nn.Module:
@@ -432,20 +430,20 @@ def inject_attention(
         head_dim = getattr(cfg_source, "head_dim", getattr(cfg_source, "d_kv", (hidden_size // max(1, num_heads) if (hidden_size and num_heads) else None)))
         num_kv_heads = getattr(cfg_source, "num_key_value_heads", num_heads)
         if hidden_size is not None:
-            setattr(config, "hidden_size", hidden_size)
+            config.hidden_size = hidden_size
         if num_heads is not None:
-            setattr(config, "num_attention_heads", num_heads)
+            config.num_attention_heads = num_heads
         if head_dim is not None:
-            setattr(config, "head_dim", head_dim)
+            config.head_dim = head_dim
         if num_kv_heads is not None:
-            setattr(config, "num_key_value_heads", num_kv_heads)
+            config.num_key_value_heads = num_kv_heads
         if not hasattr(config, "dropout"):
             dropout_val = getattr(
                 config,
                 "hidden_dropout_prob",
                 getattr(config, "attention_probs_dropout_prob", 0.1),
             )
-            setattr(config, "dropout", dropout_val)
+            config.dropout = dropout_val
     else:
         hidden_size = getattr(model, "hidden_size", None)
         num_heads = getattr(model, "num_attention_heads", None)
@@ -459,9 +457,9 @@ def inject_attention(
 
     is_dec = family in ("gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral")
     if config is not None:
-        setattr(config, "is_decoder", bool(is_dec or getattr(config, "is_decoder", False)))
+        config.is_decoder = bool(is_dec or getattr(config, "is_decoder", False))
         if not hasattr(config, "model_type") or not config.model_type:
-            setattr(config, "model_type", family)
+            config.model_type = family
 
     replaced = 0
     modules_list = list(get_attention_modules(model))
@@ -513,8 +511,8 @@ def inject_attention(
             )
         else:
             if family in ("gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral") or is_dec:
-                setattr(config, "is_decoder", True)
-                setattr(config, "is_causal", True)
+                config.is_decoder = True
+                config.is_causal = True
 
         # Ensure old_attn has canonical projection attributes for custom modules inspecting pretrained_attn
         for proj_key, alias_list in [
@@ -596,9 +594,7 @@ def inject_attention(
                 out_features = getattr(target, "out_features", None)
                 if target is not None and out_features not in {expected[key], None}:
                     if expected[key] is not None and out_features is not None:
-                        if out_features % expected[key] == 0 or expected[key] % out_features == 0:
-                            pass
-                        elif _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS["o"]) is not None:
+                        if out_features % expected[key] == 0 or expected[key] % out_features == 0 or _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS["o"]) is not None:
                             pass
                         else:
                             raise QwenIncompatibleError(
@@ -614,7 +610,7 @@ def inject_attention(
         if copy_weights:
             custom_copied = False
             if is_dec or hasattr(old_attn, "c_attn") or "gpt" in old_attn.__class__.__name__.lower():
-                setattr(old_attn, "is_decoder", True)
+                old_attn.is_decoder = True
                 if hasattr(new_attn, "is_decoder"):
                     new_attn.is_decoder = True
             if hasattr(new_attn, "copy_weights") and callable(new_attn.copy_weights):
@@ -629,7 +625,7 @@ def inject_attention(
                     logger.debug("Custom copy_weights failed on %s: %s", name, e)
                 except Exception as e:
                         logger.warning("Unexpected error in custom copy_weights on %s: %s", name, e)
-    
+
                 if not custom_copied:
                     # Detect fused QKV projection modules via regex and slice parameters
                     fused_mod = None
@@ -643,7 +639,7 @@ def inject_attention(
                             if mod is not None and hasattr(mod, "weight"):
                                 fused_mod = mod
                                 break
-        
+
                     if fused_mod is not None:
                         # Sliced Fused QKV handling
                         sliced = _slice_fused_qkv_weights(
@@ -678,7 +674,7 @@ def inject_attention(
                                             lin2.weight.data[:, :r].copy_(U_b)
                                             if b is not None and getattr(lin2, "bias", None) is not None:
                                                 lin2.bias.data.copy_(b.to(lin2.bias.device, lin2.bias.dtype))
-        
+
                         # Output projection
                         try:
                             src_w_o, src_b_o = adapter.get_weight_bias(old_attn, "o")
@@ -715,7 +711,7 @@ def inject_attention(
                                 src_weight, src_bias = adapter.get_weight_bias(old_attn, proj_key)
                             except (ValueError, AttributeError) as e:
                                 logger.debug("Could not get %s projection weights for %s: %s", proj_key, name, e)
-        
+
                             target_proj = _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS[proj_key])
                             if target_proj is not None:
                                 if src_weight is not None:
@@ -792,7 +788,7 @@ def inject_attention(
     return model
 
 
-def available_attention_types() -> List[str]:
+def available_attention_types() -> list[str]:
     """Return all registered attention mechanism identifiers."""
     return sorted(list(ATTENTION_REGISTRY.keys()))
 

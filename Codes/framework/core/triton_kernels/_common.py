@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn.functional as F
@@ -36,10 +36,10 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-SUPPORTED_HEAD_DIMS: Set[int] = {32, 64, 128, 256}
+SUPPORTED_HEAD_DIMS: set[int] = {32, 64, 128, 256}
 MAX_TRITON_SEQ_LEN: int = 4096
 
-_WARNED_REASONS: Set[str] = set()
+_WARNED_REASONS: set[str] = set()
 
 
 def log_fallback_reason(kernel_name: str, reason: str) -> None:
@@ -55,9 +55,9 @@ def log_fallback_reason(kernel_name: str, reason: str) -> None:
 def check_triton_suitability(
     tensor: torch.Tensor,
     kernel_name: str,
-    head_dim: Optional[int] = None,
-    seq_len: Optional[int] = None,
-) -> Tuple[bool, Optional[str]]:
+    head_dim: int | None = None,
+    seq_len: int | None = None,
+) -> tuple[bool, str | None]:
     """
     Validate whether the input tensor satisfies all requirements for Triton execution.
     Returns (is_suitable, failure_reason).
@@ -94,8 +94,8 @@ def linear_attn_pytorch_fallback(
     is_causal: bool = False,
     phi: str = "elu+1",
     eps: float = 1e-6,
-    cos_weight: Optional[torch.Tensor] = None,
-    sin_weight: Optional[torch.Tensor] = None,
+    cos_weight: torch.Tensor | None = None,
+    sin_weight: torch.Tensor | None = None,
     **kwargs: Any,
 ) -> torch.Tensor:
     """
@@ -283,7 +283,7 @@ def sparse_attn_pytorch_fallback(
     q: torch.Tensor,
     k: torch.Tensor,
     v: torch.Tensor,
-    block_mask: Optional[torch.Tensor] = None,
+    block_mask: torch.Tensor | None = None,
     block_size: int = 64,
     is_causal: bool = False,
     eps: float = 1e-6,
@@ -334,7 +334,7 @@ def low_rank_pytorch_fallback(
     x: torch.Tensor,
     U: torch.Tensor,
     V: torch.Tensor,
-    bias: Optional[torch.Tensor] = None,
+    bias: torch.Tensor | None = None,
     **kwargs: Any,
 ) -> torch.Tensor:
     """
@@ -364,11 +364,11 @@ def state_update_pytorch_fallback(
     A: torch.Tensor,
     B: torch.Tensor,
     C: torch.Tensor,
-    D: Optional[torch.Tensor] = None,
-    state: Optional[torch.Tensor] = None,
+    D: torch.Tensor | None = None,
+    state: torch.Tensor | None = None,
     eps: float = 1e-6,
     **kwargs: Any,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Pure PyTorch fallback for SSM state updates (Mamba/S4/RWKV recurrence).
     Computes discrete recurrent state scan: h_t = A_bar * h_{t-1} + B_bar * u_t, y_t = C * h_t + D * u_t.
@@ -426,7 +426,7 @@ def gqa_pytorch_fallback(
     num_kv_heads: int,
     num_heads: int,
     **kwargs: Any,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Pure PyTorch fallback for GQA repeat and reshape along the head dimension.
     """

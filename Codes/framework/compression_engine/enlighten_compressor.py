@@ -7,7 +7,7 @@ Registered as 'enlighten' and 'enlighten_compressor'. Production hardened for mu
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -104,12 +104,12 @@ class ENLightenCompressor(BaseCompressor):
         target_attention_only: bool = False,
         fallback_to_original: bool = True,
         max_retries: int = 2,
-        target_modules: Optional[List[str]] = None,
-        cfg: Optional[Any] = None,
+        target_modules: list[str] | None = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="enlighten", **kwargs)
-        cfg = cfg or kwargs.get("comp_config", None)
+        cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
         self.rank = int(_cfg_get(cfg, "enlighten_rank", _cfg_get(cfg, "rank", rank)))
@@ -125,12 +125,12 @@ class ENLightenCompressor(BaseCompressor):
         self.max_retries = int(max_retries)
         self.target_modules = target_modules
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_ranks: Dict[str, int] = {}
-        self.layer_sparsities: Dict[str, float] = {}
-        self.layer_errors: Dict[str, float] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_ranks: dict[str, int] = {}
+        self.layer_sparsities: dict[str, float] = {}
+        self.layer_errors: dict[str, float] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         """Determine if a module is targeted for ENLighten compression."""
@@ -163,7 +163,7 @@ class ENLightenCompressor(BaseCompressor):
 
     def _decompose_and_prune(
         self, W: torch.Tensor, rank: int
-    ) -> Tuple[torch.Tensor, float]:
+    ) -> tuple[torch.Tensor, float]:
         """Perform FP32 SVD, compute residual, apply 2:4 / unstructured pruning, and scale."""
         out_f, in_f = W.shape
         r = max(1, min(rank, out_f, in_f))
@@ -190,7 +190,7 @@ class ENLightenCompressor(BaseCompressor):
         )
         return W_recon, err
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Compress linear and Conv1D layers using low-rank SVD + 2:4 structured sparse residuals."""
         self.compressed_layers = []
         self.fallback_layers = []
@@ -241,7 +241,7 @@ class ENLightenCompressor(BaseCompressor):
             total_orig_params += orig_layer_params
             max_r = max(1, min(out_f, in_f))
             current_r = max(1, min(self.rank, max_r))
-            best_w_new: Optional[torch.Tensor] = None
+            best_w_new: torch.Tensor | None = None
             final_err = 1.0
 
             # Iterative rank retry on error threshold exceedance

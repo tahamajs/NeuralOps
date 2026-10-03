@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -49,11 +49,11 @@ class OATSLoRALinear(nn.Module):
         in_features: int,
         out_features: int,
         weight: torch.Tensor,
-        bias: Optional[torch.Tensor] = None,
+        bias: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -99,7 +99,7 @@ class OATSLoRALinear(nn.Module):
     def from_linear(
         cls,
         linear: nn.Module,
-        weight: Optional[torch.Tensor] = None,
+        weight: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         **kwargs: Any,
@@ -199,26 +199,26 @@ class OATSCompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        tokenizer: Optional[Any] = None,
+        tokenizer: Any | None = None,
         sparsity: float = 0.5,
         rank_ratio: float = 0.2,
         num_iters: int = 4,
-        device: Optional[Union[str, torch.device]] = None,
-        calibration_loader: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
+        device: str | torch.device | None = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
         structured_24: bool = True,
         max_error: float = 0.85,
         fallback_to_original: bool = True,
         skip_attention_qkv: bool = False,
         target_attention_only: bool = False,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         min_rank: int = 4,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="oats", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             sparsity = _cfg_get(cfg, "oats_sparsity", _cfg_get(cfg, "sparsity", sparsity))
             rank_ratio = _cfg_get(cfg, "oats_rank_ratio", _cfg_get(cfg, "rank_ratio", rank_ratio))
@@ -255,12 +255,12 @@ class OATSCompressor(BaseCompressor):
             if device is not None
             else next(model.parameters(), torch.tensor(0.0)).device
         )
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+        self.stats: dict[str, Any] = {}
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         """Check if layer is an attention QKV projection in a model with GQA."""
@@ -297,14 +297,14 @@ class OATSCompressor(BaseCompressor):
             return True
         return any(t in name for t in self.target_modules)
 
-    def _collect_activations(self) -> Dict[str, torch.Tensor]:
+    def _collect_activations(self) -> dict[str, torch.Tensor]:
         """Collect input activations across all compressible linear/conv1d modules."""
         self.model.eval()
-        activations: Dict[str, List[torch.Tensor]] = {}
+        activations: dict[str, list[torch.Tensor]] = {}
         hooks = []
 
         def make_hook(name: str):
-            def hook(module: nn.Module, inputs: Tuple[torch.Tensor, ...], output: Any):
+            def hook(module: nn.Module, inputs: tuple[torch.Tensor, ...], output: Any):
                 if inputs and isinstance(inputs[0], torch.Tensor):
                     inp = inputs[0].detach()
                     if name not in activations:
@@ -338,7 +338,7 @@ class OATSCompressor(BaseCompressor):
         for h in hooks:
             h.remove()
 
-        aggregated: Dict[str, torch.Tensor] = {}
+        aggregated: dict[str, torch.Tensor] = {}
         for name, act_list in activations.items():
             if act_list:
                 aggregated[name] = torch.cat(act_list, dim=0)
@@ -348,8 +348,8 @@ class OATSCompressor(BaseCompressor):
     def _oats_decompose(
         self,
         W: torch.Tensor,
-        activations: Optional[torch.Tensor],
-    ) -> Tuple[torch.Tensor, int]:
+        activations: torch.Tensor | None,
+    ) -> tuple[torch.Tensor, int]:
         """Decomposes weight into outlier low-rank L + sparse S under metric M."""
         d_out, d_in = W.shape
         device = W.device
@@ -432,7 +432,7 @@ class OATSCompressor(BaseCompressor):
             return W, rank
         return W_comp, r
 
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         """Executes OATS decomposition across compressible Linear and Conv1D modules."""
         activations_map = self._collect_activations()
         self.compressed_layers = []
@@ -440,7 +440,7 @@ class OATSCompressor(BaseCompressor):
         self.skipped_layers = []
         self.layer_errors = {}
         self.layer_ranks = {}
-        seen_weights: Set[int] = set()
+        seen_weights: set[int] = set()
         total_orig_params = 0
         total_comp_params = 0
 

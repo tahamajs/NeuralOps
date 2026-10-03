@@ -8,8 +8,7 @@ from __future__ import annotations
 
 import logging
 import math
-import inspect
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -42,8 +41,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -99,7 +98,7 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
 
 
 
-def _detect_decoder(config: Any, is_decoder: Optional[bool], src_attn: Optional[nn.Module]) -> bool:
+def _detect_decoder(config: Any, is_decoder: bool | None, src_attn: nn.Module | None) -> bool:
     if is_decoder is not None:
         return bool(is_decoder)
     if config is not None:
@@ -122,7 +121,7 @@ def _detect_decoder(config: Any, is_decoder: Optional[bool], src_attn: Optional[
     return False
 
 
-def _detect_return_format(source_attn: Optional[nn.Module], is_nested: bool) -> str:
+def _detect_return_format(source_attn: nn.Module | None, is_nested: bool) -> str:
     """JI-13: choose output tuple layout for the host model."""
     if is_nested:
         return "bert"   # (out, attn_weights)
@@ -136,9 +135,9 @@ def _detect_return_format(source_attn: Optional[nn.Module], is_nested: bool) -> 
     return "llama"
 
 
-def _read_cache(past_key_value: Any) -> Tuple[Optional[torch.Tensor],
-                                               Optional[torch.Tensor],
-                                               Optional[torch.Tensor], int]:
+def _read_cache(past_key_value: Any) -> tuple[torch.Tensor | None,
+                                               torch.Tensor | None,
+                                               torch.Tensor | None, int]:
     """JI-01: extract (k1, k2, v, past_len) from various cache formats."""
     if past_key_value is None:
         return None, None, None, 0
@@ -180,8 +179,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         fk = {"device": device, "dtype": dtype}
@@ -275,12 +274,12 @@ class JambaInfoBlock(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = 64,
-        pretrained_attn: Optional[nn.Module] = None,
-        old_attn: Optional[nn.Module] = None,
-        comp_config: Optional[Any] = None,
-        is_decoder: Optional[bool] = None,
+        config: Any | None = None,
+        rank: int | None = 64,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
+        comp_config: Any | None = None,
+        is_decoder: bool | None = None,
         per_head_alpha: bool = True,
         **kwargs: Any,
     ) -> None:
@@ -375,8 +374,8 @@ class JambaInfoBlock(BaseAttention):
         )
         self.bottleneck = InfoMambaConceptBottleneck(self.dim, bottleneck_dim=bottleneck_dim)
 
-        self.ssm_fwd: Optional[nn.Module] = None
-        self.ssm_bwd: Optional[nn.Module] = None  # only for encoders (JI-10)
+        self.ssm_fwd: nn.Module | None = None
+        self.ssm_bwd: nn.Module | None = None  # only for encoders (JI-10)
         if SimpleSSM is not None:
             self.ssm_fwd = self._make_ssm(config)
             if not self.is_decoder:
@@ -395,7 +394,7 @@ class JambaInfoBlock(BaseAttention):
         self._return_format = _detect_return_format(source_attn, self.is_nested_encoder)
 
     # ------------------------------------------------------------------
-    def _make_ssm(self, config: Optional[Any]) -> Optional[nn.Module]:
+    def _make_ssm(self, config: Any | None) -> nn.Module | None:
         if SimpleSSM is None:
             return None
         try:
@@ -488,8 +487,8 @@ class JambaInfoBlock(BaseAttention):
         return max(1, hidden_size // max(1, num_heads))
 
     # ---------------- Misc ----------------
-    def _run_ssm(self, ssm: Optional[nn.Module], x: torch.Tensor,
-                 attention_mask: Optional[torch.Tensor]) -> torch.Tensor:
+    def _run_ssm(self, ssm: nn.Module | None, x: torch.Tensor,
+                 attention_mask: torch.Tensor | None) -> torch.Tensor:
         if ssm is None:
             return torch.zeros_like(x)
         try:
@@ -504,8 +503,8 @@ class JambaInfoBlock(BaseAttention):
             out = out[0]
         return out
 
-    def _format_output(self, out: torch.Tensor, attn_weights: Optional[torch.Tensor],
-                       present: Optional[Any]) -> Tuple:
+    def _format_output(self, out: torch.Tensor, attn_weights: torch.Tensor | None,
+                       present: Any | None) -> tuple:
         fmt = self._return_format
         if fmt == "bert":
             return (out, attn_weights)
@@ -548,10 +547,8 @@ class JambaInfoBlock(BaseAttention):
         cls_name = src.__class__.__name__
         has_out_lin = any(hasattr(src, a) for a in ("out_lin", "c_proj", "o_proj"))
         is_nested = False
-        if (hasattr(src, "self") and hasattr(getattr(src, "self"), "query")
-                and hasattr(src, "output") and hasattr(getattr(src, "output"), "dense")):
-            is_nested = True
-        elif (cls_name in ["BertSelfAttention", "RobertaSelfAttention",
+        if (hasattr(src, "self") and hasattr(src.self, "query")
+                and hasattr(src, "output") and hasattr(src.output, "dense")) or (cls_name in ["BertSelfAttention", "RobertaSelfAttention",
                            "XLMRobertaSelfAttention", "ElectraSelfAttention",
                            "DebertaSelfAttention"]
               or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())) \
@@ -594,7 +591,7 @@ class JambaInfoBlock(BaseAttention):
                     bo = getattr(base_o, "bias", getattr(o, "bias", None))
                     extracted["o"] = (ow, bo.data.clone() if bo is not None else None)
 
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 m = getattr(s, sub, None)
@@ -655,8 +652,8 @@ class JambaInfoBlock(BaseAttention):
                 return w.t().contiguous()
             return w
 
-        def _copy_into(target_mod: LoRALinear, w: Optional[torch.Tensor],
-                       b: Optional[torch.Tensor]) -> None:
+        def _copy_into(target_mod: LoRALinear, w: torch.Tensor | None,
+                       b: torch.Tensor | None) -> None:
             if w is None:
                 return
             if w.ndim != 2:
@@ -717,17 +714,17 @@ class JambaInfoBlock(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
-        position_ids: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        position_ids: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
         *args: Any,
         **kwargs: Any,
     ):
         # Mask may come via kwargs
-        mask = kwargs.get("mask", None)
+        mask = kwargs.get("mask")
         if attention_mask is None and mask is not None:
             attention_mask = mask
 
@@ -746,9 +743,9 @@ class JambaInfoBlock(BaseAttention):
         v = self.W_v(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # --- JI-05: position_ids accepted; JI-06: RoPE offset ---
-        position_embeddings = position_embeddings or kwargs.get("position_embeddings", None)
+        position_embeddings = position_embeddings or kwargs.get("position_embeddings")
         if position_embeddings is None and position_ids is None:
-            position_ids = kwargs.get("position_ids", None)
+            position_ids = kwargs.get("position_ids")
 
         if position_embeddings is not None:
             cos, sin = position_embeddings
@@ -895,7 +892,7 @@ def inject_jamba_info(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):
@@ -905,7 +902,7 @@ def inject_jamba_info(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

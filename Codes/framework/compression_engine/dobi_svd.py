@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -43,7 +43,7 @@ class DobiSVDLinearLayer(nn.Module):
         bias: bool = True,
         init_gate_val: float = 2.5,
         dtype: torch.dtype = torch.float32,
-        device: Optional[torch.device] = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -158,18 +158,18 @@ class DobiSVDCompressor(BaseCompressor):
         self,
         model: nn.Module,
         init_rank_ratio: float = 0.5,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         init_gate_val: float = 2.5,
         max_error: float = 0.35,
         fallback_to_original: bool = True,
         target_attention_only: bool = True,
         max_retries: int = 2,
-        target_modules: Optional[List[str]] = None,
-        cfg: Optional[Any] = None,
+        target_modules: list[str] | None = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="dobi", **kwargs)
-        cfg_obj = cfg if cfg is not None else kwargs.get("comp_config", None)
+        cfg_obj = cfg if cfg is not None else kwargs.get("comp_config")
         self.cfg = cfg_obj
 
         init_rank_ratio = _cfg_get(cfg_obj, "dobi_init_rank_ratio", _cfg_get(cfg_obj, "init_rank_ratio", init_rank_ratio))
@@ -198,11 +198,11 @@ class DobiSVDCompressor(BaseCompressor):
         self.max_retries = int(max_retries)
         self.target_modules = target_modules
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_ranks: Dict[str, int] = {}
-        self.layer_errors: Dict[str, float] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_ranks: dict[str, int] = {}
+        self.layer_errors: dict[str, float] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_lower = name.lower()
@@ -232,7 +232,7 @@ class DobiSVDCompressor(BaseCompressor):
             return any(t in name for t in self.target_modules)
         return True
 
-    def _determine_rank(self, in_f: int, out_f: int, target_r: Optional[int]) -> int:
+    def _determine_rank(self, in_f: int, out_f: int, target_r: int | None) -> int:
         """Compute target rank guaranteeing parameter reduction and physical bounds."""
         max_reduction_r = max(1, (in_f * out_f) // (in_f + out_f) - 1)
         max_r = max(1, min(in_f - 1, out_f - 1, max_reduction_r, 128))
@@ -247,8 +247,8 @@ class DobiSVDCompressor(BaseCompressor):
     def compress_linear(
         self,
         layer: nn.Module,
-        rank: Optional[int] = None,
-    ) -> Tuple[Optional[DobiSVDLinearLayer], float, int]:
+        rank: int | None = None,
+    ) -> tuple[DobiSVDLinearLayer | None, float, int]:
         """Decompose a single linear or Conv1D layer into DobiSVDLinearLayer."""
         target_mod = getattr(layer, "base_layer", layer)
         cls_name = target_mod.__class__.__name__.lower()
@@ -304,7 +304,7 @@ class DobiSVDCompressor(BaseCompressor):
             logger.warning("DobiSVD SVD computation failed: %s", e)
             return None, 1.0, 0
 
-        best_layer: Optional[DobiSVDLinearLayer] = None
+        best_layer: DobiSVDLinearLayer | None = None
         best_err = 1.0
         chosen_r = current_r
 
@@ -367,7 +367,7 @@ class DobiSVDCompressor(BaseCompressor):
             return best_layer, best_err, chosen_r
         return None, best_err, chosen_r
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Compress all target linear and Conv1D layers across the model."""
         self.compressed_layers = []
         self.fallback_layers = []

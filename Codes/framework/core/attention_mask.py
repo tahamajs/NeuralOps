@@ -8,13 +8,12 @@ Supports:
 - Boolean masks [Batch, SeqLen]
 """
 
-from typing import Optional
 import torch
 
 
 def apply_attention_mask(
     scores: torch.Tensor,
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     mask_value: float = -10000.0,
 ) -> torch.Tensor:
     r"""Apply attention mask to attention logits in a numerically robust and universal manner.
@@ -96,7 +95,7 @@ def apply_attention_mask(
 
 
 def get_token_valid_mask(
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     batch_size: int,
     seq_len: int,
     device: torch.device,
@@ -146,13 +145,13 @@ def get_token_valid_mask(
     return torch.ones((batch_size, seq_len), dtype=torch.bool, device=device)
 
 
-def create_causal_mask(seq_len: int, device: Optional[torch.device] = None) -> torch.Tensor:
+def create_causal_mask(seq_len: int, device: torch.device | None = None) -> torch.Tensor:
     r"""Create a lower-triangular causal attention mask [SeqLen, SeqLen] where True = attend, False = mask."""
     mask = torch.tril(torch.ones((seq_len, seq_len), dtype=torch.bool, device=device))
     return mask
 
 
-def create_band_mask(seq_len: int, window_size: int, device: Optional[torch.device] = None) -> torch.Tensor:
+def create_band_mask(seq_len: int, window_size: int, device: torch.device | None = None) -> torch.Tensor:
     r"""Create a sliding window band attention mask [SeqLen, SeqLen] where positions |i - j| <= window_size are True."""
     idx = torch.arange(seq_len, device=device)
     diff = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()

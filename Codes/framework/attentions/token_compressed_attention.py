@@ -8,7 +8,6 @@ scoring, while always preserving token 0 ([CLS] / first token).
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -165,7 +164,7 @@ class TokenCompressedAttention(BaseAttention):
         except TypeError:
             super().__init__(config)
 
-        src = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn", None)
+        src = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn")
 
         # ---- hidden_size ----
         dim = None
@@ -211,7 +210,7 @@ class TokenCompressedAttention(BaseAttention):
         if config is not None and not isinstance(config, int):
             head_dim = _cfg_get(config, "head_dim", None)
         if head_dim is None:
-            head_dim = kwargs.get("head_dim", None)
+            head_dim = kwargs.get("head_dim")
         if head_dim is None:
             head_dim = self.dim // self.num_heads
         self.head_dim = int(head_dim)
@@ -576,7 +575,7 @@ class TokenCompressedAttention(BaseAttention):
 
         # ---- RoPE ----
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
             past_len = 0
@@ -712,7 +711,7 @@ def inject_token_compressed_attn(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

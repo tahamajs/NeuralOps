@@ -9,7 +9,7 @@ import os
 from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -38,12 +38,12 @@ class BaseTracker(ABC):
     """Every backend must implement these five methods."""
 
     @abstractmethod
-    def log_metric(self, name: str, value: float, step: Optional[int] = None) -> None:
+    def log_metric(self, name: str, value: float, step: int | None = None) -> None:
         """Log metric."""
         pass
 
     @abstractmethod
-    def log_params(self, params: Dict[str, Any]) -> None:
+    def log_params(self, params: dict[str, Any]) -> None:
         """Log params."""
         pass
 
@@ -53,7 +53,7 @@ class BaseTracker(ABC):
         pass
 
     @abstractmethod
-    def finalize(self, result: Optional[Dict[str, Any]] = None) -> None:
+    def finalize(self, result: dict[str, Any] | None = None) -> None:
         """Finalize."""
         pass
 
@@ -85,7 +85,7 @@ class LocalTracker(BaseTracker):
         )
         self.metrics = []
 
-    def log_metric(self, name: str, value: float, step: Optional[int] = None) -> None:
+    def log_metric(self, name: str, value: float, step: int | None = None) -> None:
         """Log metric."""
         entry = {
             "name": name,
@@ -98,7 +98,7 @@ class LocalTracker(BaseTracker):
         with open(self.metrics_file, "a") as f:
             f.write(json.dumps(entry) + "\n")
 
-    def log_params(self, params: Dict[str, Any]) -> None:
+    def log_params(self, params: dict[str, Any]) -> None:
         """Log params."""
         with open(self.params_file, "w") as f:
             json.dump(params, f, indent=2)
@@ -110,7 +110,7 @@ class LocalTracker(BaseTracker):
         dest = os.path.join(self.log_dir, os.path.basename(local_path))
         shutil.copy2(local_path, dest)
 
-    def finalize(self, result: Optional[Dict[str, Any]] = None) -> None:
+    def finalize(self, result: dict[str, Any] | None = None) -> None:
         """Finalize."""
         if result:
             summary_file = os.path.join(
@@ -137,14 +137,14 @@ class TensorBoardTracker(BaseTracker):
         self.writer = SummaryWriter(log_dir=run_dir)
         self._params = {}
 
-    def log_metric(self, name: str, value: float, step: Optional[int] = None) -> None:
+    def log_metric(self, name: str, value: float, step: int | None = None) -> None:
         """Log metric."""
         if step is not None:
             self.writer.add_scalar(name, value, global_step=step)
         else:
             self.writer.add_scalar(name, value, global_step=0)
 
-    def log_params(self, params: Dict[str, Any]) -> None:
+    def log_params(self, params: dict[str, Any]) -> None:
         # TensorBoard doesn't natively support hyperparameters well;
         # we store them as an HParams experiment
         """Log params."""
@@ -158,7 +158,7 @@ class TensorBoardTracker(BaseTracker):
         dest = os.path.join(self.writer.log_dir, os.path.basename(local_path))
         shutil.copy2(local_path, dest)
 
-    def finalize(self, result: Optional[Dict[str, Any]] = None) -> None:
+    def finalize(self, result: dict[str, Any] | None = None) -> None:
         """Finalize."""
         from torch.utils.tensorboard.summary import hparams
 
@@ -185,17 +185,17 @@ class WandBTracker(BaseTracker):
         self,
         project: str,
         experiment_name: str,
-        config_dict: Optional[Dict[str, Any]] = None,
+        config_dict: dict[str, Any] | None = None,
     ) -> None:
         import wandb
 
         self.run = wandb.init(project=project, name=experiment_name, config=config_dict)
 
-    def log_metric(self, name: str, value: float, step: Optional[int] = None) -> None:
+    def log_metric(self, name: str, value: float, step: int | None = None) -> None:
         """Log metric."""
         self.run.log({name: value, "step": step} if step is not None else {name: value})
 
-    def log_params(self, params: Dict[str, Any]) -> None:
+    def log_params(self, params: dict[str, Any]) -> None:
         """Log params."""
         self.run.config.update(params)
 
@@ -205,7 +205,7 @@ class WandBTracker(BaseTracker):
         artifact.add_file(local_path)
         self.run.log_artifact(artifact)
 
-    def finalize(self, result: Optional[Dict[str, Any]] = None) -> None:
+    def finalize(self, result: dict[str, Any] | None = None) -> None:
         """Finalize."""
         if result:
             self.run.summary.update(result)
@@ -221,7 +221,7 @@ class WandBTracker(BaseTracker):
 class MLflowTracker(BaseTracker):
     """Logs to MLflow."""
 
-    def __init__(self, experiment_name: str, tracking_uri: Optional[str] = None) -> None:
+    def __init__(self, experiment_name: str, tracking_uri: str | None = None) -> None:
         import mlflow
 
         if tracking_uri:
@@ -229,13 +229,13 @@ class MLflowTracker(BaseTracker):
         mlflow.set_experiment(experiment_name)
         self.run = mlflow.start_run()
 
-    def log_metric(self, name: str, value: float, step: Optional[int] = None) -> None:
+    def log_metric(self, name: str, value: float, step: int | None = None) -> None:
         """Log metric."""
         import mlflow
 
         mlflow.log_metric(name, value, step=step)
 
-    def log_params(self, params: Dict[str, Any]) -> None:
+    def log_params(self, params: dict[str, Any]) -> None:
         """Log params."""
         import mlflow
 
@@ -247,7 +247,7 @@ class MLflowTracker(BaseTracker):
 
         mlflow.log_artifact(local_path)
 
-    def finalize(self, result: Optional[Dict[str, Any]] = None) -> None:
+    def finalize(self, result: dict[str, Any] | None = None) -> None:
         """Finalize."""
         if result:
             import mlflow

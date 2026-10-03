@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -93,14 +93,14 @@ def compute_singular_entropy(
 
 # RESEARCH FIX: Bounded water-filling rank allocator ensuring strict adherence to layer constraints and global budget
 def allocate_entropy_ranks(
-    entropies: Dict[str, float],
+    entropies: dict[str, float],
     min_rank: int = 16,
     max_rank: int = 128,
-    total_rank_budget: Optional[int] = None,
-    total_param_budget: Optional[int] = None,
-    target_param_ratio: Optional[float] = None,
-    layer_dims: Optional[Dict[str, Tuple[int, int]]] = None,
-) -> Dict[str, int]:
+    total_rank_budget: int | None = None,
+    total_param_budget: int | None = None,
+    target_param_ratio: float | None = None,
+    layer_dims: dict[str, tuple[int, int]] | None = None,
+) -> dict[str, int]:
     """
     Dynamically allocate low-rank budgets r_l in [min_rank, max_rank] across transformer
     layers proportional to singular entropy H(Sigma_l), constrained by total rank or parameter budget.
@@ -278,7 +278,7 @@ class DynamicSVDLinear(nn.Module):
         rank: int,
         bias: bool = True,
         dtype: torch.dtype = torch.float32,
-        device: Optional[torch.device] = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -330,7 +330,7 @@ class DynamicSVDLinear(nn.Module):
         cls,
         linear: nn.Module,
         rank: int,
-        covariance: Optional[torch.Tensor] = None,
+        covariance: torch.Tensor | None = None,
     ) -> DynamicSVDLinear:
         """
         Construct factorized DynamicSVDLinear directly from dense nn.Linear or Conv1D via SVD.
@@ -466,21 +466,21 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         model: nn.Module,
         min_rank: int = 16,
         max_rank: int = 128,
-        target_param_ratio: Optional[float] = None,
-        total_rank_budget: Optional[int] = None,
-        target_rank: Optional[int] = None,
+        target_param_ratio: float | None = None,
+        total_rank_budget: int | None = None,
+        target_rank: int | None = None,
         max_error: float = 0.35,
         target_attention_only: bool = False,
         fallback_to_original: bool = True,
         calibration_loader: Any = None,
-        calibration_texts: Optional[List[str]] = None,
-        target_modules: Optional[List[str]] = None,
-        tokenizer: Optional[Any] = None,
-        cfg: Optional[Any] = None,
+        calibration_texts: list[str] | None = None,
+        target_modules: list[str] | None = None,
+        tokenizer: Any | None = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="dynamic_entropy_svd", **kwargs)
-        cfg_obj = cfg if cfg is not None else kwargs.get("comp_config", None)
+        cfg_obj = cfg if cfg is not None else kwargs.get("comp_config")
         self.cfg = cfg_obj
 
         min_rank = _cfg_get(cfg_obj, "dynamic_min_rank", _cfg_get(cfg_obj, "min_rank", min_rank))
@@ -519,12 +519,12 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         self.target_modules = target_modules
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None) or getattr(getattr(model, "config", None), "tokenizer", None)
 
-        self.layer_entropies: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
-        self.layer_errors: Dict[str, float] = {}
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
+        self.layer_entropies: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+        self.layer_errors: dict[str, float] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         """Check whether module is a compressible nn.Linear or Conv1D matching target filter."""
@@ -561,17 +561,17 @@ class DynamicEntropySVDCompressor(BaseCompressor):
 
     def collect_activation_covariances(
         self,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> dict[str, torch.Tensor]:
         """
         Collect empirical input activation covariance matrices C_X for each target layer
         using calibration forward passes.
         """
-        covariances: Dict[str, torch.Tensor] = {}
-        sample_counts: Dict[str, int] = {}
+        covariances: dict[str, torch.Tensor] = {}
+        sample_counts: dict[str, int] = {}
         hooks = []
 
         def get_hook(name: str):
-            def hook_fn(mod: nn.Module, inp: Tuple[Any, ...], out: Any) -> None:
+            def hook_fn(mod: nn.Module, inp: tuple[Any, ...], out: Any) -> None:
                 if not inp or inp[0] is None:
                     return
                 x = inp[0].detach()
@@ -687,7 +687,7 @@ class DynamicEntropySVDCompressor(BaseCompressor):
             return {}
 
         # Normalize accumulated covariances by total sample count
-        normalized_covs: Dict[str, torch.Tensor] = {}
+        normalized_covs: dict[str, torch.Tensor] = {}
         for name, cov in covariances.items():
             cnt = sample_counts.get(name, 1)
             normalized_covs[name] = cov / max(1, cnt)
@@ -699,13 +699,13 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         return normalized_covs
 
     def compute_layer_entropies(
-        self, covariances: Dict[str, torch.Tensor]
-    ) -> Dict[str, float]:
+        self, covariances: dict[str, torch.Tensor]
+    ) -> dict[str, float]:
         """
         Compute singular entropy for each target layer using activation covariance
         or fallback weight matrix spectrum.
         """
-        entropies: Dict[str, float] = {}
+        entropies: dict[str, float] = {}
         for name, module in self.model.named_modules():
             if self._is_target_module(name, module):
                 target_mod = getattr(module, "base_layer", module)
@@ -721,7 +721,7 @@ class DynamicEntropySVDCompressor(BaseCompressor):
                 entropies[name] = ent
         return entropies
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """
         Execute dynamic entropy-budgeted low-rank SVD compression across all target layers.
         Includes reconstruction error validation, fallback, layer freezing, and parameter tracking.
@@ -745,7 +745,7 @@ class DynamicEntropySVDCompressor(BaseCompressor):
             return self.model, self.get_compression_stats()
 
         # Step 3: Extract layer dimensions
-        layer_dims: Dict[str, Tuple[int, int]] = {}
+        layer_dims: dict[str, tuple[int, int]] = {}
         total_orig_decomp_params = 0
         total_comp_decomp_params = 0
 

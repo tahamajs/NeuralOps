@@ -8,8 +8,7 @@ Registered as 'sdrm', 'sdrm_factory', and 'sdrm_compressor_factory'.
 from __future__ import annotations
 
 import logging
-import math
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -51,16 +50,16 @@ class SDRMCompressor(BaseCompressor):
         use_lora: bool = False,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         max_error: float = 0.50,
         fallback_to_original: bool = True,
         min_numel: int = 16,
-        device: Optional[Union[str, torch.device]] = None,
-        cfg: Optional[Any] = None,
+        device: str | torch.device | None = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name='sdrm', **kwargs)
-        cfg_obj = cfg or kwargs.get('comp_config', None)
+        cfg_obj = cfg or kwargs.get('comp_config')
 
         self.total_param_ratio = max(0.05, min(float(total_param_ratio or _cfg_get(cfg_obj, 'total_param_ratio', _cfg_get(cfg_obj, 'ratio', 0.7))), 1.0))
         self.min_rank = max(1, int(min_rank or _cfg_get(cfg_obj, 'min_rank', 8)))
@@ -85,14 +84,14 @@ class SDRMCompressor(BaseCompressor):
             self.target_device = next(model.parameters()).device if list(model.parameters()) else torch.device('cpu')
 
         # Diagnostics & Tracking
-        self.visited_modules: Set[int] = set()
-        self.compressed_layers: List[str] = []
-        self.protected_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.failed_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.replaced_layers: List[Dict[str, Any]] = []
+        self.visited_modules: set[int] = set()
+        self.compressed_layers: list[str] = []
+        self.protected_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.failed_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.replaced_layers: list[dict[str, Any]] = []
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         """Check if layer belongs to an attention projection in a GQA architecture."""
@@ -100,7 +99,7 @@ class SDRMCompressor(BaseCompressor):
         num_heads = getattr(cfg, 'num_attention_heads', getattr(module, 'num_attention_heads', None))
         num_kv_heads = getattr(cfg, 'num_key_value_heads', getattr(module, 'num_key_value_heads', None))
         is_gqa = (num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads)
-        
+
         name_l = name.lower()
         is_attn_qkv = any(p in name_l for p in [
             'q_proj', 'k_proj', 'v_proj', 'c_attn', 'query', 'key', 'value',
@@ -113,11 +112,11 @@ class SDRMCompressor(BaseCompressor):
         # 1. Protection for critical / classification / head / pooler / embedding layers
         PROTECTED_ALWAYS = ['classifier', 'score', 'lm_head', 'pooler', 'embedding', 'cls_head', 'head', 'logits_processor']
         ATTENTION_OUTPUT = ['out_lin', 'out_proj', 'o_proj', 'c_proj', 'output.dense']
-        
+
         if any(k in name_l for k in PROTECTED_ALWAYS):
             self.protected_layers.append(name)
             return False
-            
+
         if self.protect_output_proj and any(k in name_l for k in ATTENTION_OUTPUT):
             self.protected_layers.append(name)
             return False
@@ -164,7 +163,7 @@ class SDRMCompressor(BaseCompressor):
         self,
         layer: nn.Module,
         rank: int,
-    ) -> Optional[SVDLinear]:
+    ) -> SVDLinear | None:
         """Decompose a single linear or Conv1D layer into SVDLinear in FP32 with validation."""
         base_layer = getattr(layer, 'base_layer', layer)
         raw_w = base_layer.weight.data
@@ -185,14 +184,14 @@ class SDRMCompressor(BaseCompressor):
 
         max_r = min(out_f, in_f)
         param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
-        
+
         if self.min_rank > max_r - 1:
             logger.warning("SDRM: min_rank=%d exceeds max_r=%d for %s; skipping", self.min_rank, max_r - 1, cls_name)
             return None
-            
+
         min_rank_effective = min(self.min_rank, max_r - 1, param_cap)
         r = max(min_rank_effective, min(rank, max_r - 1, param_cap))
-        
+
         if r >= max_r:
             logger.debug('SDRM: rank %d >= max_r %d; skipping layer for no parameter reduction', r, max_r)
             return None
@@ -261,7 +260,7 @@ class SDRMCompressor(BaseCompressor):
         svd_layer.reconstruction_error = rel_err
         return svd_layer
 
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         """Compress linear layers using budget-proportional rank assignment."""
         self.layer_errors = {}
         self.replaced_layers = []
@@ -377,7 +376,7 @@ def sdrm_compressor_factory(
     return_stats: bool = False,
     return_tuple: bool = False,
     **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """SDRM compressor factory returning (compressed_model, stats) when requested."""
     total_param_ratio = kwargs.pop(
         'total_param_ratio',

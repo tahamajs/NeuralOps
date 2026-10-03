@@ -17,7 +17,7 @@ Mathematical Formulation:
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -53,17 +53,17 @@ class SAESSVDCompressorV2(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         rank_ratio: float = 0.5,
         correcting_steps: int = 2,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         target_attention_only: bool = False,
         max_error: float = 0.60,
         fallback_to_original: bool = True,  # Fix 1: Default changed to True
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="saes_svd_v2", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = _cfg_get(cfg, "saes_rank", _cfg_get(cfg, "rank", rank))
             rank_ratio = _cfg_get(cfg, "saes_rank_ratio", _cfg_get(cfg, "rank_ratio", rank_ratio))
@@ -84,9 +84,9 @@ class SAESSVDCompressorV2(BaseCompressor):
         self.target_attention_only = bool(target_attention_only)
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
-        self.replaced_layers: List[Dict[str, Any]] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+        self.replaced_layers: list[dict[str, Any]] = []
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         """
@@ -115,9 +115,9 @@ class SAESSVDCompressorV2(BaseCompressor):
     def compress_linear(
         self,
         layer: nn.Module,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         name: str = "",
-    ) -> Optional[SVDLinear]:
+    ) -> SVDLinear | None:
         """Decompose a single linear or Conv1D layer with spectrum-aware error suppression."""
         base_layer = getattr(layer, "base_layer", layer)
         raw_w = base_layer.weight.data
@@ -223,7 +223,7 @@ class SAESSVDCompressorV2(BaseCompressor):
         svd_layer.rank = r
         return svd_layer
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Compress all linear and Conv1D layers in the model."""
         self.layer_errors = {}
         self.layer_ranks = {}
@@ -275,7 +275,7 @@ def saes_svd_v2_factory(
     return_stats: bool = False,
     return_tuple: bool = False,
     **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """SAES-SVD v2 factory function."""
     compressor = SAESSVDCompressorV2(model, comp_config=comp_config, **kwargs)
     compressed_model, stats = compressor.compress()

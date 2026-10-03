@@ -4,7 +4,7 @@ Provides dynamic dimension extraction, head repetition, and reshaping
 for Qwen3.5, LLaMA, Mistral, Gemma, and legacy MHA models.
 """
 from __future__ import annotations
-from typing import Any, Dict, Tuple
+from typing import Any
 import torch
 
 
@@ -22,7 +22,7 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     return hidden_states.reshape(batch, num_key_value_heads * n_rep, slen, head_dim)
 
 
-def get_qkv_projection_dims(adapter: Any) -> Tuple[int, int, int, int]:
+def get_qkv_projection_dims(adapter: Any) -> tuple[int, int, int, int]:
     """
     Extracts (q_proj_out, kv_proj_out, head_dim, kv_repeat) dynamically from adapter or config.
     Supports dictionary adapters, HF PretrainedConfig, or object adapters.

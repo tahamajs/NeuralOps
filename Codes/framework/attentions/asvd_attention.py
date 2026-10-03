@@ -11,7 +11,7 @@ Hardened for production use across diverse transformer architectures:
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -20,7 +20,7 @@ import torch.nn.functional as F
 from framework.core.adapters import UniversalAdapter
 from framework.core.attention_mask import apply_attention_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.triton_kernels import triton_dispatch
 
@@ -44,8 +44,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Applies Rotary Position Embedding (RoPE) to query and key tensors."""
     if cos.dim() == 2 and position_ids is not None:
         cos = cos[position_ids].unsqueeze(1)
@@ -96,8 +96,8 @@ class ASVDLinear(nn.Module):
         bias: bool = True,
         lora_rank: int = 0,
         freeze_base: bool = False,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -182,8 +182,8 @@ class ASVDLinear(nn.Module):
         self,
         U: torch.Tensor,
         V: torch.Tensor,
-        S: Optional[torch.Tensor] = None,
-        bias: Optional[torch.Tensor] = None,
+        S: torch.Tensor | None = None,
+        bias: torch.Tensor | None = None,
     ) -> None:
         with torch.no_grad():
             r = min(U.size(1), V.size(0))
@@ -270,9 +270,9 @@ class ASVDAttention(BaseAttention):
     triton_kernel: str = "low_rank"
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        pretrained_attn: Optional[nn.Module] = None,
+        config: Any | None = None,
+        rank: int | None = None,
+        pretrained_attn: nn.Module | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__()
@@ -295,22 +295,20 @@ class ASVDAttention(BaseAttention):
         self.lora_rank: int = getattr(config, "lora_rank", kwargs.get("lora_rank", 32))
         self.freeze_base: bool = getattr(config, "freeze_base", kwargs.get("freeze_base", self.lora_rank > 0))
         self.energy_threshold: float = getattr(config, "asvd_energy_threshold", kwargs.get("energy_threshold", 0.95))
-        self.error_threshold: Optional[float] = getattr(config, "asvd_error_threshold", kwargs.get("error_threshold", 0.40))
+        self.error_threshold: float | None = getattr(config, "asvd_error_threshold", kwargs.get("error_threshold", 0.40))
         self.dynamic_rank: bool = getattr(config, "asvd_dynamic_rank", kwargs.get("dynamic_rank", True))
 
         # Flags & metadata
         self.supports_gqa: bool = True
         self.supports_rope: bool = True
         self.is_nested_encoder: bool = False
-        self.rotary_emb: Optional[Any] = None
+        self.rotary_emb: Any | None = None
 
         # Decoder detection
         model_type = getattr(config, "model_type", "").lower()
         is_dec = getattr(config, "is_decoder", False)
         decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
-        if any(model_type.startswith(p) for p in decoder_prefixes):
-            is_dec = True
-        elif hasattr(config, "architectures") and any(
+        if any(model_type.startswith(p) for p in decoder_prefixes) or hasattr(config, "architectures") and any(
             "GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])
         ):
             is_dec = True
@@ -384,7 +382,7 @@ class ASVDAttention(BaseAttention):
         self,
         target_linear: ASVDLinear,
         src_weight: torch.Tensor,
-        src_bias: Optional[torch.Tensor],
+        src_bias: torch.Tensor | None,
         proj_name: str = "",
     ) -> float:
         """Decomposes src_weight into low-rank SVD factors and verifies relative Frobenius error."""
@@ -444,7 +442,7 @@ class ASVDAttention(BaseAttention):
 
     def copy_weights(self, src: Any) -> None:
         """Extracts and factorizes pretrained weights across DistilBERT, RoBERTa, GPT-2, Qwen/LLaMA."""
-        extracted_weights: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted_weights: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -460,7 +458,7 @@ class ASVDAttention(BaseAttention):
         has_out_lin = hasattr(src, "out_lin")
 
         is_nested_encoder = False
-        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query") and hasattr(src, "output") and hasattr(src.output, "dense"):
+        if hasattr(src, "self") and hasattr(src.self, "query") and hasattr(src, "output") and hasattr(src.output, "dense"):
             # Outer RobertaAttention containing inner self-attention and output dense
             is_nested_encoder = True
         elif (
@@ -578,27 +576,27 @@ class ASVDAttention(BaseAttention):
 
     def forward(
         self,
-        hidden_states: Optional[torch.Tensor] = None,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_ids: Optional[torch.Tensor] = None,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        hidden_states: torch.Tensor | None = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_ids: torch.Tensor | None = None,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """Forward pass for factorized ASVD attention."""
         if hidden_states is None:
-            hidden_states = kwargs.get("query", kwargs.get("x", None))
+            hidden_states = kwargs.get("query", kwargs.get("x"))
         if hidden_states is None and len(args) > 0 and isinstance(args[0], torch.Tensor):
             hidden_states = args[0]
         if attention_mask is None:
-            attention_mask = kwargs.get("mask", kwargs.get("attn_mask", None))
+            attention_mask = kwargs.get("mask", kwargs.get("attn_mask"))
 
         B, N, D = hidden_states.shape
         H = self.num_heads
@@ -610,9 +608,9 @@ class ASVDAttention(BaseAttention):
 
         # Extract rotary kwargs if supplied
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_ids is None:
-            position_ids = kwargs.get("position_ids", None)
+            position_ids = kwargs.get("position_ids")
 
         # 1. Project Q, K, V using low-rank factorized linear layers
         q: torch.Tensor = self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
@@ -711,12 +709,12 @@ def inject_asvd(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
 ):
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 
@@ -763,7 +761,7 @@ def inject_asvd(
     config = cfg
 
     """Universal injection factory for ASVDAttention with pre-flight extraction validation."""
-    target_model = model or kwargs.get("model", None)
+    target_model = model or kwargs.get("model")
     if target_model is not None and any(hasattr(target_model, a) for a in ("transformer", "model", "roberta", "bert", "distilbert", "gpt2", "qwen2", "layers")):
         from framework.core.attention_utils import inject_attention
         return inject_attention(target_model, "asvd", rank=rank, copy_weights=copy_weights, **kwargs)

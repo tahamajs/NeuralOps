@@ -20,13 +20,12 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
@@ -49,8 +48,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -101,8 +100,8 @@ def apply_rotary_pos_emb(
 
 def _detect_decoder(
     config: Any,
-    is_decoder: Optional[bool],
-    src_attn: Optional[nn.Module],
+    is_decoder: bool | None,
+    src_attn: nn.Module | None,
 ) -> bool:
     if is_decoder is not None:
         return bool(is_decoder)
@@ -141,8 +140,8 @@ class FactorizedLoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         bias: bool = True,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.in_features = int(in_features)
@@ -178,7 +177,7 @@ class FactorizedLoRALinear(nn.Module):
         return w
 
     @property
-    def bias(self) -> Optional[torch.Tensor]:
+    def bias(self) -> torch.Tensor | None:
         return self.up.bias
 
     def freeze_base_weights(self) -> None:
@@ -215,15 +214,15 @@ class LSHAttention(BaseAttention):
     def __init__(
         self,
         config: Any,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         rounds: int = 4,
         num_buckets: int = 16,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        pretrained_attn: Optional[nn.Module] = None,
-        old_attn: Optional[nn.Module] = None,
-        is_decoder: Optional[bool] = None,
-        comp_config: Optional[Any] = None,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
+        is_decoder: bool | None = None,
+        comp_config: Any | None = None,
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
@@ -295,10 +294,10 @@ class LSHAttention(BaseAttention):
                            lora_alpha=self.lora_alpha, bias=True)
 
         dropout_p = float(
-            (getattr(config, "dropout",
+            getattr(config, "dropout",
                      getattr(config, "hidden_dropout_prob",
                              getattr(config, "attention_probs_dropout_prob", 0.1)))
-             if config else 0.1)
+             if config else 0.1
         )
         self.dropout = nn.Dropout(dropout_p)
 
@@ -317,7 +316,7 @@ class LSHAttention(BaseAttention):
     # LSH-13: dimension detection
     # ------------------------------------------------------------------
     @staticmethod
-    def _detect_hidden_size(config: Any, src: Optional[nn.Module], kwargs: Dict[str, Any]) -> int:
+    def _detect_hidden_size(config: Any, src: nn.Module | None, kwargs: dict[str, Any]) -> int:
         for k in ("hidden_size", "d_model", "n_embd", "dim"):
             v = kwargs.get(k)
             if isinstance(v, int) and v > 0:
@@ -339,7 +338,7 @@ class LSHAttention(BaseAttention):
         return 768
 
     @staticmethod
-    def _detect_num_heads(config: Any, src: Optional[nn.Module], kwargs: Dict[str, Any],
+    def _detect_num_heads(config: Any, src: nn.Module | None, kwargs: dict[str, Any],
                           hidden_size: int) -> int:
         for k in ("num_heads", "num_attention_heads", "n_heads", "n_head"):
             v = kwargs.get(k)
@@ -358,7 +357,7 @@ class LSHAttention(BaseAttention):
         return max(1, hidden_size // 64)
 
     @staticmethod
-    def _detect_num_kv_heads(config: Any, src: Optional[nn.Module], kwargs: Dict[str, Any],
+    def _detect_num_kv_heads(config: Any, src: nn.Module | None, kwargs: dict[str, Any],
                              num_heads: int) -> int:
         for k in ("num_key_value_heads", "num_kv_heads"):
             v = kwargs.get(k)
@@ -376,7 +375,7 @@ class LSHAttention(BaseAttention):
         return num_heads
 
     @staticmethod
-    def _detect_head_dim(config: Any, src: Optional[nn.Module], kwargs: Dict[str, Any],
+    def _detect_head_dim(config: Any, src: nn.Module | None, kwargs: dict[str, Any],
                          hidden_size: int, num_heads: int) -> int:
         v = kwargs.get("head_dim")
         if isinstance(v, int) and v > 0:
@@ -400,7 +399,7 @@ class LSHAttention(BaseAttention):
     # SVD init
     # ------------------------------------------------------------------
     @staticmethod
-    def _svd_init(w: torch.Tensor, b: Optional[torch.Tensor],
+    def _svd_init(w: torch.Tensor, b: torch.Tensor | None,
                   proj: FactorizedLoRALinear) -> None:
         with torch.no_grad():
             W = w.detach().float()
@@ -444,10 +443,8 @@ class LSHAttention(BaseAttention):
         cls_name = src.__class__.__name__
         has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
-        if (hasattr(src, "self") and hasattr(getattr(src, "self"), "query")
-                and hasattr(src, "output") and hasattr(getattr(src, "output"), "dense")):
-            is_nested = True
-        elif (cls_name in ["BertSelfAttention", "RobertaSelfAttention",
+        if (hasattr(src, "self") and hasattr(src.self, "query")
+                and hasattr(src, "output") and hasattr(src.output, "dense")) or (cls_name in ["BertSelfAttention", "RobertaSelfAttention",
                            "XLMRobertaSelfAttention", "ElectraSelfAttention",
                            "DebertaSelfAttention"]
               or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())) \
@@ -455,7 +452,7 @@ class LSHAttention(BaseAttention):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
@@ -511,16 +508,16 @@ class LSHAttention(BaseAttention):
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
         # 2. BERT / RoBERTa nested
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query") and \
+        elif hasattr(src, "self") and hasattr(src.self, "query") and \
                 any(extracted[k][0] is None for k in ("q", "k", "v")):
-            s = getattr(src, "self")
+            s = src.self
             if hasattr(s, "query") and extracted["q"][0] is None:
                 extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
             if hasattr(s, "key") and extracted["k"][0] is None:
                 extracted["k"] = (s.key.weight.data, getattr(s.key, "bias", None))
             if hasattr(s, "value") and extracted["v"][0] is None:
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
-            if (hasattr(src, "output") and hasattr(getattr(src, "output"), "dense")
+            if (hasattr(src, "output") and hasattr(src.output, "dense")
                     and extracted["o"][0] is None):
                 dense = src.output.dense
                 extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
@@ -656,8 +653,8 @@ class LSHAttention(BaseAttention):
         Q: torch.Tensor,         # (B, H, N, d)
         K: torch.Tensor,         # (B, H, N, d)
         V: torch.Tensor,         # (B, H, N, d)
-        valid_mask: Optional[torch.Tensor],  # (B, N) bool
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        valid_mask: torch.Tensor | None,  # (B, N) bool
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """
         Chunked LSH attention. For each round, compute per-query chunk attention
         over keys in the same bucket. Memory O(B*H*N*C) per round (C=chunk).
@@ -715,19 +712,19 @@ class LSHAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         layer_idx: int = 0,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         # Handle key_value_states via kwargs
         key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
         is_cross = key_value_states is not None
@@ -745,7 +742,7 @@ class LSHAttention(BaseAttention):
 
         # RoPE with past_len offset
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             past_len = 0
@@ -854,7 +851,7 @@ def inject_lsh_attention(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):
@@ -864,7 +861,7 @@ def inject_lsh_attention(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

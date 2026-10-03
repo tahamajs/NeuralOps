@@ -8,7 +8,7 @@ architectures (GPT-2, RoBERTa/BERT, DistilBERT, T5, generic).
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 import logging
 
 import torch
@@ -59,7 +59,7 @@ def _is_already_injected(module: nn.Module) -> bool:
 
 def _find_source_attention(
     layer: nn.Module,
-) -> Optional[tuple[str, nn.Module, bool]]:
+) -> tuple[str, nn.Module, bool] | None:
     """
     Return (attr_name, src_attn, src_is_nested) if a non-injected source
     attention is found; otherwise None.
@@ -137,12 +137,12 @@ def inject_projection_factorized_attn(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
 ):
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

@@ -1,5 +1,4 @@
 # framework/utils/metrics.py
-from typing import Dict
 
 import numpy as np
 from scipy.stats import pearsonr, spearmanr
@@ -38,7 +37,7 @@ def compute_f1(
 
 def compute_precision_recall(
     preds: np.ndarray, labels: np.ndarray, average: str = "weighted"
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Compute and return precision recall."""
     from sklearn.metrics import precision_recall_fscore_support
 
@@ -53,7 +52,7 @@ def compute_metrics_for_task(
     labels: np.ndarray,
     task_name: str,
     is_regression: bool = False,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Compute and return metrics for task."""
     metrics = {}
     if is_regression or task_name == "stsb":

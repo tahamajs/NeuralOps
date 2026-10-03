@@ -44,7 +44,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -80,8 +80,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -131,8 +131,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         fk = {"device": device, "dtype": dtype}
@@ -220,17 +220,17 @@ class FUSIONATTN(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
+        config: Any | None = None,
         hidden_size: int = 768,
         num_heads: int = 12,
         block_size: int = 64,
         top_k_blocks: int = 4,
-        rank: Optional[int] = 64,
-        pretrained_attn: Optional[nn.Module] = None,
-        old_attn: Optional[nn.Module] = None,
-        comp_config: Optional[Any] = None,
-        layer_id: Optional[int] = None,
-        layer_idx: Optional[int] = None,
+        rank: int | None = 64,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
+        comp_config: Any | None = None,
+        layer_id: int | None = None,
+        layer_idx: int | None = None,
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
@@ -391,11 +391,9 @@ class FUSIONATTN(BaseAttention):
         has_out_lin = any(hasattr(pretrained_attn, a) for a in ("out_lin", "c_proj", "o_proj"))
         is_nested = False
         if (hasattr(pretrained_attn, "self")
-                and hasattr(getattr(pretrained_attn, "self"), "query")
+                and hasattr(pretrained_attn.self, "query")
                 and hasattr(pretrained_attn, "output")
-                and hasattr(getattr(pretrained_attn, "output"), "dense")):
-            is_nested = True
-        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
+                and hasattr(pretrained_attn.output, "dense")) or (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
                             "XLMRobertaSelfAttention", "ElectraSelfAttention",
                             "DebertaSelfAttention")
               or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())) \
@@ -406,7 +404,7 @@ class FUSIONATTN(BaseAttention):
         if hasattr(pretrained_attn, "rotary_emb"):
             self.rotary_emb = pretrained_attn.rotary_emb
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
@@ -453,8 +451,8 @@ class FUSIONATTN(BaseAttention):
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
         # RoBERTa / BERT nested
-        elif hasattr(pretrained_attn, "self") and hasattr(getattr(pretrained_attn, "self"), "query"):
-            s = getattr(pretrained_attn, "self")
+        elif hasattr(pretrained_attn, "self") and hasattr(pretrained_attn.self, "query"):
+            s = pretrained_attn.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 mod = getattr(s, sub, None)
                 if mod is not None and hasattr(mod, "weight"):
@@ -551,7 +549,7 @@ class FUSIONATTN(BaseAttention):
     # KV-cache helpers
     # ------------------------------------------------------------------
     @staticmethod
-    def _read_past_kv(past_key_value: Optional[Any], layer_idx: int = 0):
+    def _read_past_kv(past_key_value: Any | None, layer_idx: int = 0):
         if past_key_value is None:
             return None, None
         if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
@@ -573,7 +571,7 @@ class FUSIONATTN(BaseAttention):
     # Mask preparation
     # ------------------------------------------------------------------
     @staticmethod
-    def _normalize_valid_mask(mask, B: int, N: int, device: torch.device) -> Optional[torch.Tensor]:
+    def _normalize_valid_mask(mask, B: int, N: int, device: torch.device) -> torch.Tensor | None:
         """Return (B, N) bool mask where True = valid token."""
         if mask is None:
             return None
@@ -604,11 +602,11 @@ class FUSIONATTN(BaseAttention):
         q: torch.Tensor,
         k: torch.Tensor,
         v: torch.Tensor,
-        valid_mask: Optional[torch.Tensor],
-        head_mask: Optional[torch.Tensor],
+        valid_mask: torch.Tensor | None,
+        head_mask: torch.Tensor | None,
         is_causal: bool,
         output_attentions: bool,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, H, N, D = q.shape
         N_kv = k.shape[2]
         scale = D ** -0.5
@@ -678,11 +676,11 @@ class FUSIONATTN(BaseAttention):
         q: torch.Tensor,
         k: torch.Tensor,
         v: torch.Tensor,
-        valid_mask: Optional[torch.Tensor],
-        head_mask: Optional[torch.Tensor],
+        valid_mask: torch.Tensor | None,
+        head_mask: torch.Tensor | None,
         is_causal: bool,
         output_attentions: bool,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """
         FA-FIX-03 / FA-FIX-04 / FA-FIX-05 / FA-FIX-15 / FA-FIX-16 /
         FA-FIX-17 / FA-FIX-18 rewritten block-gated attention.
@@ -864,19 +862,19 @@ class FUSIONATTN(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_ids: Optional[torch.Tensor] = None,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_ids: torch.Tensor | None = None,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, N, _ = hidden_states.shape
         device = hidden_states.device
         is_cross_attention = encoder_hidden_states is not None
@@ -979,7 +977,7 @@ def inject_fusion_attn(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):
@@ -989,7 +987,7 @@ def inject_fusion_attn(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

@@ -93,8 +93,8 @@ def _gdn_fwd_kernel(
 
         # Optionally store S for backward (expensive: L * D * D per head)
         if STORE_S:
-            s_ptrs = (s_workspace_ptr 
-                      + pid_b * stride_swb + pid_h * stride_swh 
+            s_ptrs = (s_workspace_ptr
+                      + pid_b * stride_swb + pid_h * stride_swh
                       + t * stride_swl
                       + tl.arange(0, BLOCK_D)[:, None] * stride_swd
                       + tl.arange(0, BLOCK_D)[None, :] * stride_swn)
@@ -156,16 +156,16 @@ def _gdn_bwd_kernel(
         alpha_t = tl.load(alpha_ptr + pid_b * stride_ab + pid_h * stride_ah + t * stride_al).to(tl.float32)
 
         # Load S_t and S_{t-1} from workspace
-        s_t_ptrs = (s_workspace_ptr 
-                    + pid_b * stride_swb + pid_h * stride_swh 
+        s_t_ptrs = (s_workspace_ptr
+                    + pid_b * stride_swb + pid_h * stride_swh
                     + t * stride_swl
                     + tl.arange(0, BLOCK_D)[:, None] * stride_swd
                     + tl.arange(0, BLOCK_D)[None, :] * stride_swn)
         S_t = tl.load(s_t_ptrs)  # (D, D)
-        
+
         if t > 0:
-            s_prev_ptrs = (s_workspace_ptr 
-                           + pid_b * stride_swb + pid_h * stride_swh 
+            s_prev_ptrs = (s_workspace_ptr
+                           + pid_b * stride_swb + pid_h * stride_swh
                            + (t - 1) * stride_swl
                            + tl.arange(0, BLOCK_D)[:, None] * stride_swd
                            + tl.arange(0, BLOCK_D)[None, :] * stride_swn)
@@ -195,11 +195,11 @@ def _gdn_bwd_kernel(
 
         # === dk_t = dk_direct + dk_from_inter_v + dk_norm ===
         dk_direct = step * tl.sum(dS * err[None, :], axis=1)  # (D,)
-        
+
         # Path through inter_v = k_t @ S_prev:
         d_inter_v = -step * tl.sum(k_t[:, None] * dS, axis=0)  # (D,)
         dk_from_inter_v = tl.sum(S_prev * d_inter_v[None, :], axis=1)  # (D,)
-        
+
         # Path through norm_sq in step = alpha_t / denom:
         dS_outer = tl.sum(dS * (k_t[:, None] * err[None, :]))
         d_step = - (alpha_t / (denom * denom)) * dS_outer

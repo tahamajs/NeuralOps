@@ -36,13 +36,13 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ def low_rank_delta_compress(
     delta: torch.Tensor,
     rank: int,
     bits: int,
-) -> Tuple[torch.Tensor, float]:
+) -> tuple[torch.Tensor, float]:
     """
     Low-rank + STE-quantize a temporal delta tensor.
 
@@ -112,7 +112,7 @@ def simulate_paged_delta_kv(
     rank: int,
     bits: int,
     max_delta_error: float = 0.35,
-) -> Tuple[torch.Tensor, torch.Tensor, float, float]:
+) -> tuple[torch.Tensor, torch.Tensor, float, float]:
     """
     Delta-KV temporal compression with reconstruction-error guard.
 
@@ -160,7 +160,7 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -211,8 +211,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = True,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         fk = {"device": device, "dtype": dtype}
@@ -293,7 +293,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
+        config: Any | None = None,
         page_size: int = 16,
         k_experts: int = 4,
         svd_rank: int = 32,
@@ -303,8 +303,8 @@ class MoEDeltaKVPagedAttention(nn.Module):
         lora_alpha: float = 32.0,
         enable_moe: bool = True,
         enable_deltakv: bool = True,
-        is_decoder: Optional[bool] = None,
-        pretrained_attn: Optional[nn.Module] = None,
+        is_decoder: bool | None = None,
+        pretrained_attn: nn.Module | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__()
@@ -409,9 +409,9 @@ class MoEDeltaKVPagedAttention(nn.Module):
         # ---- storage accounting (MDP-FIX-07) ----
         self._orig_storage_bytes: int = 0
         self._comp_storage_bytes: int = 0
-        self._source_id: Optional[int] = None
+        self._source_id: int | None = None
 
-        src = pretrained_attn or kwargs.get("old_attn", None)
+        src = pretrained_attn or kwargs.get("old_attn")
         if src is not None:
             self.copy_weights(src)
 
@@ -438,7 +438,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
     def c_proj(self): return self.out_proj
 
     # ------------------------------------------------------------------
-    def storage_bytes(self) -> Dict[str, int]:
+    def storage_bytes(self) -> dict[str, int]:
         return {"orig": self._orig_storage_bytes, "comp": self._comp_storage_bytes}
 
     # ------------------------------------------------------------------
@@ -454,7 +454,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
         if self._source_id is not None and id(src) == self._source_id:
             return
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
@@ -524,7 +524,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
             except Exception as e:
                 logger.debug("Nested self extraction failed: %s", e)
 
-        if (hasattr(src, "output") and hasattr(getattr(src, "output"), "dense")
+        if (hasattr(src, "output") and hasattr(src.output, "dense")
                 and extracted["o"][0] is None):
             try:
                 dense = src.output.dense
@@ -561,17 +561,13 @@ class MoEDeltaKVPagedAttention(nn.Module):
                             ("dense", "out_proj", "c_proj", "out_lin",
                              "o_proj", "wo", "o", "proj"))
         is_nested = False
-        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            is_nested = True
-        elif cls_name in ("BertSelfAttention", "RobertaSelfAttention",
+        if hasattr(src, "self") and hasattr(src.self, "query") or cls_name in ("BertSelfAttention", "RobertaSelfAttention",
                            "XLMRobertaSelfAttention", "ElectraSelfAttention"):
             is_nested = True
         elif cls_name in ("DistilBertAttention", "DistilBertSABlock"):
             # DistilBERT nests attention inside a container but has an out_lin
             is_nested = True
-        elif cls_name.endswith("SelfAttention") and not has_out_proj:
-            is_nested = True
-        elif cls_name.endswith("Attention") and not has_out_proj:
+        elif cls_name.endswith("SelfAttention") and not has_out_proj or cls_name.endswith("Attention") and not has_out_proj:
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -681,7 +677,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
         k_hat: torch.Tensor,
         v_hat: torch.Tensor,
         valid_mask: torch.Tensor,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, H, N, d = q.shape
         page_size = self.page_size
         num_pages = (N + page_size - 1) // page_size
@@ -785,18 +781,18 @@ class MoEDeltaKVPagedAttention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
 
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
@@ -818,7 +814,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
 
         # ---- RoPE ----
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
@@ -843,7 +839,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
             k_hat, v_hat = k, v
 
         # ---- Mask normalization ----
-        valid_mask: Optional[torch.Tensor] = None
+        valid_mask: torch.Tensor | None = None
         if attention_mask is not None:
             if attention_mask.dim() == 2:
                 if attention_mask.dtype == torch.bool:
@@ -933,7 +929,7 @@ def inject_moe_deltakv_paged(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):
@@ -943,7 +939,7 @@ def inject_moe_deltakv_paged(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

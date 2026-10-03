@@ -10,7 +10,7 @@ Registered as 'hybridkv'.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -49,7 +49,7 @@ class HybridKVCache:
         recent_window: int = 32,
         budget: float = 0.3,
         static_ratio: float = 0.7,
-        static_heads_mask: Optional[torch.Tensor] = None,
+        static_heads_mask: torch.Tensor | None = None,
     ) -> None:
         self.budget = float(budget)
         self.max_cache_len = max(8, int(max_cache_len * self.budget)) if self.budget > 0 else int(max_cache_len)
@@ -57,8 +57,8 @@ class HybridKVCache:
         self.recent_window = int(recent_window)
         self.static_ratio = float(static_ratio)
         self.static_heads_mask = static_heads_mask
-        self.k_cache: Optional[torch.Tensor] = None
-        self.v_cache: Optional[torch.Tensor] = None
+        self.k_cache: torch.Tensor | None = None
+        self.v_cache: torch.Tensor | None = None
 
     def reset(self) -> None:
         """Clear cache state to prevent memory leaks."""
@@ -70,7 +70,7 @@ class HybridKVCache:
         self,
         new_k: torch.Tensor,
         new_v: torch.Tensor,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Append new KV representations and apply hybrid eviction if cache exceeds capacity.
         Shapes: (B, H, N, D) or (B, N, D) or (N, D).
@@ -111,8 +111,8 @@ class HybridKVCache:
 
         # Eviction per head according to static vs dynamic classification
         target_len = self.max_cache_len
-        head_k_list: List[torch.Tensor] = []
-        head_v_list: List[torch.Tensor] = []
+        head_k_list: list[torch.Tensor] = []
+        head_v_list: list[torch.Tensor] = []
 
         is_static = (
             self.static_heads_mask
@@ -180,11 +180,11 @@ class HybridKVCompressor(BaseCompressor):
         num_sinks: int = 4,
         recent_window: int = 32,
         target_attention_only: bool = True,
-        cfg: Optional[Any] = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="hybridkv", **kwargs)
-        cfg = cfg or kwargs.get("comp_config", None)
+        cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
         self.budget = float(_cfg_get(cfg, "hybridkv_budget", _cfg_get(cfg, "budget", budget)))
@@ -220,9 +220,9 @@ class HybridKVCompressor(BaseCompressor):
             return any(kw in name_lower for kw in _ATTN_NAMES)
         return True
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Classify heads and configure dynamic KV caches without mutating model weights."""
-        head_stats: Dict[str, Any] = {}
+        head_stats: dict[str, Any] = {}
         total_heads = 0
         static_heads_count = 0
         dynamic_heads_count = 0
@@ -253,9 +253,9 @@ class HybridKVCompressor(BaseCompressor):
                     static_heads_mask=static_mask,
                 )
                 # Attach KV cache manager without mutating stationary weights
-                setattr(module, "hybrid_kv_cache", kv_cache)
+                module.hybrid_kv_cache = kv_cache
                 if hasattr(module, "base_layer"):
-                    setattr(module.base_layer, "hybrid_kv_cache", kv_cache)
+                    module.base_layer.hybrid_kv_cache = kv_cache
 
                 head_stats[name] = {
                     "head_type": head_type,

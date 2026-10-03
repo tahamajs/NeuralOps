@@ -11,7 +11,7 @@ Mathematical Formulation:
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -37,7 +37,7 @@ _ATTN_NAMES = {
 }
 
 # LIFTR-FIX-10: safe SiLU reference
-_SILU_CLASSES: Tuple[type, ...] = (nn.GELU,)
+_SILU_CLASSES: tuple[type, ...] = (nn.GELU,)
 try:
     if hasattr(nn, "SiLU"):
         _SILU_CLASSES = (nn.GELU, nn.SiLU)
@@ -124,17 +124,17 @@ class _LinearizedAttentionWrapper(nn.Module):
 
     def forward(
         self,
-        hidden_states: Optional[torch.Tensor] = None,
-        query: Optional[torch.Tensor] = None,
-        key: Optional[torch.Tensor] = None,
-        value: Optional[torch.Tensor] = None,
-        mask: Optional[torch.Tensor] = None,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
+        hidden_states: torch.Tensor | None = None,
+        query: torch.Tensor | None = None,
+        key: torch.Tensor | None = None,
+        value: torch.Tensor | None = None,
+        mask: torch.Tensor | None = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
         output_attentions: bool = False,
         *args: Any,
         **kwargs: Any,
-    ) -> Union[torch.Tensor, Tuple[torch.Tensor, Optional[torch.Tensor]]]:
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor | None]:
         # Determine input tensor.
         x = hidden_states
         if x is None:
@@ -209,12 +209,12 @@ class _LinearizedAttentionWrapper(nn.Module):
 
     def _delegate(
         self,
-        x: Optional[torch.Tensor],
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
+        x: torch.Tensor | None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
         output_attentions: bool = False,
         **kwargs: Any,
-    ) -> Union[torch.Tensor, Tuple[torch.Tensor, Optional[torch.Tensor]]]:
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor | None]:
         """Call the underlying attention with matching signature."""
         try:
             if x is None:
@@ -249,7 +249,7 @@ class _LinearizedAttentionWrapper(nn.Module):
         self,
         out: torch.Tensor,
         output_attentions: bool,
-    ) -> Union[torch.Tensor, Tuple[torch.Tensor, Optional[torch.Tensor]]]:
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor | None]:
         """LIFTR-FIX-05: match tuple signature expected by parent module."""
         if self._returns_tuple:
             return (out, None)
@@ -283,7 +283,7 @@ class LIFTRCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="liftr", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         self.cfg = cfg
 
         self.replace_attention = bool(_cfg_get(
@@ -310,9 +310,9 @@ class LIFTRCompressor(BaseCompressor):
 
         self.linearized_activations_count = 0
         self.linearized_attentions_count = 0
-        self.replaced_modules: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.stats: Dict[str, Any] = {}
+        self.replaced_modules: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.stats: dict[str, Any] = {}
         self._compressed_params: int = 0
 
     def _is_critical(self, name: str) -> bool:
@@ -405,7 +405,7 @@ class LIFTRCompressor(BaseCompressor):
             self._linearize_module(child, prefix=full_name, _depth=_depth + 1)
 
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         # LIFTR-FIX-15: idempotence
         if getattr(self.model, "_liftr_compressed", False):
             logger.warning("LIFTR: model already compressed; skipping.")
@@ -420,8 +420,8 @@ class LIFTRCompressor(BaseCompressor):
         device = first_param.device if first_param is not None else torch.device("cpu")
 
         # LIFTR-FIX-03: dummy_in defined at function scope.
-        dummy_in: Optional[torch.Tensor] = None
-        orig_out: Optional[torch.Tensor] = None
+        dummy_in: torch.Tensor | None = None
+        orig_out: torch.Tensor | None = None
 
         if self.validation_calibration:
             try:

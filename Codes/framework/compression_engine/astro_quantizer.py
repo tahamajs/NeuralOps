@@ -12,12 +12,10 @@ Scientific Novelty:
 from __future__ import annotations
 
 import logging
-import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
@@ -55,8 +53,8 @@ class STEFakeQuantize(torch.autograd.Function):
         x: torch.Tensor,
         scale: torch.Tensor,
         zero_point: torch.Tensor,
-        qmin: Union[float, torch.Tensor],
-        qmax: Union[float, torch.Tensor],
+        qmin: float | torch.Tensor,
+        qmax: float | torch.Tensor,
     ) -> torch.Tensor:
         ctx.save_for_backward(x, scale, zero_point)
         # Quantize, clamp to discrete range, and dequantize
@@ -65,7 +63,7 @@ class STEFakeQuantize(torch.autograd.Function):
         return dq
 
     @staticmethod
-    def backward(ctx: Any, grad_output: torch.Tensor) -> Tuple[Optional[torch.Tensor], ...]:
+    def backward(ctx: Any, grad_output: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
         # Straight-Through Estimator passes gradient unmodified
         grad_x = grad_output.clone()
         return grad_x, None, None, None, None
@@ -126,7 +124,7 @@ def quantize_dequantize_tensor(
     symmetric: bool = True,
     per_channel: bool = False,
     use_ste: bool = False,
-    per_channel_bits: Optional[torch.Tensor] = None,
+    per_channel_bits: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
     Uniform quantization and de-quantization supporting:
@@ -209,7 +207,7 @@ class AstroLinear(nn.Module):
         bits: int = 8,
         symmetric: bool = True,
         per_channel: bool = False,
-        per_channel_bits: Optional[torch.Tensor] = None,
+        per_channel_bits: torch.Tensor | None = None,
     ):
         super().__init__()
         self.in_features = in_features
@@ -240,7 +238,7 @@ class AstroLinear(nn.Module):
         bits: int = 8,
         symmetric: bool = True,
         per_channel: bool = False,
-        per_channel_bits: Optional[torch.Tensor] = None,
+        per_channel_bits: torch.Tensor | None = None,
     ) -> AstroLinear:
         cls_name = linear.__class__.__name__.lower()
         is_conv1d = "conv1d" in cls_name or hasattr(linear, "nf")
@@ -326,7 +324,7 @@ class AstroQuantizer(BaseCompressor):
         max_error: float = 0.20,
         fallback_to_original: bool = True,
         protect_critical: bool = True,
-        target_modules: Optional[list[str]] = None,
+        target_modules: list[str] | None = None,
         target_attention_only: bool = False,
         use_fisher_adaptive_bits: bool = False,
         target_avg_bits: float = 6.0,
@@ -336,7 +334,7 @@ class AstroQuantizer(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="astro", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
 
         bits = int(_cfg_get(cfg, "astro_bits", _cfg_get(cfg, "bits", bits)))
         symmetric = bool(_cfg_get(cfg, "astro_symmetric", _cfg_get(cfg, "symmetric", symmetric)))
@@ -376,9 +374,9 @@ class AstroQuantizer(BaseCompressor):
         self.max_bits = max_bits
         self.fisher_beta = fisher_beta
         self.tokenizer = kwargs.get("tokenizer", getattr(model, "tokenizer", None))
-        self.calibration_loader = kwargs.get("calibration_loader", None)
-        self.calibration_texts = kwargs.get("calibration_texts", None)
-        device = kwargs.get("device", None)
+        self.calibration_loader = kwargs.get("calibration_loader")
+        self.calibration_texts = kwargs.get("calibration_texts")
+        device = kwargs.get("device")
         self.target_device = (
             torch.device(device)
             if device is not None
@@ -389,9 +387,9 @@ class AstroQuantizer(BaseCompressor):
 
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_bit_assignments: Dict[str, List[int]] = {}
-        self.layer_average_bits: Dict[str, float] = {}
+        self.layer_errors: dict[str, float] = {}
+        self.layer_bit_assignments: dict[str, list[int]] = {}
+        self.layer_average_bits: dict[str, float] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, AstroLinear):
@@ -448,20 +446,20 @@ class AstroQuantizer(BaseCompressor):
             return any(t in name for t in self.target_modules)
         return True
 
-    def _collect_fisher_info(self) -> Dict[str, torch.Tensor]:
+    def _collect_fisher_info(self) -> dict[str, torch.Tensor]:
         """
         Collect empirical Fisher gradient squared or activation energy per layer.
         Returns a dict: layer_name -> 1D tensor of importance per output channel.
         """
-        fisher_info: Dict[str, torch.Tensor] = {}
+        fisher_info: dict[str, torch.Tensor] = {}
         if not self.use_fisher_adaptive_bits:
             return fisher_info
 
-        activations: Dict[str, List[torch.Tensor]] = {}
+        activations: dict[str, list[torch.Tensor]] = {}
         hooks = []
 
         def make_hook(layer_name: str):
-            def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any):
+            def hook(module: nn.Module, inp: tuple[torch.Tensor, ...], outp: Any):
                 if inp and isinstance(inp[0], torch.Tensor):
                     x = inp[0].detach()
                     if layer_name not in activations:
@@ -542,7 +540,7 @@ class AstroQuantizer(BaseCompressor):
 
         return fisher_info
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Quantize all target linear/Conv1D layers in the model and return (compressed_model, stats)."""
         fisher_map = self._collect_fisher_info() if self.use_fisher_adaptive_bits else {}
 

@@ -14,11 +14,10 @@ Mathematical Formulation:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 import logging
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
@@ -48,8 +47,8 @@ class LowRankLinear(nn.Module):
         out_features: int,
         rank: int,
         bias: bool = True,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -94,15 +93,15 @@ class LowRankCompressor(BaseCompressor):
         self,
         model: nn.Module,
         rank: int = 8,
-        energy_threshold: Optional[float] = None,
+        energy_threshold: float | None = None,
         max_error: float = 0.5,
         target_attention_only: bool = False,
         fallback_to_original: bool = True,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="soka", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = _cfg_get(cfg, "soka_rank", _cfg_get(cfg, "rank", rank))
             energy_threshold = _cfg_get(cfg, "soka_energy", _cfg_get(cfg, "energy_threshold", energy_threshold))
@@ -116,9 +115,9 @@ class LowRankCompressor(BaseCompressor):
         self.target_attention_only = bool(target_attention_only)
         self.fallback_to_original = bool(fallback_to_original)
         self.target_modules = target_modules
-        self.compressed_layers: List[Dict[str, Any]] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[dict[str, Any]] = []
+        self.layer_errors: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
@@ -158,12 +157,12 @@ class LowRankCompressor(BaseCompressor):
         r = idx[0].item() if len(idx) > 0 else len(S)
         return max(1, min(r, max_r))
 
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         """Replaces target Linear and Conv1D modules with LowRankLinear."""
         self.compressed_layers = []
         self.layer_errors = {}
 
-        linear_layers: List[Tuple[str, nn.Module]] = []
+        linear_layers: list[tuple[str, nn.Module]] = []
         for name, module in self.model.named_modules():
             if self._is_target_module(name, module):
                 linear_layers.append((name, module))

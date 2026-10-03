@@ -7,7 +7,8 @@ with a native PyTorch Policy-Gradient / Reward-Weighted Optimization fallback.
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, Optional
+from typing import Any
+from collections.abc import Callable
 
 import torch
 import torch.nn as nn
@@ -32,10 +33,10 @@ class RLTrainer(BaseTrainer):
         model: nn.Module,
         train_dataset: Any = None,
         eval_dataset: Any = None,
-        config: Optional[Dict[str, Any]] = None,
-        results_manager: Optional[Any] = None,
-        reward_model: Optional[nn.Module] = None,
-        compute_metrics: Optional[Callable] = None,
+        config: dict[str, Any] | None = None,
+        results_manager: Any | None = None,
+        reward_model: nn.Module | None = None,
+        compute_metrics: Callable | None = None,
         **kwargs: Any,
     ) -> None:
         self.model = model
@@ -62,7 +63,7 @@ class RLTrainer(BaseTrainer):
         except ImportError:
             logger.info("TRL library not found. RLTrainer will utilize native PyTorch policy optimization fallback.")
 
-    def train(self) -> Dict[str, Any]:
+    def train(self) -> dict[str, Any]:
         """Execute RL / policy fine-tuning loop."""
         epochs = int(self.config.get("epochs", 3))
         lr = float(self.config.get("learning_rate", 1e-5))
@@ -87,7 +88,7 @@ class RLTrainer(BaseTrainer):
                     optimizer.zero_grad()
                     if isinstance(batch, dict):
                         inputs = {k: v.to(self.device) for k, v in batch.items() if isinstance(v, torch.Tensor)}
-                        labels = inputs.get("labels", None)
+                        labels = inputs.get("labels")
                         outputs = self.model(**inputs)
                         logits = outputs.logits if hasattr(outputs, "logits") else (outputs["logits"] if isinstance(outputs, dict) else outputs)
                         if labels is not None:
@@ -120,7 +121,7 @@ class RLTrainer(BaseTrainer):
 
         return metrics
 
-    def evaluate(self) -> Dict[str, Any]:
+    def evaluate(self) -> dict[str, Any]:
         """Evaluate policy performance."""
         self.model.eval()
         total_eval_loss = 0.0
@@ -137,7 +138,7 @@ class RLTrainer(BaseTrainer):
                 for batch in loader:
                     if isinstance(batch, dict):
                         inputs = {k: v.to(self.device) for k, v in batch.items() if isinstance(v, torch.Tensor)}
-                        labels = inputs.get("labels", None)
+                        labels = inputs.get("labels")
                         outputs = self.model(**inputs)
                         logits = outputs.logits if hasattr(outputs, "logits") else (outputs["logits"] if isinstance(outputs, dict) else outputs)
                         if labels is not None:

@@ -6,7 +6,7 @@ Registered in COMPRESSOR_REGISTRY as 'cur_moe' and 'cur_moe_compressor'.
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -14,14 +14,9 @@ from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.pruning_utils import adaptive_max_error
-from framework.utils.compat import get_dynamic_compression_rank, should_compress_linear
 
 from .cur_compressor import (
     CURLinear,
-    compute_energy_scores,
-    compute_leverage_scores,
-    select_indices,
-    tikhonov_pinv,
 )
 
 logger = logging.getLogger(__name__)
@@ -57,7 +52,7 @@ class CURMoECompressor(BaseCompressor):
 
     def __init__(
         self,
-        model: Optional[nn.Module] = None,
+        model: nn.Module | None = None,
         rank: int = 64,
         min_rank: int = 8,
         method: str = "leverage",
@@ -66,7 +61,7 @@ class CURMoECompressor(BaseCompressor):
         fallback_to_original: bool = True,
         max_retries: int = 2,
         target_attention_only: bool = False,
-        cfg: Optional[Any] = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="cur_moe", **kwargs)
@@ -92,10 +87,10 @@ class CURMoECompressor(BaseCompressor):
         self.target_attention_only = bool(c_target_attn)
         self.cfg = cfg
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
         self.total_orig_decomp_params = 0
         self.total_comp_decomp_params = 0
 
@@ -214,7 +209,7 @@ class CURMoECompressor(BaseCompressor):
         self.total_comp_decomp_params += (best_r * (in_f + out_f + best_r))
         return True
 
-    def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         """Compress expert linear layers in MoE architecture, or fallback to FFN layers."""
         if model is not None:
             self.model = model
@@ -341,10 +336,10 @@ class CURMoECompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("cur_moe_compressor_factory")
 def cur_moe_factory(
     model: nn.Module,
-    comp_config: Optional[Any] = None,
-    rank: Optional[int] = None,
+    comp_config: Any | None = None,
+    rank: int | None = None,
     **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """Factory function for CUR-MoE compressor."""
     effective_rank = kwargs.pop("rank", rank or _cfg_get(comp_config, "cur_moe_rank", _cfg_get(comp_config, "rank", 64)))
     min_rank = kwargs.pop("min_rank", _cfg_get(comp_config, "min_rank", 8))
@@ -377,7 +372,7 @@ def cur_moe_factory(
     return compressed_model
 
 
-def inject_cur_moe(model: nn.Module, **kwargs: Any) -> Optional[nn.Module]:
+def inject_cur_moe(model: nn.Module, **kwargs: Any) -> nn.Module | None:
     """Safe injection hook for cur_moe. Catches exceptions, logs, and returns None on failure."""
     try:
         res = cur_moe_factory(model, **kwargs)
@@ -389,6 +384,6 @@ def inject_cur_moe(model: nn.Module, **kwargs: Any) -> Optional[nn.Module]:
         return None
 
 
-def cur_moe_inject(model: nn.Module, **kwargs: Any) -> Optional[nn.Module]:
+def cur_moe_inject(model: nn.Module, **kwargs: Any) -> nn.Module | None:
     """Safe injection hook for cur_moe alias."""
     return inject_cur_moe(model, **kwargs)

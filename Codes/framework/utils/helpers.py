@@ -2,7 +2,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any
 
 import torch
 
@@ -49,27 +49,27 @@ def count_parameters(model: torch.nn.Module, trainable_only: bool = True) -> int
     return sum(p.numel() for p in model.parameters())
 
 
-def ensure_dir(path: Union[str, Path]) -> Path:
+def ensure_dir(path: str | Path) -> Path:
     """Ensure dir."""
     path = Path(path)
     path.mkdir(parents=True, exist_ok=True)
     return path
 
 
-def save_json(data: Any, path: Union[str, Path], indent: int = 2) -> None:
+def save_json(data: Any, path: str | Path, indent: int = 2) -> None:
     """Persist json to disk."""
     ensure_dir(os.path.dirname(path))
     with open(path, "w") as f:
         json.dump(data, f, indent=indent)
 
 
-def load_json(path: Union[str, Path]) -> Any:
+def load_json(path: str | Path) -> Any:
     """Load json from disk or config."""
-    with open(path, "r") as f:
+    with open(path) as f:
         return json.load(f)
 
 
-def flatten_dict(d: Dict, parent_key: str = "", sep: str = ".") -> Dict:
+def flatten_dict(d: dict, parent_key: str = "", sep: str = ".") -> dict:
     """Flatten dict."""
     items = []
     for k, v in d.items():
@@ -81,7 +81,7 @@ def flatten_dict(d: Dict, parent_key: str = "", sep: str = ".") -> Dict:
     return dict(items)
 
 
-def unflatten_dict(d: Dict, sep: str = ".") -> Dict:
+def unflatten_dict(d: dict, sep: str = ".") -> dict:
     """Unflatten dict."""
     result = {}
     for key, value in d.items():

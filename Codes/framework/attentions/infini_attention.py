@@ -43,7 +43,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -70,8 +70,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
     if cos.dim() == 2:
@@ -109,7 +109,7 @@ def apply_rotary_pos_emb(
 # ===========================================================================
 # Decoder detection
 # ===========================================================================
-def _detect_decoder(config: Any, is_decoder: Optional[bool], old_attn: Optional[nn.Module]) -> bool:
+def _detect_decoder(config: Any, is_decoder: bool | None, old_attn: nn.Module | None) -> bool:
     if is_decoder is not None:
         return bool(is_decoder)
     if config is not None:
@@ -227,13 +227,13 @@ class InfiniAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = None,
         local_window: int = 128,
-        pretrained_attn: Optional[nn.Module] = None,
-        old_attn: Optional[nn.Module] = None,
-        comp_config: Optional[Any] = None,
-        is_decoder: Optional[bool] = None,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
+        comp_config: Any | None = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
@@ -283,7 +283,7 @@ class InfiniAttention(BaseAttention):
         if config is not None:
             inferred = getattr(config, "head_dim", None)
         if inferred is None:
-            inferred = kwargs.get("head_dim", None)
+            inferred = kwargs.get("head_dim")
         if inferred is None and source_attn is not None:
             for attr in ("q_proj", "query", "q_lin"):
                 layer = getattr(source_attn, attr, None)
@@ -396,14 +396,10 @@ class InfiniAttention(BaseAttention):
         if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
             is_nested = False
         elif (hasattr(src, "self") and hasattr(src, "output")
-              and hasattr(getattr(src, "self"), "query")
-              and hasattr(getattr(src, "output"), "dense")):
-            is_nested = True
-        elif cls_name in ("BertSelfAttention", "RobertaSelfAttention",
+              and hasattr(src.self, "query")
+              and hasattr(src.output, "dense")) or cls_name in ("BertSelfAttention", "RobertaSelfAttention",
                           "XLMRobertaSelfAttention", "ElectraSelfAttention",
-                          "DebertaSelfAttention"):
-            is_nested = True
-        elif cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower() and not has_out:
+                          "DebertaSelfAttention") or cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower() and not has_out:
             is_nested = True
         self.is_nested_encoder = is_nested
 
@@ -446,7 +442,7 @@ class InfiniAttention(BaseAttention):
                     extracted["o"] = (ow, bo.data.clone() if bo is not None else None)
 
         # Nested BERT / RoBERTa
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 m = getattr(s, sub, None)
@@ -694,23 +690,23 @@ class InfiniAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
 
         # INF3-FIX-02: layer_idx from kwargs (some HF models pass it)
         layer_idx = kwargs.get("layer_idx", 0)
 
         # INF3-FIX-01: position_embeddings comes from kwargs, never positional
-        position_embeddings = kwargs.get("position_embeddings", None)
+        position_embeddings = kwargs.get("position_embeddings")
 
         if encoder_hidden_states is not None:
             raise NotImplementedError("InfiniAttention does not support cross-attention.")
@@ -786,7 +782,7 @@ class InfiniAttention(BaseAttention):
         return out, (attn if output_attentions else None)
 
     # ------------------------------------------------------------------
-    def storage_bytes(self) -> Dict[str, int]:
+    def storage_bytes(self) -> dict[str, int]:
         def _sz(p):
             if isinstance(p, (nn.Parameter, torch.Tensor)):
                 return p.numel() * p.element_size()
@@ -814,10 +810,10 @@ def inject_infini(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
-) -> Optional[nn.Module]:
+) -> nn.Module | None:
     if _depth > 8:
         logger.warning("inject_infini: max recursion depth exceeded.")
         return None

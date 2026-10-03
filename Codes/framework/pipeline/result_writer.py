@@ -20,12 +20,11 @@ Directory layout created per run
 
 import json
 import logging
-import os
 import platform
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +62,7 @@ class ResultWriter:
     # ------------------------------------------------------------------ #
     # Metrics                                                              #
     # ------------------------------------------------------------------ #
-    def save_metrics(self, metrics: Dict[str, Any], tag: str = "metrics") -> None:
+    def save_metrics(self, metrics: dict[str, Any], tag: str = "metrics") -> None:
         """Save a metrics dict to metrics/<tag>.json with a timestamp."""
         payload = {"timestamp": datetime.now().isoformat(), **metrics}
         path = self._dirs["metrics"] / f"{tag}.json"
@@ -73,7 +72,7 @@ class ResultWriter:
     # ------------------------------------------------------------------ #
     # Training history                                                     #
     # ------------------------------------------------------------------ #
-    def save_history(self, log_history: List[Dict[str, Any]]) -> None:
+    def save_history(self, log_history: list[dict[str, Any]]) -> None:
         """Save the full HuggingFace trainer log_history list."""
         path = self._dirs["history"] / "log_history.json"
         self._write_json(path, log_history)
@@ -127,7 +126,7 @@ class ResultWriter:
     # ------------------------------------------------------------------ #
     # Plots                                                                #
     # ------------------------------------------------------------------ #
-    def save_plots(self, log_history: List[Dict[str, Any]]) -> None:
+    def save_plots(self, log_history: list[dict[str, Any]]) -> None:
         """Generate and save training/validation loss and metric curves."""
         try:
             import matplotlib
@@ -188,7 +187,7 @@ class ResultWriter:
         self,
         exp_name:  str,
         cfg:       Any,
-        metrics:   Dict[str, Any],
+        metrics:   dict[str, Any],
         elapsed_s: float,
     ) -> None:
         """Write a human-readable SUMMARY.md for quick inspection."""

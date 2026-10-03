@@ -35,7 +35,7 @@ Registered as: "svd_seq", "svd_sequence", "svd_sequence_attention".
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -44,9 +44,8 @@ import torch.nn.functional as F
 from framework.core.adapters import UniversalAdapter
 from framework.core.attention_mask import apply_attention_mask, get_token_valid_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
-from framework.core.triton_kernels import triton_dispatch
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if cfg is None:
@@ -75,9 +74,9 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
+    position_ids: torch.Tensor | None = None,
     unsqueeze_dim: int = 1,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Applies Rotary Position Embedding (RoPE) with partial dimension and independent seq-len support."""
     if cos is None or sin is None:
         return q, k
@@ -182,13 +181,13 @@ class SVDLinearAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        old_attn: Optional[nn.Module] = None,
-        rank: Optional[int] = 64,
+        config: Any | None = None,
+        old_attn: nn.Module | None = None,
+        rank: int | None = 64,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
-        dropout: Optional[float] = 0.1,
+        is_decoder: bool | None = None,
+        dropout: float | None = 0.1,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
@@ -230,7 +229,7 @@ class SVDLinearAttention(BaseAttention):
         if rank is None:
             svd_disabled = _cfg_get(config, "svd_disabled", False)
             if svd_disabled or ("rank" in kwargs and kwargs["rank"] is None):
-                self.rank: Optional[int] = None
+                self.rank: int | None = None
             else:
                 cfg_r = _cfg_get(config, "svd_rank", _cfg_get(config, "rank", None))
                 self.rank = int(cfg_r) if cfg_r is not None else None
@@ -289,7 +288,7 @@ class SVDLinearAttention(BaseAttention):
             dropout if dropout is not None else getattr(config, "dropout", 0.1)
         )
         self.dropout: nn.Dropout = nn.Dropout(dropout_val)
-        self._last_u_r: Optional[torch.Tensor] = None
+        self._last_u_r: torch.Tensor | None = None
 
         # Persistent SVD projection buffer (populated in copy_weights from W_K)
         # Shape: [hidden_size, rank] — the top-r right singular vectors of W_K
@@ -548,18 +547,18 @@ class SVDLinearAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         batch_size, seq_len, _ = hidden_states.shape
         device = hidden_states.device
         dtype = hidden_states.dtype
@@ -574,7 +573,7 @@ class SVDLinearAttention(BaseAttention):
 
         # 2. RoPE support
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
@@ -590,7 +589,7 @@ class SVDLinearAttention(BaseAttention):
         # Full attention if sequence is too short for SVD compression
         # (SVD with r >= N is meaningless — the projection is identity)
         use_full_attention = (
-            self.rank is None 
+            self.rank is None
             or kv_len <= (self.rank or 0) + 8  # small buffer
         )
 
@@ -635,8 +634,8 @@ class SVDLinearAttention(BaseAttention):
                 if is_causal and seq_len > 1:
                     causal_mask = torch.triu(
                         torch.full(
-                            (seq_len, kv_len), 
-                            float("-inf"), 
+                            (seq_len, kv_len),
+                            float("-inf"),
                             device=device, dtype=torch.float32,
                         ),
                         diagonal=1,
@@ -696,8 +695,8 @@ class SVDLinearAttention(BaseAttention):
                 # Only apply causal mask if we kept the full sequence
                 causal_mask = torch.triu(
                     torch.full(
-                        (seq_len, actual_r), 
-                        float("-inf"), 
+                        (seq_len, actual_r),
+                        float("-inf"),
                         device=device, dtype=torch.float32,
                     ),
                     diagonal=1,
@@ -779,12 +778,12 @@ def inject_svd_linear_attention(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
 ):
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

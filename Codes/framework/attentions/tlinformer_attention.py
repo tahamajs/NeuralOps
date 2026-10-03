@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -164,9 +164,9 @@ class TLinFormerAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = 64,
-        pretrained_attn: Optional[nn.Module] = None,
+        config: Any | None = None,
+        rank: int | None = 64,
+        pretrained_attn: nn.Module | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank or 64)
@@ -190,7 +190,7 @@ class TLinFormerAttention(BaseAttention):
         self.num_kv_heads = int(getattr(config, "num_key_value_heads",
                                           kwargs.get("num_key_value_heads", self.num_heads)) if config else self.num_heads)
         self.head_dim = int(getattr(config, "head_dim", None)
-                             or kwargs.get("head_dim", None)
+                             or kwargs.get("head_dim")
                              or (self.hidden_size // max(1, self.num_heads)))
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
@@ -259,7 +259,7 @@ class TLinFormerAttention(BaseAttention):
                                    kwargs.get("dropout", 0.1)) if config else 0.1)
         self.dropout = nn.Dropout(dropout_p)
 
-        src = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
+        src = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
         if src is not None:
             self.copy_weights(src)
 
@@ -299,10 +299,8 @@ class TLinFormerAttention(BaseAttention):
         cls_name = src.__class__.__name__
         has_out_lin = any(hasattr(src, a) for a in ("out_lin", "c_proj", "o_proj"))
         is_nested = False
-        if (hasattr(src, "self") and hasattr(getattr(src, "self"), "query")
-                and hasattr(src, "output") and hasattr(getattr(src, "output"), "dense")):
-            is_nested = True
-        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
+        if (hasattr(src, "self") and hasattr(src.self, "query")
+                and hasattr(src, "output") and hasattr(src.output, "dense")) or (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
                             "XLMRobertaSelfAttention", "ElectraSelfAttention",
                             "DebertaSelfAttention")
               or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())) \
@@ -348,7 +346,7 @@ class TLinFormerAttention(BaseAttention):
                     extracted["o"] = (ow, bo.data.clone() if bo is not None else None)
 
         # ---- RoBERTa / BERT nested ----
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 m = getattr(s, sub, None)
@@ -515,7 +513,7 @@ class TLinFormerAttention(BaseAttention):
         """
         buf = getattr(self, name)                # (rank, max_seq_len)
         r = buf.shape[0]
-        if L > self.max_seq_len:
+        if self.max_seq_len < L:
             logger.warning(
                 "TLinFormer: sequence length %d exceeds max_seq_len %d; "
                 "projecting with clipped columns (results may degrade).",
@@ -536,15 +534,15 @@ class TLinFormerAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args, **kwargs,
     ):
         B, N, _ = hidden_states.shape
@@ -557,7 +555,7 @@ class TLinFormerAttention(BaseAttention):
 
         # ---- RoPE ----
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
@@ -600,7 +598,7 @@ class TLinFormerAttention(BaseAttention):
         # ---- encoder: linear-time LinFormer ----
         # TLF-FIX-07: if N ≤ rank, projection degenerates to identity — same
         # as the base model. Otherwise use the low-rank projection.
-        if N <= self.rank:
+        if self.rank >= N:
             # Degenerate case → exact dense attention (safe baseline)
             scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
             # TLF-FIX-10: mask KEYS
@@ -688,12 +686,12 @@ def inject_tlinformer(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
 ):
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

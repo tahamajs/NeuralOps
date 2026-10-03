@@ -3,7 +3,6 @@ Multi‑choice dataset (ARC, HellaSwag, etc.) handling.
 """
 
 import json
-from typing import List, Optional, Tuple
 
 import pandas as pd
 import torch
@@ -18,9 +17,9 @@ class MultiChoiceDataset(Dataset):
         df: pd.DataFrame,
         tokenizer,
         max_length: int = 128,
-        question_column: Optional[str] = None,
-        choices_column: Optional[str] = None,
-        answer_column: Optional[str] = None,
+        question_column: str | None = None,
+        choices_column: str | None = None,
+        answer_column: str | None = None,
     ) -> None:
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -35,7 +34,7 @@ class MultiChoiceDataset(Dataset):
             question = self._extract_question(row, q_col)
             choices = self._extract_choices(row, c_col)
             label = self._extract_label(row, a_col, len(choices))
-            if 2 <= len(choices) and 0 <= label < len(choices):
+            if len(choices) >= 2 and 0 <= label < len(choices):
                 self.samples.append(
                     {"question": question, "choices": choices, "label": label}
                 )
@@ -49,14 +48,14 @@ class MultiChoiceDataset(Dataset):
                 return col
         return df.columns[0]
 
-    def _detect_choices_column(self, df) -> Optional[str]:
+    def _detect_choices_column(self, df) -> str | None:
         """ detect choices column."""
         for col in ["choices_json", "choices", "endings", "options"]:
             if col in df.columns:
                 return col
         return None
 
-    def _detect_answer_column(self, df) -> Optional[str]:
+    def _detect_answer_column(self, df) -> str | None:
         """ detect answer column."""
         for col in ["gold_answer_json", "answer_json", "label", "answer", "gold"]:
             if col in df.columns:
@@ -67,7 +66,7 @@ class MultiChoiceDataset(Dataset):
         """ extract question."""
         return str(row[q_col]) if q_col else ""
 
-    def _extract_choices(self, row, c_col) -> List[str]:
+    def _extract_choices(self, row, c_col) -> list[str]:
         """ extract choices."""
         if c_col is None:
             choice_cols = [col for col in row.index if col.startswith("choice_")]
@@ -132,7 +131,7 @@ class MultiChoiceDataset(Dataset):
         }
 
 
-def is_multichoice_dataset(df: pd.DataFrame) -> Tuple[bool, int]:
+def is_multichoice_dataset(df: pd.DataFrame) -> tuple[bool, int]:
     """Check if a DataFrame contains a multi‑choice format and return the number of choices."""
     if "choices_json" in df.columns:
         sample = df["choices_json"].iloc[0]

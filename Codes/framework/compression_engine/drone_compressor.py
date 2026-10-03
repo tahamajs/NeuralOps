@@ -9,11 +9,10 @@ Applies the identical rank allocation and Frobenius reconstruction error fallbac
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
@@ -37,17 +36,17 @@ class DRONECompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        tokenizer: Optional[Any] = None,
+        tokenizer: Any | None = None,
         rank: int = 64,
         max_error: float = 0.50,
         fallback_to_original: bool = True,
-        device: Optional[Union[str, torch.device]] = None,
-        target_modules: Optional[List[str]] = None,
+        device: str | torch.device | None = None,
+        target_modules: list[str] | None = None,
         target_attention_only: bool = True,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="drone", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = getattr(cfg, "drone_rank", getattr(cfg, "rank", rank))
             max_error = getattr(cfg, "drone_max_error", getattr(cfg, "max_error", max_error))
@@ -75,10 +74,10 @@ class DRONECompressor(BaseCompressor):
             if device is not None
             else next(model.parameters()).device
         )
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, SVDLinear):
@@ -132,8 +131,8 @@ class DRONECompressor(BaseCompressor):
     def compress_linear(
         self,
         layer: nn.Module,
-        rank: Optional[int] = None,
-    ) -> Tuple[Optional[SVDLinear], float, int]:
+        rank: int | None = None,
+    ) -> tuple[SVDLinear | None, float, int]:
         try:
             target_mod = getattr(layer, "base_layer", layer)
             cls_name = layer.__class__.__name__.lower()
@@ -201,7 +200,7 @@ class DRONECompressor(BaseCompressor):
             logger.warning("DRONE factorization failed on linear: %s", e)
             return None, float("inf"), 0
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         self.model.eval()
         self.compressed_layers = []
         self.fallback_layers = []

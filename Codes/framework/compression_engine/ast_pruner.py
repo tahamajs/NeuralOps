@@ -21,7 +21,7 @@ Mathematical Formulation (CORRECTED):
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 import logging
 import math
 import torch
@@ -67,11 +67,11 @@ class ASTPrunedLoRALinear(nn.Module):
         in_features: int,
         out_features: int,
         weight: torch.Tensor,
-        bias: Optional[torch.Tensor] = None,
+        bias: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -117,7 +117,7 @@ class ASTPrunedLoRALinear(nn.Module):
         weight: torch.Tensor,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-    ) -> "ASTPrunedLoRALinear":
+    ) -> ASTPrunedLoRALinear:
         bias = None
         if hasattr(linear, "bias") and linear.bias is not None:
             bias = linear.bias.detach()
@@ -205,16 +205,16 @@ class ASTPruner(BaseCompressor):
         lora_alpha: float = 1.0,
         skip_attention_qkv: bool = True,
         target_attention_only: bool = False,
-        target_modules: Optional[List[str]] = None,
-        tokenizer: Optional[Any] = None,
-        calibration_loader: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
-        device: Optional[Union[str, torch.device]] = None,
-        cfg: Optional[Any] = None,
+        target_modules: list[str] | None = None,
+        tokenizer: Any | None = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="ast_pruner", **kwargs)
-        conf = cfg or kwargs.get("comp_config", None)
+        conf = cfg or kwargs.get("comp_config")
         if conf is not None:
             block_size = _cfg_get(conf, "ast_block_size", _cfg_get(conf, "block_size", block_size))
             n_keep = _cfg_get(conf, "ast_n_keep", _cfg_get(conf, "n_keep", n_keep))
@@ -254,11 +254,11 @@ class ASTPruner(BaseCompressor):
             torch.device(device) if device is not None
             else next(model.parameters(), torch.tensor(0.0)).device
         )
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
 
     # ------------------------------------------------------------------
     # Target selection
@@ -314,15 +314,15 @@ class ASTPruner(BaseCompressor):
     # ------------------------------------------------------------------
     def _collect_jacobian_and_activations(
         self,
-    ) -> Tuple[Dict[str, torch.Tensor], Dict[str, torch.Tensor]]:
+    ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
         """
         Returns (activation_covariances, jacobian_proxy_squared).
         AST-FIX-06: uses eval() + enable_grad() (not train()).
         AST-FIX-07: always averages over batches.
         AST-FIX-13: passes attention_mask when present.
         """
-        activations: Dict[str, List[torch.Tensor]] = {}
-        fisher_info: Dict[str, torch.Tensor] = {}
+        activations: dict[str, list[torch.Tensor]] = {}
+        fisher_info: dict[str, torch.Tensor] = {}
         hooks = []
 
         def make_hook(name: str):
@@ -336,7 +336,7 @@ class ASTPruner(BaseCompressor):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
         # Build calibration batches
-        batches: List[Any] = []
+        batches: list[Any] = []
         if self.calibration_loader is not None:
             for b in self.calibration_loader:
                 batches.append(b)
@@ -418,7 +418,7 @@ class ASTPruner(BaseCompressor):
                            "will fall back to |W| only.")
 
         # Build covariance map, then discard raw activations (AST-FIX-11)
-        cov_map: Dict[str, torch.Tensor] = {}
+        cov_map: dict[str, torch.Tensor] = {}
         for name, act_list in activations.items():
             if not act_list:
                 continue
@@ -480,7 +480,7 @@ class ASTPruner(BaseCompressor):
     # ------------------------------------------------------------------
     # Compress
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         from framework.core.model_utils import replace_module
 
         cov_map, fisher_map = self._collect_jacobian_and_activations()

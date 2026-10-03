@@ -10,9 +10,7 @@ from __future__ import annotations
 import inspect
 import logging
 import math
-import os
-import warnings
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import numpy as np
 import torch
@@ -41,11 +39,11 @@ class ToMoELinear(nn.Module):
 
     def __init__(
         self,
-        original: Optional[nn.Module] = None,
-        in_features: Optional[int] = None,
-        out_features: Optional[int] = None,
-        weight: Optional[torch.Tensor] = None,
-        bias: Optional[torch.Tensor] = None,
+        original: nn.Module | None = None,
+        in_features: int | None = None,
+        out_features: int | None = None,
+        weight: torch.Tensor | None = None,
+        bias: torch.Tensor | None = None,
         num_experts: int = 4,
         top_k: int = 2,
         lora_r: int = 0,
@@ -241,7 +239,7 @@ class ToMoELinear(nn.Module):
             nn.init.zeros_(self.lora_B_router)
 
     @property
-    def masks(self) -> List[torch.Tensor]:
+    def masks(self) -> list[torch.Tensor]:
         return [self._masks[e] for e in range(self.num_experts)]
 
     @property
@@ -256,7 +254,7 @@ class ToMoELinear(nn.Module):
         return W
 
     @property
-    def bias(self) -> Optional[torch.Tensor]:
+    def bias(self) -> torch.Tensor | None:
         """Reconstructed effective full bias vector (out_features,)."""
         if self.experts[0].bias is None:
             return None
@@ -387,7 +385,7 @@ class ToMoECompressor(BaseCompressor):
         lora_alpha: float = 16.0,
         freeze_experts: bool = True,
         target_attention_only: bool = False,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         **kwargs: Any,
     ):
         super().__init__(model, name="tomoe", **kwargs)
@@ -417,7 +415,7 @@ class ToMoECompressor(BaseCompressor):
         self.freeze_experts = bool(freeze_experts)
         self.target_attention_only = target_attention_only
         self.target_modules = target_modules
-        self.stats: Dict[str, Any] = {}
+        self.stats: dict[str, Any] = {}
 
     def _is_protected(self, name: str) -> bool:
         low = name.lower()
@@ -466,7 +464,7 @@ class ToMoECompressor(BaseCompressor):
             ]
         )
 
-    def _get_parent(self, full_name: str) -> Tuple[Optional[nn.Module], str]:
+    def _get_parent(self, full_name: str) -> tuple[nn.Module | None, str]:
         parts = full_name.split(".")
         parent = self.model
         for part in parts[:-1]:
@@ -475,7 +473,7 @@ class ToMoECompressor(BaseCompressor):
                 return None, ""
         return parent, parts[-1]
 
-    def compress(self, orig_model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, orig_model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         """
         Compress target layers into ToMoE Mixture of Experts layers with full error validation.
         """
@@ -487,7 +485,7 @@ class ToMoECompressor(BaseCompressor):
         skipped_layers = []
         layer_details = {}
 
-        seen_weight_ptrs: Set[int] = set()
+        seen_weight_ptrs: set[int] = set()
 
         for name, module in list(self.model.named_modules()):
             if not self._is_target(name):

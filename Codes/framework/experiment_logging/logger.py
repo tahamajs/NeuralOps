@@ -14,15 +14,15 @@ import queue
 import sys
 from datetime import datetime, timezone
 from logging.handlers import QueueHandler, QueueListener, RotatingFileHandler
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .config import LoggingConfig
 
 # Active listeners registry for clean shutdown
-_ACTIVE_LISTENERS: List[QueueListener] = []
+_ACTIVE_LISTENERS: list[QueueListener] = []
 
 
-def get_rank(configured_rank: Optional[int] = None) -> int:
+def get_rank(configured_rank: int | None = None) -> int:
     """
     Determine the current process rank in single-node or DDP multi-GPU environments.
 
@@ -63,7 +63,7 @@ class StructuredFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         """Format log record into JSON string."""
-        entry: Dict[str, Any] = {
+        entry: dict[str, Any] = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "level": record.levelname,
             "logger": record.name,
@@ -93,7 +93,7 @@ def shutdown_logging() -> None:
 atexit.register(shutdown_logging)
 
 
-def setup_logging(config: Optional[LoggingConfig] = None) -> logging.Logger:
+def setup_logging(config: LoggingConfig | None = None) -> logging.Logger:
     """
     Create and configure a thread-safe logger with isolated rank logging.
 
@@ -120,7 +120,7 @@ def setup_logging(config: Optional[LoggingConfig] = None) -> logging.Logger:
             datefmt="%Y-%m-%d %H:%M:%S",
         )
 
-    destination_handlers: List[logging.Handler] = []
+    destination_handlers: list[logging.Handler] = []
 
     if cfg.log_to_console:
         # Stream logs to stdout (typically rank 0 only or all ranks if formatted)

@@ -9,7 +9,6 @@ References:
 from typing import Any
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
 
 import numpy as np
 from framework.core.registry import Registry
@@ -22,15 +21,15 @@ FAIRNESS_MITIGATION_REGISTRY = Registry("fairness_mitigations")
 class FairnessReport:
     """Complete fairness analysis for a model."""
 
-    metrics: Dict[str, Dict[str, float]]  # metric_name → {group: value}
-    group_sizes: Dict[str, int]
-    disparities: Dict[str, float]  # max disparity per metric
+    metrics: dict[str, dict[str, float]]  # metric_name → {group: value}
+    group_sizes: dict[str, int]
+    disparities: dict[str, float]  # max disparity per metric
     overall_score: float  # 1.0 = perfectly fair, 0.0 = maximally unfair
     worst_off_group: str
     best_off_group: str
     is_fair: bool
     threshold: float
-    mitigation_suggestions: List[str] = field(default_factory=list)
+    mitigation_suggestions: list[str] = field(default_factory=list)
 
 
 class FairnessEvaluator:
@@ -50,8 +49,8 @@ class FairnessEvaluator:
         self,
         predictions: np.ndarray,
         labels: np.ndarray,
-        groups: Dict[str, np.ndarray],
-        metrics: Optional[List[str]] = None,
+        groups: dict[str, np.ndarray],
+        metrics: list[str] | None = None,
         favorable_label: int = 1,
     ) -> FairnessReport:
         """
@@ -73,9 +72,9 @@ class FairnessEvaluator:
                 "conditional_demographic_parity",
             ]
 
-        all_metric_results: Dict[str, Dict[str, float]] = {}
-        all_group_sizes: Dict[str, int] = {}
-        disparities: Dict[str, float] = {}
+        all_metric_results: dict[str, dict[str, float]] = {}
+        all_group_sizes: dict[str, int] = {}
+        disparities: dict[str, float] = {}
 
         # Determine which groups exist (union across all attributes)
         for attr_name, attr_values in groups.items():
@@ -124,7 +123,7 @@ class FairnessEvaluator:
     # ── Individual metric computers ─────────────────────────────────
     def _compute_metric(
         self, preds, labels, groups, metric, favorable
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """Route to the correct metric function."""
         methods = {
             "demographic_parity": self._demographic_parity,
@@ -228,18 +227,18 @@ class FairnessEvaluator:
 
     # ── Helpers ─────────────────────────────────────────────────────
     def _average_metric_by_group(
-        self, all_metrics: Dict[str, Dict[str, float]]
-    ) -> Dict[str, float]:
+        self, all_metrics: dict[str, dict[str, float]]
+    ) -> dict[str, float]:
         """Compute the average of all metrics for each group."""
-        group_scores: Dict[str, List[float]] = {}
+        group_scores: dict[str, list[float]] = {}
         for metric_results in all_metrics.values():
             for group, value in metric_results.items():
                 group_scores.setdefault(group, []).append(value)
         return {g: np.mean(v) for g, v in group_scores.items()}
 
     def _generate_suggestions(
-        self, metrics: Dict[str, Dict[str, float]], threshold: float
-    ) -> List[str]:
+        self, metrics: dict[str, dict[str, float]], threshold: float
+    ) -> list[str]:
         """ generate suggestions."""
         suggestions = []
         # Check demographic parity

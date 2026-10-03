@@ -2,7 +2,6 @@
 
 import os
 from pathlib import Path
-from typing import List
 
 import pandas as pd
 
@@ -11,7 +10,7 @@ from .plotting import create_comprehensive_plots, plot_tradeoff
 
 class ModelComparison:
     def __init__(
-        self, results_dirs: List[str], output_dir: str = "./results/comparison"
+        self, results_dirs: list[str], output_dir: str = "./results/comparison"
     ) -> None:
         self.results_dirs = results_dirs
         self.output_dir = Path(output_dir)
@@ -41,7 +40,7 @@ class ModelComparison:
         print(f"Plots saved to {plots_dir}")
 
 
-def quick_compare(results_dirs: List[str], output_dir: str = "./results/comparison") -> None:
+def quick_compare(results_dirs: list[str], output_dir: str = "./results/comparison") -> None:
     """Quick compare."""
     comparator = ModelComparison(results_dirs, output_dir)
     comparator.load_all_results()

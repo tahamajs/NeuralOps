@@ -7,8 +7,7 @@ Registered as 'swift_svd'.
 from __future__ import annotations
 
 import logging
-import math
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -44,9 +43,9 @@ class SwiftSVDCompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         rank_ratio: float = 0.5,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         max_error: float = 0.60,
         max_retries: int = 3,
         fallback_to_original: bool = True,
@@ -58,7 +57,7 @@ class SwiftSVDCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="swift_svd", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = _cfg_get(cfg, "swift_svd_rank", _cfg_get(cfg, "rank", rank))
             rank_ratio = _cfg_get(cfg, "swift_svd_rank_ratio",
@@ -104,10 +103,10 @@ class SwiftSVDCompressor(BaseCompressor):
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
 
-        self.compressed_layers: List[Dict[str, Any]] = []
+        self.compressed_layers: list[dict[str, Any]] = []
         # SV-FIX-02: initialize in __init__.
         self._compressed_params: int = 0
-        self.stats: Dict[str, Any] = {}
+        self.stats: dict[str, Any] = {}
 
     # ------------------------------------------------------------------
     # Target selection
@@ -148,9 +147,9 @@ class SwiftSVDCompressor(BaseCompressor):
     def compress_linear(
         self,
         layer: nn.Module,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         name: str = "",
-    ) -> Tuple[Optional[SVDLinear], float, int]:
+    ) -> tuple[SVDLinear | None, float, int]:
         """
         Decompose a single linear or Conv1D layer via truncated SVD.
         Returns (svd_layer_or_None, relative_frobenius_error, final_rank).
@@ -184,9 +183,9 @@ class SwiftSVDCompressor(BaseCompressor):
             target_r = max(1, min(int(round(min(out_f, in_f) * self.rank_ratio)), max_r))
 
         # SV-FIX-01: single try/except with explicit CUDA OOM handling.
-        U: Optional[torch.Tensor] = None
-        S: Optional[torch.Tensor] = None
-        Vt: Optional[torch.Tensor] = None
+        U: torch.Tensor | None = None
+        S: torch.Tensor | None = None
+        Vt: torch.Tensor | None = None
         try:
             if W.is_cuda:
                 U, S, Vt = torch.linalg.svd(W, full_matrices=False)
@@ -206,7 +205,7 @@ class SwiftSVDCompressor(BaseCompressor):
             return None, 1.0, 0
         norm_orig = torch.linalg.norm(W).item() + 1e-8
         cur_r = target_r
-        best_factors: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
+        best_factors: tuple[torch.Tensor, torch.Tensor] | None = None
         best_err = float("inf")
         best_r = cur_r
 
@@ -348,11 +347,11 @@ class SwiftSVDCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     # Main compress
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         """Compress all eligible linear and Conv1D layers."""
         # SV-FIX-07: deduplicate shared weights.
         seen_weights: set = set()
-        target_layers: List[Tuple[str, nn.Module]] = []
+        target_layers: list[tuple[str, nn.Module]] = []
         for name, mod in self.model.named_modules():
             if not self._is_target_module(name, mod):
                 continue
@@ -375,7 +374,7 @@ class SwiftSVDCompressor(BaseCompressor):
             return self.model, stats
 
         self.compressed_layers = []
-        fallback_layers: List[str] = []
+        fallback_layers: list[str] = []
         total_error = 0.0
 
         for name, module in target_layers:

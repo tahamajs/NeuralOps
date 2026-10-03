@@ -20,7 +20,7 @@ def estimate_intrinsic_dimension_pytorch(hidden_states, k=5) -> Any:
     elif hidden_states.dim() != 2:
         raise ValueError(f"Expected 2D or 3D tensor, got {hidden_states.dim()}D")
     N = hidden_states.shape[0]
-    if N < k + 1:
+    if k + 1 > N:
         return 1.0
     if N > 1000:
         idx = torch.randperm(N)[:1000]

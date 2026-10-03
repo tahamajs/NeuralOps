@@ -7,8 +7,7 @@ log-space forget gating, input modulation, LoRA adapters, and multi-architecture
 from __future__ import annotations
 
 import logging
-import math
-from typing import Any, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -37,7 +36,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
     if module is None:
         return None, None
     base = getattr(module, "base_layer", module)
@@ -70,13 +69,13 @@ class HGRN2Layer(BaseAttention):
     is_custom_attention: bool = True
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        d_model: Optional[Union[int, Any]] = None,
+        config: Any | None = None,
+        rank: int | None = None,
+        d_model: int | Any | None = None,
         res_clip: float = 30.0,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         freeze_base: bool = True,
         **kwargs: Any,
     ) -> None:
@@ -156,10 +155,10 @@ class HGRN2Layer(BaseAttention):
                 for p in mod.parameters():
                     p.requires_grad = True
 
-        old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn", None))
+        old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn"))
         if old_attn is not None:
             self.copy_weights(old_attn)
-            target_dtype = kwargs.get("dtype", None)
+            target_dtype = kwargs.get("dtype")
             if target_dtype is None:
                 p = next(old_attn.parameters(), None)
                 if p is not None and isinstance(p.dtype, torch.dtype):
@@ -268,7 +267,7 @@ class HGRN2Layer(BaseAttention):
             except Exception as ex:
                 logger.debug("UniversalAdapter fallback failed: %s", ex)
 
-        def _copy_param(target_linear: nn.Linear, w: Optional[torch.Tensor], b: Optional[torch.Tensor]):
+        def _copy_param(target_linear: nn.Linear, w: torch.Tensor | None, b: torch.Tensor | None):
             if w is None:
                 return
             with torch.no_grad():
@@ -373,8 +372,8 @@ class HGRN2Layer(BaseAttention):
         self,
         f: torch.Tensor,
         iv: torch.Tensor,
-        mask: Optional[torch.Tensor] = None,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        mask: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         # mask preprocessing
         if mask is not None:
             if mask.dim() == 2:
@@ -425,17 +424,17 @@ class HGRN2Layer(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
@@ -515,14 +514,14 @@ def inject_hgrn2_layer(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     lora_rank: int = 16,
     lora_alpha: float = 32.0,
     **kwargs: Any,
-) -> Optional[Any]:
+) -> Any | None:
     """Safely constructs and injects HGRN2Layer into a model or transformer layer."""
     target = layer if layer is not None else model
-    cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
+    cfg = model_config or getattr(target, "config", None) or kwargs.get("config")
 
     # 1. Whole model traversal support
     if target is not None and (

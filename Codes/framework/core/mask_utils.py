@@ -4,14 +4,13 @@ Handles 2D/4D, bool/float, additive/multiplicative masks consistently.
 """
 from __future__ import annotations
 
-from typing import Optional
 import torch
 
 
 def convert_mask_to_additive(
-    mask: Optional[torch.Tensor],
+    mask: torch.Tensor | None,
     dtype: torch.dtype = torch.float32,
-) -> Optional[torch.Tensor]:
+) -> torch.Tensor | None:
     """Convert any mask format to additive form (0 = keep, -inf = mask out).
     
     Handles: 2D (B,L), 4D (B,H,L,L), bool masks, float masks.
@@ -35,11 +34,11 @@ def convert_mask_to_additive(
 
 
 def convert_mask_to_bool(
-    attention_mask: Optional[torch.Tensor],
-    B: Optional[int] = None,
-    L: Optional[int] = None,
-    device: Optional[torch.device] = None,
-) -> Optional[torch.Tensor]:
+    attention_mask: torch.Tensor | None,
+    B: int | None = None,
+    L: int | None = None,
+    device: torch.device | None = None,
+) -> torch.Tensor | None:
     """Convert any attention_mask (2D/4D, bool/float/additive) to a boolean [B, L] mask where True=valid token."""
     if attention_mask is None:
         if B is not None and L is not None and device is not None:
@@ -61,10 +60,10 @@ def convert_mask_to_bool(
 
 
 def expand_mask_to_4d(
-    mask: Optional[torch.Tensor],
+    mask: torch.Tensor | None,
     n_heads: int = 1,
-    seq_len: Optional[int] = None,
-) -> Optional[torch.Tensor]:
+    seq_len: int | None = None,
+) -> torch.Tensor | None:
     """Expand a 2D attention mask to 4D (B, H, L, L) format."""
     if mask is None:
         return None
@@ -79,10 +78,10 @@ def expand_mask_to_4d(
 
 
 def safe_attention_mask(
-    mask: Optional[torch.Tensor],
+    mask: torch.Tensor | None,
     hidden_states: torch.Tensor,
     n_heads: int = 1,
-) -> Optional[torch.Tensor]:
+) -> torch.Tensor | None:
     """Universal mask adapter for attention computation. Returns additive mask in float32."""
     if mask is None:
         return None

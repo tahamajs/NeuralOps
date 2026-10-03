@@ -15,7 +15,7 @@ Hybrid sparse attention architecture combining multi-scale sparsity mechanisms:
 import logging
 import math
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ import torch.nn.functional as F
 
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 
 
 # ===========================================================================
@@ -43,7 +43,7 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -101,8 +101,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -347,8 +347,8 @@ class DualStageStripeAttention(nn.Module):
         Q: torch.Tensor,
         K: torch.Tensor,
         V: torch.Tensor,
-        token_valid: Optional[torch.Tensor] = None,
-        seer_mask: Optional[torch.Tensor] = None,
+        token_valid: torch.Tensor | None = None,
+        seer_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
         B, H, N, D = Q.shape
         bs = self.cfg.block_size
@@ -455,16 +455,16 @@ class NEXUSAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        model_config: Optional[Any] = None,
-        nexus_cfg: Optional[NEXUSConfig] = None,
+        config: Any | None = None,
+        model_config: Any | None = None,
+        nexus_cfg: NEXUSConfig | None = None,
         layer_idx: int = 0,
         total_layers: int = 6,
-        pretrained_attn: Optional[nn.Module] = None,
+        pretrained_attn: nn.Module | None = None,
         bert_mode: bool = False,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         if model_config is None:
@@ -543,7 +543,7 @@ class NEXUSAttention(BaseAttention):
             is_nested_encoder=self.is_nested_encoder,
         )
 
-        self.seer_gate: Optional[SeerGating] = None
+        self.seer_gate: SeerGating | None = None
         if self.cfg.seer_enabled:
             self.seer_gate = SeerGating(
                 self.head_dim,
@@ -563,7 +563,7 @@ class NEXUSAttention(BaseAttention):
             )
         )
         if self.is_rectify:
-            self.spec_rectify: Optional[SpectraformerRectify] = SpectraformerRectify(
+            self.spec_rectify: SpectraformerRectify | None = SpectraformerRectify(
                 self.head_dim, self.cfg.rff_features
             )
         else:
@@ -598,7 +598,7 @@ class NEXUSAttention(BaseAttention):
     @property
     def o_proj(self): return self.out_proj
 
-    def _reshape(self, x: torch.Tensor, n_heads: Optional[int] = None) -> torch.Tensor:
+    def _reshape(self, x: torch.Tensor, n_heads: int | None = None) -> torch.Tensor:
         B, N, _ = x.shape
         heads = n_heads if n_heads is not None else self.num_heads
         return x.view(B, N, heads, self.head_dim).transpose(1, 2).contiguous()
@@ -634,7 +634,7 @@ class NEXUSAttention(BaseAttention):
     def copy_weights(self, src: Any) -> None:
         from framework.core.adapters import UniversalAdapter
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
@@ -671,7 +671,7 @@ class NEXUSAttention(BaseAttention):
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
         if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            s = getattr(src, "self")
+            s = src.self
             if hasattr(s, "query"):
                 extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
             if hasattr(s, "key"):
@@ -679,7 +679,7 @@ class NEXUSAttention(BaseAttention):
             if hasattr(s, "value"):
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and extracted["o"][0] is None:
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -702,9 +702,7 @@ class NEXUSAttention(BaseAttention):
         has_out_proj = any(hasattr(src, attr) for attr in
                            ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
         is_nested = False
-        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            is_nested = True
-        elif (
+        if hasattr(src, "self") and hasattr(src.self, "query") or (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
         ) and not has_out_proj:
@@ -730,7 +728,7 @@ class NEXUSAttention(BaseAttention):
         if extracted["o"][0] is not None:
             norm_o = torch.linalg.norm(extracted["o"][0].float())
             if norm_o < 1e-4:
-                logger.warning(f"NEXUSAttention output weight near-zero norm")
+                logger.warning("NEXUSAttention output weight near-zero norm")
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
@@ -801,19 +799,19 @@ class NEXUSAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         layer_idx: int = 0,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
         device = hidden_states.device
@@ -829,7 +827,7 @@ class NEXUSAttention(BaseAttention):
 
         # NX-08: RoPE with past_len offset
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             past_len = 0
@@ -848,12 +846,12 @@ class NEXUSAttention(BaseAttention):
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is None:
-            eff_mask = kwargs.get("attn_mask", None)
+            eff_mask = kwargs.get("attn_mask")
         token_valid = self._get_token_valid_mask(eff_mask, B, N_kv, device)
 
         is_causal = bool(self.is_decoder and not is_cross)
         min_seq_len = getattr(self.cfg, "sparse_min_seq_len", 8)
-        use_dense = is_causal or is_cross or (N <= min_seq_len) or (self.dss_attn is None)
+        use_dense = is_causal or is_cross or (min_seq_len >= N) or (self.dss_attn is None)
 
         if use_dense:
             scale = 1.0 / math.sqrt(D)
@@ -926,16 +924,16 @@ class NEXUSAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("inject_nexus_attention")
 @ATTENTION_REGISTRY.register("nexus_attention_inject")
 def inject_nexus(
-    model: Optional[nn.Module] = None,
-    layer: Optional[nn.Module] = None,
+    model: nn.Module | None = None,
+    layer: nn.Module | None = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
-) -> Optional[Union[NEXUSAttention, nn.Module]]:
+) -> NEXUSAttention | nn.Module | None:
     if _depth > 8:
         logger.warning("inject_nexus: max recursion depth exceeded.")
         return None
@@ -1001,9 +999,9 @@ def inject_nexus(
 
         if isinstance(src_attn, NEXUSAttention) or "NEXUS" in src_attn.__class__.__name__:
             return None
-        if hasattr(src_attn, "inner") and isinstance(getattr(src_attn, "inner"), NEXUSAttention):
+        if hasattr(src_attn, "inner") and isinstance(src_attn.inner, NEXUSAttention):
             return None
-        if hasattr(src_attn, "_wrapped_attention") and isinstance(getattr(src_attn, "_wrapped_attention"), NEXUSAttention):
+        if hasattr(src_attn, "_wrapped_attention") and isinstance(src_attn._wrapped_attention, NEXUSAttention):
             return None
 
         if target is not None:
@@ -1024,7 +1022,7 @@ def inject_nexus(
         if cfg is None and hasattr(src_attn, "config"):
             cfg = src_attn.config
 
-        nexus_cfg = kwargs.get("nexus_cfg", None)
+        nexus_cfg = kwargs.get("nexus_cfg")
         if nexus_cfg is None:
             nexus_cfg = NEXUSConfig(
                 block_size=getattr(comp_config, "block_size", 16) if comp_config else 16,

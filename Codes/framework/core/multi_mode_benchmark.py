@@ -31,7 +31,6 @@ Provides:
 
 import argparse
 import copy
-import gc
 import json
 import logging
 import math
@@ -41,7 +40,7 @@ import sys
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -136,10 +135,10 @@ class ModeBenchmarkResult:
     compression_ratio: float
     memory_savings_pct: float
     execution_status: str = "SUCCESS"
-    error_message: Optional[str] = None
-    extra_metrics: Dict[str, Any] = field(default_factory=dict)
+    error_message: str | None = None
+    extra_metrics: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -161,7 +160,7 @@ class SyntheticTextDataset(torch.utils.data.Dataset):
     def __len__(self) -> int:
         return self.num_samples
 
-    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
+    def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
         return {
             "input_ids": self.data[idx],
             "attention_mask": self.attention_mask[idx],
@@ -248,7 +247,7 @@ class ModeTransformEngine:
             # Emulate FP8 scale quantization on linear layers
             for name, module in model.named_modules():
                 if isinstance(module, nn.Linear):
-                    setattr(module, "_mode_tag", "fp8_hopper_wgmma")
+                    module._mode_tag = "fp8_hopper_wgmma"
         return model
 
     @staticmethod
@@ -303,7 +302,7 @@ class ModeTransformEngine:
                     k = int(module.weight.size(0) * slice_ratio)
                     if k > 0 and k < module.weight.size(0):
                         module.weight[k:, :].zero_()
-                    setattr(module, "_mode_tag", "rotational_slicegpt")
+                    module._mode_tag = "rotational_slicegpt"
         return model
 
     @staticmethod
@@ -320,7 +319,7 @@ class ModeTransformEngine:
                     scale = (w.abs().max() + 1e-6) / 7.0
                     w_quant = torch.clamp(torch.round(w / scale), -8, 7) * scale
                     module.weight.data.copy_(w_quant)
-                    setattr(module, "_mode_tag", "sparsegpt_int4_astro")
+                    module._mode_tag = "sparsegpt_int4_astro"
         return model
 
     @staticmethod
@@ -335,7 +334,7 @@ class ModeTransformEngine:
                     except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                         pass
         for module in model.modules():
-            setattr(module, "_mode_tag", "paged_deltakv_cache")
+            module._mode_tag = "paged_deltakv_cache"
         return model
 
     @staticmethod
@@ -350,7 +349,7 @@ class ModeTransformEngine:
                     except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                         pass
         for module in model.modules():
-            setattr(module, "_mode_tag", "mamba_ssm_scan")
+            module._mode_tag = "mamba_ssm_scan"
         return model
 
     @staticmethod
@@ -365,7 +364,7 @@ class ModeTransformEngine:
                     except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                         pass
         for module in model.modules():
-            setattr(module, "_mode_tag", "moe_block_routing")
+            module._mode_tag = "moe_block_routing"
         return model
 
     @staticmethod
@@ -380,7 +379,7 @@ class ModeTransformEngine:
                     except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                         pass
         for module in model.modules():
-            setattr(module, "_mode_tag", "aegis_spectron_hybrid")
+            module._mode_tag = "aegis_spectron_hybrid"
         return model
 
     @staticmethod
@@ -393,7 +392,7 @@ class ModeTransformEngine:
             except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
         for module in model.modules():
-            setattr(module, "_mode_tag", "kronecker_tt_adapter")
+            module._mode_tag = "kronecker_tt_adapter"
         return model
 
     @staticmethod
@@ -415,7 +414,7 @@ class ModeTransformEngine:
                     if step > 0:
                         w_q = (torch.round((w - min_v) / step) * step) + min_v
                         module.weight.data.copy_(w_q)
-                    setattr(module, "_mode_tag", "kmeans_clustered")
+                    module._mode_tag = "kmeans_clustered"
         return model
 
     @staticmethod
@@ -428,7 +427,7 @@ class ModeTransformEngine:
             except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
                 pass
         for module in model.modules():
-            setattr(module, "_mode_tag", "nystrom_landmark_kernel")
+            module._mode_tag = "nystrom_landmark_kernel"
         return model
 
 
@@ -451,7 +450,7 @@ class MultiModeBenchmarkRunner:
     def __init__(
         self,
         model_name_or_path: str = "distilbert-base-uncased",
-        device: Optional[str] = "auto",
+        device: str | None = "auto",
         dtype: str = "float16",
         batch_size: int = 8,
         seq_len: int = 128,
@@ -480,14 +479,14 @@ class MultiModeBenchmarkRunner:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        self.results: List[ModeBenchmarkResult] = []
-        self._baseline_vram_mb: Optional[float] = None
-        self._baseline_params: Optional[int] = None
-        
+        self.results: list[ModeBenchmarkResult] = []
+        self._baseline_vram_mb: float | None = None
+        self._baseline_params: int | None = None
+
         # Pre-cache base model architecture and tokenizer once
         self._base_model_cached, self._tokenizer_cached = self._load_base_model()
 
-    def _resolve_device(self, req: Optional[str]) -> torch.device:
+    def _resolve_device(self, req: str | None) -> torch.device:
         if req and req != "auto":
             return torch.device(req)
         if torch.cuda.is_available():
@@ -496,7 +495,7 @@ class MultiModeBenchmarkRunner:
             return torch.device("mps")
         return torch.device("cpu")
 
-    def _load_base_model(self) -> Tuple[nn.Module, Optional[Any]]:
+    def _load_base_model(self) -> tuple[nn.Module, Any | None]:
         """Load baseline transformer model and tokenizer once."""
         tokenizer = None
         if HAS_TRANSFORMERS:
@@ -574,7 +573,7 @@ class MultiModeBenchmarkRunner:
 
         return model, tokenizer
 
-    def _get_dataset(self, dataset_name: str, tokenizer: Optional[Any]) -> torch.utils.data.Dataset:
+    def _get_dataset(self, dataset_name: str, tokenizer: Any | None) -> torch.utils.data.Dataset:
         """Load or build evaluation dataset (cached)."""
         dataset_name = dataset_name.lower()
         if not hasattr(self, "_dataset_cache"):
@@ -661,7 +660,7 @@ class MultiModeBenchmarkRunner:
         self._dataset_cache[dataset_name] = dataset
         return dataset
 
-    def _measure_memory(self) -> Tuple[float, float]:
+    def _measure_memory(self) -> tuple[float, float]:
         """Returns (peak_mb, allocated_mb)."""
         if self.device.type == "cuda":
             return (
@@ -674,7 +673,7 @@ class MultiModeBenchmarkRunner:
                 return alloc, alloc
             except (AttributeError, RuntimeError) as e:
                 logger.debug("MPS memory query failed: %s", e)
-        
+
         # CPU / Process RSS fallback
         try:
             import resource
@@ -805,7 +804,7 @@ class MultiModeBenchmarkRunner:
                     labels = None
 
                 out = model(input_ids=input_ids, attention_mask=attention_mask)
-                
+
                 # Accurate cross-entropy loss computation for PPL
                 if hasattr(out, "loss") and out.loss is not None:
                     step_loss = out.loss.item()
@@ -887,7 +886,7 @@ class MultiModeBenchmarkRunner:
         # Compression ratio
         base_params = self._baseline_params if self._baseline_params else num_params
         comp_ratio = float(base_params) / float(max(num_params, 1))
-        
+
         # In specific modes (e.g. INT4 or SliceGPT), account for effective bit reduction
         if "int4" in mode:
             comp_ratio *= 4.0
@@ -931,10 +930,10 @@ class MultiModeBenchmarkRunner:
 
     def run_all_modes(
         self,
-        modes: Optional[List[str]] = None,
-        datasets: Optional[List[str]] = None,
+        modes: list[str] | None = None,
+        datasets: list[str] | None = None,
         rank: int = 32,
-    ) -> List[ModeBenchmarkResult]:
+    ) -> list[ModeBenchmarkResult]:
         """Execute evaluation sweep across all requested modes and datasets."""
         target_modes = modes or SUPPORTED_MODES
         target_datasets = datasets or ["sst2"]
@@ -943,7 +942,7 @@ class MultiModeBenchmarkRunner:
         logger.info(f"Modes: {target_modes}")
         logger.info(f"Datasets: {target_datasets}")
 
-        results: List[ModeBenchmarkResult] = []
+        results: list[ModeBenchmarkResult] = []
 
         for ds in target_datasets:
             for m in target_modes:
@@ -960,7 +959,7 @@ class MultiModeBenchmarkRunner:
         data = [r.to_dict() for r in self.results]
         return pd.DataFrame(data)
 
-    def export_json(self, filepath: Optional[Union[str, Path]] = None) -> str:
+    def export_json(self, filepath: str | Path | None = None) -> str:
         """Export all benchmark outcomes to structured JSON."""
         target_file = Path(filepath) if filepath else self.output_dir / "multi_mode_benchmark_results.json"
         payload = {
@@ -978,7 +977,7 @@ class MultiModeBenchmarkRunner:
         logger.info(f"Exported JSON benchmark results to {target_file}")
         return str(target_file)
 
-    def export_csv(self, filepath: Optional[Union[str, Path]] = None) -> str:
+    def export_csv(self, filepath: str | Path | None = None) -> str:
         """Export results to CSV file."""
         if not HAS_PANDAS:
             raise RuntimeError("pandas is required for CSV export.")
@@ -1032,7 +1031,7 @@ class MultiModeBenchmarkRunner:
         print(sep + "\n")
 
     @classmethod
-    def list_supported_modes(cls) -> List[str]:
+    def list_supported_modes(cls) -> list[str]:
         """Return all supported benchmark execution modes."""
         return [
             "dense_fp16",
@@ -1058,10 +1057,10 @@ class MultiModeBenchmarkRunner:
         batch_size: int = 2,
         num_iters: int = 10,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Directly benchmark a registered attention module forward pass."""
         import time
-        
+
         cls = (
             ATTENTION_REGISTRY.get(attention_type)
             or ATTENTION_REGISTRY.get(attention_type.replace("_attention", ""))
@@ -1070,7 +1069,7 @@ class MultiModeBenchmarkRunner:
         )
         if cls is None:
             raise ValueError(f"Attention type '{attention_type}' not found in registry. Available: {ATTENTION_REGISTRY.keys()[:10]}...")
-        
+
         class DummyConfig:
             def __init__(self, hidden_size=64, num_heads=4, rank=16, **extra):
                 self.hidden_size = hidden_size
@@ -1093,21 +1092,21 @@ class MultiModeBenchmarkRunner:
                 module = cls(hidden_size=hidden_size, num_heads=num_heads, **kwargs).to(self.device)
 
         dummy_x = torch.randn(batch_size, seq_len, hidden_size, device=self.device)
-        
+
         # Warmup
         for _ in range(3):
             _ = module(dummy_x)
         self._sync()
-        
+
         start = time.perf_counter()
         for _ in range(num_iters):
             _ = module(dummy_x)
         self._sync()
         duration = time.perf_counter() - start
-        
+
         latency_ms = (duration / num_iters) * 1000.0
         peak_vram, _ = self._measure_memory()
-        
+
         return {
             "attention_type": attention_type,
             "latency_ms": latency_ms,

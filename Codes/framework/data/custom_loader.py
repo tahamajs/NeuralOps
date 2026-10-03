@@ -3,7 +3,6 @@ Custom dataset loading from CSV, JSON, Parquet files.
 """
 
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 
@@ -12,9 +11,9 @@ from datasets import Dataset, DatasetDict
 
 def load_custom_dataset(
     file_path: str,
-    text_column: Optional[str] = None,
-    label_column: Optional[str] = None,
-    file_format: Optional[str] = None,
+    text_column: str | None = None,
+    label_column: str | None = None,
+    file_format: str | None = None,
     **kwargs,
 ) -> DatasetDict:
     """Load a custom dataset from a file, returning a DatasetDict with at least 'train'."""
@@ -81,7 +80,7 @@ def load_dataset_from_file(
     )
 
 
-def _detect_text_column(df: pd.DataFrame) -> Optional[str]:
+def _detect_text_column(df: pd.DataFrame) -> str | None:
     """ detect text column."""
     candidates = ["text", "sentence", "prompt", "question", "content", "body"]
     for col in candidates:
@@ -95,7 +94,7 @@ def _detect_text_column(df: pd.DataFrame) -> Optional[str]:
     return None
 
 
-def _detect_label_column(df: pd.DataFrame) -> Optional[str]:
+def _detect_label_column(df: pd.DataFrame) -> str | None:
     """ detect label column."""
     candidates = ["label", "labels", "class", "target", "gold", "answer"]
     for col in candidates:

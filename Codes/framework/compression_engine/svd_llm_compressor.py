@@ -24,7 +24,7 @@ from __future__ import annotations
 import contextlib
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -38,7 +38,7 @@ from framework.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 # Standard multi-domain calibration corpus (shared with AASVD for direct parity)
-DEFAULT_CALIBRATION_CORPUS: List[str] = [
+DEFAULT_CALIBRATION_CORPUS: list[str] = [
     (
         "Transformers rely heavily on multi-head self-attention mechanisms to capture complex syntactic "
         "and semantic dependencies across arbitrary sequence lengths. However, the standard quadratic computational "
@@ -88,7 +88,7 @@ class SVDLLMLinear(nn.Module):
         rank: int,
         bias: bool = True,
         dtype: torch.dtype = torch.float32,
-        device: Optional[torch.device] = None,
+        device: torch.device | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
     ) -> None:
@@ -142,7 +142,7 @@ class SVDLLMLinear(nn.Module):
                 nn.init.kaiming_uniform_(self.lora_A_v, a=math.sqrt(5))
                 nn.init.zeros_(self.lora_B_v)
 
-    def set_factors(self, W_u: torch.Tensor, W_v: torch.Tensor, bias: Optional[torch.Tensor] = None) -> None:
+    def set_factors(self, W_u: torch.Tensor, W_v: torch.Tensor, bias: torch.Tensor | None = None) -> None:
         with torch.no_grad():
             r = min(self.rank, W_u.size(1), W_v.size(0))
             self.W_u.data.zero_()
@@ -152,7 +152,7 @@ class SVDLLMLinear(nn.Module):
             if bias is not None and self.bias is not None:
                 self.bias.data.copy_(bias.to(device=self.bias.device, dtype=self.bias.dtype))
 
-    def set_active_lora_stage(self, stage: Optional[str]) -> None:
+    def set_active_lora_stage(self, stage: str | None) -> None:
         """
         stage == 'stage1': train A_u, B_u only (W_v frozen)
         stage == 'stage2': train A_v, B_v only (W_u frozen)
@@ -220,14 +220,14 @@ class SVDLLMCompressor(BaseCompressor):
         self,
         model: nn.Module,
         rank_ratio: float = 0.20,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         max_error: float = 0.50,
         fallback_to_original: bool = False,
-        calibration_texts: Optional[List[str]] = None,
-        tokenizer: Optional[Any] = None,
-        device: Optional[Union[str, torch.device]] = None,
+        calibration_texts: list[str] | None = None,
+        tokenizer: Any | None = None,
+        device: str | torch.device | None = None,
         target_attention_only: bool = True,
         recovery_steps: int = 50,
         learning_rate: float = 2e-4,
@@ -260,12 +260,12 @@ class SVDLLMCompressor(BaseCompressor):
         else:
             self.calibration_texts = self._load_calibration_data(n_samples=256)
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
 
-    def _load_calibration_data(self, n_samples: int = 256) -> List[str]:
+    def _load_calibration_data(self, n_samples: int = 256) -> list[str]:
         """
         Load calibration samples from WikiText-2 (or Salesforce/wikitext fallback),
         following SVD-LLM (ICLR 2025) paper protocol. Falls back to default corpus if offline.
@@ -343,17 +343,17 @@ class SVDLLMCompressor(BaseCompressor):
 
         return True
 
-    def _collect_covariances(self) -> Dict[str, torch.Tensor]:
+    def _collect_covariances(self) -> dict[str, torch.Tensor]:
         """
         Collect empirical input activation covariances C = (1/N) X^T X via forward hooks.
         Uses streaming accumulation to avoid storing large activation buffers in memory.
         """
-        covariances: Dict[str, torch.Tensor] = {}
-        counts: Dict[str, int] = {}
+        covariances: dict[str, torch.Tensor] = {}
+        counts: dict[str, int] = {}
         hooks = []
 
         def make_hook(name: str):
-            def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any):
+            def hook(module: nn.Module, inp: tuple[torch.Tensor, ...], outp: Any):
                 if not inp or inp[0] is None:
                     return
                 x = inp[0].detach()
@@ -412,7 +412,7 @@ class SVDLLMCompressor(BaseCompressor):
         for h in hooks:
             h.remove()
 
-        final_cov: Dict[str, torch.Tensor] = {}
+        final_cov: dict[str, torch.Tensor] = {}
         for name, cov in covariances.items():
             n = max(1, counts.get(name, 1))
             final_cov[name] = cov / float(n)
@@ -442,9 +442,9 @@ class SVDLLMCompressor(BaseCompressor):
     def _cholesky_whiten_and_decompose(
         self,
         W: torch.Tensor,
-        C: Optional[torch.Tensor],
+        C: torch.Tensor | None,
         target_rank: int,
-    ) -> Tuple[torch.Tensor, torch.Tensor, float]:
+    ) -> tuple[torch.Tensor, torch.Tensor, float]:
         """
         Full SVD-LLM core algorithm (Section 3.1):
         1. S = cholesky(C + eps * I)
@@ -491,7 +491,7 @@ class SVDLLMCompressor(BaseCompressor):
 
         return W_u, W_v, error
 
-    def _compute_recovery_loss(self, batch_ids: torch.Tensor, batch_mask: torch.Tensor) -> Optional[torch.Tensor]:
+    def _compute_recovery_loss(self, batch_ids: torch.Tensor, batch_mask: torch.Tensor) -> torch.Tensor | None:
         """
         Compute recovery training loss across both CausalLM and Sequence Classification architectures.
         - CausalLM (GPT-2, LLaMA): cross-entropy autoregressive loss with labels=batch_ids.
@@ -589,12 +589,12 @@ class SVDLLMCompressor(BaseCompressor):
         self.model.eval()
         logger.info("[SVD-LLM] Sequential LoRA Recovery Complete.")
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """
         Compress the target model using full SVD-LLM Cholesky whitening and structural replacement.
         """
         covariances = self._collect_covariances()
-        target_layers: List[Tuple[str, nn.Module]] = []
+        target_layers: list[tuple[str, nn.Module]] = []
         for name, module in self.model.named_modules():
             if self._is_target_module(name, module):
                 target_layers.append((name, module))

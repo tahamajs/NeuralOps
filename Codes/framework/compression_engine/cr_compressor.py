@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -17,7 +17,6 @@ from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.model_utils import replace_module
 from framework.core.pruning_utils import adaptive_max_error
-from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +47,8 @@ class CRLinear(nn.Module):
         out_features: int,
         rank: int = 64,
         bias: bool = True,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -93,7 +92,7 @@ class CRLinear(nn.Module):
 
 
     @classmethod
-    def from_linear(cls, linear: Union[nn.Linear, Any], rank: int = 64) -> "CRLinear":
+    def from_linear(cls, linear: nn.Linear | Any, rank: int = 64) -> CRLinear:
         """
         Perform Column Interpolative Decomposition on linear or Conv1D layer weight matrix.
         """
@@ -208,14 +207,14 @@ class CRCompressor(BaseCompressor):
 
     def __init__(
         self,
-        model: Optional[nn.Module] = None,
+        model: nn.Module | None = None,
         rank: int = 64,
         max_error: float = 0.20,
         fallback_to_original: bool = True,
         max_retries: int = 2,
         target_attention_only: bool = False,
-        cfg: Optional[Any] = None,
-        target_layers: Optional[List[str]] = None,
+        cfg: Any | None = None,
+        target_layers: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="cr", **kwargs)
@@ -234,10 +233,10 @@ class CRCompressor(BaseCompressor):
         self.target_attention_only = bool(c_target_attn)
         self.cfg = cfg
         self.target_layers = target_layers or _cfg_get(cfg, "target_layers", None)
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         """Filter candidate layers based on classification head exclusion and target_attention_only."""
@@ -285,7 +284,7 @@ class CRCompressor(BaseCompressor):
 
         return True
 
-    def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         """Compress linear layers using interpolative decomposition."""
         if model is not None:
             self.model = model
@@ -435,7 +434,7 @@ class CRCompressor(BaseCompressor):
         )
         return self.model, stats
 
-    def compress_linear(self, linear: Union[nn.Linear, Any]) -> CRLinear:
+    def compress_linear(self, linear: nn.Linear | Any) -> CRLinear:
         """Compress a single linear layer into CRLinear."""
         return CRLinear.from_linear(linear, rank=self.rank)
 
@@ -445,10 +444,10 @@ class CRCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("cr_compressor_factory")
 def cr_compressor_factory(
     model: nn.Module,
-    comp_config: Optional[Any] = None,
-    rank: Optional[int] = None,
+    comp_config: Any | None = None,
+    rank: int | None = None,
     **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """Factory function for CR compressor."""
     effective_rank = kwargs.pop("rank", rank or _cfg_get(comp_config, "cr_rank", _cfg_get(comp_config, "rank", 64)))
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "cr_max_error", _cfg_get(comp_config, "max_error", 0.20)))

@@ -16,7 +16,7 @@ Production-hardened implementation supporting:
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ import torch.nn.functional as F
 
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -41,8 +41,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     r"""
     Applies rotary position embeddings to query and key tensors with partial-RoPE dimension slicing.
 
@@ -99,8 +99,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -181,21 +181,21 @@ class BlockTransformerHIBA(BaseAttention):
     is_custom_attention: bool = True
     def __init__(
         self,
-        config: Optional[Any] = None,
+        config: Any | None = None,
         rank: int = 64,
         block_size: int = 64,
         top_k_inter: int = 4,
         rectification_interval: int = 4,
-        layer_id: Optional[int] = None,
-        layer_idx: Optional[int] = None,
-        old_attn: Optional[nn.Module] = None,
-        pretrained_attn: Optional[nn.Module] = None,
-        comp_config: Optional[Any] = None,
+        layer_id: int | None = None,
+        layer_idx: int | None = None,
+        old_attn: nn.Module | None = None,
+        pretrained_attn: nn.Module | None = None,
+        comp_config: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
 
-        source_attn = old_attn if old_attn is not None else (pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn", kwargs.get("pretrained_attn", None)))
+        source_attn = old_attn if old_attn is not None else (pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn", kwargs.get("pretrained_attn")))
 
         self.dim: int = kwargs.get("hidden_size") or getattr(config, "hidden_size", getattr(config, "d_model", getattr(config, "dim", 768)))
         self.hidden_size: int = self.dim
@@ -225,9 +225,7 @@ class BlockTransformerHIBA(BaseAttention):
         is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False)))
         _mt = (model_type or '').lower()
         _decoder_prefixes = ('gpt', 'qwen', 'llama', 'mistral', 'gemma', 'phi', 'opt', 'bloom', 'falcon', 'olmo', 'mpt', 'stablelm')
-        if any(_mt.startswith(p) for p in _decoder_prefixes):
-            is_dec = True
-        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+        if any(_mt.startswith(p) for p in _decoder_prefixes) or hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
@@ -245,7 +243,7 @@ class BlockTransformerHIBA(BaseAttention):
         self.dropout = nn.Dropout(dropout_p)
 
         self.rotary_emb = None
-        self.comp_config: Optional[Any] = comp_config
+        self.comp_config: Any | None = comp_config
 
         if source_attn is not None:
             self.copy_weights(source_attn)
@@ -294,12 +292,10 @@ class BlockTransformerHIBA(BaseAttention):
         is_nested = False
         if (
             hasattr(pretrained_attn, "self")
-            and hasattr(getattr(pretrained_attn, "self"), "query")
+            and hasattr(pretrained_attn.self, "query")
             and hasattr(pretrained_attn, "output")
-            and hasattr(getattr(pretrained_attn, "output"), "dense")
-        ):
-            is_nested = True
-        elif (
+            and hasattr(pretrained_attn.output, "dense")
+        ) or (
             cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
             or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
         ) and not has_out_lin:
@@ -310,7 +306,7 @@ class BlockTransformerHIBA(BaseAttention):
         if hasattr(pretrained_attn, "rotary_emb"):
             self.rotary_emb = pretrained_attn.rotary_emb
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -358,14 +354,14 @@ class BlockTransformerHIBA(BaseAttention):
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
         # 3. RoBERTa / BERT nested self-attention (pretrained_attn.self)
-        elif hasattr(pretrained_attn, "self") and hasattr(getattr(pretrained_attn, "self"), "query"):
-            s = getattr(pretrained_attn, "self")
+        elif hasattr(pretrained_attn, "self") and hasattr(pretrained_attn.self, "query"):
+            s = pretrained_attn.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
                     extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
             # Output dense from outer container
-            if hasattr(pretrained_attn, "output") and hasattr(getattr(pretrained_attn, "output"), "dense"):
+            if hasattr(pretrained_attn, "output") and hasattr(pretrained_attn.output, "dense"):
                 out_mod = pretrained_attn.output.dense
                 extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
 
@@ -395,7 +391,7 @@ class BlockTransformerHIBA(BaseAttention):
                     w, b = adapter.get_weight_bias(pretrained_attn, k)
                     if w is not None:
                         extracted[k] = (w.clone(), b.clone() if b is not None else None)
-            except Exception as e:
+            except Exception:
                 pass
 
         # Verify all mandatory projections were extracted
@@ -452,7 +448,7 @@ class BlockTransformerHIBA(BaseAttention):
 
     def _convert_mask_to_bool(
         self,
-        attention_mask: Optional[torch.Tensor],
+        attention_mask: torch.Tensor | None,
         B: int,
         L: int,
         device: torch.device,
@@ -484,7 +480,7 @@ class BlockTransformerHIBA(BaseAttention):
         v: torch.Tensor,
         key_padding_mask: torch.Tensor,
         causal: bool = False,
-        head_mask: Optional[torch.Tensor] = None,
+        head_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
         B, H, L_b, D_h = q.shape
         scale = 1.0 / math.sqrt(D_h)
@@ -517,16 +513,16 @@ class BlockTransformerHIBA(BaseAttention):
         block_idx: int,
         num_blocks: int,
         valid_mask: torch.Tensor,
-        head_mask: Optional[torch.Tensor] = None,
+        head_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
         B, H, L_b, D_h = q_b.shape
         total_len = k_all.size(2)
         start_b = block_idx * self.block_size
         end_b = min((block_idx + 1) * self.block_size, total_len)
 
-        k_select: List[torch.Tensor] = []
-        v_select: List[torch.Tensor] = []
-        valid_select: List[torch.Tensor] = []
+        k_select: list[torch.Tensor] = []
+        v_select: list[torch.Tensor] = []
+        valid_select: list[torch.Tensor] = []
 
         # Previous tokens: includes block 0 (CLS at index 0)
         if block_idx > 0:
@@ -575,17 +571,17 @@ class BlockTransformerHIBA(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, L, D = hidden_states.shape
         H = self.num_heads
         is_cross_attention = encoder_hidden_states is not None
@@ -598,17 +594,17 @@ class BlockTransformerHIBA(BaseAttention):
         v = self.W_v(kv_states).view(B, S, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # 2. RoPE Embeddings applied before GQA expansion
-        pos_emb = kwargs.get("position_embeddings", None)
+        pos_emb = kwargs.get("position_embeddings")
         cos = kwargs.get("cos", pos_emb[0] if isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2 else None)
         sin = kwargs.get("sin", pos_emb[1] if isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2 else None)
 
         if cos is not None and sin is not None:
-            q, k = apply_rotary_pos_emb(q, k, cos, sin, kwargs.get("position_ids", None))
+            q, k = apply_rotary_pos_emb(q, k, cos, sin, kwargs.get("position_ids"))
         elif hasattr(self, "rotary_emb") and self.rotary_emb is not None:
             try:
                 from framework.utils.compat import maybe_apply_rotary
-                q, k = maybe_apply_rotary(q, k, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids", None))
-            except Exception as e:
+                q, k = maybe_apply_rotary(q, k, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
+            except Exception:
                 pass
 
         # 3. GQA Expansion
@@ -730,12 +726,12 @@ def inject_block_transformer_hiba(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
 ):
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

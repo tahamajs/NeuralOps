@@ -5,8 +5,7 @@ Registered as 'uniql', 'uniql_compressor', 'uniql_factory'.
 from __future__ import annotations
 
 import logging
-import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -62,10 +61,10 @@ class UniQLinear(nn.Module):
         scale_u: torch.Tensor,    # (out,)
         scale_s: torch.Tensor,    # (r,)
         scale_v: torch.Tensor,    # (in,)
-        bias: Optional[torch.Tensor] = None,
+        bias: torch.Tensor | None = None,
         is_conv1d: bool = False,
         dtype: torch.dtype = torch.float32,
-        device: Optional[torch.device] = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -122,7 +121,7 @@ class UniQLinear(nn.Module):
 # ---------------------------------------------------------------------------
 # Quantization helpers
 # ---------------------------------------------------------------------------
-def _uniform_quantize(t: torch.Tensor, bits: int) -> Tuple[torch.Tensor, torch.Tensor, float]:
+def _uniform_quantize(t: torch.Tensor, bits: int) -> tuple[torch.Tensor, torch.Tensor, float]:
     """
     Uniform min-max quantization to signed int8 (symmetric) with per-row or
     per-tensor scale. Returns (q_int8, scale, min_val_or_0).
@@ -183,7 +182,7 @@ class UniQLCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="uniql", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = _cfg_get(cfg, "uniql_rank", _cfg_get(cfg, "rank", rank))
             bits = _cfg_get(cfg, "uniql_bits", _cfg_get(cfg, "bits", bits))
@@ -215,7 +214,7 @@ class UniQLCompressor(BaseCompressor):
         self.fallback_to_original = bool(fallback_to_original)
         self.target_attention_only = target_attention_only
         self.quantize_bias = bool(quantize_bias)
-        self.compressed_layers: List[Dict[str, Any]] = []
+        self.compressed_layers: list[dict[str, Any]] = []
 
     # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
@@ -270,7 +269,7 @@ class UniQLCompressor(BaseCompressor):
         return True
 
     # ------------------------------------------------------------------
-    def _normalize_weight(self, base_layer: nn.Module) -> Tuple[torch.Tensor, bool]:
+    def _normalize_weight(self, base_layer: nn.Module) -> tuple[torch.Tensor, bool]:
         """
         Return (W as (out, in) fp32, is_conv1d).
         UQ-04: explicit, not heuristic.
@@ -288,7 +287,7 @@ class UniQLCompressor(BaseCompressor):
         return W, is_conv1d
 
     # ------------------------------------------------------------------
-    def _try_compress(self, W: torch.Tensor) -> Optional[Dict[str, Any]]:
+    def _try_compress(self, W: torch.Tensor) -> dict[str, Any] | None:
         """
         Attempt SVD + quantization with adaptive bit/rank escalation.
         UQ-05: monotonic, bounded escalation.
@@ -357,9 +356,9 @@ class UniQLCompressor(BaseCompressor):
         return best
 
     # ------------------------------------------------------------------
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers = []
-        fallback_layers: List[str] = []
+        fallback_layers: list[str] = []
         total_err = 0.0
         orig_storage_bytes = 0
         comp_storage_bytes = 0

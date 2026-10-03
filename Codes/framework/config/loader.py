@@ -4,7 +4,7 @@ Configuration loader: YAML + CLI overrides → Config dataclass.
 
 import argparse
 from dataclasses import fields, is_dataclass
-from typing import Any, Dict, Optional, Type, TypeVar
+from typing import Any, TypeVar
 
 import yaml
 
@@ -15,7 +15,7 @@ T = TypeVar("T")
 
 def load_yaml(path: str) -> dict:
     """Load yaml from disk or config."""
-    with open(path, "r") as f:
+    with open(path) as f:
         return yaml.safe_load(f)
 
 
@@ -28,7 +28,7 @@ def merge_cli_args(cfg_dict: dict, args: argparse.Namespace) -> dict:
     return cfg_dict
 
 
-def _dict_to_dataclass(cls: Type[T], data: dict) -> T:
+def _dict_to_dataclass(cls: type[T], data: dict) -> T:
     """Recursively convert dict → dataclass."""
     kwargs = {}
     for f in fields(cls):
@@ -43,14 +43,14 @@ def _dict_to_dataclass(cls: Type[T], data: dict) -> T:
 
 
 def load_config(
-    yaml_path: Optional[str] = None,
-    cli_args: Optional[argparse.Namespace] = None,
+    yaml_path: str | None = None,
+    cli_args: argparse.Namespace | None = None,
 ) -> Config:
     """
     Load configuration from optional YAML file + CLI overrides.
     Always returns a fully populated Config dataclass with defaults.
     """
-    cfg_dict: Dict[str, Any] = {}
+    cfg_dict: dict[str, Any] = {}
     if yaml_path:
         cfg_dict = load_yaml(yaml_path)
     if cli_args:

@@ -29,7 +29,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -38,7 +38,6 @@ import torch.nn.functional as F
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
-from framework.core.pruning_utils import adaptive_max_error
 from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
@@ -51,8 +50,8 @@ def fast_hash_and_sign(
     out_features: int,
     in_features: int,
     n_buckets: int,
-    device: Optional[torch.device] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    device: torch.device | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Vectorized hash and sign for every (i, j) with 0 ≤ i < out_features,
     0 ≤ j < in_features.
@@ -118,8 +117,8 @@ class HashedLinear(nn.Module):
         use_sign: bool = True,
         lora_rank: int = 0,
         lora_alpha: float = 1.0,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = int(in_features)
@@ -175,11 +174,11 @@ class HashedLinear(nn.Module):
             self.register_parameter("lora_B", None)
 
         # Cache for reconstructed weight (HN-FIX-02)
-        self._cached_weight: Optional[torch.Tensor] = None
-        self._cached_versions: Tuple[int, ...] = ()
+        self._cached_weight: torch.Tensor | None = None
+        self._cached_versions: tuple[int, ...] = ()
 
     # ------------------------------------------------------------------
-    def _current_versions(self) -> Tuple[int, ...]:
+    def _current_versions(self) -> tuple[int, ...]:
         vs = (getattr(self.weight_table, "_version", 0),)
         if self.use_sign:
             vs += (0,)  # sign is a buffer, never mutated by autograd
@@ -232,7 +231,7 @@ class HashedLinear(nn.Module):
         )
 
     # ------------------------------------------------------------------
-    def storage_bytes(self) -> Dict[str, int]:
+    def storage_bytes(self) -> dict[str, int]:
         """
         HN-FIX-08: report per-component storage (bytes).
         Used to compute honest compression ratios.
@@ -262,7 +261,7 @@ class HashedLinear(nn.Module):
         lora_alpha: float = 1.0,
         fit_lora_residual: bool = True,
         **_ignored: Any,
-    ) -> "HashedLinear":
+    ) -> HashedLinear:
         """
         Build a HashedLinear by projecting W onto the hash basis.
 
@@ -433,10 +432,10 @@ class HashedNetCompressor(BaseCompressor):
 
     def __init__(
         self,
-        model: Optional[nn.Module] = None,
-        n_buckets: Optional[int] = None,
-        compression_ratio: Optional[float] = None,
-        rank: Optional[Union[int, float]] = None,
+        model: nn.Module | None = None,
+        n_buckets: int | None = None,
+        compression_ratio: float | None = None,
+        rank: int | float | None = None,
         max_error: float = 0.35,
         target_attention_only: bool = False,
         fallback_to_original: bool = True,
@@ -446,12 +445,12 @@ class HashedNetCompressor(BaseCompressor):
         lora_alpha: float = 1.0,
         freeze_hash_table: bool = False,
         skip_attention_qkv: bool = False,
-        cfg: Optional[Any] = None,
-        target_layers: Optional[List[str]] = None,
+        cfg: Any | None = None,
+        target_layers: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="hashed_net", **kwargs)
-        conf = cfg or kwargs.get("comp_config", None)
+        conf = cfg or kwargs.get("comp_config")
         self.cfg = conf
 
         n_buckets = _cfg_get(conf, "hashed_net_buckets", _cfg_get(conf, "n_buckets", n_buckets))
@@ -490,25 +489,25 @@ class HashedNetCompressor(BaseCompressor):
         # HN-FIX-10: compression_ratio semantics.
         # compression_ratio ∈ (0, 1]: n_buckets = total_w · ratio  → smaller = more compressed
         # rank > 1: interpreted as explicit bucket count.
-        self.compression_ratio: Optional[float] = None
+        self.compression_ratio: float | None = None
         if compression_ratio is not None:
             self.compression_ratio = max(0.001, min(1.0, float(compression_ratio)))
         elif rank is not None and 0.0 < float(rank) <= 1.0:
             self.compression_ratio = float(rank)
 
         if n_buckets is not None:
-            self.base_buckets: Optional[int] = max(16, int(n_buckets))
+            self.base_buckets: int | None = max(16, int(n_buckets))
         elif rank is not None and float(rank) > 1.0:
             self.base_buckets = max(16, int(rank))
         else:
             self.base_buckets = 65536 if self.compression_ratio is None else None
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_buckets: Dict[str, int] = {}
-        self.layer_storage: Dict[str, Dict[str, int]] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_buckets: dict[str, int] = {}
+        self.layer_storage: dict[str, dict[str, int]] = {}
 
     # ------------------------------------------------------------------
     def _determine_layer_buckets(self, in_f: int, out_f: int) -> int:
@@ -575,7 +574,7 @@ class HashedNetCompressor(BaseCompressor):
         return True
 
     # ------------------------------------------------------------------
-    def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         if model is not None:
             self.model = model
             try:
@@ -646,7 +645,7 @@ class HashedNetCompressor(BaseCompressor):
 
             init_buckets = self._determine_layer_buckets(in_f, out_f)
             current_buckets = init_buckets
-            best_layer: Optional[HashedLinear] = None
+            best_layer: HashedLinear | None = None
             best_err = float("inf")
 
             for attempt in range(self.max_retries + 1):
@@ -827,10 +826,10 @@ class HashedNetCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("hashednets_compressor")
 def hashed_net_factory(
     model: nn.Module,
-    comp_config: Optional[Any] = None,
-    rank: Optional[Union[int, float]] = None,
+    comp_config: Any | None = None,
+    rank: int | float | None = None,
     **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     rank = kwargs.pop("rank", rank)

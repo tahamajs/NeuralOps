@@ -5,7 +5,6 @@ Extracts and validates all 25 required columns for paper/_ALL_MODULES_ANALYSIS.c
 and paper/_ALL_MODULES_ANALYSIS.md according to project guidelines.
 """
 
-import os
 import sys
 import csv
 import re
@@ -231,7 +230,7 @@ def get_all_module_rows(mod_name, csv_data):
     lookup_keys = [mod_name.lower()]
     if mod_name in ALIASES:
         lookup_keys.extend([a.lower() for a in ALIASES[mod_name]])
-    
+
     # Strip common suffixes
     for suffix in ["_compressor", "_attention", "_pruner", "_quantizer"]:
         if mod_name.lower().endswith(suffix):
@@ -253,7 +252,7 @@ def get_best_dataset_result(rows, target_ds):
     ds_rows = [r for r in rows if r.get("_detected_ds") == target_ds]
     if not ds_rows:
         return "N/A"
-    
+
     valid_vals = []
     for r in ds_rows:
         if target_ds == "wikitext2":
@@ -273,10 +272,10 @@ def get_best_dataset_result(rows, target_ds):
                     valid_vals.append(val)
                 except Exception:
                     pass
-    
+
     if not valid_vals:
         return "N/A"
-    
+
     if target_ds == "wikitext2":
         return f"{min(valid_vals):.2f}"
     else:
@@ -287,13 +286,13 @@ def determine_sub_category(mod_name, mod_type, cat):
     lname = mod_name.lower()
     if mod_type == "Utility" or mod_name == "pruning_utils":
         return "Utility"
-    
+
     if mod_type == "Compressor":
         if cat == "VALID":
             return "Compression-Working"
         else:
             return "Compression-Failed"
-    
+
     if any(k in lname for k in ["mamba", "jamba", "samba", "griffin", "hgrn2", "hymba", "simple_ssm"]):
         return "SSM"
     if any(k in lname for k in ["cosformer", "linformer", "performer", "nystrom", "linear_attention", "galerkin", "decay_linear"]):
@@ -304,7 +303,7 @@ def determine_sub_category(mod_name, mod_type, cat):
         return "GQA-MQA"
     if any(k in lname for k in ["svd", "compressed_mha", "soa"]):
         return "SVD-Attention"
-    
+
     return "Unknown"
 
 
@@ -330,8 +329,6 @@ def main():
     # 1. Load registries
     sys.path.insert(0, str(PROJECT_ROOT / "Codes"))
     try:
-        import framework.compression_engine
-        import framework.attentions
         from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
     except Exception as e:
         print(f"Warning importing framework registries: {e}")
