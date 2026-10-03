@@ -1,0 +1,17 @@
+{
+  "module_name": "bam_umoe",
+  "status": "FAIL_PPL_DIVERGED",
+  "perplexity": 277.49,
+  "baseline_ppl": 21.71,
+  "delta_ppl": 255.78,
+  "compression_rate": 1.1657,
+  "compression_ratio_pct": 14.21,
+  "peak_vram_mb": 1524.95,
+  "latency_ms_per_token": 0.218,
+  "throughput_tok_per_sec": 4580.6,
+  "elapsed_s": 21.83,
+  "total_params_before": 124439808,
+  "total_params_after": 106751232,
+  "error": "",
+  "timestamp": "2026-09-27T13:41:46"
+}

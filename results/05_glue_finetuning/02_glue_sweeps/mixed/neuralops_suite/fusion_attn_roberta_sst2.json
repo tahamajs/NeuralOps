@@ -1,0 +1,56 @@
+{
+  "track": "track1_svd",
+  "module_name": "fusion_attn",
+  "module_type": "attention",
+  "model_family": "roberta",
+  "dataset": "sst2",
+  "status": "PASS",
+  "error_message": null,
+  "forward_latency_ms": 3.58,
+  "backward_latency_ms": 3.19,
+  "total_step_latency_ms": 6.77,
+  "throughput_samples_per_sec": 591.34,
+  "speedup_vs_baseline": 1.0,
+  "param_count": 0,
+  "trainable_param_count": 0,
+  "compression_ratio": 0.9893385340298252,
+  "peak_memory_mb": 0.0,
+  "memory_savings_pct": 0.0,
+  "loss": 0.7025,
+  "accuracy_pct": 49.08,
+  "f1_score": 0.0,
+  "perplexity": 0.0,
+  "grad_norm": 1.9617,
+  "mcc": 0.0,
+  "pearson": 0.0,
+  "spearman": 0.0,
+  "fidelity_score": 1.0,
+  "flops_macs": 231968640,
+  "throughput_tokens_sec": 37845.75,
+  "latency_variance_ms": 0.0792,
+  "ci_lower": null,
+  "ci_upper": null,
+  "p_value_vs_baseline": null,
+  "mean_seed_acc": null,
+  "std_seed_acc": null,
+  "trajectories": {
+    "loss": [
+      0.7014,
+      0.7036
+    ],
+    "grad_norm": [
+      1.9437,
+      1.9796
+    ],
+    "fwd_latency_ms": [
+      3.6796,
+      3.4738
+    ],
+    "bwd_latency_ms": [
+      3.4495,
+      2.9257
+    ]
+  },
+  "timestamp": "2026-09-18 14:33:04",
+  "quality_gate_56pct": "FAIL (<56%)"
+}

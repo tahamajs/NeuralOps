@@ -1,0 +1,82 @@
+{
+    "model": "distilbert-base-uncased_flap",
+    "performance": {
+        "accuracy_pct": 36.2,
+        "f1_score": 0.3163,
+        "f1_macro": 0.3163,
+        "precision": 0.3699,
+        "recall": 0.3683,
+        "val_loss": 1.0997,
+        "status": "PASS_LOW",
+        "elapsed_s": 5.64
+    },
+    "efficiency": {
+        "total_params_before": 66955779,
+        "total_params_after": 66955779,
+        "trainable_recovery_params": 592899,
+        "compression_rate": 1.0,
+        "compression_ratio_pct": 0.0,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 0,
+        "num_fallback_layers": 36,
+        "num_injected_attention_layers": 0,
+        "lora_params": 0,
+        "avg_reconstruction_error": 0.0,
+        "weighted_reconstruction_error": 0.4587,
+        "per_layer_reconstruction_errors": {
+            "distilbert.transformer.layer.0.attention.q_lin": 0.44061695727825306,
+            "distilbert.transformer.layer.0.attention.k_lin": 0.4368878451793737,
+            "distilbert.transformer.layer.0.attention.v_lin": 0.43043341379787603,
+            "distilbert.transformer.layer.0.attention.out_lin": 0.43335201866888273,
+            "distilbert.transformer.layer.0.ffn.lin1": 0.44667875989485306,
+            "distilbert.transformer.layer.0.ffn.lin2": 0.46291772214764554,
+            "distilbert.transformer.layer.1.attention.q_lin": 0.43425903352006934,
+            "distilbert.transformer.layer.1.attention.k_lin": 0.4244805232520386,
+            "distilbert.transformer.layer.1.attention.v_lin": 0.4537114362883347,
+            "distilbert.transformer.layer.1.attention.out_lin": 0.4503297189749191,
+            "distilbert.transformer.layer.1.ffn.lin1": 0.46218924768225905,
+            "distilbert.transformer.layer.1.ffn.lin2": 0.4591956720553495,
+            "distilbert.transformer.layer.2.attention.q_lin": 0.46962218745598233,
+            "distilbert.transformer.layer.2.attention.k_lin": 0.46802387427871667,
+            "distilbert.transformer.layer.2.attention.v_lin": 0.4668321735165622,
+            "distilbert.transformer.layer.2.attention.out_lin": 0.4428394335211128,
+            "distilbert.transformer.layer.2.ffn.lin1": 0.48875031344616426,
+            "distilbert.transformer.layer.2.ffn.lin2": 0.4696693368297221,
+            "distilbert.transformer.layer.3.attention.q_lin": 0.4819053253081391,
+            "distilbert.transformer.layer.3.attention.k_lin": 0.4732873798831414,
+            "distilbert.transformer.layer.3.attention.v_lin": 0.4814868206435517,
+            "distilbert.transformer.layer.3.attention.out_lin": 0.48156310858708073,
+            "distilbert.transformer.layer.3.ffn.lin1": 0.4872011467155822,
+            "distilbert.transformer.layer.3.ffn.lin2": 0.4533689536260675,
+            "distilbert.transformer.layer.4.attention.q_lin": 0.47473583860807816,
+            "distilbert.transformer.layer.4.attention.k_lin": 0.47265348795745643,
+            "distilbert.transformer.layer.4.attention.v_lin": 0.44819676140752296,
+            "distilbert.transformer.layer.4.attention.out_lin": 0.4411146292777055,
+            "distilbert.transformer.layer.4.ffn.lin1": 0.4702293618698401,
+            "distilbert.transformer.layer.4.ffn.lin2": 0.4355447918900459,
+            "distilbert.transformer.layer.5.attention.q_lin": 0.4577436590860049,
+            "distilbert.transformer.layer.5.attention.k_lin": 0.46748175196666375,
+            "distilbert.transformer.layer.5.attention.v_lin": 0.4280603055618745,
+            "distilbert.transformer.layer.5.attention.out_lin": 0.4452881252494472,
+            "distilbert.transformer.layer.5.ffn.lin1": 0.4601089570607919,
+            "distilbert.transformer.layer.5.ffn.lin2": 0.43468096009509427
+        },
+        "per_layer_ranks": {}
+    },
+    "hardware": {
+        "peak_vram_mb": 304.08,
+        "tokens_per_sec": 44647.65
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 288.27,
+        "L_256_vram_mb": 290.83,
+        "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+    },
+    "timestamp": "2026-09-19T06:01:47.891661"
+}

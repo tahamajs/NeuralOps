@@ -1,0 +1,17 @@
+{
+  "module_name": "upi_stuffed_mamba",
+  "status": "FAIL_PPL_DIVERGED",
+  "perplexity": 2906.59,
+  "baseline_ppl": 21.71,
+  "delta_ppl": 2884.88,
+  "compression_rate": 1.0417,
+  "compression_ratio_pct": 4.0,
+  "peak_vram_mb": 1553.56,
+  "latency_ms_per_token": 0.601,
+  "throughput_tok_per_sec": 1663.1,
+  "elapsed_s": 60.13,
+  "total_params_before": 124439808,
+  "total_params_after": 119463168,
+  "error": "",
+  "timestamp": "2026-09-27T13:54:54"
+}

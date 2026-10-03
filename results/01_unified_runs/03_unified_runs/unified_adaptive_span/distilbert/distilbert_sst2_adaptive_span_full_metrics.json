@@ -1,0 +1,144 @@
+{
+    "model": "distilbert_sst2_adaptive_span",
+    "performance": {
+        "accuracy_pct": 90.48,
+        "f1_score": 0.9079,
+        "f1_macro": 0.9047,
+        "precision": 0.9053,
+        "recall": 0.9045,
+        "val_loss": 0.3099,
+        "perplexity": null,
+        "status": "PASS",
+        "elapsed_s": 15.19
+    },
+    "efficiency": {
+        "total_params_before": 66955010,
+        "total_params_after": 67544906,
+        "trainable_recovery_params": 589896,
+        "compression_rate": 1.0,
+        "compression_ratio_pct": 0.0,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 6,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 6,
+        "lora_params": 589824,
+        "avg_reconstruction_error": null,
+        "weighted_reconstruction_error": null,
+        "per_layer_reconstruction_errors": {},
+        "per_layer_ranks": {
+            "distilbert.transformer.layer.0.attention": 32,
+            "distilbert.transformer.layer.1.attention": 32,
+            "distilbert.transformer.layer.2.attention": 32,
+            "distilbert.transformer.layer.3.attention": 32,
+            "distilbert.transformer.layer.4.attention": 32,
+            "distilbert.transformer.layer.5.attention": 32
+        }
+    },
+    "hardware": {
+        "peak_vram_mb": 377.08,
+        "tokens_per_sec": 18185.09
+    },
+    "architecture": {
+        "span_distribution": {
+            "distilbert.transformer.layer.0.attention": [
+                15.24,
+                15.26,
+                15.24,
+                15.28,
+                15.24,
+                15.28,
+                15.27,
+                15.28,
+                15.26,
+                15.27,
+                15.26,
+                15.25
+            ],
+            "distilbert.transformer.layer.1.attention": [
+                15.25,
+                15.28,
+                15.26,
+                15.26,
+                15.28,
+                15.26,
+                15.28,
+                15.26,
+                15.28,
+                15.26,
+                15.26,
+                15.26
+            ],
+            "distilbert.transformer.layer.2.attention": [
+                15.28,
+                15.27,
+                15.28,
+                15.26,
+                15.24,
+                15.29,
+                15.24,
+                15.26,
+                15.27,
+                15.26,
+                15.26,
+                15.26
+            ],
+            "distilbert.transformer.layer.3.attention": [
+                15.27,
+                15.23,
+                15.28,
+                15.24,
+                15.24,
+                15.25,
+                15.26,
+                15.25,
+                15.26,
+                15.24,
+                15.25,
+                15.28
+            ],
+            "distilbert.transformer.layer.4.attention": [
+                15.29,
+                15.28,
+                15.25,
+                15.25,
+                15.25,
+                15.28,
+                15.27,
+                15.26,
+                15.25,
+                15.26,
+                15.24,
+                15.27
+            ],
+            "distilbert.transformer.layer.5.attention": [
+                15.28,
+                15.25,
+                15.27,
+                15.25,
+                15.27,
+                15.25,
+                15.27,
+                15.27,
+                15.25,
+                15.25,
+                15.27,
+                15.27
+            ]
+        },
+        "mean_span": 15.26,
+        "sparsity_ratio_percent": 88.08
+    },
+    "scalability": {
+        "L_128_vram_mb": 344.7,
+        "L_256_vram_mb": 356.98,
+        "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+    },
+    "seed": 42,
+    "git_sha": "5b07ee408",
+    "git_dirty": true,
+    "torch_version": "2.6.0+cu124",
+    "transformers_version": "5.5.0",
+    "cuda_version": "12.4",
+    "timestamp": "2026-09-24T12:27:45.100287+00:00"
+}

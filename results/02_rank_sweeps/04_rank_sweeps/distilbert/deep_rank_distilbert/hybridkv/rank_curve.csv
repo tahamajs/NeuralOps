@@ -1,0 +1,7 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+16,hybridkv,PASS,90.6,0.9099,0.3267,291.94,1.0,0.0,0,0,87.4,66955010,66955010
+32,hybridkv,PASS,90.6,0.9099,0.3267,291.94,1.0,0.0,0,0,87.5,66955010,66955010
+64,hybridkv,PASS,90.6,0.9099,0.3267,291.94,1.0,0.0,0,0,87.0,66955010,66955010
+128,hybridkv,PASS,90.6,0.9099,0.3267,291.94,1.0,0.0,0,0,87.2,66955010,66955010
+256,hybridkv,PASS,90.6,0.9099,0.3267,291.94,1.0,0.0,0,0,94.0,66955010,66955010
+384,hybridkv,PASS,90.6,0.9099,0.3267,291.94,1.0,0.0,0,0,93.8,66955010,66955010

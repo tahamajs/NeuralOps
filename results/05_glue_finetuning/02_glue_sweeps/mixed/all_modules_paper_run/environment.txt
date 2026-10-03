@@ -1,0 +1,5 @@
+PyTorch Version: 2.6.0+cu124
+CUDA Available: True
+CUDA Version: 12.4
+GPU Device: NVIDIA GeForce RTX 4070 Laptop GPU
+Device Count: 1

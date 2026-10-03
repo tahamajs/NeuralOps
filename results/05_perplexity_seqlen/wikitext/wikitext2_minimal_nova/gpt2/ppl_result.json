@@ -1,8 +1,0 @@
-{
-  "module": "minimal_nova",
-  "model_path": "models/gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 2253.513427734375,
-  "seq_len": 1024,
-  "stride": 512
-}

@@ -1,1 +1,0 @@
-D:\SVD_Project\results\kd_runs\hgrn2_gated_deltanet\20261001_000237_bs1_seq96_lr5e-06_noclr_C

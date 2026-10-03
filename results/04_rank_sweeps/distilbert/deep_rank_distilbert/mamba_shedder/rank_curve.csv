@@ -1,7 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-16,mamba_shedder,PASS,89.22,0.8969,0.4053,354.24,1.0443,4.24,0,0,8.62,66955010,64112786
-32,mamba_shedder,PASS,89.22,0.8969,0.4053,354.24,1.0443,4.24,0,0,8.74,66955010,64112786
-64,mamba_shedder,PASS,89.22,0.8969,0.4053,354.24,1.0443,4.24,0,0,7.54,66955010,64112786
-128,mamba_shedder,PASS,89.22,0.8969,0.4053,354.24,1.0443,4.24,0,0,7.38,66955010,64112786
-256,mamba_shedder,PASS,89.22,0.8969,0.4053,354.24,1.0443,4.24,0,0,14.45,66955010,64112786
-384,mamba_shedder,PASS,89.22,0.8969,0.4053,354.24,1.0443,4.24,0,0,14.34,66955010,64112786

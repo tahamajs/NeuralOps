@@ -1,0 +1,52 @@
+{
+    "model": "distilbert_sst2_compressed_mha",
+    "performance": {
+        "accuracy_pct": 90.14,
+        "f1_score": 0.9042,
+        "f1_macro": 0.9013,
+        "precision": 0.9017,
+        "recall": 0.9011,
+        "val_loss": 0.3055,
+        "perplexity": null,
+        "status": "PASS",
+        "elapsed_s": 14.15
+    },
+    "efficiency": {
+        "total_params_before": 66955010,
+        "total_params_after": 60322562,
+        "trainable_recovery_params": 442368,
+        "compression_rate": 1.1099,
+        "compression_ratio_pct": 9.91,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 0,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 6,
+        "lora_params": 442368,
+        "avg_reconstruction_error": null,
+        "weighted_reconstruction_error": null,
+        "per_layer_reconstruction_errors": {},
+        "per_layer_ranks": {}
+    },
+    "hardware": {
+        "peak_vram_mb": 399.5,
+        "tokens_per_sec": 52242.9
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 318.32,
+        "L_256_vram_mb": 327.21,
+        "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+    },
+    "seed": 42,
+    "git_sha": "59f307c71",
+    "git_dirty": true,
+    "torch_version": "2.6.0+cu124",
+    "transformers_version": "5.5.0",
+    "cuda_version": "12.4",
+    "timestamp": "2026-09-27T00:36:03.589540+00:00"
+}

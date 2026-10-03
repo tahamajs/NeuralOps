@@ -1,0 +1,17 @@
+{
+  "module_name": "halo_regla",
+  "status": "FAIL_PPL_DIVERGED",
+  "perplexity": NaN,
+  "baseline_ppl": 21.71,
+  "delta_ppl": NaN,
+  "compression_rate": 0.9897,
+  "compression_ratio_pct": -1.04,
+  "peak_vram_mb": 1848.6,
+  "latency_ms_per_token": 0.278,
+  "throughput_tok_per_sec": 3601.5,
+  "elapsed_s": 27.77,
+  "total_params_before": 124439808,
+  "total_params_after": 125730192,
+  "error": "",
+  "timestamp": "2026-09-27T13:40:30"
+}

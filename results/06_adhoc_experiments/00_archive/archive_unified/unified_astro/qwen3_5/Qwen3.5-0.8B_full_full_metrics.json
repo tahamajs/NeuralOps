@@ -1,0 +1,45 @@
+{
+    "model": "Qwen3.5-0.8B_full",
+    "performance": {
+        "accuracy_pct": 67.55,
+        "f1_score": 0.5501,
+        "f1_macro": 0.6481,
+        "precision": 0.7703,
+        "recall": 0.6808,
+        "val_loss": 0.6364,
+        "status": "PASS",
+        "elapsed_s": 108.07
+    },
+    "efficiency": {
+        "total_params_before": 763217728,
+        "total_params_after": 763217728,
+        "trainable_recovery_params": 0,
+        "compression_rate": 1.0,
+        "compression_ratio_pct": 0.0,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 0,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 0,
+        "lora_params": 10822656,
+        "avg_reconstruction_error": null,
+        "weighted_reconstruction_error": null,
+        "per_layer_reconstruction_errors": {},
+        "per_layer_ranks": {}
+    },
+    "hardware": {
+        "peak_vram_mb": 1809.78,
+        "tokens_per_sec": 1308.37
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 1544.98,
+        "L_256_vram_mb": 1567.48,
+        "L_512_vram_mb": 1604.06,
+        "L_1024_vram_mb": 1684.92
+    },
+    "timestamp": "2026-09-07T18:34:10.487951"
+}

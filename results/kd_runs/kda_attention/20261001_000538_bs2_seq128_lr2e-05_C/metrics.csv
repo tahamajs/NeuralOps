@@ -1,2 +1,0 @@
-method,pre_ppl,post_ppl,ppl_ratio,recovery_pct,peak_vram_mb,train_time_s,s_per_step,loss_final,cached,ppl_at_step_250,ppl_at_step_500,ppl_at_step_750,ppl_at_step_1000,ppl_at_step_1250,ppl_at_step_1500
-C,2796.78,77.16,2.4464,98.35,1956.65,1556.88,1.5569,99.1577,True,,98.24,,77.16,,

@@ -1,0 +1,406 @@
+================================================================================
+STARTING UNIFIED 4-MODEL HARDENED SVD Linear BENCHMARK ON GPU SERVER
+Running models: ['roberta']
+================================================================================
+
+============================== RUNNING MODEL: roberta ==============================
+
+>>> FINISHED MODEL: roberta in 44.2s (Exit: 0, Status: PASS, Compressed Layers: 0, Comp Rate: 1.09x)
+
+================================================================================
+4-MODEL BENCHMARK RESULTS SUMMARY (SVD Linear on GPU)
+================================================================================
+  Model  Exit Code Baseline Acc SVD Linear Acc Delta Acc     F1 Status Compressed Layers Comp Rate Peak VRAM Time (s)
+roberta          0       78.56%         58.94%   -19.62% 0.5201   PASS                 0     1.09x  579.3 MB     44.2
+================================================================================
+
+Saved consolidated summaries to:
+- results\unified_svd_linear_4models_summary.csv
+- results\unified_svd_linear_4models_summary.json
+Generated and saved comparative visualization charts to results\unified_baseline
+
+================================================================================
+STAGE 2: QUALITY-GATED EXPORT TO HUGGING FACE & GITHUB (SVD Linear)
+================================================================================
+[Quality Gate: PASSED] roberta passed criteria (status=PASS, acc=58.94% >= 56.0%). Packaging for export...
+  Successfully uploaded to https://huggingface.co/Hooshaai/svd-linear-attention-roberta-svd_linear
+
+[+] Updated documentation benchmark table in Docs\content\compressions\svd_linear.md
+Committing results directly to main...
+[main bfb2cabf3] feat(benchmark): evaluation (1/1 passed on SST-2)
+ 3 files changed, 9 insertions(+), 9 deletions(-)
+Results committed to main.
+
+================================================================================
+ALL TASKS COMPLETED!
+Passed Models: 1 / 1
+Uploaded Repositories: 1
+  - https://huggingface.co/Hooshaai/svd-linear-attention-roberta-svd_linear
+================================================================================
+
+--- STDERR ---
+2026-09-15 08:01:57,498 [INFO] QwenQualitySweep: Parsed 6 module-specific extended arguments: ['--svd_linear_rank', '64', '--svd_linear_max_error', '0.50', '--svd_linear_target_attention_only', 'true']
+2026-09-15 08:01:57,576 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+
+Loading weights:   0%|          | 0/197 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 197/197 [00:00<00:00, 4147.94it/s]
+[1mRobertaForSequenceClassification LOAD REPORT[0m from: models\roberta-base
+Key                             | Status     | 
+--------------------------------+------------+-
+lm_head.layer_norm.bias         | UNEXPECTED | 
+lm_head.bias                    | UNEXPECTED | 
+lm_head.dense.weight            | UNEXPECTED | 
+lm_head.dense.bias              | UNEXPECTED | 
+lm_head.layer_norm.weight       | UNEXPECTED | 
+roberta.embeddings.position_ids | UNEXPECTED | 
+classifier.out_proj.weight      | MISSING    | 
+classifier.dense.bias           | MISSING    | 
+classifier.out_proj.bias        | MISSING    | 
+classifier.dense.weight         | MISSING    | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-09-15 08:01:58,839 [INFO] QwenQualitySweep: model=models\roberta-base qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-09-15 08:01:58,839 [INFO] QwenQualitySweep: detected model family=roberta adapter={'family': 'roberta', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-15 08:01:58,839 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 08:01:58,839 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-15 08:01:58,839 [INFO] QwenQualitySweep:   model:             models\roberta-base
+2026-09-15 08:01:58,840 [INFO] QwenQualitySweep:   family:            roberta
+2026-09-15 08:01:58,840 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-15 08:01:58,840 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-15 08:01:58,840 [INFO] QwenQualitySweep:   recovery_steps:    10
+2026-09-15 08:01:58,841 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-09-15 08:01:58,841 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-15 08:01:58,841 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 08:01:58,841 [WARNING] QwenQualitySweep: Specified parent_checkpoint 'results\unified_delta_kv\roberta\finetuned_model.pt' does not exist; attempting automatic fallback search.
+2026-09-15 08:01:59,197 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\roberta_sst2_lora_baseline\finetuned_model.pt
+2026-09-15 08:01:59,835 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-15 08:02:00,439 [INFO] QwenQualitySweep: Prepared 109 eval batches and 10 train batches directly on GPU.
+2026-09-15 08:02:05,207 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 78.56%
+2026-09-15 08:02:05,256 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 08:02:05,257 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-15 08:02:05,257 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-15 08:02:05,257 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-15 08:02:05,257 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-15 08:02:05,257 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-15 08:02:05,257 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-15 08:02:05,258 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 08:02:05,259 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=10, batch_size=8, optimizer=adamw)
+2026-09-15 08:02:10,382 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_svd_linear\roberta\roberta-base_full_full_metrics.json
+2026-09-15 08:02:10,403 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_svd_linear\roberta\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-15 08:02:11,066 [INFO] QwenQualitySweep: [1/2] full -> PASS 78.56% (F1: 0.8124, Peak VRAM: 711.69 MB)
+2026-09-15 08:02:11,066 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_svd_linear\roberta\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 08:02:11,315 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: svd_linear (recovery_steps=10, batch_size=8, optimizer=adamw)
+2026-09-15 08:02:15,740 [INFO] QwenQualitySweep: module=svd_linear path=adapted_roberta
+2026-09-15 08:02:15,741 [INFO] QwenQualitySweep: module=svd_linear injection summary: 48 SVDLinear layers active
+2026-09-15 08:02:15,741 [INFO] QwenQualitySweep: Running 10 recovery fine-tuning steps for svd_linear (lr=2.0e-04)
+2026-09-15 08:02:15,932 [INFO] framework.utils.compat: Recovery fine-tuning selected 1290384 trainable parameters across 120 tensors.
+2026-09-15 08:02:15,932 [INFO] framework.utils.compat: Discovered 120 trainable tensors (1290384 params)
+2026-09-15 08:02:15,936 [INFO] QwenQualitySweep: LoRA fine-tuning: 1290384 trainable parameters across 120 tensors (lr=2.0e-04, optimizer=adamw)
+2026-09-15 08:02:16,127 [INFO] QwenQualitySweep: LoRA fine-tune step 1/10 loss=0.5349 (bs=8, micro_bs=8)
+2026-09-15 08:02:16,554 [INFO] QwenQualitySweep: LoRA fine-tune step 5/10 loss=1.2172 (bs=8, micro_bs=8)
+2026-09-15 08:02:17,110 [INFO] QwenQualitySweep: LoRA fine-tune step 10/10 loss=1.2283 (bs=8, micro_bs=8)
+2026-09-15 08:02:24,521 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_svd_linear\roberta\roberta-base_svd_linear_full_metrics.json
+2026-09-15 08:02:24,700 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_svd_linear\roberta\checkpoints\svd_linear\weights.pt (module_params=240, lora_params=100)
+2026-09-15 08:02:25,586 [INFO] QwenQualitySweep: [2/2] svd_linear -> PASS 58.94% (F1: 0.5201, Peak VRAM: 579.28 MB)
+2026-09-15 08:02:25,586 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_svd_linear\roberta\checkpoints\svd_linear. Automated export will be handled post-sweep by orchestrator.
+2026-09-15 08:02:25,846 [INFO] QwenQualitySweep: ================================================================================
+2026-09-15 08:02:25,846 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (roberta-base on sst2)
+2026-09-15 08:02:25,850 [INFO] QwenQualitySweep: 
+                     Module Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+                       full   PASS   78.56% 0.00% (base) 0.8124                  0            1.00x  711.7 MB               3.96              4.55
+svd_linear (efficient-attn)   PASS   58.94%      -19.62% 0.5201                  0            1.09x  579.3 MB               7.16              8.21
+2026-09-15 08:02:25,850 [INFO] QwenQualitySweep: ================================================================================
+No files have been modified since last commit. Skipping to prevent empty commit.
+No files have been modified since last commit. Skipping to prevent empty commit.
+No files have been modified since last commit. Skipping to prevent empty commit.
+
+weights.pt:   0%|          | 0.00/49.8M [00:00<?, ?B/s]
+weights.pt:   0%|          | 65.5k/49.8M [00:00<04:50, 171kB/s]
+weights.pt:   0%|          | 197k/49.8M [00:00<02:24, 345kB/s] 
+weights.pt:   1%|          | 262k/49.8M [00:00<02:04, 397kB/s]
+weights.pt:   1%|          | 459k/49.8M [00:00<01:06, 741kB/s]
+weights.pt:   2%|1         | 852k/49.8M [00:00<00:33, 1.45MB/s]
+weights.pt:   3%|3         | 1.57M/49.8M [00:01<00:17, 2.82MB/s]
+weights.pt:   4%|3         | 1.97M/49.8M [00:01<00:20, 2.28MB/s]
+weights.pt:   5%|4         | 2.42M/49.8M [00:01<00:17, 2.75MB/s]
+weights.pt:   6%|5         | 2.82M/49.8M [00:01<00:15, 2.98MB/s]
+weights.pt:   6%|6         | 3.21M/49.8M [00:01<00:18, 2.47MB/s]
+weights.pt:   8%|7         | 3.80M/49.8M [00:01<00:14, 3.13MB/s]
+weights.pt:   8%|8         | 4.19M/49.8M [00:02<00:15, 2.99MB/s]
+weights.pt:   9%|9         | 4.59M/49.8M [00:02<00:15, 2.85MB/s]
+weights.pt:  10%|9         | 4.92M/49.8M [00:02<00:16, 2.79MB/s]
+weights.pt:  11%|#         | 5.24M/49.8M [00:02<00:15, 2.86MB/s]
+weights.pt:  11%|#1        | 5.57M/49.8M [00:02<00:19, 2.22MB/s]
+weights.pt:  12%|#1        | 5.90M/49.8M [00:02<00:19, 2.26MB/s]
+weights.pt:  12%|#2        | 6.16M/49.8M [00:03<00:23, 1.83MB/s]
+weights.pt:  13%|#2        | 6.42M/49.8M [00:03<00:23, 1.87MB/s]
+weights.pt:  13%|#3        | 6.68M/49.8M [00:03<00:26, 1.63MB/s]
+weights.pt:  14%|#3        | 6.88M/49.8M [00:03<00:27, 1.58MB/s]
+weights.pt:  14%|#4        | 7.08M/49.8M [00:03<00:27, 1.56MB/s]
+weights.pt:  15%|#4        | 7.27M/49.8M [00:03<00:27, 1.55MB/s]
+weights.pt:  15%|#4        | 7.47M/49.8M [00:03<00:27, 1.55MB/s]
+weights.pt:  15%|#5        | 7.67M/49.8M [00:04<00:30, 1.38MB/s]
+weights.pt:  16%|#5        | 7.86M/49.8M [00:04<00:29, 1.44MB/s]
+weights.pt:  16%|#6        | 8.06M/49.8M [00:04<00:28, 1.47MB/s]
+weights.pt:  17%|#6        | 8.26M/49.8M [00:04<00:28, 1.48MB/s]
+weights.pt:  17%|#6        | 8.45M/49.8M [00:04<00:27, 1.51MB/s]
+weights.pt:  17%|#7        | 8.65M/49.8M [00:04<00:26, 1.53MB/s]
+weights.pt:  18%|#7        | 8.85M/49.8M [00:04<00:26, 1.56MB/s]
+weights.pt:  18%|#8        | 9.04M/49.8M [00:04<00:25, 1.59MB/s]
+weights.pt:  19%|#8        | 9.24M/49.8M [00:05<00:25, 1.59MB/s]
+weights.pt:  19%|#8        | 9.44M/49.8M [00:05<00:25, 1.59MB/s]
+weights.pt:  19%|#9        | 9.63M/49.8M [00:05<00:25, 1.60MB/s]
+weights.pt:  20%|#9        | 9.83M/49.8M [00:05<00:24, 1.63MB/s]
+weights.pt:  20%|##        | 10.0M/49.8M [00:05<00:29, 1.35MB/s]
+weights.pt:  21%|##        | 10.2M/49.8M [00:05<00:28, 1.37MB/s]
+weights.pt:  21%|##        | 10.4M/49.8M [00:05<00:34, 1.15MB/s]
+weights.pt:  21%|##1       | 10.6M/49.8M [00:06<00:34, 1.15MB/s]
+weights.pt:  21%|##1       | 10.7M/49.8M [00:06<00:33, 1.17MB/s]
+weights.pt:  22%|##1       | 10.8M/49.8M [00:06<00:33, 1.18MB/s]
+weights.pt:  22%|##1       | 10.9M/49.8M [00:06<00:32, 1.20MB/s]
+weights.pt:  22%|##2       | 11.1M/49.8M [00:06<00:32, 1.20MB/s]
+weights.pt:  23%|##2       | 11.3M/49.8M [00:06<00:32, 1.19MB/s]
+weights.pt:  23%|##2       | 11.4M/49.8M [00:06<00:32, 1.18MB/s]
+weights.pt:  23%|##3       | 11.5M/49.8M [00:06<00:33, 1.16MB/s]
+weights.pt:  24%|##3       | 11.7M/49.8M [00:07<00:31, 1.21MB/s]
+weights.pt:  24%|##3       | 11.9M/49.8M [00:07<00:31, 1.22MB/s]
+weights.pt:  24%|##4       | 12.0M/49.8M [00:07<00:30, 1.24MB/s]
+weights.pt:  24%|##4       | 12.1M/49.8M [00:07<00:30, 1.23MB/s]
+weights.pt:  25%|##4       | 12.3M/49.8M [00:07<00:29, 1.29MB/s]
+weights.pt:  25%|##5       | 12.5M/49.8M [00:07<00:27, 1.33MB/s]
+weights.pt:  26%|##5       | 12.7M/49.8M [00:07<00:26, 1.39MB/s]
+weights.pt:  26%|##5       | 12.9M/49.8M [00:07<00:27, 1.33MB/s]
+weights.pt:  26%|##6       | 13.1M/49.8M [00:08<00:27, 1.33MB/s]
+weights.pt:  27%|##6       | 13.3M/49.8M [00:08<00:26, 1.39MB/s]
+weights.pt:  27%|##7       | 13.5M/49.8M [00:08<00:25, 1.42MB/s]
+weights.pt:  27%|##7       | 13.7M/49.8M [00:08<00:25, 1.42MB/s]
+weights.pt:  28%|##7       | 13.9M/49.8M [00:08<00:26, 1.35MB/s]
+weights.pt:  28%|##8       | 14.1M/49.8M [00:08<00:25, 1.41MB/s]
+weights.pt:  29%|##8       | 14.3M/49.8M [00:08<00:25, 1.41MB/s]
+weights.pt:  29%|##9       | 14.5M/49.8M [00:09<00:26, 1.32MB/s]
+weights.pt:  29%|##9       | 14.7M/49.8M [00:09<00:25, 1.36MB/s]
+weights.pt:  30%|##9       | 14.9M/49.8M [00:09<00:24, 1.42MB/s]
+weights.pt:  30%|###       | 15.1M/49.8M [00:09<00:29, 1.18MB/s]
+weights.pt:  31%|###       | 15.2M/49.8M [00:09<00:31, 1.10MB/s]
+weights.pt:  31%|###       | 15.3M/49.8M [00:09<00:36, 947kB/s] 
+weights.pt:  31%|###1      | 15.5M/49.8M [00:10<00:43, 784kB/s]
+weights.pt:  31%|###1      | 15.6M/49.8M [00:10<00:40, 838kB/s]
+weights.pt:  32%|###1      | 15.7M/49.8M [00:10<00:38, 885kB/s]
+weights.pt:  32%|###1      | 15.9M/49.8M [00:10<00:36, 928kB/s]
+weights.pt:  32%|###2      | 16.0M/49.8M [00:10<00:35, 956kB/s]
+weights.pt:  32%|###2      | 16.1M/49.8M [00:11<01:49, 309kB/s]
+weights.pt:  34%|###4      | 17.2M/49.8M [00:11<00:28, 1.16MB/s]
+weights.pt:  35%|###5      | 17.5M/49.8M [00:12<00:31, 1.01MB/s]
+weights.pt:  36%|###5      | 17.8M/49.8M [00:12<00:32, 985kB/s] 
+weights.pt:  36%|###6      | 18.0M/49.8M [00:12<00:33, 950kB/s]
+weights.pt:  36%|###6      | 18.2M/49.8M [00:13<00:34, 924kB/s]
+weights.pt:  37%|###6      | 18.3M/49.8M [00:13<00:34, 912kB/s]
+weights.pt:  37%|###6      | 18.4M/49.8M [00:13<00:35, 883kB/s]
+weights.pt:  37%|###7      | 18.6M/49.8M [00:13<00:34, 907kB/s]
+weights.pt:  38%|###7      | 18.7M/49.8M [00:13<00:33, 928kB/s]
+weights.pt:  38%|###7      | 18.8M/49.8M [00:13<00:32, 958kB/s]
+weights.pt:  38%|###8      | 18.9M/49.8M [00:14<00:35, 878kB/s]
+weights.pt:  38%|###8      | 19.1M/49.8M [00:14<00:33, 905kB/s]
+weights.pt:  39%|###8      | 19.2M/49.8M [00:14<00:32, 936kB/s]
+weights.pt:  39%|###8      | 19.3M/49.8M [00:14<00:31, 967kB/s]
+weights.pt:  39%|###9      | 19.5M/49.8M [00:14<00:30, 984kB/s]
+weights.pt:  39%|###9      | 19.6M/49.8M [00:14<00:32, 939kB/s]
+weights.pt:  40%|###9      | 19.7M/49.8M [00:14<00:31, 948kB/s]
+weights.pt:  40%|###9      | 19.9M/49.8M [00:15<00:31, 943kB/s]
+weights.pt:  40%|####      | 20.0M/49.8M [00:15<00:30, 968kB/s]
+weights.pt:  40%|####      | 20.1M/49.8M [00:15<00:30, 979kB/s]
+weights.pt:  41%|####      | 20.3M/49.8M [00:15<00:29, 1.00MB/s]
+weights.pt:  41%|####      | 20.4M/49.8M [00:15<00:28, 1.02MB/s]
+weights.pt:  41%|####1     | 20.5M/49.8M [00:15<00:29, 987kB/s] 
+weights.pt:  41%|####1     | 20.7M/49.8M [00:15<00:29, 993kB/s]
+weights.pt:  42%|####1     | 20.8M/49.8M [00:15<00:29, 994kB/s]
+weights.pt:  42%|####1     | 20.9M/49.8M [00:16<00:29, 987kB/s]
+weights.pt:  42%|####2     | 21.0M/49.8M [00:16<00:28, 998kB/s]
+weights.pt:  43%|####2     | 21.2M/49.8M [00:16<00:40, 702kB/s]
+weights.pt:  43%|####2     | 21.3M/49.8M [00:16<00:37, 764kB/s]
+weights.pt:  43%|####3     | 21.4M/49.8M [00:16<00:39, 711kB/s]
+weights.pt:  43%|####3     | 21.6M/49.8M [00:16<00:36, 784kB/s]
+weights.pt:  44%|####3     | 21.7M/49.8M [00:17<00:39, 703kB/s]
+weights.pt:  44%|####3     | 21.8M/49.8M [00:17<00:50, 557kB/s]
+weights.pt:  44%|####3     | 21.9M/49.8M [00:17<00:50, 555kB/s]
+weights.pt:  44%|####4     | 22.0M/49.8M [00:17<00:42, 654kB/s]
+weights.pt:  44%|####4     | 22.2M/49.8M [00:18<00:42, 647kB/s]
+weights.pt:  45%|####4     | 22.3M/49.8M [00:18<00:39, 698kB/s]
+weights.pt:  45%|####5     | 22.4M/49.8M [00:18<00:36, 743kB/s]
+weights.pt:  45%|####5     | 22.6M/49.8M [00:18<00:37, 731kB/s]
+weights.pt:  46%|####5     | 22.7M/49.8M [00:18<00:34, 782kB/s]
+weights.pt:  46%|####5     | 22.8M/49.8M [00:18<00:32, 821kB/s]
+weights.pt:  46%|####6     | 22.9M/49.8M [00:18<00:34, 780kB/s]
+weights.pt:  46%|####6     | 23.1M/49.8M [00:19<00:31, 841kB/s]
+weights.pt:  47%|####6     | 23.2M/49.8M [00:19<00:30, 872kB/s]
+weights.pt:  47%|####6     | 23.3M/49.8M [00:19<00:32, 824kB/s]
+weights.pt:  47%|####7     | 23.5M/49.8M [00:19<00:31, 843kB/s]
+weights.pt:  47%|####7     | 23.6M/49.8M [00:19<00:29, 896kB/s]
+weights.pt:  48%|####7     | 23.7M/49.8M [00:19<00:28, 914kB/s]
+weights.pt:  48%|####7     | 23.9M/49.8M [00:20<00:31, 835kB/s]
+weights.pt:  48%|####8     | 24.0M/49.8M [00:20<00:29, 879kB/s]
+weights.pt:  48%|####8     | 24.1M/49.8M [00:20<00:30, 832kB/s]
+weights.pt:  49%|####8     | 24.3M/49.8M [00:20<00:43, 594kB/s]
+weights.pt:  49%|####8     | 24.4M/49.8M [00:20<00:37, 684kB/s]
+weights.pt:  49%|####9     | 24.5M/49.8M [00:20<00:32, 769kB/s]
+weights.pt:  49%|####9     | 24.7M/49.8M [00:21<00:30, 835kB/s]
+weights.pt:  50%|####9     | 24.8M/49.8M [00:21<00:32, 773kB/s]
+weights.pt:  50%|#####     | 24.9M/49.8M [00:21<00:29, 832kB/s]
+weights.pt:  50%|#####     | 25.0M/49.8M [00:21<00:28, 875kB/s]
+weights.pt:  51%|#####     | 25.2M/49.8M [00:21<00:27, 909kB/s]
+weights.pt:  51%|#####     | 25.3M/49.8M [00:21<00:28, 863kB/s]
+weights.pt:  51%|#####1    | 25.4M/49.8M [00:21<00:27, 902kB/s]
+weights.pt:  51%|#####1    | 25.6M/49.8M [00:22<00:25, 937kB/s]
+weights.pt:  52%|#####1    | 25.7M/49.8M [00:22<00:25, 929kB/s]
+weights.pt:  52%|#####1    | 25.8M/49.8M [00:22<00:24, 971kB/s]
+weights.pt:  52%|#####2    | 26.0M/49.8M [00:22<00:23, 995kB/s]
+weights.pt:  52%|#####2    | 26.1M/49.8M [00:22<00:23, 998kB/s]
+weights.pt:  53%|#####2    | 26.2M/49.8M [00:22<00:24, 948kB/s]
+weights.pt:  53%|#####2    | 26.4M/49.8M [00:22<00:24, 975kB/s]
+weights.pt:  53%|#####3    | 26.5M/49.8M [00:23<00:23, 988kB/s]
+weights.pt:  53%|#####3    | 26.6M/49.8M [00:23<00:31, 732kB/s]
+weights.pt:  54%|#####3    | 26.7M/49.8M [00:23<00:29, 789kB/s]
+weights.pt:  54%|#####3    | 26.9M/49.8M [00:23<00:30, 752kB/s]
+weights.pt:  54%|#####4    | 27.0M/49.8M [00:23<00:27, 823kB/s]
+weights.pt:  54%|#####4    | 27.1M/49.8M [00:23<00:27, 816kB/s]
+weights.pt:  55%|#####4    | 27.3M/49.8M [00:24<00:29, 775kB/s]
+weights.pt:  55%|#####5    | 27.4M/49.8M [00:24<00:28, 796kB/s]
+weights.pt:  55%|#####5    | 27.5M/49.8M [00:24<00:29, 754kB/s]
+weights.pt:  56%|#####5    | 27.7M/49.8M [00:24<00:36, 602kB/s]
+weights.pt:  56%|#####5    | 27.8M/49.8M [00:25<00:37, 581kB/s]
+weights.pt:  56%|#####5    | 27.9M/49.8M [00:25<00:37, 589kB/s]
+weights.pt:  56%|#####6    | 28.0M/49.8M [00:25<00:32, 677kB/s]
+weights.pt:  56%|#####6    | 28.1M/49.8M [00:25<00:28, 752kB/s]
+weights.pt:  57%|#####6    | 28.3M/49.8M [00:25<00:29, 722kB/s]
+weights.pt:  57%|#####6    | 28.4M/49.8M [00:25<00:27, 778kB/s]
+weights.pt:  57%|#####7    | 28.5M/49.8M [00:25<00:25, 830kB/s]
+weights.pt:  58%|#####7    | 28.6M/49.8M [00:26<00:27, 783kB/s]
+weights.pt:  58%|#####7    | 28.8M/49.8M [00:26<00:25, 821kB/s]
+weights.pt:  58%|#####8    | 28.9M/49.8M [00:26<00:24, 864kB/s]
+weights.pt:  58%|#####8    | 29.0M/49.8M [00:26<00:25, 812kB/s]
+weights.pt:  59%|#####8    | 29.2M/49.8M [00:26<00:32, 645kB/s]
+weights.pt:  59%|#####8    | 29.3M/49.8M [00:27<00:33, 615kB/s]
+weights.pt:  59%|#####9    | 29.4M/49.8M [00:27<00:29, 683kB/s]
+weights.pt:  59%|#####9    | 29.6M/49.8M [00:27<00:26, 757kB/s]
+weights.pt:  60%|#####9    | 29.7M/49.8M [00:27<00:24, 814kB/s]
+weights.pt:  60%|#####9    | 29.8M/49.8M [00:27<00:25, 789kB/s]
+weights.pt:  60%|######    | 30.0M/49.8M [00:27<00:24, 826kB/s]
+weights.pt:  60%|######    | 30.1M/49.8M [00:27<00:22, 869kB/s]
+weights.pt:  61%|######    | 30.2M/49.8M [00:28<00:21, 914kB/s]
+weights.pt:  61%|######    | 30.4M/49.8M [00:28<00:22, 871kB/s]
+weights.pt:  61%|######1   | 30.5M/49.8M [00:28<00:21, 908kB/s]
+weights.pt:  61%|######1   | 30.6M/49.8M [00:28<00:20, 933kB/s]
+weights.pt:  62%|######1   | 30.7M/49.8M [00:28<00:19, 955kB/s]
+weights.pt:  62%|######1   | 30.9M/49.8M [00:28<00:19, 968kB/s]
+weights.pt:  62%|######2   | 31.0M/49.8M [00:28<00:19, 972kB/s]
+weights.pt:  63%|######2   | 31.1M/49.8M [00:29<00:20, 932kB/s]
+weights.pt:  63%|######2   | 31.3M/49.8M [00:29<00:19, 957kB/s]
+weights.pt:  63%|######3   | 31.4M/49.8M [00:29<00:19, 958kB/s]
+weights.pt:  63%|######3   | 31.5M/49.8M [00:29<00:18, 982kB/s]
+weights.pt:  64%|######3   | 31.7M/49.8M [00:29<00:17, 1.01MB/s]
+weights.pt:  64%|######3   | 31.8M/49.8M [00:29<00:17, 1.03MB/s]
+weights.pt:  64%|######4   | 31.9M/49.8M [00:29<00:17, 1.02MB/s]
+weights.pt:  64%|######4   | 32.1M/49.8M [00:31<01:03, 282kB/s] 
+weights.pt:  67%|######6   | 33.2M/49.8M [00:31<00:14, 1.13MB/s]
+weights.pt:  67%|######7   | 33.5M/49.8M [00:31<00:19, 856kB/s] 
+weights.pt:  68%|######7   | 33.8M/49.8M [00:32<00:17, 895kB/s]
+weights.pt:  68%|######8   | 34.0M/49.8M [00:32<00:17, 887kB/s]
+weights.pt:  69%|######8   | 34.2M/49.8M [00:32<00:17, 885kB/s]
+weights.pt:  69%|######8   | 34.4M/49.8M [00:32<00:16, 913kB/s]
+weights.pt:  69%|######9   | 34.5M/49.8M [00:32<00:16, 919kB/s]
+weights.pt:  69%|######9   | 34.6M/49.8M [00:33<00:16, 939kB/s]
+weights.pt:  70%|######9   | 34.8M/49.8M [00:33<00:15, 972kB/s]
+weights.pt:  70%|#######   | 34.9M/49.8M [00:33<00:14, 998kB/s]
+weights.pt:  70%|#######   | 35.0M/49.8M [00:33<00:14, 1.02MB/s]
+weights.pt:  71%|#######   | 35.1M/49.8M [00:33<00:14, 1.04MB/s]
+weights.pt:  71%|#######   | 35.3M/49.8M [00:33<00:17, 819kB/s] 
+weights.pt:  71%|#######1  | 35.4M/49.8M [00:34<00:20, 711kB/s]
+weights.pt:  71%|#######1  | 35.5M/49.8M [00:34<00:18, 776kB/s]
+weights.pt:  72%|#######1  | 35.7M/49.8M [00:34<00:19, 711kB/s]
+weights.pt:  72%|#######1  | 35.8M/49.8M [00:34<00:18, 771kB/s]
+weights.pt:  72%|#######2  | 35.9M/49.8M [00:34<00:19, 721kB/s]
+weights.pt:  72%|#######2  | 36.1M/49.8M [00:34<00:17, 770kB/s]
+weights.pt:  73%|#######2  | 36.2M/49.8M [00:35<00:16, 812kB/s]
+weights.pt:  73%|#######2  | 36.3M/49.8M [00:35<00:17, 769kB/s]
+weights.pt:  73%|#######3  | 36.5M/49.8M [00:35<00:16, 816kB/s]
+weights.pt:  73%|#######3  | 36.6M/49.8M [00:35<00:15, 836kB/s]
+weights.pt:  74%|#######3  | 36.7M/49.8M [00:35<00:16, 800kB/s]
+weights.pt:  74%|#######3  | 36.8M/49.8M [00:35<00:15, 841kB/s]
+weights.pt:  74%|#######4  | 37.0M/49.8M [00:35<00:14, 877kB/s]
+weights.pt:  74%|#######4  | 37.1M/49.8M [00:36<00:13, 910kB/s]
+weights.pt:  75%|#######4  | 37.2M/49.8M [00:36<00:14, 847kB/s]
+weights.pt:  75%|#######5  | 37.4M/49.8M [00:36<00:13, 890kB/s]
+weights.pt:  75%|#######5  | 37.5M/49.8M [00:36<00:13, 902kB/s]
+weights.pt:  76%|#######5  | 37.6M/49.8M [00:36<00:12, 944kB/s]
+weights.pt:  76%|#######5  | 37.8M/49.8M [00:36<00:13, 862kB/s]
+weights.pt:  76%|#######6  | 37.9M/49.8M [00:36<00:13, 900kB/s]
+weights.pt:  76%|#######6  | 38.0M/49.8M [00:37<00:12, 920kB/s]
+weights.pt:  77%|#######6  | 38.2M/49.8M [00:37<00:12, 935kB/s]
+weights.pt:  77%|#######6  | 38.3M/49.8M [00:37<00:11, 968kB/s]
+weights.pt:  77%|#######7  | 38.4M/49.8M [00:37<00:12, 901kB/s]
+weights.pt:  77%|#######7  | 38.6M/49.8M [00:37<00:12, 928kB/s]
+weights.pt:  78%|#######7  | 38.7M/49.8M [00:37<00:11, 955kB/s]
+weights.pt:  78%|#######7  | 38.8M/49.8M [00:37<00:11, 946kB/s]
+weights.pt:  78%|#######8  | 38.9M/49.8M [00:38<00:11, 973kB/s]
+weights.pt:  78%|#######8  | 39.1M/49.8M [00:38<00:11, 936kB/s]
+weights.pt:  79%|#######8  | 39.2M/49.8M [00:38<00:10, 972kB/s]
+weights.pt:  79%|#######8  | 39.3M/49.8M [00:38<00:10, 975kB/s]
+weights.pt:  79%|#######9  | 39.5M/49.8M [00:38<00:10, 996kB/s]
+weights.pt:  79%|#######9  | 39.6M/49.8M [00:38<00:10, 1.01MB/s]
+weights.pt:  80%|#######9  | 39.7M/49.8M [00:38<00:09, 1.01MB/s]
+weights.pt:  80%|########  | 39.9M/49.8M [00:38<00:09, 1.02MB/s]
+weights.pt:  80%|########  | 40.0M/49.8M [00:39<00:09, 1.01MB/s]
+weights.pt:  81%|########  | 40.1M/49.8M [00:39<00:09, 983kB/s] 
+weights.pt:  81%|########  | 40.3M/49.8M [00:39<00:09, 995kB/s]
+weights.pt:  81%|########1 | 40.4M/49.8M [00:39<00:09, 1.01MB/s]
+weights.pt:  81%|########1 | 40.5M/49.8M [00:39<00:09, 1.03MB/s]
+weights.pt:  82%|########1 | 40.7M/49.8M [00:39<00:09, 1.01MB/s]
+weights.pt:  82%|########1 | 40.8M/49.8M [00:39<00:08, 1.04MB/s]
+weights.pt:  82%|########2 | 40.9M/49.8M [00:39<00:08, 1.05MB/s]
+weights.pt:  82%|########2 | 41.0M/49.8M [00:40<00:08, 1.05MB/s]
+weights.pt:  83%|########2 | 41.2M/49.8M [00:40<00:08, 1.07MB/s]
+weights.pt:  83%|########2 | 41.3M/49.8M [00:40<00:07, 1.09MB/s]
+weights.pt:  83%|########3 | 41.4M/49.8M [00:40<00:07, 1.10MB/s]
+weights.pt:  83%|########3 | 41.6M/49.8M [00:40<00:09, 857kB/s] 
+weights.pt:  84%|########3 | 41.7M/49.8M [00:40<00:09, 849kB/s]
+weights.pt:  84%|########3 | 41.8M/49.8M [00:41<00:11, 677kB/s]
+weights.pt:  84%|########4 | 42.0M/49.8M [00:41<00:10, 721kB/s]
+weights.pt:  84%|########4 | 42.1M/49.8M [00:41<00:09, 821kB/s]
+weights.pt:  85%|########4 | 42.2M/49.8M [00:41<00:08, 895kB/s]
+weights.pt:  85%|########5 | 42.4M/49.8M [00:41<00:07, 943kB/s]
+weights.pt:  85%|########5 | 42.5M/49.8M [00:41<00:07, 989kB/s]
+weights.pt:  86%|########5 | 42.6M/49.8M [00:41<00:06, 1.04MB/s]
+weights.pt:  86%|########5 | 42.7M/49.8M [00:41<00:06, 1.08MB/s]
+weights.pt:  86%|########6 | 42.9M/49.8M [00:42<00:06, 1.11MB/s]
+weights.pt:  86%|########6 | 43.0M/49.8M [00:42<00:05, 1.15MB/s]
+weights.pt:  87%|########6 | 43.2M/49.8M [00:42<00:05, 1.21MB/s]
+weights.pt:  87%|########7 | 43.4M/49.8M [00:42<00:05, 1.28MB/s]
+weights.pt:  87%|########7 | 43.5M/49.8M [00:42<00:05, 1.20MB/s]
+weights.pt:  88%|########7 | 43.7M/49.8M [00:42<00:04, 1.26MB/s]
+weights.pt:  88%|########8 | 43.9M/49.8M [00:42<00:04, 1.33MB/s]
+weights.pt:  89%|########8 | 44.1M/49.8M [00:42<00:04, 1.41MB/s]
+weights.pt:  89%|########8 | 44.3M/49.8M [00:43<00:03, 1.45MB/s]
+weights.pt:  89%|########9 | 44.5M/49.8M [00:43<00:03, 1.51MB/s]
+weights.pt:  90%|########9 | 44.7M/49.8M [00:43<00:03, 1.57MB/s]
+weights.pt:  90%|######### | 44.9M/49.8M [00:43<00:03, 1.61MB/s]
+weights.pt:  91%|######### | 45.1M/49.8M [00:43<00:02, 1.63MB/s]
+weights.pt:  91%|######### | 45.3M/49.8M [00:43<00:02, 1.67MB/s]
+weights.pt:  91%|#########1| 45.6M/49.8M [00:43<00:02, 1.77MB/s]
+weights.pt:  92%|#########1| 45.8M/49.8M [00:43<00:02, 1.85MB/s]
+weights.pt:  93%|#########2| 46.1M/49.8M [00:44<00:01, 1.92MB/s]
+weights.pt:  93%|#########3| 46.4M/49.8M [00:44<00:01, 2.00MB/s]
+weights.pt:  94%|#########3| 46.6M/49.8M [00:44<00:01, 2.05MB/s]
+weights.pt:  94%|#########4| 46.9M/49.8M [00:44<00:01, 2.10MB/s]
+weights.pt:  95%|#########4| 47.1M/49.8M [00:44<00:01, 2.14MB/s]
+weights.pt:  95%|#########5| 47.4M/49.8M [00:44<00:01, 2.20MB/s]
+weights.pt:  96%|#########5| 47.7M/49.8M [00:44<00:01, 2.07MB/s]
+weights.pt:  96%|#########6| 47.9M/49.8M [00:44<00:00, 2.08MB/s]
+weights.pt:  97%|#########6| 48.2M/49.8M [00:45<00:02, 794kB/s] 
+weights.pt:  99%|#########8| 49.2M/49.8M [00:45<00:00, 1.76MB/s]
+weights.pt:  99%|#########9| 49.5M/49.8M [00:46<00:00, 1.69MB/s]
+weights.pt: 100%|##########| 49.8M/49.8M [00:46<00:00, 1.60MB/s]
+weights.pt: 100%|##########| 49.8M/49.8M [00:47<00:00, 1.05MB/s]
+To https://github.com/tahamajs/SVD_linear_Attention.git
+   d4cd47c35..bfb2cabf3  main -> main

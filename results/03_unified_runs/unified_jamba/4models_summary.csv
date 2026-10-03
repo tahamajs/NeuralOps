@@ -1,4 +1,0 @@
-module_name,status,accuracy_pct,f1_score,f1_macro,precision,recall,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,trainable_recovery_params,compression_rate,compression_ratio_pct,flops_reduction_pct,num_compressed_layers,num_fallback_layers,avg_reconstruction_error,weighted_reconstruction_error,num_injected_attention_layers,lora_params,error,path,timestamp,module_key,model_name,model_slug
-full,PASS,90.94,0.9125,0.9093,0.9101,0.9091,0.3103,0.0,389.51,167898.9,66955010,66955010,0,1.0,0.0,0.0,0,0,,,0,0,,legacy_bert,2026-09-11T19:10:21.140592,jamba,distilbert,distilbert
-full,PASS,75.46,0.7277,0.7522,0.7691,0.7567,0.6577,0.0,712.34,89113.64,124647170,124647170,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_roberta,2026-09-11T19:10:48.031252,jamba,roberta,roberta
-full,PASS,57.91,0.301,0.4999,0.7569,0.5866,0.6661,0.0,793.19,70977.91,124441344,124441344,0,1.0,0.0,0.0,0,0,,,0,0,,adapted_gpt,2026-09-11T19:11:18.988500,jamba,gpt2,gpt2

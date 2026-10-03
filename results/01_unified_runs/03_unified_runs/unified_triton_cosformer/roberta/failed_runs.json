@@ -1,0 +1,12 @@
+[
+  {
+    "module": "triton_cosformer",
+    "model": "D:\\SVD_Project\\models\\roberta_sst2",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 55.05,
+    "error": "base_before=124647170 base_after=131734274 delta=+5.69%",
+    "timestamp": "2026-09-29T07:08:10.656166"
+  }
+]

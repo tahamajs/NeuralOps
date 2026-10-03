@@ -1,3 +1,0 @@
-module_name,status,perplexity,baseline_ppl,delta_ppl,ppl_ratio,compression_rate,compression_ratio_pct,total_params_before,total_params_after,delta_params,num_injected_attention_layers,num_compressed_layers,num_fallback_layers,lora_params,calibration_time_s,recovery_time_s,peak_vram_mb,latency_ms_per_token,throughput_tok_per_sec,eval_elapsed_s,wall_elapsed_s,error,timestamp
-full,PASS,23.011,23.011,0.0,1.0,1.0,0.0,124439808,124439808,0,0,0,0,0,0.0,0.0,919.88,0.1339,7470.44,1.339,1.339,,2026-09-30T04:05:20
-hla,FAIL_PPL_DIVERGED,3096.9222,23.011,3073.9112,134.5844,0.9908,-0.93,124439808,125591964,1152156,12,0,0,0,0.408,0.0,1152.31,0.2304,4339.42,2.304,5.015,,2026-09-30T04:05:25

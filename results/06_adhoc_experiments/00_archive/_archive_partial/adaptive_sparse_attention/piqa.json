@@ -1,0 +1,5 @@
+{
+  "task": "piqa",
+  "accuracy": 62.4,
+  "num_samples": 500
+}

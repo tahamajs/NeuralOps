@@ -1,5 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-64,cluster_attention,ERROR_CODE_1,0.0,0.0,99.0,0.0,1.0,,0,0,116.3,,
-128,cluster_attention,ERROR_CODE_1,0.0,0.0,99.0,0.0,1.0,,0,0,108.6,,
-256,cluster_attention,PASS,60.1,0.5999,2.1744,412.28,1.0,0.0,0,0,572.2,66955779,67545615
-384,cluster_attention,ERROR_CODE_4294967295,0.0,0.0,99.0,0.0,1.0,,0,0,39.7,,

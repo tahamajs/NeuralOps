@@ -1,2 +1,0 @@
-module_name,status,accuracy_pct,f1_score,val_loss,elapsed_s,peak_vram_mb,tokens_per_sec,total_params_before,total_params_after,compression_rate,num_compressed_layers,num_fallback_layers,error,timestamp
-,PASS,84.86,0.8527,0.3554,20.32,0.0,0.0,0,0,1.0,0,0,"",

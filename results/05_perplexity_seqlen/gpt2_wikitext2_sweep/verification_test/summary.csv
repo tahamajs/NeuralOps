@@ -1,5 +1,0 @@
-module_name,status,perplexity,baseline_ppl,delta_ppl,compression_rate,compression_ratio_pct,peak_vram_mb,latency_ms_per_token,throughput_tok_per_sec,elapsed_s,total_params_before,total_params_after,error,timestamp
-full,PASS,21.71,21.71,0.0,1.0,0.0,916.17,0.141,7114.1,14.06,124439808,124439808,,2026-09-27T09:55:01
-adasvd,PASS_DEGRADED,1713.9,21.71,1692.19,1.0523,4.97,901.52,0.127,7844.8,12.75,124439808,118255872,,2026-09-27T09:55:41
-aegis_hybrid,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,8.02,124439808,124439808,expected scalar type Float but found Half,2026-09-27T09:55:49
-aegis_spectron_fp8,FAIL,-1.0,21.71,999.0,1.0,0.0,0.0,0.0,0.0,12.27,124439808,124439808,"mat1 and mat2 must have the same dtype, but got Half and Float",2026-09-27T09:56:01

@@ -1,0 +1,217 @@
+{
+  "compressor_name": "a3",
+  "original_parameters": 124647170,
+  "compressed_parameters": 120063746,
+  "saved_parameters": 4583424,
+  "compression_ratio": 0.9632288161857184,
+  "reduction_percentage": 3.6771183814281545,
+  "factorized_layers": 32,
+  "skipped_layers": 4,
+  "num_compressed": 32,
+  "num_fallback": 4,
+  "num_compressed_layers": 32,
+  "num_fallback_layers": 4,
+  "r_ceiling": 320,
+  "compressed_layers": [
+    "roberta.encoder.layer.0.attention.self.query",
+    "roberta.encoder.layer.0.attention.self.key",
+    "roberta.encoder.layer.0.attention.self.value",
+    "roberta.encoder.layer.1.attention.self.query",
+    "roberta.encoder.layer.1.attention.self.key",
+    "roberta.encoder.layer.1.attention.self.value",
+    "roberta.encoder.layer.2.attention.self.query",
+    "roberta.encoder.layer.2.attention.self.key",
+    "roberta.encoder.layer.2.attention.self.value",
+    "roberta.encoder.layer.3.attention.self.query",
+    "roberta.encoder.layer.3.attention.self.key",
+    "roberta.encoder.layer.3.attention.self.value",
+    "roberta.encoder.layer.4.attention.self.query",
+    "roberta.encoder.layer.4.attention.self.key",
+    "roberta.encoder.layer.4.attention.self.value",
+    "roberta.encoder.layer.5.attention.self.query",
+    "roberta.encoder.layer.5.attention.self.key",
+    "roberta.encoder.layer.5.attention.self.value",
+    "roberta.encoder.layer.6.attention.self.query",
+    "roberta.encoder.layer.6.attention.self.key",
+    "roberta.encoder.layer.6.attention.self.value",
+    "roberta.encoder.layer.7.attention.self.query",
+    "roberta.encoder.layer.7.attention.self.key",
+    "roberta.encoder.layer.7.attention.self.value",
+    "roberta.encoder.layer.8.attention.self.query",
+    "roberta.encoder.layer.8.attention.self.key",
+    "roberta.encoder.layer.9.attention.self.query",
+    "roberta.encoder.layer.9.attention.self.key",
+    "roberta.encoder.layer.10.attention.self.query",
+    "roberta.encoder.layer.10.attention.self.key",
+    "roberta.encoder.layer.11.attention.self.query",
+    "roberta.encoder.layer.11.attention.self.key"
+  ],
+  "rank": 128,
+  "use_fisher": true,
+  "recalibrate_ln": true,
+  "avg_reconstruction_error": 0.37249635868102926,
+  "weighted_reconstruction_error": 0.3724963586810292,
+  "layer_stats": {
+    "roberta.encoder.layer.0.attention.self.query": {
+      "rank": 281,
+      "rel_error": 0.3925778090483413,
+      "weighted": true
+    },
+    "roberta.encoder.layer.0.attention.self.key": {
+      "rank": 281,
+      "rel_error": 0.3601707469917284,
+      "weighted": true
+    },
+    "roberta.encoder.layer.0.attention.self.value": {
+      "rank": 281,
+      "rel_error": 0.3774054140011317,
+      "weighted": true
+    },
+    "roberta.encoder.layer.1.attention.self.query": {
+      "rank": 281,
+      "rel_error": 0.3969222527538211,
+      "weighted": true
+    },
+    "roberta.encoder.layer.1.attention.self.key": {
+      "rank": 281,
+      "rel_error": 0.38563464300619904,
+      "weighted": true
+    },
+    "roberta.encoder.layer.1.attention.self.value": {
+      "rank": 281,
+      "rel_error": 0.3666764880155932,
+      "weighted": true
+    },
+    "roberta.encoder.layer.2.attention.self.query": {
+      "rank": 281,
+      "rel_error": 0.39312136693075966,
+      "weighted": true
+    },
+    "roberta.encoder.layer.2.attention.self.key": {
+      "rank": 281,
+      "rel_error": 0.3961398113497906,
+      "weighted": true
+    },
+    "roberta.encoder.layer.2.attention.self.value": {
+      "rank": 281,
+      "rel_error": 0.3846374061157655,
+      "weighted": true
+    },
+    "roberta.encoder.layer.3.attention.self.query": {
+      "rank": 320,
+      "rel_error": 0.359481348045489,
+      "weighted": true
+    },
+    "roberta.encoder.layer.3.attention.self.key": {
+      "rank": 320,
+      "rel_error": 0.3742071756792038,
+      "weighted": true
+    },
+    "roberta.encoder.layer.3.attention.self.value": {
+      "rank": 281,
+      "rel_error": 0.3940644304681711,
+      "weighted": true
+    },
+    "roberta.encoder.layer.4.attention.self.query": {
+      "rank": 320,
+      "rel_error": 0.34743244982001015,
+      "weighted": true
+    },
+    "roberta.encoder.layer.4.attention.self.key": {
+      "rank": 320,
+      "rel_error": 0.3542835327803368,
+      "weighted": true
+    },
+    "roberta.encoder.layer.4.attention.self.value": {
+      "rank": 281,
+      "rel_error": 0.3800386270525366,
+      "weighted": true
+    },
+    "roberta.encoder.layer.5.attention.self.query": {
+      "rank": 320,
+      "rel_error": 0.3511267612380837,
+      "weighted": true
+    },
+    "roberta.encoder.layer.5.attention.self.key": {
+      "rank": 320,
+      "rel_error": 0.3563982692517169,
+      "weighted": true
+    },
+    "roberta.encoder.layer.5.attention.self.value": {
+      "rank": 281,
+      "rel_error": 0.3872005996943863,
+      "weighted": true
+    },
+    "roberta.encoder.layer.6.attention.self.query": {
+      "rank": 281,
+      "rel_error": 0.3861470060555869,
+      "weighted": true
+    },
+    "roberta.encoder.layer.6.attention.self.key": {
+      "rank": 281,
+      "rel_error": 0.3727078423808441,
+      "weighted": true
+    },
+    "roberta.encoder.layer.6.attention.self.value": {
+      "rank": 320,
+      "rel_error": 0.34317046803679097,
+      "weighted": true
+    },
+    "roberta.encoder.layer.7.attention.self.query": {
+      "rank": 281,
+      "rel_error": 0.3961151037509558,
+      "weighted": true
+    },
+    "roberta.encoder.layer.7.attention.self.key": {
+      "rank": 281,
+      "rel_error": 0.3844423328885966,
+      "weighted": true
+    },
+    "roberta.encoder.layer.7.attention.self.value": {
+      "rank": 320,
+      "rel_error": 0.35479604343727694,
+      "weighted": true
+    },
+    "roberta.encoder.layer.8.attention.self.query": {
+      "rank": 281,
+      "rel_error": 0.3716001671351714,
+      "weighted": true
+    },
+    "roberta.encoder.layer.8.attention.self.key": {
+      "rank": 281,
+      "rel_error": 0.36555492174709053,
+      "weighted": true
+    },
+    "roberta.encoder.layer.9.attention.self.query": {
+      "rank": 281,
+      "rel_error": 0.3509090725282964,
+      "weighted": true
+    },
+    "roberta.encoder.layer.9.attention.self.key": {
+      "rank": 281,
+      "rel_error": 0.3580739239336724,
+      "weighted": true
+    },
+    "roberta.encoder.layer.10.attention.self.query": {
+      "rank": 281,
+      "rel_error": 0.36044710524256135,
+      "weighted": true
+    },
+    "roberta.encoder.layer.10.attention.self.key": {
+      "rank": 281,
+      "rel_error": 0.3566906923487222,
+      "weighted": true
+    },
+    "roberta.encoder.layer.11.attention.self.query": {
+      "rank": 281,
+      "rel_error": 0.36807216939854537,
+      "weighted": true
+    },
+    "roberta.encoder.layer.11.attention.self.key": {
+      "rank": 281,
+      "rel_error": 0.39363749666575915,
+      "weighted": true
+    }
+  },
+  "method": "a3_activation_aware_factorized_svd"
+}

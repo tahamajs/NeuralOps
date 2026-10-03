@@ -1,0 +1,4 @@
+model,slug,baseline_acc,acc,delta_acc,f1,status,passed_gate,num_compressed,num_fallback,actual_sparsity,effective_parameter_ratio,avg_reconstruction_error,latency_p95_ms,vram_peak_mb,out_dir,hf_repo
+distilbert,distilbert,0.9070999999999999,0.9002,-0.006899999999999906,0.9032,PASS_NO_COMPRESSION,False,0,36,0.5,1.0,0.3922593709495332,0.0,183.07,results\unified_armor\distilbert,N/A (Failed Gate)
+roberta,roberta,0.7856000000000001,0.797,0.011399999999999966,0.8127,PASS_NO_COMPRESSION,False,0,72,0.5,1.0,0.4025514241721895,0.0,520.68,results\unified_armor\roberta,N/A (Failed Gate)
+gpt2,gpt2,0.7936,0.49310000000000004,-0.30049999999999993,0.009,PASS_NO_COMPRESSION,False,0,48,0.5,1.0,0.38758774908880395,0.0,627.91,results\unified_armor\gpt2,N/A (Failed Gate)

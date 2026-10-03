@@ -1,0 +1,12 @@
+[
+  {
+    "module": "aegis_v6",
+    "model": "models/roberta_sst2",
+    "dataset": "sst2",
+    "status": "FAIL_BELOW_CHANCE",
+    "perplexity": "",
+    "accuracy_pct": 50.92,
+    "error": "FAIL: accuracy (50.92%) below chance threshold (56.00%)",
+    "timestamp": "2026-09-25T16:11:38.547127"
+  }
+]

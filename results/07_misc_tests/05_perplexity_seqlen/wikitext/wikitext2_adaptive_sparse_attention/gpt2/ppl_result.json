@@ -1,0 +1,8 @@
+{
+  "module": "adaptive_sparse_attention",
+  "model_path": "models/gpt2",
+  "dataset": "wikitext2",
+  "perplexity": 27.2719669342041,
+  "seq_len": 1024,
+  "stride": 512
+}

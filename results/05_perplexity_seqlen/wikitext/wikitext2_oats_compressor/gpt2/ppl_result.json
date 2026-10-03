@@ -1,8 +1,0 @@
-{
-  "module": "oats_compressor",
-  "model_path": "models/gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 14298.2587890625,
-  "seq_len": 1024,
-  "stride": 512
-}

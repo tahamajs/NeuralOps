@@ -1,0 +1,5 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+64,ast_pruner,ERROR_CODE_4294967295,0.0,0.0,99.0,0.0,1.0,,0,0,12.4,,
+128,ast_pruner,ERROR_CODE_4294967295,0.0,0.0,99.0,0.0,1.0,,0,0,41.7,,
+256,ast_pruner,ERROR_CODE_4294967295,0.0,0.0,99.0,0.0,1.0,,0,0,16.2,,
+384,ast_pruner,ERROR_CODE_4294967295,0.0,0.0,99.0,0.0,1.0,,0,0,15.1,,

@@ -1,0 +1,30 @@
+{
+  "module": "res_svd",
+  "pre_ppl": 277.4,
+  "baseline_ppl": 31.54,
+  "results": {
+    "C": {
+      "method": "C",
+      "pre_ppl": 277.4,
+      "post_ppl": 115.3,
+      "ppl_ratio": 3.6557,
+      "recovery_pct": 65.93,
+      "peak_vram_mb": 1149.0,
+      "train_time_s": 204.57,
+      "s_per_step": 0.4091,
+      "loss_final": 185.6532,
+      "cached": true,
+      "ppl_at_step_250": "",
+      "ppl_at_step_500": 115.3,
+      "ppl_at_step_750": "",
+      "ppl_at_step_1000": "",
+      "ppl_at_step_1250": "",
+      "ppl_at_step_1500": ""
+    }
+  },
+  "best_method": "C",
+  "best_post_ppl": 115.3,
+  "is_ssm_recoverable": true,
+  "recommendation": "MAYBE: Partial recovery achieved. Additional recovery steps or specialized scan kernels needed.",
+  "run_dir": "results/kd_runs/res_svd/20260930_190016_bs1_seq128_lr5e-06_noclr_C"
+}

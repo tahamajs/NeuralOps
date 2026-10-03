@@ -1,0 +1,59 @@
+{
+    "model": "distilbert_sst2_fusion_attn",
+    "performance": {
+        "accuracy_pct": 89.91,
+        "f1_score": 0.9024,
+        "f1_macro": 0.899,
+        "precision": 0.8996,
+        "recall": 0.8988,
+        "val_loss": 0.2697,
+        "perplexity": null,
+        "status": "MODERATE_EXPANSION",
+        "elapsed_s": 8.98
+    },
+    "efficiency": {
+        "total_params_before": 66955010,
+        "total_params_after": 67646222,
+        "trainable_recovery_params": 691212,
+        "compression_rate": 1.0,
+        "compression_ratio_pct": 0.0,
+        "flops_reduction_pct": 0.0,
+        "num_compressed_layers": 0,
+        "num_fallback_layers": 0,
+        "num_injected_attention_layers": 6,
+        "lora_params": 589824,
+        "avg_reconstruction_error": null,
+        "weighted_reconstruction_error": null,
+        "per_layer_reconstruction_errors": {},
+        "per_layer_ranks": {
+            "distilbert.transformer.layer.0.attention": 64,
+            "distilbert.transformer.layer.1.attention": 64,
+            "distilbert.transformer.layer.2.attention": 64,
+            "distilbert.transformer.layer.3.attention": 64,
+            "distilbert.transformer.layer.4.attention": 64,
+            "distilbert.transformer.layer.5.attention": 64
+        }
+    },
+    "hardware": {
+        "peak_vram_mb": 380.91,
+        "tokens_per_sec": 50765.47
+    },
+    "architecture": {
+        "span_distribution": {},
+        "mean_span": 128.0,
+        "sparsity_ratio_percent": 0.0
+    },
+    "scalability": {
+        "L_128_vram_mb": 346.23,
+        "L_256_vram_mb": 348.99,
+        "L_512_vram_mb": "unsupported (exceeds model max_position_embeddings 512)",
+        "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
+    },
+    "seed": 42,
+    "git_sha": "235e210ae",
+    "git_dirty": true,
+    "torch_version": "2.6.0+cu124",
+    "transformers_version": "5.5.0",
+    "cuda_version": "12.4",
+    "timestamp": "2026-09-26T23:58:27.208971+00:00"
+}

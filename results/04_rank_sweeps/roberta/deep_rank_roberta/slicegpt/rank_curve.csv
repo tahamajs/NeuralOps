@@ -1,7 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-16,slicegpt,PASS,93.81,0.94,0.2711,292.72,1.0,0.0,0,0,94.3,124647170,124647170
-32,slicegpt,PASS,93.81,0.94,0.2711,292.72,1.0,0.0,0,0,94.5,124647170,124647170
-64,,PASS,93.81,0.9403,0.1981,0.0,1.0,,0,0,32.8,0,0
-128,,PASS,93.81,0.9403,0.1981,0.0,1.0,,0,0,32.98,0,0
-256,,PASS,93.81,0.9403,0.1981,0.0,1.0,,0,0,33.16,0,0
-384,,PASS,93.81,0.9403,0.1981,0.0,1.0,,0,0,33.39,0,0

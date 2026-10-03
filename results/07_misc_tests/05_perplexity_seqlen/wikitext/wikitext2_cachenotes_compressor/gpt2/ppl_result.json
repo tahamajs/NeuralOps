@@ -1,0 +1,8 @@
+{
+  "module": "cachenotes_compressor",
+  "model_path": "models/gpt2",
+  "dataset": "wikitext2",
+  "perplexity": 29.951868057250977,
+  "seq_len": 1024,
+  "stride": 512
+}

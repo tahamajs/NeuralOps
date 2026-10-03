@@ -1,0 +1,8 @@
+{
+  "module": "flat_llm",
+  "model_path": "models/gpt2",
+  "dataset": "wikitext2",
+  "perplexity": 53.294464111328125,
+  "seq_len": 1024,
+  "stride": 512
+}

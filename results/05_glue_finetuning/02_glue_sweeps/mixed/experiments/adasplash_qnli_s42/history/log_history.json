@@ -1,0 +1,9 @@
+[
+  {
+    "loss": 0.695,
+    "grad_norm": NaN,
+    "learning_rate": 0.0,
+    "epoch": 0.0019094172458565645,
+    "step": 50
+  }
+]

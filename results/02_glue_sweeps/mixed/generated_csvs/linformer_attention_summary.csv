@@ -1,4 +1,0 @@
-model,accuracy_pct,f1_score,peak_vram_mb,throughput_tokens_sec,status
-BERT,47.48,0.4675,349.3,329138.1,PASS
-RoBERTa,48.17,0.4989,421.4,582397.3,PASS
-DistilBERT,50.92,0.6748,1321.7,32099.9,PASS

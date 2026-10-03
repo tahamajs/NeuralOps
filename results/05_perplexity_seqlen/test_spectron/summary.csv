@@ -1,3 +1,0 @@
-module_name,status,perplexity,baseline_ppl,delta_ppl,compression_rate,compression_ratio_pct,peak_vram_mb,latency_ms_per_token,throughput_tok_per_sec,elapsed_s,total_params_before,total_params_after,error,timestamp
-full,PASS,21.71,21.71,0.0,1.0,0.0,916.17,0.075,13378.4,7.47,124439808,124439808,,2026-09-27T11:05:53
-aegis_spectron_fp8,PASS_DEGRADED,1814.89,21.71,1793.18,1.1278,11.33,837.64,1.313,761.8,131.27,124439808,110339508,,2026-09-27T11:08:11

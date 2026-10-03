@@ -1,8 +1,0 @@
-{
-  "module": "expert_choice_moe",
-  "model_path": "models/gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 27.323715209960938,
-  "seq_len": 1024,
-  "stride": 512
-}

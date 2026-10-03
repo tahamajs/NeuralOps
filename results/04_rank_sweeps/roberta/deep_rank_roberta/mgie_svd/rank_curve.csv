@@ -1,7 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-16,mgie_svd,PASS,73.62,0.7103,0.5268,304.27,1.2709,21.31,47,1,1673.6,124647170,98080514
-32,mgie_svd,PASS,76.49,0.776,0.5014,315.76,1.263,20.82,48,0,1635.7,124647170,98694914
-64,,PASS,94.04,0.9417,0.1889,0.0,1.0,,0,0,25.21,0,0
-128,,PASS,94.04,0.9417,0.1889,0.0,1.0,,0,0,14.54,0,0
-256,,PASS,92.2,0.9233,0.2275,0.0,1.0,,0,0,31.83,0,0
-384,,PASS,92.78,0.9293,0.2123,0.0,1.0,,0,0,42.57,0,0

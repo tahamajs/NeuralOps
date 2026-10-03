@@ -1,8 +1,0 @@
-{
-  "module": "mlorq_compressor",
-  "model_path": "models/gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 30.583478927612305,
-  "seq_len": 1024,
-  "stride": 512
-}

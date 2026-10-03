@@ -1,7 +1,0 @@
-{
-  "seed": 456,
-  "module": "adaptive_svd",
-  "accuracy_pct": 40.3,
-  "f1_score": 0.3341,
-  "elapsed_s": 8.1
-}

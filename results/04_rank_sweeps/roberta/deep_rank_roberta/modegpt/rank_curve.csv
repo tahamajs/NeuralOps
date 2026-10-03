@@ -1,7 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-16,modegpt,PASS,75.11,0.7792,0.5267,299.49,1.1133,10.18,47,1,110.4,124647170,111959810
-32,modegpt,PASS,78.78,0.8034,0.4594,306.47,1.1102,9.92,48,0,110.3,124647170,112279298
-64,,PASS,94.04,0.9417,0.1889,0.0,1.0,,0,0,14.73,0,0
-128,,PASS,94.04,0.9417,0.1889,0.0,1.0,,0,0,15.01,0,0
-256,,PASS,91.74,0.9184,0.2301,0.0,1.0,,0,0,14.72,0,0
-384,,MODERATE_EXPANSION,92.43,0.9252,0.2117,0.0,1.0,,0,0,13.64,0,0

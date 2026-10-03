@@ -1,8 +1,0 @@
-{
-  "module": "proxsparse",
-  "model_path": "models/gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 341.44891357421875,
-  "seq_len": 1024,
-  "stride": 512
-}

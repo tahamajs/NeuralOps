@@ -1,7 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-16,oats_compressor,PASS,93.35,0.9361,0.2935,351.35,1.0,0.0,48,0,124.4,124647170,124647170
-32,oats_compressor,PASS,93.35,0.9361,0.2935,351.35,1.0,0.0,48,0,124.4,124647170,124647170
-64,,PASS,93.81,0.9397,0.2011,0.0,1.0,,0,0,27.82,0,0
-128,,PASS,93.81,0.9397,0.2011,0.0,1.0,,0,0,25.6,0,0
-256,,PASS,93.81,0.9397,0.2011,0.0,1.0,,0,0,25.67,0,0
-384,,PASS,93.81,0.9397,0.2011,0.0,1.0,,0,0,30.24,0,0

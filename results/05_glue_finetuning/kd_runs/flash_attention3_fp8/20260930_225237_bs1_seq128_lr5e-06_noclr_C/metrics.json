@@ -1,0 +1,30 @@
+{
+  "module": "flash_attention3_fp8",
+  "pre_ppl": 31.54,
+  "baseline_ppl": 31.54,
+  "results": {
+    "C": {
+      "method": "C",
+      "pre_ppl": 31.54,
+      "post_ppl": 31.81,
+      "ppl_ratio": 1.0086,
+      "recovery_pct": 0.0,
+      "peak_vram_mb": 1444.94,
+      "train_time_s": 183.51,
+      "s_per_step": 0.367,
+      "loss_final": 21.1802,
+      "cached": true,
+      "ppl_at_step_250": "",
+      "ppl_at_step_500": 31.81,
+      "ppl_at_step_750": "",
+      "ppl_at_step_1000": "",
+      "ppl_at_step_1250": "",
+      "ppl_at_step_1500": ""
+    }
+  },
+  "best_method": "C",
+  "best_post_ppl": 31.81,
+  "is_ssm_recoverable": true,
+  "recommendation": "YES: SSM can learn from attention. Distillation successfully bridged the architectural gap.",
+  "run_dir": "results/kd_runs/flash_attention3_fp8/20260930_225237_bs1_seq128_lr5e-06_noclr_C"
+}

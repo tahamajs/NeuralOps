@@ -1,7 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-16,swift_svd_compressor,PASS_NO_COMPRESSION,93.81,0.94,0.2711,292.72,1.0,0.0,0,48,107.1,124647170,124647170
-32,swift_svd_compressor,PASS_NO_COMPRESSION,93.81,0.94,0.2711,292.72,1.0,0.0,0,48,107.0,124647170,124647170
-64,,PASS,93.92,0.9413,0.2054,0.0,1.0,,0,0,39.26,0,0
-128,,PASS,93.92,0.9413,0.2054,0.0,1.0,,0,0,43.08,0,0
-256,,PASS,91.74,0.9195,0.2838,0.0,1.0,,0,0,51.48,0,0
-384,,PASS,93.0,0.9315,0.2534,0.0,1.0,,0,0,67.38,0,0

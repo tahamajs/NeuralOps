@@ -1,8 +1,0 @@
-{
-  "module": "granite_hybrid",
-  "model_path": "models/gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 1899.7998046875,
-  "seq_len": 1024,
-  "stride": 512
-}

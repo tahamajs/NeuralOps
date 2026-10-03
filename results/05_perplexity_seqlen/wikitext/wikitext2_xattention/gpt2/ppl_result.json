@@ -1,8 +1,0 @@
-{
-  "module": "xattention",
-  "model_path": "models/gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 42.179359436035156,
-  "seq_len": 1024,
-  "stride": 512
-}

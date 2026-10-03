@@ -1,0 +1,30 @@
+{
+  "module": "svd_llm_v2_attention",
+  "pre_ppl": 339.46,
+  "baseline_ppl": 31.54,
+  "results": {
+    "C": {
+      "method": "C",
+      "pre_ppl": 339.46,
+      "post_ppl": 120.41,
+      "ppl_ratio": 3.8177,
+      "recovery_pct": 71.14,
+      "peak_vram_mb": 1132.14,
+      "train_time_s": 263.22,
+      "s_per_step": 0.5264,
+      "loss_final": 180.0523,
+      "cached": true,
+      "ppl_at_step_250": "",
+      "ppl_at_step_500": 120.41,
+      "ppl_at_step_750": "",
+      "ppl_at_step_1000": "",
+      "ppl_at_step_1250": "",
+      "ppl_at_step_1500": ""
+    }
+  },
+  "best_method": "C",
+  "best_post_ppl": 120.41,
+  "is_ssm_recoverable": true,
+  "recommendation": "MAYBE: Partial recovery achieved. Additional recovery steps or specialized scan kernels needed.",
+  "run_dir": "results/kd_runs/svd_llm_v2_attention/20260930_173348_bs1_seq128_lr5e-06_noclr_C"
+}

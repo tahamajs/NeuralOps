@@ -1,1 +1,0 @@
-{"batch_size": 2, "num_workers": 4, "learning_rate": 0.0002, "epochs": 3.0, "seed": 42, "attn": "expert_choice_moe", "task": "sst2"}

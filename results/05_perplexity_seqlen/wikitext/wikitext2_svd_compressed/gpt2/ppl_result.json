@@ -1,8 +1,0 @@
-{
-  "module": "svd_compressed",
-  "model_path": "models/gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 2253.48779296875,
-  "seq_len": 1024,
-  "stride": 512
-}

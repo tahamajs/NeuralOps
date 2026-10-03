@@ -1,6 +1,0 @@
-module_name,status,perplexity,baseline_ppl,delta_ppl,ppl_ratio,compression_rate,compression_ratio_pct,total_params_before,total_params_after,delta_params,num_injected_attention_layers,num_compressed_layers,num_fallback_layers,lora_params,calibration_time_s,recovery_time_s,peak_vram_mb,latency_ms_per_token,throughput_tok_per_sec,eval_elapsed_s,wall_elapsed_s,error,timestamp
-full,PASS,23.7263,23.7263,0.0,1.0,1.0,0.0,124439808,124439808,0,0,0,0,0,0.0,0.0,919.54,0.1868,5352.96,0.934,0.934,,2026-09-30T04:59:23
-gated_delta_net,FAIL_PPL_DIVERGED,650.1731,23.7263,626.4468,27.4031,0.7702,-29.84,124439808,161571372,37131564,12,0,0,0,0.673,0.0,1237.38,37.8186,26.44,189.093,192.26,,2026-09-30T05:03:17
-hla,FAIL_PPL_DIVERGED,2878.0402,23.7263,2854.3139,121.3017,0.9908,-0.93,124439808,125591964,1152156,12,0,0,0,0.409,0.0,1152.31,0.2345,4265.14,1.172,3.929,,2026-09-30T04:59:27
-phantom,FAIL_PPL_DIVERGED,1155.2642,23.7263,1131.5379,48.6913,1.2197,18.01,124439808,102026496,-22413312,12,0,0,0,13.987,0.0,1044.27,0.549,1821.59,2.745,19.051,,2026-09-30T04:59:46
-vspec,FAIL_PPL_DIVERGED,592.3634,23.7263,568.6371,24.9665,1.1886,15.87,124439808,104696604,-19743204,12,0,0,0,13.963,0.0,1049.44,0.3716,2691.04,1.858,18.139,,2026-09-30T05:00:05

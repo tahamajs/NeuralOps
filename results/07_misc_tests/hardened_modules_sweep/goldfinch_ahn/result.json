@@ -1,0 +1,17 @@
+{
+  "module_name": "goldfinch_ahn",
+  "status": "FAIL_PPL_DIVERGED",
+  "perplexity": 2017.88,
+  "baseline_ppl": 21.71,
+  "delta_ppl": 1996.17,
+  "compression_rate": 0.8895,
+  "compression_ratio_pct": -12.43,
+  "peak_vram_mb": 1603.81,
+  "latency_ms_per_token": 7.223,
+  "throughput_tok_per_sec": 138.4,
+  "elapsed_s": 722.31,
+  "total_params_before": 124439808,
+  "total_params_after": 139904412,
+  "error": "",
+  "timestamp": "2026-09-27T13:53:51"
+}

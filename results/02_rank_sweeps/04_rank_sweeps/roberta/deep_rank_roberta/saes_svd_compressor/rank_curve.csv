@@ -1,0 +1,7 @@
+rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
+16,saes_svd_compressor,PASS,93.23,0.9352,0.2973,292.72,1.0,0.0,0,0,103.1,124647170,124647170
+32,saes_svd_compressor,PASS,93.23,0.9352,0.2973,292.72,1.0,0.0,0,0,102.6,124647170,124647170
+64,,PASS,93.92,0.9413,0.204,0.0,1.0,,0,0,32.59,0,0
+128,,PASS,93.92,0.9413,0.204,0.0,1.0,,0,0,39.82,0,0
+256,,PASS,91.51,0.9178,0.2735,0.0,1.0,,0,0,45.39,0,0
+384,,PASS,92.78,0.9302,0.242,0.0,1.0,,0,0,56.02,0,0

@@ -1,1 +1,0 @@
-{"batch_size": 64, "num_workers": 4, "learning_rate": 0.0002, "epochs": 3.0, "seed": 42, "attn": "compress_kronecker", "task": "sst2"}

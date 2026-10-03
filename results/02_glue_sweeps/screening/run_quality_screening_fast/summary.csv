@@ -1,5 +1,0 @@
-run_id,module_name,model_family,dataset,status,mean_accuracy,std_accuracy,ci_lower,ci_upper,p_value,f1_score,fidelity_score,fwd_ms,bwd_ms,peak_vram_mb,throughput_tokens_sec,flops_macs,timestamp
-run_quality_20260827_002047,full,DISTILBERT,SST2,PASS,90.6,0.0,90.6,90.6,1.0,0.9093,1.0,66.72,185.12,1846.8,65055.5,1450000000.0,2026-08-27T00:27:50.043997
-run_quality_20260827_002047,svd_linear_attention,DISTILBERT,SST2,PASS,82.91,0.0,82.91,82.91,1.0,0.8293,0.7979,104.29,267.56,1847.2,44060.6,1450000000.0,2026-08-27T00:36:21.227044
-run_quality_20260827_002047,minimal_svd,DISTILBERT,SST2,PASS,83.14,0.0,83.14,83.14,1.0,0.8312,0.8066,87.21,227.18,1848.5,52113.1,1450000000.0,2026-08-27T00:43:53.291726
-run_quality_20260827_002047,aegis_v6,DISTILBERT,SST2,PASS,49.08,0.0,49.08,49.08,1.0,0.0,1.0,276.5,753.63,2990.9,15904.8,1450000000.0,2026-08-27T01:04:09.443804

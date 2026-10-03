@@ -1,8 +1,0 @@
-{
-  "module": "a3_compressor",
-  "model_path": "models/gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 487.2012634277344,
-  "seq_len": 1024,
-  "stride": 512
-}

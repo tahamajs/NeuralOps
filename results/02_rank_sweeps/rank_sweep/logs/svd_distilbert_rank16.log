@@ -1,0 +1,93 @@
+
+========================================================
+Starting DISTILBERT Benchmark...
+Command: C:\Users\Hadi Schumacher\anaconda3\python.exe -u Codes\framework\run_quality_sweep.py --model models\distilbert_sst2 --model_family bert --dataset sst2 --dataset_dir Codes\framework\data\glue_data\sst2 --output_dir results\unified_svd\distilbert --parent_checkpoint results\unified_asvd\distilbert\finetuned_model.pt --modules full,svd --batch_size 8 --recovery_steps 10 --learning_rate 5e-5 --lora_rank 16 --rank 16 --precision fp16 --fresh --defer_export --timeout 180
+========================================================
+
+Skipping attention module 'run_quality_sweep' due to: cannot import name 'apply_module_to_model' from partially initialized module 'framework.eval_all_models_datasets' (most likely due to a circular import) (D:\SVD_Project\Codes\framework\eval_all_models_datasets.py)
+2026-09-17 04:28:59,197 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-09-17 04:28:59,459 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]
+Loading weights: 100%|##########| 104/104 [00:00<00:00, 3469.84it/s]
+2026-09-17 04:29:00,165 [INFO] QwenQualitySweep: model=models\distilbert_sst2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=6
+2026-09-17 04:29:00,165 [INFO] QwenQualitySweep: detected model family=bert adapter={'family': 'bert', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 6, 'causal': False, 'mask_rank': 2, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-09-17 04:29:00,165 [INFO] QwenQualitySweep: ================================================================================
+2026-09-17 04:29:00,165 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-09-17 04:29:00,165 [INFO] QwenQualitySweep:   model:             models\distilbert_sst2
+2026-09-17 04:29:00,168 [INFO] QwenQualitySweep:   family:            bert
+2026-09-17 04:29:00,168 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-09-17 04:29:00,168 [INFO] QwenQualitySweep:   batch_size:        8
+2026-09-17 04:29:00,168 [INFO] QwenQualitySweep:   recovery_steps:    10
+2026-09-17 04:29:00,169 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=5.0e-05, weight_decay=1.0e-02)
+2026-09-17 04:29:00,169 [INFO] QwenQualitySweep:   precision:         fp16
+2026-09-17 04:29:00,169 [INFO] QwenQualitySweep: ================================================================================
+2026-09-17 04:29:00,174 [INFO] QwenQualitySweep: Loading shared baseline checkpoint from parent directory: results\unified_asvd\distilbert\finetuned_model.pt
+2026-09-17 04:29:00,390 [INFO] QwenQualitySweep: Precomputing validation and training batches directly on device cuda...
+2026-09-17 04:29:02,001 [INFO] QwenQualitySweep: Prepared 109 eval batches and 10 train batches directly on GPU.
+2026-09-17 04:29:07,044 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 90.71%
+2026-09-17 04:29:07,132 [INFO] QwenQualitySweep: ================================================================================
+2026-09-17 04:29:07,135 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-09-17 04:29:07,135 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-09-17 04:29:07,136 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-09-17 04:29:07,136 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-09-17 04:29:07,136 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-09-17 04:29:07,136 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  56.00%
+2026-09-17 04:29:07,136 [INFO] QwenQualitySweep: ================================================================================
+2026-09-17 04:29:07,138 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/2]: full (recovery_steps=10, batch_size=8, optimizer=adamw)
+2026-09-17 04:29:11,985 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_svd\distilbert\distilbert_sst2_full_full_metrics.json
+2026-09-17 04:29:12,006 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_svd\distilbert\checkpoints\full\weights.pt (module_params=0, lora_params=4)
+2026-09-17 04:29:12,366 [INFO] QwenQualitySweep: [1/2] full -> PASS 90.71% (F1: 0.9099, Peak VRAM: 388.55 MB)
+2026-09-17 04:29:12,369 [INFO] QwenQualitySweep: [Export Deferred] Checkpoint preserved in results\unified_svd\distilbert\checkpoints\full. Automated export will be handled post-sweep by orchestrator.
+2026-09-17 04:29:12,762 [INFO] QwenQualitySweep: >>> STARTING MODULE [2/2]: svd (recovery_steps=10, batch_size=8, optimizer=adamw)
+2026-09-17 04:29:13,686 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 16]), rank=16
+2026-09-17 04:29:13,812 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 16]), rank=16
+2026-09-17 04:29:13,922 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 16]), rank=16
+2026-09-17 04:29:14,050 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 16]), rank=16
+2026-09-17 04:29:14,159 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 16]), rank=16
+2026-09-17 04:29:14,290 [INFO] framework.attentions.svd_attention: SVD projection computed from W_K: shape=torch.Size([768, 16]), rank=16
+2026-09-17 04:29:14,291 [INFO] framework.core.attention_utils: Successfully injected 'svd' into 6 transformer blocks.
+2026-09-17 04:29:14,308 [INFO] QwenQualitySweep: module=svd path=legacy_bert
+2026-09-17 04:29:14,309 [INFO] QwenQualitySweep: module=svd injection summary: 0 SVDLinear layers active
+2026-09-17 04:29:14,309 [INFO] QwenQualitySweep: Running 10 recovery fine-tuning steps for svd (lr=5.0e-05)
+2026-09-17 04:29:14,411 [INFO] framework.utils.compat: Recovery fine-tuning selected 589824 trainable parameters across 48 tensors.
+2026-09-17 04:29:14,411 [INFO] framework.utils.compat: Discovered 48 trainable tensors (589824 params)
+2026-09-17 04:29:14,414 [INFO] QwenQualitySweep: LoRA fine-tuning: 589824 trainable parameters across 48 tensors (lr=5.0e-05, optimizer=adamw)
+2026-09-17 04:29:15,056 [INFO] QwenQualitySweep: Step 1/10 took 0.64s (loss=0.5942, bs=8, micro=8)
+2026-09-17 04:29:16,089 [INFO] QwenQualitySweep: Step 5/10 took 0.24s (loss=0.7184, bs=8, micro=8)
+2026-09-17 04:29:17,288 [INFO] QwenQualitySweep: Step 10/10 took 0.24s (loss=0.6873, bs=8, micro=8)
+2026-09-17 04:29:28,287 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\unified_svd\distilbert\distilbert_sst2_svd_full_metrics.json
+2026-09-17 04:29:28,336 [INFO] QwenQualitySweep: Successfully saved model weights and checkpoint to results\unified_svd\distilbert\checkpoints\svd\weights.pt (module_params=0, lora_params=52)
+2026-09-17 04:29:28,878 [INFO] QwenQualitySweep: [2/2] svd -> PASS_LOW 49.31% (F1: 0.0134, Peak VRAM: 314.93 MB)
+2026-09-17 04:29:28,879 [INFO] QwenQualitySweep: [Quality Guard] Module 'svd' did not pass quality criteria (status=PASS_LOW, acc=49.31%, pass_thresh=56.00%). Pruning large checkpoint artifacts but preserving metrics.
+2026-09-17 04:29:29,372 [INFO] QwenQualitySweep: ================================================================================
+2026-09-17 04:29:29,372 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (distilbert_sst2 on sst2)
+2026-09-17 04:29:29,387 [INFO] QwenQualitySweep: 
+Module   Status Accuracy    Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+  full     PASS   90.71% 0.00% (base) 0.9099                  0            1.00x  388.6 MB               3.88              4.45
+   svd PASS_LOW   49.31%      -41.40% 0.0134                  6            1.00x  314.9 MB              10.70             12.27
+2026-09-17 04:29:29,387 [INFO] QwenQualitySweep: ================================================================================
+
+[SUCCESS] Finished Benchmark for distilbert.
+
+========================================================
+All Requested Models Processed in 68.51s
+========================================================
+
+
+--- Summary Results ---
+
+Summary for distilbert:
+module_name   status  accuracy_pct  f1_score  f1_macro  precision  recall  val_loss  elapsed_s  peak_vram_mb  tokens_per_sec  total_params_before  total_params_after  trainable_recovery_params  compression_rate  compression_ratio_pct  flops_reduction_pct  num_compressed_layers  num_fallback_layers  avg_reconstruction_error  weighted_reconstruction_error  num_injected_attention_layers  lora_params                                                             error        path                  timestamp
+       full     PASS         90.71    0.9099    0.9070     0.9075  0.9068    0.3027       5.23        388.55        28781.46             66955010            66955010                          0               1.0                    0.0                  0.0                      0                    0                       NaN                            NaN                              0            0                                                               NaN legacy_bert 2026-09-17T04:29:12.366047
+        svd PASS_LOW         49.31    0.0134    0.3362     0.6210  0.5022    0.7104      16.12        314.93        10429.73             66955010            67544834                     589824               1.0                    0.0                  0.0                      6                    0                       NaN                            NaN                              6       589824 note: evaluated accuracy (49.31%) below chance threshold (56.00%) legacy_bert 2026-09-17T04:29:28.878171
+
+========================================================
+Starting Quality Gate & Automated Hugging Face Export...
+========================================================
+
+[Quality Gate: REJECTED] distilbert did not meet criteria (status=PASS_LOW, acc=49.31% < 56.0%).
+
+Export Complete: 0/1 passed quality gate.
+
+--- STDERR ---

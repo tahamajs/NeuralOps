@@ -1,8 +1,0 @@
-{
-  "module": "svd_linear_decay",
-  "model_path": "models/gpt2",
-  "dataset": "wikitext2",
-  "perplexity": 2253.465087890625,
-  "seq_len": 1024,
-  "stride": 512
-}
