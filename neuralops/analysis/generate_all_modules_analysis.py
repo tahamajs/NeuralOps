@@ -14,7 +14,7 @@ from collections import defaultdict
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-PAPERS_DIR = PROJECT_ROOT / "paper" / "PerModulePaper"
+PAPERS_DIR = PROJECT_ROOT / "paper" / "build_paper"
 RESULTS_DIR = PROJECT_ROOT / "results"
 CSV_OUT = PROJECT_ROOT / "paper" / "_ALL_MODULES_ANALYSIS.csv"
 MD_OUT = PROJECT_ROOT / "paper" / "_ALL_MODULES_ANALYSIS.md"
@@ -825,7 +825,7 @@ def main():
     print("=" * 70)
 
     # 1. Load registries
-    sys.path.insert(0, str(PROJECT_ROOT / "Codes"))
+    sys.path.insert(0, str(PROJECT_ROOT / "neuralops"))
     try:
         from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
     except Exception as e:
