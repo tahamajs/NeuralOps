@@ -305,7 +305,7 @@ def build_all_streams():
     s1_tasks = []
     for m in cat5a_all:
         for r in [64, 128, 256, 384]:
-            out = str(BASE_DIR / "results" / "deep_rank_distilbert" / m / f"rank_{r}")
+            out = str(BASE_DIR / "results" / "02_rank_sweeps" / "deep_rank_distilbert" / m / f"rank_{r}")
             s1_tasks.append({
                 "name": f"Stream 1 (Cat 5A r={r}) | DISTILBERT | {m}",
                 "module": m, "model": "models/distilbert_sst2", "model_family": "bert",
@@ -318,7 +318,7 @@ def build_all_streams():
     s2_tasks = []
     for m in cat5a_all:
         for r in [64, 128, 256, 384]:
-            out = str(BASE_DIR / "results" / "deep_rank_roberta" / m / f"rank_{r}")
+            out = str(BASE_DIR / "results" / "02_rank_sweeps" / "deep_rank_roberta" / m / f"rank_{r}")
             s2_tasks.append({
                 "name": f"Stream 2 (Cat 5A r={r}) | ROBERTA | {m}",
                 "module": m, "model": "models/roberta_sst2", "model_family": "roberta",
@@ -340,7 +340,7 @@ def build_all_streams():
             ("roberta", "models/roberta_sst2", "roberta", "5e-5"),
             ("distilbert", "models/distilbert_sst2", "bert", "2e-4"),
         ]:
-            out = str(BASE_DIR / "results" / f"attn_{model_tag}" / m)
+            out = str(BASE_DIR / "results" / "06_adhoc_experiments" / f"attn_{model_tag}" / m)
             timeout_val = 180 if m == "mamba_svd_flash" else 300
             s3_tasks.append({
                 "name": f"Stream 3 (Attn) | {model_tag.upper()} | {m}",
@@ -357,14 +357,14 @@ def build_all_streams():
     ]
     s4_tasks = []
     for m in transfer_mods:
-        out_mnli = str(BASE_DIR / "results" / "mnli_deep_sweep" / m)
+        out_mnli = str(BASE_DIR / "results" / "06_adhoc_experiments" / "mnli_deep_sweep" / m)
         s4_tasks.append({
             "name": f"Stream 4 (MNLI) | {m}",
             "module": m, "model": "models/distilbert_mnli_full", "model_family": "bert",
             "dataset": "mnli", "batch_size": 64, "lr": "2e-4", "out_dir": out_mnli,
             "summary_file": f"{out_mnli}/summary.csv",
         })
-        out_ag = str(BASE_DIR / "results" / "agnews_deep_sweep" / m)
+        out_ag = str(BASE_DIR / "results" / "06_adhoc_experiments" / "agnews_deep_sweep" / m)
         s4_tasks.append({
             "name": f"Stream 4 (AGNews) | {m}",
             "module": m, "model": "models/distilbert_agnews_full", "model_family": "bert",
@@ -379,7 +379,7 @@ def build_all_streams():
     for m in seq_mods:
         for seq_len in [128, 256, 512]:
             bs = 64 if seq_len <= 256 else 32
-            out = str(BASE_DIR / "results" / "seqlen_48h" / m / f"seq_{seq_len}")
+            out = str(BASE_DIR / "results" / "06_adhoc_experiments" / "seqlen_48h" / m / f"seq_{seq_len}")
             s5_tasks.append({
                 "name": f"Stream 5 (SeqLen {seq_len}) | {m}",
                 "module": m, "model": "models/distilbert_sst2", "model_family": "bert",
@@ -396,7 +396,7 @@ def build_all_streams():
                 ("distilbert", "models/distilbert_sst2", "bert", "2e-4"),
                 ("roberta", "models/roberta_sst2", "roberta", "5e-5"),
             ]:
-                out = str(BASE_DIR / "results" / f"multiseed_rigor_{model_tag}" / m / f"seed_{seed}")
+                out = str(BASE_DIR / "results" / "05_glue_finetuning" / f"multiseed_rigor_{model_tag}" / m / f"seed_{seed}")
                 s6_tasks.append({
                     "name": f"Stream 6 (Seed {seed}) | {model_tag.upper()} | {m}",
                     "module": m, "model": m_path, "model_family": fam, "dataset": "sst2",
