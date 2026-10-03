@@ -1,0 +1,88 @@
+Module neuralops.attentions.template_attention
+==============================================
+Template Attention Mechanism (YourCustomAttention) – Production-Hardened.
+Supports: DistilBERT (Flat MHA), RoBERTa/BERT (Nested Encoder),
+GPT-2 (Causal Decoder with Conv1D), Qwen/LLaMA (GQA + RoPE).
+
+Functions
+---------
+
+`apply_rotary_pos_emb(q: torch.Tensor, k: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) ‑> tuple[torch.Tensor, torch.Tensor]`
+:   TA-02/TA-11/TA-12: dtype-safe, past_len-aware RoPE.
+
+`inject_custom_attn(layer: Any = None, model: Any = None, model_config: Any = None, comp_config: Any = None, layer_idx: int = 0, total_layers: int = 12, old_attn: torch.nn.modules.module.Module | None = None, **kwargs: Any)`
+:   
+
+Classes
+-------
+
+`LoRALinear(in_features: int, out_features: int, bias: bool = True, lora_rank: int = 0, lora_alpha: float = 1.0, freeze_base: bool = True, device: torch.device | None = None, dtype: torch.dtype | None = None)`
+:   Linear projection with frozen base weights and trainable LoRA adapters.
+    
+    Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+    ### Ancestors (in MRO)
+
+    * torch.nn.modules.module.Module
+
+    ### Methods
+
+    `forward(self, x: torch.Tensor) ‑> torch.Tensor`
+    :   Define the computation performed at every call.
+        
+        Should be overridden by all subclasses.
+        
+        .. note::
+            Although the recipe for forward pass needs to be defined within
+            this function, one should call the :class:`Module` instance afterwards
+            instead of this since the former takes care of running the
+            registered hooks while the latter silently ignores them.
+
+`YourCustomAttention(config: Any | None = None, rank: int | None = None, pretrained_attn: torch.nn.modules.module.Module | None = None, lora_rank: int = 16, lora_alpha: float = 32.0, is_decoder: bool | None = None, **kwargs: Any)`
+:   Template attention layer with optional low-rank pooling modulation.
+    
+    Initialize internal Module state, shared by both nn.Module and ScriptModule.
+
+    ### Ancestors (in MRO)
+
+    * neuralops.core.base.BaseAttention
+    * torch.nn.modules.module.Module
+
+    ### Class variables
+
+    `is_custom_attention: bool`
+    :   The type of the None singleton.
+
+    `supports_causal: bool`
+    :   The type of the None singleton.
+
+    `supports_gqa: bool`
+    :   The type of the None singleton.
+
+    ### Instance variables
+
+    `c_proj`
+    :
+
+    `dense`
+    :
+
+    `k_lin`
+    :
+
+    `o_proj`
+    :
+
+    `out_lin`
+    :
+
+    `q_lin`
+    :
+
+    `v_lin`
+    :
+
+    ### Methods
+
+    `copy_weights(self, old_attn: Any) ‑> None`
+    :   Robust weight copying from DistilBERT, RoBERTa nested, GPT-2, Qwen/LLaMA.
