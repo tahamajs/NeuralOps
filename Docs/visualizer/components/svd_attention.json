@@ -6,7 +6,7 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "SVD-Compressed Sequence Attention.  This module reduces attention complexity from O(N\u00b2) to O(N\u00b7r)  by projecting K and V onto a rank-r subspace along the  sequence dimension.  CRITICAL LIMITATION \u2014 Read This:      The projection basis is precomputed ONCE from the SVD of      the key weight matrix W_K in copy_weights(). This means      the projection does NOT depend on the input sequence \u2014      it",
+  "description": "SVD-Compressed Sequence Attention.  This module reduces attention complexity from O(N\u00b2) to O(N\u00b7r) by projecting K and V onto a rank-r subspace along the sequence dimension.  CRITICAL LIMITATION \u2014 Read This:      The projection basis is precomputed ONCE from the SVD of     the key weight matrix W_K in copy_weights(). This means     the projection does NOT depend on the input sequence \u2014     it is fi",
   "classes": [
     "LoRALinear",
     "SVDLinearAttention"

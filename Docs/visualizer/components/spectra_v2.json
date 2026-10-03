@@ -6,7 +6,7 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "MHA-SDPA: A thin Multi-Head Attention wrapper around PyTorch's  scaled_dot_product_attention.  DISCLAIMER:     This module was previously named \"SPECTRA-v2\" and claimed to      implement a sparse per-head efficient context transformer      with intra-block attention, top-k inter-block routing,      adaptive spans, and RFF rectification. NONE of these      features are implemented here. What this m",
+  "description": "MHA-SDPA: A thin Multi-Head Attention wrapper around PyTorch's scaled_dot_product_attention.  DISCLAIMER:     This module was previously named \"SPECTRA-v2\" and claimed to     implement a sparse per-head efficient context transformer     with intra-block attention, top-k inter-block routing,     adaptive spans, and RFF rectification. NONE of these     features are implemented here. What this module",
   "classes": [
     "LoRALinear",
     "SpectraV2Attention"
