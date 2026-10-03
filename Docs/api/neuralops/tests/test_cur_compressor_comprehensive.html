@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tests.test_cur_compressor_comprehensive API documentation</title>
+<meta name="description" content="">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.tests.test_cur_compressor_comprehensive</code></h1>
+</header>
+<section id="section-intro">
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.tests.test_cur_compressor_comprehensive.test_cur_compressor_factory_configs"><code class="name flex">
+<span>def <span class="ident">test_cur_compressor_factory_configs</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_cur_compressor_factory_configs():
+    model = nn.Sequential(nn.Linear(128, 64))
+    # Config is None
+    m1 = cur_compressor_factory(model, comp_config=None, rank=16)
+    assert m1 is not None
+
+    # Config is dict
+    cfg_dict = {&#34;cur_rank&#34;: 16, &#34;method&#34;: &#34;energy&#34;, &#34;target_attention_only&#34;: False}
+    m2, stats = cur_compressor_factory(nn.Sequential(nn.Linear(128, 64)), comp_config=cfg_dict, return_stats=True)
+    assert &#34;effective_parameter_ratio&#34; in stats
+    assert stats[&#34;cur_method&#34;] == &#34;energy&#34;</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_cur_compressor_comprehensive.test_cur_compressor_fallback_and_freeze"><code class="name flex">
+<span>def <span class="ident">test_cur_compressor_fallback_and_freeze</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_cur_compressor_fallback_and_freeze():
+    lin = nn.Linear(128, 64)
+    model = nn.Sequential(lin)
+
+    # Force fallback with max_error = 0.0001
+    compressor = CURCompressor(model, rank=8, max_error=0.0001, fallback_to_original=True)
+    compressed, stats = compressor.compress()
+
+    assert len(stats[&#34;fallback_layers&#34;]) &gt; 0
+    # Fallback layer must have requires_grad=False
+    for p in compressed.parameters():
+        assert p.requires_grad is False</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_cur_compressor_comprehensive.test_cur_compressor_lora_preservation"><code class="name flex">
+<span>def <span class="ident">test_cur_compressor_lora_preservation</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_cur_compressor_lora_preservation():
+    lin = nn.Linear(128, 64)
+    lora_mod = MockLoRALinear(lin, r=4)
+    model = nn.Sequential(lora_mod)
+
+    compressor = CURCompressor(model, rank=16, max_error=1.0)
+    compressed_model, stats = compressor.compress()
+
+    # Base layer should be CURLinear, outer LoRA preserved and trainable
+    assert isinstance(compressed_model[0].base_layer, CURLinear)
+    assert compressed_model[0].lora_A.requires_grad is True
+    assert compressed_model[0].lora_B.requires_grad is True</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_cur_compressor_comprehensive.test_cur_compressor_target_attention_only"><code class="name flex">
+<span>def <span class="ident">test_cur_compressor_target_attention_only</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_cur_compressor_target_attention_only():
+    class DummyTransformerLayer(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.q_proj = nn.Linear(128, 128)
+            self.k_proj = nn.Linear(128, 128)
+            self.mlp = nn.Sequential(
+                nn.Linear(128, 512),
+                nn.ReLU(),
+                nn.Linear(512, 128),
+            )
+
+    layer = DummyTransformerLayer()
+    compressor = CURCompressor(layer, rank=16, target_attention_only=True, max_error=1.0)
+    compressed, stats = compressor.compress()
+
+    # Attention projections compressed
+    assert any(&#34;q_proj&#34; in name for name in stats[&#34;compressed_layers&#34;])
+    assert any(&#34;k_proj&#34; in name for name in stats[&#34;compressed_layers&#34;])
+    # MLP not compressed and frozen
+    assert not any(&#34;mlp&#34; in name for name in stats[&#34;compressed_layers&#34;])
+    for p in layer.mlp.parameters():
+        assert p.requires_grad is False</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_cur_compressor_comprehensive.test_cur_linear_conv1d_transposition"><code class="name flex">
+<span>def <span class="ident">test_cur_linear_conv1d_transposition</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_cur_linear_conv1d_transposition():
+    nx, nf, r = 128, 64, 16
+    conv = MockConv1D(nf=nf, nx=nx)
+    cur = CURLinear.from_linear(conv, rank=r)
+    assert cur.in_features == nx
+    assert cur.out_features == nf
+
+    x = torch.randn(2, 4, nx)
+    out = cur(x)
+    assert out.shape == (2, 4, nf)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_cur_compressor_comprehensive.test_cur_linear_forward_matches_formula"><code class="name flex">
+<span>def <span class="ident">test_cur_linear_forward_matches_formula</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_cur_linear_forward_matches_formula():
+    in_f, out_f, r = 128, 64, 16
+    lin = nn.Linear(in_f, out_f)
+    cur = CURLinear.from_linear(lin, rank=r, method=&#34;leverage&#34;, deterministic=True)
+
+    x = torch.randn(2, 5, in_f)
+    y_forward = cur(x)
+
+    W_eff = cur.get_weight()
+    assert W_eff.shape == (out_f, in_f)
+    y_expected = torch.matmul(x, W_eff.t()) + cur.bias
+    assert torch.allclose(y_forward, y_expected, atol=1e-4)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_cur_compressor_comprehensive.test_sampling_scores"><code class="name flex">
+<span>def <span class="ident">test_sampling_scores</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_sampling_scores():
+    W = torch.randn(64, 128)
+    # Leverage sampling
+    col_lev, row_lev = compute_leverage_scores(W, rank=16)
+    assert col_lev.shape == (128,)
+    assert row_lev.shape == (64,)
+    assert torch.isclose(col_lev.sum(), torch.tensor(1.0), atol=1e-4)
+    assert torch.isclose(row_lev.sum(), torch.tensor(1.0), atol=1e-4)
+
+    # Energy sampling
+    col_en, row_en = compute_energy_scores(W)
+    assert col_en.shape == (128,)
+    assert row_en.shape == (64,)
+    assert torch.isclose(col_en.sum(), torch.tensor(1.0), atol=1e-4)
+    assert torch.isclose(row_en.sum(), torch.tensor(1.0), atol=1e-4)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.tests.test_cur_compressor_comprehensive.MockConv1D"><code class="flex name class">
+<span>class <span class="ident">MockConv1D</span></span>
+<span>(</span><span>nf, nx)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class MockConv1D(nn.Module):
+    def __init__(self, nf, nx):
+        super().__init__()
+        self.nf = nf
+        self.weight = nn.Parameter(torch.randn(nx, nf))
+        self.bias = nn.Parameter(torch.zeros(nf))
+
+    def forward(self, x):
+        return torch.matmul(x, self.weight) + self.bias</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_cur_compressor_comprehensive.MockConv1D.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x) ‑> Callable[..., typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x):
+    return torch.matmul(x, self.weight) + self.bias</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_cur_compressor_comprehensive.MockLoRALinear"><code class="flex name class">
+<span>class <span class="ident">MockLoRALinear</span></span>
+<span>(</span><span>base_layer, r=8, alpha=16)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class MockLoRALinear(nn.Module):
+    def __init__(self, base_layer, r=8, alpha=16):
+        super().__init__()
+        self.base_layer = base_layer
+        self.r = r
+        self.scaling = alpha / r
+        in_f = getattr(base_layer, &#34;in_features&#34;, getattr(base_layer, &#34;weight&#34;).shape[0])
+        out_f = getattr(base_layer, &#34;out_features&#34;, getattr(base_layer, &#34;weight&#34;).shape[1])
+        self.lora_A = nn.Parameter(torch.randn(r, in_f) * 0.1)
+        self.lora_B = nn.Parameter(torch.zeros(out_f, r))
+
+    def forward(self, x):
+        out = self.base_layer(x)
+        lora_out = torch.matmul(torch.matmul(x, self.lora_A.t()), self.lora_B.t()) * self.scaling
+        return out + lora_out</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_cur_compressor_comprehensive.MockLoRALinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x) ‑> Callable[..., typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x):
+    out = self.base_layer(x)
+    lora_out = torch.matmul(torch.matmul(x, self.lora_A.t()), self.lora_B.t()) * self.scaling
+    return out + lora_out</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.tests" href="index.html">neuralops.tests</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.tests.test_cur_compressor_comprehensive.test_cur_compressor_factory_configs" href="#neuralops.tests.test_cur_compressor_comprehensive.test_cur_compressor_factory_configs">test_cur_compressor_factory_configs</a></code></li>
+<li><code><a title="neuralops.tests.test_cur_compressor_comprehensive.test_cur_compressor_fallback_and_freeze" href="#neuralops.tests.test_cur_compressor_comprehensive.test_cur_compressor_fallback_and_freeze">test_cur_compressor_fallback_and_freeze</a></code></li>
+<li><code><a title="neuralops.tests.test_cur_compressor_comprehensive.test_cur_compressor_lora_preservation" href="#neuralops.tests.test_cur_compressor_comprehensive.test_cur_compressor_lora_preservation">test_cur_compressor_lora_preservation</a></code></li>
+<li><code><a title="neuralops.tests.test_cur_compressor_comprehensive.test_cur_compressor_target_attention_only" href="#neuralops.tests.test_cur_compressor_comprehensive.test_cur_compressor_target_attention_only">test_cur_compressor_target_attention_only</a></code></li>
+<li><code><a title="neuralops.tests.test_cur_compressor_comprehensive.test_cur_linear_conv1d_transposition" href="#neuralops.tests.test_cur_compressor_comprehensive.test_cur_linear_conv1d_transposition">test_cur_linear_conv1d_transposition</a></code></li>
+<li><code><a title="neuralops.tests.test_cur_compressor_comprehensive.test_cur_linear_forward_matches_formula" href="#neuralops.tests.test_cur_compressor_comprehensive.test_cur_linear_forward_matches_formula">test_cur_linear_forward_matches_formula</a></code></li>
+<li><code><a title="neuralops.tests.test_cur_compressor_comprehensive.test_sampling_scores" href="#neuralops.tests.test_cur_compressor_comprehensive.test_sampling_scores">test_sampling_scores</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.tests.test_cur_compressor_comprehensive.MockConv1D" href="#neuralops.tests.test_cur_compressor_comprehensive.MockConv1D">MockConv1D</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_cur_compressor_comprehensive.MockConv1D.forward" href="#neuralops.tests.test_cur_compressor_comprehensive.MockConv1D.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_cur_compressor_comprehensive.MockLoRALinear" href="#neuralops.tests.test_cur_compressor_comprehensive.MockLoRALinear">MockLoRALinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_cur_compressor_comprehensive.MockLoRALinear.forward" href="#neuralops.tests.test_cur_compressor_comprehensive.MockLoRALinear.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.experiment_utils.tasks API documentation</title>
+<meta name="description" content="Background training task (Django integration) with WebSocket broadcasting
+and AI assistant.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.experiment_utils.tasks</code></h1>
+</header>
+<section id="section-intro">
+<p>Background training task (Django integration) with WebSocket broadcasting
+and AI assistant.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.experiment_utils.tasks.broadcast_terminal"><code class="name flex">
+<span>def <span class="ident">broadcast_terminal</span></span>(<span>msg: str) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def broadcast_terminal(msg: str) -&gt; None:
+    &#34;&#34;&#34;Send a log message to the terminal WebSocket group.&#34;&#34;&#34;
+    if not HAS_CHANNELS:
+        return
+    try:
+        channel_layer = get_channel_layer()
+        if channel_layer and async_to_sync:
+            async_to_sync(channel_layer.group_send)(
+                &#34;terminal&#34;, {&#34;type&#34;: &#34;terminal_message&#34;, &#34;data&#34;: msg}
+            )
+    except Exception as e:
+        print(f&#34;WS broadcast error: {e}&#34;)</code></pre>
+</details>
+<div class="desc"><p>Send a log message to the terminal WebSocket group.</p></div>
+</dd>
+<dt id="neuralops.experiment_utils.tasks.run_training_async"><code class="name flex">
+<span>def <span class="ident">run_training_async</span></span>(<span>experiment, stop_event: threading.Event) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_training_async(experiment, stop_event: threading.Event) -&gt; None:
+    &#34;&#34;&#34;
+    Main entry point called by Django in a background thread.
+
+    Args:
+        experiment: Django model instance with fields:
+            id, config (JSON), status, logs, current_step, total_steps, etc.
+        stop_event: threading.Event to signal cancellation.
+    &#34;&#34;&#34;
+    config = experiment.config
+    run_id = str(experiment.id)
+    base_dir = _get_media_root() / &#34;experiments&#34;
+
+    def log(msg: str) -&gt; None:
+        &#34;&#34;&#34;Log.&#34;&#34;&#34;
+        experiment.logs = (experiment.logs or &#34;&#34;) + msg + &#34;\n&#34;
+        experiment.save(update_fields=[&#34;logs&#34;])
+        WSMessageQueue.send(run_id, {&#34;type&#34;: &#34;log&#34;, &#34;data&#34;: msg})
+        broadcast_terminal(msg)
+
+    def update_status(status: str) -&gt; None:
+        &#34;&#34;&#34;Update status.&#34;&#34;&#34;
+        experiment.status = status
+        experiment.save(update_fields=[&#34;status&#34;])
+        WSMessageQueue.send(run_id, {&#34;type&#34;: &#34;status&#34;, &#34;status&#34;: status})
+
+    def progress_callback(current: int, total: int, pct: float) -&gt; None:
+        &#34;&#34;&#34;Progress callback.&#34;&#34;&#34;
+        experiment.current_step = current
+        experiment.total_steps = total
+        experiment.estimated_remaining_seconds = (total - current) * 0.1  # crude
+        experiment.cpu_usage = psutil.cpu_percent()
+        experiment.ram_usage_mb = psutil.virtual_memory().used / 1024**2
+        experiment.save(
+            update_fields=[
+                &#34;current_step&#34;,
+                &#34;total_steps&#34;,
+                &#34;estimated_remaining_seconds&#34;,
+                &#34;cpu_usage&#34;,
+                &#34;ram_usage_mb&#34;,
+            ]
+        )
+        WSMessageQueue.send(
+            run_id,
+            {
+                &#34;type&#34;: &#34;progress&#34;,
+                &#34;progress&#34;: pct,
+                &#34;current_step&#34;: current,
+                &#34;total_steps&#34;: total,
+            },
+        )
+
+    def log_callback(msg: str):
+        # Called by the orchestrator for log messages
+        &#34;&#34;&#34;Log callback.&#34;&#34;&#34;
+        log(msg)
+
+    def final_callback(metrics: dict) -&gt; None:
+        &#34;&#34;&#34;Final callback.&#34;&#34;&#34;
+        experiment.config[&#34;final_metrics&#34;] = metrics
+        experiment.save(update_fields=[&#34;config&#34;])
+        WSMessageQueue.send(run_id, {&#34;type&#34;: &#34;final&#34;, &#34;data&#34;: metrics})
+        log(f&#34;Training finished. Final metrics: {json.dumps(metrics)}&#34;)
+        save_artifacts(experiment, metrics)
+
+    try:
+        update_status(&#34;running&#34;)
+        orchestrator = MegaOrchestrator(
+            config=config,
+            run_id=run_id,
+            base_dir=base_dir,
+            progress_callback=progress_callback,
+            log_callback=log_callback,
+            final_callback=final_callback,
+            stop_event=stop_event,
+        )
+        orchestrator.run()
+
+        if stop_event.is_set():
+            update_status(&#34;stopped&#34;)
+            log(&#34;Training cancelled by user.&#34;)
+        else:
+            update_status(&#34;completed&#34;)
+
+    except Exception as e:
+        error_msg = traceback.format_exc()
+        log(f&#34;ERROR: {str(e)}\n{error_msg}&#34;)
+        update_status(&#34;failed&#34;)</code></pre>
+</details>
+<div class="desc"><p>Main entry point called by Django in a background thread.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>experiment</code></strong></dt>
+<dd>Django model instance with fields:
+id, config (JSON), status, logs, current_step, total_steps, etc.</dd>
+<dt><strong><code>stop_event</code></strong></dt>
+<dd>threading.Event to signal cancellation.</dd>
+</dl></div>
+</dd>
+<dt id="neuralops.experiment_utils.tasks.save_artifacts"><code class="name flex">
+<span>def <span class="ident">save_artifacts</span></span>(<span>experiment, final_metrics: dict) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def save_artifacts(experiment, final_metrics: dict) -&gt; None:
+    &#34;&#34;&#34;Save model, plots, history, etc. to the experiment&#39;s media directory.&#34;&#34;&#34;
+    output_dir = _get_media_root() / &#34;experiments&#34; / str(experiment.id)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # History is saved by the saver inside orchestrator, we just add a few extra things
+    import matplotlib.pyplot as plt
+
+    # Loss plot from training history (if available)
+    history = experiment.config.get(&#34;history&#34;, [])
+    if history:
+        steps = [h.get(&#34;step&#34;, i) for i, h in enumerate(history) if &#34;loss&#34; in h]
+        losses = [h[&#34;loss&#34;] for h in history if &#34;loss&#34; in h]
+        if steps:
+            plt.figure(figsize=(10, 6))
+            plt.plot(steps, losses, label=&#34;Train Loss&#34;)
+            plt.xlabel(&#34;Step&#34;)
+            plt.ylabel(&#34;Loss&#34;)
+            plt.legend()
+            plt.grid(True)
+            plt.savefig(output_dir / &#34;loss_curve.png&#34;, dpi=150)
+            plt.close()
+
+    # Final metrics JSON
+    with open(output_dir / &#34;final_metrics.json&#34;, &#34;w&#34;) as f:
+        json.dump(final_metrics, f, indent=2)
+
+    # Copy model if present
+    model_src = _get_media_root() / &#34;experiments&#34; / str(experiment.id) / &#34;artifacts&#34; / &#34;model&#34;
+    if model_src.exists():
+        import shutil
+
+        shutil.copytree(model_src, output_dir / &#34;model&#34;, dirs_exist_ok=True)</code></pre>
+</details>
+<div class="desc"><p>Save model, plots, history, etc. to the experiment's media directory.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.experiment_utils.tasks.AIAssistant"><code class="flex name class">
+<span>class <span class="ident">AIAssistant</span></span>
+<span>(</span><span>llm_function)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class AIAssistant:
+    &#34;&#34;&#34;
+    Monitors training metrics and suggests actions (e.g., early stop).
+    Uses a callable LLM function for decision making.
+    &#34;&#34;&#34;
+
+    def __init__(self, llm_function) -&gt; None:
+        self.llm = llm_function
+
+    def monitor(self, exp_id: str, metrics_history: list) -&gt; None:
+        &#34;&#34;&#34;Monitor.&#34;&#34;&#34;
+        last_losses = [m.get(&#34;loss&#34;) for m in metrics_history[-5:] if &#34;loss&#34; in m]
+        if len(last_losses) &gt;= 5 and all(
+            abs(last_losses[i] - last_losses[i - 1]) &lt; 0.01 for i in range(1, 5)
+        ):
+            suggestion = &#34;early_stop&#34;
+            reason = &#34;Loss plateau detected&#34;
+            WSMessageQueue.send(
+                exp_id,
+                {&#34;type&#34;: &#34;ai_suggestion&#34;, &#34;suggestion&#34;: suggestion, &#34;reason&#34;: reason},
+            )
+            # Optionally trigger early stop
+            # stop_event.set()</code></pre>
+</details>
+<div class="desc"><p>Monitors training metrics and suggests actions (e.g., early stop).
+Uses a callable LLM function for decision making.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.experiment_utils.tasks.AIAssistant.monitor"><code class="name flex">
+<span>def <span class="ident">monitor</span></span>(<span>self, exp_id: str, metrics_history: list) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def monitor(self, exp_id: str, metrics_history: list) -&gt; None:
+    &#34;&#34;&#34;Monitor.&#34;&#34;&#34;
+    last_losses = [m.get(&#34;loss&#34;) for m in metrics_history[-5:] if &#34;loss&#34; in m]
+    if len(last_losses) &gt;= 5 and all(
+        abs(last_losses[i] - last_losses[i - 1]) &lt; 0.01 for i in range(1, 5)
+    ):
+        suggestion = &#34;early_stop&#34;
+        reason = &#34;Loss plateau detected&#34;
+        WSMessageQueue.send(
+            exp_id,
+            {&#34;type&#34;: &#34;ai_suggestion&#34;, &#34;suggestion&#34;: suggestion, &#34;reason&#34;: reason},
+        )
+        # Optionally trigger early stop
+        # stop_event.set()</code></pre>
+</details>
+<div class="desc"><p>Monitor.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.experiment_utils.tasks.WSMessageQueue"><code class="flex name class">
+<span>class <span class="ident">WSMessageQueue</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class WSMessageQueue:
+    &#34;&#34;&#34;Thread‑safe WebSocket message sender.&#34;&#34;&#34;
+
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    @staticmethod
+    def send(experiment_id: str, data: dict) -&gt; None:
+        &#34;&#34;&#34;Send.&#34;&#34;&#34;
+        try:
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f&#34;job_{experiment_id}&#34;, {&#34;type&#34;: &#34;job_update&#34;, &#34;data&#34;: data}
+            )
+        except Exception as e:
+            print(f&#34;WS send error: {e}&#34;)</code></pre>
+</details>
+<div class="desc"><p>Thread‑safe WebSocket message sender.</p></div>
+<h3>Static methods</h3>
+<dl>
+<dt id="neuralops.experiment_utils.tasks.WSMessageQueue.send"><code class="name flex">
+<span>def <span class="ident">send</span></span>(<span>experiment_id: str, data: dict) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def send(experiment_id: str, data: dict) -&gt; None:
+    &#34;&#34;&#34;Send.&#34;&#34;&#34;
+    try:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f&#34;job_{experiment_id}&#34;, {&#34;type&#34;: &#34;job_update&#34;, &#34;data&#34;: data}
+        )
+    except Exception as e:
+        print(f&#34;WS send error: {e}&#34;)</code></pre>
+</details>
+<div class="desc"><p>Send.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.experiment_utils" href="index.html">neuralops.experiment_utils</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.experiment_utils.tasks.broadcast_terminal" href="#neuralops.experiment_utils.tasks.broadcast_terminal">broadcast_terminal</a></code></li>
+<li><code><a title="neuralops.experiment_utils.tasks.run_training_async" href="#neuralops.experiment_utils.tasks.run_training_async">run_training_async</a></code></li>
+<li><code><a title="neuralops.experiment_utils.tasks.save_artifacts" href="#neuralops.experiment_utils.tasks.save_artifacts">save_artifacts</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.experiment_utils.tasks.AIAssistant" href="#neuralops.experiment_utils.tasks.AIAssistant">AIAssistant</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.experiment_utils.tasks.AIAssistant.monitor" href="#neuralops.experiment_utils.tasks.AIAssistant.monitor">monitor</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.experiment_utils.tasks.WSMessageQueue" href="#neuralops.experiment_utils.tasks.WSMessageQueue">WSMessageQueue</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.experiment_utils.tasks.WSMessageQueue.send" href="#neuralops.experiment_utils.tasks.WSMessageQueue.send">send</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

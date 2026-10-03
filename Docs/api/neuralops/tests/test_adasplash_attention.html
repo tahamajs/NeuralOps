@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tests.test_adasplash_attention API documentation</title>
+<meta name="description" content="Hardening tests for AdaSplashAttention (adasplash_attention.py) …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.tests.test_adasplash_attention</code></h1>
+</header>
+<section id="section-intro">
+<p>Hardening tests for AdaSplashAttention (adasplash_attention.py).</p>
+<p>Covers: fail-loud copy_weights, odd-dim RoPE, inject safety, forward shapes.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.tests.test_adasplash_attention.DummyDistilBertAttn"><code class="flex name class">
+<span>class <span class="ident">DummyDistilBertAttn</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DummyDistilBertAttn(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.q_lin = nn.Linear(64, 64)
+        self.k_lin = nn.Linear(64, 64)
+        self.v_lin = nn.Linear(64, 64)
+        self.out_lin = nn.Linear(64, 64)</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.DummyEmptyAttn"><code class="flex name class">
+<span>class <span class="ident">DummyEmptyAttn</span></span>
+<span>(</span><span>*args: Any, **kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DummyEmptyAttn(nn.Module):
+    &#34;&#34;&#34;Attention with no extractable projections — should trigger RuntimeError.&#34;&#34;&#34;
+    def forward(self, x):
+        return x</code></pre>
+</details>
+<div class="desc"><p>Attention with no extractable projections — should trigger RuntimeError.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_adasplash_attention.DummyEmptyAttn.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x) ‑> Callable[..., typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x):
+    return x</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.DummyGPT2Attn"><code class="flex name class">
+<span>class <span class="ident">DummyGPT2Attn</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DummyGPT2Attn(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.c_attn = nn.Linear(64, 192)   # fused q+k+v
+        self.c_proj = nn.Linear(64, 64)</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.DummyLayer"><code class="flex name class">
+<span>class <span class="ident">DummyLayer</span></span>
+<span>(</span><span>attn)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DummyLayer(nn.Module):
+    def __init__(self, attn):
+        super().__init__()
+        self.attention = attn</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.DummyQwenAttn"><code class="flex name class">
+<span>class <span class="ident">DummyQwenAttn</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DummyQwenAttn(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.q_proj = nn.Linear(64, 64)
+        self.k_proj = nn.Linear(64, 64)
+        self.v_proj = nn.Linear(64, 64)
+        self.o_proj = nn.Linear(64, 64)</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.DummyRobertaAttn"><code class="flex name class">
+<span>class <span class="ident">DummyRobertaAttn</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DummyRobertaAttn(nn.Module):
+    &#34;&#34;&#34;Simulates RoBERTa BertAttention with nested .self / .output.dense.&#34;&#34;&#34;
+    def __init__(self):
+        super().__init__()
+        self_obj = type(&#34;BertSelfAttn&#34;, (nn.Module,), {})()
+        self_obj.query = nn.Linear(64, 64)
+        self_obj.key = nn.Linear(64, 64)
+        self_obj.value = nn.Linear(64, 64)
+        self.self = self_obj
+        out_obj = type(&#34;BertOutput&#34;, (nn.Module,), {})()
+        out_obj.dense = nn.Linear(64, 64)
+        self.output = out_obj</code></pre>
+</details>
+<div class="desc"><p>Simulates RoBERTa BertAttention with nested .self / .output.dense.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.MockConfig"><code class="flex name class">
+<span>class <span class="ident">MockConfig</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class MockConfig:
+    hidden_size = 64
+    num_attention_heads = 4
+    num_heads = 4
+    num_key_value_heads = 4
+    head_dim = 16
+    is_decoder = False
+    model_type = &#34;bert&#34;
+    rank = 8
+    alpha = 1.5
+    lora_rank = 4</code></pre>
+</details>
+<div class="desc"></div>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.tests.test_adasplash_attention.MockConfig.alpha"><code class="name">var <span class="ident">alpha</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.MockConfig.head_dim"><code class="name">var <span class="ident">head_dim</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.MockConfig.hidden_size"><code class="name">var <span class="ident">hidden_size</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.MockConfig.is_decoder"><code class="name">var <span class="ident">is_decoder</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.MockConfig.lora_rank"><code class="name">var <span class="ident">lora_rank</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.MockConfig.model_type"><code class="name">var <span class="ident">model_type</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.MockConfig.num_attention_heads"><code class="name">var <span class="ident">num_attention_heads</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.MockConfig.num_heads"><code class="name">var <span class="ident">num_heads</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.MockConfig.num_key_value_heads"><code class="name">var <span class="ident">num_key_value_heads</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.MockConfig.rank"><code class="name">var <span class="ident">rank</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud"><code class="flex name class">
+<span>class <span class="ident">TestCopyWeightsFailLoud</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TestCopyWeightsFailLoud:
+    def _make_attn(self):
+        return AdaSplashAttention(config=MockConfig())
+
+    def test_copy_distilbert_succeeds(self):
+        attn = self._make_attn()
+        src = DummyDistilBertAttn()
+        attn.copy_weights(src)  # must not raise
+
+    def test_copy_roberta_succeeds(self):
+        attn = self._make_attn()
+        src = DummyRobertaAttn()
+        attn.copy_weights(src)  # must not raise
+
+    def test_copy_gpt2_succeeds(self):
+        attn = self._make_attn()
+        src = DummyGPT2Attn()
+        attn.copy_weights(src)  # must not raise
+
+    def test_copy_qwen_succeeds(self):
+        attn = self._make_attn()
+        src = DummyQwenAttn()
+        attn.copy_weights(src)  # must not raise
+
+    def test_copy_empty_raises_runtimeerror(self):
+        attn = self._make_attn()
+        with pytest.raises(RuntimeError, match=&#34;mandatory projections|Refusing&#34;):
+            attn.copy_weights(DummyEmptyAttn())
+
+    def test_copy_empty_not_warns_silently(self):
+        &#34;&#34;&#34;copy_weights must NOT silently return — it must raise.&#34;&#34;&#34;
+        attn = self._make_attn()
+        raised = False
+        try:
+            attn.copy_weights(DummyEmptyAttn())
+        except RuntimeError:
+            raised = True
+        assert raised, &#34;copy_weights should raise RuntimeError, not silently return&#34;</code></pre>
+</details>
+<div class="desc"></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud.test_copy_distilbert_succeeds"><code class="name flex">
+<span>def <span class="ident">test_copy_distilbert_succeeds</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_copy_distilbert_succeeds(self):
+    attn = self._make_attn()
+    src = DummyDistilBertAttn()
+    attn.copy_weights(src)  # must not raise</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud.test_copy_empty_not_warns_silently"><code class="name flex">
+<span>def <span class="ident">test_copy_empty_not_warns_silently</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_copy_empty_not_warns_silently(self):
+    &#34;&#34;&#34;copy_weights must NOT silently return — it must raise.&#34;&#34;&#34;
+    attn = self._make_attn()
+    raised = False
+    try:
+        attn.copy_weights(DummyEmptyAttn())
+    except RuntimeError:
+        raised = True
+    assert raised, &#34;copy_weights should raise RuntimeError, not silently return&#34;</code></pre>
+</details>
+<div class="desc"><p>copy_weights must NOT silently return — it must raise.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud.test_copy_empty_raises_runtimeerror"><code class="name flex">
+<span>def <span class="ident">test_copy_empty_raises_runtimeerror</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_copy_empty_raises_runtimeerror(self):
+    attn = self._make_attn()
+    with pytest.raises(RuntimeError, match=&#34;mandatory projections|Refusing&#34;):
+        attn.copy_weights(DummyEmptyAttn())</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud.test_copy_gpt2_succeeds"><code class="name flex">
+<span>def <span class="ident">test_copy_gpt2_succeeds</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_copy_gpt2_succeeds(self):
+    attn = self._make_attn()
+    src = DummyGPT2Attn()
+    attn.copy_weights(src)  # must not raise</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud.test_copy_qwen_succeeds"><code class="name flex">
+<span>def <span class="ident">test_copy_qwen_succeeds</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_copy_qwen_succeeds(self):
+    attn = self._make_attn()
+    src = DummyQwenAttn()
+    attn.copy_weights(src)  # must not raise</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud.test_copy_roberta_succeeds"><code class="name flex">
+<span>def <span class="ident">test_copy_roberta_succeeds</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_copy_roberta_succeeds(self):
+    attn = self._make_attn()
+    src = DummyRobertaAttn()
+    attn.copy_weights(src)  # must not raise</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.TestForwardShapes"><code class="flex name class">
+<span>class <span class="ident">TestForwardShapes</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TestForwardShapes:
+    def _make_attn(self):
+        return AdaSplashAttention(config=MockConfig())
+
+    def test_encoder_output_shape(self):
+        attn = self._make_attn()
+        x = torch.randn(2, 10, 64)
+        out, weights = attn(x)
+        assert out.shape == (2, 10, 64)
+
+    def test_output_attentions(self):
+        attn = self._make_attn()
+        x = torch.randn(1, 6, 64)
+        out, weights = attn(x, output_attentions=True)
+        assert out.shape == (1, 6, 64)
+
+    def test_with_attention_mask(self):
+        attn = self._make_attn()
+        x = torch.randn(2, 5, 64)
+        mask = torch.zeros(2, 1, 1, 5)
+        out, _ = attn(x, attention_mask=mask)
+        assert out.shape == (2, 5, 64)
+
+    def test_pretrained_attn_in_constructor(self):
+        src = DummyDistilBertAttn()
+        attn = AdaSplashAttention(config=MockConfig(), pretrained_attn=src)
+        x = torch.randn(1, 4, 64)
+        out, _ = attn(x)
+        assert out.shape == (1, 4, 64)</code></pre>
+</details>
+<div class="desc"></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_adasplash_attention.TestForwardShapes.test_encoder_output_shape"><code class="name flex">
+<span>def <span class="ident">test_encoder_output_shape</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_encoder_output_shape(self):
+    attn = self._make_attn()
+    x = torch.randn(2, 10, 64)
+    out, weights = attn(x)
+    assert out.shape == (2, 10, 64)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.TestForwardShapes.test_output_attentions"><code class="name flex">
+<span>def <span class="ident">test_output_attentions</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_output_attentions(self):
+    attn = self._make_attn()
+    x = torch.randn(1, 6, 64)
+    out, weights = attn(x, output_attentions=True)
+    assert out.shape == (1, 6, 64)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.TestForwardShapes.test_pretrained_attn_in_constructor"><code class="name flex">
+<span>def <span class="ident">test_pretrained_attn_in_constructor</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_pretrained_attn_in_constructor(self):
+    src = DummyDistilBertAttn()
+    attn = AdaSplashAttention(config=MockConfig(), pretrained_attn=src)
+    x = torch.randn(1, 4, 64)
+    out, _ = attn(x)
+    assert out.shape == (1, 4, 64)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.TestForwardShapes.test_with_attention_mask"><code class="name flex">
+<span>def <span class="ident">test_with_attention_mask</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_with_attention_mask(self):
+    attn = self._make_attn()
+    x = torch.randn(2, 5, 64)
+    mask = torch.zeros(2, 1, 1, 5)
+    out, _ = attn(x, attention_mask=mask)
+    assert out.shape == (2, 5, 64)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.TestInjectSafety"><code class="flex name class">
+<span>class <span class="ident">TestInjectSafety</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TestInjectSafety:
+    def test_inject_none_returns_none(self):
+        assert inject_adasplash(layer=None, model=None, model_config=MockConfig()) is None
+
+    def test_inject_distilbert(self):
+        layer = DummyLayer(DummyDistilBertAttn())
+        res = inject_adasplash(layer=layer, model_config=MockConfig())
+        assert res is not None
+
+    def test_inject_qwen(self):
+        class L(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.self_attn = DummyQwenAttn()
+        res = inject_adasplash(layer=L(), model_config=MockConfig())
+        assert res is not None
+
+    def test_inject_empty_attn_returns_none(self):
+        &#34;&#34;&#34;Inject with an unrecognised attn (no projections) must return None, not raise.&#34;&#34;&#34;
+        layer = DummyLayer(DummyEmptyAttn())
+        res = inject_adasplash(layer=layer, model_config=MockConfig())
+        assert res is None
+
+    def test_inject_returns_adasplash_instance(self):
+        layer = DummyLayer(DummyDistilBertAttn())
+        res = inject_adasplash(layer=layer, model_config=MockConfig())
+        assert isinstance(res, AdaSplashAttention)</code></pre>
+</details>
+<div class="desc"></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_adasplash_attention.TestInjectSafety.test_inject_distilbert"><code class="name flex">
+<span>def <span class="ident">test_inject_distilbert</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_inject_distilbert(self):
+    layer = DummyLayer(DummyDistilBertAttn())
+    res = inject_adasplash(layer=layer, model_config=MockConfig())
+    assert res is not None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.TestInjectSafety.test_inject_empty_attn_returns_none"><code class="name flex">
+<span>def <span class="ident">test_inject_empty_attn_returns_none</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_inject_empty_attn_returns_none(self):
+    &#34;&#34;&#34;Inject with an unrecognised attn (no projections) must return None, not raise.&#34;&#34;&#34;
+    layer = DummyLayer(DummyEmptyAttn())
+    res = inject_adasplash(layer=layer, model_config=MockConfig())
+    assert res is None</code></pre>
+</details>
+<div class="desc"><p>Inject with an unrecognised attn (no projections) must return None, not raise.</p></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.TestInjectSafety.test_inject_none_returns_none"><code class="name flex">
+<span>def <span class="ident">test_inject_none_returns_none</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_inject_none_returns_none(self):
+    assert inject_adasplash(layer=None, model=None, model_config=MockConfig()) is None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.TestInjectSafety.test_inject_qwen"><code class="name flex">
+<span>def <span class="ident">test_inject_qwen</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_inject_qwen(self):
+    class L(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.self_attn = DummyQwenAttn()
+    res = inject_adasplash(layer=L(), model_config=MockConfig())
+    assert res is not None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.TestInjectSafety.test_inject_returns_adasplash_instance"><code class="name flex">
+<span>def <span class="ident">test_inject_returns_adasplash_instance</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_inject_returns_adasplash_instance(self):
+    layer = DummyLayer(DummyDistilBertAttn())
+    res = inject_adasplash(layer=layer, model_config=MockConfig())
+    assert isinstance(res, AdaSplashAttention)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.TestOddDimRoPE"><code class="flex name class">
+<span>class <span class="ident">TestOddDimRoPE</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TestOddDimRoPE:
+    def _make_attn(self):
+        return AdaSplashAttention(config=MockConfig())
+
+    def test_forward_even_dim_no_rope(self):
+        attn = self._make_attn()
+        x = torch.randn(2, 8, 64)
+        out, _ = attn(x)
+        assert out.shape == (2, 8, 64)
+
+    def test_forward_with_rope_even(self):
+        attn = self._make_attn()
+        x = torch.randn(2, 8, 64)
+        cos = torch.ones(2, 8, 16)
+        sin = torch.zeros(2, 8, 16)
+        out, _ = attn(x, position_embeddings=(cos, sin))
+        assert out.shape == (2, 8, 64)
+
+    def test_forward_with_rope_odd_head_dim(self):
+        &#34;&#34;&#34;Odd head_dim must not crash (e.g. head_dim=7).&#34;&#34;&#34;
+        cfg = type(&#34;C&#34;, (), {
+            &#34;hidden_size&#34;: 56, &#34;num_attention_heads&#34;: 8, &#34;num_heads&#34;: 8,
+            &#34;num_key_value_heads&#34;: 8, &#34;head_dim&#34;: 7, &#34;is_decoder&#34;: False,
+            &#34;model_type&#34;: &#34;bert&#34;, &#34;rank&#34;: 4, &#34;alpha&#34;: 1.5, &#34;lora_rank&#34;: 2,
+        })()
+        attn = AdaSplashAttention(config=cfg)
+        x = torch.randn(1, 4, 56)
+        cos = torch.ones(1, 4, 7)
+        sin = torch.zeros(1, 4, 7)
+        out, _ = attn(x, position_embeddings=(cos, sin))
+        assert out.shape == (1, 4, 56)</code></pre>
+</details>
+<div class="desc"></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_adasplash_attention.TestOddDimRoPE.test_forward_even_dim_no_rope"><code class="name flex">
+<span>def <span class="ident">test_forward_even_dim_no_rope</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_forward_even_dim_no_rope(self):
+    attn = self._make_attn()
+    x = torch.randn(2, 8, 64)
+    out, _ = attn(x)
+    assert out.shape == (2, 8, 64)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.TestOddDimRoPE.test_forward_with_rope_even"><code class="name flex">
+<span>def <span class="ident">test_forward_with_rope_even</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_forward_with_rope_even(self):
+    attn = self._make_attn()
+    x = torch.randn(2, 8, 64)
+    cos = torch.ones(2, 8, 16)
+    sin = torch.zeros(2, 8, 16)
+    out, _ = attn(x, position_embeddings=(cos, sin))
+    assert out.shape == (2, 8, 64)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_adasplash_attention.TestOddDimRoPE.test_forward_with_rope_odd_head_dim"><code class="name flex">
+<span>def <span class="ident">test_forward_with_rope_odd_head_dim</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_forward_with_rope_odd_head_dim(self):
+    &#34;&#34;&#34;Odd head_dim must not crash (e.g. head_dim=7).&#34;&#34;&#34;
+    cfg = type(&#34;C&#34;, (), {
+        &#34;hidden_size&#34;: 56, &#34;num_attention_heads&#34;: 8, &#34;num_heads&#34;: 8,
+        &#34;num_key_value_heads&#34;: 8, &#34;head_dim&#34;: 7, &#34;is_decoder&#34;: False,
+        &#34;model_type&#34;: &#34;bert&#34;, &#34;rank&#34;: 4, &#34;alpha&#34;: 1.5, &#34;lora_rank&#34;: 2,
+    })()
+    attn = AdaSplashAttention(config=cfg)
+    x = torch.randn(1, 4, 56)
+    cos = torch.ones(1, 4, 7)
+    sin = torch.zeros(1, 4, 7)
+    out, _ = attn(x, position_embeddings=(cos, sin))
+    assert out.shape == (1, 4, 56)</code></pre>
+</details>
+<div class="desc"><p>Odd head_dim must not crash (e.g. head_dim=7).</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.tests" href="index.html">neuralops.tests</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.tests.test_adasplash_attention.DummyDistilBertAttn" href="#neuralops.tests.test_adasplash_attention.DummyDistilBertAttn">DummyDistilBertAttn</a></code></h4>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_adasplash_attention.DummyEmptyAttn" href="#neuralops.tests.test_adasplash_attention.DummyEmptyAttn">DummyEmptyAttn</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_adasplash_attention.DummyEmptyAttn.forward" href="#neuralops.tests.test_adasplash_attention.DummyEmptyAttn.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_adasplash_attention.DummyGPT2Attn" href="#neuralops.tests.test_adasplash_attention.DummyGPT2Attn">DummyGPT2Attn</a></code></h4>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_adasplash_attention.DummyLayer" href="#neuralops.tests.test_adasplash_attention.DummyLayer">DummyLayer</a></code></h4>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_adasplash_attention.DummyQwenAttn" href="#neuralops.tests.test_adasplash_attention.DummyQwenAttn">DummyQwenAttn</a></code></h4>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_adasplash_attention.DummyRobertaAttn" href="#neuralops.tests.test_adasplash_attention.DummyRobertaAttn">DummyRobertaAttn</a></code></h4>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_adasplash_attention.MockConfig" href="#neuralops.tests.test_adasplash_attention.MockConfig">MockConfig</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.alpha" href="#neuralops.tests.test_adasplash_attention.MockConfig.alpha">alpha</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.head_dim" href="#neuralops.tests.test_adasplash_attention.MockConfig.head_dim">head_dim</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.hidden_size" href="#neuralops.tests.test_adasplash_attention.MockConfig.hidden_size">hidden_size</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.is_decoder" href="#neuralops.tests.test_adasplash_attention.MockConfig.is_decoder">is_decoder</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.lora_rank" href="#neuralops.tests.test_adasplash_attention.MockConfig.lora_rank">lora_rank</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.model_type" href="#neuralops.tests.test_adasplash_attention.MockConfig.model_type">model_type</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.num_attention_heads" href="#neuralops.tests.test_adasplash_attention.MockConfig.num_attention_heads">num_attention_heads</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.num_heads" href="#neuralops.tests.test_adasplash_attention.MockConfig.num_heads">num_heads</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.num_key_value_heads" href="#neuralops.tests.test_adasplash_attention.MockConfig.num_key_value_heads">num_key_value_heads</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.MockConfig.rank" href="#neuralops.tests.test_adasplash_attention.MockConfig.rank">rank</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud" href="#neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud">TestCopyWeightsFailLoud</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud.test_copy_distilbert_succeeds" href="#neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud.test_copy_distilbert_succeeds">test_copy_distilbert_succeeds</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud.test_copy_empty_not_warns_silently" href="#neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud.test_copy_empty_not_warns_silently">test_copy_empty_not_warns_silently</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud.test_copy_empty_raises_runtimeerror" href="#neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud.test_copy_empty_raises_runtimeerror">test_copy_empty_raises_runtimeerror</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud.test_copy_gpt2_succeeds" href="#neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud.test_copy_gpt2_succeeds">test_copy_gpt2_succeeds</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud.test_copy_qwen_succeeds" href="#neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud.test_copy_qwen_succeeds">test_copy_qwen_succeeds</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud.test_copy_roberta_succeeds" href="#neuralops.tests.test_adasplash_attention.TestCopyWeightsFailLoud.test_copy_roberta_succeeds">test_copy_roberta_succeeds</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_adasplash_attention.TestForwardShapes" href="#neuralops.tests.test_adasplash_attention.TestForwardShapes">TestForwardShapes</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_adasplash_attention.TestForwardShapes.test_encoder_output_shape" href="#neuralops.tests.test_adasplash_attention.TestForwardShapes.test_encoder_output_shape">test_encoder_output_shape</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.TestForwardShapes.test_output_attentions" href="#neuralops.tests.test_adasplash_attention.TestForwardShapes.test_output_attentions">test_output_attentions</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.TestForwardShapes.test_pretrained_attn_in_constructor" href="#neuralops.tests.test_adasplash_attention.TestForwardShapes.test_pretrained_attn_in_constructor">test_pretrained_attn_in_constructor</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.TestForwardShapes.test_with_attention_mask" href="#neuralops.tests.test_adasplash_attention.TestForwardShapes.test_with_attention_mask">test_with_attention_mask</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_adasplash_attention.TestInjectSafety" href="#neuralops.tests.test_adasplash_attention.TestInjectSafety">TestInjectSafety</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_adasplash_attention.TestInjectSafety.test_inject_distilbert" href="#neuralops.tests.test_adasplash_attention.TestInjectSafety.test_inject_distilbert">test_inject_distilbert</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.TestInjectSafety.test_inject_empty_attn_returns_none" href="#neuralops.tests.test_adasplash_attention.TestInjectSafety.test_inject_empty_attn_returns_none">test_inject_empty_attn_returns_none</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.TestInjectSafety.test_inject_none_returns_none" href="#neuralops.tests.test_adasplash_attention.TestInjectSafety.test_inject_none_returns_none">test_inject_none_returns_none</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.TestInjectSafety.test_inject_qwen" href="#neuralops.tests.test_adasplash_attention.TestInjectSafety.test_inject_qwen">test_inject_qwen</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.TestInjectSafety.test_inject_returns_adasplash_instance" href="#neuralops.tests.test_adasplash_attention.TestInjectSafety.test_inject_returns_adasplash_instance">test_inject_returns_adasplash_instance</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_adasplash_attention.TestOddDimRoPE" href="#neuralops.tests.test_adasplash_attention.TestOddDimRoPE">TestOddDimRoPE</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_adasplash_attention.TestOddDimRoPE.test_forward_even_dim_no_rope" href="#neuralops.tests.test_adasplash_attention.TestOddDimRoPE.test_forward_even_dim_no_rope">test_forward_even_dim_no_rope</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.TestOddDimRoPE.test_forward_with_rope_even" href="#neuralops.tests.test_adasplash_attention.TestOddDimRoPE.test_forward_with_rope_even">test_forward_with_rope_even</a></code></li>
+<li><code><a title="neuralops.tests.test_adasplash_attention.TestOddDimRoPE.test_forward_with_rope_odd_head_dim" href="#neuralops.tests.test_adasplash_attention.TestOddDimRoPE.test_forward_with_rope_odd_head_dim">test_forward_with_rope_odd_head_dim</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

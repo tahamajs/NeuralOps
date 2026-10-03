@@ -1,0 +1,793 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.attentions.gated_deltanet_block API documentation</title>
+<meta name="description" content="Gated DeltaNet Block with Optional Multi-Head Attention Bypass …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.attentions.gated_deltanet_block</code></h1>
+</header>
+<section id="section-intro">
+<p>Gated DeltaNet Block with Optional Multi-Head Attention Bypass.</p>
+<p>Implements an efficient hybrid linear-recurrent block switching dynamically between standard
+multi-head self-attention and Bidirectional Gated DeltaNet with pretrained weight transfer.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.attentions.gated_deltanet_block.inject_gated_deltanet_block"><code class="name flex">
+<span>def <span class="ident">inject_gated_deltanet_block</span></span>(<span>layer: Any = None,<br>model: Any = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: torch.nn.modules.module.Module | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;gated_deltanet_block_inject&#34;)
+@ATTENTION_REGISTRY.register(&#34;inject_gated_deltanet_block&#34;)
+def inject_gated_deltanet_block(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    **kwargs: Any,
+):
+    target = layer if layer is not None else model
+    if target is None:
+        target = kwargs.get(&#34;model&#34;, kwargs.get(&#34;layer&#34;))
+    if target is None:
+        return None
+
+    cfg = model_config if model_config is not None else getattr(target, &#34;config&#34;, None)
+
+    # Whole-model traversal
+    layer_list = None
+    if hasattr(target, &#34;distilbert&#34;) and hasattr(target.distilbert, &#34;transformer&#34;):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, &#34;roberta&#34;) and hasattr(target.roberta, &#34;encoder&#34;):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, &#34;transformer&#34;) and hasattr(target.transformer, &#34;h&#34;):
+        layer_list = target.transformer.h
+    elif hasattr(target, &#34;h&#34;) and isinstance(target.h, (torch.nn.ModuleList, list)):
+        layer_list = target.h
+    elif hasattr(target, &#34;model&#34;) and hasattr(target.model, &#34;layers&#34;):
+        layer_list = target.model.layers
+    elif hasattr(target, &#34;encoder&#34;) and hasattr(target.encoder, &#34;layer&#34;):
+        layer_list = target.encoder.layer
+    elif (
+        hasattr(target, &#34;bert&#34;)
+        and hasattr(target.bert, &#34;encoder&#34;)
+        and hasattr(target.bert.encoder, &#34;layer&#34;)
+    ):
+        layer_list = target.bert.encoder.layer
+    elif hasattr(target, &#34;layers&#34;) and isinstance(target.layers, (torch.nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_gated_deltanet_block(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=(
+                    comp_config if &#34;comp_config&#34; in locals() or &#34;comp_config&#34; in kwargs else None
+                ),
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected &gt; 0 else None
+
+    layer = target
+
+    r&#34;&#34;&#34;Injects GatedDeltaNetBlock into a transformer layer.&#34;&#34;&#34;
+    src_attn = old_attn
+    if src_attn is None:
+        if hasattr(layer, &#34;attention&#34;):
+            src_attn = layer.attention
+        elif hasattr(layer, &#34;attn&#34;):
+            src_attn = layer.attn
+        elif hasattr(layer, &#34;self_attn&#34;):
+            src_attn = layer.self_attn
+        elif hasattr(layer, &#34;self&#34;):
+            src_attn = layer.self
+        else:
+            src_attn = layer
+
+    d_model = 64
+    num_heads = 4
+    if src_attn is not None:
+        cand = getattr(
+            src_attn,
+            &#34;hidden_size&#34;,
+            getattr(src_attn, &#34;embed_dim&#34;, getattr(src_attn, &#34;all_head_size&#34;, None)),
+        )
+        if cand is None and hasattr(src_attn, &#34;q_proj&#34;) and hasattr(src_attn.q_proj, &#34;in_features&#34;):
+            cand = src_attn.q_proj.in_features
+        if cand is not None:
+            d_model = cand
+        num_heads = getattr(
+            src_attn, &#34;num_heads&#34;, getattr(src_attn, &#34;num_attention_heads&#34;, num_heads)
+        )
+    elif model_config is None and hasattr(layer, &#34;config&#34;):
+        model_config = layer.config
+    if model_config is not None:
+        d_model = getattr(model_config, &#34;hidden_size&#34;, getattr(model_config, &#34;dim&#34;, d_model))
+        num_heads = getattr(model_config, &#34;num_attention_heads&#34;, num_heads)
+    elif hasattr(layer, &#34;config&#34;):
+        d_model = getattr(layer.config, &#34;hidden_size&#34;, d_model)
+        num_heads = getattr(layer.config, &#34;num_attention_heads&#34;, num_heads)
+
+    try:
+        use_full = getattr(comp_config, &#34;use_full_attention&#34;, False) if comp_config else False
+        new_block = GatedDeltaNetBlock(
+            config=model_config,
+            comp_config=comp_config,
+            d_model=d_model,
+            num_heads=num_heads,
+            use_full_attention=use_full,
+            layer_id=layer_idx,
+            layer_idx=layer_idx,
+            **kwargs,
+        )
+        if src_attn is not None and hasattr(new_block, &#34;copy_weights&#34;):
+            new_block.copy_weights(src_attn)
+
+        if hasattr(layer, &#34;attention&#34;):
+            if hasattr(layer.attention, &#34;self&#34;):
+                new_block.is_nested_encoder = True
+                new_block.deltanet.is_nested_encoder = True
+                layer.attention.self = new_block
+            else:
+                new_block.is_nested_encoder = False
+                new_block.deltanet.is_nested_encoder = False
+                layer.attention = new_block
+        elif hasattr(layer, &#34;self&#34;):
+            new_block.is_nested_encoder = True
+            new_block.deltanet.is_nested_encoder = True
+            layer.self = new_block
+        elif hasattr(layer, &#34;attn&#34;):
+            new_block.is_nested_encoder = False
+            new_block.deltanet.is_nested_encoder = False
+            layer.attn = new_block
+        elif hasattr(layer, &#34;self_attn&#34;):
+            new_block.is_nested_encoder = False
+            new_block.deltanet.is_nested_encoder = False
+            layer.self_attn = new_block
+        assert new_block.is_nested_encoder == new_block.deltanet.is_nested_encoder, (
+            &#34;GatedDeltaNetBlock nested flag desynced&#34;
+        )
+
+        return new_block
+    except Exception as e:
+        logger.error(f&#34;GatedDeltaNetBlock injection failed: {e}&#34;)
+        return None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock"><code class="flex name class">
+<span>class <span class="ident">GatedDeltaNetBlock</span></span>
+<span>(</span><span>config: Any | None = None,<br>rank: int | None = None,<br>d_model: int | Any | None = None,<br>num_heads: int | None = None,<br>use_full_attention: bool = False,<br>comp_config: Any | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;gated_deltanet_block&#34;)
+class GatedDeltaNetBlock(BaseAttention):
+    r&#34;&#34;&#34;Gated DeltaNet Transformer Block with Pretrained Weight Transfer.
+
+    Mathematical Formulation:
+        $$\text{Output} = \begin{cases}
+            \text{LayerNorm}(X + \text{MHA}(X, X, X)), &amp; \text{if } \text{use\_full\_attention} \\
+            \text{LayerNorm}(X + \text{GatedDeltaNet}(X)), &amp; \text{otherwise}
+        \end{cases}$$
+    &#34;&#34;&#34;
+
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        config: Any | None = None,
+        rank: int | None = None,
+        d_model: int | Any | None = None,
+        num_heads: int | None = None,
+        use_full_attention: bool = False,
+        comp_config: Any | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(config, rank)
+        if d_model is None:
+            if config is not None:
+                d_model = getattr(config, &#34;hidden_size&#34;, getattr(config, &#34;dim&#34;, 768))
+            else:
+                d_model = kwargs.get(&#34;hidden_size&#34;, 768)
+
+        if num_heads is None:
+            if config is not None:
+                num_heads = getattr(config, &#34;num_attention_heads&#34;, 4)
+            else:
+                num_heads = kwargs.get(&#34;num_attention_heads&#34;, 4)
+
+        self.d_model: int = d_model
+        self.num_heads: int = num_heads
+        self.use_full_attention: bool = use_full_attention
+        self.comp_config = comp_config
+
+        if use_full_attention:
+            self.attn: nn.MultiheadAttention | None = nn.MultiheadAttention(
+                self.d_model, self.num_heads, batch_first=True
+            )
+        else:
+            self.attn = None
+
+        self.deltanet = GatedDeltaNet(
+            config=config,
+            comp_config=comp_config,
+            d_model=self.d_model,
+            num_heads=self.num_heads,
+            **kwargs,
+        )
+        self.norm = nn.LayerNorm(self.d_model)
+        self.is_nested_encoder: bool = getattr(self.deltanet, &#34;is_nested_encoder&#34;, False)
+
+    # Compatibility properties
+    @property
+    def query(self) -&gt; Any:
+        return self.deltanet.query
+
+    @property
+    def key(self) -&gt; Any:
+        return self.deltanet.key
+
+    @property
+    def value(self) -&gt; Any:
+        return self.deltanet.value
+
+    @property
+    def q_proj(self) -&gt; Any:
+        return self.deltanet.q_proj
+
+    @property
+    def k_proj(self) -&gt; Any:
+        return self.deltanet.k_proj
+
+    @property
+    def v_proj(self) -&gt; Any:
+        return self.deltanet.v_proj
+
+    @property
+    def out_proj(self) -&gt; Any:
+        return self.deltanet.out_proj
+
+    @property
+    def q_lin(self) -&gt; Any:
+        return self.deltanet.q_lin
+
+    @property
+    def k_lin(self) -&gt; Any:
+        return self.deltanet.k_lin
+
+    @property
+    def v_lin(self) -&gt; Any:
+        return self.deltanet.v_lin
+
+    @property
+    def out_lin(self) -&gt; Any:
+        return self.deltanet.out_lin
+
+    def copy_weights(self, old_attn: Any) -&gt; None:
+        &#34;&#34;&#34;Transfer pretrained weights to either MHA or GatedDeltaNet.&#34;&#34;&#34;
+        if self.use_full_attention and self.attn is not None:
+            try:
+                adapter = UniversalAdapter()
+                w_q, b_q = adapter.get_weight_bias(old_attn, &#34;q&#34;)
+                w_k, b_k = adapter.get_weight_bias(old_attn, &#34;k&#34;)
+                w_v, b_v = adapter.get_weight_bias(old_attn, &#34;v&#34;)
+                w_o, b_o = adapter.get_weight_bias(old_attn, &#34;o&#34;)
+
+                if w_o is None:
+                    for cand in (&#34;out_proj&#34;, &#34;out_lin&#34;, &#34;o_proj&#34;, &#34;output&#34;, &#34;proj&#34;):
+                        for target in (old_attn, getattr(old_attn, &#34;self&#34;, None)):
+                            if target is not None and hasattr(target, cand):
+                                mod = getattr(target, cand)
+                                if hasattr(mod, &#34;dense&#34;):
+                                    mod = mod.dense
+                                if hasattr(mod, &#34;weight&#34;) and mod.weight is not None:
+                                    w_o = mod.weight.data.clone()
+                                    if w_o.ndim == 2 and w_o.shape[0] &lt; w_o.shape[1]:
+                                        w_o = w_o.t()
+                                    b_o = getattr(mod, &#34;bias&#34;, None)
+                                    b_o = b_o.data.clone() if b_o is not None else None
+                                    break
+                        if w_o is not None:
+                            break
+
+                with torch.no_grad():
+                    if w_q is not None and w_k is not None and w_v is not None:
+                        qkv_w = torch.cat([w_q, w_k, w_v], dim=0)
+                        if qkv_w.shape == self.attn.in_proj_weight.shape:
+                            self.attn.in_proj_weight.copy_(qkv_w)
+                        if (
+                            b_q is not None
+                            and b_k is not None
+                            and b_v is not None
+                            and self.attn.in_proj_bias is not None
+                        ):
+                            cat_b = torch.cat([b_q, b_k, b_v], dim=0)
+                            if cat_b.shape == self.attn.in_proj_bias.shape:
+                                self.attn.in_proj_bias.copy_(cat_b)
+                    if w_o is not None:
+                        if w_o.shape == self.attn.out_proj.weight.shape:
+                            self.attn.out_proj.weight.copy_(w_o)
+                        elif w_o.t().shape == self.attn.out_proj.weight.shape:
+                            self.attn.out_proj.weight.copy_(w_o.t())
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError) as e:
+                logger.warning(
+                    &#34;GatedDeltaNetBlock copy_weights to MultiheadAttention incomplete: %s&#34;,
+                    e,
+                )
+        else:
+            if hasattr(self.deltanet, &#34;copy_weights&#34;):
+                self.deltanet.copy_weights(old_attn)
+                self.is_nested_encoder = getattr(self.deltanet, &#34;is_nested_encoder&#34;, False)
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        *args: Any,
+        **kwargs: Any,
+    ) -&gt; tuple[torch.Tensor, torch.Tensor | None]:
+        &#34;&#34;&#34;Forward pass for GatedDeltaNetBlock.&#34;&#34;&#34;
+        x = hidden_states
+        if self.use_full_attention and self.attn is not None:
+            key_padding_mask = None
+            if attention_mask is not None:
+                if attention_mask.dim() == 2:
+                    key_padding_mask = attention_mask == 0
+                elif attention_mask.dim() == 4:
+                    key_padding_mask = attention_mask[:, 0, 0, :] &lt;= -10000.0
+
+            attn_out, attn_weights = self.attn(
+                x,
+                x,
+                x,
+                key_padding_mask=key_padding_mask,
+                need_weights=output_attentions,
+            )
+            if attn_out.shape[-1] != x.shape[-1]:
+                attn_out = (
+                    F.pad(attn_out, (0, x.shape[-1] - attn_out.shape[-1]))
+                    if attn_out.shape[-1] &lt; x.shape[-1]
+                    else attn_out[..., : x.shape[-1]]
+                )
+            if self.is_nested_encoder:
+                return attn_out, (attn_weights if output_attentions else None)
+            out = self.norm(x + attn_out)
+            return out, (attn_weights if output_attentions else None)
+        else:
+            delta_out, _ = self.deltanet(
+                x,
+                attention_mask=attention_mask,
+                head_mask=head_mask,
+                output_attentions=output_attentions,
+                **kwargs,
+            )
+            if delta_out.shape[-1] != x.shape[-1]:
+                delta_out = (
+                    F.pad(delta_out, (0, x.shape[-1] - delta_out.shape[-1]))
+                    if delta_out.shape[-1] &lt; x.shape[-1]
+                    else delta_out[..., : x.shape[-1]]
+                )
+            if self.is_nested_encoder:
+                return delta_out, None
+            if getattr(self, &#34;is_nested_encoder&#34;, False):
+                return delta_out, None
+            out = self.norm(x + delta_out)
+            return out, None</code></pre>
+</details>
+<div class="desc"><p>Gated DeltaNet Transformer Block with Pretrained Weight Transfer.</p>
+<p>Mathematical Formulation:
+$$\text{Output} = \begin{cases}
+\text{LayerNorm}(X + \text{MHA}(X, X, X)), &amp; \text{if } \text{use_full_attention} \
+\text{LayerNorm}(X + \text{GatedDeltaNet}(X)), &amp; \text{otherwise}
+\end{cases}$$</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.k_lin"><code class="name">prop <span class="ident">k_lin</span> : Any</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def k_lin(self) -&gt; Any:
+    return self.deltanet.k_lin</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.k_proj"><code class="name">prop <span class="ident">k_proj</span> : Any</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def k_proj(self) -&gt; Any:
+    return self.deltanet.k_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.key"><code class="name">prop <span class="ident">key</span> : Any</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def key(self) -&gt; Any:
+    return self.deltanet.key</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.out_lin"><code class="name">prop <span class="ident">out_lin</span> : Any</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def out_lin(self) -&gt; Any:
+    return self.deltanet.out_lin</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.out_proj"><code class="name">prop <span class="ident">out_proj</span> : Any</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def out_proj(self) -&gt; Any:
+    return self.deltanet.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.q_lin"><code class="name">prop <span class="ident">q_lin</span> : Any</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def q_lin(self) -&gt; Any:
+    return self.deltanet.q_lin</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.q_proj"><code class="name">prop <span class="ident">q_proj</span> : Any</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def q_proj(self) -&gt; Any:
+    return self.deltanet.q_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.query"><code class="name">prop <span class="ident">query</span> : Any</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def query(self) -&gt; Any:
+    return self.deltanet.query</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.v_lin"><code class="name">prop <span class="ident">v_lin</span> : Any</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def v_lin(self) -&gt; Any:
+    return self.deltanet.v_lin</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.v_proj"><code class="name">prop <span class="ident">v_proj</span> : Any</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def v_proj(self) -&gt; Any:
+    return self.deltanet.v_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.value"><code class="name">prop <span class="ident">value</span> : Any</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def value(self) -&gt; Any:
+    return self.deltanet.value</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.copy_weights"><code class="name flex">
+<span>def <span class="ident">copy_weights</span></span>(<span>self, old_attn: Any) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def copy_weights(self, old_attn: Any) -&gt; None:
+    &#34;&#34;&#34;Transfer pretrained weights to either MHA or GatedDeltaNet.&#34;&#34;&#34;
+    if self.use_full_attention and self.attn is not None:
+        try:
+            adapter = UniversalAdapter()
+            w_q, b_q = adapter.get_weight_bias(old_attn, &#34;q&#34;)
+            w_k, b_k = adapter.get_weight_bias(old_attn, &#34;k&#34;)
+            w_v, b_v = adapter.get_weight_bias(old_attn, &#34;v&#34;)
+            w_o, b_o = adapter.get_weight_bias(old_attn, &#34;o&#34;)
+
+            if w_o is None:
+                for cand in (&#34;out_proj&#34;, &#34;out_lin&#34;, &#34;o_proj&#34;, &#34;output&#34;, &#34;proj&#34;):
+                    for target in (old_attn, getattr(old_attn, &#34;self&#34;, None)):
+                        if target is not None and hasattr(target, cand):
+                            mod = getattr(target, cand)
+                            if hasattr(mod, &#34;dense&#34;):
+                                mod = mod.dense
+                            if hasattr(mod, &#34;weight&#34;) and mod.weight is not None:
+                                w_o = mod.weight.data.clone()
+                                if w_o.ndim == 2 and w_o.shape[0] &lt; w_o.shape[1]:
+                                    w_o = w_o.t()
+                                b_o = getattr(mod, &#34;bias&#34;, None)
+                                b_o = b_o.data.clone() if b_o is not None else None
+                                break
+                    if w_o is not None:
+                        break
+
+            with torch.no_grad():
+                if w_q is not None and w_k is not None and w_v is not None:
+                    qkv_w = torch.cat([w_q, w_k, w_v], dim=0)
+                    if qkv_w.shape == self.attn.in_proj_weight.shape:
+                        self.attn.in_proj_weight.copy_(qkv_w)
+                    if (
+                        b_q is not None
+                        and b_k is not None
+                        and b_v is not None
+                        and self.attn.in_proj_bias is not None
+                    ):
+                        cat_b = torch.cat([b_q, b_k, b_v], dim=0)
+                        if cat_b.shape == self.attn.in_proj_bias.shape:
+                            self.attn.in_proj_bias.copy_(cat_b)
+                if w_o is not None:
+                    if w_o.shape == self.attn.out_proj.weight.shape:
+                        self.attn.out_proj.weight.copy_(w_o)
+                    elif w_o.t().shape == self.attn.out_proj.weight.shape:
+                        self.attn.out_proj.weight.copy_(w_o.t())
+        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError) as e:
+            logger.warning(
+                &#34;GatedDeltaNetBlock copy_weights to MultiheadAttention incomplete: %s&#34;,
+                e,
+            )
+    else:
+        if hasattr(self.deltanet, &#34;copy_weights&#34;):
+            self.deltanet.copy_weights(old_attn)
+            self.is_nested_encoder = getattr(self.deltanet, &#34;is_nested_encoder&#34;, False)</code></pre>
+</details>
+<div class="desc"><p>Transfer pretrained weights to either MHA or GatedDeltaNet.</p></div>
+</dd>
+<dt id="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self,<br>hidden_states: torch.Tensor,<br>attention_mask: torch.Tensor | None = None,<br>head_mask: torch.Tensor | None = None,<br>encoder_hidden_states: torch.Tensor | None = None,<br>encoder_attention_mask: torch.Tensor | None = None,<br>past_key_value: Any | None = None,<br>output_attentions: bool | None = False,<br>output_hidden_states: bool | None = False,<br>return_dict: bool | None = True,<br>*args: Any,<br>**kwargs: Any) ‑> tuple[torch.Tensor, torch.Tensor | None]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(
+    self,
+    hidden_states: torch.Tensor,
+    attention_mask: torch.Tensor | None = None,
+    head_mask: torch.Tensor | None = None,
+    encoder_hidden_states: torch.Tensor | None = None,
+    encoder_attention_mask: torch.Tensor | None = None,
+    past_key_value: Any | None = None,
+    output_attentions: bool | None = False,
+    output_hidden_states: bool | None = False,
+    return_dict: bool | None = True,
+    *args: Any,
+    **kwargs: Any,
+) -&gt; tuple[torch.Tensor, torch.Tensor | None]:
+    &#34;&#34;&#34;Forward pass for GatedDeltaNetBlock.&#34;&#34;&#34;
+    x = hidden_states
+    if self.use_full_attention and self.attn is not None:
+        key_padding_mask = None
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                key_padding_mask = attention_mask == 0
+            elif attention_mask.dim() == 4:
+                key_padding_mask = attention_mask[:, 0, 0, :] &lt;= -10000.0
+
+        attn_out, attn_weights = self.attn(
+            x,
+            x,
+            x,
+            key_padding_mask=key_padding_mask,
+            need_weights=output_attentions,
+        )
+        if attn_out.shape[-1] != x.shape[-1]:
+            attn_out = (
+                F.pad(attn_out, (0, x.shape[-1] - attn_out.shape[-1]))
+                if attn_out.shape[-1] &lt; x.shape[-1]
+                else attn_out[..., : x.shape[-1]]
+            )
+        if self.is_nested_encoder:
+            return attn_out, (attn_weights if output_attentions else None)
+        out = self.norm(x + attn_out)
+        return out, (attn_weights if output_attentions else None)
+    else:
+        delta_out, _ = self.deltanet(
+            x,
+            attention_mask=attention_mask,
+            head_mask=head_mask,
+            output_attentions=output_attentions,
+            **kwargs,
+        )
+        if delta_out.shape[-1] != x.shape[-1]:
+            delta_out = (
+                F.pad(delta_out, (0, x.shape[-1] - delta_out.shape[-1]))
+                if delta_out.shape[-1] &lt; x.shape[-1]
+                else delta_out[..., : x.shape[-1]]
+            )
+        if self.is_nested_encoder:
+            return delta_out, None
+        if getattr(self, &#34;is_nested_encoder&#34;, False):
+            return delta_out, None
+        out = self.norm(x + delta_out)
+        return out, None</code></pre>
+</details>
+<div class="desc"><p>Forward pass for GatedDeltaNetBlock.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseAttention.extra_repr" href="../core/base.html#neuralops.core.base.BaseAttention.extra_repr">extra_repr</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.attentions" href="index.html">neuralops.attentions</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.attentions.gated_deltanet_block.inject_gated_deltanet_block" href="#neuralops.attentions.gated_deltanet_block.inject_gated_deltanet_block">inject_gated_deltanet_block</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock" href="#neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock">GatedDeltaNetBlock</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.copy_weights" href="#neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.forward" href="#neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.forward">forward</a></code></li>
+<li><code><a title="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.is_custom_attention" href="#neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.k_lin" href="#neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.k_lin">k_lin</a></code></li>
+<li><code><a title="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.k_proj" href="#neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.k_proj">k_proj</a></code></li>
+<li><code><a title="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.key" href="#neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.key">key</a></code></li>
+<li><code><a title="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.out_lin" href="#neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.out_lin">out_lin</a></code></li>
+<li><code><a title="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.out_proj" href="#neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.out_proj">out_proj</a></code></li>
+<li><code><a title="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.q_lin" href="#neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.q_lin">q_lin</a></code></li>
+<li><code><a title="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.q_proj" href="#neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.q_proj">q_proj</a></code></li>
+<li><code><a title="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.query" href="#neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.query">query</a></code></li>
+<li><code><a title="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.v_lin" href="#neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.v_lin">v_lin</a></code></li>
+<li><code><a title="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.v_proj" href="#neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.v_proj">v_proj</a></code></li>
+<li><code><a title="neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.value" href="#neuralops.attentions.gated_deltanet_block.GatedDeltaNetBlock.value">value</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

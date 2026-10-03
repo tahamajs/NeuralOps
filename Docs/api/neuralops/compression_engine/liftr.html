@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.liftr API documentation</title>
+<meta name="description" content="LIFTR – Linearized Function Trick Compressor.
+Registered as &#39;liftr&#39;, &#39;liftr_compressor&#39;, &#39;liftr_class&#39; …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.liftr</code></h1>
+</header>
+<section id="section-intro">
+<p>LIFTR – Linearized Function Trick Compressor.
+Registered as 'liftr', 'liftr_compressor', 'liftr_class'.</p>
+<p>Mathematical Formulation:
+Activation:
+ReLU(x) → Identity(x), GELU(x) / SiLU(x) ≈ α·x
+Attention:
+Softmax(QK^T/√d)V → (1/N) Σ V_i</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.liftr.liftr_compressor_entry"><code class="name flex">
+<span>def <span class="ident">liftr_compressor_entry</span></span>(<span>model: nn.Module, comp_config: Any = None, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;liftr&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;liftr_compressor&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;liftr_factory&#34;)
+def liftr_compressor_entry(
+    model: nn.Module,
+    comp_config: Any = None,
+    **kwargs: Any,
+) -&gt; Any:
+    &#34;&#34;&#34;Factory function for LIFTR compressor.&#34;&#34;&#34;
+    replace_attention = _cfg_get(
+        comp_config,
+        &#34;liftr_replace_attention&#34;,
+        _cfg_get(comp_config, &#34;replace_attention&#34;, kwargs.pop(&#34;replace_attention&#34;, False)),
+    )
+    gelu_coefficient = _cfg_get(
+        comp_config,
+        &#34;liftr_gelu_coefficient&#34;,
+        _cfg_get(comp_config, &#34;gelu_coefficient&#34;, kwargs.pop(&#34;gelu_coefficient&#34;, 0.8)),
+    )
+    target_attention_only = _cfg_get(
+        comp_config,
+        &#34;liftr_target_attention_only&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;target_attention_only&#34;,
+            kwargs.pop(&#34;target_attention_only&#34;, False),
+        ),
+    )
+    skip_filter = _cfg_get(
+        comp_config,
+        &#34;skip_should_compress_filter&#34;,
+        kwargs.pop(&#34;skip_should_compress_filter&#34;, False),
+    )
+    return_stats = kwargs.pop(&#34;return_stats&#34;, kwargs.pop(&#34;return_tuple&#34;, False))
+
+    compressor = LIFTRCompressor(
+        model,
+        replace_attention=replace_attention,
+        gelu_coefficient=gelu_coefficient,
+        target_attention_only=target_attention_only,
+        skip_should_compress_filter=skip_filter,
+        comp_config=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>Factory function for LIFTR compressor.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.liftr.LIFTRCompressor"><code class="flex name class">
+<span>class <span class="ident">LIFTRCompressor</span></span>
+<span>(</span><span>model: nn.Module,<br>replace_attention: bool = False,<br>gelu_coefficient: float = 0.8,<br>validation_calibration: bool = False,<br>calibration_threshold: float = 0.2,<br>target_attention_only: bool = False,<br>skip_should_compress_filter: bool = False,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;liftr_class&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;liftr_compressor_class&#34;)
+class LIFTRCompressor(BaseCompressor):
+    # LIFTR-FIX-01: this is a compressor, not an attention.
+    is_custom_attention: bool = False
+
+    CRITICAL_MODULE_KEYWORDS = [
+        &#34;classifier&#34;,
+        &#34;score&#34;,
+        &#34;lm_head&#34;,
+        &#34;pooler&#34;,
+        &#34;embed&#34;,
+        &#34;wte&#34;,
+        &#34;wpe&#34;,
+        &#34;shared&#34;,
+        &#34;head&#34;,
+        &#34;logits&#34;,
+    ]
+
+    def __init__(
+        self,
+        model: nn.Module,
+        replace_attention: bool = False,
+        gelu_coefficient: float = 0.8,
+        validation_calibration: bool = False,
+        calibration_threshold: float = 0.20,
+        target_attention_only: bool = False,
+        skip_should_compress_filter: bool = False,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;liftr&#34;, **kwargs)
+        cfg = kwargs.get(&#34;comp_config&#34;, kwargs.get(&#34;cfg&#34;))
+        self.cfg = cfg
+
+        self.replace_attention = bool(
+            _cfg_get(
+                cfg,
+                &#34;liftr_replace_attention&#34;,
+                _cfg_get(cfg, &#34;replace_attention&#34;, replace_attention),
+            )
+        )
+        self.gelu_coefficient = float(
+            _cfg_get(
+                cfg,
+                &#34;liftr_gelu_coefficient&#34;,
+                _cfg_get(cfg, &#34;gelu_coefficient&#34;, gelu_coefficient),
+            )
+        )
+        self.validation_calibration = bool(
+            _cfg_get(
+                cfg,
+                &#34;validation_calibration&#34;,
+                validation_calibration,
+            )
+        )
+        self.calibration_threshold = float(
+            _cfg_get(
+                cfg,
+                &#34;calibration_threshold&#34;,
+                calibration_threshold,
+            )
+        )
+        self.target_attention_only = bool(
+            _cfg_get(
+                cfg,
+                &#34;liftr_target_attention_only&#34;,
+                _cfg_get(cfg, &#34;target_attention_only&#34;, target_attention_only),
+            )
+        )
+        self.skip_should_compress_filter = bool(
+            _cfg_get(
+                cfg,
+                &#34;skip_should_compress_filter&#34;,
+                skip_should_compress_filter,
+            )
+        )
+
+        self.linearized_activations_count = 0
+        self.linearized_attentions_count = 0
+        self.replaced_modules: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.stats: dict[str, Any] = {}
+        self._compressed_params: int = 0
+
+    def _is_critical(self, name: str) -&gt; bool:
+        low = name.lower()
+        if any(part in name.split(&#34;.&#34;) for part in (&#34;lora_A&#34;, &#34;lora_B&#34;)):
+            return True
+        return any(kw in low for kw in self.CRITICAL_MODULE_KEYWORDS)
+
+    def _is_already_compressed(self, module: nn.Module) -&gt; bool:
+        &#34;&#34;&#34;LIFTR-FIX-06: skip already-compressed module types.&#34;&#34;&#34;
+        cls_name = module.__class__.__name__
+        return cls_name in (
+            &#34;LSCPrunedLoRALinear&#34;,
+            &#34;DynamicSVDLinear&#34;,
+            &#34;SVDLinear&#34;,
+            &#34;FactorisedLinear&#34;,
+            &#34;FactorizedLinear&#34;,
+            &#34;LowRankPlusSparseLinear&#34;,
+            &#34;_LinearizedAttentionWrapper&#34;,
+        )
+
+    def _linearize_module(
+        self,
+        module: nn.Module,
+        prefix: str = &#34;&#34;,
+        _depth: int = 0,
+    ) -&gt; None:
+        &#34;&#34;&#34;Recursively replaces activation functions and (optionally) attention blocks.&#34;&#34;&#34;
+        if _depth &gt; 16:
+            return
+
+        for name, child in list(module.named_children()):
+            full_name = f&#34;{prefix}.{name}&#34; if prefix else name
+
+            if self._is_critical(full_name):
+                continue
+
+            if self._is_already_compressed(child):
+                if hasattr(child, &#34;lora_A&#34;) or child.__class__.__name__.lower() == &#34;loralinear&#34;:
+                    continue
+                if isinstance(child, _LinearizedAttentionWrapper):
+                    continue
+
+            # Skip LoRA-wrapped modules.
+            if hasattr(child, &#34;lora_A&#34;) or child.__class__.__name__.lower() == &#34;loralinear&#34;:
+                continue
+
+            is_attn_layer = any(k in full_name.lower() for k in _ATTN_NAMES)
+
+            # --- Activation linearization ---
+            if isinstance(child, nn.ReLU):
+                if self.target_attention_only and not is_attn_layer:
+                    self.skipped_layers.append(full_name)
+                    continue
+                setattr(module, name, nn.Identity())
+                self.linearized_activations_count += 1
+                self.replaced_modules.append(full_name)
+                continue
+
+            if isinstance(child, _SILU_CLASSES):
+                if self.target_attention_only and not is_attn_layer:
+                    self.skipped_layers.append(full_name)
+                    continue
+                setattr(module, name, _LinearizedGELU(alpha=self.gelu_coefficient))
+                self.linearized_activations_count += 1
+                self.replaced_modules.append(full_name)
+                continue
+
+            # --- Attention linearization ---
+            if self.replace_attention and is_attn_layer:
+                if &#34;norm&#34; in name.lower():
+                    self._linearize_module(child, prefix=full_name, _depth=_depth + 1)
+                    continue
+                if isinstance(child, (nn.Linear, nn.LayerNorm, nn.RMSNorm, nn.Embedding)):
+                    self._linearize_module(child, prefix=full_name, _depth=_depth + 1)
+                    continue
+
+                # BERT / RoBERTa nested structure: linearize inner self-attention.
+                if hasattr(child, &#34;self&#34;) and hasattr(child, &#34;output&#34;):
+                    self._linearize_module(child, prefix=full_name, _depth=_depth + 1)
+                    continue
+
+                if isinstance(child, _LinearizedAttentionWrapper):
+                    continue
+
+                if not hasattr(child, &#34;_liftr_skip&#34;) and not isinstance(
+                    child, _LinearizedAttentionWrapper
+                ):
+                    try:
+                        wrapped = _LinearizedAttentionWrapper(child, layer_name=full_name)
+                        setattr(module, name, wrapped)
+                        self.linearized_attentions_count += 1
+                        self.replaced_modules.append(full_name)
+                    except Exception as e:
+                        logger.warning(&#34;LIFTR: failed to wrap %s: %s&#34;, full_name, e)
+                continue
+
+            # --- Recurse ---
+            self._linearize_module(child, prefix=full_name, _depth=_depth + 1)
+
+    # ------------------------------------------------------------------
+    def compress(self, **kwargs: Any) -&gt; tuple[nn.Module, dict[str, Any]]:
+        # LIFTR-FIX-15: idempotence
+        if getattr(self.model, &#34;_liftr_compressed&#34;, False):
+            logger.warning(&#34;LIFTR: model already compressed; skipping.&#34;)
+            try:
+                stats = self.get_compression_stats()
+            except Exception:
+                stats = {}
+            return self.model, stats
+
+        # LIFTR-FIX-11: safe device resolution.
+        first_param = next(iter(self.model.parameters()), None)
+        device = first_param.device if first_param is not None else torch.device(&#34;cpu&#34;)
+
+        # LIFTR-FIX-03: dummy_in defined at function scope.
+        dummy_in: torch.Tensor | None = None
+        orig_out: torch.Tensor | None = None
+
+        if self.validation_calibration:
+            try:
+                self.model.eval()
+                dummy_in = torch.randint(0, 100, (1, 8), device=device, dtype=torch.long)
+                with torch.no_grad():
+                    res = self.model(dummy_in)
+                    if hasattr(res, &#34;logits&#34;):
+                        orig_out = res.logits.detach()
+                    elif isinstance(res, (tuple, list)):
+                        orig_out = res[0].detach()
+                    else:
+                        orig_out = res.detach()
+            except Exception as e:
+                logger.debug(&#34;LIFTR baseline calibration failed: %s&#34;, e)
+                dummy_in = None
+                orig_out = None
+
+        # Apply linearization.
+        self._linearize_module(self.model)
+
+        # Freeze parameters in skipped modules.
+        if self.skipped_layers:
+            skipped_set = set(self.skipped_layers)
+            for name, module in self.model.named_modules():
+                if name in skipped_set:
+                    for p in module.parameters(recurse=False):
+                        p.requires_grad = False
+
+        # Post-linearization validation.
+        validation_passed = True
+        rel_diff = 0.0
+        if self.validation_calibration and orig_out is not None and dummy_in is not None:
+            try:
+                with torch.no_grad():
+                    res_new = self.model(dummy_in)
+                    if hasattr(res_new, &#34;logits&#34;):
+                        new_out = res_new.logits
+                    elif isinstance(res_new, (tuple, list)):
+                        new_out = res_new[0]
+                    else:
+                        new_out = res_new
+                    rel_diff = (
+                        torch.norm(orig_out.float() - new_out.float())
+                        / (torch.norm(orig_out.float()) + 1e-8)
+                    ).item()
+                    if rel_diff &gt; self.calibration_threshold:
+                        logger.warning(
+                            &#34;LIFTR: validation diff %.4f &gt; threshold %.4f.&#34;,
+                            rel_diff,
+                            self.calibration_threshold,
+                        )
+                        validation_passed = False
+            except Exception as e:
+                logger.warning(&#34;LIFTR: post-linearization validation failed: %s&#34;, e)
+                validation_passed = False
+
+        try:
+            self._compressed_params = self._count_params(self.model)
+        except Exception:
+            self._compressed_params = sum(p.numel() for p in self.model.parameters())
+
+        try:
+            stats = self.get_compression_stats()
+        except Exception:
+            stats = {}
+
+        stats.update(
+            {
+                &#34;linearized_activations&#34;: self.linearized_activations_count,
+                &#34;linearized_attentions&#34;: self.linearized_attentions_count,
+                &#34;replace_attention&#34;: self.replace_attention,
+                &#34;replaced_modules&#34;: self.replaced_modules,
+                &#34;gelu_coefficient&#34;: self.gelu_coefficient,
+                &#34;target_attention_only&#34;: self.target_attention_only,
+                &#34;validation_calibration&#34;: self.validation_calibration,
+                &#34;validation_passed&#34;: validation_passed,
+                &#34;calibration_rel_diff&#34;: rel_diff,
+                # LIFTR-FIX-08: explicit note.
+                &#34;effective_parameter_ratio&#34;: 1.0,
+                &#34;flops_reduction_pct&#34;: 0.0,
+                &#34;method&#34;: &#34;liftr_linearization&#34;,
+                &#34;note&#34;: (
+                    &#34;LIFTR performs functional linearization (activation &amp; attention). &#34;
+                    &#34;It does NOT reduce parameters; original attention submodules are &#34;
+                    &#34;retained as `self.original_attn` for safe delegation.&#34;
+                ),
+            }
+        )
+        self.stats = stats
+        self.model._liftr_compressed = True
+        logger.info(
+            &#34;LIFTR: %d activations linearized, %d attentions wrapped.&#34;,
+            self.linearized_activations_count,
+            self.linearized_attentions_count,
+        )
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Base class for all compressors. Not a nn.Module to avoid parameter storage.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.liftr.LIFTRCompressor.CRITICAL_MODULE_KEYWORDS"><code class="name">var <span class="ident">CRITICAL_MODULE_KEYWORDS</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.liftr.LIFTRCompressor.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.compress" href="../core/base.html#neuralops.core.base.BaseCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.liftr.liftr_compressor_entry" href="#neuralops.compression_engine.liftr.liftr_compressor_entry">liftr_compressor_entry</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.liftr.LIFTRCompressor" href="#neuralops.compression_engine.liftr.LIFTRCompressor">LIFTRCompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.liftr.LIFTRCompressor.CRITICAL_MODULE_KEYWORDS" href="#neuralops.compression_engine.liftr.LIFTRCompressor.CRITICAL_MODULE_KEYWORDS">CRITICAL_MODULE_KEYWORDS</a></code></li>
+<li><code><a title="neuralops.compression_engine.liftr.LIFTRCompressor.is_custom_attention" href="#neuralops.compression_engine.liftr.LIFTRCompressor.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,2105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.benchmarks.kd_quick_test API documentation</title>
+<meta name="description" content="Adaptive Knowledge Distillation (KD) Experiment on MambaBlock …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.benchmarks.kd_quick_test</code></h1>
+</header>
+<section id="section-intro">
+<p>Adaptive Knowledge Distillation (KD) Experiment on MambaBlock.</p>
+<p>Evaluates whether KD can rescue an SSM-based module injected into GPT-2:
+- Method A: Logits-only KD (0.9 * KL(T=2.0) + 0.1 * CE)
+- Method B: Hidden-states only KD (0.9 * MSE_hidden + 0.1 * CE)
+- Method C: Combined KD (0.3 * KL + 0.5 * MSE_hidden + 0.1 * MSE_attn + 0.1 * CE)
+- Method D: SSM-Specialized KD (0.5 * KL(T=4.0) + 0.4 * Normalized/Cosine Hidden + 0.1 * CE)</p>
+<p>Hardware Constraints: RTX 4070 Laptop GPU (8 GB VRAM).
+Features:
+- Teacher output preprocessing cache (5-10x speedup across iterations)
+- Full VRAM release between sequential runs
+- Automatic OOM fallback (halves seq_len to 128)
+- Early stopping if PPL &gt; 5000 (prevents wasted compute)
+- Comprehensive CSV tracking, ASCII comparison table, and final JSON artifact</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.benchmarks.kd_quick_test.build_teacher_cache"><code class="name flex">
+<span>def <span class="ident">build_teacher_cache</span></span>(<span>teacher: torch.nn.modules.module.Module,<br>tokenizer,<br>train_chunks: torch.Tensor,<br>cache_dir: pathlib.Path,<br>methods: list[str],<br>device: str,<br>seq_len: int,<br>include_attn: bool = False,<br>max_train_texts: int = 1000) ‑> pathlib.Path</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def build_teacher_cache(
+    teacher: nn.Module,
+    tokenizer,
+    train_chunks: torch.Tensor,
+    cache_dir: Path,
+    methods: list[str],
+    device: str,
+    seq_len: int,
+    include_attn: bool = False,
+    max_train_texts: int = 1000,
+) -&gt; Path:
+    &#34;&#34;&#34;
+    Runs teacher forward on every chunk, saves outputs to cache_dir.
+    Returns the path to the cache manifest.
+    &#34;&#34;&#34;
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    n_chunks = len(train_chunks)
+
+    methods_set = set(methods)
+    need_logits = any(m in methods_set for m in (&#34;A&#34;, &#34;C&#34;, &#34;D&#34;))
+    need_hidden = any(m in methods_set for m in (&#34;B&#34;, &#34;C&#34;, &#34;D&#34;))
+    need_attn = include_attn and (&#34;C&#34; in methods_set)
+
+    LOG.info(
+        &#34;Building teacher cache for %d chunks (max_texts=%d, seq_len=%d)...&#34;,
+        n_chunks,
+        max_train_texts,
+        seq_len,
+    )
+    t0 = time.time()
+
+    teacher.eval()
+    teacher.to(device)
+
+    eval_batch_size = min(8, n_chunks)
+
+    # Determine shapes from config to pre-allocate buffers directly (avoids torch.cat memory duplication)
+    vocab_size = getattr(getattr(teacher, &#34;config&#34;, None), &#34;vocab_size&#34;, len(tokenizer))
+    num_layers = getattr(getattr(teacher, &#34;config&#34;, None), &#34;n_layer&#34;, 12) + 1  # +1 for embeddings
+    hidden_dim = getattr(getattr(teacher, &#34;config&#34;, None), &#34;n_embd&#34;, 768)
+
+    logits_buffer = (
+        torch.empty((n_chunks, seq_len, vocab_size), dtype=torch.float16) if need_logits else None
+    )
+    hidden_buffer = (
+        torch.empty((num_layers, n_chunks, seq_len, hidden_dim), dtype=torch.float16)
+        if need_hidden
+        else None
+    )
+    attn_buffer = None
+    if need_attn:
+        n_heads = getattr(getattr(teacher, &#34;config&#34;, None), &#34;n_head&#34;, 12)
+        n_attn_layers = getattr(getattr(teacher, &#34;config&#34;, None), &#34;n_layer&#34;, 12)
+        attn_buffer = torch.empty(
+            (n_attn_layers, n_chunks, n_heads, seq_len, seq_len), dtype=torch.float16
+        )
+
+    with torch.no_grad():
+        for start_idx in range(0, n_chunks, eval_batch_size):
+            end_idx = min(start_idx + eval_batch_size, n_chunks)
+            chunk_batch = train_chunks[start_idx:end_idx]
+            if chunk_batch.size(1) &gt; seq_len:
+                chunk_batch = chunk_batch[:, :seq_len]
+            chunk_batch = chunk_batch.to(device)
+
+            with torch.amp.autocast(
+                device_type=&#34;cuda&#34; if device.startswith(&#34;cuda&#34;) else &#34;cpu&#34;,
+                dtype=torch.float16,
+                enabled=device.startswith(&#34;cuda&#34;),
+            ):
+                out = teacher(
+                    chunk_batch,
+                    output_hidden_states=need_hidden,
+                    output_attentions=need_attn,
+                )
+
+            if need_logits and logits_buffer is not None:
+                logits_buffer[start_idx:end_idx] = out.logits.detach().to(torch.float16).cpu()
+
+            if need_hidden and hidden_buffer is not None and out.hidden_states is not None:
+                for l, h in enumerate(out.hidden_states):
+                    hidden_buffer[l, start_idx:end_idx] = h.detach().to(torch.float16).cpu()
+
+            if need_attn and attn_buffer is not None and out.attentions is not None:
+                for l, a in enumerate(out.attentions):
+                    attn_buffer[l, start_idx:end_idx] = a.detach().to(torch.float16).cpu()
+
+    manifest: dict[str, Any] = {
+        &#34;n_chunks&#34;: n_chunks,
+        &#34;seq_len&#34;: seq_len,
+        &#34;vocab_size&#34;: vocab_size,
+        &#34;has_logits&#34;: need_logits,
+        &#34;has_hidden&#34;: need_hidden,
+        &#34;has_attn&#34;: need_attn,
+        &#34;logits_file&#34;: None,
+        &#34;hidden_file&#34;: None,
+        &#34;attn_file&#34;: None,
+        &#34;logits_size_bytes&#34;: 0,
+        &#34;hidden_size_bytes&#34;: 0,
+        &#34;attn_size_bytes&#34;: 0,
+        &#34;build_time_s&#34;: 0.0,
+    }
+
+    total_size_bytes = 0
+    logits_gb = 0.0
+    if need_logits and logits_buffer is not None:
+        logits_path = cache_dir / &#34;teacher_logits.pt&#34;
+        torch.save(logits_buffer, logits_path, _use_new_zipfile_serialization=True)
+        sz = logits_path.stat().st_size
+        manifest[&#34;logits_file&#34;] = &#34;teacher_logits.pt&#34;
+        manifest[&#34;logits_size_bytes&#34;] = sz
+        total_size_bytes += sz
+        logits_gb = sz / 1e9
+        del logits_buffer
+
+    if need_hidden and hidden_buffer is not None:
+        hidden_path = cache_dir / &#34;teacher_hidden.pt&#34;
+        torch.save(hidden_buffer, hidden_path, _use_new_zipfile_serialization=True)
+        sz = hidden_path.stat().st_size
+        manifest[&#34;hidden_file&#34;] = &#34;teacher_hidden.pt&#34;
+        manifest[&#34;hidden_size_bytes&#34;] = sz
+        total_size_bytes += sz
+        del hidden_buffer
+
+    if need_attn and attn_buffer is not None:
+        attn_path = cache_dir / &#34;teacher_attn.pt&#34;
+        torch.save(attn_buffer, attn_path, _use_new_zipfile_serialization=True)
+        sz = attn_path.stat().st_size
+        manifest[&#34;attn_file&#34;] = &#34;teacher_attn.pt&#34;
+        manifest[&#34;attn_size_bytes&#34;] = sz
+        total_size_bytes += sz
+        del attn_buffer
+
+    build_time = time.time() - t0
+    manifest[&#34;build_time_s&#34;] = round(build_time, 2)
+    manifest_path = cache_dir / &#34;manifest.json&#34;
+    manifest_path.write_text(json.dumps(manifest, indent=2), encoding=&#34;utf-8&#34;)
+
+    total_gb = total_size_bytes / 1e9
+    LOG.info(
+        &#34;Cache built: %s (logits: %.1f GB, total: %.1f GB)&#34;,
+        cache_dir,
+        logits_gb,
+        total_gb,
+    )
+    return manifest_path</code></pre>
+</details>
+<div class="desc"><p>Runs teacher forward on every chunk, saves outputs to cache_dir.
+Returns the path to the cache manifest.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.kd_quick_test.build_train_chunks"><code class="name flex">
+<span>def <span class="ident">build_train_chunks</span></span>(<span>train_dataset, tokenizer, max_train_texts: int = 5000, seq_len: int = 256) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def build_train_chunks(
+    train_dataset,
+    tokenizer,
+    max_train_texts: int = 5000,
+    seq_len: int = 256,
+) -&gt; torch.Tensor:
+    texts: list[str] = []
+    for item in train_dataset[&#34;text&#34;]:
+        t = item.strip()
+        if len(t) &gt; 20:
+            texts.append(t)
+        if len(texts) &gt;= max_train_texts:
+            break
+
+    if not texts:
+        texts = [&#34;The quick brown fox jumps over the lazy dog.&#34;] * 512
+
+    all_ids: list[int] = []
+    eos_id = tokenizer.eos_token_id or tokenizer.pad_token_id or 0
+    for t in texts:
+        ids = tokenizer(t, add_special_tokens=False).input_ids
+        if ids:
+            all_ids.extend(ids)
+            all_ids.append(eos_id)
+
+    total_chunks = len(all_ids) // seq_len
+    if total_chunks == 0:
+        all_ids = all_ids + [eos_id] * (seq_len - len(all_ids))
+        total_chunks = 1
+
+    all_ids = all_ids[: total_chunks * seq_len]
+    return torch.tensor(all_ids, dtype=torch.long).view(total_chunks, seq_len)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.kd_quick_test.can_use_cache_for_method"><code class="name flex">
+<span>def <span class="ident">can_use_cache_for_method</span></span>(<span>cache: dict[str, typing.Any] | None,<br>method_name: str,<br>include_attn: bool = False) ‑> bool</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def can_use_cache_for_method(
+    cache: dict[str, Any] | None,
+    method_name: str,
+    include_attn: bool = False,
+) -&gt; bool:
+    if cache is None:
+        return False
+    if method_name == &#34;A&#34;:
+        return cache.get(&#34;logits&#34;) is not None
+    elif method_name == &#34;B&#34;:
+        return cache.get(&#34;hidden_states&#34;) is not None
+    elif method_name == &#34;C&#34;:
+        has_l = cache.get(&#34;logits&#34;) is not None
+        has_h = cache.get(&#34;hidden_states&#34;) is not None
+        has_a = (cache.get(&#34;attentions&#34;) is not None) if include_attn else True
+        return has_l and has_h and has_a
+    elif method_name == &#34;D&#34;:
+        return cache.get(&#34;logits&#34;) is not None and cache.get(&#34;hidden_states&#34;) is not None
+    return False</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.kd_quick_test.compute_attention_mse"><code class="name flex">
+<span>def <span class="ident">compute_attention_mse</span></span>(<span>student_attentions: tuple[torch.Tensor, ...] | None,<br>teacher_attentions: tuple[torch.Tensor, ...] | None,<br>device: str) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_attention_mse(
+    student_attentions: tuple[torch.Tensor, ...] | None,
+    teacher_attentions: tuple[torch.Tensor, ...] | None,
+    device: str,
+) -&gt; torch.Tensor:
+    if student_attentions is None or teacher_attentions is None:
+        return torch.tensor(0.0, device=device)
+    losses = []
+    for s_a, t_a in zip(student_attentions, teacher_attentions):
+        if s_a is not None and t_a is not None:
+            losses.append(F.mse_loss(s_a.float(), t_a.float()))
+    if not losses:
+        return torch.tensor(0.0, device=device)
+    return sum(losses) / len(losses)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.kd_quick_test.compute_hidden_mse"><code class="name flex">
+<span>def <span class="ident">compute_hidden_mse</span></span>(<span>student_hidden_states: tuple[torch.Tensor, ...],<br>teacher_hidden_states: tuple[torch.Tensor, ...],<br>projection_adapter: <a title="neuralops.benchmarks.kd_quick_test.HiddenProjectionAdapter" href="#neuralops.benchmarks.kd_quick_test.HiddenProjectionAdapter">HiddenProjectionAdapter</a> | None = None) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_hidden_mse(
+    student_hidden_states: tuple[torch.Tensor, ...],
+    teacher_hidden_states: tuple[torch.Tensor, ...],
+    projection_adapter: HiddenProjectionAdapter | None = None,
+) -&gt; torch.Tensor:
+    losses = []
+    # Compare matching layer representations (skip index 0 = embeddings)
+    for idx, (s_h, t_h) in enumerate(zip(student_hidden_states[1:], teacher_hidden_states[1:])):
+        s_aligned = (
+            projection_adapter(idx, s_h.float()) if projection_adapter is not None else s_h.float()
+        )
+        losses.append(F.mse_loss(s_aligned, t_h.float()))
+    return sum(losses) / max(1, len(losses))</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.kd_quick_test.compute_kl_divergence"><code class="name flex">
+<span>def <span class="ident">compute_kl_divergence</span></span>(<span>student_logits: torch.Tensor,<br>teacher_logits: torch.Tensor,<br>temperature: float = 2.0) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_kl_divergence(
+    student_logits: torch.Tensor,
+    teacher_logits: torch.Tensor,
+    temperature: float = 2.0,
+) -&gt; torch.Tensor:
+    p_s = F.log_softmax(student_logits / temperature, dim=-1)
+    p_t = F.softmax(teacher_logits / temperature, dim=-1)
+    return F.kl_div(p_s, p_t, reduction=&#34;batchmean&#34;) * (temperature * temperature)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.kd_quick_test.compute_method_d_loss"><code class="name flex">
+<span>def <span class="ident">compute_method_d_loss</span></span>(<span>student_out: Any,<br>teacher_out: Any,<br>input_ids: torch.Tensor,<br>device: str,<br>kl_temperature: float = 4.0,<br>kl_weight: float = 0.5,<br>hidden_weight: float = 0.4,<br>ce_weight: float = 0.1,<br>projection_adapter: <a title="neuralops.benchmarks.kd_quick_test.HiddenProjectionAdapter" href="#neuralops.benchmarks.kd_quick_test.HiddenProjectionAdapter">HiddenProjectionAdapter</a> | None = None) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_method_d_loss(
+    student_out: Any,
+    teacher_out: Any,
+    input_ids: torch.Tensor,
+    device: str,
+    kl_temperature: float = 4.0,
+    kl_weight: float = 0.5,
+    hidden_weight: float = 0.4,
+    ce_weight: float = 0.1,
+    projection_adapter: HiddenProjectionAdapter | None = None,
+) -&gt; torch.Tensor:
+    # 1. Softer KL divergence with configurable temperature and warmup weight
+    loss_kl = compute_kl_divergence(
+        student_out.logits, teacher_out.logits, temperature=kl_temperature
+    )
+
+    # 2. Directional / Angle matching (Cosine distance) on projected manifold
+    cos_losses = []
+    for idx, (s_h, t_h) in enumerate(
+        zip(student_out.hidden_states[1:], teacher_out.hidden_states[1:])
+    ):
+        s_aligned = (
+            projection_adapter(idx, s_h.float()) if projection_adapter is not None else s_h.float()
+        )
+        t_f = t_h.float()
+        cos_sim = F.cosine_similarity(s_aligned, t_f, dim=-1)
+        cos_losses.append((1.0 - cos_sim).mean())
+
+    hidden_d = sum(cos_losses) / max(1, len(cos_losses))
+
+    # 3. Next-token Cross Entropy
+    shift_logits = student_out.logits[..., :-1, :].contiguous()
+    shift_labels = input_ids[..., 1:].contiguous()
+    loss_ce = F.cross_entropy(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+
+    return kl_weight * loss_kl + hidden_weight * hidden_d + ce_weight * loss_ce</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.kd_quick_test.compute_perplexity"><code class="name flex">
+<span>def <span class="ident">compute_perplexity</span></span>(<span>model: torch.nn.modules.module.Module,<br>tokenizer,<br>test_dataset,<br>seq_len: int = 1024,<br>stride: int = 512,<br>max_eval_tokens: int = 15000,<br>device: str = 'cuda') ‑> float</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_perplexity(
+    model: nn.Module,
+    tokenizer,
+    test_dataset,
+    seq_len: int = 1024,
+    stride: int = 512,
+    max_eval_tokens: int = 15000,
+    device: str = &#34;cuda&#34;,
+) -&gt; float:
+    model.eval()
+    # Slice only the necessary test texts to avoid MemoryError on constrained memory
+    sample_texts = []
+    accum_chars = 0
+    target_chars = max_eval_tokens * 6  # Rough upper bound for token character count
+    for t in test_dataset[&#34;text&#34;]:
+        sample_texts.append(t)
+        accum_chars += len(t)
+        if accum_chars &gt;= target_chars:
+            break
+    text = &#34;\n\n&#34;.join(sample_texts) if sample_texts else &#34;\n\n&#34;.join(test_dataset[&#34;text&#34;][:100])
+    enc = tokenizer(text, return_tensors=&#34;pt&#34;, truncation=False)
+    input_ids = enc.input_ids
+    if input_ids.dim() == 1:
+        input_ids = input_ids.unsqueeze(0)
+    total_len = min(input_ids.size(1), max_eval_tokens)
+    input_ids = input_ids[:, :total_len]
+
+    nlls = []
+    prev_end = 0
+    with torch.no_grad():
+        for begin in range(0, total_len, stride):
+            end = min(begin + seq_len, total_len)
+            trg_len = end - prev_end
+            if trg_len &lt;= 0:
+                break
+            ids = input_ids[:, begin:end].to(device)
+            tgt = ids.clone()
+            if trg_len &lt; (end - begin):
+                tgt[:, :-trg_len] = -100
+
+            with torch.amp.autocast(
+                device_type=&#34;cuda&#34; if device.startswith(&#34;cuda&#34;) else &#34;cpu&#34;,
+                dtype=torch.float16,
+                enabled=device.startswith(&#34;cuda&#34;),
+            ):
+                out = model(ids, labels=tgt)
+                loss = out.loss
+
+            if torch.isnan(loss) or torch.isinf(loss):
+                return float(&#34;nan&#34;)
+
+            nlls.append((loss * trg_len).detach().cpu())
+            prev_end = end
+            if end == total_len:
+                break
+
+    if not nlls:
+        return float(&#34;nan&#34;)
+    total_nll = float(torch.stack(nlls).sum().item())
+    ppl = float(np.exp(total_nll / max(1, prev_end)))
+    return round(ppl, 2)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.kd_quick_test.get_cache_hash"><code class="name flex">
+<span>def <span class="ident">get_cache_hash</span></span>(<span>model_path: str,<br>tokenizer_name: str,<br>seq_len: int,<br>num_chunks: int,<br>methods: list[str],<br>include_attn: bool) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_cache_hash(
+    model_path: str,
+    tokenizer_name: str,
+    seq_len: int,
+    num_chunks: int,
+    methods: list[str],
+    include_attn: bool,
+) -&gt; str:
+    cache_key_data = {
+        &#34;model_path&#34;: str(model_path),
+        &#34;tokenizer_name&#34;: str(tokenizer_name),
+        &#34;seq_len&#34;: int(seq_len),
+        &#34;num_chunks&#34;: int(num_chunks),
+        &#34;methods&#34;: sorted(list(set(methods))),
+        &#34;include_attn&#34;: bool(include_attn),
+        &#34;torch_version&#34;: torch.__version__,
+        &#34;cuda_device&#34;: (torch.cuda.get_device_name(0) if torch.cuda.is_available() else &#34;cpu&#34;),
+    }
+    return hashlib.sha256(json.dumps(cache_key_data, sort_keys=True).encode()).hexdigest()[:12]</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.kd_quick_test.is_cache_valid"><code class="name flex">
+<span>def <span class="ident">is_cache_valid</span></span>(<span>cache_dir: pathlib.Path,<br>expected_chunks: int,<br>expected_seq_len: int,<br>methods: list[str],<br>include_attn: bool = False) ‑> bool</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_cache_valid(
+    cache_dir: Path,
+    expected_chunks: int,
+    expected_seq_len: int,
+    methods: list[str],
+    include_attn: bool = False,
+) -&gt; bool:
+    manifest_path = cache_dir / &#34;manifest.json&#34;
+    if not manifest_path.exists():
+        return False
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding=&#34;utf-8&#34;))
+        if manifest.get(&#34;n_chunks&#34;) != expected_chunks:
+            return False
+        if manifest.get(&#34;seq_len&#34;) != expected_seq_len:
+            return False
+        methods_set = set(methods)
+        need_logits = any(m in methods_set for m in (&#34;A&#34;, &#34;C&#34;, &#34;D&#34;))
+        need_hidden = any(m in methods_set for m in (&#34;B&#34;, &#34;C&#34;, &#34;D&#34;))
+        need_attn = include_attn and (&#34;C&#34; in methods_set)
+        if need_logits and not (
+            manifest.get(&#34;has_logits&#34;)
+            and (cache_dir / (manifest.get(&#34;logits_file&#34;) or &#34;&#34;)).exists()
+        ):
+            return False
+        if need_hidden and not (
+            manifest.get(&#34;has_hidden&#34;)
+            and (cache_dir / (manifest.get(&#34;hidden_file&#34;) or &#34;&#34;)).exists()
+        ):
+            return False
+        if need_attn and not (
+            manifest.get(&#34;has_attn&#34;) and (cache_dir / (manifest.get(&#34;attn_file&#34;) or &#34;&#34;)).exists()
+        ):
+            return False
+        return True
+    except Exception:
+        return False</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.kd_quick_test.load_teacher_cache"><code class="name flex">
+<span>def <span class="ident">load_teacher_cache</span></span>(<span>cache_dir: pathlib.Path) ‑> dict[str, typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_teacher_cache(cache_dir: Path) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;
+    Loads cached outputs. Returns a dict:
+      {
+        &#34;logits&#34;: Tensor(n_chunks, seq_len, vocab_size) fp16,
+        &#34;hidden_states&#34;: Tensor(n_layers, n_chunks, seq_len, hidden) fp16,
+        &#34;attentions&#34;: Tensor(n_layers, n_chunks, n_heads, seq_len, seq_len) fp16,
+                        (or None if not cached),
+        &#34;manifest&#34;: {...}
+      }
+    &#34;&#34;&#34;
+    manifest_path = cache_dir / &#34;manifest.json&#34;
+    if not manifest_path.exists():
+        raise FileNotFoundError(f&#34;Cache manifest not found at {manifest_path}&#34;)
+    manifest = json.loads(manifest_path.read_text(encoding=&#34;utf-8&#34;))
+
+    cache: dict[str, Any] = {
+        &#34;manifest&#34;: manifest,
+        &#34;logits&#34;: None,
+        &#34;hidden_states&#34;: None,
+        &#34;attentions&#34;: None,
+    }
+
+    if manifest.get(&#34;has_logits&#34;) and manifest.get(&#34;logits_file&#34;):
+        logits_path = cache_dir / manifest[&#34;logits_file&#34;]
+        if logits_path.exists():
+            try:
+                cache[&#34;logits&#34;] = torch.load(logits_path, map_location=&#34;cpu&#34;, mmap=True)
+                LOG.info(&#34;Loaded logits with mmap=True&#34;)
+            except Exception as e:
+                LOG.warning(&#34;mmap failed for logits, loading fully into RAM: %s&#34;, e)
+                cache[&#34;logits&#34;] = torch.load(logits_path, map_location=&#34;cpu&#34;)
+
+    if manifest.get(&#34;has_hidden&#34;) and manifest.get(&#34;hidden_file&#34;):
+        hidden_path = cache_dir / manifest[&#34;hidden_file&#34;]
+        if hidden_path.exists():
+            try:
+                cache[&#34;hidden_states&#34;] = torch.load(hidden_path, map_location=&#34;cpu&#34;, mmap=True)
+                LOG.info(&#34;Loaded hidden states with mmap=True&#34;)
+            except Exception as e:
+                LOG.warning(&#34;mmap failed for hidden states, loading fully into RAM: %s&#34;, e)
+                cache[&#34;hidden_states&#34;] = torch.load(hidden_path, map_location=&#34;cpu&#34;)
+
+    if manifest.get(&#34;has_attn&#34;) and manifest.get(&#34;attn_file&#34;):
+        attn_path = cache_dir / manifest[&#34;attn_file&#34;]
+        if attn_path.exists():
+            try:
+                cache[&#34;attentions&#34;] = torch.load(attn_path, map_location=&#34;cpu&#34;, mmap=True)
+                LOG.info(&#34;Loaded attentions with mmap=True&#34;)
+            except Exception as e:
+                LOG.warning(&#34;mmap failed for attentions, loading fully into RAM: %s&#34;, e)
+                cache[&#34;attentions&#34;] = torch.load(attn_path, map_location=&#34;cpu&#34;)
+
+    return cache</code></pre>
+</details>
+<div class="desc"><p>Loads cached outputs. Returns a dict:
+{
+"logits": Tensor(n_chunks, seq_len, vocab_size) fp16,
+"hidden_states": Tensor(n_layers, n_chunks, seq_len, hidden) fp16,
+"attentions": Tensor(n_layers, n_chunks, n_heads, seq_len, seq_len) fp16,
+(or None if not cached),
+"manifest": {&hellip;}
+}</p></div>
+</dd>
+<dt id="neuralops.benchmarks.kd_quick_test.main"><code class="name flex">
+<span>def <span class="ident">main</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def main():
+    parser = argparse.ArgumentParser(description=&#34;Adaptive KD experiment on MambaBlock.&#34;)
+    parser.add_argument(&#34;--model_path&#34;, type=str, default=&#34;models/gpt2_wikitext&#34;)
+    parser.add_argument(&#34;--module&#34;, type=str, default=&#34;mamba_block&#34;)
+    parser.add_argument(&#34;--recovery_steps&#34;, type=int, default=1500)
+    parser.add_argument(&#34;--batch_size&#34;, type=int, default=1)
+    parser.add_argument(&#34;--grad_accum_steps&#34;, type=int, default=8)
+    parser.add_argument(&#34;--seq_len&#34;, type=int, default=256)
+    parser.add_argument(&#34;--max_train_texts&#34;, type=int, default=5000)
+    parser.add_argument(&#34;--learning_rate&#34;, type=float, default=1e-4)
+    parser.add_argument(&#34;--warmup_steps&#34;, type=int, default=100)
+    parser.add_argument(&#34;--eval_every&#34;, type=int, default=250)
+    parser.add_argument(&#34;--eval_max_tokens&#34;, type=int, default=15000)
+    parser.add_argument(&#34;--train_scope&#34;, type=str, default=&#34;all&#34;)
+    parser.add_argument(&#34;--lora_rank&#34;, type=int, default=64)
+    parser.add_argument(&#34;--rank&#34;, type=int, default=64)
+    parser.add_argument(&#34;--fp16&#34;, action=&#34;store_true&#34;, default=True)
+    parser.add_argument(&#34;--device&#34;, type=str, default=&#34;cuda&#34;)
+    parser.add_argument(&#34;--early_stop_ppl&#34;, type=float, default=5000.0)
+    parser.add_argument(&#34;--methods&#34;, nargs=&#34;+&#34;, default=[&#34;A&#34;, &#34;B&#34;, &#34;C&#34;, &#34;D&#34;])
+    parser.add_argument(
+        &#34;--output_csv&#34;, type=str, default=&#34;results/06_adhoc_experiments/kd_comparison_mamba.csv&#34;
+    )
+    parser.add_argument(
+        &#34;--output_json&#34;, type=str, default=&#34;results/06_adhoc_experiments/kd_comparison_mamba.json&#34;
+    )
+    parser.add_argument(&#34;--log_file&#34;, type=str, default=None)
+
+    # Preprocessing Cache arguments
+    parser.add_argument(
+        &#34;--cache_dir&#34;,
+        type=str,
+        default=None,
+        help=&#34;Where to store cache (default: cache/teacher_&lt;hash&gt;)&#34;,
+    )
+    parser.add_argument(&#34;--cache_methods&#34;, nargs=&#34;+&#34;, default=None, help=&#34;Which methods need cache&#34;)
+    parser.add_argument(
+        &#34;--cache_force_rebuild&#34;,
+        action=&#34;store_true&#34;,
+        default=False,
+        help=&#34;Rebuild cache even if it exists&#34;,
+    )
+    parser.add_argument(
+        &#34;--cache_attn&#34;,
+        action=&#34;store_true&#34;,
+        default=False,
+        help=&#34;Also cache attention probs (large!)&#34;,
+    )
+    parser.add_argument(
+        &#34;--cache_max_train_texts&#34;,
+        type=int,
+        default=1000,
+        help=&#34;Limit cache size (default 1000)&#34;,
+    )
+    parser.add_argument(
+        &#34;--no_cache&#34;,
+        action=&#34;store_true&#34;,
+        default=False,
+        help=&#34;Disable teacher caching entirely&#34;,
+    )
+
+    # Regularization &amp; Distillation stability
+    parser.add_argument(
+        &#34;--kl_temperature&#34;,
+        type=float,
+        default=2.0,
+        help=&#34;Temperature for KL divergence (default 2.0)&#34;,
+    )
+    parser.add_argument(
+        &#34;--max_grad_norm&#34;,
+        type=float,
+        default=1.0,
+        help=&#34;Max gradient norm for clipping (default 1.0)&#34;,
+    )
+    parser.add_argument(
+        &#34;--kl_warmup_steps&#34;,
+        type=int,
+        default=0,
+        help=&#34;Number of steps to linearly ramp up KL loss weight (default 0)&#34;,
+    )
+    parser.add_argument(&#34;--tag&#34;, type=str, default=&#34;run&#34;, help=&#34;Tag for output plot filenames&#34;)
+    parser.add_argument(
+        &#34;--no-cosine-lr&#34;,
+        &#34;--no_cosine_lr&#34;,
+        dest=&#34;no_cosine_lr&#34;,
+        action=&#34;store_true&#34;,
+        default=False,
+        help=&#34;Disable cosine LR decay, use constant LR after warmup&#34;,
+    )
+    parser.add_argument(
+        &#34;--no-fp16&#34;,
+        action=&#34;store_true&#34;,
+        default=False,
+        help=&#34;Disable FP16 / run in FP32&#34;,
+    )
+    args = parser.parse_args()
+    if args.no_fp16:
+        args.fp16 = False
+
+    timestamp = datetime.now().strftime(&#34;%Y%m%d_%H%M%S&#34;)
+    args.timestamp = timestamp
+    if not args.log_file:
+        args.log_file = f&#34;logs/kd_comparison_mamba_{timestamp}.log&#34;
+    setup_logging(args.log_file)
+
+    # Create module-specific run directory
+    args.run_dir = make_run_dir(args.module, args)
+    LOG.info(&#34;Run directory: %s&#34;, args.run_dir)
+    update_latest_link(args.module, args.run_dir)
+
+    LOG.info(&#34;=&#34; * 70)
+    LOG.info(&#34;KNOWLEDGE DISTILLATION QUICK TEST: MAMBA_BLOCK RESCUE&#34;)
+    LOG.info(&#34;  Module:           %s&#34;, args.module)
+    LOG.info(&#34;  Device:           %s (fp16=%s)&#34;, args.device, args.fp16)
+    LOG.info(
+        &#34;  Recovery steps:   %d (accum=%d, eff_batch=%d)&#34;,
+        args.recovery_steps,
+        args.grad_accum_steps,
+        args.batch_size * args.grad_accum_steps,
+    )
+    LOG.info(&#34;  Seq len:          %d (fallback=128 on OOM)&#34;, args.seq_len)
+    LOG.info(&#34;  Learning rate:    %.2e (warmup=%d)&#34;, args.learning_rate, args.warmup_steps)
+    LOG.info(&#34;  Methods to test:  %s&#34;, &#34;, &#34;.join(args.methods))
+    LOG.info(&#34;  Teacher Cache:    %s&#34;, &#34;DISABLED&#34; if args.no_cache else &#34;ENABLED&#34;)
+    LOG.info(&#34;=&#34; * 70)
+
+    # 1. Load Tokenizer &amp; WikiText Datasets
+    tok_src = args.model_path if Path(args.model_path).exists() else &#34;gpt2&#34;
+    LOG.info(&#34;Loading tokenizer from %s...&#34;, tok_src)
+    tokenizer = AutoTokenizer.from_pretrained(tok_src)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    LOG.info(&#34;Loading WikiText-2 datasets...&#34;)
+    try:
+        ds_test = load_dataset(&#34;wikitext&#34;, &#34;wikitext-2-raw-v1&#34;, split=&#34;test&#34;)
+        ds_train = load_dataset(&#34;wikitext&#34;, &#34;wikitext-2-raw-v1&#34;, split=&#34;train&#34;)
+    except Exception:
+        ds_test = load_dataset(&#34;Salesforce/wikitext&#34;, &#34;wikitext-2-raw-v1&#34;, split=&#34;test&#34;)
+        ds_train = load_dataset(&#34;Salesforce/wikitext&#34;, &#34;wikitext-2-raw-v1&#34;, split=&#34;train&#34;)
+
+    # 2. Tokenize Training Chunks
+    max_train_texts = args.max_train_texts
+    if args.cache_max_train_texts is not None and args.cache_max_train_texts &lt; max_train_texts:
+        max_train_texts = args.cache_max_train_texts
+
+    if max_train_texts &gt; 2000 and not args.no_cache:
+        LOG.warning(
+            &#34;cache_max_train_texts (%d) &gt; 2000: Cache file can be large (&gt;30 GB). Consider --cache_max_train_texts 1000.&#34;,
+            max_train_texts,
+        )
+
+    LOG.info(
+        &#34;Preparing training chunks (max_texts=%d, seq_len=%d)...&#34;,
+        max_train_texts,
+        args.seq_len,
+    )
+    train_chunks = build_train_chunks(ds_train, tokenizer, max_train_texts, args.seq_len)
+    LOG.info(&#34;Total training chunks prepared: %d&#34;, len(train_chunks))
+
+    # 3. Load Teacher Model &amp; Snapshot
+    LOG.info(&#34;Loading Teacher GPT-2 from %s...&#34;, tok_src)
+    teacher = AutoModelForCausalLM.from_pretrained(tok_src)
+    if args.fp16 and args.device.startswith(&#34;cuda&#34;):
+        teacher.half()
+    teacher.to(args.device)
+    teacher.eval()
+    for p in teacher.parameters():
+        p.requires_grad = False
+
+    base_snapshot = copy.deepcopy(teacher)
+
+    # 4. Evaluate Baseline PPL
+    baseline_ppl = compute_perplexity(
+        teacher,
+        tokenizer,
+        ds_test,
+        seq_len=args.seq_len,
+        stride=128,
+        max_eval_tokens=args.eval_max_tokens,
+        device=args.device,
+    )
+    LOG.info(&#34;Teacher Baseline PPL: %.2f&#34;, baseline_ppl)
+
+    # 4.5 Teacher Output Preprocessing Cache
+    teacher_cache = None
+    if not args.no_cache:
+        cache_methods = args.cache_methods or args.methods
+        if args.cache_dir:
+            cache_dir = Path(args.cache_dir)
+        else:
+            c_hash = get_cache_hash(
+                tok_src,
+                (tokenizer.name_or_path if hasattr(tokenizer, &#34;name_or_path&#34;) else &#34;gpt2&#34;),
+                args.seq_len,
+                len(train_chunks),
+                cache_methods,
+                args.cache_attn,
+            )
+            cache_dir = Path(&#34;cache&#34;) / f&#34;teacher_{c_hash}&#34;
+
+        need_build = args.cache_force_rebuild or not is_cache_valid(
+            cache_dir,
+            len(train_chunks),
+            args.seq_len,
+            cache_methods,
+            args.cache_attn,
+        )
+        if need_build:
+            build_teacher_cache(
+                teacher=teacher,
+                tokenizer=tokenizer,
+                train_chunks=train_chunks,
+                cache_dir=cache_dir,
+                methods=cache_methods,
+                device=args.device,
+                seq_len=args.seq_len,
+                include_attn=args.cache_attn,
+                max_train_texts=max_train_texts,
+            )
+        else:
+            LOG.info(&#34;Reusing existing teacher cache from %s&#34;, cache_dir)
+        teacher_cache = load_teacher_cache(cache_dir)
+
+    # 5. Run Each Method Sequentially
+    results: list[dict[str, Any]] = []
+    for method in args.methods:
+        try:
+            res = run_kd_method(
+                method,
+                teacher,
+                base_snapshot,
+                tokenizer,
+                train_chunks,
+                ds_test,
+                args,
+                teacher_cache=teacher_cache,
+                baseline_ppl=baseline_ppl,
+            )
+            results.append(res)
+        except Exception as e:
+            LOG.error(&#34;Method %s failed with exception: %s&#34;, method, e, exc_info=True)
+            results.append(
+                {
+                    &#34;method&#34;: method,
+                    &#34;pre_ppl&#34;: float(&#34;nan&#34;),
+                    &#34;post_ppl&#34;: float(&#34;nan&#34;),
+                    &#34;ppl_ratio&#34;: float(&#34;inf&#34;),
+                    &#34;recovery_pct&#34;: 0.0,
+                    &#34;peak_vram_mb&#34;: 0.0,
+                    &#34;train_time_s&#34;: 0.0,
+                    &#34;loss_final&#34;: float(&#34;nan&#34;),
+                    &#34;error&#34;: str(e),
+                }
+            )
+
+    # 6. Save CSV (module-specific folder)
+    run_dir = getattr(args, &#34;run_dir&#34;, make_run_dir(args.module, args))
+    csv_path = run_dir / &#34;metrics.csv&#34;
+    fieldnames = [
+        &#34;method&#34;,
+        &#34;pre_ppl&#34;,
+        &#34;post_ppl&#34;,
+        &#34;ppl_ratio&#34;,
+        &#34;recovery_pct&#34;,
+        &#34;peak_vram_mb&#34;,
+        &#34;train_time_s&#34;,
+        &#34;s_per_step&#34;,
+        &#34;loss_final&#34;,
+        &#34;cached&#34;,
+        &#34;ppl_at_step_250&#34;,
+        &#34;ppl_at_step_500&#34;,
+        &#34;ppl_at_step_750&#34;,
+        &#34;ppl_at_step_1000&#34;,
+        &#34;ppl_at_step_1250&#34;,
+        &#34;ppl_at_step_1500&#34;,
+    ]
+    with open(csv_path, &#34;w&#34;, newline=&#34;&#34;, encoding=&#34;utf-8&#34;) as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction=&#34;ignore&#34;)
+        writer.writeheader()
+        for r in results:
+            writer.writerow(r)
+    LOG.info(&#34;Saved CSV results to %s&#34;, csv_path)
+
+    # Save config.json with all run arguments
+    config_path = run_dir / &#34;config.json&#34;
+    config_dict = {
+        k: (str(v) if not isinstance(v, (int, float, bool, str, type(None))) else v)
+        for k, v in vars(args).items()
+        if k != &#34;run_dir&#34;
+    }
+    config_dict[&#34;run_dir&#34;] = str(run_dir).replace(&#34;\\&#34;, &#34;/&#34;)
+    config_path.write_text(json.dumps(config_dict, indent=2), encoding=&#34;utf-8&#34;)
+    LOG.info(&#34;Saved config to %s&#34;, config_path)
+
+    # 7. Print Comparison Table
+    print_comparison_table(results)
+
+    # 8. Determine Best Method &amp; Recoverability Scale
+    valid_results = [
+        r
+        for r in results
+        if isinstance(r.get(&#34;post_ppl&#34;), (int, float)) and np.isfinite(r[&#34;post_ppl&#34;])
+    ]
+    if valid_results:
+        best_res = min(valid_results, key=lambda x: x[&#34;post_ppl&#34;])
+        best_method = best_res[&#34;method&#34;]
+        best_post_ppl = best_res[&#34;post_ppl&#34;]
+    else:
+        best_method = &#34;None&#34;
+        best_post_ppl = float(&#34;inf&#34;)
+
+    # Scale:
+    # post_ppl &lt; 100  -&gt; YES, SSM can learn from attention
+    # post_ppl &lt; 500  -&gt; MAYBE, partial recovery
+    # post_ppl &gt; 1000 -&gt; NO, fundamental incompatibility
+    if best_post_ppl &lt; 100:
+        is_recoverable = True
+        recommendation = &#34;YES: SSM can learn from attention. Distillation successfully bridged the architectural gap.&#34;
+    elif best_post_ppl &lt; 500:
+        is_recoverable = True
+        recommendation = &#34;MAYBE: Partial recovery achieved. Additional recovery steps or specialized scan kernels needed.&#34;
+    else:
+        is_recoverable = False
+        recommendation = &#34;NO: Fundamental mathematical incompatibility between SSM recurrence and pre-trained attention representations.&#34;
+
+    json_payload = {
+        &#34;module&#34;: args.module,
+        &#34;pre_ppl&#34;: valid_results[0][&#34;pre_ppl&#34;] if valid_results else float(&#34;nan&#34;),
+        &#34;baseline_ppl&#34;: baseline_ppl,
+        &#34;results&#34;: {r[&#34;method&#34;]: r for r in results},
+        &#34;best_method&#34;: best_method,
+        &#34;best_post_ppl&#34;: best_post_ppl,
+        &#34;is_ssm_recoverable&#34;: is_recoverable,
+        &#34;recommendation&#34;: recommendation,
+        &#34;run_dir&#34;: str(run_dir).replace(&#34;\\&#34;, &#34;/&#34;),
+    }
+
+    json_path = run_dir / &#34;metrics.json&#34;
+    json_path.write_text(json.dumps(json_payload, indent=2), encoding=&#34;utf-8&#34;)
+    LOG.info(&#34;Saved JSON summary to %s&#34;, json_path)
+
+    # Generate README for this run
+    readme_lines = [
+        f&#34;# KD Run: {args.module}&#34;,
+        &#34;&#34;,
+        f&#34;**Date:** {datetime.now().strftime(&#39;%Y-%m-%d %H:%M:%S&#39;)}&#34;,
+        f&#34;**Module:** `{args.module}`&#34;,
+        f&#34;**Methods:** {&#39;, &#39;.join(args.methods)}&#34;,
+        f&#34;**Train scope:** `{args.train_scope}`&#34;,
+        &#34;&#34;,
+        &#34;## Configuration&#34;,
+        &#34;&#34;,
+        f&#34;- Batch size: {args.batch_size}&#34;,
+        f&#34;- Grad accumulation: {args.grad_accum_steps} (effective batch = {args.batch_size * args.grad_accum_steps})&#34;,
+        f&#34;- Sequence length: {args.seq_len}&#34;,
+        f&#34;- Recovery steps: {args.recovery_steps}&#34;,
+        f&#34;- Learning rate: {args.learning_rate:.2e}&#34;,
+        f&#34;- KL temperature: {args.kl_temperature}&#34;,
+        f&#34;- LR schedule: {&#39;constant (no cosine)&#39; if args.no_cosine_lr else &#39;cosine&#39;}&#34;,
+        f&#34;- Cache max texts: {args.cache_max_train_texts}&#34;,
+        &#34;&#34;,
+        &#34;## Results&#34;,
+        &#34;&#34;,
+    ]
+
+    for r in results:
+        readme_lines.append(f&#34;### Method {r[&#39;method&#39;]}&#34;)
+        readme_lines.append(&#34;&#34;)
+        pre_val = r.get(&#34;pre_ppl&#34;, float(&#34;nan&#34;))
+        post_val = r.get(&#34;post_ppl&#34;, float(&#34;nan&#34;))
+        rec_val = r.get(&#34;recovery_pct&#34;, 0.0)
+        ratio_val = r.get(&#34;ppl_ratio&#34;, float(&#34;inf&#34;))
+        s_step = r.get(&#34;s_per_step&#34;, 0.0)
+        vram_mb = r.get(&#34;peak_vram_mb&#34;, 0.0)
+        readme_lines.append(
+            f&#34;- Pre-KD PPL: {pre_val:.2f}&#34; if np.isfinite(pre_val) else f&#34;- Pre-KD PPL: {pre_val}&#34;
+        )
+        readme_lines.append(
+            f&#34;- Post-KD PPL: {post_val:.2f}&#34;
+            if np.isfinite(post_val)
+            else f&#34;- Post-KD PPL: {post_val}&#34;
+        )
+        readme_lines.append(f&#34;- Recovery: {rec_val:.2f}%&#34;)
+        readme_lines.append(
+            f&#34;- Post/Baseline ratio: {ratio_val:.3f}x&#34;
+            if np.isfinite(ratio_val)
+            else f&#34;- Post/Baseline ratio: {ratio_val}&#34;
+        )
+        readme_lines.append(f&#34;- Step time: {s_step * 1000:.0f} ms&#34;)
+        readme_lines.append(f&#34;- Peak VRAM: {vram_mb:.0f} MB&#34;)
+        readme_lines.append(&#34;&#34;)
+
+    readme_path = run_dir / &#34;README.md&#34;
+    readme_path.write_text(&#34;\n&#34;.join(readme_lines), encoding=&#34;utf-8&#34;)
+    LOG.info(&#34;Saved README to %s&#34;, readme_path)
+
+    # Maintain global registry of all runs
+    update_registry(args.module, run_dir, results, args, baseline_ppl)
+
+    # Backward compatibility: copy artifacts to legacy output paths
+    try:
+        import shutil
+
+        legacy_csv = Path(args.output_csv)
+        legacy_csv.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(csv_path, legacy_csv)
+
+        legacy_json = Path(args.output_json)
+        legacy_json.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(json_path, legacy_json)
+        LOG.info(&#34;Updated legacy paths: %s and %s&#34;, legacy_csv, legacy_json)
+    except Exception as e:
+        LOG.warning(&#34;Failed to copy to legacy paths: %s&#34;, e)
+
+    # Comparison plot
+    if HAS_MATPLOTLIB and len(valid_results) &gt; 0:
+        try:
+            fig, ax = plt.subplots(1, 1, figsize=(10, 6))
+            methods_plotted = []
+            ppls_plotted = []
+            for method, r in json_payload[&#34;results&#34;].items():
+                r.get(&#34;pre_ppl&#34;, float(&#34;nan&#34;))
+                post = r.get(&#34;post_ppl&#34;, float(&#34;nan&#34;))
+                if np.isfinite(post):
+                    methods_plotted.append(method)
+                    ppls_plotted.append(post)
+            if methods_plotted:
+                bars = ax.bar(methods_plotted, ppls_plotted, color=&#34;skyblue&#34;, edgecolor=&#34;navy&#34;)
+                ax.bar_label(bars, fmt=&#34;%.1f&#34;, padding=3)
+            ax.axhline(
+                y=baseline_ppl,
+                color=&#34;g&#34;,
+                linestyle=&#34;--&#34;,
+                label=f&#34;Baseline ({baseline_ppl:.1f})&#34;,
+            )
+            ax.set_ylabel(&#34;Post-KD PPL (log scale)&#34;)
+            ax.set_yscale(&#34;log&#34;)
+            ax.set_title(f&#34;KD Methods Comparison on {args.module}: Post-KD Perplexity&#34;)
+            ax.legend()
+            ax.grid(True, alpha=0.3, axis=&#34;y&#34;)
+            plt.tight_layout()
+            comparison_path = run_dir / &#34;methods_comparison.png&#34;
+            plt.savefig(comparison_path, dpi=120)
+            # Legacy comparison plot
+            legacy_comp_path = Path(&#34;results&#34;) / f&#34;methods_comparison_{timestamp}.png&#34;
+            legacy_comp_path.parent.mkdir(parents=True, exist_ok=True)
+            plt.savefig(legacy_comp_path, dpi=120)
+            plt.close(fig)
+            LOG.info(&#34;Saved comparison plot: %s&#34;, comparison_path)
+        except Exception as e:
+            LOG.warning(&#34;Failed to generate comparison plot: %s&#34;, e)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.kd_quick_test.make_run_dir"><code class="name flex">
+<span>def <span class="ident">make_run_dir</span></span>(<span>module_name: str, args: argparse.Namespace) ‑> pathlib.Path</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def make_run_dir(module_name: str, args: argparse.Namespace) -&gt; Path:
+    &#34;&#34;&#34;Create a unique run directory based on module name and config.&#34;&#34;&#34;
+    timestamp = getattr(args, &#34;timestamp&#34;, datetime.now().strftime(&#34;%Y%m%d_%H%M%S&#34;))
+
+    # Build a short config suffix
+    config_parts = [
+        f&#34;bs{args.batch_size}&#34;,
+        f&#34;seq{args.seq_len}&#34;,
+        f&#34;lr{args.learning_rate:.0e}&#34;,
+    ]
+    if getattr(args, &#34;no_cosine_lr&#34;, False):
+        config_parts.append(&#34;noclr&#34;)
+    if args.methods:
+        config_parts.append(&#34;&#34;.join(sorted(args.methods)))
+    config_suffix = &#34;_&#34;.join(config_parts)
+
+    run_dir = Path(&#34;results&#34;) / &#34;kd_runs&#34; / module_name / f&#34;{timestamp}_{config_suffix}&#34;
+    run_dir.mkdir(parents=True, exist_ok=True)
+    return run_dir</code></pre>
+</details>
+<div class="desc"><p>Create a unique run directory based on module name and config.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.kd_quick_test.print_comparison_table"><code class="name flex">
+<span>def <span class="ident">print_comparison_table</span></span>(<span>results: list[dict[str, typing.Any]])</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def print_comparison_table(results: list[dict[str, Any]]):
+    try:
+        if hasattr(sys.stdout, &#34;reconfigure&#34;):
+            sys.stdout.reconfigure(encoding=&#34;utf-8&#34;)
+    except Exception:
+        pass
+    header = (
+        &#34;+---------+----------+----------+----------+----------+----------+----------+\n&#34;
+        &#34;| Method  | Pre PPL  | Post PPL | Recovery | Time (s) | VRAM(MB) | Cached   |\n&#34;
+        &#34;+---------+----------+----------+----------+----------+----------+----------+&#34;
+    )
+    print(header)
+    for r in results:
+        m = r[&#34;method&#34;]
+        pre = f&#34;{r[&#39;pre_ppl&#39;]:.2f}&#34; if isinstance(r[&#34;pre_ppl&#34;], (int, float)) else str(r[&#34;pre_ppl&#34;])
+        post = (
+            f&#34;{r[&#39;post_ppl&#39;]:.2f}&#34;
+            if isinstance(r[&#34;post_ppl&#34;], (int, float))
+            else str(r[&#34;post_ppl&#34;])
+        )
+        rec = (
+            f&#34;{r[&#39;recovery_pct&#39;]:.1f}%&#34;
+            if isinstance(r[&#34;recovery_pct&#34;], (int, float))
+            else str(r[&#34;recovery_pct&#34;])
+        )
+        t = (
+            f&#34;{r[&#39;train_time_s&#39;]:.1f}&#34;
+            if isinstance(r[&#34;train_time_s&#34;], (int, float))
+            else str(r[&#34;train_time_s&#34;])
+        )
+        vram = (
+            f&#34;{r[&#39;peak_vram_mb&#39;]:.1f}&#34;
+            if isinstance(r[&#34;peak_vram_mb&#34;], (int, float))
+            else str(r[&#34;peak_vram_mb&#34;])
+        )
+        cached_str = &#34;YES&#34; if r.get(&#34;cached&#34;) else &#34;NO&#34;
+        print(
+            f&#34;| {m:&lt;7} | {pre:&gt;8} | {post:&gt;8} | {rec:&gt;8} | {t:&gt;8} | {vram:&gt;8} | {cached_str:&gt;8} |&#34;
+        )
+    print(&#34;+---------+----------+----------+----------+----------+----------+----------+&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.kd_quick_test.run_kd_method"><code class="name flex">
+<span>def <span class="ident">run_kd_method</span></span>(<span>method_name: str,<br>base_teacher: transformers.models.auto.modeling_auto.AutoModelForCausalLM,<br>base_snapshot: transformers.models.auto.modeling_auto.AutoModelForCausalLM,<br>tokenizer: transformers.models.auto.tokenization_auto.AutoTokenizer,<br>train_chunks: torch.Tensor,<br>test_dataset: Any,<br>args: argparse.Namespace,<br>teacher_cache: dict[str, typing.Any] | None = None,<br>baseline_ppl: float = 21.71) ‑> dict[str, typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_kd_method(
+    method_name: str,
+    base_teacher: AutoModelForCausalLM,
+    base_snapshot: AutoModelForCausalLM,
+    tokenizer: AutoTokenizer,
+    train_chunks: torch.Tensor,
+    test_dataset: Any,
+    args: argparse.Namespace,
+    teacher_cache: dict[str, Any] | None = None,
+    baseline_ppl: float = 21.71,
+) -&gt; dict[str, Any]:
+    LOG.info(&#34;=&#34; * 70)
+    LOG.info(f&#34;STARTING METHOD {method_name}&#34;)
+    LOG.info(&#34;=&#34; * 70)
+
+    device = args.device
+    if device.startswith(&#34;cuda&#34;) and torch.cuda.is_available():
+        torch.cuda.reset_peak_memory_stats()
+
+    use_cache = can_use_cache_for_method(
+        teacher_cache, method_name, getattr(args, &#34;cache_attn&#34;, False)
+    )
+    if use_cache:
+        LOG.info(
+            &#34;[%s] Using precomputed teacher cache (teacher forward pass BYPASS)&#34;,
+            method_name,
+        )
+    else:
+        LOG.info(
+            &#34;[%s] Teacher cache not active/available; running live teacher forward&#34;,
+            method_name,
+        )
+
+    # Instantiate fresh student from snapshot
+    student = copy.deepcopy(base_snapshot)
+    student.to(device)
+
+    # Inject module
+    LOG.info(&#34;Injecting &#39;%s&#39; into student model...&#34;, args.module)
+    calib_slice = train_chunks[:4, :128].to(device)
+
+    student, comp_stats = apply_module_to_model(
+        student,
+        args.module,
+        &#34;auto&#34;,
+        rank=args.rank,
+        device=device,
+        calibration_data=calib_slice,
+        tokenizer=tokenizer,
+    )
+
+    student.eval()
+    with torch.no_grad():
+        diag_ids = train_chunks[:1, :128].to(device)
+        diag_out = student(diag_ids)
+        print(
+            f&#34;DIAG: logits nan={torch.isnan(diag_out.logits).any().item()}, &#34;
+            f&#34;min={diag_out.logits.min().item():.4f}, &#34;
+            f&#34;max={diag_out.logits.max().item():.4f}, &#34;
+            f&#34;mean={diag_out.logits.mean().item():.4f}&#34;
+        )
+        # چک تک‌تک لایه‌ها
+        for name, mod in student.named_modules():
+            if isinstance(mod, type(student.transformer.h[0].attn)) or &#34;cosformer&#34; in name.lower():
+                print(
+                    f&#34;  Attn module: {name} | is_decoder={getattr(mod, &#39;is_decoder&#39;, &#39;?&#39;)}, &#34;
+                    f&#34;is_causal={getattr(mod, &#39;is_causal&#39;, &#39;?&#39;)}&#34;
+                )
+
+    if args.fp16 and device.startswith(&#34;cuda&#34;):
+        student.half()
+
+    # Pre-KD Perplexity
+    pre_ppl = compute_perplexity(
+        student,
+        tokenizer,
+        test_dataset,
+        seq_len=args.seq_len,
+        stride=128,
+        max_eval_tokens=args.eval_max_tokens,
+        device=device,
+    )
+    LOG.info(&#34;Pre-KD PPL for Method %s: %.2f&#34;, method_name, pre_ppl)
+
+    # Configure train scope
+    n_trainable = set_train_scope(student, args.train_scope)
+    if n_trainable == 0:
+        LOG.warning(
+            &#34;Train scope &#39;%s&#39; yielded 0 trainable parameters. Falling back to training all attention parameters.&#34;,
+            args.train_scope,
+        )
+        for name, p in student.named_parameters():
+            if &#34;.attn.&#34; in name:
+                p.requires_grad = True
+        n_trainable = sum(p.numel() for p in student.parameters() if p.requires_grad)
+
+    LOG.info(
+        f&#34;Train scope: &#39;{args.train_scope}&#39; | Trainable parameters: {n_trainable:,} / {sum(p.numel() for p in student.parameters()):,}&#34;
+    )
+
+    # Ensure trainable parameters are in fp32 for optimizer master weights
+    for p in student.parameters():
+        if p.requires_grad:
+            p.data = p.data.float()
+
+    # Feature Alignment Projection Adapter (Learnable Affine Mapping between SSM &amp; Transformer manifolds)
+    projection_adapter = None
+    if method_name in (&#34;B&#34;, &#34;C&#34;, &#34;D&#34;):
+        hidden_dim = getattr(student.config, &#34;n_embd&#34;, 768)
+        num_layers = getattr(student.config, &#34;n_layer&#34;, 12)
+        projection_adapter = HiddenProjectionAdapter(
+            hidden_dim=hidden_dim, num_layers=num_layers
+        ).to(device)
+        for p in projection_adapter.parameters():
+            p.data = p.data.float()
+
+    # Parameter-Group Learning Rates:
+    # Injected Mamba/SSM blocks undergo massive architectural disruption and require what amounts
+    # to continual pre-training (higher learning rate, 5x) compared to standard fine-tuning of surrounding layers.
+    attn_mamba_params = []
+    other_params = []
+    for name, p in student.named_parameters():
+        if p.requires_grad:
+            if &#34;.attn.&#34; in name or &#34;mamba&#34; in name.lower() or &#34;ssm&#34; in name.lower():
+                attn_mamba_params.append(p)
+            else:
+                other_params.append(p)
+
+    adapter_params = list(projection_adapter.parameters()) if projection_adapter is not None else []
+
+    param_groups = []
+    if attn_mamba_params:
+        # 5x higher learning rate for the destroyed/injected attention/SSM weights
+        param_groups.append({&#34;params&#34;: attn_mamba_params, &#34;lr&#34;: args.learning_rate * 5.0})
+    if other_params:
+        param_groups.append({&#34;params&#34;: other_params, &#34;lr&#34;: args.learning_rate})
+    if adapter_params:
+        # Trainable alignment projections learn concurrently with student
+        param_groups.append({&#34;params&#34;: adapter_params, &#34;lr&#34;: args.learning_rate * 2.0})
+
+    if not param_groups:
+        LOG.warning(&#34;No trainable parameters found; unfreezing all student parameters.&#34;)
+        for p in student.parameters():
+            p.requires_grad = True
+            p.data = p.data.float()
+        param_groups = [
+            {
+                &#34;params&#34;: [p for p in student.parameters() if p.requires_grad],
+                &#34;lr&#34;: args.learning_rate,
+            }
+        ]
+
+    optimizer = torch.optim.AdamW(param_groups, weight_decay=0.01)
+    all_trainable_params = [p for group in param_groups for p in group[&#34;params&#34;]]
+
+    total_steps = args.recovery_steps
+    warmup_steps = args.warmup_steps
+
+    def lr_lambda(current_step: int):
+        if current_step &lt; warmup_steps:
+            return float(current_step) / float(max(1, warmup_steps))
+        if getattr(args, &#34;no_cosine_lr&#34;, False):
+            return 1.0  # constant after warmup
+        progress = float(current_step - warmup_steps) / float(max(1, total_steps - warmup_steps))
+        return max(0.1, 0.5 * (1.0 + math.cos(math.pi * progress)))
+
+    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
+    use_scaler = bool(args.fp16 and device.startswith(&#34;cuda&#34;))
+    scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
+
+    # Training state
+    ppl_history: dict[int, float] = {}
+    loss_history: list[tuple[int, float]] = []
+    current_seq_len = args.seq_len
+    num_chunks = len(train_chunks)
+    chunk_idx = 0
+
+    t_start = time.time()
+    optimizer.zero_grad()
+    accum_count = 0
+    final_loss = 0.0
+
+    step = 0
+    while step &lt; total_steps:
+        student.train()
+        if not use_cache:
+            base_teacher.eval()
+
+        # Batch preparation with OOM fallback handling
+        try:
+            batch_slice = slice(chunk_idx, min(chunk_idx + args.batch_size, num_chunks))
+            batch_ids = train_chunks[batch_slice]
+            chunk_idx = (chunk_idx + args.batch_size) % num_chunks
+            if batch_ids.size(1) &gt; current_seq_len:
+                batch_ids = batch_ids[:, :current_seq_len]
+            batch_ids = batch_ids.to(device)
+
+            with torch.cuda.amp.autocast(enabled=args.fp16 and device.startswith(&#34;cuda&#34;)):
+                # Teacher forward or cached lookup
+                if use_cache and teacher_cache is not None:
+                    c_logits = None
+                    if teacher_cache.get(&#34;logits&#34;) is not None:
+                        c_logits = teacher_cache[&#34;logits&#34;][batch_slice].to(
+                            device, non_blocking=True
+                        )
+                        if c_logits.size(1) &gt; current_seq_len:
+                            c_logits = c_logits[:, :current_seq_len, :]
+
+                    c_hidden = None
+                    if teacher_cache.get(&#34;hidden_states&#34;) is not None:
+                        raw_h = teacher_cache[&#34;hidden_states&#34;]
+                        c_hidden = tuple(
+                            raw_h[l, batch_slice][:, :current_seq_len, :].to(
+                                device, non_blocking=True
+                            )
+                            for l in range(raw_h.shape[0])
+                        )
+
+                    c_attn = None
+                    if teacher_cache.get(&#34;attentions&#34;) is not None:
+                        raw_a = teacher_cache[&#34;attentions&#34;]
+                        c_attn = tuple(
+                            raw_a[l, batch_slice][:, :, :current_seq_len, :current_seq_len].to(
+                                device, non_blocking=True
+                            )
+                            for l in range(raw_a.shape[0])
+                        )
+
+                    teacher_out = CachedTeacherOutput(
+                        logits=c_logits,
+                        hidden_states=c_hidden,
+                        attentions=c_attn,
+                    )
+                else:
+                    with torch.no_grad():
+                        teacher_out = base_teacher(
+                            batch_ids,
+                            output_hidden_states=(method_name in (&#34;B&#34;, &#34;C&#34;, &#34;D&#34;)),
+                            output_attentions=(method_name == &#34;C&#34;),
+                        )
+
+                # Student forward
+                student_out = student(
+                    batch_ids,
+                    output_hidden_states=(method_name in (&#34;B&#34;, &#34;C&#34;, &#34;D&#34;)),
+                    output_attentions=(method_name == &#34;C&#34;),
+                )
+
+                # Curriculum / Phased Distillation:
+                # Early steps prioritize hidden state feature alignment to bridge the SSM-Transformer
+                # architectural manifold gap first, then smoothly transition toward output KL divergence.
+                progress_ratio = float(step) / float(max(1, total_steps))
+                phase_hidden_weight = max(0.2, 0.7 * (1.0 - progress_ratio))
+                phase_kl_weight = min(0.7, 0.2 + 0.5 * progress_ratio)
+
+                # Compute KL warmup factor
+                kl_temp = getattr(args, &#34;kl_temperature&#34;, 2.0)
+                kl_warmup = getattr(args, &#34;kl_warmup_steps&#34;, 0)
+                warmup_factor = (
+                    min(1.0, float(step + 1) / float(max(1, kl_warmup))) if kl_warmup &gt; 0 else 1.0
+                )
+
+                # Loss computation based on Method
+                if method_name == &#34;A&#34;:
+                    loss_kl = compute_kl_divergence(
+                        student_out.logits, teacher_out.logits, temperature=kl_temp
+                    )
+                    shift_logits = student_out.logits[..., :-1, :].contiguous()
+                    shift_labels = batch_ids[..., 1:].contiguous()
+                    loss_ce = F.cross_entropy(
+                        shift_logits.view(-1, shift_logits.size(-1)),
+                        shift_labels.view(-1),
+                    )
+                    kl_weight = 0.9 * warmup_factor
+                    loss = kl_weight * loss_kl + 0.1 * loss_ce
+                elif method_name == &#34;B&#34;:
+                    loss_hidden = compute_hidden_mse(
+                        student_out.hidden_states,
+                        teacher_out.hidden_states,
+                        projection_adapter=projection_adapter,
+                    )
+                    shift_logits = student_out.logits[..., :-1, :].contiguous()
+                    shift_labels = batch_ids[..., 1:].contiguous()
+                    loss_ce = F.cross_entropy(
+                        shift_logits.view(-1, shift_logits.size(-1)),
+                        shift_labels.view(-1),
+                    )
+                    loss = 0.9 * loss_hidden + 0.1 * loss_ce
+                elif method_name == &#34;C&#34;:
+                    loss_kl = compute_kl_divergence(
+                        student_out.logits, teacher_out.logits, temperature=kl_temp
+                    )
+                    loss_hidden = compute_hidden_mse(
+                        student_out.hidden_states,
+                        teacher_out.hidden_states,
+                        projection_adapter=projection_adapter,
+                    )
+                    loss_attn = compute_attention_mse(
+                        student_out.attentions, teacher_out.attentions, device
+                    )
+                    shift_logits = student_out.logits[..., :-1, :].contiguous()
+                    shift_labels = batch_ids[..., 1:].contiguous()
+                    loss_ce = F.cross_entropy(
+                        shift_logits.view(-1, shift_logits.size(-1)),
+                        shift_labels.view(-1),
+                    )
+                    kl_weight = phase_kl_weight * warmup_factor
+                    loss = (
+                        kl_weight * loss_kl
+                        + phase_hidden_weight * loss_hidden
+                        + 0.05 * loss_attn
+                        + 0.05 * loss_ce
+                    )
+                elif method_name == &#34;D&#34;:
+                    kl_w = phase_kl_weight * warmup_factor
+                    loss = compute_method_d_loss(
+                        student_out,
+                        teacher_out,
+                        batch_ids,
+                        device,
+                        kl_temperature=kl_temp,
+                        kl_weight=kl_w,
+                        hidden_weight=phase_hidden_weight,
+                        ce_weight=0.1,
+                        projection_adapter=projection_adapter,
+                    )
+                else:
+                    raise ValueError(f&#34;Unknown method {method_name}&#34;)
+
+                loss_scaled = loss / args.grad_accum_steps
+                final_loss = float(loss.item())
+
+            if use_scaler:
+                scaler.scale(loss_scaled).backward()
+            else:
+                loss_scaled.backward()
+            accum_count += 1
+
+            if accum_count % args.grad_accum_steps == 0:
+                loss_history.append((step, final_loss))
+                max_norm = getattr(args, &#34;max_grad_norm&#34;, 1.0)
+                if use_scaler:
+                    scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(all_trainable_params, max_norm=max_norm)
+                    scaler.step(optimizer)
+                    scaler.update()
+                else:
+                    torch.nn.utils.clip_grad_norm_(all_trainable_params, max_norm=max_norm)
+                    optimizer.step()
+                optimizer.zero_grad()
+                scheduler.step()
+                step += 1
+
+                if (
+                    step % 50 == 0
+                    or step == total_steps
+                    or step &lt;= 5
+                    or (total_steps &lt;= 20 and step % 2 == 0)
+                ):
+                    step_time_ms = ((time.time() - t_start) / max(1, step)) * 1000.0
+                    LOG.info(
+                        f&#34;[{method_name}] Step {step}/{total_steps} | Loss: {final_loss:.4f} | LR: {scheduler.get_last_lr()[0]:.2e} | Step time: {step_time_ms:.1f}ms&#34;
+                    )
+
+                # Periodic evaluation
+                if step % args.eval_every == 0 or step == total_steps:
+                    eval_ppl = compute_perplexity(
+                        student,
+                        tokenizer,
+                        test_dataset,
+                        seq_len=current_seq_len,
+                        stride=128,
+                        max_eval_tokens=args.eval_max_tokens,
+                        device=device,
+                    )
+                    ppl_history[step] = eval_ppl
+                    LOG.info(f&#34;[{method_name}] Step {step} Eval PPL: {eval_ppl:.2f}&#34;)
+
+                    # Early stopping condition: PPL &gt; early_stop_ppl (5000.0) or NaN
+                    if math.isnan(eval_ppl) or eval_ppl &gt; args.early_stop_ppl:
+                        LOG.warning(
+                            f&#34;[{method_name}] Early stop triggered at step {step}: PPL={eval_ppl} exceeds threshold {args.early_stop_ppl}&#34;
+                        )
+                        break
+
+        except torch.cuda.OutOfMemoryError:
+            LOG.warning(
+                f&#34;[{method_name}] CUDA OOM detected! Falling back seq_len from {current_seq_len} to 128...&#34;
+            )
+            if &#34;loss_scaled&#34; in locals():
+                del loss_scaled
+            if &#34;student_out&#34; in locals():
+                del student_out
+            if &#34;teacher_out&#34; in locals():
+                del teacher_out
+            gc.collect()
+            torch.cuda.empty_cache()
+            current_seq_len = 128
+            optimizer.zero_grad()
+            accum_count = 0
+            continue
+
+    train_time = round(time.time() - t_start, 2)
+    s_per_step = round(train_time / max(1, step), 4)
+    peak_vram = (
+        round(float(torch.cuda.max_memory_allocated() / (1024**2)), 2)
+        if device.startswith(&#34;cuda&#34;) and torch.cuda.is_available()
+        else 0.0
+    )
+
+    # Final PPL
+    post_ppl = ppl_history.get(step, float(&#34;nan&#34;))
+    if math.isnan(post_ppl) and ppl_history:
+        post_ppl = list(ppl_history.values())[-1]
+
+    ppl_ratio = (
+        round(post_ppl / baseline_ppl, 4)
+        if np.isfinite(post_ppl) and post_ppl &gt; 0
+        else float(&#34;inf&#34;)
+    )
+    recovery_pct = (
+        round(min(100.0, (pre_ppl - post_ppl) / (pre_ppl - baseline_ppl) * 100.0), 2)
+        if np.isfinite(post_ppl) and (pre_ppl - baseline_ppl) &gt; 0
+        else 0.0
+    )
+
+    LOG.info(
+        f&#34;[{method_name}] COMPLETE | Pre: {pre_ppl:.2f} -&gt; Post: {post_ppl:.2f} | Recovery: {recovery_pct}% | VRAM: {peak_vram} MB | Time: {train_time}s ({s_per_step * 1000:.1f}ms/step)&#34;
+    )
+
+    # Generate loss and PPL curve
+    if HAS_MATPLOTLIB and loss_history:
+        try:
+            steps_arr = np.array([s for s, _ in loss_history])
+            losses_arr = np.array([l for _, l in loss_history])
+
+            fig, ax1 = plt.subplots(figsize=(12, 6))
+
+            # Loss on left axis
+            ax1.plot(
+                steps_arr,
+                losses_arr,
+                &#34;b-&#34;,
+                linewidth=1.0,
+                alpha=0.7,
+                label=&#34;Training Loss&#34;,
+            )
+            ax1.set_xlabel(&#34;Step&#34;)
+            ax1.set_ylabel(&#34;Training Loss&#34;, color=&#34;b&#34;)
+            ax1.tick_params(axis=&#34;y&#34;, labelcolor=&#34;b&#34;)
+            ax1.set_yscale(&#34;log&#34;)
+            ax1.grid(True, alpha=0.3)
+
+            # PPL on right axis
+            if ppl_history:
+                ax2 = ax1.twinx()
+                ppl_steps = sorted(ppl_history.keys())
+                ppl_vals = [ppl_history[s] for s in ppl_steps]
+                ax2.plot(
+                    ppl_steps,
+                    ppl_vals,
+                    &#34;r-o&#34;,
+                    linewidth=2,
+                    markersize=6,
+                    label=&#34;Eval PPL&#34;,
+                )
+                ax2.axhline(
+                    y=baseline_ppl,
+                    color=&#34;g&#34;,
+                    linestyle=&#34;--&#34;,
+                    linewidth=1.5,
+                    label=f&#34;Baseline ({baseline_ppl:.1f})&#34;,
+                )
+                ax2.axhline(
+                    y=pre_ppl,
+                    color=&#34;orange&#34;,
+                    linestyle=&#34;--&#34;,
+                    linewidth=1.5,
+                    label=f&#34;Pre-KD ({pre_ppl:.1f})&#34;,
+                )
+                ax2.set_ylabel(&#34;Eval PPL&#34;, color=&#34;r&#34;)
+                ax2.tick_params(axis=&#34;y&#34;, labelcolor=&#34;r&#34;)
+                ax2.set_yscale(&#34;log&#34;)
+                ax2.legend(loc=&#34;upper right&#34;)
+
+            d_state_val = getattr(
+                getattr(student if &#34;student&#34; in locals() else None, &#34;config&#34;, None),
+                &#34;d_state&#34;,
+                16,
+            )
+            plt.title(
+                f&#34;Method {method_name} (batch={args.batch_size}, {total_steps} steps)\n&#34;
+                f&#34;Pre PPL={pre_ppl:.1f}, Post PPL={post_ppl:.1f}, Recovery={recovery_pct:.1f}%&#34;
+            )
+            plt.tight_layout()
+            if hasattr(args, &#34;run_dir&#34;) and args.run_dir:
+                plot_path = Path(args.run_dir) / f&#34;loss_curve_{method_name}.png&#34;
+            else:
+                plot_path = (
+                    Path(&#34;results&#34;) / f&#34;loss_curve_{method_name}_{getattr(args, &#39;tag&#39;, &#39;run&#39;)}.png&#34;
+                )
+            plot_path.parent.mkdir(parents=True, exist_ok=True)
+            plt.savefig(plot_path, dpi=120)
+            # Also keep legacy copy in results/
+            legacy_plot = (
+                Path(&#34;results&#34;) / f&#34;loss_curve_{method_name}_{getattr(args, &#39;tag&#39;, &#39;run&#39;)}.png&#34;
+            )
+            if plot_path.resolve() != legacy_plot.resolve():
+                legacy_plot.parent.mkdir(parents=True, exist_ok=True)
+                plt.savefig(legacy_plot, dpi=120)
+            plt.close(fig)
+            LOG.info(&#34;Saved loss curve: %s&#34;, plot_path)
+        except Exception as e:
+            LOG.warning(&#34;Failed to generate loss curve for %s: %s&#34;, method_name, e)
+
+    # Clean up model &amp; VRAM completely (discard alignment projection adapter)
+    del student
+    if projection_adapter is not None:
+        del projection_adapter
+    del optimizer
+    del scheduler
+    del scaler
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    time.sleep(2)
+
+    return {
+        &#34;method&#34;: method_name,
+        &#34;pre_ppl&#34;: pre_ppl,
+        &#34;post_ppl&#34;: post_ppl,
+        &#34;ppl_ratio&#34;: ppl_ratio,
+        &#34;recovery_pct&#34;: recovery_pct,
+        &#34;peak_vram_mb&#34;: peak_vram,
+        &#34;train_time_s&#34;: train_time,
+        &#34;s_per_step&#34;: s_per_step,
+        &#34;loss_final&#34;: round(final_loss, 4),
+        &#34;cached&#34;: bool(use_cache),
+        &#34;ppl_at_step_250&#34;: ppl_history.get(250, &#34;&#34;),
+        &#34;ppl_at_step_500&#34;: ppl_history.get(500, &#34;&#34;),
+        &#34;ppl_at_step_750&#34;: ppl_history.get(750, &#34;&#34;),
+        &#34;ppl_at_step_1000&#34;: ppl_history.get(1000, &#34;&#34;),
+        &#34;ppl_at_step_1250&#34;: ppl_history.get(1250, &#34;&#34;),
+        &#34;ppl_at_step_1500&#34;: ppl_history.get(1500, &#34;&#34;),
+    }</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.kd_quick_test.set_train_scope"><code class="name flex">
+<span>def <span class="ident">set_train_scope</span></span>(<span>model, train_scope='all')</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_train_scope(model, train_scope=&#34;all&#34;):
+    &#34;&#34;&#34;
+    Configure trainable parameters.
+
+    - &#39;all&#39;                 : train everything
+    - &#39;mamba&#39;/&#39;attention&#39;/&#39;module&#39; : train ONLY parameters inside
+                                    the attention submodule, EXCEPT:
+                                      1. Original GPT-2 c_attn/c_proj weights
+                                      2. SVD base weights (.U, .S, .V)
+                                      3. FactorisedLinear base weights
+                                         (.down.weight, .up.weight, .up.bias)
+                                         when lora_A/lora_B adapters exist
+                                    TRAINABLE: lora_A, lora_B, fusion_gate,
+                                    prune_gate, SSM-specific params, etc.
+    &#34;&#34;&#34;
+    if train_scope == &#34;all&#34;:
+        for p in model.parameters():
+            p.requires_grad = True
+    elif train_scope in (&#34;mamba&#34;, &#34;attention&#34;, &#34;module&#34;):
+        # Build a lookup of all named modules for parent-inspection
+        named_mods = dict(model.named_modules())
+
+        # Keywords indicating low-rank / SSM / adapter parameters to keep trainable
+
+        for name, p in model.named_parameters():
+            # Must be inside a transformer block&#39;s attention submodule
+            if &#34;.attn.&#34; not in name:
+                p.requires_grad = False
+                continue
+
+            # --- Freeze SVD tri-factor bases (.U, .S, .V) ---
+            if any(name.endswith(sfx) for sfx in (&#34;.U&#34;, &#34;.S&#34;, &#34;.V&#34;)):
+                p.requires_grad = False
+                continue
+
+            # --- Freeze FactorisedLinear BASE weights ---
+            # Pattern: &lt;path&gt;.down.weight or &lt;path&gt;.up.weight or &lt;path&gt;.up.bias
+            # We freeze these iff the PARENT FactorisedLinear has lora_A/lora_B.
+            # Without LoRA adapters (lora_rank=0), the base weights ARE the
+            # learned parameters and should be trained.
+            factorised_base = False
+            for base_sfx in (&#34;.down.weight&#34;, &#34;.up.weight&#34;, &#34;.up.bias&#34;):
+                if name.endswith(base_sfx):
+                    # Parent module is everything before &#34;.down.weight&#34; etc.
+                    parent_path = name[
+                        : name.rfind(base_sfx.rsplit(&#34;.&#34;, 2)[0])
+                        + len(base_sfx.rsplit(&#34;.&#34;, 2)[0])
+                        - 1
+                    ]
+                    # E.g. &#34;...attn.q_proj.down.weight&#34; → parent = &#34;...attn.q_proj&#34;
+                    parent_path = name.rsplit(&#34;.&#34;, 2)[0]  # strip &#34;.down.weight&#34; → &#34;...q_proj&#34;
+                    parent_mod = named_mods.get(parent_path)
+                    if parent_mod is not None:
+                        has_lora = (
+                            getattr(parent_mod, &#34;lora_A&#34;, None) is not None
+                            and getattr(parent_mod, &#34;lora_B&#34;, None) is not None
+                        )
+                        if has_lora:
+                            factorised_base = True
+                    break
+
+            if factorised_base:
+                p.requires_grad = False
+                continue
+
+            # --- Freeze original GPT-2 c_attn / c_proj ---
+            sub = name.split(&#34;.attn.&#34;, 1)[-1]
+            if sub.startswith(
+                (
+                    &#34;c_attn.weight&#34;,
+                    &#34;c_proj.weight&#34;,
+                    &#34;c_attn.bias&#34;,
+                    &#34;c_proj.bias&#34;,
+                )
+            ) or sub in (&#34;c_attn&#34;, &#34;c_proj&#34;):
+                p.requires_grad = False
+                continue
+
+            # --- Everything else inside .attn. is trainable ---
+            # Includes: lora_A, lora_B, fusion_gate, prune_gate, SSM matrices,
+            #           FactorisedLinear bases when lora_rank=0 (they ARE the weights)
+            p.requires_grad = True
+    else:
+        raise ValueError(f&#34;Unknown train_scope: {train_scope}&#34;)
+
+    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    total = sum(p.numel() for p in model.parameters())
+    LOG.info(
+        &#34;Train scope &#39;%s&#39;: %d/%d trainable (%.2f%%)&#34;,
+        train_scope,
+        trainable,
+        total,
+        100.0 * trainable / max(1, total),
+    )
+    return trainable</code></pre>
+</details>
+<div class="desc"><p>Configure trainable parameters.</p>
+<ul>
+<li>'all'
+: train everything</li>
+<li>'mamba'/'attention'/'module' : train ONLY parameters inside
+the attention submodule, EXCEPT:
+1. Original GPT-2 c_attn/c_proj weights
+2. SVD base weights (.U, .S, .V)
+3. FactorisedLinear base weights
+(.down.weight, .up.weight, .up.bias)
+when lora_A/lora_B adapters exist
+TRAINABLE: lora_A, lora_B, fusion_gate,
+prune_gate, SSM-specific params, etc.</li>
+</ul></div>
+</dd>
+<dt id="neuralops.benchmarks.kd_quick_test.setup_logging"><code class="name flex">
+<span>def <span class="ident">setup_logging</span></span>(<span>log_file: str | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setup_logging(log_file: str | None = None):
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    for h in list(root.handlers):
+        root.removeHandler(h)
+    fmt = logging.Formatter(&#34;%(asctime)s [%(levelname)s] %(name)s: %(message)s&#34;)
+    ch = logging.StreamHandler(sys.stdout)
+    ch.setFormatter(fmt)
+    root.addHandler(ch)
+    if log_file:
+        Path(log_file).parent.mkdir(parents=True, exist_ok=True)
+        fh = logging.FileHandler(log_file, mode=&#34;a&#34;, encoding=&#34;utf-8&#34;)
+        fh.setFormatter(fmt)
+        root.addHandler(fh)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.kd_quick_test.update_latest_link"><code class="name flex">
+<span>def <span class="ident">update_latest_link</span></span>(<span>module_name: str, run_dir: pathlib.Path)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def update_latest_link(module_name: str, run_dir: Path):
+    &#34;&#34;&#34;Record latest run path in results/06_adhoc_experiments/kd_runs/&lt;module&gt;/latest.txt.&#34;&#34;&#34;
+    try:
+        module_dir = Path(&#34;results&#34;) / &#34;kd_runs&#34; / module_name
+        module_dir.mkdir(parents=True, exist_ok=True)
+        latest_file = module_dir / &#34;latest.txt&#34;
+        latest_file.write_text(str(run_dir.resolve()), encoding=&#34;utf-8&#34;)
+    except Exception as e:
+        LOG.warning(&#34;Failed to update latest.txt for %s: %s&#34;, module_name, e)</code></pre>
+</details>
+<div class="desc"><p>Record latest run path in results/06_adhoc_experiments/kd_runs/<module>/latest.txt.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.kd_quick_test.update_registry"><code class="name flex">
+<span>def <span class="ident">update_registry</span></span>(<span>module_name: str,<br>run_dir: pathlib.Path,<br>results: list[dict[str, typing.Any]],<br>args: argparse.Namespace,<br>baseline_ppl: float)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def update_registry(
+    module_name: str,
+    run_dir: Path,
+    results: list[dict[str, Any]],
+    args: argparse.Namespace,
+    baseline_ppl: float,
+):
+    &#34;&#34;&#34;Maintain a master JSON registry at results/06_adhoc_experiments/kd_runs/registry.json.&#34;&#34;&#34;
+    try:
+        registry_path = Path(&#34;results&#34;) / &#34;kd_runs&#34; / &#34;registry.json&#34;
+        registry_path.parent.mkdir(parents=True, exist_ok=True)
+
+        data = {&#34;runs&#34;: []}
+        if registry_path.exists():
+            try:
+                data = json.loads(registry_path.read_text(encoding=&#34;utf-8&#34;))
+                if &#34;runs&#34; not in data or not isinstance(data[&#34;runs&#34;], list):
+                    data = {&#34;runs&#34;: []}
+            except Exception:
+                data = {&#34;runs&#34;: []}
+
+        valid_results = [
+            r
+            for r in results
+            if isinstance(r.get(&#34;post_ppl&#34;), (int, float)) and np.isfinite(r[&#34;post_ppl&#34;])
+        ]
+        best_post_ppl = min((r[&#34;post_ppl&#34;] for r in valid_results), default=float(&#34;nan&#34;))
+        best_recovery = max((r.get(&#34;recovery_pct&#34;, 0.0) for r in valid_results), default=0.0)
+
+        entry = {
+            &#34;module&#34;: module_name,
+            &#34;timestamp&#34;: getattr(args, &#34;timestamp&#34;, datetime.now().strftime(&#34;%Y%m%d_%H%M%S&#34;)),
+            &#34;run_dir&#34;: str(run_dir).replace(&#34;\\&#34;, &#34;/&#34;),
+            &#34;methods&#34;: args.methods,
+            &#34;batch_size&#34;: args.batch_size,
+            &#34;grad_accum_steps&#34;: args.grad_accum_steps,
+            &#34;seq_len&#34;: args.seq_len,
+            &#34;recovery_steps&#34;: args.recovery_steps,
+            &#34;baseline_ppl&#34;: baseline_ppl,
+            &#34;best_post_ppl&#34;: best_post_ppl,
+            &#34;best_recovery_pct&#34;: best_recovery,
+            &#34;results&#34;: {
+                r[&#34;method&#34;]: {k: v for k, v in r.items() if k != &#34;method&#34;} for r in results
+            },
+        }
+        data[&#34;runs&#34;].append(entry)
+        registry_path.write_text(json.dumps(data, indent=2), encoding=&#34;utf-8&#34;)
+        LOG.info(&#34;Updated global registry at %s&#34;, registry_path)
+    except Exception as e:
+        LOG.warning(&#34;Failed to update global registry: %s&#34;, e)</code></pre>
+</details>
+<div class="desc"><p>Maintain a master JSON registry at results/06_adhoc_experiments/kd_runs/registry.json.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.benchmarks.kd_quick_test.CachedTeacherOutput"><code class="flex name class">
+<span>class <span class="ident">CachedTeacherOutput</span></span>
+<span>(</span><span>logits: torch.Tensor | None = None,<br>hidden_states: tuple[torch.Tensor, ...] | None = None,<br>attentions: tuple[torch.Tensor, ...] | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class CachedTeacherOutput:
+    def __init__(
+        self,
+        logits: torch.Tensor | None = None,
+        hidden_states: tuple[torch.Tensor, ...] | None = None,
+        attentions: tuple[torch.Tensor, ...] | None = None,
+    ):
+        self.logits = logits
+        self.hidden_states = hidden_states
+        self.attentions = attentions</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.kd_quick_test.HiddenProjectionAdapter"><code class="flex name class">
+<span>class <span class="ident">HiddenProjectionAdapter</span></span>
+<span>(</span><span>hidden_dim: int, num_layers: int = 12)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class HiddenProjectionAdapter(nn.Module):
+    &#34;&#34;&#34;
+    Lightweight learnable affine projection to bridge the architectural manifold gap
+    between Transformer Attention (spatial dynamic routing) and Mamba/Recurrent SSM (temporal state-space).
+
+    Instead of forcing strict isomorphic alignment (which over-restricts the student),
+    this projection maps the student&#39;s hidden states to the teacher&#39;s manifold during KD
+    and is safely discarded after distillation.
+    &#34;&#34;&#34;
+
+    def __init__(self, hidden_dim: int, num_layers: int = 12):
+        super().__init__()
+        # Independent layer-wise linear projection for each transformer block
+        self.projections = nn.ModuleList(
+            [nn.Linear(hidden_dim, hidden_dim, bias=True) for _ in range(num_layers)]
+        )
+        for p in self.projections:
+            nn.init.eye_(p.weight)
+            nn.init.zeros_(p.bias)
+
+    def forward(self, layer_idx: int, student_h: torch.Tensor) -&gt; torch.Tensor:
+        idx = min(layer_idx, len(self.projections) - 1)
+        return self.projections[idx](student_h)</code></pre>
+</details>
+<div class="desc"><p>Lightweight learnable affine projection to bridge the architectural manifold gap
+between Transformer Attention (spatial dynamic routing) and Mamba/Recurrent SSM (temporal state-space).</p>
+<p>Instead of forcing strict isomorphic alignment (which over-restricts the student),
+this projection maps the student's hidden states to the teacher's manifold during KD
+and is safely discarded after distillation.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.benchmarks.kd_quick_test.HiddenProjectionAdapter.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, layer_idx: int, student_h: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, layer_idx: int, student_h: torch.Tensor) -&gt; torch.Tensor:
+    idx = min(layer_idx, len(self.projections) - 1)
+    return self.projections[idx](student_h)</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.benchmarks" href="index.html">neuralops.benchmarks</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.benchmarks.kd_quick_test.build_teacher_cache" href="#neuralops.benchmarks.kd_quick_test.build_teacher_cache">build_teacher_cache</a></code></li>
+<li><code><a title="neuralops.benchmarks.kd_quick_test.build_train_chunks" href="#neuralops.benchmarks.kd_quick_test.build_train_chunks">build_train_chunks</a></code></li>
+<li><code><a title="neuralops.benchmarks.kd_quick_test.can_use_cache_for_method" href="#neuralops.benchmarks.kd_quick_test.can_use_cache_for_method">can_use_cache_for_method</a></code></li>
+<li><code><a title="neuralops.benchmarks.kd_quick_test.compute_attention_mse" href="#neuralops.benchmarks.kd_quick_test.compute_attention_mse">compute_attention_mse</a></code></li>
+<li><code><a title="neuralops.benchmarks.kd_quick_test.compute_hidden_mse" href="#neuralops.benchmarks.kd_quick_test.compute_hidden_mse">compute_hidden_mse</a></code></li>
+<li><code><a title="neuralops.benchmarks.kd_quick_test.compute_kl_divergence" href="#neuralops.benchmarks.kd_quick_test.compute_kl_divergence">compute_kl_divergence</a></code></li>
+<li><code><a title="neuralops.benchmarks.kd_quick_test.compute_method_d_loss" href="#neuralops.benchmarks.kd_quick_test.compute_method_d_loss">compute_method_d_loss</a></code></li>
+<li><code><a title="neuralops.benchmarks.kd_quick_test.compute_perplexity" href="#neuralops.benchmarks.kd_quick_test.compute_perplexity">compute_perplexity</a></code></li>
+<li><code><a title="neuralops.benchmarks.kd_quick_test.get_cache_hash" href="#neuralops.benchmarks.kd_quick_test.get_cache_hash">get_cache_hash</a></code></li>
+<li><code><a title="neuralops.benchmarks.kd_quick_test.is_cache_valid" href="#neuralops.benchmarks.kd_quick_test.is_cache_valid">is_cache_valid</a></code></li>
+<li><code><a title="neuralops.benchmarks.kd_quick_test.load_teacher_cache" href="#neuralops.benchmarks.kd_quick_test.load_teacher_cache">load_teacher_cache</a></code></li>
+<li><code><a title="neuralops.benchmarks.kd_quick_test.main" href="#neuralops.benchmarks.kd_quick_test.main">main</a></code></li>
+<li><code><a title="neuralops.benchmarks.kd_quick_test.make_run_dir" href="#neuralops.benchmarks.kd_quick_test.make_run_dir">make_run_dir</a></code></li>
+<li><code><a title="neuralops.benchmarks.kd_quick_test.print_comparison_table" href="#neuralops.benchmarks.kd_quick_test.print_comparison_table">print_comparison_table</a></code></li>
+<li><code><a title="neuralops.benchmarks.kd_quick_test.run_kd_method" href="#neuralops.benchmarks.kd_quick_test.run_kd_method">run_kd_method</a></code></li>
+<li><code><a title="neuralops.benchmarks.kd_quick_test.set_train_scope" href="#neuralops.benchmarks.kd_quick_test.set_train_scope">set_train_scope</a></code></li>
+<li><code><a title="neuralops.benchmarks.kd_quick_test.setup_logging" href="#neuralops.benchmarks.kd_quick_test.setup_logging">setup_logging</a></code></li>
+<li><code><a title="neuralops.benchmarks.kd_quick_test.update_latest_link" href="#neuralops.benchmarks.kd_quick_test.update_latest_link">update_latest_link</a></code></li>
+<li><code><a title="neuralops.benchmarks.kd_quick_test.update_registry" href="#neuralops.benchmarks.kd_quick_test.update_registry">update_registry</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.benchmarks.kd_quick_test.CachedTeacherOutput" href="#neuralops.benchmarks.kd_quick_test.CachedTeacherOutput">CachedTeacherOutput</a></code></h4>
+</li>
+<li>
+<h4><code><a title="neuralops.benchmarks.kd_quick_test.HiddenProjectionAdapter" href="#neuralops.benchmarks.kd_quick_test.HiddenProjectionAdapter">HiddenProjectionAdapter</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.benchmarks.kd_quick_test.HiddenProjectionAdapter.forward" href="#neuralops.benchmarks.kd_quick_test.HiddenProjectionAdapter.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

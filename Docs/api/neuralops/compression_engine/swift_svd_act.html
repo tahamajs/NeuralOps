@@ -1,0 +1,1038 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.swift_svd_act API documentation</title>
+<meta name="description" content="Swift-SVD Activation-Aware Compressor — Production-Hardened (v2) …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.swift_svd_act</code></h1>
+</header>
+<section id="section-intro">
+<p>Swift-SVD Activation-Aware Compressor — Production-Hardened (v2).</p>
+<p>Registered as 'swift_svd_act', 'swift_svd', 'swift_svd_compressor'.</p>
+<p>Algorithm
+-----=
+1. Collect empirical cross-covariance C = E[Y^T X] per layer across
+calibration data (online accumulation, bounded memory).
+2. Extract principal activation subspaces:
+U_act = top-r left
+singular vectors of C
+V_act = top-r right singular vectors of C
+3. Project W onto (U_act, V_act):
+M = U_act^T @ W @ V_act
+4. SVD the projected matrix and reconstruct:
+A = U_act @ U_m · sqrt(S_m)
+B = sqrt(S_m) · Vt_m @ V_act^T
+5. Replace the dense layer with SVDLinear (or fall back to plain SVD).</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.swift_svd_act.swift_svd_act_factory"><code class="name flex">
+<span>def <span class="ident">swift_svd_act_factory</span></span>(<span>model: nn.Module, comp_config: Any = None, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;swift_svd_act_factory&#34;)
+def swift_svd_act_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Swift-SVD activation-aware factory function.&#34;&#34;&#34;
+    rank = kwargs.pop(
+        &#34;rank&#34;,
+        _cfg_get(comp_config, &#34;swift_svd_act_rank&#34;, _cfg_get(comp_config, &#34;rank&#34;, 64)),
+    )
+    max_error = kwargs.pop(&#34;max_error&#34;, _cfg_get(comp_config, &#34;max_error&#34;, 0.50))
+    fallback = kwargs.pop(
+        &#34;fallback_to_original&#34;, _cfg_get(comp_config, &#34;fallback_to_original&#34;, True)
+    )
+    lora_r = kwargs.pop(&#34;lora_r&#34;, _cfg_get(comp_config, &#34;lora_r&#34;, 0))
+    lora_alpha = kwargs.pop(&#34;lora_alpha&#34;, _cfg_get(comp_config, &#34;lora_alpha&#34;, 1.0))
+    target_attn = kwargs.pop(
+        &#34;target_attention_only&#34;, _cfg_get(comp_config, &#34;target_attention_only&#34;, False)
+    )
+    num_calib = kwargs.pop(
+        &#34;num_calibration_batches&#34;, _cfg_get(comp_config, &#34;num_calibration_batches&#34;, 8)
+    )
+    max_tokens = kwargs.pop(
+        &#34;max_calibration_tokens&#34;, _cfg_get(comp_config, &#34;max_calibration_tokens&#34;, 32768)
+    )
+    return_stats = kwargs.pop(&#34;return_stats&#34;, kwargs.pop(&#34;return_tuple&#34;, False))
+
+    compressor = SwiftSVDActivationCompressor(
+        model,
+        rank=rank,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        target_attention_only=target_attn,
+        num_calibration_batches=num_calib,
+        max_calibration_tokens=max_tokens,
+        comp_config=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>Swift-SVD activation-aware factory function.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.swift_svd_act.SwiftSVDActivationCompressor"><code class="flex name class">
+<span>class <span class="ident">SwiftSVDActivationCompressor</span></span>
+<span>(</span><span>model: nn.Module,<br>tokenizer: Any | None = None,<br>calibration_loader: Any | None = None,<br>calibration_texts: list[str] | None = None,<br>rank: int = 64,<br>max_error: float = 0.5,<br>fallback_to_original: bool = True,<br>target_attention_only: bool = False,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0,<br>skip_attention_qkv: bool = False,<br>min_rank: int = 4,<br>target_modules: list[str] | None = None,<br>num_calibration_batches: int = 8,<br>max_calibration_tokens: int = 32768,<br>use_fp64_cross_cov: bool = True,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;swift_svd_act&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;swift_svd&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;swift_svd_compressor&#34;)
+class SwiftSVDActivationCompressor(BaseCompressor):
+    &#34;&#34;&#34;
+    Swift-SVD Activation-Aware Compressor.
+
+    Captures empirical input-output cross-covariances across calibration data,
+    derives activation-aligned subspaces, projects weights onto the principal
+    activation subspace, and replaces dense nn.Linear / Conv1D layers with
+    factorized SVDLinear modules.
+    &#34;&#34;&#34;
+
+    # SW-FIX-09
+    is_custom_attention: bool = False
+
+    def __init__(
+        self,
+        model: nn.Module,
+        tokenizer: Any | None = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        rank: int = 64,
+        max_error: float = 0.50,
+        fallback_to_original: bool = True,
+        target_attention_only: bool = False,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        skip_attention_qkv: bool = False,
+        min_rank: int = 4,
+        target_modules: list[str] | None = None,
+        num_calibration_batches: int = 8,
+        max_calibration_tokens: int = 32768,
+        use_fp64_cross_cov: bool = True,  # SW-FIX-16
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;swift_svd_act&#34;, **kwargs)
+        cfg = kwargs.get(&#34;comp_config&#34;, kwargs.get(&#34;cfg&#34;))
+        if cfg is not None:
+            rank = _cfg_get(cfg, &#34;swift_svd_act_rank&#34;, _cfg_get(cfg, &#34;rank&#34;, rank))
+            tokenizer = _cfg_get(cfg, &#34;tokenizer&#34;, tokenizer)
+            calibration_loader = _cfg_get(cfg, &#34;calibration_loader&#34;, calibration_loader)
+            calibration_texts = _cfg_get(cfg, &#34;calibration_texts&#34;, calibration_texts)
+            max_error = _cfg_get(cfg, &#34;max_error&#34;, max_error)
+            fallback_to_original = _cfg_get(cfg, &#34;fallback_to_original&#34;, fallback_to_original)
+            target_attention_only = _cfg_get(cfg, &#34;target_attention_only&#34;, target_attention_only)
+            lora_r = _cfg_get(cfg, &#34;lora_r&#34;, lora_r)
+            lora_alpha = _cfg_get(cfg, &#34;lora_alpha&#34;, lora_alpha)
+            skip_attention_qkv = _cfg_get(cfg, &#34;skip_attention_qkv&#34;, skip_attention_qkv)
+            min_rank = _cfg_get(cfg, &#34;min_rank&#34;, min_rank)
+            num_calibration_batches = _cfg_get(
+                cfg, &#34;num_calibration_batches&#34;, num_calibration_batches
+            )
+            max_calibration_tokens = _cfg_get(cfg, &#34;max_calibration_tokens&#34;, max_calibration_tokens)
+            use_fp64_cross_cov = _cfg_get(cfg, &#34;use_fp64_cross_cov&#34;, use_fp64_cross_cov)
+
+        if &#34;rank&#34; in kwargs and kwargs[&#34;rank&#34;] is not None:
+            rank = kwargs[&#34;rank&#34;]
+
+        self.tokenizer = tokenizer
+        self.calibration_loader = calibration_loader
+        self.calibration_texts = calibration_texts
+        self.rank = int(rank)
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.target_attention_only = bool(target_attention_only)
+        self.lora_r = max(0, int(lora_r))
+        self.lora_alpha = float(lora_alpha)
+        self.skip_attention_qkv = bool(skip_attention_qkv)
+        self.min_rank = max(1, int(min_rank))
+        self.use_fp64_cross_cov = bool(use_fp64_cross_cov)
+
+        # SW-FIX-12: empty list → None
+        if target_modules is not None and len(target_modules) == 0:
+            target_modules = None
+        self.target_modules = target_modules
+
+        self.num_calibration_batches = max(1, int(num_calibration_batches))
+        self.max_calibration_tokens = max(1, int(max_calibration_tokens))
+
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.replaced_layers: list[dict[str, Any]] = []
+        self.stats: dict[str, Any] = {}
+        self._compressed_params: int = 0
+        self._orig_storage_bytes: int = 0
+        self._comp_storage_bytes: int = 0
+
+    # ------------------------------------------------------------------
+    # Target selection
+    # ------------------------------------------------------------------
+    def _is_gqa_asymmetric(self, name: str, module: nn.Module) -&gt; bool:
+        # SW-FIX-11: always active, not gated by skip_attention_qkv.
+        cfg = getattr(self.model, &#34;config&#34;, None)
+        if cfg is None:
+            return False
+        num_heads = getattr(cfg, &#34;num_attention_heads&#34;, None)
+        num_kv_heads = getattr(cfg, &#34;num_key_value_heads&#34;, None)
+        if num_heads is None or num_kv_heads is None:
+            return False
+        if num_kv_heads &gt;= num_heads:
+            return False
+        name_lower = name.lower()
+        return any(
+            p in name_lower
+            for p in (&#34;q_proj&#34;, &#34;k_proj&#34;, &#34;v_proj&#34;, &#34;query&#34;, &#34;key&#34;, &#34;value&#34;, &#34;c_attn&#34;)
+        )
+
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        name_l = name.lower()
+        if any(
+            k in name_l
+            for k in (
+                &#34;classifier&#34;,
+                &#34;score&#34;,
+                &#34;lm_head&#34;,
+                &#34;pooler&#34;,
+                &#34;embed&#34;,
+                &#34;logits_processor&#34;,
+            )
+        ):
+            return False
+
+        if isinstance(
+            module,
+            (nn.LayerNorm, nn.RMSNorm, nn.Embedding, nn.BatchNorm1d, nn.BatchNorm2d),
+        ):
+            return False
+
+        if self.target_attention_only:
+            attn_keywords = (
+                &#34;attn&#34;,
+                &#34;attention&#34;,
+                &#34;q_proj&#34;,
+                &#34;k_proj&#34;,
+                &#34;v_proj&#34;,
+                &#34;o_proj&#34;,
+                &#34;c_attn&#34;,
+                &#34;c_proj&#34;,
+                &#34;query&#34;,
+                &#34;key&#34;,
+                &#34;value&#34;,
+            )
+            if not any(k in name_l for k in attn_keywords):
+                return False
+
+        base_mod = getattr(module, &#34;base_layer&#34;, module)
+        cls_name = base_mod.__class__.__name__.lower()
+        is_linear_like = (
+            isinstance(base_mod, nn.Linear) or &#34;conv1d&#34; in cls_name or hasattr(base_mod, &#34;nf&#34;)
+        )
+        if not is_linear_like:
+            return False
+        if isinstance(base_mod, SVDLinear):
+            return False
+
+        try:
+            if not should_compress_linear(self.model, name):
+                return False
+        except Exception:
+            pass
+
+        if self._is_gqa_asymmetric(name, module):
+            return False
+
+        if self.target_modules is None:
+            return True
+        return any(t in name for t in self.target_modules)
+
+    # ------------------------------------------------------------------
+    # Calibration batch normalization (SW-FIX-02)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _normalize_calibration_batches(calib_inputs: Any) -&gt; list[Any]:
+        &#34;&#34;&#34;
+        Convert whatever `get_calibration_tensors` returns into a list of batches.
+
+        SW-FIX-02: A single tuple like `(input_ids, attention_mask)` is treated
+        as ONE batch, not as two batches. Detection rule: a batch is a tuple/
+        list ONLY IF its elements are themselves tensors/dicts AND the tuple
+        length is small (≤ 3). Otherwise, the top-level container is a list of
+        batches.
+        &#34;&#34;&#34;
+        if calib_inputs is None:
+            return []
+
+        # Single tensor / dict / small tuple → single batch
+        if isinstance(calib_inputs, torch.Tensor):
+            return [calib_inputs]
+        if isinstance(calib_inputs, dict):
+            return [calib_inputs]
+
+        if isinstance(calib_inputs, (list, tuple)):
+            if len(calib_inputs) == 0:
+                return []
+
+            # Case A: top-level list/tuple where every element is a batch
+            # (dict, tensor, or tuple-of-tensors)
+            all_batches = all(
+                isinstance(x, (dict, torch.Tensor, list, tuple)) for x in calib_inputs
+            )
+            if all_batches:
+                # Distinguish &#34;list of batches&#34; from &#34;single batch as tuple&#34;.
+                # Heuristic: single batch if the outer tuple contains only
+                # tensors (e.g., (input_ids, attention_mask)).
+                if (
+                    all(isinstance(x, torch.Tensor) for x in calib_inputs)
+                    and len(calib_inputs) &lt;= 3
+                ):
+                    return [calib_inputs]
+                # Otherwise, it&#39;s a list of batches.
+                return list(calib_inputs)
+
+        return [calib_inputs]
+
+    # ------------------------------------------------------------------
+    # Activation collection (SW-FIX-04, SW-FIX-07, SW-FIX-16)
+    # ------------------------------------------------------------------
+    def _collect_activations(self) -&gt; dict[str, tuple[torch.Tensor, int]]:
+        &#34;&#34;&#34;
+        Collect activations and accumulate cross-covariance C = E[Y^T X] per layer.
+
+        Returns {name: (cross_cov_fp32, n_tokens)}.
+        cross_cov shape: [out_features, in_features] in fp32 on CPU.
+        &#34;&#34;&#34;
+        accum: dict[str, dict[str, Any]] = {}
+        hooks = []
+        compute_dtype = torch.float64 if self.use_fp64_cross_cov else torch.float32
+
+        def make_hook(layer_name: str):
+            def hook(module: nn.Module, inp: tuple[Any, ...], outp: Any) -&gt; None:
+                if not inp or inp[0] is None:
+                    return
+                x_in = inp[0].detach()
+                if isinstance(outp, torch.Tensor):
+                    x_out = outp.detach()
+                elif (
+                    isinstance(outp, (tuple, list))
+                    and len(outp) &gt; 0
+                    and isinstance(outp[0], torch.Tensor)
+                ):
+                    x_out = outp[0].detach()
+                else:
+                    return
+
+                in_f = x_in.shape[-1]
+                out_f = x_out.shape[-1]
+
+                x_in_2d = x_in.reshape(-1, in_f).float()
+                x_out_2d = x_out.reshape(-1, out_f).float()
+
+                n = x_in_2d.shape[0]
+                if n &gt; self.max_calibration_tokens:
+                    x_in_2d = x_in_2d[: self.max_calibration_tokens]
+                    x_out_2d = x_out_2d[: self.max_calibration_tokens]
+                    n = self.max_calibration_tokens
+
+                if n == 0:
+                    return
+
+                if layer_name not in accum:
+                    accum[layer_name] = {
+                        &#34;cov&#34;: torch.zeros(out_f, in_f, dtype=compute_dtype),
+                        &#34;n&#34;: 0,
+                        &#34;in_f&#34;: in_f,
+                        &#34;out_f&#34;: out_f,
+                    }
+                elif accum[layer_name][&#34;in_f&#34;] != in_f or accum[layer_name][&#34;out_f&#34;] != out_f:
+                    # Shape changed across batches → skip
+                    return
+
+                with torch.no_grad():
+                    cov_local = (x_out_2d.to(compute_dtype).t() @ x_in_2d.to(compute_dtype)).cpu()
+                accum[layer_name][&#34;cov&#34;] += cov_local
+                accum[layer_name][&#34;n&#34;] += n
+
+            return hook
+
+        target_layers = [
+            (name, mod)
+            for name, mod in self.model.named_modules()
+            if self._is_target_module(name, mod)
+        ]
+        if not target_layers:
+            return {}
+
+        for name, mod in target_layers:
+            hooks.append(mod.register_forward_hook(make_hook(name)))
+
+        device = next(self.model.parameters(), torch.tensor(0.0)).device
+        self.model.eval()
+
+        try:
+            calib_inputs = get_calibration_tensors(
+                self.model,
+                tokenizer=self.tokenizer,
+                calibration_loader=self.calibration_loader,
+                calibration_texts=self.calibration_texts,
+                device=device,
+            )
+            batches = self._normalize_calibration_batches(calib_inputs)
+            n_batches = min(len(batches), self.num_calibration_batches)
+
+            if n_batches == 0:
+                logger.warning(&#34;SwiftSVDActivation: no calibration batches available.&#34;)
+                return {}
+
+            with torch.no_grad():
+                for i in range(n_batches):
+                    batch = batches[i]
+                    try:
+                        if isinstance(batch, dict):
+                            b_dev = {
+                                k: v.to(device) if isinstance(v, torch.Tensor) else v
+                                for k, v in batch.items()
+                            }
+                            self.model(**b_dev)
+                        elif isinstance(batch, torch.Tensor):
+                            self.model(batch.to(device))
+                        elif isinstance(batch, (list, tuple)):
+                            b_dev = [
+                                v.to(device) if isinstance(v, torch.Tensor) else v for v in batch
+                            ]
+                            self.model(*b_dev)
+                    except Exception as e:
+                        logger.debug(&#34;Calibration batch %d forward failed: %s&#34;, i, e)
+        finally:
+            for h in hooks:
+                h.remove()
+
+        aggregated: dict[str, tuple[torch.Tensor, int]] = {}
+        for name, data in accum.items():
+            n = max(1, data[&#34;n&#34;])
+            cov = (data[&#34;cov&#34;] / n).float()
+            aggregated[name] = (cov, int(n))
+        return aggregated
+
+    # ------------------------------------------------------------------
+    # LoRA rank detection (SW-FIX-03)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _detect_lora_rank(module: nn.Module) -&gt; int:
+        for attr in (&#34;r&#34;, &#34;lora_r&#34;, &#34;rank&#34;):
+            val = getattr(module, attr, None)
+            if isinstance(val, int) and val &gt; 0:
+                return val
+        la = getattr(module, &#34;lora_A&#34;, None)
+        if la is not None:
+            if hasattr(la, &#34;out_features&#34;):
+                try:
+                    return int(la.out_features)
+                except Exception:
+                    pass
+            if hasattr(la, &#34;weight&#34;) and la.weight is not None and la.weight.dim() &gt;= 1:
+                return int(la.weight.shape[0])
+            if isinstance(la, torch.Tensor) and la.dim() &gt;= 1:
+                return int(la.shape[0])
+        return 0
+
+    # ------------------------------------------------------------------
+    # Rank selection (SW-FIX-01, SW-FIX-13)
+    # ------------------------------------------------------------------
+    def _select_rank(self, in_f: int, out_f: int) -&gt; int:
+        &#34;&#34;&#34;
+        SW-FIX-13: clear, monotonic rank selection.
+
+        1. max_r = min(in_f, out_f)
+        2. Dense break-even rank (where param count of SVD == param count of dense):
+             2r(in + out) &lt; in · out  →  r &lt; in·out / (2(in+out))
+           We use `param_cap = (in·out) // (in + out) - 1` (a slightly stricter bound
+           often used in the codebase) and clamp to max_r.
+        3. requested_r = clamp(self.rank, self.min_rank, param_cap)
+        &#34;&#34;&#34;
+        max_r = min(in_f, out_f)
+        if in_f * out_f &gt; 16:
+            param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
+        else:
+            param_cap = max_r
+        param_cap = max(1, min(param_cap, max_r))
+
+        r_lower = min(self.min_rank, max_r, param_cap)
+        r_upper = min(self.rank, max_r, param_cap)
+
+        # SW-FIX-13: monotone selection — start from r_lower, aim for r_upper.
+        r = max(r_lower, r_upper)
+        r = max(1, min(r, param_cap))
+        return r
+
+    # ------------------------------------------------------------------
+    # Per-layer compression
+    # ------------------------------------------------------------------
+    def compress_linear(
+        self,
+        layer: nn.Module,
+        act_pair: tuple[torch.Tensor, int] | None = None,
+    ) -&gt; SVDLinear | None:
+        base_layer = getattr(layer, &#34;base_layer&#34;, layer)
+        raw_w = base_layer.weight.data
+        cls_name = base_layer.__class__.__name__.lower()
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(base_layer, &#34;nf&#34;)
+
+        W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
+        out_f, in_f = W.shape
+
+        r = self._select_rank(in_f, out_f)
+        device = raw_w.device
+        dtype = raw_w.dtype
+        A: torch.Tensor | None = None
+        B: torch.Tensor | None = None
+
+        # ---- Activation subspace projection ----
+        if act_pair is not None:
+            try:
+                cov, _n = act_pair
+                if cov.shape[0] == out_f and cov.shape[1] == in_f:
+                    C = cov.to(device=device, dtype=torch.float32)
+                    U_c, _, Vt_c = torch.linalg.svd(C, full_matrices=False)
+                    r_act = min(r, U_c.shape[1], Vt_c.shape[0])
+                    if r_act &gt; 0:
+                        U_act = U_c[:, :r_act]
+                        V_act = Vt_c[:r_act, :].t().contiguous()
+
+                        # M = U_act^T W V_act
+                        M = U_act.t().contiguous() @ W @ V_act
+                        U_m, S_m, Vt_m = torch.linalg.svd(M, full_matrices=False)
+                        r_act = min(r_act, len(S_m))
+                        if r_act &gt; 0:
+                            sqrt_S_m = torch.sqrt(torch.clamp(S_m[:r_act], min=1e-12))
+                            A = (U_act @ U_m[:, :r_act]) * sqrt_S_m.unsqueeze(0)
+                            B = sqrt_S_m.unsqueeze(1) @ (Vt_m[:r_act, :] @ V_act.t().contiguous())
+                            r = r_act
+            except Exception as e:
+                logger.debug(
+                    &#34;Activation subspace projection failed (%s). Falling back to direct SVD.&#34;,
+                    e,
+                )
+                A, B = None, None
+
+        # ---- Direct SVD fallback ----
+        if A is None or B is None:
+            try:
+                U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+                r = min(r, len(S))
+                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+                A = U[:, :r] * sqrt_S.unsqueeze(0)
+                B = sqrt_S.unsqueeze(1) @ Vt[:r, :]
+            except Exception as e:
+                logger.warning(&#34;SwiftSVDActivation SVD failure: %s&#34;, e)
+                return None
+
+        # ---- Error check ----
+        W_rec = A @ B
+        norm_orig = torch.norm(W, p=&#34;fro&#34;).item()
+        rel_err = (torch.norm(W - W_rec) / max(norm_orig, 1e-12)).item()
+
+        if not math.isfinite(rel_err) or rel_err &gt; self.max_error:
+            # Try direct SVD (may have better conditioning)
+            try:
+                U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+                r_d = min(r, len(S))
+                sqrt_S = torch.sqrt(torch.clamp(S[:r_d], min=1e-12))
+                A_d = U[:, :r_d] * sqrt_S.unsqueeze(0)
+                B_d = sqrt_S.unsqueeze(1) @ Vt[:r_d, :]
+                W_rec_d = A_d @ B_d
+                err_d = (torch.norm(W - W_rec_d) / max(norm_orig, 1e-12)).item()
+                if err_d &lt; rel_err:
+                    A, B, r, rel_err = A_d, B_d, r_d, err_d
+            except Exception as e:
+                logger.debug(&#34;Direct SVD fallback failed: %s&#34;, e)
+
+        # SW-FIX-14: preserve original on high error
+        if not math.isfinite(rel_err) or rel_err &gt; self.max_error:
+            logger.warning(
+                &#34;SwiftSVDActivation reconstruction error %.4f exceeded threshold %.4f on %s.&#34;,
+                rel_err,
+                self.max_error,
+                getattr(base_layer, &#34;_name&#34;, &#34;?&#34;),
+            )
+            return None
+
+        # ---- Build SVDLinear ----
+        effective_lora_r = self.lora_r
+        detected = self._detect_lora_rank(layer)
+        if detected &gt; 0:
+            effective_lora_r = detected
+
+        svd_layer = SVDLinear(
+            in_features=in_f,
+            out_features=out_f,
+            rank=r,
+            bias=base_layer.bias is not None,
+            dtype=dtype,
+            device=device,
+            lora_r=effective_lora_r,
+            lora_alpha=self.lora_alpha,
+        )
+        svd_layer.set_low_rank_factors(
+            U_factor=A.to(dtype=dtype, device=device),
+            V_factor=B.to(dtype=dtype, device=device),
+        )
+        if base_layer.bias is not None and svd_layer.bias is not None:
+            svd_layer.bias.data.copy_(base_layer.bias.data)
+
+        # ---- LoRA transfer ----
+        if effective_lora_r &gt; 0 and getattr(svd_layer, &#34;use_lora&#34;, False):
+            try:
+                src_lA = getattr(layer, &#34;lora_A&#34;, None)
+                src_lB = getattr(layer, &#34;lora_B&#34;, None)
+                if src_lA is not None and src_lB is not None:
+                    src_lA_w = getattr(src_lA, &#34;weight&#34;, src_lA)
+                    src_lB_w = getattr(src_lB, &#34;weight&#34;, src_lB)
+                    dst_lA_w = getattr(svd_layer.lora_A, &#34;weight&#34;, svd_layer.lora_A)
+                    dst_lB_w = getattr(svd_layer.lora_B, &#34;weight&#34;, svd_layer.lora_B)
+                    if src_lA_w.shape == dst_lA_w.shape:
+                        dst_lA_w.data.copy_(src_lA_w.data)
+                    if src_lB_w.shape == dst_lB_w.shape:
+                        dst_lB_w.data.copy_(src_lB_w.data)
+            except Exception as e:
+                logger.debug(&#34;LoRA transfer failed: %s&#34;, e)
+
+        svd_layer.reconstruction_error = rel_err
+        return svd_layer
+
+    # ------------------------------------------------------------------
+    # Weight-sharing detection
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _get_weight_tensor(module: nn.Module) -&gt; torch.Tensor | None:
+        base = getattr(module, &#34;base_layer&#34;, module)
+        return getattr(base, &#34;weight&#34;, None)
+
+    # ------------------------------------------------------------------
+    # Main compress
+    # ------------------------------------------------------------------
+    def compress(self, **kwargs: Any) -&gt; tuple[nn.Module, dict[str, Any]]:
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.skipped_layers = []
+        self.layer_errors = {}
+        self.replaced_layers = []
+        self._orig_storage_bytes = 0
+        self._comp_storage_bytes = 0
+        seen_weights: set[int] = set()
+
+        target_layers: list[tuple[str, nn.Module]] = []
+        for name, mod in list(self.model.named_modules()):
+            if not self._is_target_module(name, mod):
+                continue
+            w = self._get_weight_tensor(mod)
+            if w is None:
+                continue
+            w_id = id(w)
+            if w_id in seen_weights:
+                self.skipped_layers.append(name)
+                continue
+            seen_weights.add(w_id)
+            target_layers.append((name, mod))
+
+        if not target_layers:
+            logger.warning(&#34;SwiftSVDActivation: no compressible linear layers found.&#34;)
+            return self.model, self.get_compression_stats()
+
+        activations = self._collect_activations()
+
+        for name, module in target_layers:
+            act_pair = activations.get(name, None)
+            base_layer = getattr(module, &#34;base_layer&#34;, module)
+            raw_w = base_layer.weight.data
+
+            # Original bytes
+            orig_bytes = raw_w.numel() * raw_w.element_size()
+            if getattr(base_layer, &#34;bias&#34;, None) is not None:
+                orig_bytes += base_layer.bias.numel() * base_layer.bias.element_size()
+            self._orig_storage_bytes += orig_bytes
+
+            svd_layer = self.compress_linear(module, act_pair=act_pair)
+            if svd_layer is not None:
+                err = getattr(svd_layer, &#34;reconstruction_error&#34;, 0.0)
+                self.layer_errors[name] = err
+                self.replaced_layers.append(
+                    {
+                        &#34;name&#34;: name,
+                        &#34;rank&#34;: svd_layer.rank,
+                        &#34;error&#34;: err,
+                    }
+                )
+
+                if hasattr(module, &#34;base_layer&#34;):
+                    module.base_layer = svd_layer
+                    for attr in (&#34;lora_A&#34;, &#34;lora_B&#34;):
+                        sub = getattr(module, attr, None)
+                        if sub is None:
+                            continue
+                        params = sub.parameters() if hasattr(sub, &#34;parameters&#34;) else iter([sub])
+                        for p in params:
+                            if hasattr(p, &#34;requires_grad&#34;):
+                                p.requires_grad = True
+                else:
+                    replace_module(self.model, name, svd_layer)
+
+                self.compressed_layers.append(name)
+                # Honest byte count
+                comp_bytes = 0
+                for p in svd_layer.parameters():
+                    comp_bytes += p.numel() * p.element_size()
+                for b in svd_layer.buffers():
+                    if b is not None:
+                        comp_bytes += b.numel() * b.element_size()
+                self._comp_storage_bytes += comp_bytes
+            else:
+                self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
+                # Original storage retained
+                self._comp_storage_bytes += orig_bytes
+
+        # ---- Forward sanity check (SW-FIX-15) ----
+        forward_check_success = True
+        try:
+            with torch.no_grad():
+                dev = next(self.model.parameters(), torch.tensor(0.0)).device
+                cfg = getattr(self.model, &#34;config&#34;, None)
+                vocab = getattr(cfg, &#34;vocab_size&#34;, None) if cfg else None
+                if vocab is None:
+                    vocab = 100
+                dummy = torch.randint(0, min(vocab, 100), (1, 8), device=dev)
+                try:
+                    self.model(input_ids=dummy, attention_mask=torch.ones_like(dummy))
+                except Exception:
+                    try:
+                        self.model(dummy)
+                    except Exception as e2:
+                        logger.warning(&#34;Post-compression forward check failed: %s&#34;, e2)
+                        forward_check_success = False
+        except Exception as e:
+            logger.warning(&#34;Post-compression forward check warning: %s&#34;, e)
+            forward_check_success = False
+
+        try:
+            self._compressed_params = self._count_params(self.model)
+        except Exception:
+            self._compressed_params = sum(p.numel() for p in self.model.parameters())
+
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.compressed_layers)
+            / max(1, len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
+        try:
+            stats = self.get_compression_stats()
+        except Exception:
+            stats = {}
+
+        storage_ratio = (
+            self._orig_storage_bytes / self._comp_storage_bytes
+            if self._comp_storage_bytes &gt; 0
+            else 1.0
+        )
+        effective_ratio = (
+            self._comp_storage_bytes / self._orig_storage_bytes
+            if self._orig_storage_bytes &gt; 0
+            else 1.0
+        )
+
+        stats.update(
+            {
+                &#34;compressed_layers&#34;: self.compressed_layers,
+                &#34;fallback_layers&#34;: self.fallback_layers,
+                &#34;skipped_layers&#34;: self.skipped_layers,
+                &#34;num_compressed&#34;: len(self.compressed_layers),
+                &#34;num_fallback&#34;: len(self.fallback_layers),
+                &#34;num_skipped&#34;: len(self.skipped_layers),
+                &#34;layer_errors&#34;: self.layer_errors,
+                &#34;avg_reconstruction_error&#34;: avg_err,
+                &#34;max_error&#34;: self.max_error,
+                &#34;fallback_to_original&#34;: self.fallback_to_original,
+                &#34;lora_r&#34;: self.lora_r,
+                &#34;lora_alpha&#34;: self.lora_alpha,
+                # SW-FIX-10: honest accounting
+                &#34;orig_storage_bytes&#34;: self._orig_storage_bytes,
+                &#34;comp_storage_bytes&#34;: self._comp_storage_bytes,
+                &#34;storage_compression_ratio&#34;: round(storage_ratio, 3),
+                &#34;storage_reduction_pct&#34;: round(100.0 * (1.0 - effective_ratio), 2),
+                &#34;effective_parameter_ratio&#34;: round(effective_ratio, 4),
+                &#34;forward_check_success&#34;: forward_check_success,
+                &#34;method&#34;: &#34;swift_svd_act&#34;,
+            }
+        )
+        self.stats = stats
+        logger.info(
+            &#34;Swift-SVD-ACT: %d compressed, %d fallback, avg_err=%.4f, storage_ratio=%.2fx&#34;,
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            storage_ratio,
+        )
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Swift-SVD Activation-Aware Compressor.</p>
+<p>Captures empirical input-output cross-covariances across calibration data,
+derives activation-aligned subspaces, projects weights onto the principal
+activation subspace, and replaces dense nn.Linear / Conv1D layers with
+factorized SVDLinear modules.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.swift_svd_act.SwiftSVDActivationCompressor.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.swift_svd_act.SwiftSVDActivationCompressor.compress_linear"><code class="name flex">
+<span>def <span class="ident">compress_linear</span></span>(<span>self, layer: nn.Module, act_pair: tuple[torch.Tensor, int] | None = None) ‑> <a title="neuralops.compression_engine.aa_svd_compressor.SVDLinear" href="aa_svd_compressor.html#neuralops.compression_engine.aa_svd_compressor.SVDLinear">SVDLinear</a> | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress_linear(
+    self,
+    layer: nn.Module,
+    act_pair: tuple[torch.Tensor, int] | None = None,
+) -&gt; SVDLinear | None:
+    base_layer = getattr(layer, &#34;base_layer&#34;, layer)
+    raw_w = base_layer.weight.data
+    cls_name = base_layer.__class__.__name__.lower()
+    is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(base_layer, &#34;nf&#34;)
+
+    W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
+    out_f, in_f = W.shape
+
+    r = self._select_rank(in_f, out_f)
+    device = raw_w.device
+    dtype = raw_w.dtype
+    A: torch.Tensor | None = None
+    B: torch.Tensor | None = None
+
+    # ---- Activation subspace projection ----
+    if act_pair is not None:
+        try:
+            cov, _n = act_pair
+            if cov.shape[0] == out_f and cov.shape[1] == in_f:
+                C = cov.to(device=device, dtype=torch.float32)
+                U_c, _, Vt_c = torch.linalg.svd(C, full_matrices=False)
+                r_act = min(r, U_c.shape[1], Vt_c.shape[0])
+                if r_act &gt; 0:
+                    U_act = U_c[:, :r_act]
+                    V_act = Vt_c[:r_act, :].t().contiguous()
+
+                    # M = U_act^T W V_act
+                    M = U_act.t().contiguous() @ W @ V_act
+                    U_m, S_m, Vt_m = torch.linalg.svd(M, full_matrices=False)
+                    r_act = min(r_act, len(S_m))
+                    if r_act &gt; 0:
+                        sqrt_S_m = torch.sqrt(torch.clamp(S_m[:r_act], min=1e-12))
+                        A = (U_act @ U_m[:, :r_act]) * sqrt_S_m.unsqueeze(0)
+                        B = sqrt_S_m.unsqueeze(1) @ (Vt_m[:r_act, :] @ V_act.t().contiguous())
+                        r = r_act
+        except Exception as e:
+            logger.debug(
+                &#34;Activation subspace projection failed (%s). Falling back to direct SVD.&#34;,
+                e,
+            )
+            A, B = None, None
+
+    # ---- Direct SVD fallback ----
+    if A is None or B is None:
+        try:
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            r = min(r, len(S))
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            A = U[:, :r] * sqrt_S.unsqueeze(0)
+            B = sqrt_S.unsqueeze(1) @ Vt[:r, :]
+        except Exception as e:
+            logger.warning(&#34;SwiftSVDActivation SVD failure: %s&#34;, e)
+            return None
+
+    # ---- Error check ----
+    W_rec = A @ B
+    norm_orig = torch.norm(W, p=&#34;fro&#34;).item()
+    rel_err = (torch.norm(W - W_rec) / max(norm_orig, 1e-12)).item()
+
+    if not math.isfinite(rel_err) or rel_err &gt; self.max_error:
+        # Try direct SVD (may have better conditioning)
+        try:
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            r_d = min(r, len(S))
+            sqrt_S = torch.sqrt(torch.clamp(S[:r_d], min=1e-12))
+            A_d = U[:, :r_d] * sqrt_S.unsqueeze(0)
+            B_d = sqrt_S.unsqueeze(1) @ Vt[:r_d, :]
+            W_rec_d = A_d @ B_d
+            err_d = (torch.norm(W - W_rec_d) / max(norm_orig, 1e-12)).item()
+            if err_d &lt; rel_err:
+                A, B, r, rel_err = A_d, B_d, r_d, err_d
+        except Exception as e:
+            logger.debug(&#34;Direct SVD fallback failed: %s&#34;, e)
+
+    # SW-FIX-14: preserve original on high error
+    if not math.isfinite(rel_err) or rel_err &gt; self.max_error:
+        logger.warning(
+            &#34;SwiftSVDActivation reconstruction error %.4f exceeded threshold %.4f on %s.&#34;,
+            rel_err,
+            self.max_error,
+            getattr(base_layer, &#34;_name&#34;, &#34;?&#34;),
+        )
+        return None
+
+    # ---- Build SVDLinear ----
+    effective_lora_r = self.lora_r
+    detected = self._detect_lora_rank(layer)
+    if detected &gt; 0:
+        effective_lora_r = detected
+
+    svd_layer = SVDLinear(
+        in_features=in_f,
+        out_features=out_f,
+        rank=r,
+        bias=base_layer.bias is not None,
+        dtype=dtype,
+        device=device,
+        lora_r=effective_lora_r,
+        lora_alpha=self.lora_alpha,
+    )
+    svd_layer.set_low_rank_factors(
+        U_factor=A.to(dtype=dtype, device=device),
+        V_factor=B.to(dtype=dtype, device=device),
+    )
+    if base_layer.bias is not None and svd_layer.bias is not None:
+        svd_layer.bias.data.copy_(base_layer.bias.data)
+
+    # ---- LoRA transfer ----
+    if effective_lora_r &gt; 0 and getattr(svd_layer, &#34;use_lora&#34;, False):
+        try:
+            src_lA = getattr(layer, &#34;lora_A&#34;, None)
+            src_lB = getattr(layer, &#34;lora_B&#34;, None)
+            if src_lA is not None and src_lB is not None:
+                src_lA_w = getattr(src_lA, &#34;weight&#34;, src_lA)
+                src_lB_w = getattr(src_lB, &#34;weight&#34;, src_lB)
+                dst_lA_w = getattr(svd_layer.lora_A, &#34;weight&#34;, svd_layer.lora_A)
+                dst_lB_w = getattr(svd_layer.lora_B, &#34;weight&#34;, svd_layer.lora_B)
+                if src_lA_w.shape == dst_lA_w.shape:
+                    dst_lA_w.data.copy_(src_lA_w.data)
+                if src_lB_w.shape == dst_lB_w.shape:
+                    dst_lB_w.data.copy_(src_lB_w.data)
+        except Exception as e:
+            logger.debug(&#34;LoRA transfer failed: %s&#34;, e)
+
+    svd_layer.reconstruction_error = rel_err
+    return svd_layer</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.compress" href="../core/base.html#neuralops.core.base.BaseCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.swift_svd_act.swift_svd_act_factory" href="#neuralops.compression_engine.swift_svd_act.swift_svd_act_factory">swift_svd_act_factory</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.swift_svd_act.SwiftSVDActivationCompressor" href="#neuralops.compression_engine.swift_svd_act.SwiftSVDActivationCompressor">SwiftSVDActivationCompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.swift_svd_act.SwiftSVDActivationCompressor.compress_linear" href="#neuralops.compression_engine.swift_svd_act.SwiftSVDActivationCompressor.compress_linear">compress_linear</a></code></li>
+<li><code><a title="neuralops.compression_engine.swift_svd_act.SwiftSVDActivationCompressor.is_custom_attention" href="#neuralops.compression_engine.swift_svd_act.SwiftSVDActivationCompressor.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.replaceme_compressor API documentation</title>
+<meta name="description" content="ReplaceMe: Layer Removal and Replacement with Linear Residual Block …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.replaceme_compressor</code></h1>
+</header>
+<section id="section-intro">
+<p>ReplaceMe: Layer Removal and Replacement with Linear Residual Block.</p>
+<p>Replaces the last N layers of a Transformer encoder or decoder with a compatible
+LayerNorm + Linear residual block with optional trainable LoRA fine-tuning adapters.</p>
+<p>Registered in COMPRESSOR_REGISTRY as 'replaceme', 'replaceme_compressor', and 'replaceme_factory'.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.replaceme_compressor.replaceme_compressor_factory"><code class="name flex">
+<span>def <span class="ident">replaceme_compressor_factory</span></span>(<span>model: Any,<br>comp_config: Any = None,<br>return_stats: bool = False,<br>return_tuple: bool = False,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module | tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;replaceme_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;replaceme_compressor_factory&#34;)
+def replaceme_factory(
+    model: Any,
+    comp_config: Any = None,
+    return_stats: bool = False,
+    return_tuple: bool = False,
+    **kwargs: Any,
+) -&gt; nn.Module | tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;ReplaceMe compressor factory function.&#34;&#34;&#34;
+    remove_layers = kwargs.pop(&#34;remove_layers&#34;, _cfg_get(comp_config, &#34;remove_layers&#34;, 2))
+    use_lora = kwargs.pop(&#34;use_lora&#34;, _cfg_get(comp_config, &#34;use_lora&#34;, False))
+    lora_r = kwargs.pop(&#34;lora_r&#34;, _cfg_get(comp_config, &#34;lora_r&#34;, 0))
+    lora_alpha = kwargs.pop(&#34;lora_alpha&#34;, _cfg_get(comp_config, &#34;lora_alpha&#34;, 1.0))
+    fallback = kwargs.pop(
+        &#34;fallback_to_original&#34;, _cfg_get(comp_config, &#34;fallback_to_original&#34;, True)
+    )
+
+    compressor = ReplaceMeCompressor(
+        model,
+        remove_layers=remove_layers,
+        use_lora=use_lora,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        fallback_to_original=fallback,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_stats or return_tuple or kwargs.pop(&#34;return_both&#34;, False):
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>ReplaceMe compressor factory function.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.replaceme_compressor.replaceme_factory"><code class="name flex">
+<span>def <span class="ident">replaceme_factory</span></span>(<span>model: Any,<br>comp_config: Any = None,<br>return_stats: bool = False,<br>return_tuple: bool = False,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module | tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;replaceme_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;replaceme_compressor_factory&#34;)
+def replaceme_factory(
+    model: Any,
+    comp_config: Any = None,
+    return_stats: bool = False,
+    return_tuple: bool = False,
+    **kwargs: Any,
+) -&gt; nn.Module | tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;ReplaceMe compressor factory function.&#34;&#34;&#34;
+    remove_layers = kwargs.pop(&#34;remove_layers&#34;, _cfg_get(comp_config, &#34;remove_layers&#34;, 2))
+    use_lora = kwargs.pop(&#34;use_lora&#34;, _cfg_get(comp_config, &#34;use_lora&#34;, False))
+    lora_r = kwargs.pop(&#34;lora_r&#34;, _cfg_get(comp_config, &#34;lora_r&#34;, 0))
+    lora_alpha = kwargs.pop(&#34;lora_alpha&#34;, _cfg_get(comp_config, &#34;lora_alpha&#34;, 1.0))
+    fallback = kwargs.pop(
+        &#34;fallback_to_original&#34;, _cfg_get(comp_config, &#34;fallback_to_original&#34;, True)
+    )
+
+    compressor = ReplaceMeCompressor(
+        model,
+        remove_layers=remove_layers,
+        use_lora=use_lora,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        fallback_to_original=fallback,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_stats or return_tuple or kwargs.pop(&#34;return_both&#34;, False):
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>ReplaceMe compressor factory function.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.replaceme_compressor.ReplaceMeCompressor"><code class="flex name class">
+<span>class <span class="ident">ReplaceMeCompressor</span></span>
+<span>(</span><span>model: nn.Module,<br>remove_layers: int = 2,<br>use_lora: bool = False,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0,<br>fallback_to_original: bool = True,<br>device: str | torch.device | None = None,<br>config: Any | None = None,<br>cfg: Any | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;replaceme&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;replaceme_compressor&#34;)
+class ReplaceMeCompressor(BaseCompressor):
+    &#34;&#34;&#34;
+    Replaces the trailing N layers of a Transformer with a lightweight
+    LayerNorm + Linear residual block.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        model: nn.Module,
+        remove_layers: int = 2,
+        use_lora: bool = False,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        fallback_to_original: bool = True,
+        device: str | torch.device | None = None,
+        config: Any | None = None,
+        cfg: Any | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;replaceme&#34;, **kwargs)
+        cfg_obj = cfg or config or kwargs.get(&#34;comp_config&#34;)
+
+        self.remove_layers = max(
+            1,
+            int(
+                remove_layers
+                if remove_layers is not None
+                else _cfg_get(cfg_obj, &#34;remove_layers&#34;, 2)
+            ),
+        )
+        self.use_lora = bool(use_lora or _cfg_get(cfg_obj, &#34;use_lora&#34;, False) or (lora_r &gt; 0))
+        self.lora_r = int(lora_r or _cfg_get(cfg_obj, &#34;lora_r&#34;, 0))
+        self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, &#34;lora_alpha&#34;, 1.0))
+        self.fallback_to_original = bool(
+            fallback_to_original
+            if fallback_to_original is not None
+            else _cfg_get(cfg_obj, &#34;fallback_to_original&#34;, True)
+        )
+
+        # Device resolution
+        if device is not None:
+            try:
+                self.target_device = torch.device(device)
+            except Exception:
+                self.target_device = (
+                    next(model.parameters()).device
+                    if list(model.parameters())
+                    else torch.device(&#34;cpu&#34;)
+                )
+        else:
+            self.target_device = (
+                next(model.parameters()).device if list(model.parameters()) else torch.device(&#34;cpu&#34;)
+            )
+
+    # ------------------------------------------------------------------
+    def _find_transformer_layers(self) -&gt; nn.ModuleList | None:
+        &#34;&#34;&#34;Locate the transformer layer list across common architectures.&#34;&#34;&#34;
+        # Ordered list of attribute paths (most specific first).
+        candidates = [
+            (&#34;distilbert&#34;, &#34;transformer&#34;, &#34;layer&#34;),
+            (&#34;roberta&#34;, &#34;encoder&#34;, &#34;layer&#34;),
+            (&#34;bert&#34;, &#34;encoder&#34;, &#34;layer&#34;),
+            (&#34;encoder&#34;, &#34;layer&#34;),
+            (&#34;transformer&#34;, &#34;h&#34;),  # GPT-2
+            (&#34;transformer&#34;, &#34;layer&#34;),
+            (&#34;model&#34;, &#34;layers&#34;),  # LLaMA / Qwen
+        ]
+        for path in candidates:
+            curr = self.model
+            ok = True
+            for attr in path:
+                if hasattr(curr, attr):
+                    curr = getattr(curr, attr)
+                else:
+                    ok = False
+                    break
+            if ok and isinstance(curr, (nn.ModuleList, list)) and len(curr) &gt; 0:
+                return curr
+
+        # Fallback: scan for the first long ModuleList whose elements look like
+        # transformer layers.
+        for _, module in self.model.named_modules():
+            if isinstance(module, nn.ModuleList) and len(module) &gt;= 2:
+                first_cls = module[0].__class__.__name__.lower()
+                if any(k in first_cls for k in (&#34;layer&#34;, &#34;block&#34;, &#34;decoderlayer&#34;, &#34;encoderlayer&#34;)):
+                    return module
+        return None
+
+    # ------------------------------------------------------------------
+    def _infer_hidden_size(self, layers: nn.ModuleList) -&gt; int:
+        # Try config first.
+        cfg = getattr(self.model, &#34;config&#34;, None)
+        if cfg is not None:
+            for key in (&#34;hidden_size&#34;, &#34;d_model&#34;, &#34;dim&#34;, &#34;n_embd&#34;):
+                v = _cfg_get(cfg, key, None)
+                if isinstance(v, int) and v &gt; 0:
+                    return int(v)
+        # Fallback: inspect first layer&#39;s parameters.
+        try:
+            first_layer = layers[0]
+            for p in first_layer.parameters():
+                if p.dim() == 2:
+                    return int(p.shape[-1])
+        except Exception:
+            pass
+        return 768  # last-resort default
+
+    # ------------------------------------------------------------------
+    def compress(self, **kwargs: Any) -&gt; tuple[nn.Module, dict[str, Any]]:
+        layers = self._find_transformer_layers()
+        layers_replaced = 0
+        fallback_layers: list[int] = []
+
+        if layers is None:
+            logger.warning(&#34;ReplaceMe: could not locate transformer layer list.&#34;)
+            stats = self.get_compression_stats()
+            stats.update(
+                {
+                    &#34;layers_removed&#34;: 0,
+                    &#34;layers_replaced&#34;: 0,
+                    &#34;fallback_layers&#34;: [],
+                    &#34;fallback_count&#34;: 0,
+                    &#34;target_removed&#34;: self.remove_layers,
+                    &#34;hidden_size&#34;: None,
+                    &#34;forward_check_success&#34;: False,
+                    &#34;use_lora&#34;: self.use_lora,
+                    &#34;lora_r&#34;: self.lora_r,
+                    &#34;method&#34;: &#34;replaceme&#34;,
+                }
+            )
+            self.stats = stats
+            return self.model, stats
+
+        hidden_size = self._infer_hidden_size(layers)
+        num_layers = len(layers)
+        n_remove = min(self.remove_layers, num_layers)
+
+        target_dtype = (
+            next(self.model.parameters()).dtype if list(self.model.parameters()) else torch.float32
+        )
+
+        for i in range(num_layers - n_remove, num_layers):
+            old_layer = layers[i]
+
+            # Detect whether the original layer returns a tuple.
+            try:
+                dummy_h = torch.randn(
+                    1,
+                    4,
+                    hidden_size,
+                    device=self.target_device,
+                    dtype=target_dtype,
+                )
+                with torch.no_grad():
+                    old_out = old_layer(dummy_h)
+                return_tuple = isinstance(old_out, (tuple, list))
+            except Exception as e:
+                logger.debug(
+                    &#34;ReplaceMe: could not probe layer %d output type (%s); &#34;
+                    &#34;defaulting to tuple=True.&#34;,
+                    i,
+                    e,
+                )
+                return_tuple = True
+
+            new_block = ReplacementBlock(
+                hidden_size,
+                lora_r=self.lora_r if self.use_lora else 0,
+                lora_alpha=self.lora_alpha,
+                return_tuple=return_tuple,
+                device=self.target_device,
+                dtype=target_dtype,
+            )
+            layers[i] = new_block
+            layers_replaced += 1
+
+        # Forward sanity check
+        forward_check_success = True
+        try:
+            with torch.no_grad():
+                dummy_input = torch.randint(
+                    0,
+                    100,
+                    (1, 8),
+                    device=self.target_device,
+                )
+                try:
+                    self.model(input_ids=dummy_input)
+                except Exception:
+                    # Some non-HF models expect positional arg.
+                    self.model(dummy_input)
+        except Exception as e:
+            logger.warning(&#34;ReplaceMe forward sanity check failed: %s&#34;, e)
+            forward_check_success = False
+
+        self._compressed_params = self._count_params(self.model)
+        stats = self.get_compression_stats()
+        stats.update(
+            {
+                &#34;layers_removed&#34;: layers_replaced,
+                &#34;layers_replaced&#34;: layers_replaced,
+                &#34;fallback_layers&#34;: fallback_layers,  # RM-FIX-03: list of indices
+                &#34;fallback_count&#34;: len(fallback_layers),
+                &#34;target_removed&#34;: self.remove_layers,
+                &#34;hidden_size&#34;: hidden_size,
+                &#34;forward_check_success&#34;: forward_check_success,
+                &#34;use_lora&#34;: self.use_lora,
+                &#34;lora_r&#34;: self.lora_r,
+                &#34;method&#34;: &#34;replaceme&#34;,
+            }
+        )
+        self.stats = stats
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Replaces the trailing N layers of a Transformer with a lightweight
+LayerNorm + Linear residual block.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.compress" href="../core/base.html#neuralops.core.base.BaseCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.compression_engine.replaceme_compressor.ReplacementBlock"><code class="flex name class">
+<span>class <span class="ident">ReplacementBlock</span></span>
+<span>(</span><span>hidden_size: int,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0,<br>return_tuple: bool = True,<br>device: torch.device | None = None,<br>dtype: torch.dtype | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ReplacementBlock(nn.Module):
+    &#34;&#34;&#34;
+    Drop-in replacement for a transformer layer.
+
+    Preserves tensor shapes and maintains signal propagation via a residual
+    connection with optional LoRA fine-tuning adapters.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        hidden_size: int,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        return_tuple: bool = True,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -&gt; None:
+        super().__init__()
+        self.hidden_size = hidden_size
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.return_tuple = bool(return_tuple)
+        self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r &gt; 0 else 1.0
+
+        self.ln = nn.LayerNorm(hidden_size, device=device, dtype=dtype)
+        self.linear = nn.Linear(hidden_size, hidden_size, device=device, dtype=dtype)
+        # Zero-init → block starts as near-identity
+        nn.init.zeros_(self.linear.weight)
+        if self.linear.bias is not None:
+            nn.init.zeros_(self.linear.bias)
+
+        if self.lora_r &gt; 0:
+            self.linear.weight.requires_grad = False
+            if self.linear.bias is not None:
+                self.linear.bias.requires_grad = False
+            self.lora_A = nn.Parameter(
+                torch.empty((self.lora_r, hidden_size), dtype=torch.float32, device=device)
+            )
+            self.lora_B = nn.Parameter(
+                torch.zeros((hidden_size, self.lora_r), dtype=torch.float32, device=device)
+            )
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor | tuple[torch.Tensor, ...] | Any,
+        *args: Any,
+        **kwargs: Any,
+    ) -&gt; torch.Tensor | tuple[torch.Tensor, ...]:
+        # Extract primary tensor
+        if isinstance(hidden_states, (tuple, list)):
+            primary = hidden_states[0]
+        elif hasattr(hidden_states, &#34;last_hidden_state&#34;):
+            primary = hidden_states.last_hidden_state
+        else:
+            primary = hidden_states
+
+        normed = self.ln(primary)
+        delta = self.linear(normed)
+        if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_delta = F.linear(F.linear(normed.float(), self.lora_A), self.lora_B) * self.scaling
+            delta = delta + lora_delta.to(delta.dtype)
+
+        out = primary + delta
+
+        # RM-FIX-02: return correct tuple shape
+        if self.return_tuple:
+            return (out,)
+        return out</code></pre>
+</details>
+<div class="desc"><p>Drop-in replacement for a transformer layer.</p>
+<p>Preserves tensor shapes and maintains signal propagation via a residual
+connection with optional LoRA fine-tuning adapters.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.replaceme_compressor.ReplacementBlock.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self,<br>hidden_states: torch.Tensor | tuple[torch.Tensor, ...] | Any,<br>*args: Any,<br>**kwargs: Any) ‑> torch.Tensor | tuple[torch.Tensor, ...]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(
+    self,
+    hidden_states: torch.Tensor | tuple[torch.Tensor, ...] | Any,
+    *args: Any,
+    **kwargs: Any,
+) -&gt; torch.Tensor | tuple[torch.Tensor, ...]:
+    # Extract primary tensor
+    if isinstance(hidden_states, (tuple, list)):
+        primary = hidden_states[0]
+    elif hasattr(hidden_states, &#34;last_hidden_state&#34;):
+        primary = hidden_states.last_hidden_state
+    else:
+        primary = hidden_states
+
+    normed = self.ln(primary)
+    delta = self.linear(normed)
+    if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        lora_delta = F.linear(F.linear(normed.float(), self.lora_A), self.lora_B) * self.scaling
+        delta = delta + lora_delta.to(delta.dtype)
+
+    out = primary + delta
+
+    # RM-FIX-02: return correct tuple shape
+    if self.return_tuple:
+        return (out,)
+    return out</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.replaceme_compressor.replaceme_compressor_factory" href="#neuralops.compression_engine.replaceme_compressor.replaceme_compressor_factory">replaceme_compressor_factory</a></code></li>
+<li><code><a title="neuralops.compression_engine.replaceme_compressor.replaceme_factory" href="#neuralops.compression_engine.replaceme_compressor.replaceme_factory">replaceme_factory</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.replaceme_compressor.ReplaceMeCompressor" href="#neuralops.compression_engine.replaceme_compressor.ReplaceMeCompressor">ReplaceMeCompressor</a></code></h4>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.replaceme_compressor.ReplacementBlock" href="#neuralops.compression_engine.replaceme_compressor.ReplacementBlock">ReplacementBlock</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.replaceme_compressor.ReplacementBlock.forward" href="#neuralops.compression_engine.replaceme_compressor.ReplacementBlock.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.sdrm_compressor API documentation</title>
+<meta name="description" content="SDRM: Scaled Dimension Rank Modulation.
+Assigns layer rank proportional to parameter budget for edge inference and factorizes
+into low-rank SVDLinear …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.sdrm_compressor</code></h1>
+</header>
+<section id="section-intro">
+<p>SDRM: Scaled Dimension Rank Modulation.
+Assigns layer rank proportional to parameter budget for edge inference and factorizes
+into low-rank SVDLinear layers to achieve physical parameter reduction.
+Registered as 'sdrm', 'sdrm_factory', and 'sdrm_compressor_factory'.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.sdrm_compressor.sdrm_compressor_factory"><code class="name flex">
+<span>def <span class="ident">sdrm_compressor_factory</span></span>(<span>model: Any,<br>comp_config: Any = None,<br>return_stats: bool = False,<br>return_tuple: bool = False,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module | tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;sdrm&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;sdrm_compressor&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;sdrm_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;sdrm_compressor_factory&#34;)
+def sdrm_compressor_factory(
+    model: Any,
+    comp_config: Any = None,
+    return_stats: bool = False,
+    return_tuple: bool = False,
+    **kwargs: Any,
+) -&gt; nn.Module | tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;SDRM compressor factory returning (compressed_model, stats) when requested.&#34;&#34;&#34;
+    total_param_ratio = kwargs.pop(
+        &#34;total_param_ratio&#34;,
+        kwargs.pop(
+            &#34;ratio&#34;,
+            _cfg_get(comp_config, &#34;total_param_ratio&#34;, _cfg_get(comp_config, &#34;ratio&#34;, 0.7)),
+        ),
+    )
+    min_rank = kwargs.pop(&#34;min_rank&#34;, _cfg_get(comp_config, &#34;min_rank&#34;, 8))
+    skip_attention_qkv = kwargs.pop(
+        &#34;skip_attention_qkv&#34;, _cfg_get(comp_config, &#34;skip_attention_qkv&#34;, False)
+    )
+    target_attention_only = kwargs.pop(
+        &#34;target_attention_only&#34;, _cfg_get(comp_config, &#34;target_attention_only&#34;, False)
+    )
+    use_lora = kwargs.pop(&#34;use_lora&#34;, _cfg_get(comp_config, &#34;use_lora&#34;, False))
+    lora_r = kwargs.pop(&#34;lora_r&#34;, _cfg_get(comp_config, &#34;lora_r&#34;, 0))
+    lora_alpha = kwargs.pop(&#34;lora_alpha&#34;, _cfg_get(comp_config, &#34;lora_alpha&#34;, 1.0))
+    max_error = kwargs.pop(&#34;max_error&#34;, _cfg_get(comp_config, &#34;max_error&#34;, 0.50))
+    fallback = kwargs.pop(
+        &#34;fallback_to_original&#34;, _cfg_get(comp_config, &#34;fallback_to_original&#34;, True)
+    )
+
+    compressor = SDRMCompressor(
+        model,
+        total_param_ratio=total_param_ratio,
+        min_rank=min_rank,
+        skip_attention_qkv=skip_attention_qkv,
+        target_attention_only=target_attention_only,
+        use_lora=use_lora,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_stats or return_tuple or kwargs.pop(&#34;return_both&#34;, False):
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>SDRM compressor factory returning (compressed_model, stats) when requested.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.sdrm_compressor.SDRMCompressor"><code class="flex name class">
+<span>class <span class="ident">SDRMCompressor</span></span>
+<span>(</span><span>model: nn.Module,<br>total_param_ratio: float = 0.7,<br>min_rank: int = 8,<br>skip_attention_qkv: bool = False,<br>target_attention_only: bool = False,<br>use_lora: bool = False,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0,<br>target_modules: list[str] | None = None,<br>max_error: float = 0.5,<br>fallback_to_original: bool = True,<br>min_numel: int = 16,<br>device: str | torch.device | None = None,<br>cfg: Any | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;sdrm_class&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;sdrm_compressor_class&#34;)
+class SDRMCompressor(BaseCompressor):
+    is_custom_attention: bool = True
+    &#34;&#34;&#34;
+    SDRM: Scaled Dimension Rank Modulation.
+    Assigns layer rank proportional to parameter budget for edge inference and factorizes
+    target layers into low-rank SVDLinear modules with optional LoRA fine-tuning adapters.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        model: nn.Module,
+        total_param_ratio: float = 0.7,
+        min_rank: int = 8,
+        skip_attention_qkv: bool = False,
+        target_attention_only: bool = False,
+        use_lora: bool = False,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        target_modules: list[str] | None = None,
+        max_error: float = 0.50,
+        fallback_to_original: bool = True,
+        min_numel: int = 16,
+        device: str | torch.device | None = None,
+        cfg: Any | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;sdrm&#34;, **kwargs)
+        cfg_obj = cfg or kwargs.get(&#34;comp_config&#34;)
+
+        self.total_param_ratio = max(
+            0.05,
+            min(
+                float(
+                    total_param_ratio
+                    or _cfg_get(cfg_obj, &#34;total_param_ratio&#34;, _cfg_get(cfg_obj, &#34;ratio&#34;, 0.7))
+                ),
+                1.0,
+            ),
+        )
+        self.min_rank = max(1, int(min_rank or _cfg_get(cfg_obj, &#34;min_rank&#34;, 8)))
+        self.skip_attention_qkv = bool(
+            skip_attention_qkv
+            if skip_attention_qkv is not None
+            else _cfg_get(cfg_obj, &#34;skip_attention_qkv&#34;, False)
+        )
+        self.target_attention_only = bool(
+            target_attention_only
+            if target_attention_only is not None
+            else _cfg_get(cfg_obj, &#34;target_attention_only&#34;, False)
+        )
+        self.use_lora = bool(use_lora or _cfg_get(cfg_obj, &#34;use_lora&#34;, False) or (lora_r &gt; 0))
+        self.lora_r = int(lora_r or _cfg_get(cfg_obj, &#34;lora_r&#34;, 0))
+        self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, &#34;lora_alpha&#34;, 1.0))
+        self.target_modules = target_modules
+        self.max_error = float(max_error or _cfg_get(cfg_obj, &#34;max_error&#34;, 0.50))
+        self.fallback_to_original = bool(
+            fallback_to_original
+            if fallback_to_original is not None
+            else _cfg_get(cfg_obj, &#34;fallback_to_original&#34;, True)
+        )
+        self.min_numel = max(1, int(min_numel or _cfg_get(cfg_obj, &#34;min_numel&#34;, 16)))
+        self.protect_output_proj: bool = bool(_cfg_get(cfg_obj, &#34;protect_output_proj&#34;, True))
+
+        # Target device derivation
+        if device is not None:
+            try:
+                self.target_device = torch.device(device)
+            except Exception:
+                self.target_device = (
+                    next(model.parameters()).device
+                    if list(model.parameters())
+                    else torch.device(&#34;cpu&#34;)
+                )
+        else:
+            self.target_device = (
+                next(model.parameters()).device if list(model.parameters()) else torch.device(&#34;cpu&#34;)
+            )
+
+        # Diagnostics &amp; Tracking
+        self.visited_modules: set[int] = set()
+        self.compressed_layers: list[str] = []
+        self.protected_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.failed_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.replaced_layers: list[dict[str, Any]] = []
+
+    def _is_gqa_asymmetric(self, name: str, module: nn.Module) -&gt; bool:
+        &#34;&#34;&#34;Check if layer belongs to an attention projection in a GQA architecture.&#34;&#34;&#34;
+        cfg = getattr(self.model, &#34;config&#34;, None)
+        num_heads = getattr(
+            cfg, &#34;num_attention_heads&#34;, getattr(module, &#34;num_attention_heads&#34;, None)
+        )
+        num_kv_heads = getattr(
+            cfg, &#34;num_key_value_heads&#34;, getattr(module, &#34;num_key_value_heads&#34;, None)
+        )
+        is_gqa = num_heads is not None and num_kv_heads is not None and num_kv_heads &lt; num_heads
+
+        name_l = name.lower()
+        is_attn_qkv = any(
+            p in name_l
+            for p in [
+                &#34;q_proj&#34;,
+                &#34;k_proj&#34;,
+                &#34;v_proj&#34;,
+                &#34;c_attn&#34;,
+                &#34;query&#34;,
+                &#34;key&#34;,
+                &#34;value&#34;,
+                &#34;q_lin&#34;,
+                &#34;k_lin&#34;,
+                &#34;v_lin&#34;,
+                &#34;self_attn.q&#34;,
+                &#34;self_attn.k&#34;,
+                &#34;self_attn.v&#34;,
+            ]
+        )
+        return (is_gqa or self.skip_attention_qkv) and is_attn_qkv
+
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        name_l = name.lower()
+        # 1. Protection for critical / classification / head / pooler / embedding layers
+        PROTECTED_ALWAYS = [
+            &#34;classifier&#34;,
+            &#34;score&#34;,
+            &#34;lm_head&#34;,
+            &#34;pooler&#34;,
+            &#34;embedding&#34;,
+            &#34;cls_head&#34;,
+            &#34;head&#34;,
+            &#34;logits_processor&#34;,
+        ]
+        ATTENTION_OUTPUT = [&#34;out_lin&#34;, &#34;out_proj&#34;, &#34;o_proj&#34;, &#34;c_proj&#34;, &#34;output.dense&#34;]
+
+        if any(k in name_l for k in PROTECTED_ALWAYS):
+            self.protected_layers.append(name)
+            return False
+
+        if self.protect_output_proj and any(k in name_l for k in ATTENTION_OUTPUT):
+            self.protected_layers.append(name)
+            return False
+
+        # Target attention only filter
+        if self.target_attention_only:
+            attn_keywords = [
+                &#34;attn&#34;,
+                &#34;attention&#34;,
+                &#34;q_proj&#34;,
+                &#34;k_proj&#34;,
+                &#34;v_proj&#34;,
+                &#34;o_proj&#34;,
+                &#34;c_attn&#34;,
+                &#34;c_proj&#34;,
+                &#34;query&#34;,
+                &#34;key&#34;,
+                &#34;value&#34;,
+            ]
+            if not any(k in name_l for k in attn_keywords):
+                return False
+
+        # 2. GQA-aware skipping
+        if self._is_gqa_asymmetric(name, module):
+            self.skipped_layers.append(name)
+            return False
+
+        # 3. Check linear or Conv1D nature
+        base_mod = getattr(module, &#34;base_layer&#34;, module)
+        cls_name = base_mod.__class__.__name__
+        raw_w = getattr(base_mod, &#34;weight&#34;, None)
+        if raw_w is None or not isinstance(raw_w, torch.Tensor):
+            return False
+
+        is_conv1d = &#34;conv1d&#34; in cls_name.lower() or hasattr(base_mod, &#34;nf&#34;)
+        is_linear_like = isinstance(base_mod, nn.Linear) or is_conv1d
+        if not is_linear_like or isinstance(base_mod, SVDLinear):
+            return False
+
+        # 4. Tiny layer guard
+        if raw_w.numel() &lt; self.min_numel:
+            self.skipped_layers.append(name)
+            return False
+
+        # 5. Respect framework compatibility rules
+        if not should_compress_linear(self.model, name):
+            self.protected_layers.append(name)
+            return False
+
+        # 6. User-defined explicit target modules
+        if self.target_modules is not None:
+            return any(t in name for t in self.target_modules)
+        return True
+
+    def compress_linear(
+        self,
+        layer: nn.Module,
+        rank: int,
+    ) -&gt; SVDLinear | None:
+        &#34;&#34;&#34;Decompose a single linear or Conv1D layer into SVDLinear in FP32 with validation.&#34;&#34;&#34;
+        base_layer = getattr(layer, &#34;base_layer&#34;, layer)
+        raw_w = base_layer.weight.data
+        cls_name = base_layer.__class__.__name__
+        is_conv1d = &#34;conv1d&#34; in cls_name.lower() or hasattr(base_layer, &#34;nf&#34;)
+
+        if is_conv1d:
+            W = raw_w.t().contiguous().float()
+            out_f, in_f = W.shape
+        else:
+            W = raw_w.contiguous().float()
+            out_f = getattr(base_layer, &#34;out_features&#34;, W.shape[0])
+            in_f = getattr(base_layer, &#34;in_features&#34;, W.shape[1])
+
+        norm_orig = torch.norm(W, p=&#34;fro&#34;).item()
+        if norm_orig &lt; 1e-4:
+            return None
+
+        max_r = min(out_f, in_f)
+        param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
+
+        if self.min_rank &gt; max_r - 1:
+            logger.warning(
+                &#34;SDRM: min_rank=%d exceeds max_r=%d for %s; skipping&#34;,
+                self.min_rank,
+                max_r - 1,
+                cls_name,
+            )
+            return None
+
+        min_rank_effective = min(self.min_rank, max_r - 1, param_cap)
+        r = max(min_rank_effective, min(rank, max_r - 1, param_cap))
+
+        if r &gt;= max_r:
+            logger.debug(
+                &#34;SDRM: rank %d &gt;= max_r %d; skipping layer for no parameter reduction&#34;,
+                r,
+                max_r,
+            )
+            return None
+
+        device = base_layer.weight.device
+        dtype = base_layer.weight.dtype
+
+        try:
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        except Exception as e:
+            logger.warning(&#34;SDRM SVD decomposition failure: %s&#34;, e)
+            return None
+
+        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+        U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
+        V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
+
+        has_base_layer = hasattr(layer, &#34;base_layer&#34;)
+        has_existing_lora = hasattr(layer, &#34;lora_A&#34;) and hasattr(layer, &#34;lora_B&#34;)
+        effective_lora_r = (
+            0
+            if has_base_layer
+            else (
+                getattr(layer, &#34;r&#34;, self.lora_r)
+                if (has_existing_lora and getattr(layer, &#34;r&#34;, 0) &gt; 0)
+                else self.lora_r
+            )
+        )
+
+        svd_layer = SVDLinear(
+            in_features=in_f,
+            out_features=out_f,
+            rank=r,
+            bias=base_layer.bias is not None,
+            dtype=dtype,
+            device=device,
+            lora_r=effective_lora_r if (self.use_lora or has_existing_lora) else 0,
+            lora_alpha=self.lora_alpha,
+        )
+        svd_layer.set_low_rank_factors(U_r, V_r)
+        if base_layer.bias is not None:
+            svd_layer.bias.data.copy_(base_layer.bias.data)
+
+        # Preserve existing LoRA adapters when replacing full module
+        if not has_base_layer and has_existing_lora and svd_layer.use_lora:
+            try:
+                src_lA = getattr(layer.lora_A, &#34;weight&#34;, layer.lora_A)
+                src_lB = getattr(layer.lora_B, &#34;weight&#34;, layer.lora_B)
+                dst_lA = getattr(svd_layer.lora_A, &#34;weight&#34;, svd_layer.lora_A)
+                dst_lB = getattr(svd_layer.lora_B, &#34;weight&#34;, svd_layer.lora_B)
+                if (
+                    hasattr(src_lA, &#34;data&#34;)
+                    and hasattr(dst_lA, &#34;data&#34;)
+                    and src_lA.shape == dst_lA.shape
+                ):
+                    dst_lA.data.copy_(src_lA.data)
+                if (
+                    hasattr(src_lB, &#34;data&#34;)
+                    and hasattr(dst_lB, &#34;data&#34;)
+                    and src_lB.shape == dst_lB.shape
+                ):
+                    dst_lB.data.copy_(src_lB.data)
+            except Exception as e_lora:
+                logger.warning(&#34;Could not copy existing LoRA adapters in SDRM: %s&#34;, e_lora)
+
+        # Frobenius reconstruction error check
+        W_rec = torch.matmul(U_r.float(), V_r.float())
+        norm_orig_clamped = torch.norm(W, p=&#34;fro&#34;).clamp_min(1e-8)
+        rel_err = (torch.norm(W - W_rec, p=&#34;fro&#34;) / norm_orig_clamped).item()
+
+        is_invalid = torch.isnan(W_rec).any() or torch.isinf(W_rec).any()
+        if rel_err &gt; self.max_error:
+            logger.warning(
+                &#34;SDRM: reconstruction error %.4f exceeded threshold %.4f.&#34;,
+                rel_err,
+                self.max_error,
+            )
+            is_invalid = True
+
+        if is_invalid and self.fallback_to_original:
+            return None
+
+        svd_layer.reconstruction_error = rel_err
+        return svd_layer
+
+    def compress(self, **kwargs: Any) -&gt; tuple[nn.Module, dict[str, Any]]:
+        &#34;&#34;&#34;Compress linear layers using budget-proportional rank assignment.&#34;&#34;&#34;
+        self.layer_errors = {}
+        self.replaced_layers = []
+        self.visited_modules.clear()
+        self.compressed_layers.clear()
+        self.protected_layers.clear()
+        self.skipped_layers.clear()
+        self.fallback_layers.clear()
+        self.failed_layers.clear()
+
+        target_layers = [
+            (name, mod)
+            for name, mod in self.model.named_modules()
+            if self._is_target_module(name, mod)
+        ]
+
+        if not target_layers:
+            logger.warning(&#34;SDRM: No compressible linear layers found.&#34;)
+            return self.model, self.get_compression_stats()
+
+        for name, module in target_layers:
+            mod_id = id(module)
+            if mod_id in self.visited_modules:
+                logger.debug(&#34;SDRM: Skipping tied module %s&#34;, name)
+                self.skipped_layers.append(name)
+                continue
+            self.visited_modules.add(mod_id)
+
+            try:
+                base_m = getattr(module, &#34;base_layer&#34;, module)
+                raw_w = base_m.weight.data
+                cls_name = base_m.__class__.__name__
+                is_conv1d = &#34;conv1d&#34; in cls_name.lower() or hasattr(base_m, &#34;nf&#34;)
+                out_f = (
+                    raw_w.shape[1] if is_conv1d else getattr(base_m, &#34;out_features&#34;, raw_w.shape[0])
+                )
+                in_f = (
+                    raw_w.shape[0] if is_conv1d else getattr(base_m, &#34;in_features&#34;, raw_w.shape[1])
+                )
+
+                params = in_f * out_f
+                allowed = params * self.total_param_ratio
+                rank = max(self.min_rank, int(allowed / max(in_f + out_f, 1)))
+
+                svd_layer = self.compress_linear(module, rank=rank)
+                if svd_layer is not None:
+                    err = getattr(svd_layer, &#34;reconstruction_error&#34;, 0.0)
+                    self.layer_errors[name] = err
+                    self.replaced_layers.append(
+                        {&#34;name&#34;: name, &#34;rank&#34;: svd_layer.rank, &#34;error&#34;: err}
+                    )
+                    if hasattr(module, &#34;base_layer&#34;):
+                        module.base_layer = svd_layer
+                        if hasattr(module, &#34;lora_A&#34;) and module.lora_A is not None:
+                            for p in (
+                                module.lora_A.parameters()
+                                if hasattr(module.lora_A, &#34;parameters&#34;)
+                                else [module.lora_A]
+                            ):
+                                p.requires_grad = True
+                        if hasattr(module, &#34;lora_B&#34;) and module.lora_B is not None:
+                            for p in (
+                                module.lora_B.parameters()
+                                if hasattr(module.lora_B, &#34;parameters&#34;)
+                                else [module.lora_B]
+                            ):
+                                p.requires_grad = True
+                    else:
+                        replace_module(self.model, name, svd_layer)
+                    self.compressed_layers.append(name)
+                else:
+                    self.fallback_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
+            except Exception as e_comp:
+                logger.warning(&#34;Failed to compress %s: %s&#34;, name, e_comp)
+                self.failed_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
+
+        # Post-compression forward sanity check
+        forward_check_success = True
+        try:
+            with torch.no_grad():
+                dummy_input = torch.randint(0, 100, (1, 8), device=self.target_device)
+                self.model(dummy_input)
+        except Exception as ex_sanity:
+            logger.warning(&#34;SDRM post-compression forward sanity check warning: %s&#34;, ex_sanity)
+            forward_check_success = False
+
+        self._compressed_params = self._count_params(self.model)
+        avg_err = (
+            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
+        )
+        stats = self.get_compression_stats()
+        stats.update(
+            {
+                &#34;total_param_ratio&#34;: self.total_param_ratio,
+                &#34;compressed_layers&#34;: self.compressed_layers,
+                &#34;compressed_layer_count&#34;: len(self.compressed_layers),
+                &#34;protected_layers&#34;: self.protected_layers,
+                &#34;protected_layer_count&#34;: len(self.protected_layers),
+                &#34;skipped_layers&#34;: self.skipped_layers,
+                &#34;skipped_layer_count&#34;: len(self.skipped_layers),
+                &#34;fallback_layers&#34;: self.fallback_layers,
+                &#34;fallback_layer_count&#34;: len(self.fallback_layers),
+                &#34;failed_layers&#34;: self.failed_layers,
+                &#34;failed_layer_count&#34;: len(self.failed_layers),
+                &#34;layer_errors&#34;: self.layer_errors,
+                &#34;avg_reconstruction_error&#34;: avg_err,
+                &#34;forward_check_success&#34;: forward_check_success,
+                &#34;min_rank&#34;: self.min_rank,
+                &#34;skip_attention_qkv&#34;: self.skip_attention_qkv,
+                &#34;target_attention_only&#34;: self.target_attention_only,
+                &#34;use_lora&#34;: self.use_lora,
+                &#34;lora_r&#34;: self.lora_r,
+                &#34;method&#34;: &#34;sdrm&#34;,
+            }
+        )
+        self.stats = stats
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Base class for all compressors. Not a nn.Module to avoid parameter storage.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.sdrm_compressor.SDRMCompressor.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>SDRM: Scaled Dimension Rank Modulation.
+Assigns layer rank proportional to parameter budget for edge inference and factorizes
+target layers into low-rank SVDLinear modules with optional LoRA fine-tuning adapters.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.sdrm_compressor.SDRMCompressor.compress"><code class="name flex">
+<span>def <span class="ident">compress</span></span>(<span>self, **kwargs: Any) ‑> tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress(self, **kwargs: Any) -&gt; tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;Compress linear layers using budget-proportional rank assignment.&#34;&#34;&#34;
+    self.layer_errors = {}
+    self.replaced_layers = []
+    self.visited_modules.clear()
+    self.compressed_layers.clear()
+    self.protected_layers.clear()
+    self.skipped_layers.clear()
+    self.fallback_layers.clear()
+    self.failed_layers.clear()
+
+    target_layers = [
+        (name, mod)
+        for name, mod in self.model.named_modules()
+        if self._is_target_module(name, mod)
+    ]
+
+    if not target_layers:
+        logger.warning(&#34;SDRM: No compressible linear layers found.&#34;)
+        return self.model, self.get_compression_stats()
+
+    for name, module in target_layers:
+        mod_id = id(module)
+        if mod_id in self.visited_modules:
+            logger.debug(&#34;SDRM: Skipping tied module %s&#34;, name)
+            self.skipped_layers.append(name)
+            continue
+        self.visited_modules.add(mod_id)
+
+        try:
+            base_m = getattr(module, &#34;base_layer&#34;, module)
+            raw_w = base_m.weight.data
+            cls_name = base_m.__class__.__name__
+            is_conv1d = &#34;conv1d&#34; in cls_name.lower() or hasattr(base_m, &#34;nf&#34;)
+            out_f = (
+                raw_w.shape[1] if is_conv1d else getattr(base_m, &#34;out_features&#34;, raw_w.shape[0])
+            )
+            in_f = (
+                raw_w.shape[0] if is_conv1d else getattr(base_m, &#34;in_features&#34;, raw_w.shape[1])
+            )
+
+            params = in_f * out_f
+            allowed = params * self.total_param_ratio
+            rank = max(self.min_rank, int(allowed / max(in_f + out_f, 1)))
+
+            svd_layer = self.compress_linear(module, rank=rank)
+            if svd_layer is not None:
+                err = getattr(svd_layer, &#34;reconstruction_error&#34;, 0.0)
+                self.layer_errors[name] = err
+                self.replaced_layers.append(
+                    {&#34;name&#34;: name, &#34;rank&#34;: svd_layer.rank, &#34;error&#34;: err}
+                )
+                if hasattr(module, &#34;base_layer&#34;):
+                    module.base_layer = svd_layer
+                    if hasattr(module, &#34;lora_A&#34;) and module.lora_A is not None:
+                        for p in (
+                            module.lora_A.parameters()
+                            if hasattr(module.lora_A, &#34;parameters&#34;)
+                            else [module.lora_A]
+                        ):
+                            p.requires_grad = True
+                    if hasattr(module, &#34;lora_B&#34;) and module.lora_B is not None:
+                        for p in (
+                            module.lora_B.parameters()
+                            if hasattr(module.lora_B, &#34;parameters&#34;)
+                            else [module.lora_B]
+                        ):
+                            p.requires_grad = True
+                else:
+                    replace_module(self.model, name, svd_layer)
+                self.compressed_layers.append(name)
+            else:
+                self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
+        except Exception as e_comp:
+            logger.warning(&#34;Failed to compress %s: %s&#34;, name, e_comp)
+            self.failed_layers.append(name)
+            for p in module.parameters():
+                p.requires_grad = False
+
+    # Post-compression forward sanity check
+    forward_check_success = True
+    try:
+        with torch.no_grad():
+            dummy_input = torch.randint(0, 100, (1, 8), device=self.target_device)
+            self.model(dummy_input)
+    except Exception as ex_sanity:
+        logger.warning(&#34;SDRM post-compression forward sanity check warning: %s&#34;, ex_sanity)
+        forward_check_success = False
+
+    self._compressed_params = self._count_params(self.model)
+    avg_err = (
+        (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
+    )
+    stats = self.get_compression_stats()
+    stats.update(
+        {
+            &#34;total_param_ratio&#34;: self.total_param_ratio,
+            &#34;compressed_layers&#34;: self.compressed_layers,
+            &#34;compressed_layer_count&#34;: len(self.compressed_layers),
+            &#34;protected_layers&#34;: self.protected_layers,
+            &#34;protected_layer_count&#34;: len(self.protected_layers),
+            &#34;skipped_layers&#34;: self.skipped_layers,
+            &#34;skipped_layer_count&#34;: len(self.skipped_layers),
+            &#34;fallback_layers&#34;: self.fallback_layers,
+            &#34;fallback_layer_count&#34;: len(self.fallback_layers),
+            &#34;failed_layers&#34;: self.failed_layers,
+            &#34;failed_layer_count&#34;: len(self.failed_layers),
+            &#34;layer_errors&#34;: self.layer_errors,
+            &#34;avg_reconstruction_error&#34;: avg_err,
+            &#34;forward_check_success&#34;: forward_check_success,
+            &#34;min_rank&#34;: self.min_rank,
+            &#34;skip_attention_qkv&#34;: self.skip_attention_qkv,
+            &#34;target_attention_only&#34;: self.target_attention_only,
+            &#34;use_lora&#34;: self.use_lora,
+            &#34;lora_r&#34;: self.lora_r,
+            &#34;method&#34;: &#34;sdrm&#34;,
+        }
+    )
+    self.stats = stats
+    return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Compress linear layers using budget-proportional rank assignment.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.sdrm_compressor.SDRMCompressor.compress_linear"><code class="name flex">
+<span>def <span class="ident">compress_linear</span></span>(<span>self, layer: nn.Module, rank: int) ‑> <a title="neuralops.compression_engine.aa_svd_compressor.SVDLinear" href="aa_svd_compressor.html#neuralops.compression_engine.aa_svd_compressor.SVDLinear">SVDLinear</a> | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress_linear(
+    self,
+    layer: nn.Module,
+    rank: int,
+) -&gt; SVDLinear | None:
+    &#34;&#34;&#34;Decompose a single linear or Conv1D layer into SVDLinear in FP32 with validation.&#34;&#34;&#34;
+    base_layer = getattr(layer, &#34;base_layer&#34;, layer)
+    raw_w = base_layer.weight.data
+    cls_name = base_layer.__class__.__name__
+    is_conv1d = &#34;conv1d&#34; in cls_name.lower() or hasattr(base_layer, &#34;nf&#34;)
+
+    if is_conv1d:
+        W = raw_w.t().contiguous().float()
+        out_f, in_f = W.shape
+    else:
+        W = raw_w.contiguous().float()
+        out_f = getattr(base_layer, &#34;out_features&#34;, W.shape[0])
+        in_f = getattr(base_layer, &#34;in_features&#34;, W.shape[1])
+
+    norm_orig = torch.norm(W, p=&#34;fro&#34;).item()
+    if norm_orig &lt; 1e-4:
+        return None
+
+    max_r = min(out_f, in_f)
+    param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
+
+    if self.min_rank &gt; max_r - 1:
+        logger.warning(
+            &#34;SDRM: min_rank=%d exceeds max_r=%d for %s; skipping&#34;,
+            self.min_rank,
+            max_r - 1,
+            cls_name,
+        )
+        return None
+
+    min_rank_effective = min(self.min_rank, max_r - 1, param_cap)
+    r = max(min_rank_effective, min(rank, max_r - 1, param_cap))
+
+    if r &gt;= max_r:
+        logger.debug(
+            &#34;SDRM: rank %d &gt;= max_r %d; skipping layer for no parameter reduction&#34;,
+            r,
+            max_r,
+        )
+        return None
+
+    device = base_layer.weight.device
+    dtype = base_layer.weight.dtype
+
+    try:
+        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+    except Exception as e:
+        logger.warning(&#34;SDRM SVD decomposition failure: %s&#34;, e)
+        return None
+
+    sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+    U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
+    V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
+
+    has_base_layer = hasattr(layer, &#34;base_layer&#34;)
+    has_existing_lora = hasattr(layer, &#34;lora_A&#34;) and hasattr(layer, &#34;lora_B&#34;)
+    effective_lora_r = (
+        0
+        if has_base_layer
+        else (
+            getattr(layer, &#34;r&#34;, self.lora_r)
+            if (has_existing_lora and getattr(layer, &#34;r&#34;, 0) &gt; 0)
+            else self.lora_r
+        )
+    )
+
+    svd_layer = SVDLinear(
+        in_features=in_f,
+        out_features=out_f,
+        rank=r,
+        bias=base_layer.bias is not None,
+        dtype=dtype,
+        device=device,
+        lora_r=effective_lora_r if (self.use_lora or has_existing_lora) else 0,
+        lora_alpha=self.lora_alpha,
+    )
+    svd_layer.set_low_rank_factors(U_r, V_r)
+    if base_layer.bias is not None:
+        svd_layer.bias.data.copy_(base_layer.bias.data)
+
+    # Preserve existing LoRA adapters when replacing full module
+    if not has_base_layer and has_existing_lora and svd_layer.use_lora:
+        try:
+            src_lA = getattr(layer.lora_A, &#34;weight&#34;, layer.lora_A)
+            src_lB = getattr(layer.lora_B, &#34;weight&#34;, layer.lora_B)
+            dst_lA = getattr(svd_layer.lora_A, &#34;weight&#34;, svd_layer.lora_A)
+            dst_lB = getattr(svd_layer.lora_B, &#34;weight&#34;, svd_layer.lora_B)
+            if (
+                hasattr(src_lA, &#34;data&#34;)
+                and hasattr(dst_lA, &#34;data&#34;)
+                and src_lA.shape == dst_lA.shape
+            ):
+                dst_lA.data.copy_(src_lA.data)
+            if (
+                hasattr(src_lB, &#34;data&#34;)
+                and hasattr(dst_lB, &#34;data&#34;)
+                and src_lB.shape == dst_lB.shape
+            ):
+                dst_lB.data.copy_(src_lB.data)
+        except Exception as e_lora:
+            logger.warning(&#34;Could not copy existing LoRA adapters in SDRM: %s&#34;, e_lora)
+
+    # Frobenius reconstruction error check
+    W_rec = torch.matmul(U_r.float(), V_r.float())
+    norm_orig_clamped = torch.norm(W, p=&#34;fro&#34;).clamp_min(1e-8)
+    rel_err = (torch.norm(W - W_rec, p=&#34;fro&#34;) / norm_orig_clamped).item()
+
+    is_invalid = torch.isnan(W_rec).any() or torch.isinf(W_rec).any()
+    if rel_err &gt; self.max_error:
+        logger.warning(
+            &#34;SDRM: reconstruction error %.4f exceeded threshold %.4f.&#34;,
+            rel_err,
+            self.max_error,
+        )
+        is_invalid = True
+
+    if is_invalid and self.fallback_to_original:
+        return None
+
+    svd_layer.reconstruction_error = rel_err
+    return svd_layer</code></pre>
+</details>
+<div class="desc"><p>Decompose a single linear or Conv1D layer into SVDLinear in FP32 with validation.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.sdrm_compressor.sdrm_compressor_factory" href="#neuralops.compression_engine.sdrm_compressor.sdrm_compressor_factory">sdrm_compressor_factory</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.sdrm_compressor.SDRMCompressor" href="#neuralops.compression_engine.sdrm_compressor.SDRMCompressor">SDRMCompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.sdrm_compressor.SDRMCompressor.compress" href="#neuralops.compression_engine.sdrm_compressor.SDRMCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.compression_engine.sdrm_compressor.SDRMCompressor.compress_linear" href="#neuralops.compression_engine.sdrm_compressor.SDRMCompressor.compress_linear">compress_linear</a></code></li>
+<li><code><a title="neuralops.compression_engine.sdrm_compressor.SDRMCompressor.is_custom_attention" href="#neuralops.compression_engine.sdrm_compressor.SDRMCompressor.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.utils.hf_git_exporter API documentation</title>
+<meta name="description" content="Automated exporter for successful benchmark runs to private Hugging Face repositories and GitHub documentation …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.utils.hf_git_exporter</code></h1>
+</header>
+<section id="section-intro">
+<p>Automated exporter for successful benchmark runs to private Hugging Face repositories and GitHub documentation.</p>
+<p>Performs:
+1. Model packaging &amp; upload to private Hugging Face repo (tahamajs/svd-linear-attention-*)
+2. Documentation update in Docs/content/
+3. Clean Git commit and push to origin/main
+Strictly gated on success criteria (status == 'PASS', acc &gt;= pass_threshold_pct).</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.utils.hf_git_exporter.commit_and_push_git"><code class="name flex">
+<span>def <span class="ident">commit_and_push_git</span></span>(<span>commit_message: str, cwd: Path | None = None, branch: str | None = None) ‑> str | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def commit_and_push_git(
+    commit_message: str,
+    cwd: Path | None = None,
+    branch: str | None = None,
+) -&gt; str | None:
+    &#34;&#34;&#34;Stage modified documentation, summaries, and CSVs, commit, and push to Git.
+
+    Handles concurrent pushes from parallel workers with retry + backoff.
+    If branch is specified, commits to that branch and pushes upstream.
+    &#34;&#34;&#34;
+    import random
+    import time
+
+    cwd = find_git_root(cwd)
+    try:
+        subprocess.run([&#34;git&#34;, &#34;add&#34;, &#34;Docs/&#34;, &#34;results/&#34;], cwd=cwd, check=False)
+        diff = subprocess.run(
+            [&#34;git&#34;, &#34;diff&#34;, &#34;--cached&#34;, &#34;--name-only&#34;],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+        )
+        if not diff.stdout.strip():
+            LOG.info(&#34;No changes to commit to Git.&#34;)
+            rev = subprocess.run(
+                [&#34;git&#34;, &#34;rev-parse&#34;, &#34;HEAD&#34;], cwd=cwd, capture_output=True, text=True
+            )
+            return rev.stdout.strip()[:8]
+
+        curr_branch = subprocess.run(
+            [&#34;git&#34;, &#34;rev-parse&#34;, &#34;--abbrev-ref&#34;, &#34;HEAD&#34;],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        if curr_branch == &#34;HEAD&#34; or not curr_branch:
+            curr_branch = &#34;main&#34;
+        target_branch = branch or os.environ.get(&#34;BENCHMARK_GIT_BRANCH&#34;, &#34;main&#34;)
+
+        switched = False
+        if target_branch != curr_branch:
+            check = subprocess.run(
+                [&#34;git&#34;, &#34;show-ref&#34;, &#34;--verify&#34;, f&#34;refs/heads/{target_branch}&#34;],
+                cwd=cwd,
+                capture_output=True,
+            )
+            if check.returncode == 0:
+                subprocess.run([&#34;git&#34;, &#34;checkout&#34;, target_branch], cwd=cwd, check=True)
+            else:
+                subprocess.run([&#34;git&#34;, &#34;checkout&#34;, &#34;-b&#34;, target_branch], cwd=cwd, check=True)
+            switched = True
+
+        subprocess.run([&#34;git&#34;, &#34;commit&#34;, &#34;-m&#34;, commit_message], cwd=cwd, check=True)
+
+        # Retry push up to 5 times — handles concurrent workers racing to push
+        commit_hash = None
+        for attempt in range(5):
+            # Clean up any stale rebase state before pulling
+            for stale in [&#34;.git/rebase-merge&#34;, &#34;.git/rebase-apply&#34;]:
+                stale_path = (cwd / stale) if cwd else Path(stale)
+                if stale_path.exists():
+                    import shutil
+
+                    shutil.rmtree(str(stale_path), ignore_errors=True)
+
+            pull = subprocess.run(
+                [&#34;git&#34;, &#34;pull&#34;, &#34;--rebase&#34;, &#34;--autostash&#34;, &#34;origin&#34;, target_branch],
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+            )
+            if pull.returncode != 0:
+                LOG.debug(
+                    &#34;Pull/rebase attempt %d failed: %s&#34;,
+                    attempt + 1,
+                    pull.stderr.strip(),
+                )
+
+            push = subprocess.run(
+                [&#34;git&#34;, &#34;push&#34;, &#34;-u&#34;, &#34;origin&#34;, target_branch],
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+            )
+            if push.returncode == 0:
+                rev = subprocess.run(
+                    [&#34;git&#34;, &#34;rev-parse&#34;, &#34;HEAD&#34;],
+                    cwd=cwd,
+                    capture_output=True,
+                    text=True,
+                )
+                commit_hash = rev.stdout.strip()[:8]
+                LOG.info(
+                    &#34;Successfully committed and pushed Git changes to %s: %s&#34;,
+                    target_branch,
+                    commit_hash,
+                )
+                break
+            else:
+                wait = random.uniform(2, 6) * (attempt + 1)
+                LOG.debug(
+                    &#34;Push attempt %d/%d failed, retrying in %.1fs: %s&#34;,
+                    attempt + 1,
+                    5,
+                    wait,
+                    push.stderr.strip()[:200],
+                )
+                time.sleep(wait)
+
+        if commit_hash is None:
+            LOG.warning(&#34;Git push failed after 5 attempts — commit is local only.&#34;)
+
+        if switched:
+            subprocess.run([&#34;git&#34;, &#34;checkout&#34;, curr_branch], cwd=cwd, check=False)
+
+        return commit_hash
+    except Exception as e:
+        LOG.warning(&#34;Git commit/push failed: %s&#34;, e)
+        return None</code></pre>
+</details>
+<div class="desc"><p>Stage modified documentation, summaries, and CSVs, commit, and push to Git.</p>
+<p>Handles concurrent pushes from parallel workers with retry + backoff.
+If branch is specified, commits to that branch and pushes upstream.</p></div>
+</dd>
+<dt id="neuralops.utils.hf_git_exporter.find_documentation_file"><code class="name flex">
+<span>def <span class="ident">find_documentation_file</span></span>(<span>module_name: str, docs_dir: Path | None = None) ‑> pathlib.Path | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def find_documentation_file(module_name: str, docs_dir: Path | None = None) -&gt; Path | None:
+    &#34;&#34;&#34;Locate the corresponding Markdown documentation file in Docs/content/.&#34;&#34;&#34;
+    if docs_dir is None:
+        docs_dir = Path(__file__).resolve().parents[3] / &#34;Docs&#34; / &#34;content&#34;
+
+    if not docs_dir.exists():
+        return None
+
+    norm = module_name.lower().replace(&#34;-&#34;, &#34;_&#34;)
+    candidates = [
+        norm,
+        f&#34;{norm}_compressor&#34;,
+        f&#34;{norm}_attention&#34;,
+        norm.replace(&#34;_compressor&#34;, &#34;&#34;),
+        norm.replace(&#34;_attention&#34;, &#34;&#34;),
+        norm.replace(&#34;aa_&#34;, &#34;aa&#34;),
+    ]
+
+    for subfolder in [&#34;compressions&#34;, &#34;attentions&#34;]:
+        folder = docs_dir / subfolder
+        if not folder.exists():
+            continue
+        for cand in candidates:
+            p = folder / f&#34;{cand}.md&#34;
+            if p.exists():
+                return p
+
+    # Fallback recursive search
+    for p in docs_dir.glob(&#34;**/*.md&#34;):
+        stem = p.stem.lower().replace(&#34;-&#34;, &#34;_&#34;)
+        if stem in candidates or norm in stem:
+            return p
+
+    return None</code></pre>
+</details>
+<div class="desc"><p>Locate the corresponding Markdown documentation file in Docs/content/.</p></div>
+</dd>
+<dt id="neuralops.utils.hf_git_exporter.find_git_root"><code class="name flex">
+<span>def <span class="ident">find_git_root</span></span>(<span>start: Path | None = None) ‑> pathlib.Path</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def find_git_root(start: Path | None = None) -&gt; Path:
+    &#34;&#34;&#34;Find the root Git repository directory.&#34;&#34;&#34;
+    p = (start or Path(__file__)).resolve()
+    for parent in [p] + list(p.parents):
+        if (parent / &#34;.git&#34;).exists():
+            return parent
+    return Path(__file__).resolve().parents[3]</code></pre>
+</details>
+<div class="desc"><p>Find the root Git repository directory.</p></div>
+</dd>
+<dt id="neuralops.utils.hf_git_exporter.generate_model_card"><code class="name flex">
+<span>def <span class="ident">generate_model_card</span></span>(<span>model_name: str,<br>module_name: str,<br>dataset_name: str,<br>perf_metrics: dict,<br>comp_metrics: dict,<br>config_dict: dict | None = None) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def generate_model_card(
+    model_name: str,
+    module_name: str,
+    dataset_name: str,
+    perf_metrics: dict,
+    comp_metrics: dict,
+    config_dict: dict | None = None,
+) -&gt; str:
+    &#34;&#34;&#34;Generate a publication-grade README.md model card for Hugging Face.&#34;&#34;&#34;
+    acc = float(perf_metrics.get(&#34;accuracy_pct&#34;, 0.0))
+    f1 = perf_metrics.get(&#34;f1_score&#34;, &#34;N/A&#34;)
+    prec = perf_metrics.get(&#34;precision&#34;, &#34;N/A&#34;)
+    rec = perf_metrics.get(&#34;recall&#34;, &#34;N/A&#34;)
+    loss = perf_metrics.get(&#34;val_loss&#34;, &#34;N/A&#34;)
+    status = perf_metrics.get(&#34;status&#34;, &#34;PASS&#34;)
+
+    comp_rate = comp_metrics.get(&#34;compression_rate&#34;, &#34;1.00&#34;)
+    comp_ratio = comp_metrics.get(&#34;compression_ratio_pct&#34;, &#34;0.0&#34;)
+    flops_red = comp_metrics.get(&#34;flops_reduction_pct&#34;, &#34;0.0&#34;)
+    num_comp = comp_metrics.get(&#34;num_compressed_layers&#34;, &#34;N/A&#34;)
+    num_fallback = comp_metrics.get(&#34;num_fallback_layers&#34;, &#34;0&#34;)
+    avg_err = comp_metrics.get(&#34;avg_reconstruction_error&#34;, &#34;N/A&#34;)
+    vram = perf_metrics.get(&#34;peak_vram_mb&#34;, &#34;N/A&#34;)
+    throughput = perf_metrics.get(&#34;tokens_per_sec&#34;, &#34;N/A&#34;)
+
+    date_str = datetime.now().strftime(&#34;%Y-%m-%d&#34;)
+
+    cfg_clean = {}
+    if config_dict:
+        for k, v in config_dict.items():
+            if isinstance(v, (int, float, str, bool)):
+                cfg_clean[k] = v
+
+    card = f&#34;&#34;&#34;---
+tags:
+- svd
+- model-compression
+- linear-attention
+- efficiency
+- pytorch
+datasets:
+- {dataset_name}
+metrics:
+- accuracy
+- f1
+---
+
+# SVD Linear Attention: {model_name} with {module_name}
+
+This repository hosts a validated factorized/compressed checkpoint of **{model_name}** using the **{module_name}** module evaluated on **{dataset_name}**.
+
+## Evaluation Summary
+- **Accuracy**: `{acc:.2f}%`
+- **F1 Score**: `{f1}`
+- **Precision**: `{prec}`
+- **Recall**: `{rec}`
+- **Validation Loss**: `{loss}`
+- **Verification Status**: `{status}`
+- **Date**: `{date_str}`
+
+## Efficiency &amp; Compression Profile
+- **Original Parameters**: `{comp_metrics.get(&#34;total_params_before&#34;, &#34;N/A&#34;)}`
+- **Compressed Parameters**: `{comp_metrics.get(&#34;total_params_after&#34;, &#34;N/A&#34;)}`
+- **Compression Rate**: `{comp_rate}x`
+- **Compression Ratio**: `{comp_ratio}%`
+- **FLOPs Reduction**: `{flops_red}%`
+- **Factorized Layers**: `{num_comp}`
+- **Fallback Layers**: `{num_fallback}`
+- **Avg Reconstruction Error**: `{avg_err}`
+- **Peak VRAM**: `{vram} MB`
+- **Inference Throughput**: `{throughput} tokens/sec`
+
+## Benchmark Configuration
+```json
+{json.dumps(cfg_clean, indent=2)}
+```
+
+## Reproducibility
+Trained and factorized via the Unified SVD Linear Attention Framework.
+&#34;&#34;&#34;
+    return card</code></pre>
+</details>
+<div class="desc"><p>Generate a publication-grade README.md model card for Hugging Face.</p></div>
+</dd>
+<dt id="neuralops.utils.hf_git_exporter.handle_benchmark_run_export"><code class="name flex">
+<span>def <span class="ident">handle_benchmark_run_export</span></span>(<span>model: torch.nn.Module | None,<br>tokenizer: Any,<br>model_name: str,<br>module_name: str,<br>dataset_name: str,<br>perf_metrics: dict,<br>comp_metrics: dict,<br>status: str,<br>pass_threshold_pct: float,<br>baseline_acc: float | None = None,<br>config_dict: dict | None = None,<br>out_dir: Path | None = None,<br>allow_pass_low: bool = False,<br>export_dir: Path | None = None) ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def handle_benchmark_run_export(
+    model: torch.nn.Module | None,
+    tokenizer: Any,
+    model_name: str,
+    module_name: str,
+    dataset_name: str,
+    perf_metrics: dict,
+    comp_metrics: dict,
+    status: str,
+    pass_threshold_pct: float,
+    baseline_acc: float | None = None,
+    config_dict: dict | None = None,
+    out_dir: Path | None = None,
+    allow_pass_low: bool = False,
+    export_dir: Path | None = None,
+) -&gt; dict:
+    &#34;&#34;&#34;Main orchestration entry point for successful run export.&#34;&#34;&#34;
+    acc = float(perf_metrics.get(&#34;accuracy_pct&#34;, 0.0))
+    is_pass = (status == &#34;PASS&#34;) or (allow_pass_low and status in (&#34;PASS&#34;, &#34;PASS_LOW&#34;))
+    is_successful = is_pass and (acc &gt;= pass_threshold_pct)
+
+    if not is_successful:
+        LOG.info(
+            &#34;[Automation] Run %s / %s (acc=%.2f%%, status=%s) is NOT successful (threshold=%.2f%%). Skipping HF upload.&#34;,
+            model_name,
+            module_name,
+            acc,
+            status,
+            pass_threshold_pct,
+        )
+        return {
+            &#34;success&#34;: False,
+            &#34;reason&#34;: f&#34;status={status}, acc={acc:.2f}% &lt; {pass_threshold_pct:.2f}%&#34;,
+            &#34;hf_url&#34;: None,
+            &#34;commit_hash&#34;: None,
+        }
+
+    clean_model = sanitize_slug(Path(model_name).name)
+    clean_mod = sanitize_slug(module_name)
+    hf_org = os.environ.get(&#34;HF_ORG&#34;, &#34;tahamajs&#34;)
+    repo_id = f&#34;{hf_org}/svd-linear-attention-{clean_model}-{clean_mod}&#34;
+
+    LOG.info(
+        &#34;[Automation] Run %s / %s is SUCCESSFUL (acc=%.2f%% &gt;= %.2f%%). Starting automated HF export to %s and Git recording.&#34;,
+        clean_model,
+        clean_mod,
+        acc,
+        pass_threshold_pct,
+        repo_id,
+    )
+
+    hf_url = None
+    if module_name.lower() == &#34;full&#34;:
+        LOG.info(
+            &#34;[Automation] Module is baseline &#39;full&#39;. Skipping HF model upload (base model already on Hugging Face).&#34;
+        )
+    elif export_dir and export_dir.exists():
+        hf_url = upload_to_huggingface(
+            export_dir=export_dir,
+            repo_id=repo_id,
+            model_name=clean_model,
+            module_name=module_name,
+            dataset_name=dataset_name,
+            perf_metrics=perf_metrics,
+            comp_metrics=comp_metrics,
+            config_dict=config_dict,
+        )
+
+    doc_file = find_documentation_file(module_name)
+    if doc_file and doc_file.exists():
+        update_documentation_table(
+            doc_path=doc_file,
+            model_name=clean_model,
+            module_name=module_name,
+            dataset_name=dataset_name,
+            status=status,
+            baseline_acc=baseline_acc,
+            acc=acc,
+            f1=perf_metrics.get(&#34;f1_score&#34;),
+            comp_rate=comp_metrics.get(&#34;compression_rate&#34;),
+            num_compressed=comp_metrics.get(&#34;num_compressed_layers&#34;),
+            hf_repo_url=hf_url,
+        )
+
+    target_branch = os.environ.get(&#34;BENCHMARK_GIT_BRANCH&#34;)
+    if not target_branch and (config_dict and config_dict.get(&#34;new_branch&#34;)):
+        target_branch = f&#34;results/{clean_model}-{clean_mod}&#34;
+
+    f1_val = perf_metrics.get(&#34;f1_score&#34;, &#34;N/A&#34;)
+    commit_msg = f&#34;feat(benchmark): record successful {module_name} on {clean_model} (Acc: {acc:.2f}%, F1: {f1_val})&#34;
+    commit_hash = commit_and_push_git(commit_msg, branch=target_branch)
+
+    return {
+        &#34;success&#34;: True,
+        &#34;repo_id&#34;: repo_id,
+        &#34;hf_url&#34;: hf_url,
+        &#34;commit_hash&#34;: commit_hash,
+    }</code></pre>
+</details>
+<div class="desc"><p>Main orchestration entry point for successful run export.</p></div>
+</dd>
+<dt id="neuralops.utils.hf_git_exporter.sanitize_slug"><code class="name flex">
+<span>def <span class="ident">sanitize_slug</span></span>(<span>text: str) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sanitize_slug(text: str) -&gt; str:
+    &#34;&#34;&#34;Sanitize strings for repo naming and identifiers.&#34;&#34;&#34;
+    return text.lower().replace(&#34;/&#34;, &#34;_&#34;).replace(&#34;\\&#34;, &#34;_&#34;).replace(&#34; &#34;, &#34;-&#34;).replace(&#34;_&#34;, &#34;-&#34;)</code></pre>
+</details>
+<div class="desc"><p>Sanitize strings for repo naming and identifiers.</p></div>
+</dd>
+<dt id="neuralops.utils.hf_git_exporter.update_documentation_table"><code class="name flex">
+<span>def <span class="ident">update_documentation_table</span></span>(<span>doc_path: Path,<br>model_name: str,<br>module_name: str,<br>dataset_name: str,<br>status: str,<br>baseline_acc: float | None,<br>acc: float,<br>f1: Any,<br>comp_rate: Any,<br>num_compressed: Any,<br>hf_repo_url: str | None = None) ‑> bool</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def update_documentation_table(
+    doc_path: Path,
+    model_name: str,
+    module_name: str,
+    dataset_name: str,
+    status: str,
+    baseline_acc: float | None,
+    acc: float,
+    f1: Any,
+    comp_rate: Any,
+    num_compressed: Any,
+    hf_repo_url: str | None = None,
+) -&gt; bool:
+    &#34;&#34;&#34;Add or update an empirical benchmark row in the relevant documentation file.&#34;&#34;&#34;
+    try:
+        content = doc_path.read_text(encoding=&#34;utf-8&#34;)
+        date_str = datetime.now().strftime(&#34;%Y-%m-%d&#34;)
+        base_str = f&#34;{baseline_acc:.2f}%&#34; if baseline_acc is not None else &#34;N/A&#34;
+        delta_str = f&#34;{(acc - baseline_acc):+.2f}%&#34; if baseline_acc is not None else &#34;N/A&#34;
+        f1_str = f&#34;{float(f1):.4f}&#34; if f1 not in (None, &#34;N/A&#34;, &#34;&#34;) else &#34;N/A&#34;
+        comp_rate_str = (
+            f&#34;{float(comp_rate):.2f}x&#34; if comp_rate not in (None, &#34;N/A&#34;, &#34;&#34;) else &#34;1.00x&#34;
+        )
+        hf_link = f&#34;[{hf_repo_url.split(&#39;/&#39;)[-1]}]({hf_repo_url})&#34; if hf_repo_url else &#34;N/A&#34;
+
+        row = f&#34;| **{model_name}** | {dataset_name} | `{status}` | {base_str} | **{acc:.2f}%** | {delta_str} | {f1_str} | {comp_rate_str} | {num_compressed} | {hf_link} | {date_str} |\n&#34;
+
+        # Check if table already exists with headers
+        if &#34;| Model | Dataset | Status |&#34; in content:
+            lines = content.splitlines()
+            replaced = False
+            new_lines = []
+            for line in lines:
+                if line.startswith(f&#34;| **{model_name}**&#34;) and f&#34;| {dataset_name} |&#34; in line:
+                    new_lines.append(row.strip())
+                    replaced = True
+                else:
+                    new_lines.append(line)
+            if not replaced:
+                # Find the table header and insert under it
+                header_idx = -1
+                for idx, line in enumerate(new_lines):
+                    if &#34;| Model | Dataset | Status |&#34; in line:
+                        header_idx = idx
+                        break
+                if header_idx != -1:
+                    # skip header and divider line
+                    insert_idx = header_idx + 2
+                    # find the end of the table
+                    while insert_idx &lt; len(new_lines) and new_lines[insert_idx].startswith(&#34;|&#34;):
+                        insert_idx += 1
+                    new_lines.insert(insert_idx, row.strip())
+                else:
+                    new_lines.append(row.strip())
+            content = &#34;\n&#34;.join(new_lines)
+        elif any(&#34;Empirical Benchmark Results&#34; in line for line in content.splitlines()):
+            # Insert table right after the section header
+            lines = content.splitlines()
+            header_idx = -1
+            for idx, line in enumerate(lines):
+                if &#34;Empirical Benchmark Results&#34; in line:
+                    header_idx = idx
+                    break
+            table_block = [
+                &#34;&#34;,
+                &#34;### Benchmark Results&#34;,
+                &#34;&#34;,
+                &#34;| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |&#34;,
+                &#34;| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |&#34;,
+                row.strip(),
+                &#34;&#34;,
+            ]
+            lines = lines[: header_idx + 1] + table_block + lines[header_idx + 1 :]
+            content = &#34;\n&#34;.join(lines)
+        else:
+            table_block = f&#34;&#34;&#34;
+## Empirical Benchmark Results
+
+| Model | Dataset | Status | Baseline Acc | Compressed Acc | Δ Acc | F1 Score | Comp Rate | Compressed Layers | Checkpoint | Date |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+{row}
+&#34;&#34;&#34;
+            content = content.rstrip() + &#34;\n\n&#34; + table_block.strip() + &#34;\n&#34;
+
+        doc_path.write_text(content, encoding=&#34;utf-8&#34;)
+        LOG.info(&#34;Updated documentation in %s&#34;, doc_path)
+        return True
+    except Exception as e:
+        LOG.warning(&#34;Failed updating documentation %s: %s&#34;, doc_path, e)
+        return False</code></pre>
+</details>
+<div class="desc"><p>Add or update an empirical benchmark row in the relevant documentation file.</p></div>
+</dd>
+<dt id="neuralops.utils.hf_git_exporter.upload_to_huggingface"><code class="name flex">
+<span>def <span class="ident">upload_to_huggingface</span></span>(<span>export_dir: Path,<br>repo_id: str,<br>model_name: str,<br>module_name: str,<br>dataset_name: str,<br>perf_metrics: dict,<br>comp_metrics: dict,<br>config_dict: dict | None = None) ‑> str | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def upload_to_huggingface(
+    export_dir: Path,
+    repo_id: str,
+    model_name: str,
+    module_name: str,
+    dataset_name: str,
+    perf_metrics: dict,
+    comp_metrics: dict,
+    config_dict: dict | None = None,
+) -&gt; str | None:
+    &#34;&#34;&#34;Upload model directory to a private Hugging Face repository.&#34;&#34;&#34;
+    # Temporarily remove any offline switches to ensure Hugging Face Hub connectivity
+    old_offline = os.environ.pop(&#34;HF_HUB_OFFLINE&#34;, None)
+    old_tr_offline = os.environ.pop(&#34;TRANSFORMERS_OFFLINE&#34;, None)
+    old_ds_offline = os.environ.pop(&#34;HF_DATASETS_OFFLINE&#34;, None)
+    os.environ[&#34;HF_HUB_DISABLE_XET&#34;] = &#34;1&#34;
+    os.environ[&#34;HF_HUB_ENABLE_HF_TRANSFER&#34;] = &#34;0&#34;
+    try:
+        from huggingface_hub import HfApi
+
+        api = HfApi()
+
+        # 1. Ensure private repo exists
+        api.create_repo(repo_id=repo_id, private=True, exist_ok=True, repo_type=&#34;model&#34;)
+
+        # 2. Write model card
+        readme_path = export_dir / &#34;README.md&#34;
+        readme_path.write_text(
+            generate_model_card(
+                model_name,
+                module_name,
+                dataset_name,
+                perf_metrics,
+                comp_metrics,
+                config_dict,
+            ),
+            encoding=&#34;utf-8&#34;,
+        )
+
+        # 3. Prune large uncompressed binary if present to keep upload lean (~90 MB)
+        bin_file = export_dir / &#34;pytorch_model.bin&#34;
+        if bin_file.exists():
+            try:
+                bin_file.unlink()
+            except Exception:
+                pass
+
+        # 4. Upload to private repo (robust against CAS/XetHub network restrictions)
+        acc = float(perf_metrics.get(&#34;accuracy_pct&#34;, 0.0))
+        f1 = perf_metrics.get(&#34;f1_score&#34;, &#34;N/A&#34;)
+        commit_msg = f&#34;feat: upload {module_name} on {model_name} (Acc: {acc:.2f}%, F1: {f1})&#34;
+        try:
+            api.upload_folder(
+                folder_path=str(export_dir),
+                repo_id=repo_id,
+                repo_type=&#34;model&#34;,
+                commit_message=commit_msg,
+            )
+        except Exception as e_folder:
+            LOG.warning(
+                &#34;upload_folder encountered issue (%s); falling back to per-file direct upload...&#34;,
+                e_folder,
+            )
+            for file_path in sorted(export_dir.rglob(&#34;*&#34;)):
+                if file_path.is_file():
+                    rel_path = file_path.relative_to(export_dir).as_posix()
+                    api.upload_file(
+                        path_or_fileobj=str(file_path),
+                        path_in_repo=rel_path,
+                        repo_id=repo_id,
+                        repo_type=&#34;model&#34;,
+                        commit_message=f&#34;feat: upload {rel_path} for {module_name}&#34;,
+                    )
+        url = f&#34;https://huggingface.co/{repo_id}&#34;
+        LOG.info(&#34;Successfully uploaded private model to Hugging Face: %s&#34;, url)
+        return url
+    except Exception as e:
+        LOG.warning(&#34;Hugging Face upload failed for %s: %s&#34;, repo_id, e)
+        return None
+    finally:
+        if old_offline is not None:
+            os.environ[&#34;HF_HUB_OFFLINE&#34;] = old_offline
+        if old_tr_offline is not None:
+            os.environ[&#34;TRANSFORMERS_OFFLINE&#34;] = old_tr_offline
+        if old_ds_offline is not None:
+            os.environ[&#34;HF_DATASETS_OFFLINE&#34;] = old_ds_offline</code></pre>
+</details>
+<div class="desc"><p>Upload model directory to a private Hugging Face repository.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.utils" href="index.html">neuralops.utils</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.utils.hf_git_exporter.commit_and_push_git" href="#neuralops.utils.hf_git_exporter.commit_and_push_git">commit_and_push_git</a></code></li>
+<li><code><a title="neuralops.utils.hf_git_exporter.find_documentation_file" href="#neuralops.utils.hf_git_exporter.find_documentation_file">find_documentation_file</a></code></li>
+<li><code><a title="neuralops.utils.hf_git_exporter.find_git_root" href="#neuralops.utils.hf_git_exporter.find_git_root">find_git_root</a></code></li>
+<li><code><a title="neuralops.utils.hf_git_exporter.generate_model_card" href="#neuralops.utils.hf_git_exporter.generate_model_card">generate_model_card</a></code></li>
+<li><code><a title="neuralops.utils.hf_git_exporter.handle_benchmark_run_export" href="#neuralops.utils.hf_git_exporter.handle_benchmark_run_export">handle_benchmark_run_export</a></code></li>
+<li><code><a title="neuralops.utils.hf_git_exporter.sanitize_slug" href="#neuralops.utils.hf_git_exporter.sanitize_slug">sanitize_slug</a></code></li>
+<li><code><a title="neuralops.utils.hf_git_exporter.update_documentation_table" href="#neuralops.utils.hf_git_exporter.update_documentation_table">update_documentation_table</a></code></li>
+<li><code><a title="neuralops.utils.hf_git_exporter.upload_to_huggingface" href="#neuralops.utils.hf_git_exporter.upload_to_huggingface">upload_to_huggingface</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

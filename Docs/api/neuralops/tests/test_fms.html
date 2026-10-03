@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tests.test_fms API documentation</title>
+<meta name="description" content="Comprehensive test suite for Factorised Matrix State Attention …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.tests.test_fms</code></h1>
+</header>
+<section id="section-intro">
+<p>Comprehensive test suite for Factorised Matrix State Attention.</p>
+<p>Tests:
+1. Basic initialization and bidirectional forward pass.
+2. Causal forward pass (decoder mode).
+3. Chunked linear scan numerical equivalence with parallel scan on short sequence.
+4. Linear memory and runtime behavior across sequence lengths (L=64, 128, 256).
+5. Pretrained weight copy from DistilBERT, RoBERTa, GPT-2, and Qwen.
+6. Missing weight extraction raises RuntimeError.
+7. Nested encoder bypass of out_proj.
+8. RoPE embedding and odd head dimension safety.
+9. Head mask handling.
+10. Symmetry breaking in L and R initialization (gradients flow into L while R starts at 0).</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.tests.test_fms.test_basic_forward"><code class="name flex">
+<span>def <span class="ident">test_basic_forward</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_basic_forward():
+    cfg = MockConfig()
+    fms = FactorisedMatrixState(config=cfg)
+    x = torch.randn(2, 16, 64)
+    out, _ = fms(x)
+    assert out.shape == (2, 16, 64)
+    assert not torch.isnan(out).any()</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_fms.test_causal_forward"><code class="name flex">
+<span>def <span class="ident">test_causal_forward</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_causal_forward():
+    cfg = MockConfig(is_decoder=True, model_type=&#34;gpt2&#34;)
+    fms = FactorisedMatrixState(config=cfg)
+    assert fms.is_decoder
+    x = torch.randn(2, 32, 64)
+    out, _ = fms(x)
+    assert out.shape == (2, 32, 64)
+    assert not torch.isnan(out).any()</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_fms.test_chunked_scan_equivalence"><code class="name flex">
+<span>def <span class="ident">test_chunked_scan_equivalence</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_chunked_scan_equivalence():
+    &#34;&#34;&#34;Verify chunked linear scan produces numerically consistent results with small chunk size.&#34;&#34;&#34;
+    cfg = MockConfig()
+    fms = FactorisedMatrixState(config=cfg)
+    B, H, L, d = 2, 4, 128, 16
+    q = torch.randn(B, H, L, d)
+    k = torch.randn(B, H, L, d)
+    v = torch.randn(B, H, L, d)
+    decay = torch.sigmoid(fms.beta)
+
+    # Run with small chunk size (32) and larger chunk size (64)
+    y_c32 = fms._matrix_scan_linear(q, k, v, decay, chunk_size=32)
+    y_c64 = fms._matrix_scan_linear(q, k, v, decay, chunk_size=64)
+    diff = (y_c32 - y_c64).abs().max().item()
+    assert diff &lt; 1e-4, f&#34;Chunked scan outputs differ across chunk sizes: diff={diff}&#34;</code></pre>
+</details>
+<div class="desc"><p>Verify chunked linear scan produces numerically consistent results with small chunk size.</p></div>
+</dd>
+<dt id="neuralops.tests.test_fms.test_distilbert_weight_copy"><code class="name flex">
+<span>def <span class="ident">test_distilbert_weight_copy</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_distilbert_weight_copy():
+    cfg = MockConfig()
+    old_attn = DummyDistilBertAttention(64)
+    fms = FactorisedMatrixState(config=cfg, pretrained_attn=old_attn)
+    assert not fms.is_nested_encoder
+    x = torch.randn(2, 8, 64)
+    out, _ = fms(x)
+    assert out.shape == (2, 8, 64)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_fms.test_gpt2_weight_copy"><code class="name flex">
+<span>def <span class="ident">test_gpt2_weight_copy</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_gpt2_weight_copy():
+    cfg = MockConfig(is_decoder=True, model_type=&#34;gpt2&#34;)
+    old_attn = DummyGPT2Attention(64)
+    fms = FactorisedMatrixState(config=cfg, pretrained_attn=old_attn)
+    assert fms.is_decoder
+    x = torch.randn(2, 16, 64)
+    out, _ = fms(x)
+    assert out.shape == (2, 16, 64)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_fms.test_long_sequence_linear_scaling"><code class="name flex">
+<span>def <span class="ident">test_long_sequence_linear_scaling</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_long_sequence_linear_scaling():
+    &#34;&#34;&#34;Test that chunked linear scan handles long sequences without OOM.&#34;&#34;&#34;
+    cfg = MockConfig()
+    fms = FactorisedMatrixState(config=cfg)
+    x = torch.randn(1, 256, 64)
+    out, _ = fms(x)
+    assert out.shape == (1, 256, 64)</code></pre>
+</details>
+<div class="desc"><p>Test that chunked linear scan handles long sequences without OOM.</p></div>
+</dd>
+<dt id="neuralops.tests.test_fms.test_lr_symmetry_breaking"><code class="name flex">
+<span>def <span class="ident">test_lr_symmetry_breaking</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_lr_symmetry_breaking():
+    &#34;&#34;&#34;Verify L is non-zero (Kaiming uniform) and R is zero initially, allowing gradients into L.&#34;&#34;&#34;
+    cfg = MockConfig()
+    fms = FactorisedMatrixState(config=cfg)
+    assert fms.L.norm().item() &gt; 0.1, &#34;L should have non-zero initial norm&#34;
+    assert fms.R.norm().item() == 0.0, &#34;R should start at zero&#34;</code></pre>
+</details>
+<div class="desc"><p>Verify L is non-zero (Kaiming uniform) and R is zero initially, allowing gradients into L.</p></div>
+</dd>
+<dt id="neuralops.tests.test_fms.test_missing_weights_raises"><code class="name flex">
+<span>def <span class="ident">test_missing_weights_raises</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_missing_weights_raises():
+    class BrokenAttn(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.linear = nn.Linear(64, 64)
+
+    cfg = MockConfig()
+    with pytest.raises(RuntimeError, match=&#34;missing mandatory projections&#34;):
+        FactorisedMatrixState(config=cfg, pretrained_attn=BrokenAttn())</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_fms.test_odd_head_dimension_rotate_half"><code class="name flex">
+<span>def <span class="ident">test_odd_head_dimension_rotate_half</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_odd_head_dimension_rotate_half():
+    &#34;&#34;&#34;Verify _rotate_half handles odd dimension without shape mismatch.&#34;&#34;&#34;
+    x = torch.randn(2, 4, 8, 17)
+    rot = _rotate_half(x)
+    assert rot.shape == x.shape</code></pre>
+</details>
+<div class="desc"><p>Verify _rotate_half handles odd dimension without shape mismatch.</p></div>
+</dd>
+<dt id="neuralops.tests.test_fms.test_qwen_gqa_and_rope"><code class="name flex">
+<span>def <span class="ident">test_qwen_gqa_and_rope</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_qwen_gqa_and_rope():
+    cfg = MockConfig(hidden_size=64, num_attention_heads=4, num_key_value_heads=2, head_dim=16, is_decoder=True, model_type=&#34;qwen2&#34;)
+    old_attn = DummyQwenAttention(dim=64, num_kv_heads=2, head_dim=16)
+    fms = FactorisedMatrixState(config=cfg, pretrained_attn=old_attn)
+    assert fms.kv_repeat == 2
+    x = torch.randn(2, 8, 64)
+    cos = torch.randn(2, 8, 16)
+    sin = torch.randn(2, 8, 16)
+    out, _ = fms(x, position_embeddings=(cos, sin))
+    assert out.shape == (2, 8, 64)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_fms.test_roberta_weight_copy_and_nested_bypass"><code class="name flex">
+<span>def <span class="ident">test_roberta_weight_copy_and_nested_bypass</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_roberta_weight_copy_and_nested_bypass():
+    cfg = MockConfig()
+    old_attn = DummyRobertaAttention(64)
+    fms = FactorisedMatrixState(config=cfg, pretrained_attn=old_attn)
+    assert fms.is_nested_encoder
+    x = torch.randn(2, 8, 64)
+    out, _ = fms(x)
+    assert out.shape == (2, 8, 64)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.tests.test_fms.DummyDistilBertAttention"><code class="flex name class">
+<span>class <span class="ident">DummyDistilBertAttention</span></span>
+<span>(</span><span>dim: int = 64)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DummyDistilBertAttention(nn.Module):
+    def __init__(self, dim: int = 64):
+        super().__init__()
+        self.q_lin = nn.Linear(dim, dim)
+        self.k_lin = nn.Linear(dim, dim)
+        self.v_lin = nn.Linear(dim, dim)
+        self.out_lin = nn.Linear(dim, dim)</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+</dd>
+<dt id="neuralops.tests.test_fms.DummyGPT2Attention"><code class="flex name class">
+<span>class <span class="ident">DummyGPT2Attention</span></span>
+<span>(</span><span>dim: int = 64)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DummyGPT2Attention(nn.Module):
+    def __init__(self, dim: int = 64):
+        super().__init__()
+        self.c_attn = nn.Linear(dim, 3 * dim)
+        self.c_proj = nn.Linear(dim, dim)</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+</dd>
+<dt id="neuralops.tests.test_fms.DummyQwenAttention"><code class="flex name class">
+<span>class <span class="ident">DummyQwenAttention</span></span>
+<span>(</span><span>dim: int = 64, num_kv_heads: int = 2, head_dim: int = 16)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DummyQwenAttention(nn.Module):
+    def __init__(self, dim: int = 64, num_kv_heads: int = 2, head_dim: int = 16):
+        super().__init__()
+        self.q_proj = nn.Linear(dim, dim)
+        self.k_proj = nn.Linear(dim, num_kv_heads * head_dim)
+        self.v_proj = nn.Linear(dim, num_kv_heads * head_dim)
+        self.o_proj = nn.Linear(dim, dim)</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+</dd>
+<dt id="neuralops.tests.test_fms.DummyRobertaAttention"><code class="flex name class">
+<span>class <span class="ident">DummyRobertaAttention</span></span>
+<span>(</span><span>dim: int = 64)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DummyRobertaAttention(nn.Module):
+    def __init__(self, dim: int = 64):
+        super().__init__()
+        self.self = DummyRobertaSelfAttention(dim)
+        self.output = nn.Module()
+        self.output.dense = nn.Linear(dim, dim)</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+</dd>
+<dt id="neuralops.tests.test_fms.DummyRobertaSelfAttention"><code class="flex name class">
+<span>class <span class="ident">DummyRobertaSelfAttention</span></span>
+<span>(</span><span>dim: int = 64)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DummyRobertaSelfAttention(nn.Module):
+    def __init__(self, dim: int = 64):
+        super().__init__()
+        self.query = nn.Linear(dim, dim)
+        self.key = nn.Linear(dim, dim)
+        self.value = nn.Linear(dim, dim)</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+</dd>
+<dt id="neuralops.tests.test_fms.MockConfig"><code class="flex name class">
+<span>class <span class="ident">MockConfig</span></span>
+<span>(</span><span>hidden_size: int = 64,<br>num_attention_heads: int = 4,<br>num_key_value_heads: int = 4,<br>head_dim: int = 16,<br>is_decoder: bool = False,<br>model_type: str = 'bert',<br>dropout: float = 0.0)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class MockConfig:
+    def __init__(
+        self,
+        hidden_size: int = 64,
+        num_attention_heads: int = 4,
+        num_key_value_heads: int = 4,
+        head_dim: int = 16,
+        is_decoder: bool = False,
+        model_type: str = &#34;bert&#34;,
+        dropout: float = 0.0,
+    ):
+        self.hidden_size = hidden_size
+        self.num_attention_heads = num_attention_heads
+        self.num_heads = num_attention_heads
+        self.num_key_value_heads = num_key_value_heads
+        self.head_dim = head_dim
+        self.is_decoder = is_decoder
+        self.model_type = model_type
+        self.dropout = dropout</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.tests" href="index.html">neuralops.tests</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.tests.test_fms.test_basic_forward" href="#neuralops.tests.test_fms.test_basic_forward">test_basic_forward</a></code></li>
+<li><code><a title="neuralops.tests.test_fms.test_causal_forward" href="#neuralops.tests.test_fms.test_causal_forward">test_causal_forward</a></code></li>
+<li><code><a title="neuralops.tests.test_fms.test_chunked_scan_equivalence" href="#neuralops.tests.test_fms.test_chunked_scan_equivalence">test_chunked_scan_equivalence</a></code></li>
+<li><code><a title="neuralops.tests.test_fms.test_distilbert_weight_copy" href="#neuralops.tests.test_fms.test_distilbert_weight_copy">test_distilbert_weight_copy</a></code></li>
+<li><code><a title="neuralops.tests.test_fms.test_gpt2_weight_copy" href="#neuralops.tests.test_fms.test_gpt2_weight_copy">test_gpt2_weight_copy</a></code></li>
+<li><code><a title="neuralops.tests.test_fms.test_long_sequence_linear_scaling" href="#neuralops.tests.test_fms.test_long_sequence_linear_scaling">test_long_sequence_linear_scaling</a></code></li>
+<li><code><a title="neuralops.tests.test_fms.test_lr_symmetry_breaking" href="#neuralops.tests.test_fms.test_lr_symmetry_breaking">test_lr_symmetry_breaking</a></code></li>
+<li><code><a title="neuralops.tests.test_fms.test_missing_weights_raises" href="#neuralops.tests.test_fms.test_missing_weights_raises">test_missing_weights_raises</a></code></li>
+<li><code><a title="neuralops.tests.test_fms.test_odd_head_dimension_rotate_half" href="#neuralops.tests.test_fms.test_odd_head_dimension_rotate_half">test_odd_head_dimension_rotate_half</a></code></li>
+<li><code><a title="neuralops.tests.test_fms.test_qwen_gqa_and_rope" href="#neuralops.tests.test_fms.test_qwen_gqa_and_rope">test_qwen_gqa_and_rope</a></code></li>
+<li><code><a title="neuralops.tests.test_fms.test_roberta_weight_copy_and_nested_bypass" href="#neuralops.tests.test_fms.test_roberta_weight_copy_and_nested_bypass">test_roberta_weight_copy_and_nested_bypass</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.tests.test_fms.DummyDistilBertAttention" href="#neuralops.tests.test_fms.DummyDistilBertAttention">DummyDistilBertAttention</a></code></h4>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_fms.DummyGPT2Attention" href="#neuralops.tests.test_fms.DummyGPT2Attention">DummyGPT2Attention</a></code></h4>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_fms.DummyQwenAttention" href="#neuralops.tests.test_fms.DummyQwenAttention">DummyQwenAttention</a></code></h4>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_fms.DummyRobertaAttention" href="#neuralops.tests.test_fms.DummyRobertaAttention">DummyRobertaAttention</a></code></h4>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_fms.DummyRobertaSelfAttention" href="#neuralops.tests.test_fms.DummyRobertaSelfAttention">DummyRobertaSelfAttention</a></code></h4>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_fms.MockConfig" href="#neuralops.tests.test_fms.MockConfig">MockConfig</a></code></h4>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,1912 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.attentions.reap_moe API documentation</title>
+<meta name="description" content="REAP-MoE: Robust Expert Allocation and Pruning Mixture of Experts Attention Module …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.attentions.reap_moe</code></h1>
+</header>
+<section id="section-intro">
+<p>REAP-MoE: Robust Expert Allocation and Pruning Mixture of Experts Attention Module.</p>
+<p>Vectorized Mixture-of-Experts block with load-balancing regularization, SVD low-rank
+expert factorization, and multi-head attention weight transfer.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.attentions.reap_moe.apply_rotary_pos_emb"><code class="name flex">
+<span>def <span class="ident">apply_rotary_pos_emb</span></span>(<span>q: torch.Tensor,<br>k: torch.Tensor,<br>cos: torch.Tensor,<br>sin: torch.Tensor,<br>position_ids: torch.Tensor | None = None) ‑> tuple[torch.Tensor, torch.Tensor]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+    position_ids: torch.Tensor | None = None,
+) -&gt; tuple[torch.Tensor, torch.Tensor]:
+    if cos is None or sin is None:
+        return q, k
+
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
+
+    if rotary_dim &lt; head_dim:
+        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+        cos_q = cos.to(q_rot.dtype)
+        sin_q = sin.to(q_rot.dtype)
+        cos_k = cos.to(k_rot.dtype)
+        sin_k = sin.to(k_rot.dtype)
+        q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
+        k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
+        q = torch.cat([q_rot_embed, q_pass], dim=-1)
+        k = torch.cat([k_rot_embed, k_pass], dim=-1)
+    else:
+        cos_q = cos[..., :head_dim].to(q.dtype)
+        sin_q = sin[..., :head_dim].to(q.dtype)
+        cos_k = cos[..., :head_dim].to(k.dtype)
+        sin_k = sin[..., :head_dim].to(k.dtype)
+        q = (q * cos_q) + (_rotate_half(q) * sin_q)
+        k = (k * cos_k) + (_rotate_half(k) * sin_k)
+
+    return q, k</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.reap_moe.inject_reap_moe"><code class="name flex">
+<span>def <span class="ident">inject_reap_moe</span></span>(<span>model: nn.Module | None = None,<br>layer: nn.Module | None = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: nn.Module | None = None,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;reap_moe_inject&#34;)
+@ATTENTION_REGISTRY.register(&#34;inject_reap_moe&#34;)
+def inject_reap_moe(
+    model: nn.Module | None = None,
+    layer: nn.Module | None = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    _depth: int = 0,
+    **kwargs: Any,
+) -&gt; nn.Module | None:
+    if _depth &gt; 8:
+        logger.warning(&#34;inject_reap_moe: max recursion depth exceeded, aborting.&#34;)
+        return None
+
+    target = layer if layer is not None else model
+    if target is None:
+        target = kwargs.get(&#34;model&#34;, kwargs.get(&#34;layer&#34;))
+    if target is None:
+        return None
+
+    cfg = model_config if model_config is not None else getattr(target, &#34;config&#34;, None)
+
+    # Whole-model traversal
+    layer_list = None
+    if hasattr(target, &#34;distilbert&#34;) and hasattr(target.distilbert, &#34;transformer&#34;):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, &#34;roberta&#34;) and hasattr(target.roberta, &#34;encoder&#34;):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, &#34;transformer&#34;) and hasattr(target.transformer, &#34;h&#34;):
+        layer_list = target.transformer.h
+    elif hasattr(target, &#34;h&#34;) and isinstance(target.h, (nn.ModuleList, list)):
+        layer_list = target.h
+    elif hasattr(target, &#34;model&#34;) and hasattr(target.model, &#34;layers&#34;):
+        layer_list = target.model.layers
+    elif hasattr(target, &#34;encoder&#34;) and hasattr(target.encoder, &#34;layer&#34;):
+        layer_list = target.encoder.layer
+    elif (
+        hasattr(target, &#34;bert&#34;)
+        and hasattr(target.bert, &#34;encoder&#34;)
+        and hasattr(target.bert.encoder, &#34;layer&#34;)
+    ):
+        layer_list = target.bert.encoder.layer
+    elif hasattr(target, &#34;layers&#34;) and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_reap_moe(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected &gt; 0 else None
+
+    try:
+        src_attn = old_attn
+        if src_attn is None:
+            for attr in (&#34;attention&#34;, &#34;self_attn&#34;, &#34;attn&#34;, &#34;self&#34;):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if cand is not None:
+                        src_attn = getattr(cand, &#34;self&#34;, cand)
+                        break
+
+        def _already_injected(module):
+            if module is None:
+                return False
+            if isinstance(module, REAPMoEAttention):
+                return True
+            if &#34;REAPMoE&#34; in module.__class__.__name__:
+                return True
+            inner = getattr(module, &#34;inner&#34;, None)
+            if isinstance(inner, REAPMoEAttention):
+                return True
+            wrapped = getattr(module, &#34;_wrapped_attention&#34;, None)
+            if isinstance(wrapped, REAPMoEAttention):
+                return True
+            return False
+
+        if _already_injected(src_attn):
+            return None
+
+        if src_attn is None:
+            return None
+
+        cls_name = src_attn.__class__.__name__
+        if &#34;DeltaNet&#34; in cls_name or &#34;LinearAttention&#34; in cls_name:
+            return None
+
+        if cfg is None and hasattr(src_attn, &#34;config&#34;):
+            cfg = src_attn.config
+
+        # RP-FIX-25: propagate n_experts, top_k from comp_config
+        extra_kwargs = {}
+        if comp_config is not None:
+            for key in (&#34;n_experts&#34;, &#34;top_k&#34;):
+                val = getattr(comp_config, key, None)
+                if val is not None:
+                    extra_kwargs[key] = val
+
+        new_attn = REAPMoEAttention(
+            config=cfg,
+            comp_config=comp_config,
+            pretrained_attn=src_attn,
+            **extra_kwargs,
+            **kwargs,
+        )
+
+        p = next(src_attn.parameters(), None)
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
+
+        if hasattr(target, &#34;attention&#34;):
+            if hasattr(target.attention, &#34;self&#34;):
+                target.attention.self = new_attn
+                new_attn.is_nested_encoder = True
+            else:
+                target.attention = new_attn
+            return new_attn
+        for attr in (&#34;self_attn&#34;, &#34;attn&#34;, &#34;self&#34;):
+            if hasattr(target, attr):
+                setattr(target, attr, new_attn)
+                return new_attn
+        target.attention = new_attn
+        return new_attn
+    except Exception as e:
+        logger.exception(&#34;inject_reap_moe failed: %s&#34;, e)
+        return None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.reap_moe.inject_reap_moe_attention"><code class="name flex">
+<span>def <span class="ident">inject_reap_moe_attention</span></span>(<span>model: nn.Module | None = None,<br>layer: nn.Module | None = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: nn.Module | None = None,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;reap_moe_inject&#34;)
+@ATTENTION_REGISTRY.register(&#34;inject_reap_moe&#34;)
+def inject_reap_moe(
+    model: nn.Module | None = None,
+    layer: nn.Module | None = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    _depth: int = 0,
+    **kwargs: Any,
+) -&gt; nn.Module | None:
+    if _depth &gt; 8:
+        logger.warning(&#34;inject_reap_moe: max recursion depth exceeded, aborting.&#34;)
+        return None
+
+    target = layer if layer is not None else model
+    if target is None:
+        target = kwargs.get(&#34;model&#34;, kwargs.get(&#34;layer&#34;))
+    if target is None:
+        return None
+
+    cfg = model_config if model_config is not None else getattr(target, &#34;config&#34;, None)
+
+    # Whole-model traversal
+    layer_list = None
+    if hasattr(target, &#34;distilbert&#34;) and hasattr(target.distilbert, &#34;transformer&#34;):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, &#34;roberta&#34;) and hasattr(target.roberta, &#34;encoder&#34;):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, &#34;transformer&#34;) and hasattr(target.transformer, &#34;h&#34;):
+        layer_list = target.transformer.h
+    elif hasattr(target, &#34;h&#34;) and isinstance(target.h, (nn.ModuleList, list)):
+        layer_list = target.h
+    elif hasattr(target, &#34;model&#34;) and hasattr(target.model, &#34;layers&#34;):
+        layer_list = target.model.layers
+    elif hasattr(target, &#34;encoder&#34;) and hasattr(target.encoder, &#34;layer&#34;):
+        layer_list = target.encoder.layer
+    elif (
+        hasattr(target, &#34;bert&#34;)
+        and hasattr(target.bert, &#34;encoder&#34;)
+        and hasattr(target.bert.encoder, &#34;layer&#34;)
+    ):
+        layer_list = target.bert.encoder.layer
+    elif hasattr(target, &#34;layers&#34;) and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_reap_moe(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected &gt; 0 else None
+
+    try:
+        src_attn = old_attn
+        if src_attn is None:
+            for attr in (&#34;attention&#34;, &#34;self_attn&#34;, &#34;attn&#34;, &#34;self&#34;):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if cand is not None:
+                        src_attn = getattr(cand, &#34;self&#34;, cand)
+                        break
+
+        def _already_injected(module):
+            if module is None:
+                return False
+            if isinstance(module, REAPMoEAttention):
+                return True
+            if &#34;REAPMoE&#34; in module.__class__.__name__:
+                return True
+            inner = getattr(module, &#34;inner&#34;, None)
+            if isinstance(inner, REAPMoEAttention):
+                return True
+            wrapped = getattr(module, &#34;_wrapped_attention&#34;, None)
+            if isinstance(wrapped, REAPMoEAttention):
+                return True
+            return False
+
+        if _already_injected(src_attn):
+            return None
+
+        if src_attn is None:
+            return None
+
+        cls_name = src_attn.__class__.__name__
+        if &#34;DeltaNet&#34; in cls_name or &#34;LinearAttention&#34; in cls_name:
+            return None
+
+        if cfg is None and hasattr(src_attn, &#34;config&#34;):
+            cfg = src_attn.config
+
+        # RP-FIX-25: propagate n_experts, top_k from comp_config
+        extra_kwargs = {}
+        if comp_config is not None:
+            for key in (&#34;n_experts&#34;, &#34;top_k&#34;):
+                val = getattr(comp_config, key, None)
+                if val is not None:
+                    extra_kwargs[key] = val
+
+        new_attn = REAPMoEAttention(
+            config=cfg,
+            comp_config=comp_config,
+            pretrained_attn=src_attn,
+            **extra_kwargs,
+            **kwargs,
+        )
+
+        p = next(src_attn.parameters(), None)
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
+
+        if hasattr(target, &#34;attention&#34;):
+            if hasattr(target.attention, &#34;self&#34;):
+                target.attention.self = new_attn
+                new_attn.is_nested_encoder = True
+            else:
+                target.attention = new_attn
+            return new_attn
+        for attr in (&#34;self_attn&#34;, &#34;attn&#34;, &#34;self&#34;):
+            if hasattr(target, attr):
+                setattr(target, attr, new_attn)
+                return new_attn
+        target.attention = new_attn
+        return new_attn
+    except Exception as e:
+        logger.exception(&#34;inject_reap_moe failed: %s&#34;, e)
+        return None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.reap_moe.inject_reap_moe_model"><code class="name flex">
+<span>def <span class="ident">inject_reap_moe_model</span></span>(<span>model: nn.Module | None = None,<br>layer: nn.Module | None = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: nn.Module | None = None,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;reap_moe_inject&#34;)
+@ATTENTION_REGISTRY.register(&#34;inject_reap_moe&#34;)
+def inject_reap_moe(
+    model: nn.Module | None = None,
+    layer: nn.Module | None = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    _depth: int = 0,
+    **kwargs: Any,
+) -&gt; nn.Module | None:
+    if _depth &gt; 8:
+        logger.warning(&#34;inject_reap_moe: max recursion depth exceeded, aborting.&#34;)
+        return None
+
+    target = layer if layer is not None else model
+    if target is None:
+        target = kwargs.get(&#34;model&#34;, kwargs.get(&#34;layer&#34;))
+    if target is None:
+        return None
+
+    cfg = model_config if model_config is not None else getattr(target, &#34;config&#34;, None)
+
+    # Whole-model traversal
+    layer_list = None
+    if hasattr(target, &#34;distilbert&#34;) and hasattr(target.distilbert, &#34;transformer&#34;):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, &#34;roberta&#34;) and hasattr(target.roberta, &#34;encoder&#34;):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, &#34;transformer&#34;) and hasattr(target.transformer, &#34;h&#34;):
+        layer_list = target.transformer.h
+    elif hasattr(target, &#34;h&#34;) and isinstance(target.h, (nn.ModuleList, list)):
+        layer_list = target.h
+    elif hasattr(target, &#34;model&#34;) and hasattr(target.model, &#34;layers&#34;):
+        layer_list = target.model.layers
+    elif hasattr(target, &#34;encoder&#34;) and hasattr(target.encoder, &#34;layer&#34;):
+        layer_list = target.encoder.layer
+    elif (
+        hasattr(target, &#34;bert&#34;)
+        and hasattr(target.bert, &#34;encoder&#34;)
+        and hasattr(target.bert.encoder, &#34;layer&#34;)
+    ):
+        layer_list = target.bert.encoder.layer
+    elif hasattr(target, &#34;layers&#34;) and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_reap_moe(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected &gt; 0 else None
+
+    try:
+        src_attn = old_attn
+        if src_attn is None:
+            for attr in (&#34;attention&#34;, &#34;self_attn&#34;, &#34;attn&#34;, &#34;self&#34;):
+                if hasattr(target, attr):
+                    cand = getattr(target, attr)
+                    if cand is not None:
+                        src_attn = getattr(cand, &#34;self&#34;, cand)
+                        break
+
+        def _already_injected(module):
+            if module is None:
+                return False
+            if isinstance(module, REAPMoEAttention):
+                return True
+            if &#34;REAPMoE&#34; in module.__class__.__name__:
+                return True
+            inner = getattr(module, &#34;inner&#34;, None)
+            if isinstance(inner, REAPMoEAttention):
+                return True
+            wrapped = getattr(module, &#34;_wrapped_attention&#34;, None)
+            if isinstance(wrapped, REAPMoEAttention):
+                return True
+            return False
+
+        if _already_injected(src_attn):
+            return None
+
+        if src_attn is None:
+            return None
+
+        cls_name = src_attn.__class__.__name__
+        if &#34;DeltaNet&#34; in cls_name or &#34;LinearAttention&#34; in cls_name:
+            return None
+
+        if cfg is None and hasattr(src_attn, &#34;config&#34;):
+            cfg = src_attn.config
+
+        # RP-FIX-25: propagate n_experts, top_k from comp_config
+        extra_kwargs = {}
+        if comp_config is not None:
+            for key in (&#34;n_experts&#34;, &#34;top_k&#34;):
+                val = getattr(comp_config, key, None)
+                if val is not None:
+                    extra_kwargs[key] = val
+
+        new_attn = REAPMoEAttention(
+            config=cfg,
+            comp_config=comp_config,
+            pretrained_attn=src_attn,
+            **extra_kwargs,
+            **kwargs,
+        )
+
+        p = next(src_attn.parameters(), None)
+        if p is not None:
+            new_attn.to(device=p.device, dtype=p.dtype)
+
+        if hasattr(target, &#34;attention&#34;):
+            if hasattr(target.attention, &#34;self&#34;):
+                target.attention.self = new_attn
+                new_attn.is_nested_encoder = True
+            else:
+                target.attention = new_attn
+            return new_attn
+        for attr in (&#34;self_attn&#34;, &#34;attn&#34;, &#34;self&#34;):
+            if hasattr(target, attr):
+                setattr(target, attr, new_attn)
+                return new_attn
+        target.attention = new_attn
+        return new_attn
+    except Exception as e:
+        logger.exception(&#34;inject_reap_moe failed: %s&#34;, e)
+        return None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.attentions.reap_moe.LoRALinear"><code class="flex name class">
+<span>class <span class="ident">LoRALinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>bias: bool = True,<br>lora_rank: int = 16,<br>lora_alpha: float = 32.0,<br>freeze_base: bool = False,<br>device: torch.device | None = None,<br>dtype: torch.dtype | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class LoRALinear(nn.Module):
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        freeze_base: bool = False,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -&gt; None:
+        super().__init__()
+        factory_kwargs = {&#34;device&#34;: device, &#34;dtype&#34;: dtype}
+        self.in_features = in_features
+        self.out_features = out_features
+        self.lora_rank = lora_rank
+        self.lora_alpha = lora_alpha
+        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank &gt; 0 else 1.0
+        self.freeze_base = freeze_base
+
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+        if self.lora_rank &gt; 0:
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+        self.reset_parameters()
+        if freeze_base:
+            self.freeze_base_weights()
+
+    def reset_parameters(self) -&gt; None:
+        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in &gt; 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+
+        if self.lora_rank &gt; 0 and self.lora_A is not None:
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            self.lora_A.requires_grad = True
+        if self.lora_rank &gt; 0 and self.lora_B is not None:
+            nn.init.zeros_(self.lora_B)
+            self.lora_B.requires_grad = True
+
+    def freeze_base_weights(self) -&gt; None:
+        self.weight.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+        if self.lora_rank &gt; 0:
+            if self.lora_A is not None:
+                self.lora_A.requires_grad = True
+            if self.lora_B is not None:
+                self.lora_B.requires_grad = True
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        target_dtype = x.dtype
+        w = self.weight.to(target_dtype) if self.weight.dtype != target_dtype else self.weight
+        b = (
+            self.bias.to(target_dtype)
+            if (self.bias is not None and self.bias.dtype != target_dtype)
+            else self.bias
+        )
+        out = F.linear(x, w, b)
+        if self.lora_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            a = self.lora_A.to(target_dtype) if self.lora_A.dtype != target_dtype else self.lora_A
+            bb = self.lora_B.to(target_dtype) if self.lora_B.dtype != target_dtype else self.lora_B
+            lora_out = F.linear(F.linear(x, a), bb) * self.lora_scaling
+            out = out + lora_out
+        return out.to(target_dtype)</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.reap_moe.LoRALinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    target_dtype = x.dtype
+    w = self.weight.to(target_dtype) if self.weight.dtype != target_dtype else self.weight
+    b = (
+        self.bias.to(target_dtype)
+        if (self.bias is not None and self.bias.dtype != target_dtype)
+        else self.bias
+    )
+    out = F.linear(x, w, b)
+    if self.lora_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        a = self.lora_A.to(target_dtype) if self.lora_A.dtype != target_dtype else self.lora_A
+        bb = self.lora_B.to(target_dtype) if self.lora_B.dtype != target_dtype else self.lora_B
+        lora_out = F.linear(F.linear(x, a), bb) * self.lora_scaling
+        out = out + lora_out
+    return out.to(target_dtype)</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+<dt id="neuralops.attentions.reap_moe.LoRALinear.freeze_base_weights"><code class="name flex">
+<span>def <span class="ident">freeze_base_weights</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def freeze_base_weights(self) -&gt; None:
+    self.weight.requires_grad = False
+    if self.bias is not None:
+        self.bias.requires_grad = False
+    if self.lora_rank &gt; 0:
+        if self.lora_A is not None:
+            self.lora_A.requires_grad = True
+        if self.lora_B is not None:
+            self.lora_B.requires_grad = True</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.reap_moe.LoRALinear.reset_parameters"><code class="name flex">
+<span>def <span class="ident">reset_parameters</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_parameters(self) -&gt; None:
+    nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+    if self.bias is not None:
+        fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+        bound = 1 / math.sqrt(fan_in) if fan_in &gt; 0 else 0
+        nn.init.uniform_(self.bias, -bound, bound)
+
+    if self.lora_rank &gt; 0 and self.lora_A is not None:
+        nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        self.lora_A.requires_grad = True
+    if self.lora_rank &gt; 0 and self.lora_B is not None:
+        nn.init.zeros_(self.lora_B)
+        self.lora_B.requires_grad = True</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.attentions.reap_moe.REAPMoE"><code class="flex name class">
+<span>class <span class="ident">REAPMoE</span></span>
+<span>(</span><span>d_model: int = 768,<br>n_experts: int = 2,<br>top_k: int = 1,<br>noise_std: float = 0.05,<br>use_svd: bool = True,<br>config: Any | None = None,<br>device: torch.device | None = None,<br>dtype: torch.dtype | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class REAPMoE(nn.Module):
+    def __init__(
+        self,
+        d_model: int = 768,
+        n_experts: int = 2,
+        top_k: int = 1,
+        noise_std: float = 0.05,
+        use_svd: bool = True,
+        config: Any | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__()
+        factory_kwargs = {&#34;device&#34;: device, &#34;dtype&#34;: dtype}
+        if config is not None:
+            d_model = getattr(config, &#34;hidden_size&#34;, getattr(config, &#34;d_model&#34;, d_model))
+            n_experts = getattr(config, &#34;num_experts&#34;, getattr(config, &#34;n_experts&#34;, n_experts))
+            top_k = getattr(config, &#34;top_k&#34;, top_k)
+
+        self.d_model = d_model
+        self.n_experts = n_experts
+        self.top_k = min(top_k, n_experts)
+        self.noise_std = noise_std
+
+        self.register_buffer(&#34;_aux_loss&#34;, torch.tensor(0.0), persistent=False)
+
+        self.router_ln = nn.LayerNorm(self.d_model, **factory_kwargs)
+        self.router = nn.Linear(d_model, n_experts, bias=False, **factory_kwargs)
+        nn.init.uniform_(self.router.weight, -0.01, 0.01)
+
+        if use_svd:
+
+            def expert_layer():
+                return nn.Sequential(
+                    SVDLinear(d_model, d_model, rank=max(1, d_model // 8), **factory_kwargs),
+                    nn.GELU(),
+                    SVDLinear(d_model, d_model, rank=max(1, d_model // 8), **factory_kwargs),
+                )
+
+        else:
+
+            def expert_layer():
+                return nn.Sequential(
+                    nn.Linear(d_model, d_model, **factory_kwargs),
+                    nn.GELU(),
+                    nn.Linear(d_model, d_model, **factory_kwargs),
+                )
+
+        self.experts = nn.ModuleList([expert_layer() for _ in range(n_experts)])
+
+        for exp in self.experts:
+            final_layer = exp[-1]
+            if isinstance(final_layer, SVDLinear):
+                nn.init.zeros_(final_layer.U)
+                nn.init.zeros_(final_layer.S)
+                nn.init.zeros_(final_layer.bias)
+            elif isinstance(final_layer, nn.Linear):
+                nn.init.zeros_(final_layer.weight)
+                if final_layer.bias is not None:
+                    nn.init.zeros_(final_layer.bias)
+
+    @property
+    def aux_loss(self) -&gt; torch.Tensor:
+        return self._aux_loss
+
+    def forward(self, x: torch.Tensor) -&gt; tuple[torch.Tensor, torch.Tensor]:
+        B, L, D = x.shape
+        target_dtype = x.dtype
+
+        r_dtype = (
+            self.router_ln.weight.dtype
+            if hasattr(self.router_ln, &#34;weight&#34;) and self.router_ln.weight is not None
+            else target_dtype
+        )
+        normed_x = self.router_ln(x.to(r_dtype)).to(target_dtype)
+        rw_dtype = (
+            self.router.weight.dtype
+            if hasattr(self.router, &#34;weight&#34;) and self.router.weight is not None
+            else target_dtype
+        )
+        logits = self.router(normed_x.to(rw_dtype)).to(target_dtype)
+        if self.training and self.noise_std &gt; 0:
+            noise = torch.randn_like(logits) * self.noise_std
+            scores = logits + noise
+        else:
+            scores = logits
+
+        full_probs = F.softmax(scores.float(), dim=-1).to(target_dtype)
+        topk_weights, topk_indices = torch.topk(full_probs, self.top_k, dim=-1)
+        topk_weights = (topk_weights / topk_weights.sum(dim=-1, keepdim=True).clamp(min=1e-9)).to(
+            target_dtype
+        )
+
+        router_probs = F.softmax(logits.float(), dim=-1).view(-1, self.n_experts)
+        expert_mask = F.one_hot(topk_indices, num_classes=self.n_experts).float()
+        expert_assignment = expert_mask.sum(dim=2).clamp(max=1.0)
+        density = expert_assignment.view(-1, self.n_experts).mean(dim=0)
+        prob_mean = router_probs.mean(dim=0)
+        aux_loss = self.n_experts * torch.sum(density * prob_mean)
+        self._aux_loss = aux_loss.detach()
+
+        experts_stack = torch.stack([exp(x).to(target_dtype) for exp in self.experts], dim=2)
+        topk_expanded = topk_indices.unsqueeze(-1).expand(-1, -1, -1, D)
+        gathered = torch.gather(experts_stack, 2, topk_expanded)
+        out = torch.sum(gathered * topk_weights.unsqueeze(-1), dim=2).to(target_dtype)
+
+        return out, aux_loss</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.reap_moe.REAPMoE.aux_loss"><code class="name">prop <span class="ident">aux_loss</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def aux_loss(self) -&gt; torch.Tensor:
+    return self._aux_loss</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.reap_moe.REAPMoE.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> tuple[torch.Tensor, torch.Tensor]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; tuple[torch.Tensor, torch.Tensor]:
+    B, L, D = x.shape
+    target_dtype = x.dtype
+
+    r_dtype = (
+        self.router_ln.weight.dtype
+        if hasattr(self.router_ln, &#34;weight&#34;) and self.router_ln.weight is not None
+        else target_dtype
+    )
+    normed_x = self.router_ln(x.to(r_dtype)).to(target_dtype)
+    rw_dtype = (
+        self.router.weight.dtype
+        if hasattr(self.router, &#34;weight&#34;) and self.router.weight is not None
+        else target_dtype
+    )
+    logits = self.router(normed_x.to(rw_dtype)).to(target_dtype)
+    if self.training and self.noise_std &gt; 0:
+        noise = torch.randn_like(logits) * self.noise_std
+        scores = logits + noise
+    else:
+        scores = logits
+
+    full_probs = F.softmax(scores.float(), dim=-1).to(target_dtype)
+    topk_weights, topk_indices = torch.topk(full_probs, self.top_k, dim=-1)
+    topk_weights = (topk_weights / topk_weights.sum(dim=-1, keepdim=True).clamp(min=1e-9)).to(
+        target_dtype
+    )
+
+    router_probs = F.softmax(logits.float(), dim=-1).view(-1, self.n_experts)
+    expert_mask = F.one_hot(topk_indices, num_classes=self.n_experts).float()
+    expert_assignment = expert_mask.sum(dim=2).clamp(max=1.0)
+    density = expert_assignment.view(-1, self.n_experts).mean(dim=0)
+    prob_mean = router_probs.mean(dim=0)
+    aux_loss = self.n_experts * torch.sum(density * prob_mean)
+    self._aux_loss = aux_loss.detach()
+
+    experts_stack = torch.stack([exp(x).to(target_dtype) for exp in self.experts], dim=2)
+    topk_expanded = topk_indices.unsqueeze(-1).expand(-1, -1, -1, D)
+    gathered = torch.gather(experts_stack, 2, topk_expanded)
+    out = torch.sum(gathered * topk_weights.unsqueeze(-1), dim=2).to(target_dtype)
+
+    return out, aux_loss</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.attentions.reap_moe.REAPMoEAttention"><code class="flex name class">
+<span>class <span class="ident">REAPMoEAttention</span></span>
+<span>(</span><span>config: Any | None = None,<br>rank: int | None = 64,<br>n_experts: int = 2,<br>top_k: int = 1,<br>pretrained_attn: nn.Module | None = None,<br>is_decoder: bool | None = None,<br>pre_ln: bool | None = None,<br>comp_config: Any | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;reap_moe&#34;)
+@ATTENTION_REGISTRY.register(&#34;reap_moe_attn&#34;)
+@ATTENTION_REGISTRY.register(&#34;reap_moe_attention&#34;)
+class REAPMoEAttention(BaseAttention):
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        config: Any | None = None,
+        rank: int | None = 64,
+        n_experts: int = 2,
+        top_k: int = 1,
+        pretrained_attn: nn.Module | None = None,
+        is_decoder: bool | None = None,
+        pre_ln: bool | None = None,
+        comp_config: Any | None = None,  # RP-FIX-21
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(config, rank or 64)
+        self.config = config
+        # If comp_config passed, prefer it; else fall back to config attribute.
+        if comp_config is None:
+            comp_config = getattr(config, &#34;compression_config&#34;, None)
+        self.comp_config = comp_config
+
+        # RP-FIX-10: strict hidden_size
+        h_size = (
+            kwargs.get(&#34;hidden_size&#34;)
+            or getattr(config, &#34;hidden_size&#34;, None)
+            or getattr(config, &#34;d_model&#34;, None)
+        )
+        if h_size is None and pretrained_attn is not None:
+            for cand in (&#34;q_lin&#34;, &#34;query&#34;, &#34;q_proj&#34;, &#34;c_attn&#34;):
+                mod = getattr(pretrained_attn, cand, None)
+                if mod is not None and hasattr(mod, &#34;weight&#34;):
+                    w = mod.weight
+                    if w.ndim == 2:
+                        if mod.__class__.__name__ == &#34;Conv1D&#34; or hasattr(mod, &#34;nf&#34;):
+                            h_size = w.shape[0]
+                        else:
+                            h_size = w.shape[1]
+                        break
+        if h_size is None:
+            raise ValueError(&#34;REAPMoEAttention: could not infer hidden_size.&#34;)
+
+        self.dim = int(h_size)
+        self.num_heads = (
+            kwargs.get(&#34;num_heads&#34;)
+            or kwargs.get(&#34;num_attention_heads&#34;)
+            or getattr(config, &#34;num_attention_heads&#34;, None)
+            or getattr(config, &#34;num_heads&#34;, None)
+            or 12
+        )
+        self.num_kv_heads = (
+            kwargs.get(&#34;num_key_value_heads&#34;)
+            or kwargs.get(&#34;num_kv_heads&#34;)
+            or getattr(config, &#34;num_key_value_heads&#34;, None)
+            or getattr(config, &#34;num_kv_heads&#34;, None)
+            or self.num_heads
+        )
+        # RP-FIX-23
+        self.num_kv_heads = min(self.num_kv_heads, self.num_heads)
+        self.head_dim = (
+            kwargs.get(&#34;head_dim&#34;)
+            or getattr(config, &#34;head_dim&#34;, None)
+            or getattr(config, &#34;d_kv&#34;, None)
+            or (self.dim // max(1, self.num_heads))
+        )
+        self.all_head_size = self.num_heads * self.head_dim
+        self.all_kv_head_size = self.num_kv_heads * self.head_dim
+
+        # RP-FIX-11
+        self.is_decoder = _detect_decoder(config, is_decoder, pretrained_attn)
+        self.is_nested_encoder = False  # RP-FIX-22
+
+        # RP-FIX-12
+        if pre_ln is None:
+            pre_ln = getattr(config, &#34;pre_ln&#34;, True) if config is not None else True
+        self.pre_ln = bool(pre_ln)
+
+        self.lora_rank = (
+            getattr(
+                config,
+                &#34;lora_rank&#34;,
+                getattr(comp_config, &#34;lora_rank&#34;, kwargs.get(&#34;lora_rank&#34;, 16)),
+            )
+            if config
+            else 16
+        )
+        self.lora_alpha = (
+            getattr(
+                config,
+                &#34;lora_alpha&#34;,
+                getattr(comp_config, &#34;lora_alpha&#34;, kwargs.get(&#34;lora_alpha&#34;, 32.0)),
+            )
+            if config
+            else 32.0
+        )
+        self.freeze_base = self.lora_rank &gt; 0
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.supports_gqa = True
+
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get(&#34;source_attn&#34;)
+        target_dtype = kwargs.get(&#34;dtype&#34;)
+        if target_dtype is None and source_attn is not None:
+            p = next(source_attn.parameters(), None)
+            if p is not None:
+                target_dtype = p.dtype
+
+        self.q_lin = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
+        )
+        self.k_lin = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
+        )
+        self.v_lin = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
+        )
+        self.out_lin = LoRALinear(
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
+        )
+
+        # Aliases
+        self.q_proj = self.q_lin
+        self.k_proj = self.k_lin
+        self.v_proj = self.v_lin
+        self.out_proj = self.out_lin
+        self.query = self.q_lin
+        self.key = self.k_lin
+        self.value = self.v_lin
+        self.dense = self.out_lin
+        self.o_proj = self.out_lin
+        self.c_proj = self.out_lin
+
+        self.moe = REAPMoE(
+            self.dim,
+            n_experts=n_experts,
+            top_k=top_k,
+            config=config,
+            dtype=target_dtype,
+        )
+        self.norm1 = nn.LayerNorm(self.dim, dtype=target_dtype)
+        self.norm2 = nn.LayerNorm(self.dim, dtype=target_dtype)
+
+        dropout_p = (
+            getattr(config, &#34;dropout&#34;, getattr(config, &#34;attention_probs_dropout_prob&#34;, 0.1))
+            if config
+            else 0.1
+        )
+        self.dropout = nn.Dropout(dropout_p)
+
+        self.register_buffer(&#34;_attn_aux_loss&#34;, torch.tensor(0.0), persistent=False)
+
+        if source_attn is not None:
+            self.copy_weights(source_attn)
+
+        if target_dtype is not None:
+            self.to(target_dtype)
+
+    @property
+    def aux_loss(self) -&gt; torch.Tensor:
+        return self.moe.aux_loss
+
+    # ------------------------------------------------------------------
+    def copy_weights(self, src: Any) -&gt; None:
+        if src is None:
+            return
+
+        cls_name = src.__class__.__name__
+        has_out_lin = hasattr(src, &#34;out_lin&#34;) or hasattr(src, &#34;c_proj&#34;) or hasattr(src, &#34;o_proj&#34;)
+        is_nested = False
+        if (
+            (
+                hasattr(src, &#34;self&#34;)
+                and hasattr(src.self, &#34;query&#34;)
+                and hasattr(src, &#34;output&#34;)
+                and hasattr(src.output, &#34;dense&#34;)
+            )
+            or (
+                cls_name
+                in [
+                    &#34;BertSelfAttention&#34;,
+                    &#34;RobertaSelfAttention&#34;,
+                    &#34;XLMRobertaSelfAttention&#34;,
+                    &#34;ElectraSelfAttention&#34;,
+                    &#34;DebertaSelfAttention&#34;,
+                ]
+                or (cls_name.endswith(&#34;SelfAttention&#34;) and &#34;distil&#34; not in cls_name.lower())
+            )
+            and not has_out_lin
+        ):
+            is_nested = True
+        self.is_nested_encoder = bool(is_nested)
+
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
+            &#34;q&#34;: (None, None),
+            &#34;k&#34;: (None, None),
+            &#34;v&#34;: (None, None),
+            &#34;o&#34;: (None, None),
+        }
+
+        # GPT-2 fused
+        if hasattr(src, &#34;c_attn&#34;) and src.c_attn is not None:
+            c_attn_mod = src.c_attn
+            base_c = getattr(c_attn_mod, &#34;base_layer&#34;, c_attn_mod)
+            c_w = getattr(base_c, &#34;weight&#34;, getattr(c_attn_mod, &#34;weight&#34;, None))
+            if c_w is not None:
+                c_w = c_w.data.clone()
+                if (
+                    c_attn_mod.__class__.__name__ == &#34;Conv1D&#34;
+                    or base_c.__class__.__name__ == &#34;Conv1D&#34;
+                    or (c_w.ndim == 2 and c_w.shape[0] &lt; c_w.shape[1])
+                ):
+                    c_w = c_w.t().contiguous()
+                split_size = c_w.size(0) // 3
+                bias_mod = getattr(base_c, &#34;bias&#34;, getattr(c_attn_mod, &#34;bias&#34;, None))
+                c_b = bias_mod.data.clone() if bias_mod is not None else None
+                extracted[&#34;q&#34;] = (
+                    c_w[:split_size, :],
+                    c_b[:split_size] if c_b is not None else None,
+                )
+                extracted[&#34;k&#34;] = (
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted[&#34;v&#34;] = (
+                    c_w[2 * split_size :, :],
+                    c_b[2 * split_size :] if c_b is not None else None,
+                )
+
+            if hasattr(src, &#34;c_proj&#34;) and src.c_proj is not None:
+                c_proj_mod = src.c_proj
+                base_o = getattr(c_proj_mod, &#34;base_layer&#34;, c_proj_mod)
+                o_w = getattr(base_o, &#34;weight&#34;, getattr(c_proj_mod, &#34;weight&#34;, None))
+                if o_w is not None:
+                    o_w = o_w.data.clone()
+                    if (
+                        c_proj_mod.__class__.__name__ == &#34;Conv1D&#34;
+                        or base_o.__class__.__name__ == &#34;Conv1D&#34;
+                        or (o_w.ndim == 2 and o_w.shape[0] &lt; o_w.shape[1])
+                    ):
+                        o_w = o_w.t().contiguous()
+                    bias_o = getattr(base_o, &#34;bias&#34;, getattr(c_proj_mod, &#34;bias&#34;, None))
+                    extracted[&#34;o&#34;] = (
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
+                    )
+
+        # RoBERTa / BERT nested
+        elif hasattr(src, &#34;self&#34;) and hasattr(src.self, &#34;query&#34;):
+            s = src.self
+            for proj_key, sub_name in [(&#34;q&#34;, &#34;query&#34;), (&#34;k&#34;, &#34;key&#34;), (&#34;v&#34;, &#34;value&#34;)]:
+                mod = getattr(s, sub_name, None)
+                if mod is not None and hasattr(mod, &#34;weight&#34;):
+                    extracted[proj_key] = (
+                        mod.weight.data.clone(),
+                        mod.bias.data.clone() if mod.bias is not None else None,
+                    )
+            if hasattr(src, &#34;output&#34;) and hasattr(src.output, &#34;dense&#34;):
+                out_mod = src.output.dense
+                extracted[&#34;o&#34;] = (
+                    out_mod.weight.data.clone(),
+                    out_mod.bias.data.clone() if out_mod.bias is not None else None,
+                )
+
+        # Flat modules
+        else:
+            proj_candidates = {
+                &#34;q&#34;: [&#34;q_lin&#34;, &#34;q_proj&#34;, &#34;query&#34;],
+                &#34;k&#34;: [&#34;k_lin&#34;, &#34;k_proj&#34;, &#34;key&#34;],
+                &#34;v&#34;: [&#34;v_lin&#34;, &#34;v_proj&#34;, &#34;value&#34;],
+                &#34;o&#34;: [&#34;out_lin&#34;, &#34;out_proj&#34;, &#34;dense&#34;, &#34;o_proj&#34;],
+            }
+            for proj_key, names in proj_candidates.items():
+                for name in names:
+                    if hasattr(src, name):
+                        mod = getattr(src, name)
+                        if mod is not None and hasattr(mod, &#34;weight&#34;):
+                            extracted[proj_key] = (
+                                mod.weight.data.clone(),
+                                mod.bias.data.clone() if mod.bias is not None else None,
+                            )
+                            break
+
+        # UniversalAdapter fallback
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != &#34;o&#34; or not self.is_nested_encoder)
+        ]
+        if missing:
+            try:
+                from neuralops.core.adapters import UniversalAdapter
+
+                adapter = UniversalAdapter()
+                for k in missing:
+                    w, b = adapter.get_weight_bias(src, k)
+                    if w is not None:
+                        extracted[k] = (w.clone(), b.clone() if b is not None else None)
+            except Exception as e:
+                logger.debug(&#34;UniversalAdapter fallback failed: %s&#34;, e)
+
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != &#34;o&#34; or not self.is_nested_encoder)
+        ]
+        if missing_after:
+            raise RuntimeError(
+                f&#34;REAPMoEAttention.copy_weights: missing mandatory projections &#34;
+                f&#34;{missing_after} from {src.__class__.__name__}.&#34;
+            )
+
+        target_map = {
+            &#34;q&#34;: self.q_lin,
+            &#34;k&#34;: self.k_lin,
+            &#34;v&#34;: self.v_lin,
+            &#34;o&#34;: self.out_lin,
+        }
+
+        with torch.no_grad():
+            for proj_key, target_mod in target_map.items():
+                w, b = extracted[proj_key]
+                if w is None:
+                    if proj_key == &#34;o&#34; and self.is_nested_encoder:
+                        # For nested, out_lin will be Identity (set below).
+                        continue
+                    else:
+                        raise RuntimeError(f&#34;REAPMoEAttention: missing weight for {proj_key}.&#34;)
+
+                if w.shape == target_mod.weight.shape:
+                    target_mod.weight.copy_(w)
+                elif w.t().contiguous().shape == target_mod.weight.shape:
+                    target_mod.weight.copy_(w.t().contiguous())
+                elif (
+                    w.shape[0] &lt; target_mod.weight.shape[0]
+                    and target_mod.weight.shape[0] % w.shape[0] == 0
+                    and w.shape[1] == target_mod.weight.shape[1]
+                ):
+                    repeats = target_mod.weight.shape[0] // w.shape[0]
+                    target_mod.weight.copy_(w.repeat(repeats, 1))
+                else:
+                    min_0 = min(target_mod.weight.shape[0], w.shape[0])
+                    min_1 = min(target_mod.weight.shape[1], w.shape[1])
+                    target_mod.weight.zero_()
+                    target_mod.weight[:min_0, :min_1].copy_(w[:min_0, :min_1])
+
+                if b is not None and target_mod.bias is not None:
+                    if b.shape == target_mod.bias.shape:
+                        target_mod.bias.copy_(b)
+                    elif (
+                        b.shape[0] &lt; target_mod.bias.shape[0]
+                        and target_mod.bias.shape[0] % b.shape[0] == 0
+                    ):
+                        repeats = target_mod.bias.shape[0] // b.shape[0]
+                        target_mod.bias.copy_(b.repeat(repeats))
+                    else:
+                        min_b = min(target_mod.bias.shape[0], b.shape[0])
+                        target_mod.bias.zero_()
+                        target_mod.bias[:min_b].copy_(b[:min_b])
+                elif target_mod.bias is not None:
+                    nn.init.zeros_(target_mod.bias)
+
+                norm = float(torch.linalg.norm(target_mod.weight.float()).item())
+                if norm &lt; 1e-4:
+                    logger.warning(
+                        &#34;REAPMoEAttention: weight for &#39;%s&#39; has near-zero Frobenius norm (%.2e).&#34;,
+                        proj_key,
+                        norm,
+                    )
+
+        if self.freeze_base:
+            for mod in [self.q_lin, self.k_lin, self.v_lin, self.out_lin]:
+                mod.freeze_base_weights()
+
+        # RP-FIX-16: nested encoder should NOT apply its own out_lin.
+        if self.is_nested_encoder:
+            self.out_lin = nn.Identity()
+
+    # ------------------------------------------------------------------
+    # Mask helper (RP-FIX-20)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _prepare_valid_mask(
+        attention_mask: torch.Tensor | None,
+        B: int,
+        N_kv: int,
+        device: torch.device,
+    ) -&gt; torch.Tensor | None:
+        if attention_mask is None:
+            return None
+        if attention_mask.dim() == 2:
+            if attention_mask.dtype == torch.bool:
+                return attention_mask
+            if attention_mask.dtype.is_floating_point:
+                return attention_mask &gt; -1e4
+            return attention_mask &gt; 0
+        if attention_mask.dim() == 3:
+            # (B, N_q, N_kv) or (B, 1, N_kv)
+            if attention_mask.dtype == torch.bool:
+                v = attention_mask
+            elif attention_mask.dtype.is_floating_point:
+                v = attention_mask &gt; -1e4
+            else:
+                v = attention_mask &gt; 0
+            # Reduce over query dimension if present, else keep as is.
+            if v.shape[1] &gt; 1:
+                v = v.any(dim=1)  # (B, N_kv)
+            else:
+                v = v.squeeze(1)  # (B, N_kv)
+            return v
+        if attention_mask.dim() == 4:
+            if attention_mask.dtype == torch.bool:
+                v = attention_mask
+            elif attention_mask.dtype.is_floating_point:
+                v = attention_mask &gt; -1e4
+            else:
+                v = attention_mask &gt; 0
+            return v.any(dim=-2).squeeze(1)
+        raise ValueError(f&#34;Unsupported attention_mask dim: {attention_mask.dim()}&#34;)
+
+    # ------------------------------------------------------------------
+    # Forward
+    # ------------------------------------------------------------------
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        layer_idx: int = 0,
+        *args: Any,
+        **kwargs: Any,
+    ) -&gt; tuple[torch.Tensor, torch.Tensor | None]:
+        # RP-FIX-24
+        if encoder_hidden_states is not None:
+            raise NotImplementedError(&#34;REAPMoEAttention does not support cross-attention.&#34;)
+
+        B, L, _ = hidden_states.shape
+        device = hidden_states.device
+
+        target_dtype = hidden_states.dtype
+
+        # Pre-LN: apply norm before attention (RP-FIX-17)
+        if self.pre_ln:
+            n1_dtype = (
+                self.norm1.weight.dtype
+                if hasattr(self.norm1, &#34;weight&#34;) and self.norm1.weight is not None
+                else target_dtype
+            )
+            h_norm = self.norm1(hidden_states.to(n1_dtype)).to(target_dtype)
+            attn_input = h_norm
+            residual = hidden_states
+        else:
+            attn_input = hidden_states
+            residual = hidden_states
+
+        # Projections on attn_input
+        q = self.q_lin(attn_input).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        k_new = (
+            self.k_lin(attn_input).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        )
+        v_new = (
+            self.v_lin(attn_input).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        )
+
+        # RoPE with past_len
+        if position_embeddings is None:
+            position_embeddings = kwargs.get(&#34;position_embeddings&#34;)
+        if position_embeddings is not None:
+            cos, sin = position_embeddings
+            past_len_rope = 0
+            if past_key_value is not None:
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) &gt;= 1:
+                    past_len_rope = past_key_value[0].shape[-2]
+                elif hasattr(past_key_value, &#34;key_cache&#34;) and past_key_value.key_cache:
+                    # RP-FIX-19: use layer_idx
+                    idx = min(layer_idx, len(past_key_value.key_cache) - 1)
+                    past_len_rope = past_key_value.key_cache[idx].shape[-2]
+            cos = cos[..., past_len_rope : past_len_rope + L, :]
+            sin = sin[..., past_len_rope : past_len_rope + L, :]
+            q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin)
+
+        # KV-cache
+        past_k = past_v = None
+        if past_key_value is not None:
+            if isinstance(past_key_value, (tuple, list)) and len(past_key_value) &gt;= 2:
+                past_k, past_v = past_key_value[0], past_key_value[1]
+            elif hasattr(past_key_value, &#34;key_cache&#34;) and past_key_value.key_cache:
+                idx = min(layer_idx, len(past_key_value.key_cache) - 1)
+                past_k = past_key_value.key_cache[idx]
+                past_v = past_key_value.value_cache[idx]
+
+        if past_k is not None:
+            K_cat = torch.cat([past_k, k_new], dim=-2)
+            V_cat = torch.cat([past_v, v_new], dim=-2)
+        else:
+            K_cat = k_new
+            V_cat = v_new
+
+        if past_key_value is not None and hasattr(past_key_value, &#34;update&#34;):
+            past_key_value.update(k_new, v_new, layer_idx)
+
+        N_kv = K_cat.shape[2]
+        past_len = N_kv - L if self.is_decoder else 0
+
+        # GQA expansion
+        if self.num_heads != self.num_kv_heads:
+            repeats = self.num_heads // self.num_kv_heads
+            K_full = repeat_kv(K_cat, repeats)
+            V_full = repeat_kv(V_cat, repeats)
+        else:
+            K_full = K_cat
+            V_full = V_cat
+
+        # RP-FIX-18: disable SDPA if causal and past_len &gt; 0
+        use_sdpa = (
+            not output_attentions and head_mask is None and not (self.is_decoder and past_len &gt; 0)
+        )
+
+        if use_sdpa:
+            q_sdp = q.to(torch.float16) if q.dtype == torch.float32 else q
+            k_sdp = K_full.to(torch.float16) if K_full.dtype == torch.float32 else K_full
+            v_sdp = V_full.to(torch.float16) if V_full.dtype == torch.float32 else V_full
+
+            attn_bias_sdp = None
+            if attention_mask is not None:
+                if attention_mask.dim() == 4:
+                    attn_bias_sdp = attention_mask.to(q_sdp.dtype)
+                else:
+                    token_valid = self._prepare_valid_mask(attention_mask, B, N_kv, device)
+                    if token_valid is not None:
+                        attn_bias_sdp = ((token_valid[:, None, None, :].float() - 1.0) * 1e4).to(
+                            q_sdp.dtype
+                        )
+
+            is_causal_sdp = self.is_decoder and L &gt; 1 and past_len == 0
+
+            attn_out_sdp = F.scaled_dot_product_attention(
+                q_sdp,
+                k_sdp,
+                v_sdp,
+                attn_mask=attn_bias_sdp,
+                is_causal=is_causal_sdp,
+                dropout_p=self.dropout.p if self.training else 0.0,
+            )
+            attn_out = (
+                attn_out_sdp.to(hidden_states.dtype)
+                .transpose(1, 2)
+                .contiguous()
+                .view(B, L, self.all_head_size)
+            )
+            attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
+            attn_ret = None
+        else:
+            scale = 1.0 / math.sqrt(self.head_dim)
+            scores = torch.matmul(q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale
+
+            token_valid = self._prepare_valid_mask(attention_mask, B, N_kv, device)
+
+            if self.is_decoder:
+                if past_len &gt; 0:
+                    abs_q = (past_len + torch.arange(L, device=device)).unsqueeze(1)
+                    abs_k = torch.arange(N_kv, device=device).unsqueeze(0)
+                    causal = (abs_k &lt;= abs_q).unsqueeze(0).unsqueeze(0)
+                else:
+                    causal = (
+                        torch.tril(torch.ones(L, N_kv, device=device, dtype=torch.bool))
+                        .unsqueeze(0)
+                        .unsqueeze(0)
+                    )
+                scores = scores.masked_fill(~causal, -1e4)
+
+            if token_valid is not None:
+                scores = scores.masked_fill(~token_valid[:, None, None, :].bool(), -1e4)
+
+            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+            probs = F.softmax(scores, dim=-1).to(hidden_states.dtype)
+            probs = torch.nan_to_num(probs, nan=0.0)
+            probs = self.dropout(probs)
+
+            if head_mask is not None:
+                if head_mask.dim() == 1:
+                    head_mask = head_mask.view(1, -1, 1, 1)
+                elif head_mask.dim() == 2:
+                    head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)
+                elif head_mask.dim() == 3:
+                    head_mask = head_mask[:, :, :1].unsqueeze(-1)
+                probs = probs * head_mask.to(probs.dtype)
+
+            attn_out = (
+                torch.matmul(probs, V_full)
+                .permute(0, 2, 1, 3)
+                .contiguous()
+                .view(B, L, self.all_head_size)
+            )
+            attn_ret = probs if output_attentions else None
+
+        # RP-FIX-16: skip out_lin for nested encoder
+        if self.is_nested_encoder:
+            proj = attn_out
+        else:
+            proj = self.out_lin(attn_out)
+
+        proj = torch.nan_to_num(proj, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        # Residual + MoE (RP-FIX-17)
+        n2_dtype = (
+            self.norm2.weight.dtype
+            if hasattr(self.norm2, &#34;weight&#34;) and self.norm2.weight is not None
+            else target_dtype
+        )
+        if self.pre_ln:
+            h1 = (residual + self.dropout(proj.to(target_dtype))).to(target_dtype)
+            h1_norm = self.norm2(h1.to(n2_dtype)).to(target_dtype)
+            moe_out, _ = self.moe(h1_norm)
+            out = (h1 + self.dropout(moe_out.to(target_dtype))).to(target_dtype)
+        else:
+            # Post-LN: norm after residual
+            n1_dtype = (
+                self.norm1.weight.dtype
+                if hasattr(self.norm1, &#34;weight&#34;) and self.norm1.weight is not None
+                else target_dtype
+            )
+            h1 = (residual + self.dropout(proj.to(target_dtype))).to(target_dtype)
+            h1 = self.norm1(h1.to(n1_dtype)).to(target_dtype)
+            moe_out, _ = self.moe(h1)
+            out = (h1 + self.dropout(moe_out.to(target_dtype))).to(target_dtype)
+            out = self.norm2(out.to(n2_dtype)).to(target_dtype)
+
+        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+        return out.to(target_dtype), attn_ret</code></pre>
+</details>
+<div class="desc"><p>Every custom attention module must inherit from this.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.reap_moe.REAPMoEAttention.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.reap_moe.REAPMoEAttention.aux_loss"><code class="name">prop <span class="ident">aux_loss</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def aux_loss(self) -&gt; torch.Tensor:
+    return self.moe.aux_loss</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseAttention.copy_weights" href="../core/base.html#neuralops.core.base.BaseAttention.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.extra_repr" href="../core/base.html#neuralops.core.base.BaseAttention.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.forward" href="../core/base.html#neuralops.core.base.BaseAttention.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.attentions.reap_moe.SVDLinear"><code class="flex name class">
+<span>class <span class="ident">SVDLinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>rank: int | None = None,<br>device: torch.device | None = None,<br>dtype: torch.dtype | None = None,<br>freeze: bool = False)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class SVDLinear(nn.Module):
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+        freeze: bool = False,
+    ):
+        super().__init__()
+        factory_kwargs = {&#34;device&#34;: device, &#34;dtype&#34;: dtype}
+        self.in_features = in_features
+        self.out_features = out_features
+        self.rank = rank or max(1, min(in_features, out_features) // 4)
+
+        self.U = nn.Parameter(torch.randn((out_features, self.rank), **factory_kwargs) * 0.02)
+        self.S = nn.Parameter(torch.ones(self.rank, **factory_kwargs))
+        self.V = nn.Parameter(torch.randn((in_features, self.rank), **factory_kwargs) * 0.02)
+        self.bias = nn.Parameter(torch.zeros(out_features, **factory_kwargs))
+
+        if freeze:
+            self.U.requires_grad = False
+            self.S.requires_grad = False
+            self.V.requires_grad = False
+            self.bias.requires_grad = False
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        return (self.U * self.S.unsqueeze(0)) @ self.V.t().contiguous()
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        target_dtype = x.dtype
+        V = self.V.to(target_dtype) if self.V.dtype != target_dtype else self.V
+        S = self.S.to(target_dtype) if self.S.dtype != target_dtype else self.S
+        U = self.U.to(target_dtype) if self.U.dtype != target_dtype else self.U
+        b = (
+            self.bias.to(target_dtype)
+            if (self.bias is not None and self.bias.dtype != target_dtype)
+            else self.bias
+        )
+        out = (x @ V) * S @ U.t().contiguous()
+        if b is not None:
+            out = out + b
+        return out.to(target_dtype)</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.reap_moe.SVDLinear.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.reap_moe.SVDLinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    return (self.U * self.S.unsqueeze(0)) @ self.V.t().contiguous()</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.reap_moe.SVDLinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    target_dtype = x.dtype
+    V = self.V.to(target_dtype) if self.V.dtype != target_dtype else self.V
+    S = self.S.to(target_dtype) if self.S.dtype != target_dtype else self.S
+    U = self.U.to(target_dtype) if self.U.dtype != target_dtype else self.U
+    b = (
+        self.bias.to(target_dtype)
+        if (self.bias is not None and self.bias.dtype != target_dtype)
+        else self.bias
+    )
+    out = (x @ V) * S @ U.t().contiguous()
+    if b is not None:
+        out = out + b
+    return out.to(target_dtype)</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.attentions" href="index.html">neuralops.attentions</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.attentions.reap_moe.apply_rotary_pos_emb" href="#neuralops.attentions.reap_moe.apply_rotary_pos_emb">apply_rotary_pos_emb</a></code></li>
+<li><code><a title="neuralops.attentions.reap_moe.inject_reap_moe" href="#neuralops.attentions.reap_moe.inject_reap_moe">inject_reap_moe</a></code></li>
+<li><code><a title="neuralops.attentions.reap_moe.inject_reap_moe_attention" href="#neuralops.attentions.reap_moe.inject_reap_moe_attention">inject_reap_moe_attention</a></code></li>
+<li><code><a title="neuralops.attentions.reap_moe.inject_reap_moe_model" href="#neuralops.attentions.reap_moe.inject_reap_moe_model">inject_reap_moe_model</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.attentions.reap_moe.LoRALinear" href="#neuralops.attentions.reap_moe.LoRALinear">LoRALinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.reap_moe.LoRALinear.forward" href="#neuralops.attentions.reap_moe.LoRALinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.attentions.reap_moe.LoRALinear.freeze_base_weights" href="#neuralops.attentions.reap_moe.LoRALinear.freeze_base_weights">freeze_base_weights</a></code></li>
+<li><code><a title="neuralops.attentions.reap_moe.LoRALinear.reset_parameters" href="#neuralops.attentions.reap_moe.LoRALinear.reset_parameters">reset_parameters</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.reap_moe.REAPMoE" href="#neuralops.attentions.reap_moe.REAPMoE">REAPMoE</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.reap_moe.REAPMoE.aux_loss" href="#neuralops.attentions.reap_moe.REAPMoE.aux_loss">aux_loss</a></code></li>
+<li><code><a title="neuralops.attentions.reap_moe.REAPMoE.forward" href="#neuralops.attentions.reap_moe.REAPMoE.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.reap_moe.REAPMoEAttention" href="#neuralops.attentions.reap_moe.REAPMoEAttention">REAPMoEAttention</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.reap_moe.REAPMoEAttention.aux_loss" href="#neuralops.attentions.reap_moe.REAPMoEAttention.aux_loss">aux_loss</a></code></li>
+<li><code><a title="neuralops.attentions.reap_moe.REAPMoEAttention.is_custom_attention" href="#neuralops.attentions.reap_moe.REAPMoEAttention.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.reap_moe.SVDLinear" href="#neuralops.attentions.reap_moe.SVDLinear">SVDLinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.reap_moe.SVDLinear.forward" href="#neuralops.attentions.reap_moe.SVDLinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.attentions.reap_moe.SVDLinear.is_custom_attention" href="#neuralops.attentions.reap_moe.SVDLinear.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.reap_moe.SVDLinear.weight" href="#neuralops.attentions.reap_moe.SVDLinear.weight">weight</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

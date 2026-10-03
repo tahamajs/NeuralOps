@@ -1,0 +1,1988 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.dynamic_rank API documentation</title>
+<meta name="description" content="Dynamic Entropy Singular Value Decomposition (Dynamic Entropy SVD) Compressor …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.dynamic_rank</code></h1>
+</header>
+<section id="section-intro">
+<p>Dynamic Entropy Singular Value Decomposition (Dynamic Entropy SVD) Compressor.</p>
+<p>Implements singular entropy computation over empirical layer activation covariances:
+$$H(\Sigma_l) = -\sum_{i=1}^{d} p_i \ln(p_i), \quad p_i = \frac{\sigma_i}{\sum_j \sigma_j}$$
+Dynamically budgets layer ranks $r_l \in [r_{\min}, r_{\max}]$ proportional to singular entropy,
+subject to global rank or parameter budgets, and replaces dense linear layers with low-rank
+factorized <code><a title="neuralops.compression_engine.dynamic_rank.DynamicSVDLinear" href="#neuralops.compression_engine.dynamic_rank.DynamicSVDLinear">DynamicSVDLinear</a></code> modules.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.dynamic_rank.allocate_entropy_ranks"><code class="name flex">
+<span>def <span class="ident">allocate_entropy_ranks</span></span>(<span>entropies: dict[str, float],<br>min_rank: int = 16,<br>max_rank: int = 128,<br>total_rank_budget: int | None = None,<br>total_param_budget: int | None = None,<br>target_param_ratio: float | None = None,<br>layer_dims: dict[str, tuple[int, int]] | None = None) ‑> dict[str, int]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def allocate_entropy_ranks(
+    entropies: dict[str, float],
+    min_rank: int = 16,
+    max_rank: int = 128,
+    total_rank_budget: int | None = None,
+    total_param_budget: int | None = None,
+    target_param_ratio: float | None = None,
+    layer_dims: dict[str, tuple[int, int]] | None = None,
+) -&gt; dict[str, int]:
+    &#34;&#34;&#34;
+    Dynamically allocate low-rank budgets r_l in [min_rank, max_rank] across transformer
+    layers proportional to singular entropy H(Sigma_l), constrained by total rank or parameter budget.
+
+    Args:
+        entropies: Dictionary mapping layer names to their singular entropy values.
+        min_rank: Lower bound for per-layer rank.
+        max_rank: Upper bound for per-layer rank.
+        total_rank_budget: Optional total sum of ranks across all layers.
+        total_param_budget: Optional total parameter budget for factorized layers.
+        target_param_ratio: Optional parameter retention ratio in (0, 1].
+        layer_dims: Optional dictionary mapping layer names to (out_features, in_features).
+
+    Returns:
+        Dict[str, int]: Allocated rank for each layer.
+    &#34;&#34;&#34;
+    if not entropies:
+        return {}
+
+    min_rank = max(16, int(min_rank))
+    layer_names = list(entropies.keys())
+    len(layer_names)
+
+    # Determine per-layer physical dimension bounds with minimum rank floor
+    per_layer_min = {}
+    per_layer_max = {}
+    for name in layer_names:
+        if layer_dims and name in layer_dims:
+            out_f, in_f = layer_dims[name]
+            phys_max = min(out_f, in_f)
+        else:
+            phys_max = max_rank
+
+        l_min = max(1, min(max(16, min_rank), phys_max))
+        l_max = max(l_min, min(max_rank, phys_max))
+        per_layer_min[name] = l_min
+        per_layer_max[name] = l_max
+
+    # Compute baseline entropy weights
+    raw_weights = {name: max(entropies[name], 1e-6) for name in layer_names}
+    total_entropy = sum(raw_weights.values())
+
+    # Case 1: Parameter Budget Constraint
+    if (total_param_budget is not None or target_param_ratio is not None) and layer_dims:
+        total_orig_params = sum(layer_dims[name][0] * layer_dims[name][1] for name in layer_names)
+        if target_param_ratio is not None:
+            effective_param_budget = int(total_orig_params * target_param_ratio)
+        else:
+            effective_param_budget = int(total_param_budget)
+
+        # Binary search for parameter budget water-filling
+        # Parameter cost for layer l at rank r is r * (d_in + d_out)
+        low_scale, high_scale = 0.0, 1e6
+        best_ranks = {}
+        for _ in range(60):
+            mid_scale = (low_scale + high_scale) / 2.0
+            candidate_ranks = {}
+            current_params = 0
+            for name in layer_names:
+                out_f, in_f = layer_dims[name]
+                param_cost_per_rank = out_f + in_f
+                # Proportional rank candidate
+                target_r = int(round(mid_scale * (raw_weights[name] / total_entropy) * 100.0))
+                r_clamped = max(per_layer_min[name], min(per_layer_max[name], target_r))
+                candidate_ranks[name] = r_clamped
+                current_params += r_clamped * param_cost_per_rank
+
+            if current_params &lt;= effective_param_budget:
+                best_ranks = candidate_ranks
+                low_scale = mid_scale
+            else:
+                high_scale = mid_scale
+
+        if not best_ranks:
+            best_ranks = {name: per_layer_min[name] for name in layer_names}
+        return best_ranks
+
+    # Case 2: Total Rank Budget Constraint
+    if total_rank_budget is None:
+        # Default total budget: average of min_rank and max_rank across layers
+        total_rank_budget = sum(
+            (per_layer_min[name] + per_layer_max[name]) // 2 for name in layer_names
+        )
+
+    min_possible_sum = sum(per_layer_min.values())
+    max_possible_sum = sum(per_layer_max.values())
+    target_budget = max(min_possible_sum, min(max_possible_sum, total_rank_budget))
+
+    # RESEARCH FIX: Iterative bisection water-filling for exact integer rank distribution
+    low, high = 0.0, float(target_budget * 2)
+    allocated_ranks = {}
+    for _ in range(50):
+        mid = (low + high) / 2.0
+        candidate_ranks = {}
+        candidate_sum = 0
+        for name in layer_names:
+            w = raw_weights[name] / total_entropy
+            r = int(round(mid * w))
+            r_clamped = max(per_layer_min[name], min(per_layer_max[name], r))
+            candidate_ranks[name] = r_clamped
+            candidate_sum += r_clamped
+
+        allocated_ranks = candidate_ranks
+        if candidate_sum == target_budget:
+            break
+        elif candidate_sum &lt; target_budget:
+            low = mid
+        else:
+            high = mid
+
+    # Residual greedy adjustment to ensure exact budget match if slack remains
+    current_sum = sum(allocated_ranks.values())
+    diff = target_budget - current_sum
+
+    if diff &gt; 0:
+        # Greedily allocate remaining ranks to layers with highest entropy that are below per_layer_max
+        sorted_by_entropy = sorted(layer_names, key=lambda n: raw_weights[n], reverse=True)
+        while diff &gt; 0:
+            progress = False
+            for name in sorted_by_entropy:
+                if allocated_ranks[name] &lt; per_layer_max[name] and diff &gt; 0:
+                    allocated_ranks[name] += 1
+                    diff -= 1
+                    progress = True
+            if not progress:
+                break
+    elif diff &lt; 0:
+        # Greedily subtract ranks from layers with lowest entropy that are above per_layer_min
+        sorted_by_entropy = sorted(layer_names, key=lambda n: raw_weights[n])
+        while diff &lt; 0:
+            progress = False
+            for name in sorted_by_entropy:
+                if allocated_ranks[name] &gt; per_layer_min[name] and diff &lt; 0:
+                    allocated_ranks[name] -= 1
+                    diff += 1
+                    progress = True
+            if not progress:
+                break
+
+    return allocated_ranks</code></pre>
+</details>
+<div class="desc"><p>Dynamically allocate low-rank budgets r_l in [min_rank, max_rank] across transformer
+layers proportional to singular entropy H(Sigma_l), constrained by total rank or parameter budget.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>entropies</code></strong></dt>
+<dd>Dictionary mapping layer names to their singular entropy values.</dd>
+<dt><strong><code>min_rank</code></strong></dt>
+<dd>Lower bound for per-layer rank.</dd>
+<dt><strong><code>max_rank</code></strong></dt>
+<dd>Upper bound for per-layer rank.</dd>
+<dt><strong><code>total_rank_budget</code></strong></dt>
+<dd>Optional total sum of ranks across all layers.</dd>
+<dt><strong><code>total_param_budget</code></strong></dt>
+<dd>Optional total parameter budget for factorized layers.</dd>
+<dt><strong><code>target_param_ratio</code></strong></dt>
+<dd>Optional parameter retention ratio in (0, 1].</dd>
+<dt><strong><code>layer_dims</code></strong></dt>
+<dd>Optional dictionary mapping layer names to (out_features, in_features).</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Dict[str, int]</code></dt>
+<dd>Allocated rank for each layer.</dd>
+</dl></div>
+</dd>
+<dt id="neuralops.compression_engine.dynamic_rank.compute_singular_entropy"><code class="name flex">
+<span>def <span class="ident">compute_singular_entropy</span></span>(<span>spectrum_or_matrix: torch.Tensor, eps: float = 1e-12, normalize: bool = False) ‑> float</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_singular_entropy(
+    spectrum_or_matrix: torch.Tensor,
+    eps: float = 1e-12,
+    normalize: bool = False,
+) -&gt; float:
+    &#34;&#34;&#34;
+    Compute Singular Entropy H(Sigma) = -sum(p_i * log(p_i)) of a covariance matrix,
+    weight matrix, or 1D singular value spectrum tensor.
+
+    Args:
+        spectrum_or_matrix: 1D singular values tensor, or 2D covariance/weight matrix.
+        eps: Small numerical stabilizer to avoid log(0) and division by zero.
+        normalize: If True, normalize entropy by ln(dim) to bound in [0.0, 1.0].
+
+    Returns:
+        float: Computed singular entropy H(Sigma) &gt;= 0.0.
+    &#34;&#34;&#34;
+    if not isinstance(spectrum_or_matrix, torch.Tensor):
+        spectrum_or_matrix = torch.tensor(spectrum_or_matrix, dtype=torch.float32)
+
+    spectrum_or_matrix = spectrum_or_matrix.detach().float()
+
+    if spectrum_or_matrix.ndim == 1:
+        singular_values = spectrum_or_matrix
+    elif spectrum_or_matrix.ndim == 2:
+        # Check if square and symmetric (covariance matrix) or rectangular (weight matrix)
+        r, c = spectrum_or_matrix.shape
+        if r == c:
+            try:
+                # RESEARCH FIX: Use eigvalsh for symmetric covariance matrices to avoid SVD overhead
+                eigenvals = torch.linalg.eigvalsh(spectrum_or_matrix)
+                singular_values = torch.clamp(eigenvals, min=0.0)
+            except RuntimeError:
+                singular_values = torch.linalg.svdvals(spectrum_or_matrix)
+        else:
+            singular_values = torch.linalg.svdvals(spectrum_or_matrix)
+    else:
+        raise ValueError(
+            f&#34;compute_singular_entropy expects 1D or 2D tensor, got shape {spectrum_or_matrix.shape}&#34;
+        )
+
+    # RESEARCH FIX: Filter out non-positive singular values before probability normalization
+    valid_sv = singular_values[singular_values &gt; eps]
+    if valid_sv.numel() == 0:
+        return 0.0
+
+    total_sum = valid_sv.sum()
+    if total_sum &lt;= eps:
+        return 0.0
+
+    # Normalized singular probability mass function p_i = sigma_i / sum(sigma_j)
+    probs = valid_sv / total_sum
+    probs = torch.clamp(probs, min=eps, max=1.0)
+    entropy = -torch.sum(probs * torch.log(probs)).item()
+
+    if normalize and valid_sv.numel() &gt; 1:
+        max_entropy = math.log(float(valid_sv.numel()))
+        if max_entropy &gt; 0.0:
+            entropy = entropy / max_entropy
+
+    return max(0.0, float(entropy))</code></pre>
+</details>
+<div class="desc"><p>Compute Singular Entropy H(Sigma) = -sum(p_i * log(p_i)) of a covariance matrix,
+weight matrix, or 1D singular value spectrum tensor.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>spectrum_or_matrix</code></strong></dt>
+<dd>1D singular values tensor, or 2D covariance/weight matrix.</dd>
+<dt><strong><code>eps</code></strong></dt>
+<dd>Small numerical stabilizer to avoid log(0) and division by zero.</dd>
+<dt><strong><code>normalize</code></strong></dt>
+<dd>If True, normalize entropy by ln(dim) to bound in [0.0, 1.0].</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>float</code></dt>
+<dd>Computed singular entropy H(Sigma) &gt;= 0.0.</dd>
+</dl></div>
+</dd>
+<dt id="neuralops.compression_engine.dynamic_rank.dynamic_entropy_inject"><code class="name flex">
+<span>def <span class="ident">dynamic_entropy_inject</span></span>(<span>model: Any = None, layer: Any = None, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def dynamic_entropy_inject(model: Any = None, layer: Any = None, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Safe injection hook alias.&#34;&#34;&#34;
+    return inject_dynamic_entropy(model, layer, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Safe injection hook alias.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.dynamic_rank.dynamic_entropy_svd_factory"><code class="name flex">
+<span>def <span class="ident">dynamic_entropy_svd_factory</span></span>(<span>model: Any, comp_config: Any = None, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;dynamic_entropy&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_entropy_svd&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_rank&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_entropy_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_entropy_svd_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_rank_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_entropy_compressor&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_entropy_svd_compressor&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_rank_compressor&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;entropy_rank_allocator&#34;)
+def dynamic_entropy_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Dynamic Entropy SVD factory function.&#34;&#34;&#34;
+    return_stats = kwargs.pop(&#34;return_stats&#34;, kwargs.pop(&#34;return_tuple&#34;, False))
+    try:
+        min_rank = kwargs.pop(
+            &#34;min_rank&#34;,
+            _cfg_get(comp_config, &#34;dynamic_min_rank&#34;, _cfg_get(comp_config, &#34;min_rank&#34;, 16)),
+        )
+        max_rank = kwargs.pop(
+            &#34;max_rank&#34;,
+            _cfg_get(comp_config, &#34;dynamic_max_rank&#34;, _cfg_get(comp_config, &#34;max_rank&#34;, 128)),
+        )
+        target_rank = kwargs.pop(
+            &#34;rank&#34;,
+            _cfg_get(comp_config, &#34;dynamic_rank&#34;, _cfg_get(comp_config, &#34;rank&#34;, None)),
+        )
+        max_error = kwargs.pop(
+            &#34;max_error&#34;,
+            _cfg_get(
+                comp_config,
+                &#34;dynamic_max_error&#34;,
+                _cfg_get(comp_config, &#34;max_error&#34;, 0.35),
+            ),
+        )
+        target_attention_only = kwargs.pop(
+            &#34;target_attention_only&#34;,
+            _cfg_get(
+                comp_config,
+                &#34;dynamic_target_attention_only&#34;,
+                _cfg_get(comp_config, &#34;target_attention_only&#34;, False),
+            ),
+        )
+        fallback = kwargs.pop(
+            &#34;fallback_to_original&#34;,
+            _cfg_get(
+                comp_config,
+                &#34;dynamic_fallback_to_original&#34;,
+                _cfg_get(comp_config, &#34;fallback_to_original&#34;, True),
+            ),
+        )
+        target_param_ratio = kwargs.pop(
+            &#34;target_param_ratio&#34;, _cfg_get(comp_config, &#34;target_param_ratio&#34;, None)
+        )
+        total_rank_budget = kwargs.pop(
+            &#34;total_rank_budget&#34;, _cfg_get(comp_config, &#34;total_rank_budget&#34;, None)
+        )
+
+        compressor = DynamicEntropySVDCompressor(
+            model,
+            min_rank=min_rank,
+            max_rank=max_rank,
+            target_rank=target_rank,
+            max_error=max_error,
+            target_attention_only=target_attention_only,
+            fallback_to_original=fallback,
+            target_param_ratio=target_param_ratio,
+            total_rank_budget=total_rank_budget,
+            cfg=comp_config,
+            **kwargs,
+        )
+        compressed_model, stats = compressor.compress()
+        try:
+            compressed_model.compression_stats = stats
+        except Exception:
+            pass
+        if return_stats:
+            return compressed_model, stats
+        return compressed_model
+    except Exception as e:
+        logger.error(&#34;dynamic_entropy_svd_factory failed: %s&#34;, e, exc_info=True)
+        return (model, {}) if return_stats else model</code></pre>
+</details>
+<div class="desc"><p>Dynamic Entropy SVD factory function.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.dynamic_rank.dynamic_rank_factory"><code class="name flex">
+<span>def <span class="ident">dynamic_rank_factory</span></span>(<span>model: Any, comp_config: Any = None, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;dynamic_entropy&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_entropy_svd&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_rank&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_entropy_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_entropy_svd_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_rank_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_entropy_compressor&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_entropy_svd_compressor&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_rank_compressor&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;entropy_rank_allocator&#34;)
+def dynamic_entropy_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Dynamic Entropy SVD factory function.&#34;&#34;&#34;
+    return_stats = kwargs.pop(&#34;return_stats&#34;, kwargs.pop(&#34;return_tuple&#34;, False))
+    try:
+        min_rank = kwargs.pop(
+            &#34;min_rank&#34;,
+            _cfg_get(comp_config, &#34;dynamic_min_rank&#34;, _cfg_get(comp_config, &#34;min_rank&#34;, 16)),
+        )
+        max_rank = kwargs.pop(
+            &#34;max_rank&#34;,
+            _cfg_get(comp_config, &#34;dynamic_max_rank&#34;, _cfg_get(comp_config, &#34;max_rank&#34;, 128)),
+        )
+        target_rank = kwargs.pop(
+            &#34;rank&#34;,
+            _cfg_get(comp_config, &#34;dynamic_rank&#34;, _cfg_get(comp_config, &#34;rank&#34;, None)),
+        )
+        max_error = kwargs.pop(
+            &#34;max_error&#34;,
+            _cfg_get(
+                comp_config,
+                &#34;dynamic_max_error&#34;,
+                _cfg_get(comp_config, &#34;max_error&#34;, 0.35),
+            ),
+        )
+        target_attention_only = kwargs.pop(
+            &#34;target_attention_only&#34;,
+            _cfg_get(
+                comp_config,
+                &#34;dynamic_target_attention_only&#34;,
+                _cfg_get(comp_config, &#34;target_attention_only&#34;, False),
+            ),
+        )
+        fallback = kwargs.pop(
+            &#34;fallback_to_original&#34;,
+            _cfg_get(
+                comp_config,
+                &#34;dynamic_fallback_to_original&#34;,
+                _cfg_get(comp_config, &#34;fallback_to_original&#34;, True),
+            ),
+        )
+        target_param_ratio = kwargs.pop(
+            &#34;target_param_ratio&#34;, _cfg_get(comp_config, &#34;target_param_ratio&#34;, None)
+        )
+        total_rank_budget = kwargs.pop(
+            &#34;total_rank_budget&#34;, _cfg_get(comp_config, &#34;total_rank_budget&#34;, None)
+        )
+
+        compressor = DynamicEntropySVDCompressor(
+            model,
+            min_rank=min_rank,
+            max_rank=max_rank,
+            target_rank=target_rank,
+            max_error=max_error,
+            target_attention_only=target_attention_only,
+            fallback_to_original=fallback,
+            target_param_ratio=target_param_ratio,
+            total_rank_budget=total_rank_budget,
+            cfg=comp_config,
+            **kwargs,
+        )
+        compressed_model, stats = compressor.compress()
+        try:
+            compressed_model.compression_stats = stats
+        except Exception:
+            pass
+        if return_stats:
+            return compressed_model, stats
+        return compressed_model
+    except Exception as e:
+        logger.error(&#34;dynamic_entropy_svd_factory failed: %s&#34;, e, exc_info=True)
+        return (model, {}) if return_stats else model</code></pre>
+</details>
+<div class="desc"><p>Dynamic Entropy SVD factory function.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.dynamic_rank.dynamic_rank_inject"><code class="name flex">
+<span>def <span class="ident">dynamic_rank_inject</span></span>(<span>model: Any = None, layer: Any = None, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def dynamic_rank_inject(model: Any = None, layer: Any = None, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Safe injection hook alias for dynamic_rank.&#34;&#34;&#34;
+    return inject_dynamic_entropy(model, layer, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Safe injection hook alias for dynamic_rank.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.dynamic_rank.entropy_rank_allocator_factory"><code class="name flex">
+<span>def <span class="ident">entropy_rank_allocator_factory</span></span>(<span>model: Any, comp_config: Any = None, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;dynamic_entropy&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_entropy_svd&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_rank&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_entropy_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_entropy_svd_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_rank_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_entropy_compressor&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_entropy_svd_compressor&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_rank_compressor&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;entropy_rank_allocator&#34;)
+def dynamic_entropy_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Dynamic Entropy SVD factory function.&#34;&#34;&#34;
+    return_stats = kwargs.pop(&#34;return_stats&#34;, kwargs.pop(&#34;return_tuple&#34;, False))
+    try:
+        min_rank = kwargs.pop(
+            &#34;min_rank&#34;,
+            _cfg_get(comp_config, &#34;dynamic_min_rank&#34;, _cfg_get(comp_config, &#34;min_rank&#34;, 16)),
+        )
+        max_rank = kwargs.pop(
+            &#34;max_rank&#34;,
+            _cfg_get(comp_config, &#34;dynamic_max_rank&#34;, _cfg_get(comp_config, &#34;max_rank&#34;, 128)),
+        )
+        target_rank = kwargs.pop(
+            &#34;rank&#34;,
+            _cfg_get(comp_config, &#34;dynamic_rank&#34;, _cfg_get(comp_config, &#34;rank&#34;, None)),
+        )
+        max_error = kwargs.pop(
+            &#34;max_error&#34;,
+            _cfg_get(
+                comp_config,
+                &#34;dynamic_max_error&#34;,
+                _cfg_get(comp_config, &#34;max_error&#34;, 0.35),
+            ),
+        )
+        target_attention_only = kwargs.pop(
+            &#34;target_attention_only&#34;,
+            _cfg_get(
+                comp_config,
+                &#34;dynamic_target_attention_only&#34;,
+                _cfg_get(comp_config, &#34;target_attention_only&#34;, False),
+            ),
+        )
+        fallback = kwargs.pop(
+            &#34;fallback_to_original&#34;,
+            _cfg_get(
+                comp_config,
+                &#34;dynamic_fallback_to_original&#34;,
+                _cfg_get(comp_config, &#34;fallback_to_original&#34;, True),
+            ),
+        )
+        target_param_ratio = kwargs.pop(
+            &#34;target_param_ratio&#34;, _cfg_get(comp_config, &#34;target_param_ratio&#34;, None)
+        )
+        total_rank_budget = kwargs.pop(
+            &#34;total_rank_budget&#34;, _cfg_get(comp_config, &#34;total_rank_budget&#34;, None)
+        )
+
+        compressor = DynamicEntropySVDCompressor(
+            model,
+            min_rank=min_rank,
+            max_rank=max_rank,
+            target_rank=target_rank,
+            max_error=max_error,
+            target_attention_only=target_attention_only,
+            fallback_to_original=fallback,
+            target_param_ratio=target_param_ratio,
+            total_rank_budget=total_rank_budget,
+            cfg=comp_config,
+            **kwargs,
+        )
+        compressed_model, stats = compressor.compress()
+        try:
+            compressed_model.compression_stats = stats
+        except Exception:
+            pass
+        if return_stats:
+            return compressed_model, stats
+        return compressed_model
+    except Exception as e:
+        logger.error(&#34;dynamic_entropy_svd_factory failed: %s&#34;, e, exc_info=True)
+        return (model, {}) if return_stats else model</code></pre>
+</details>
+<div class="desc"><p>Dynamic Entropy SVD factory function.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.dynamic_rank.inject_dynamic_entropy"><code class="name flex">
+<span>def <span class="ident">inject_dynamic_entropy</span></span>(<span>model: Any = None, layer: Any = None, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;inject_dynamic_entropy&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_entropy_inject&#34;)
+def inject_dynamic_entropy(model: Any = None, layer: Any = None, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Safe injection hook for dynamic_entropy. Returns None on failure.&#34;&#34;&#34;
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+    try:
+        res = dynamic_entropy_svd_factory(target, **kwargs)
+        if isinstance(res, tuple):
+            return res[0]
+        return res
+    except Exception as e:
+        logger.error(&#34;inject_dynamic_entropy failed: %s&#34;, e, exc_info=True)
+        return None</code></pre>
+</details>
+<div class="desc"><p>Safe injection hook for dynamic_entropy. Returns None on failure.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.dynamic_rank.inject_dynamic_rank"><code class="name flex">
+<span>def <span class="ident">inject_dynamic_rank</span></span>(<span>model: Any = None, layer: Any = None, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;inject_dynamic_rank&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;dynamic_rank_inject&#34;)
+def inject_dynamic_rank(model: Any = None, layer: Any = None, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Safe injection hook alias for dynamic_rank.&#34;&#34;&#34;
+    return inject_dynamic_entropy(model, layer, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Safe injection hook alias for dynamic_rank.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.dynamic_rank.DynamicEntropySVDCompressor"><code class="flex name class">
+<span>class <span class="ident">DynamicEntropySVDCompressor</span></span>
+<span>(</span><span>model: nn.Module,<br>min_rank: int = 16,<br>max_rank: int = 128,<br>target_param_ratio: float | None = None,<br>total_rank_budget: int | None = None,<br>target_rank: int | None = None,<br>max_error: float = 0.35,<br>target_attention_only: bool = False,<br>fallback_to_original: bool = True,<br>calibration_loader: Any = None,<br>calibration_texts: list[str] | None = None,<br>target_modules: list[str] | None = None,<br>tokenizer: Any | None = None,<br>cfg: Any | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DynamicEntropySVDCompressor(BaseCompressor):
+    &#34;&#34;&#34;
+    Dynamic Entropy SVD Compressor.
+
+    1. Computes singular entropy H(Sigma_l) on layer activation covariances or weights.
+    2. Allocates layer ranks within [min_rank, max_rank] subject to parameter/rank budget.
+    3. Replaces dense Linear/Conv1D layers with DynamicSVDLinear factorized modules.
+    4. Provides relative Frobenius error validation, max_error threshold, and safe fallback.
+    5. Freezes fallback and non-target layers during recovery.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        model: nn.Module,
+        min_rank: int = 16,
+        max_rank: int = 128,
+        target_param_ratio: float | None = None,
+        total_rank_budget: int | None = None,
+        target_rank: int | None = None,
+        max_error: float = 0.35,
+        target_attention_only: bool = False,
+        fallback_to_original: bool = True,
+        calibration_loader: Any = None,
+        calibration_texts: list[str] | None = None,
+        target_modules: list[str] | None = None,
+        tokenizer: Any | None = None,
+        cfg: Any | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;dynamic_entropy_svd&#34;, **kwargs)
+        cfg_obj = cfg if cfg is not None else kwargs.get(&#34;comp_config&#34;)
+        self.cfg = cfg_obj
+
+        min_rank = _cfg_get(cfg_obj, &#34;dynamic_min_rank&#34;, _cfg_get(cfg_obj, &#34;min_rank&#34;, min_rank))
+        max_rank = _cfg_get(cfg_obj, &#34;dynamic_max_rank&#34;, _cfg_get(cfg_obj, &#34;max_rank&#34;, max_rank))
+        target_rank = _cfg_get(cfg_obj, &#34;dynamic_rank&#34;, _cfg_get(cfg_obj, &#34;rank&#34;, target_rank))
+        total_rank_budget = _cfg_get(cfg_obj, &#34;total_rank_budget&#34;, total_rank_budget)
+        target_param_ratio = _cfg_get(cfg_obj, &#34;target_param_ratio&#34;, target_param_ratio)
+        max_error = _cfg_get(
+            cfg_obj, &#34;dynamic_max_error&#34;, _cfg_get(cfg_obj, &#34;max_error&#34;, max_error)
+        )
+        target_attention_only = _cfg_get(
+            cfg_obj,
+            &#34;dynamic_target_attention_only&#34;,
+            _cfg_get(cfg_obj, &#34;target_attention_only&#34;, target_attention_only),
+        )
+        fallback_to_original = _cfg_get(
+            cfg_obj,
+            &#34;dynamic_fallback_to_original&#34;,
+            _cfg_get(cfg_obj, &#34;fallback_to_original&#34;, fallback_to_original),
+        )
+
+        min_rank = max(16, int(min_rank))
+        if &#34;rank&#34; in kwargs and kwargs[&#34;rank&#34;] is not None:
+            target_rank = kwargs[&#34;rank&#34;]
+            min_rank = max(16, min(min_rank, target_rank))
+            max_rank = max(max_rank, target_rank)
+
+        self.min_rank = min_rank
+        self.max_rank = max(min_rank, int(max_rank))
+        self.target_param_ratio = (
+            float(target_param_ratio) if target_param_ratio is not None else None
+        )
+        self.total_rank_budget = int(total_rank_budget) if total_rank_budget is not None else None
+        self.target_rank = int(target_rank) if target_rank is not None else None
+        if max_error is None or max_error == 0.35:
+            max_error = adaptive_max_error(
+                self.target_rank or self.min_rank, 768, 768, &#34;distilbert&#34;
+            )
+
+        self.max_error = float(max_error)
+        self.target_attention_only = bool(target_attention_only)
+        self.fallback_to_original = bool(fallback_to_original)
+
+        self.calibration_loader = calibration_loader
+        self.calibration_texts = calibration_texts
+        self.target_modules = target_modules
+        self.tokenizer = (
+            tokenizer
+            or getattr(model, &#34;tokenizer&#34;, None)
+            or getattr(getattr(model, &#34;config&#34;, None), &#34;tokenizer&#34;, None)
+        )
+
+        self.layer_entropies: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+        self.layer_errors: dict[str, float] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        &#34;&#34;&#34;Check whether module is a compressible nn.Linear or Conv1D matching target filter.&#34;&#34;&#34;
+        name_lower = name.lower()
+        if any(part in name.split(&#34;.&#34;) for part in [&#34;lora_A&#34;, &#34;lora_B&#34;, &#34;base_layer&#34;]):
+            return False
+        if any(
+            skip in name_lower
+            for skip in [
+                &#34;classifier&#34;,
+                &#34;score&#34;,
+                &#34;lm_head&#34;,
+                &#34;pooler&#34;,
+                &#34;embedding&#34;,
+                &#34;router&#34;,
+                &#34;gate&#34;,
+            ]
+        ):
+            return False
+
+        target_mod = getattr(module, &#34;base_layer&#34;, module)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_linear = isinstance(target_mod, nn.Linear)
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+        if not (is_linear or is_conv1d):
+            return False
+        if isinstance(target_mod, DynamicSVDLinear) or isinstance(module, DynamicSVDLinear):
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+
+        raw_w = target_mod.weight.data
+        if min(raw_w.shape[0], raw_w.shape[1]) &lt; 16:
+            return False
+
+        if self.target_attention_only:
+            last_part = name.split(&#34;.&#34;)[-1]
+            is_attn = (last_part in _ATTN_NAMES) or any(
+                k in name_lower for k in (&#34;attn&#34;, &#34;attention&#34;)
+            )
+            if not is_attn:
+                return False
+
+        if self.target_modules is not None:
+            return any(t in name for t in self.target_modules)
+        return True
+
+    def collect_activation_covariances(
+        self,
+    ) -&gt; dict[str, torch.Tensor]:
+        &#34;&#34;&#34;
+        Collect empirical input activation covariance matrices C_X for each target layer
+        using calibration forward passes.
+        &#34;&#34;&#34;
+        covariances: dict[str, torch.Tensor] = {}
+        sample_counts: dict[str, int] = {}
+        hooks = []
+
+        def get_hook(name: str):
+            def hook_fn(mod: nn.Module, inp: tuple[Any, ...], out: Any) -&gt; None:
+                if not inp or inp[0] is None:
+                    return
+                x = inp[0].detach()
+                if x.ndim &gt;= 2:
+                    x_flat = x.reshape(-1, x.shape[-1]).float()
+                    # Double-precision covariance accumulation for stability
+                    cov = x_flat.t().contiguous() @ x_flat
+                    n = x_flat.shape[0]
+                    if name not in covariances:
+                        covariances[name] = cov
+                        sample_counts[name] = n
+                    else:
+                        covariances[name] += cov
+                        sample_counts[name] += n
+
+            return hook_fn
+
+        target_layers = [
+            (name, mod)
+            for name, mod in self.model.named_modules()
+            if self._is_target_module(name, mod)
+        ]
+
+        if not target_layers:
+            return {}
+
+        for name, mod in target_layers:
+            target_mod = getattr(mod, &#34;base_layer&#34;, mod)
+            hooks.append(target_mod.register_forward_hook(get_hook(name)))
+
+        device = next(self.model.parameters()).device
+        self.model.eval()
+
+        # Track whether REAL calibration data (not random dummy) was used.
+        # If only dummy data is used, the covariance matrix will be rank-deficient
+        # (rank &lt;= num_dummy_tokens &lt;&lt; hidden_dim), causing the whitening transform
+        # to map near-zero eigenvalue directions through inv_sqrt with scale ~100x,
+        # which after un-whitening produces reconstruction error near 1.0 on every layer.
+        real_calibration_used = False
+
+        try:
+            with torch.no_grad():
+                if self.calibration_loader is not None:
+                    batch_count = 0
+                    for batch in self.calibration_loader:
+                        if isinstance(batch, dict):
+                            batch = {
+                                k: v.to(device) if isinstance(v, torch.Tensor) else v
+                                for k, v in batch.items()
+                            }
+                            self.model(**batch)
+                        elif isinstance(batch, (list, tuple)):
+                            batch = [
+                                v.to(device) if isinstance(v, torch.Tensor) else v for v in batch
+                            ]
+                            self.model(*batch)
+                        elif isinstance(batch, torch.Tensor):
+                            self.model(batch.to(device))
+                        batch_count += 1
+                    if batch_count &gt; 0:
+                        real_calibration_used = True
+                        logger.info(
+                            &#34;DynamicEntropySVD: real calibration loader used (%d batches).&#34;,
+                            batch_count,
+                        )
+                elif self.calibration_texts is not None and len(self.calibration_texts) &gt; 0:
+                    logger.info(
+                        &#34;Running calibration forward on %d provided texts.&#34;,
+                        len(self.calibration_texts),
+                    )
+                    if self.tokenizer is not None:
+                        text_count = 0
+                        for text in self.calibration_texts[:32]:
+                            try:
+                                enc = self.tokenizer(
+                                    text,
+                                    return_tensors=&#34;pt&#34;,
+                                    truncation=True,
+                                    max_length=128,
+                                )
+                                enc = {k: v.to(device) for k, v in enc.items()}
+                                self.model(**enc)
+                                text_count += 1
+                            except Exception as e:
+                                logger.debug(&#34;Calibration text pass exception: %s&#34;, e)
+                                break
+                        if text_count &gt; 0:
+                            real_calibration_used = True
+                            logger.info(
+                                &#34;DynamicEntropySVD: real calibration texts used (%d texts).&#34;,
+                                text_count,
+                            )
+                    else:
+                        logger.info(
+                            &#34;No tokenizer available; calibration_texts provided but cannot encode. &#34;
+                            &#34;Falling back to weight-only SVD.&#34;
+                        )
+        except Exception as e:
+            logger.warning(
+                &#34;Activation collection encountered exception (%s); falling back to weight SVD.&#34;,
+                e,
+            )
+        finally:
+            for h in hooks:
+                h.remove()
+
+        # ROOT-CAUSE FIX: If no real calibration data was used, dummy inputs (e.g.
+        # 2x32 random tokens) produce a rank-deficient covariance (rank&lt;=64 for
+        # hidden_dim=768). The whitening eigenvalue clamp (min=1e-4) then assigns
+        # weight 100x to the 704 meaningless directions. After SVD truncation and
+        # un-whitening, reconstruction error approaches 1.0 on every layer, causing
+        # all 24 layers to fall back and zero compression.
+        #
+        # Solution: return {} so from_linear uses plain weight-only SVD instead.
+        # Expected reconstruction error at rank 64: ~0.15-0.25 (all layers compress).
+        if not real_calibration_used:
+            logger.warning(
+                &#34;DynamicEntropySVD: no real calibration data available &#34;
+                &#34;(calibration_loader=None, calibration_texts=None/empty). &#34;
+                &#34;Activation-aware whitening DISABLED. Using weight-only SVD for all &#34;
+                &#34;layers. Expected reconstruction error at rank=64: ~0.15-0.25.&#34;
+            )
+            return {}
+
+        # Normalize accumulated covariances by total sample count
+        normalized_covs: dict[str, torch.Tensor] = {}
+        for name, cov in covariances.items():
+            cnt = sample_counts.get(name, 1)
+            normalized_covs[name] = cov / max(1, cnt)
+
+        logger.info(
+            &#34;DynamicEntropySVD: %d activation covariances collected (real data).&#34;,
+            len(normalized_covs),
+        )
+        return normalized_covs
+
+    def compute_layer_entropies(self, covariances: dict[str, torch.Tensor]) -&gt; dict[str, float]:
+        &#34;&#34;&#34;
+        Compute singular entropy for each target layer using activation covariance
+        or fallback weight matrix spectrum.
+        &#34;&#34;&#34;
+        entropies: dict[str, float] = {}
+        for name, module in self.model.named_modules():
+            if self._is_target_module(name, module):
+                target_mod = getattr(module, &#34;base_layer&#34;, module)
+                raw_w = target_mod.weight.data
+                cls_name = target_mod.__class__.__name__.lower()
+                is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+                w_mat = raw_w.t().contiguous().float() if is_conv1d else raw_w.float()
+
+                if name in covariances:
+                    ent = compute_singular_entropy(covariances[name])
+                else:
+                    ent = compute_singular_entropy(w_mat)
+                entropies[name] = ent
+        return entropies
+
+    def compress(self) -&gt; tuple[nn.Module, dict[str, Any]]:
+        &#34;&#34;&#34;
+        Execute dynamic entropy-budgeted low-rank SVD compression across all target layers.
+        Includes reconstruction error validation, fallback, layer freezing, and parameter tracking.
+
+        Returns:
+            Tuple[nn.Module, Dict[str, Any]]: Compressed model and detailed statistics.
+        &#34;&#34;&#34;
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.skipped_layers = []
+        self.layer_errors = {}
+
+        # Step 1: Collect activation covariances
+        covariances = self.collect_activation_covariances()
+
+        # Step 2: Compute singular entropies per layer
+        self.layer_entropies = self.compute_layer_entropies(covariances)
+
+        if not self.layer_entropies:
+            logger.warning(&#34;No compressible linear layers found in model.&#34;)
+            return self.model, self.get_compression_stats()
+
+        # Step 3: Extract layer dimensions
+        layer_dims: dict[str, tuple[int, int]] = {}
+        total_orig_decomp_params = 0
+        total_comp_decomp_params = 0
+
+        for name, module in self.model.named_modules():
+            if name in self.layer_entropies:
+                target_mod = getattr(module, &#34;base_layer&#34;, module)
+                raw_w = target_mod.weight.data
+                cls_name = target_mod.__class__.__name__.lower()
+                is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+                if is_conv1d:
+                    in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+                else:
+                    out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+                layer_dims[name] = (out_f, in_f)
+                total_orig_decomp_params += out_f * in_f
+
+        # Freeze uncompressed layers when target_attention_only=True
+        if self.target_attention_only:
+            for name, module in list(self.model.named_modules()):
+                target_mod = getattr(module, &#34;base_layer&#34;, module)
+                cls_name = target_mod.__class__.__name__.lower()
+                is_linear = isinstance(target_mod, nn.Linear)
+                is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+                if is_linear or is_conv1d:
+                    if not self._is_target_module(name, module):
+                        for p in module.parameters():
+                            p.requires_grad = False
+                        self.skipped_layers.append(name)
+
+        # Step 4: Determine total rank budget
+        total_rank_budget = self.total_rank_budget
+        if total_rank_budget is None and self.target_rank is not None:
+            total_rank_budget = self.target_rank * len(self.layer_entropies)
+
+        # Step 5: Dynamic rank allocation
+        self.layer_ranks = allocate_entropy_ranks(
+            entropies=self.layer_entropies,
+            min_rank=self.min_rank,
+            max_rank=self.max_rank,
+            total_rank_budget=total_rank_budget,
+            target_param_ratio=self.target_param_ratio,
+            layer_dims=layer_dims,
+        )
+
+        # Step 6: Factorize, validate, and replace each target linear layer
+        for name, rank in self.layer_ranks.items():
+            parent_name, child_name = name.rsplit(&#34;.&#34;, 1) if &#34;.&#34; in name else (&#34;&#34;, name)
+            if parent_name:
+                parent = self.model.get_submodule(parent_name)
+            else:
+                parent = self.model
+            module = getattr(parent, child_name)
+            target_mod = getattr(module, &#34;base_layer&#34;, module)
+
+            out_f, in_f = layer_dims[name]
+            orig_params = out_f * in_f
+
+            cov = covariances.get(name, None)
+            factorized_layer = DynamicSVDLinear.from_linear(
+                linear=module,
+                rank=rank,
+                covariance=cov,
+            )
+
+            # Compute relative Frobenius reconstruction error
+            raw_w = target_mod.weight.data
+            cls_name = target_mod.__class__.__name__.lower()
+            is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+            W = raw_w.t().contiguous().float() if is_conv1d else raw_w.float()
+            W_recon = factorized_layer.U.float() @ factorized_layer.V.float()
+            norm_w = torch.norm(W, p=&#34;fro&#34;).item()
+            err = float(torch.norm(W - W_recon, p=&#34;fro&#34;).item() / max(norm_w, 1e-12))
+            self.layer_errors[name] = err
+
+            if err &gt; self.max_error and self.fallback_to_original:
+                logger.warning(
+                    &#34;DynamicEntropySVD error %.4f on %s exceeded threshold %.4f; falling back to original.&#34;,
+                    err,
+                    name,
+                    self.max_error,
+                )
+                self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
+                total_comp_decomp_params += orig_params
+                continue
+
+            # If wrapped in LoRALinear, replace the inner base_layer or linear
+            has_base_layer = hasattr(module, &#34;base_layer&#34;) or (
+                hasattr(module, &#34;linear&#34;) and (hasattr(module, &#34;lora_A&#34;) or hasattr(module, &#34;r&#34;))
+            )
+            if hasattr(module, &#34;base_layer&#34;):
+                module.base_layer = factorized_layer
+            elif hasattr(module, &#34;linear&#34;) and (hasattr(module, &#34;lora_A&#34;) or hasattr(module, &#34;r&#34;)):
+                module.linear = factorized_layer
+            else:
+                replace_module(self.model, name, factorized_layer)
+
+            if has_base_layer:
+                for p_name, p in module.named_parameters():
+                    if any(t in p_name.lower() for t in (&#34;lora_a&#34;, &#34;lora_b&#34;, &#34;adapter&#34;)):
+                        p.requires_grad = True
+
+            self.compressed_layers.append(name)
+            total_comp_decomp_params += rank * (in_f + out_f)
+
+        # Forward sanity check
+        forward_check_success = False
+        try:
+            self.model.eval()
+            with torch.no_grad():
+                d = next(self.model.parameters()).device
+                dummy = torch.randint(0, 100, (1, 16), device=d)
+                self.model(dummy)
+            forward_check_success = True
+        except Exception as e:
+            logger.debug(&#34;DynamicEntropySVD forward check exception: %s&#34;, e)
+
+        effective_ratio = (
+            total_comp_decomp_params / total_orig_decomp_params
+            if total_orig_decomp_params &gt; 0
+            else 1.0
+        )
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.compressed_layers)
+            / max(1, len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
+
+        stats = self.get_compression_stats()
+        stats.update(
+            {
+                &#34;layer_entropies&#34;: self.layer_entropies,
+                &#34;layer_ranks&#34;: self.layer_ranks,
+                &#34;layer_errors&#34;: self.layer_errors,
+                &#34;compressed_layers&#34;: self.compressed_layers,
+                &#34;compressed_layer_count&#34;: len(self.compressed_layers),
+                &#34;fallback_layers&#34;: self.fallback_layers,
+                &#34;fallback_layer_count&#34;: len(self.fallback_layers),
+                &#34;skipped_layers&#34;: self.skipped_layers,
+                &#34;skipped_layer_count&#34;: len(self.skipped_layers),
+                &#34;original_layer_count&#34;: len(layer_dims),
+                &#34;max_error&#34;: self.max_error,
+                &#34;target_attention_only&#34;: self.target_attention_only,
+                &#34;fallback_to_original&#34;: self.fallback_to_original,
+                &#34;effective_parameter_ratio&#34;: round(effective_ratio, 4),
+                &#34;avg_reconstruction_error&#34;: avg_err,
+                &#34;forward_check_success&#34;: forward_check_success,
+                &#34;method&#34;: &#34;dynamic_entropy_svd&#34;,
+            }
+        )
+        self.stats = stats
+        logger.info(
+            &#34;Compressor dynamic_rank finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f&#34;,
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error,
+        )
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Dynamic Entropy SVD Compressor.</p>
+<ol>
+<li>Computes singular entropy H(Sigma_l) on layer activation covariances or weights.</li>
+<li>Allocates layer ranks within [min_rank, max_rank] subject to parameter/rank budget.</li>
+<li>Replaces dense Linear/Conv1D layers with DynamicSVDLinear factorized modules.</li>
+<li>Provides relative Frobenius error validation, max_error threshold, and safe fallback.</li>
+<li>Freezes fallback and non-target layers during recovery.</li>
+</ol></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li>neuralops.compression_engine.dynamic_rank.DynamicEntropySVDCompressorRegistered</li>
+<li>neuralops.compression_engine.dynamic_rank.EntropyRankAllocatorRegistered</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.dynamic_rank.DynamicEntropySVDCompressor.collect_activation_covariances"><code class="name flex">
+<span>def <span class="ident">collect_activation_covariances</span></span>(<span>self) ‑> dict[str, torch.Tensor]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def collect_activation_covariances(
+    self,
+) -&gt; dict[str, torch.Tensor]:
+    &#34;&#34;&#34;
+    Collect empirical input activation covariance matrices C_X for each target layer
+    using calibration forward passes.
+    &#34;&#34;&#34;
+    covariances: dict[str, torch.Tensor] = {}
+    sample_counts: dict[str, int] = {}
+    hooks = []
+
+    def get_hook(name: str):
+        def hook_fn(mod: nn.Module, inp: tuple[Any, ...], out: Any) -&gt; None:
+            if not inp or inp[0] is None:
+                return
+            x = inp[0].detach()
+            if x.ndim &gt;= 2:
+                x_flat = x.reshape(-1, x.shape[-1]).float()
+                # Double-precision covariance accumulation for stability
+                cov = x_flat.t().contiguous() @ x_flat
+                n = x_flat.shape[0]
+                if name not in covariances:
+                    covariances[name] = cov
+                    sample_counts[name] = n
+                else:
+                    covariances[name] += cov
+                    sample_counts[name] += n
+
+        return hook_fn
+
+    target_layers = [
+        (name, mod)
+        for name, mod in self.model.named_modules()
+        if self._is_target_module(name, mod)
+    ]
+
+    if not target_layers:
+        return {}
+
+    for name, mod in target_layers:
+        target_mod = getattr(mod, &#34;base_layer&#34;, mod)
+        hooks.append(target_mod.register_forward_hook(get_hook(name)))
+
+    device = next(self.model.parameters()).device
+    self.model.eval()
+
+    # Track whether REAL calibration data (not random dummy) was used.
+    # If only dummy data is used, the covariance matrix will be rank-deficient
+    # (rank &lt;= num_dummy_tokens &lt;&lt; hidden_dim), causing the whitening transform
+    # to map near-zero eigenvalue directions through inv_sqrt with scale ~100x,
+    # which after un-whitening produces reconstruction error near 1.0 on every layer.
+    real_calibration_used = False
+
+    try:
+        with torch.no_grad():
+            if self.calibration_loader is not None:
+                batch_count = 0
+                for batch in self.calibration_loader:
+                    if isinstance(batch, dict):
+                        batch = {
+                            k: v.to(device) if isinstance(v, torch.Tensor) else v
+                            for k, v in batch.items()
+                        }
+                        self.model(**batch)
+                    elif isinstance(batch, (list, tuple)):
+                        batch = [
+                            v.to(device) if isinstance(v, torch.Tensor) else v for v in batch
+                        ]
+                        self.model(*batch)
+                    elif isinstance(batch, torch.Tensor):
+                        self.model(batch.to(device))
+                    batch_count += 1
+                if batch_count &gt; 0:
+                    real_calibration_used = True
+                    logger.info(
+                        &#34;DynamicEntropySVD: real calibration loader used (%d batches).&#34;,
+                        batch_count,
+                    )
+            elif self.calibration_texts is not None and len(self.calibration_texts) &gt; 0:
+                logger.info(
+                    &#34;Running calibration forward on %d provided texts.&#34;,
+                    len(self.calibration_texts),
+                )
+                if self.tokenizer is not None:
+                    text_count = 0
+                    for text in self.calibration_texts[:32]:
+                        try:
+                            enc = self.tokenizer(
+                                text,
+                                return_tensors=&#34;pt&#34;,
+                                truncation=True,
+                                max_length=128,
+                            )
+                            enc = {k: v.to(device) for k, v in enc.items()}
+                            self.model(**enc)
+                            text_count += 1
+                        except Exception as e:
+                            logger.debug(&#34;Calibration text pass exception: %s&#34;, e)
+                            break
+                    if text_count &gt; 0:
+                        real_calibration_used = True
+                        logger.info(
+                            &#34;DynamicEntropySVD: real calibration texts used (%d texts).&#34;,
+                            text_count,
+                        )
+                else:
+                    logger.info(
+                        &#34;No tokenizer available; calibration_texts provided but cannot encode. &#34;
+                        &#34;Falling back to weight-only SVD.&#34;
+                    )
+    except Exception as e:
+        logger.warning(
+            &#34;Activation collection encountered exception (%s); falling back to weight SVD.&#34;,
+            e,
+        )
+    finally:
+        for h in hooks:
+            h.remove()
+
+    # ROOT-CAUSE FIX: If no real calibration data was used, dummy inputs (e.g.
+    # 2x32 random tokens) produce a rank-deficient covariance (rank&lt;=64 for
+    # hidden_dim=768). The whitening eigenvalue clamp (min=1e-4) then assigns
+    # weight 100x to the 704 meaningless directions. After SVD truncation and
+    # un-whitening, reconstruction error approaches 1.0 on every layer, causing
+    # all 24 layers to fall back and zero compression.
+    #
+    # Solution: return {} so from_linear uses plain weight-only SVD instead.
+    # Expected reconstruction error at rank 64: ~0.15-0.25 (all layers compress).
+    if not real_calibration_used:
+        logger.warning(
+            &#34;DynamicEntropySVD: no real calibration data available &#34;
+            &#34;(calibration_loader=None, calibration_texts=None/empty). &#34;
+            &#34;Activation-aware whitening DISABLED. Using weight-only SVD for all &#34;
+            &#34;layers. Expected reconstruction error at rank=64: ~0.15-0.25.&#34;
+        )
+        return {}
+
+    # Normalize accumulated covariances by total sample count
+    normalized_covs: dict[str, torch.Tensor] = {}
+    for name, cov in covariances.items():
+        cnt = sample_counts.get(name, 1)
+        normalized_covs[name] = cov / max(1, cnt)
+
+    logger.info(
+        &#34;DynamicEntropySVD: %d activation covariances collected (real data).&#34;,
+        len(normalized_covs),
+    )
+    return normalized_covs</code></pre>
+</details>
+<div class="desc"><p>Collect empirical input activation covariance matrices C_X for each target layer
+using calibration forward passes.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.dynamic_rank.DynamicEntropySVDCompressor.compress"><code class="name flex">
+<span>def <span class="ident">compress</span></span>(<span>self) ‑> tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress(self) -&gt; tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;
+    Execute dynamic entropy-budgeted low-rank SVD compression across all target layers.
+    Includes reconstruction error validation, fallback, layer freezing, and parameter tracking.
+
+    Returns:
+        Tuple[nn.Module, Dict[str, Any]]: Compressed model and detailed statistics.
+    &#34;&#34;&#34;
+    self.compressed_layers = []
+    self.fallback_layers = []
+    self.skipped_layers = []
+    self.layer_errors = {}
+
+    # Step 1: Collect activation covariances
+    covariances = self.collect_activation_covariances()
+
+    # Step 2: Compute singular entropies per layer
+    self.layer_entropies = self.compute_layer_entropies(covariances)
+
+    if not self.layer_entropies:
+        logger.warning(&#34;No compressible linear layers found in model.&#34;)
+        return self.model, self.get_compression_stats()
+
+    # Step 3: Extract layer dimensions
+    layer_dims: dict[str, tuple[int, int]] = {}
+    total_orig_decomp_params = 0
+    total_comp_decomp_params = 0
+
+    for name, module in self.model.named_modules():
+        if name in self.layer_entropies:
+            target_mod = getattr(module, &#34;base_layer&#34;, module)
+            raw_w = target_mod.weight.data
+            cls_name = target_mod.__class__.__name__.lower()
+            is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+            if is_conv1d:
+                in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+            else:
+                out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+            layer_dims[name] = (out_f, in_f)
+            total_orig_decomp_params += out_f * in_f
+
+    # Freeze uncompressed layers when target_attention_only=True
+    if self.target_attention_only:
+        for name, module in list(self.model.named_modules()):
+            target_mod = getattr(module, &#34;base_layer&#34;, module)
+            cls_name = target_mod.__class__.__name__.lower()
+            is_linear = isinstance(target_mod, nn.Linear)
+            is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+            if is_linear or is_conv1d:
+                if not self._is_target_module(name, module):
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    self.skipped_layers.append(name)
+
+    # Step 4: Determine total rank budget
+    total_rank_budget = self.total_rank_budget
+    if total_rank_budget is None and self.target_rank is not None:
+        total_rank_budget = self.target_rank * len(self.layer_entropies)
+
+    # Step 5: Dynamic rank allocation
+    self.layer_ranks = allocate_entropy_ranks(
+        entropies=self.layer_entropies,
+        min_rank=self.min_rank,
+        max_rank=self.max_rank,
+        total_rank_budget=total_rank_budget,
+        target_param_ratio=self.target_param_ratio,
+        layer_dims=layer_dims,
+    )
+
+    # Step 6: Factorize, validate, and replace each target linear layer
+    for name, rank in self.layer_ranks.items():
+        parent_name, child_name = name.rsplit(&#34;.&#34;, 1) if &#34;.&#34; in name else (&#34;&#34;, name)
+        if parent_name:
+            parent = self.model.get_submodule(parent_name)
+        else:
+            parent = self.model
+        module = getattr(parent, child_name)
+        target_mod = getattr(module, &#34;base_layer&#34;, module)
+
+        out_f, in_f = layer_dims[name]
+        orig_params = out_f * in_f
+
+        cov = covariances.get(name, None)
+        factorized_layer = DynamicSVDLinear.from_linear(
+            linear=module,
+            rank=rank,
+            covariance=cov,
+        )
+
+        # Compute relative Frobenius reconstruction error
+        raw_w = target_mod.weight.data
+        cls_name = target_mod.__class__.__name__.lower()
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+        W = raw_w.t().contiguous().float() if is_conv1d else raw_w.float()
+        W_recon = factorized_layer.U.float() @ factorized_layer.V.float()
+        norm_w = torch.norm(W, p=&#34;fro&#34;).item()
+        err = float(torch.norm(W - W_recon, p=&#34;fro&#34;).item() / max(norm_w, 1e-12))
+        self.layer_errors[name] = err
+
+        if err &gt; self.max_error and self.fallback_to_original:
+            logger.warning(
+                &#34;DynamicEntropySVD error %.4f on %s exceeded threshold %.4f; falling back to original.&#34;,
+                err,
+                name,
+                self.max_error,
+            )
+            self.fallback_layers.append(name)
+            for p in module.parameters():
+                p.requires_grad = False
+            total_comp_decomp_params += orig_params
+            continue
+
+        # If wrapped in LoRALinear, replace the inner base_layer or linear
+        has_base_layer = hasattr(module, &#34;base_layer&#34;) or (
+            hasattr(module, &#34;linear&#34;) and (hasattr(module, &#34;lora_A&#34;) or hasattr(module, &#34;r&#34;))
+        )
+        if hasattr(module, &#34;base_layer&#34;):
+            module.base_layer = factorized_layer
+        elif hasattr(module, &#34;linear&#34;) and (hasattr(module, &#34;lora_A&#34;) or hasattr(module, &#34;r&#34;)):
+            module.linear = factorized_layer
+        else:
+            replace_module(self.model, name, factorized_layer)
+
+        if has_base_layer:
+            for p_name, p in module.named_parameters():
+                if any(t in p_name.lower() for t in (&#34;lora_a&#34;, &#34;lora_b&#34;, &#34;adapter&#34;)):
+                    p.requires_grad = True
+
+        self.compressed_layers.append(name)
+        total_comp_decomp_params += rank * (in_f + out_f)
+
+    # Forward sanity check
+    forward_check_success = False
+    try:
+        self.model.eval()
+        with torch.no_grad():
+            d = next(self.model.parameters()).device
+            dummy = torch.randint(0, 100, (1, 16), device=d)
+            self.model(dummy)
+        forward_check_success = True
+    except Exception as e:
+        logger.debug(&#34;DynamicEntropySVD forward check exception: %s&#34;, e)
+
+    effective_ratio = (
+        total_comp_decomp_params / total_orig_decomp_params
+        if total_orig_decomp_params &gt; 0
+        else 1.0
+    )
+    avg_err = (
+        sum(self.layer_errors[k] for k in self.compressed_layers)
+        / max(1, len(self.compressed_layers))
+        if self.compressed_layers
+        else 0.0
+    )
+
+    stats = self.get_compression_stats()
+    stats.update(
+        {
+            &#34;layer_entropies&#34;: self.layer_entropies,
+            &#34;layer_ranks&#34;: self.layer_ranks,
+            &#34;layer_errors&#34;: self.layer_errors,
+            &#34;compressed_layers&#34;: self.compressed_layers,
+            &#34;compressed_layer_count&#34;: len(self.compressed_layers),
+            &#34;fallback_layers&#34;: self.fallback_layers,
+            &#34;fallback_layer_count&#34;: len(self.fallback_layers),
+            &#34;skipped_layers&#34;: self.skipped_layers,
+            &#34;skipped_layer_count&#34;: len(self.skipped_layers),
+            &#34;original_layer_count&#34;: len(layer_dims),
+            &#34;max_error&#34;: self.max_error,
+            &#34;target_attention_only&#34;: self.target_attention_only,
+            &#34;fallback_to_original&#34;: self.fallback_to_original,
+            &#34;effective_parameter_ratio&#34;: round(effective_ratio, 4),
+            &#34;avg_reconstruction_error&#34;: avg_err,
+            &#34;forward_check_success&#34;: forward_check_success,
+            &#34;method&#34;: &#34;dynamic_entropy_svd&#34;,
+        }
+    )
+    self.stats = stats
+    logger.info(
+        &#34;Compressor dynamic_rank finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f&#34;,
+        len(self.compressed_layers),
+        len(self.fallback_layers),
+        avg_err,
+        self.max_error,
+    )
+    return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Execute dynamic entropy-budgeted low-rank SVD compression across all target layers.
+Includes reconstruction error validation, fallback, layer freezing, and parameter tracking.</p>
+<dl>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code>Tuple[nn.Module, Dict[str, Any]]</code></dt>
+<dd>Compressed model and detailed statistics.</dd>
+</dl></div>
+</dd>
+<dt id="neuralops.compression_engine.dynamic_rank.DynamicEntropySVDCompressor.compute_layer_entropies"><code class="name flex">
+<span>def <span class="ident">compute_layer_entropies</span></span>(<span>self, covariances: dict[str, torch.Tensor]) ‑> dict[str, float]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_layer_entropies(self, covariances: dict[str, torch.Tensor]) -&gt; dict[str, float]:
+    &#34;&#34;&#34;
+    Compute singular entropy for each target layer using activation covariance
+    or fallback weight matrix spectrum.
+    &#34;&#34;&#34;
+    entropies: dict[str, float] = {}
+    for name, module in self.model.named_modules():
+        if self._is_target_module(name, module):
+            target_mod = getattr(module, &#34;base_layer&#34;, module)
+            raw_w = target_mod.weight.data
+            cls_name = target_mod.__class__.__name__.lower()
+            is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+            w_mat = raw_w.t().contiguous().float() if is_conv1d else raw_w.float()
+
+            if name in covariances:
+                ent = compute_singular_entropy(covariances[name])
+            else:
+                ent = compute_singular_entropy(w_mat)
+            entropies[name] = ent
+    return entropies</code></pre>
+</details>
+<div class="desc"><p>Compute singular entropy for each target layer using activation covariance
+or fallback weight matrix spectrum.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.compression_engine.dynamic_rank.DynamicSVDLinear"><code class="flex name class">
+<span>class <span class="ident">DynamicSVDLinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>rank: int,<br>bias: bool = True,<br>dtype: torch.dtype = torch.float32,<br>device: torch.device | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DynamicSVDLinear(nn.Module):
+    is_custom_attention: bool = True
+    &#34;&#34;&#34;
+    True Low-Rank Factorized Linear Layer executing as:
+    y = (x @ V.T) @ U.T + bias
+    where V is (rank, in_features) and U is (out_features, rank).
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int,
+        bias: bool = True,
+        dtype: torch.dtype = torch.float32,
+        device: torch.device | None = None,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.rank = max(1, min(rank, in_features, out_features))
+
+        # Factorized low-rank parameter tensors
+        self.V = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
+        self.U = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
+
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device))
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+        self.reset_parameters()
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Reconstructed effective weight matrix for compatibility.&#34;&#34;&#34;
+        return torch.matmul(self.U, self.V)
+
+    def reset_parameters(self) -&gt; None:
+        &#34;&#34;&#34;Kaiming uniform parameter initialization.&#34;&#34;&#34;
+        nn.init.kaiming_uniform_(self.V, a=math.sqrt(5))
+        nn.init.kaiming_uniform_(self.U, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in = self.in_features
+            bound = 1 / math.sqrt(fan_in) if fan_in &gt; 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        &#34;&#34;&#34;
+        Forward pass executing factorized low-rank multiplication:
+        y = (x @ V^T) @ U^T + bias
+        &#34;&#34;&#34;
+        intermediate = F.linear(x, self.V)
+        out = F.linear(intermediate, self.U, self.bias)
+        return out
+
+    @classmethod
+    def from_linear(
+        cls,
+        linear: nn.Module,
+        rank: int,
+        covariance: torch.Tensor | None = None,
+    ) -&gt; DynamicSVDLinear:
+        &#34;&#34;&#34;
+        Construct factorized DynamicSVDLinear directly from dense nn.Linear or Conv1D via SVD.
+
+        Args:
+            linear: Source dense linear or Conv1D layer (or LoRALinear wrapper).
+            rank: Target rank for low-rank factorization.
+            covariance: Optional empirical activation covariance C_X for activation-aware SVD.
+
+        Returns:
+            DynamicSVDLinear: Initialized factorized low-rank layer.
+        &#34;&#34;&#34;
+        target_mod = getattr(linear, &#34;base_layer&#34;, linear)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+        raw_w = target_mod.weight.data
+
+        if is_conv1d:
+            in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+            W = raw_w.t().contiguous().float()  # [out_features, in_features]
+        else:
+            out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+            W = raw_w.float()  # [out_features, in_features]
+
+        target_rank = max(1, min(rank, in_f, out_f))
+
+        new_layer = cls(
+            in_features=in_f,
+            out_features=out_f,
+            rank=target_rank,
+            bias=target_mod.bias is not None,
+            dtype=target_mod.weight.dtype,
+            device=target_mod.weight.device,
+        )
+
+        # Always compute the weight-only SVD baseline first.
+        # This serves as both the default path (when covariance=None) and the
+        # fallback comparison when the activation-aware path produces higher error.
+        U_svd_w, S_svd_w, Vh_svd_w = torch.linalg.svd(W, full_matrices=False)
+        sqrt_S_w = torch.sqrt(torch.clamp(S_svd_w[:target_rank], min=1e-12))
+        U_w = U_svd_w[:, :target_rank] * sqrt_S_w.unsqueeze(0)  # [out_f, rank]
+        V_w = sqrt_S_w.unsqueeze(1) * Vh_svd_w[:target_rank, :]  # [rank, in_f]
+        W_rec_w = U_w @ V_w
+        norm_W = torch.norm(W, p=&#34;fro&#34;).clamp(min=1e-12)
+        err_weight_only = (torch.norm(W - W_rec_w, p=&#34;fro&#34;) / norm_W).item()
+
+        # Default to weight-only unless activation-aware is demonstrably better.
+        U_r, V_r = U_w, V_w
+
+        if covariance is not None and covariance.numel() &gt; 0 and covariance.shape[0] == in_f:
+            # RESEARCH FIX: Activation-aware whitening SVD with eigenvalue clamping lambda_i &gt;= 1e-4
+            # NOTE: We only accept the activation-aware result if its reconstruction error is
+            # strictly lower than the weight-only baseline. This guards against rank-deficient
+            # covariances (e.g. from dummy calibration data) that inflate inv_sqrt by up to 100x
+            # and destroy the approximation quality.
+            cov = covariance.to(device=W.device, dtype=torch.float32)
+            try:
+                # Eigen-decomposition with regularized eigenvalue clamping &gt;= 1e-4
+                eigvals, eigvecs = torch.linalg.eigh(cov + 1e-4 * torch.eye(in_f, device=W.device))
+                eigvals_clamped = torch.clamp(eigvals, min=1e-4)
+                cov_sqrt = (
+                    eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.t().contiguous()
+                )
+                cov_inv_sqrt = (
+                    eigvecs
+                    @ torch.diag(1.0 / torch.sqrt(eigvals_clamped))
+                    @ eigvecs.t().contiguous()
+                )
+
+                W_scaled = W @ cov_sqrt
+                U_svd_a, S_svd_a, Vh_svd_a = torch.linalg.svd(W_scaled, full_matrices=False)
+
+                # Truncate and un-whiten right singular factors
+                sqrt_S_a = torch.sqrt(torch.clamp(S_svd_a[:target_rank], min=1e-12))
+                U_a = U_svd_a[:, :target_rank] * sqrt_S_a.unsqueeze(0)
+                V_a = sqrt_S_a.unsqueeze(1) * (Vh_svd_a[:target_rank, :] @ cov_inv_sqrt)
+                # Symmetrically normalize factor magnitudes
+                norm_u = torch.norm(U_a, p=&#34;fro&#34;).clamp_min(1e-8)
+                norm_v = torch.norm(V_a, p=&#34;fro&#34;).clamp_min(1e-8)
+                scale = torch.sqrt(norm_u / norm_v)
+                U_a = U_a / scale
+                V_a = V_a * scale
+
+                W_rec_a = U_a @ V_a
+                err_act_aware = (torch.norm(W - W_rec_a, p=&#34;fro&#34;) / norm_W).item()
+
+                if err_act_aware &lt; err_weight_only:
+                    # Activation-aware is genuinely better: accept it
+                    U_r, V_r = U_a, V_a
+                    logger.debug(
+                        &#34;from_linear: activation-aware SVD accepted &#34;
+                        &#34;(err_act=%.4f &lt; err_weight=%.4f).&#34;,
+                        err_act_aware,
+                        err_weight_only,
+                    )
+                else:
+                    # Activation-aware is worse (e.g. due to rank-deficient covariance):
+                    # stick with the weight-only baseline
+                    logger.debug(
+                        &#34;from_linear: activation-aware SVD rejected &#34;
+                        &#34;(err_act=%.4f &gt;= err_weight=%.4f); using weight-only SVD.&#34;,
+                        err_act_aware,
+                        err_weight_only,
+                    )
+            except Exception as e:
+                logger.warning(&#34;Activation-aware SVD failed (%s); using weight-only SVD.&#34;, e)
+                # U_r, V_r already set to weight-only baseline above
+
+        new_layer.U.data.copy_(U_r.to(dtype=target_mod.weight.dtype))
+        new_layer.V.data.copy_(V_r.to(dtype=target_mod.weight.dtype))
+
+        if target_mod.bias is not None and new_layer.bias is not None:
+            new_layer.bias.data.copy_(target_mod.bias.data)
+
+        return new_layer
+
+    def extra_repr(self) -&gt; str:
+        return f&#34;in_features={self.in_features}, out_features={self.out_features}, rank={self.rank}, bias={self.bias is not None}&#34;</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.dynamic_rank.DynamicSVDLinear.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>True Low-Rank Factorized Linear Layer executing as:
+y = (x @ V.T) @ U.T + bias
+where V is (rank, in_features) and U is (out_features, rank).</p></div>
+</dd>
+</dl>
+<h3>Static methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.dynamic_rank.DynamicSVDLinear.from_linear"><code class="name flex">
+<span>def <span class="ident">from_linear</span></span>(<span>linear: nn.Module, rank: int, covariance: torch.Tensor | None = None) ‑> <a title="neuralops.compression_engine.dynamic_rank.DynamicSVDLinear" href="#neuralops.compression_engine.dynamic_rank.DynamicSVDLinear">DynamicSVDLinear</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Construct factorized DynamicSVDLinear directly from dense nn.Linear or Conv1D via SVD.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>linear</code></strong></dt>
+<dd>Source dense linear or Conv1D layer (or LoRALinear wrapper).</dd>
+<dt><strong><code>rank</code></strong></dt>
+<dd>Target rank for low-rank factorization.</dd>
+<dt><strong><code>covariance</code></strong></dt>
+<dd>Optional empirical activation covariance C_X for activation-aware SVD.</dd>
+<dt>Returns</dt>
+<dt>-----=</dt>
+<dt><code><a title="neuralops.compression_engine.dynamic_rank.DynamicSVDLinear" href="#neuralops.compression_engine.dynamic_rank.DynamicSVDLinear">DynamicSVDLinear</a></code></dt>
+<dd>Initialized factorized low-rank layer.</dd>
+</dl></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.dynamic_rank.DynamicSVDLinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Reconstructed effective weight matrix for compatibility.&#34;&#34;&#34;
+    return torch.matmul(self.U, self.V)</code></pre>
+</details>
+<div class="desc"><p>Reconstructed effective weight matrix for compatibility.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.dynamic_rank.DynamicSVDLinear.extra_repr"><code class="name flex">
+<span>def <span class="ident">extra_repr</span></span>(<span>self) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def extra_repr(self) -&gt; str:
+    return f&#34;in_features={self.in_features}, out_features={self.out_features}, rank={self.rank}, bias={self.bias is not None}&#34;</code></pre>
+</details>
+<div class="desc"><p>Return the extra representation of the module.</p>
+<p>To print customized extra information, you should re-implement
+this method in your own modules. Both single-line and multi-line
+strings are acceptable.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.dynamic_rank.DynamicSVDLinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    &#34;&#34;&#34;
+    Forward pass executing factorized low-rank multiplication:
+    y = (x @ V^T) @ U^T + bias
+    &#34;&#34;&#34;
+    intermediate = F.linear(x, self.V)
+    out = F.linear(intermediate, self.U, self.bias)
+    return out</code></pre>
+</details>
+<div class="desc"><p>Forward pass executing factorized low-rank multiplication:
+y = (x @ V^T) @ U^T + bias</p></div>
+</dd>
+<dt id="neuralops.compression_engine.dynamic_rank.DynamicSVDLinear.reset_parameters"><code class="name flex">
+<span>def <span class="ident">reset_parameters</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_parameters(self) -&gt; None:
+    &#34;&#34;&#34;Kaiming uniform parameter initialization.&#34;&#34;&#34;
+    nn.init.kaiming_uniform_(self.V, a=math.sqrt(5))
+    nn.init.kaiming_uniform_(self.U, a=math.sqrt(5))
+    if self.bias is not None:
+        fan_in = self.in_features
+        bound = 1 / math.sqrt(fan_in) if fan_in &gt; 0 else 0
+        nn.init.uniform_(self.bias, -bound, bound)</code></pre>
+</details>
+<div class="desc"><p>Kaiming uniform parameter initialization.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.dynamic_rank.allocate_entropy_ranks" href="#neuralops.compression_engine.dynamic_rank.allocate_entropy_ranks">allocate_entropy_ranks</a></code></li>
+<li><code><a title="neuralops.compression_engine.dynamic_rank.compute_singular_entropy" href="#neuralops.compression_engine.dynamic_rank.compute_singular_entropy">compute_singular_entropy</a></code></li>
+<li><code><a title="neuralops.compression_engine.dynamic_rank.dynamic_entropy_inject" href="#neuralops.compression_engine.dynamic_rank.dynamic_entropy_inject">dynamic_entropy_inject</a></code></li>
+<li><code><a title="neuralops.compression_engine.dynamic_rank.dynamic_entropy_svd_factory" href="#neuralops.compression_engine.dynamic_rank.dynamic_entropy_svd_factory">dynamic_entropy_svd_factory</a></code></li>
+<li><code><a title="neuralops.compression_engine.dynamic_rank.dynamic_rank_factory" href="#neuralops.compression_engine.dynamic_rank.dynamic_rank_factory">dynamic_rank_factory</a></code></li>
+<li><code><a title="neuralops.compression_engine.dynamic_rank.dynamic_rank_inject" href="#neuralops.compression_engine.dynamic_rank.dynamic_rank_inject">dynamic_rank_inject</a></code></li>
+<li><code><a title="neuralops.compression_engine.dynamic_rank.entropy_rank_allocator_factory" href="#neuralops.compression_engine.dynamic_rank.entropy_rank_allocator_factory">entropy_rank_allocator_factory</a></code></li>
+<li><code><a title="neuralops.compression_engine.dynamic_rank.inject_dynamic_entropy" href="#neuralops.compression_engine.dynamic_rank.inject_dynamic_entropy">inject_dynamic_entropy</a></code></li>
+<li><code><a title="neuralops.compression_engine.dynamic_rank.inject_dynamic_rank" href="#neuralops.compression_engine.dynamic_rank.inject_dynamic_rank">inject_dynamic_rank</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.dynamic_rank.DynamicEntropySVDCompressor" href="#neuralops.compression_engine.dynamic_rank.DynamicEntropySVDCompressor">DynamicEntropySVDCompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.dynamic_rank.DynamicEntropySVDCompressor.collect_activation_covariances" href="#neuralops.compression_engine.dynamic_rank.DynamicEntropySVDCompressor.collect_activation_covariances">collect_activation_covariances</a></code></li>
+<li><code><a title="neuralops.compression_engine.dynamic_rank.DynamicEntropySVDCompressor.compress" href="#neuralops.compression_engine.dynamic_rank.DynamicEntropySVDCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.compression_engine.dynamic_rank.DynamicEntropySVDCompressor.compute_layer_entropies" href="#neuralops.compression_engine.dynamic_rank.DynamicEntropySVDCompressor.compute_layer_entropies">compute_layer_entropies</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.dynamic_rank.DynamicSVDLinear" href="#neuralops.compression_engine.dynamic_rank.DynamicSVDLinear">DynamicSVDLinear</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.compression_engine.dynamic_rank.DynamicSVDLinear.extra_repr" href="#neuralops.compression_engine.dynamic_rank.DynamicSVDLinear.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.compression_engine.dynamic_rank.DynamicSVDLinear.forward" href="#neuralops.compression_engine.dynamic_rank.DynamicSVDLinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.compression_engine.dynamic_rank.DynamicSVDLinear.from_linear" href="#neuralops.compression_engine.dynamic_rank.DynamicSVDLinear.from_linear">from_linear</a></code></li>
+<li><code><a title="neuralops.compression_engine.dynamic_rank.DynamicSVDLinear.is_custom_attention" href="#neuralops.compression_engine.dynamic_rank.DynamicSVDLinear.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.compression_engine.dynamic_rank.DynamicSVDLinear.reset_parameters" href="#neuralops.compression_engine.dynamic_rank.DynamicSVDLinear.reset_parameters">reset_parameters</a></code></li>
+<li><code><a title="neuralops.compression_engine.dynamic_rank.DynamicSVDLinear.weight" href="#neuralops.compression_engine.dynamic_rank.DynamicSVDLinear.weight">weight</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

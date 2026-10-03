@@ -4,6 +4,9 @@ All framework components (attentions, compressors, trainers, visualizers, etc.)
 are stored in registries, enabling dynamic discovery and plug‑and‑play integration.
 """
 
+from __future__ import annotations
+
+import builtins
 import logging
 from collections.abc import Callable
 from typing import Any
@@ -229,16 +232,16 @@ class Registry:
                     raise
                 logger.warning("Error loading attentions: %s", e)
 
-    def keys(self) -> list[str]:
+    def keys(self) -> builtins.list[str]:
         """Return a list of all registered keys (in original casing)."""
         self._load_all()
         return list(self._dict.keys())
 
-    def list_available(self) -> list[str]:
+    def list_available(self) -> builtins.list[str]:
         """Return a list of all registered keys."""
         return self.keys()
 
-    def list(self) -> list[str]:
+    def list(self) -> builtins.list[str]:
         """Return a list of all registered keys."""
         return self.keys()
 

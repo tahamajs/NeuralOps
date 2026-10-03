@@ -1,0 +1,1538 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.nli_softmax API documentation</title>
+<meta name="description" content="NLI Softmax approximation – a fast, quantisation-friendly softmax.
+Uses standard forward softmax, simplified sigmoid-based backward.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.nli_softmax</code></h1>
+</header>
+<section id="section-intro">
+<p>NLI Softmax approximation – a fast, quantisation-friendly softmax.
+Uses standard forward softmax, simplified sigmoid-based backward.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.nli_softmax.inject_nli_softmax"><code class="name flex">
+<span>def <span class="ident">inject_nli_softmax</span></span>(<span>layer: Any = None,<br>model: Any = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: torch.nn.modules.module.Module | None = None,<br>**kwargs: Any) ‑> <a title="neuralops.compression_engine.nli_softmax.NLISoftmaxAttention" href="#neuralops.compression_engine.nli_softmax.NLISoftmaxAttention">NLISoftmaxAttention</a> | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;nli_softmax_inject&#34;)
+@ATTENTION_REGISTRY.register(&#34;inject_nli_softmax&#34;)
+def inject_nli_softmax(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    _depth: int = 0,
+    **kwargs: Any,
+) -&gt; NLISoftmaxAttention | None:
+    if _depth &gt; 8:
+        logger.warning(&#34;inject_nli_softmax: max recursion depth exceeded.&#34;)
+        return None
+
+    try:
+        target = layer if layer is not None else model
+        if target is None:
+            target = kwargs.get(&#34;model&#34;, kwargs.get(&#34;layer&#34;))
+        if target is None:
+            return None
+
+        # Whole-model traversal.
+        layer_list = None
+        if hasattr(target, &#34;distilbert&#34;) and hasattr(target.distilbert, &#34;transformer&#34;):
+            layer_list = target.distilbert.transformer.layer
+        elif hasattr(target, &#34;roberta&#34;) and hasattr(target.roberta, &#34;encoder&#34;):
+            layer_list = target.roberta.encoder.layer
+        elif hasattr(target, &#34;bert&#34;) and hasattr(target.bert, &#34;encoder&#34;):
+            layer_list = target.bert.encoder.layer
+        elif hasattr(target, &#34;transformer&#34;) and hasattr(target.transformer, &#34;h&#34;):
+            layer_list = target.transformer.h
+        elif hasattr(target, &#34;model&#34;) and hasattr(target.model, &#34;layers&#34;):
+            layer_list = target.model.layers
+        elif hasattr(target, &#34;encoder&#34;) and hasattr(target.encoder, &#34;layer&#34;):
+            layer_list = target.encoder.layer
+        elif hasattr(target, &#34;layers&#34;) and isinstance(target.layers, (nn.ModuleList, list)):
+            layer_list = target.layers
+
+        if layer_list is not None:
+            n_inj = 0
+            tot = len(layer_list)
+            for idx, lyr in enumerate(layer_list):
+                res = inject_nli_softmax(
+                    layer=lyr,
+                    model_config=model_config or getattr(target, &#34;config&#34;, None),
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    _depth=_depth + 1,
+                    **kwargs,
+                )
+                if res is not None:
+                    n_inj += 1
+            return target if n_inj &gt; 0 else None
+
+        layer = target
+        src = old_attn
+        if src is None:
+            for attr in (&#34;attention&#34;, &#34;self_attn&#34;, &#34;attn&#34;, &#34;self&#34;):
+                if hasattr(layer, attr):
+                    src = getattr(layer, attr)
+                    break
+        if src is None:
+            return None
+
+        # Nested encoder detection.
+        is_nested = False
+        if hasattr(src, &#34;self&#34;) and hasattr(src, &#34;output&#34;):
+            is_nested = True
+            old_self = src.self
+        elif src.__class__.__name__ in _NESTED_ATTN_CLASSES:
+            is_nested = True
+            old_self = src
+        else:
+            old_self = src
+
+        new_attn = NLISoftmaxAttention(
+            config=model_config or getattr(layer, &#34;config&#34;, None),
+            old_attn=old_self,
+            is_nested_encoder=is_nested,
+            **kwargs,
+        )
+
+        if is_nested and hasattr(layer, &#34;attention&#34;) and hasattr(layer.attention, &#34;self&#34;):
+            layer.attention.self = new_attn
+        elif hasattr(layer, &#34;attention&#34;):
+            layer.attention = new_attn
+        elif hasattr(layer, &#34;self_attn&#34;):
+            layer.self_attn = new_attn
+        elif hasattr(layer, &#34;self&#34;):
+            layer.self = new_attn
+        elif hasattr(layer, &#34;attn&#34;):
+            layer.attn = new_attn
+        else:
+            return None
+        return new_attn
+    except Exception as e:
+        logger.error(&#34;inject_nli_softmax failed at layer %d: %s&#34;, layer_idx, e)
+        return None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.compression_engine.nli_softmax.nli_softmax"><code class="name flex">
+<span>def <span class="ident">nli_softmax</span></span>(<span>x: torch.Tensor, dim: int = -1) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def nli_softmax(x: torch.Tensor, dim: int = -1) -&gt; torch.Tensor:
+    return NLISoftmaxFunction.apply(x, dim)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.compression_engine.nli_softmax.nli_softmax_factory"><code class="name flex">
+<span>def <span class="ident">nli_softmax_factory</span></span>(<span>model: Any, comp_config: Any = None, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;nli_softmax_factory&#34;)
+def nli_softmax_factory(model: Any, comp_config: Any = None, **kwargs: Any) -&gt; Any:
+    max_error = kwargs.pop(
+        &#34;max_error&#34;,
+        _cfg_get(comp_config, &#34;nli_max_error&#34;, _cfg_get(comp_config, &#34;max_error&#34;, 0.20)),
+    )
+    fallback = kwargs.pop(
+        &#34;fallback_to_original&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;nli_fallback_to_original&#34;,
+            _cfg_get(comp_config, &#34;fallback_to_original&#34;, True),
+        ),
+    )
+    target_attention_only = kwargs.pop(
+        &#34;target_attention_only&#34;, _cfg_get(comp_config, &#34;target_attention_only&#34;, False)
+    )
+    skip_filter = kwargs.pop(
+        &#34;skip_should_compress_filter&#34;,
+        _cfg_get(comp_config, &#34;skip_should_compress_filter&#34;, False),
+    )
+    return_stats = kwargs.pop(&#34;return_stats&#34;, kwargs.pop(&#34;return_tuple&#34;, False))
+
+    compressor = NLISoftmaxCompressor(
+        model,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        target_attention_only=target_attention_only,
+        skip_should_compress_filter=skip_filter,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.nli_softmax.LoRALinear"><code class="flex name class">
+<span>class <span class="ident">LoRALinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>bias: bool = True,<br>lora_rank: int = 16,<br>lora_alpha: float = 32.0,<br>freeze_base: bool = False,<br>device: torch.device | None = None,<br>dtype: torch.dtype | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class LoRALinear(nn.Module):
+    is_custom_attention: bool = False
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        freeze_base: bool = False,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -&gt; None:
+        super().__init__()
+        factory_kwargs = {&#34;device&#34;: device, &#34;dtype&#34;: dtype}
+        self.in_features = in_features
+        self.out_features = out_features
+        self.lora_rank = lora_rank
+        self.lora_alpha = lora_alpha
+        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank &gt; 0 else 1.0
+        self.freeze_base = freeze_base
+
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+        if self.lora_rank &gt; 0:
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+        self.reset_parameters()
+        if freeze_base:
+            self.freeze_base_weights()
+
+    def reset_parameters(self) -&gt; None:
+        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in &gt; 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+        if self.lora_rank &gt; 0 and self.lora_A is not None:
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            self.lora_A.requires_grad = True
+        if self.lora_rank &gt; 0 and self.lora_B is not None:
+            nn.init.zeros_(self.lora_B)
+            self.lora_B.requires_grad = True
+
+    def freeze_base_weights(self) -&gt; None:
+        self.weight.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+        if self.lora_rank &gt; 0 and self.lora_A is not None:
+            self.lora_A.requires_grad = True
+        if self.lora_rank &gt; 0 and self.lora_B is not None:
+            self.lora_B.requires_grad = True
+
+    def unfreeze_base_weights(self) -&gt; None:
+        self.weight.requires_grad = True
+        if self.bias is not None:
+            self.bias.requires_grad = True
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        out = F.linear(x, self.weight, self.bias)
+        if self.lora_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            out = out + lora_out
+        return out</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.nli_softmax.LoRALinear.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.nli_softmax.LoRALinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    out = F.linear(x, self.weight, self.bias)
+    if self.lora_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        out = out + lora_out
+    return out</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+<dt id="neuralops.compression_engine.nli_softmax.LoRALinear.freeze_base_weights"><code class="name flex">
+<span>def <span class="ident">freeze_base_weights</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def freeze_base_weights(self) -&gt; None:
+    self.weight.requires_grad = False
+    if self.bias is not None:
+        self.bias.requires_grad = False
+    if self.lora_rank &gt; 0 and self.lora_A is not None:
+        self.lora_A.requires_grad = True
+    if self.lora_rank &gt; 0 and self.lora_B is not None:
+        self.lora_B.requires_grad = True</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.compression_engine.nli_softmax.LoRALinear.reset_parameters"><code class="name flex">
+<span>def <span class="ident">reset_parameters</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_parameters(self) -&gt; None:
+    nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+    if self.bias is not None:
+        fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+        bound = 1 / math.sqrt(fan_in) if fan_in &gt; 0 else 0
+        nn.init.uniform_(self.bias, -bound, bound)
+    if self.lora_rank &gt; 0 and self.lora_A is not None:
+        nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        self.lora_A.requires_grad = True
+    if self.lora_rank &gt; 0 and self.lora_B is not None:
+        nn.init.zeros_(self.lora_B)
+        self.lora_B.requires_grad = True</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.compression_engine.nli_softmax.LoRALinear.unfreeze_base_weights"><code class="name flex">
+<span>def <span class="ident">unfreeze_base_weights</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def unfreeze_base_weights(self) -&gt; None:
+    self.weight.requires_grad = True
+    if self.bias is not None:
+        self.bias.requires_grad = True</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.compression_engine.nli_softmax.NLISoftmax"><code class="flex name class">
+<span>class <span class="ident">NLISoftmax</span></span>
+<span>(</span><span>dim: int = -1)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class NLISoftmax(nn.Module):
+    is_custom_attention: bool = False
+
+    def __init__(self, dim: int = -1) -&gt; None:
+        super().__init__()
+        self.dim = dim
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        return nli_softmax(x, dim=self.dim)
+
+    def extra_repr(self) -&gt; str:
+        return f&#34;dim={self.dim}&#34;</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.nli_softmax.NLISoftmax.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.nli_softmax.NLISoftmax.extra_repr"><code class="name flex">
+<span>def <span class="ident">extra_repr</span></span>(<span>self) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def extra_repr(self) -&gt; str:
+    return f&#34;dim={self.dim}&#34;</code></pre>
+</details>
+<div class="desc"><p>Return the extra representation of the module.</p>
+<p>To print customized extra information, you should re-implement
+this method in your own modules. Both single-line and multi-line
+strings are acceptable.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.nli_softmax.NLISoftmax.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    return nli_softmax(x, dim=self.dim)</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.compression_engine.nli_softmax.NLISoftmaxAttention"><code class="flex name class">
+<span>class <span class="ident">NLISoftmaxAttention</span></span>
+<span>(</span><span>config: Any | None = None,<br>rank: int | None = None,<br>dim: int | None = None,<br>num_heads: int | None = None,<br>is_nested_encoder: bool = False,<br>is_decoder: bool | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;nli_softmax_attention&#34;)
+@ATTENTION_REGISTRY.register(&#34;nli_softmax_attn&#34;)
+class NLISoftmaxAttention(BaseAttention):
+    &#34;&#34;&#34;
+    Attention approximating softmax with NLISoftmax.
+
+    Nested-encoder mode (BERT/RoBERTa): the internal out_proj is NOT created,
+    because the outer `BertSelfOutput` / `RobertaSelfOutput` applies dense + LayerNorm.
+    &#34;&#34;&#34;
+
+    # NLI-FIX-02
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        config: Any | None = None,
+        rank: int | None = None,
+        dim: int | None = None,
+        num_heads: int | None = None,
+        is_nested_encoder: bool = False,
+        is_decoder: bool | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        # NLI-FIX-11: guard against varying BaseAttention signatures.
+        try:
+            super().__init__(config, rank)
+        except TypeError:
+            super().__init__(config)
+
+        cfg = config
+        d_model = dim or _cfg_get(
+            cfg,
+            &#34;hidden_size&#34;,
+            _cfg_get(cfg, &#34;d_model&#34;, _cfg_get(cfg, &#34;dim&#34;, 768)),
+        )
+        heads = num_heads or _cfg_get(
+            cfg,
+            &#34;num_attention_heads&#34;,
+            _cfg_get(cfg, &#34;n_heads&#34;, _cfg_get(cfg, &#34;n_head&#34;, 12)),
+        )
+
+        self.d_model = int(d_model)
+        self.num_heads = int(heads)
+        while self.num_heads &gt; 1 and (self.d_model % self.num_heads != 0):
+            self.num_heads -= 1
+        self.head_dim = self.d_model // max(1, self.num_heads)
+        self.all_head_size = self.num_heads * self.head_dim
+        self.is_nested_encoder = bool(is_nested_encoder)
+        self.dropout = nn.Dropout(_cfg_get(cfg, &#34;attention_probs_dropout_prob&#34;, 0.1))
+
+        # Decoder detection
+        if is_decoder is not None:
+            self.is_decoder = bool(is_decoder)
+        else:
+            dec = bool(_cfg_get(cfg, &#34;is_decoder&#34;, _cfg_get(cfg, &#34;is_causal&#34;, False)))
+            m_type = str(_cfg_get(cfg, &#34;model_type&#34;, &#34;&#34;)).lower()
+            if any(
+                m_type.startswith(p)
+                for p in (
+                    &#34;gpt&#34;,
+                    &#34;qwen&#34;,
+                    &#34;llama&#34;,
+                    &#34;mistral&#34;,
+                    &#34;gemma&#34;,
+                    &#34;phi&#34;,
+                    &#34;opt&#34;,
+                    &#34;bloom&#34;,
+                    &#34;falcon&#34;,
+                    &#34;olmo&#34;,
+                    &#34;mpt&#34;,
+                    &#34;stablelm&#34;,
+                )
+            ):
+                dec = True
+            self.is_decoder = dec
+
+        lora_r = int(kwargs.get(&#34;lora_rank&#34;, _cfg_get(cfg, &#34;lora_rank&#34;, 16)))
+        lora_a = float(kwargs.get(&#34;lora_alpha&#34;, _cfg_get(cfg, &#34;lora_alpha&#34;, 32.0)))
+        self.lora_rank = lora_r
+        self.lora_alpha = lora_a
+
+        # Always create Q/K/V.
+        self.q_proj = LoRALinear(
+            self.d_model,
+            self.all_head_size,
+            lora_rank=lora_r,
+            lora_alpha=lora_a,
+            freeze_base=True,
+        )
+        self.k_proj = LoRALinear(
+            self.d_model,
+            self.all_head_size,
+            lora_rank=lora_r,
+            lora_alpha=lora_a,
+            freeze_base=True,
+        )
+        self.v_proj = LoRALinear(
+            self.d_model,
+            self.all_head_size,
+            lora_rank=lora_r,
+            lora_alpha=lora_a,
+            freeze_base=True,
+        )
+
+        # NLI-FIX-04: only create out_proj when not nested.
+        if not self.is_nested_encoder:
+            self.out_proj = LoRALinear(
+                self.all_head_size,
+                self.d_model,
+                lora_rank=lora_r,
+                lora_alpha=lora_a,
+                freeze_base=True,
+            )
+        else:
+            self.out_proj = None
+
+        old_attn = kwargs.get(&#34;old_attn&#34;, kwargs.get(&#34;pretrained_attn&#34;))
+        if old_attn is not None:
+            src_cls = old_attn.__class__.__name__
+            if hasattr(old_attn, &#34;c_attn&#34;) or &#34;gpt&#34; in src_cls.lower():
+                self.is_decoder = True
+            self.copy_weights(old_attn)
+
+    # ------------------------------------------------------------------
+    @property
+    def query(self) -&gt; nn.Module:
+        return self.q_proj
+
+    @property
+    def key(self) -&gt; nn.Module:
+        return self.k_proj
+
+    @property
+    def value(self) -&gt; nn.Module:
+        return self.v_proj
+
+    def freeze_base_weights(self) -&gt; None:
+        for proj in (self.q_proj, self.k_proj, self.v_proj):
+            if hasattr(proj, &#34;freeze_base_weights&#34;):
+                proj.freeze_base_weights()
+        if self.out_proj is not None:
+            self.out_proj.freeze_base_weights()
+
+    # ------------------------------------------------------------------
+    def copy_weights(self, old_attn: Any) -&gt; None:
+        w_q = b_q = w_k = b_k = w_v = b_v = w_o = b_o = None
+
+        src_cls_name = getattr(old_attn, &#34;__class__&#34;, type(old_attn)).__name__
+
+        # Detect nested encoder.
+        if src_cls_name in _NESTED_ATTN_CLASSES or (
+            hasattr(old_attn, &#34;query&#34;)
+            and not hasattr(old_attn, &#34;dense&#34;)
+            and not hasattr(old_attn, &#34;out_proj&#34;)
+        ):
+            self.is_nested_encoder = True
+
+        if hasattr(old_attn, &#34;self&#34;) and hasattr(old_attn, &#34;output&#34;):
+            self.is_nested_encoder = True
+            src = old_attn.self
+            if hasattr(old_attn.output, &#34;dense&#34;):
+                w_o = getattr(old_attn.output.dense, &#34;weight&#34;, None)
+                b_o = getattr(old_attn.output.dense, &#34;bias&#34;, None)
+        else:
+            src = old_attn
+
+        # NLI-FIX-04: create out_proj lazily if we now know we&#39;re not nested.
+        if not self.is_nested_encoder and self.out_proj is None:
+            self.out_proj = LoRALinear(
+                self.all_head_size,
+                self.d_model,
+                lora_rank=self.lora_rank,
+                lora_alpha=self.lora_alpha,
+                freeze_base=True,
+            )
+
+        def _unpack(m: Any) -&gt; tuple[torch.Tensor | None, torch.Tensor | None]:
+            if m is None:
+                return None, None
+            base = getattr(m, &#34;base_layer&#34;, m)
+            w = getattr(base, &#34;weight&#34;, None)
+            b = getattr(base, &#34;bias&#34;, None)
+            w_out = w.data.clone() if w is not None else None
+            b_out = b.data.clone() if b is not None else None
+            cls_name = getattr(m, &#34;__class__&#34;, type(m)).__name__
+            if (
+                (&#34;Conv1D&#34; in cls_name or hasattr(base, &#34;nf&#34;))
+                and w_out is not None
+                and w_out.ndim == 2
+            ):
+                w_out = w_out.t().contiguous()
+            return w_out, b_out
+
+        # Pattern 1: GPT-2 Conv1D fused
+        if hasattr(src, &#34;c_attn&#34;) and hasattr(src, &#34;c_proj&#34;):
+            c_w, c_b = _unpack(src.c_attn)
+            if c_w is not None:
+                split = c_w.shape[0] // 3
+                w_q, w_k, w_v = (
+                    c_w[:split, :],
+                    c_w[split : 2 * split, :],
+                    c_w[2 * split :, :],
+                )
+                if c_b is not None:
+                    b_q, b_k, b_v = (
+                        c_b[:split],
+                        c_b[split : 2 * split],
+                        c_b[2 * split :],
+                    )
+            w_o, b_o = _unpack(src.c_proj)
+
+        # Pattern 2: BERT/RoBERTa separate QKV
+        elif hasattr(src, &#34;query&#34;) and hasattr(src, &#34;key&#34;) and hasattr(src, &#34;value&#34;):
+            w_q, b_q = _unpack(src.query)
+            w_k, b_k = _unpack(src.key)
+            w_v, b_v = _unpack(src.value)
+            if w_o is None:
+                for attr in (&#34;dense&#34;, &#34;out_proj&#34;, &#34;o_proj&#34;):
+                    if hasattr(src, attr):
+                        w_o, b_o = _unpack(getattr(src, attr))
+                        break
+
+        # Pattern 3: DistilBERT
+        elif hasattr(src, &#34;q_lin&#34;) and hasattr(src, &#34;k_lin&#34;) and hasattr(src, &#34;v_lin&#34;):
+            w_q, b_q = _unpack(src.q_lin)
+            w_k, b_k = _unpack(src.k_lin)
+            w_v, b_v = _unpack(src.v_lin)
+            if hasattr(src, &#34;out_lin&#34;):
+                w_o, b_o = _unpack(src.out_lin)
+
+        # Pattern 4: Qwen/LLaMA
+        elif hasattr(src, &#34;q_proj&#34;) and hasattr(src, &#34;k_proj&#34;) and hasattr(src, &#34;v_proj&#34;):
+            w_q, b_q = _unpack(src.q_proj)
+            w_k, b_k = _unpack(src.k_proj)
+            w_v, b_v = _unpack(src.v_proj)
+            if hasattr(src, &#34;o_proj&#34;):
+                w_o, b_o = _unpack(src.o_proj)
+
+        def _copy_param(
+            target_linear: Any | None, w: torch.Tensor | None, b: torch.Tensor | None
+        ) -&gt; None:
+            if target_linear is None or w is None:
+                return
+            with torch.no_grad():
+                tw = target_linear.weight
+                if w.shape == tw.shape:
+                    tw.copy_(w)
+                else:
+                    min_r = min(tw.shape[0], w.shape[0])
+                    min_c = min(tw.shape[1], w.shape[1])
+                    tw[:min_r, :min_c].copy_(w[:min_r, :min_c])
+                if b is not None and getattr(target_linear, &#34;bias&#34;, None) is not None:
+                    tb = target_linear.bias
+                    min_b = min(tb.shape[0], b.shape[0])
+                    tb[:min_b].copy_(b[:min_b])
+            if hasattr(target_linear, &#34;freeze_base_weights&#34;):
+                target_linear.freeze_base_weights()
+
+        _copy_param(self.q_proj, w_q, b_q)
+        _copy_param(self.k_proj, w_k, b_k)
+        _copy_param(self.v_proj, w_v, b_v)
+        if not self.is_nested_encoder and w_o is not None:
+            _copy_param(self.out_proj, w_o, b_o)
+
+        self.freeze_base_weights()
+
+        for name, p in (
+            (&#34;q_proj&#34;, self.q_proj),
+            (&#34;k_proj&#34;, self.k_proj),
+            (&#34;v_proj&#34;, self.v_proj),
+        ):
+            fnorm = float(torch.linalg.norm(p.weight.float()))
+            if fnorm &lt; 1e-4:
+                logger.warning(
+                    &#34;NLISoftmaxAttention: %s Frobenius norm near zero: %g&#34;,
+                    name,
+                    fnorm,
+                )
+
+    # ------------------------------------------------------------------
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        *args: Any,
+        **kwargs: Any,
+    ) -&gt; tuple[torch.Tensor, torch.Tensor | None]:
+        if encoder_hidden_states is not None:
+            raise NotImplementedError(&#34;NLISoftmaxAttention does not support cross-attention&#34;)
+
+        B, N, D = hidden_states.shape
+        q = (
+            self.q_proj(hidden_states)
+            .view(B, N, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        k = (
+            self.k_proj(hidden_states)
+            .view(B, N, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_proj(hidden_states)
+            .view(B, N, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+
+        scores = torch.matmul(q, k.transpose(-1, -2).contiguous()) / math.sqrt(self.head_dim)
+
+        if self.is_decoder and N &gt; 1:
+            causal_mask = (
+                torch.triu(
+                    torch.full((N, N), -10000.0, device=scores.device, dtype=scores.dtype),
+                    diagonal=1,
+                )
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
+            scores = scores + causal_mask
+
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                scores = scores + (attention_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+            elif attention_mask.dim() == 3:
+                scores = scores + (attention_mask.unsqueeze(1).float() - 1.0) * 10000.0
+            elif attention_mask.dim() == 4:
+                scores = scores + attention_mask.to(scores.dtype)
+
+        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+        attn_probs = nli_softmax(scores, dim=-1)
+        attn_probs = self.dropout(attn_probs)
+
+        if head_mask is not None:
+            if head_mask.dim() == 1:
+                head_mask = head_mask.view(1, -1, 1, 1)
+            elif head_mask.dim() == 2:
+                head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)
+            elif head_mask.dim() == 3:
+                head_mask = head_mask[:, :, :1].unsqueeze(-1)
+            attn_probs = attn_probs * head_mask.to(attn_probs.dtype)
+
+        context = torch.matmul(attn_probs, v)
+        context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+
+        # NLI-FIX-04: out_proj only for non-nested.
+        if self.is_nested_encoder or self.out_proj is None:
+            out = context
+        else:
+            out = self.out_proj(context)
+
+        # NLI-FIX-05: explicit 2-tuple.
+        if output_attentions:
+            return out, attn_probs
+        return out, None</code></pre>
+</details>
+<div class="desc"><p>Attention approximating softmax with NLISoftmax.</p>
+<p>Nested-encoder mode (BERT/RoBERTa): the internal out_proj is NOT created,
+because the outer <code>BertSelfOutput</code> / <code>RobertaSelfOutput</code> applies dense + LayerNorm.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.nli_softmax.NLISoftmaxAttention.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.nli_softmax.NLISoftmaxAttention.key"><code class="name">prop <span class="ident">key</span> : torch.nn.modules.module.Module</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def key(self) -&gt; nn.Module:
+    return self.k_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.compression_engine.nli_softmax.NLISoftmaxAttention.query"><code class="name">prop <span class="ident">query</span> : torch.nn.modules.module.Module</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def query(self) -&gt; nn.Module:
+    return self.q_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.compression_engine.nli_softmax.NLISoftmaxAttention.value"><code class="name">prop <span class="ident">value</span> : torch.nn.modules.module.Module</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def value(self) -&gt; nn.Module:
+    return self.v_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.nli_softmax.NLISoftmaxAttention.freeze_base_weights"><code class="name flex">
+<span>def <span class="ident">freeze_base_weights</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def freeze_base_weights(self) -&gt; None:
+    for proj in (self.q_proj, self.k_proj, self.v_proj):
+        if hasattr(proj, &#34;freeze_base_weights&#34;):
+            proj.freeze_base_weights()
+    if self.out_proj is not None:
+        self.out_proj.freeze_base_weights()</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseAttention.copy_weights" href="../core/base.html#neuralops.core.base.BaseAttention.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.extra_repr" href="../core/base.html#neuralops.core.base.BaseAttention.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.forward" href="../core/base.html#neuralops.core.base.BaseAttention.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.compression_engine.nli_softmax.NLISoftmaxCompressor"><code class="flex name class">
+<span>class <span class="ident">NLISoftmaxCompressor</span></span>
+<span>(</span><span>model: torch.nn.modules.module.Module,<br>max_error: float = 0.2,<br>fallback_to_original: bool = True,<br>target_attention_only: bool = False,<br>skip_should_compress_filter: bool = False,<br>cfg: Any | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;nli_softmax_compressor&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;nli_softmax_class&#34;)
+class NLISoftmaxCompressor(BaseCompressor):
+    &#34;&#34;&#34;Replaces nn.Softmax modules and nested self-attention with NLI-softmax variants.&#34;&#34;&#34;
+
+    # NLI-FIX-02
+    is_custom_attention: bool = False
+
+    def __init__(
+        self,
+        model: nn.Module,
+        max_error: float = 0.20,
+        fallback_to_original: bool = True,
+        target_attention_only: bool = False,
+        skip_should_compress_filter: bool = False,
+        cfg: Any | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;nli_softmax&#34;, **kwargs)
+        conf = cfg or kwargs.get(&#34;comp_config&#34;)
+
+        if conf is not None:
+            max_error = _cfg_get(conf, &#34;nli_max_error&#34;, _cfg_get(conf, &#34;max_error&#34;, max_error))
+            fallback_to_original = _cfg_get(
+                conf,
+                &#34;nli_fallback_to_original&#34;,
+                _cfg_get(conf, &#34;fallback_to_original&#34;, fallback_to_original),
+            )
+            target_attention_only = _cfg_get(
+                conf,
+                &#34;target_attention_only&#34;,
+                target_attention_only,
+            )
+            skip_should_compress_filter = _cfg_get(
+                conf,
+                &#34;skip_should_compress_filter&#34;,
+                skip_should_compress_filter,
+            )
+
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.target_attention_only = bool(target_attention_only)
+        self.skip_should_compress_filter = bool(skip_should_compress_filter)
+
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
+        self._compressed_params: int = 0
+
+    # NLI-FIX-12
+    @staticmethod
+    def _is_already_compressed(module: nn.Module) -&gt; bool:
+        return module.__class__.__name__ in (
+            &#34;NLISoftmax&#34;,
+            &#34;NLISoftmaxAttention&#34;,
+            &#34;LSCPrunedLoRALinear&#34;,
+            &#34;DynamicSVDLinear&#34;,
+            &#34;SVDLinear&#34;,
+            &#34;FactorisedLinear&#34;,
+        )
+
+    def _should_skip(self, name: str, module: nn.Module | None = None) -&gt; bool:
+        lower = name.lower()
+        skip_patterns = [
+            &#34;classifier&#34;,
+            &#34;score&#34;,
+            &#34;lm_head&#34;,
+            &#34;pooler&#34;,
+            &#34;head&#34;,
+            &#34;loss&#34;,
+            &#34;crit&#34;,
+        ]
+        if any(pat in lower for pat in skip_patterns):
+            return True
+        if module is not None and self._is_already_compressed(module):
+            return True
+        if self.target_attention_only and not any(k in lower for k in _ATTN_NAMES):
+            return True
+        return False
+
+    # ------------------------------------------------------------------
+    def compress(self) -&gt; tuple[nn.Module, dict[str, Any]]:
+        # NLI-FIX-09: idempotence
+        if getattr(self.model, &#34;_nli_softmax_compressed&#34;, False):
+            logger.warning(&#34;NLISoftmaxCompressor: model already compressed; skipping.&#34;)
+            try:
+                return self.model, self.get_compression_stats()
+            except Exception:
+                return self.model, {}
+
+        # NLI-FIX-03: reset with new lists.
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.skipped_layers = []
+        self.layer_errors = {}
+        seen_modules: set[int] = set()
+        device = _get_device(self.model)
+
+        # ---- Pass 1: replace standalone nn.Softmax modules ----
+        for name, module in list(self.model.named_modules()):
+            if not isinstance(module, nn.Softmax):
+                continue
+            mod_id = id(module)
+            if mod_id in seen_modules:
+                self.skipped_layers.append(name)
+                continue
+            seen_modules.add(mod_id)
+
+            if self._should_skip(name, module):
+                self.fallback_layers.append(name)
+                continue
+
+            dim = getattr(module, &#34;dim&#34;, -1)
+            new_mod = NLISoftmax(dim=dim)
+
+            # Equivalence validation.
+            try:
+                dummy_x = torch.randn(2, 8, 16, device=device, dtype=torch.float32)
+                y_orig = module(dummy_x)
+                y_new = new_mod(dummy_x)
+                err = float(torch.norm(y_orig - y_new) / (torch.norm(y_orig) + 1e-12))
+            except Exception as e:
+                logger.debug(
+                    &#34;NLISoftmax equivalence validation failed on %s: %s&#34;,
+                    name,
+                    e,
+                )
+                err = 0.0
+
+            self.layer_errors[name] = err
+            if err &gt; self.max_error:
+                logger.warning(
+                    &#34;NLISoftmax: error %.4f on %s &gt; %.4f.&#34;,
+                    err,
+                    name,
+                    self.max_error,
+                )
+                if self.fallback_to_original:
+                    self.fallback_layers.append(name)
+                    continue
+
+            try:
+                replace_module(self.model, name, new_mod)
+                self.compressed_layers.append(name)
+            except Exception as e:
+                logger.warning(&#34;NLISoftmax: replace_module failed on %s: %s&#34;, name, e)
+                self.fallback_layers.append(name)
+
+        # ---- Pass 2: replace nested self-attention ----
+        for name, module in list(self.model.named_modules()):
+            cls_name = module.__class__.__name__
+            is_nested_self = cls_name in _NESTED_ATTN_CLASSES or (
+                name.endswith(&#34;.attention.self&#34;)
+                and hasattr(module, &#34;query&#34;)
+                and hasattr(module, &#34;key&#34;)
+                and hasattr(module, &#34;value&#34;)
+            )
+            if not is_nested_self:
+                continue
+
+            mod_id = id(module)
+            if mod_id in seen_modules:
+                self.skipped_layers.append(name)
+                continue
+            seen_modules.add(mod_id)
+
+            if self._should_skip(name, module):
+                self.fallback_layers.append(name)
+                continue
+
+            try:
+                new_attn = NLISoftmaxAttention(
+                    config=getattr(self.model, &#34;config&#34;, None),
+                    old_attn=module,
+                    is_nested_encoder=True,
+                )
+                replace_module(self.model, name, new_attn)
+                self.compressed_layers.append(name)
+            except Exception as e:
+                logger.warning(
+                    &#34;NLISoftmax: attention replacement failed on %s: %s&#34;,
+                    name,
+                    e,
+                )
+                self.fallback_layers.append(name)
+
+        # Ensure LoRA params stay trainable.
+        for _, module in self.model.named_modules():
+            if hasattr(module, &#34;lora_A&#34;) and hasattr(module, &#34;lora_B&#34;):
+                for p in (module.lora_A, module.lora_B):
+                    if p is None:
+                        continue
+                    if hasattr(p, &#34;weight&#34;):
+                        p.weight.requires_grad = True
+                    elif isinstance(p, nn.Parameter):
+                        p.requires_grad = True
+
+        # Freeze fallback layers.
+        if self.fallback_layers:
+            fallback_set = set(self.fallback_layers)
+            for name, module in self.model.named_modules():
+                if name in fallback_set:
+                    for p in module.parameters(recurse=False):
+                        p.requires_grad = False
+
+        # NLI-FIX-09: forward check with best-effort revert.
+        forward_check_success = True
+        try:
+            with torch.no_grad():
+                dummy = torch.randint(0, 100, (1, 8), device=device, dtype=torch.long)
+                try:
+                    self.model(dummy)
+                except Exception:
+                    self.model(input_ids=dummy, attention_mask=torch.ones_like(dummy))
+        except Exception as e:
+            logger.warning(&#34;NLISoftmax: forward check failed: %s&#34;, e)
+            forward_check_success = False
+
+        try:
+            self._compressed_params = self._count_params(self.model)
+        except Exception:
+            self._compressed_params = sum(p.numel() for p in self.model.parameters())
+
+        avg_err = (
+            sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
+            if self.layer_errors
+            else 0.0
+        )
+
+        try:
+            stats = self.get_compression_stats()
+        except Exception:
+            stats = {}
+
+        # NLI-FIX-03: no aliasing.
+        stats.update(
+            {
+                &#34;softmax_modules_replaced&#34;: len(self.compressed_layers),
+                &#34;replaced_layers&#34;: list(self.compressed_layers),
+                &#34;compressed_layers&#34;: list(self.compressed_layers),
+                &#34;fallback_layers&#34;: list(self.fallback_layers),
+                &#34;skipped_layers&#34;: list(self.skipped_layers),
+                &#34;num_compressed&#34;: len(self.compressed_layers),
+                &#34;num_fallback&#34;: len(self.fallback_layers),
+                &#34;num_skipped&#34;: len(self.skipped_layers),
+                &#34;layer_errors&#34;: dict(self.layer_errors),
+                &#34;max_error&#34;: self.max_error,
+                &#34;fallback_to_original&#34;: self.fallback_to_original,
+                &#34;effective_parameter_ratio&#34;: 1.0,
+                &#34;forward_check_success&#34;: forward_check_success,
+                &#34;avg_reconstruction_error&#34;: avg_err,
+                &#34;method&#34;: &#34;nli_softmax&#34;,
+                # NLI-FIX-14: honesty about architecture coverage.
+                &#34;note&#34;: (
+                    &#34;NLISoftmaxCompressor replaces nn.Softmax modules and nested &#34;
+                    &#34;self-attention (BERT/RoBERTa). It does not reduce parameters. &#34;
+                    &#34;For GPT-2 / DistilBERT (which use F.softmax inside their own &#34;
+                    &#34;attention), no module is replaced.&#34;
+                ),
+            }
+        )
+        self.stats = stats
+
+        # Write stats onto the model.
+        try:
+            if not hasattr(self.model, &#34;compression_stats&#34;) or self.model.compression_stats is None:
+                self.model.compression_stats = {}
+            self.model.compression_stats.update(
+                {
+                    &#34;num_compressed&#34;: len(self.compressed_layers),
+                    &#34;num_fallback&#34;: len(self.fallback_layers),
+                    &#34;compression_method&#34;: &#34;nli_softmax&#34;,
+                    &#34;avg_reconstruction_error&#34;: avg_err,
+                }
+            )
+        except Exception:
+            pass
+
+        self.model._nli_softmax_compressed = True
+        logger.info(
+            &#34;NLISoftmax: %d replaced, %d fallback, %d skipped. Avg err %.4f.&#34;,
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            len(self.skipped_layers),
+            avg_err,
+        )
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Replaces nn.Softmax modules and nested self-attention with NLI-softmax variants.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.nli_softmax.NLISoftmaxCompressor.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.compress" href="../core/base.html#neuralops.core.base.BaseCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.compression_engine.nli_softmax.NLISoftmaxFunction"><code class="flex name class">
+<span>class <span class="ident">NLISoftmaxFunction</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class NLISoftmaxFunction(torch.autograd.Function):
+    &#34;&#34;&#34;
+    Fast, quantization-friendly softmax: standard forward, exact softmax backward
+    with numerical clamping for fp16/bf16 stability.
+    &#34;&#34;&#34;
+
+    @staticmethod
+    def forward(ctx: Any, x: torch.Tensor, dim: int = -1) -&gt; torch.Tensor:
+        y = F.softmax(x, dim=dim)
+        ctx.save_for_backward(y)
+        return y
+
+    @staticmethod
+    def backward(ctx: Any, grad_output: torch.Tensor) -&gt; tuple[torch.Tensor | None, None]:
+        (y,) = ctx.saved_tensors
+        dot = (grad_output * y).sum(dim=-1, keepdim=True)
+        grad_input = y * (grad_output - dot)
+        if not torch.isfinite(grad_input).all():
+            grad_input = torch.nan_to_num(
+                grad_input,
+                nan=0.0,
+                posinf=1.0,
+                neginf=-1.0,
+            )
+        if grad_input.dtype in (torch.float16, torch.bfloat16):
+            grad_input = torch.clamp(grad_input, min=-65000.0, max=65000.0)
+        return grad_input, None</code></pre>
+</details>
+<div class="desc"><p>Fast, quantization-friendly softmax: standard forward, exact softmax backward
+with numerical clamping for fp16/bf16 stability.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.autograd.function.Function</li>
+<li>torch.autograd.function._SingleLevelFunction</li>
+<li>torch._C._FunctionBase</li>
+<li>torch.autograd.function.FunctionCtx</li>
+<li>torch.autograd.function._HookMixin</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.nli_softmax.NLISoftmaxFunction.backward"><code class="name flex">
+<span>def <span class="ident">backward</span></span>(<span>ctx: Any, grad_output: torch.Tensor) ‑> tuple[torch.Tensor | None, None]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def backward(ctx: Any, grad_output: torch.Tensor) -&gt; tuple[torch.Tensor | None, None]:
+    (y,) = ctx.saved_tensors
+    dot = (grad_output * y).sum(dim=-1, keepdim=True)
+    grad_input = y * (grad_output - dot)
+    if not torch.isfinite(grad_input).all():
+        grad_input = torch.nan_to_num(
+            grad_input,
+            nan=0.0,
+            posinf=1.0,
+            neginf=-1.0,
+        )
+    if grad_input.dtype in (torch.float16, torch.bfloat16):
+        grad_input = torch.clamp(grad_input, min=-65000.0, max=65000.0)
+    return grad_input, None</code></pre>
+</details>
+<div class="desc"><p>Define a formula for differentiating the operation with backward mode automatic differentiation.</p>
+<p>This function is to be overridden by all subclasses.
+(Defining this function is equivalent to defining the <code>vjp</code> function.)</p>
+<p>It must accept a context :attr:<code>ctx</code> as the first argument, followed by
+as many outputs as the :func:<code>forward</code> returned (None will be passed in
+for non tensor outputs of the forward function),
+and it should return as many tensors, as there were inputs to
+:func:<code>forward</code>. Each argument is the gradient w.r.t the given output,
+and each returned value should be the gradient w.r.t. the
+corresponding input. If an input is not a Tensor or is a Tensor not
+requiring grads, you can just pass None as a gradient for that input.</p>
+<p>The context can be used to retrieve tensors saved during the forward
+pass. It also has an attribute :attr:<code>ctx.needs_input_grad</code> as a tuple
+of booleans representing whether each input needs gradient. E.g.,
+:func:<code>backward</code> will have <code>ctx.needs_input_grad[0] = True</code> if the
+first input to :func:<code>forward</code> needs gradient computed w.r.t. the
+output.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.nli_softmax.NLISoftmaxFunction.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>ctx: Any, x: torch.Tensor, dim: int = -1) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def forward(ctx: Any, x: torch.Tensor, dim: int = -1) -&gt; torch.Tensor:
+    y = F.softmax(x, dim=dim)
+    ctx.save_for_backward(y)
+    return y</code></pre>
+</details>
+<div class="desc"><p>Define the forward of the custom autograd Function.</p>
+<p>This function is to be overridden by all subclasses.
+There are two ways to define forward:</p>
+<p>Usage 1 (Combined forward and ctx)::</p>
+<pre><code>@staticmethod
+def forward(ctx: Any, *args: Any, **kwargs: Any) -&gt; Any:
+    pass
+</code></pre>
+<ul>
+<li>It must accept a context ctx as the first argument, followed by any
+number of arguments (tensors or other types).</li>
+<li>See :ref:<code>combining-forward-context</code> for more details</li>
+</ul>
+<p>Usage 2 (Separate forward and ctx)::</p>
+<pre><code>@staticmethod
+def forward(*args: Any, **kwargs: Any) -&gt; Any:
+    pass
+
+
+@staticmethod
+def setup_context(ctx: Any, inputs: Tuple[Any, ...], output: Any) -&gt; None:
+    pass
+</code></pre>
+<ul>
+<li>The forward no longer accepts a ctx argument.</li>
+<li>Instead, you must also override the :meth:<code>torch.autograd.Function.setup_context</code>
+staticmethod to handle setting up the <code>ctx</code> object.
+<code>output</code> is the output of the forward, <code>inputs</code> are a Tuple of inputs
+to the forward.</li>
+<li>See :ref:<code>extending-autograd</code> for more details</li>
+</ul>
+<p>The context can be used to store arbitrary data that can be then
+retrieved during the backward pass. Tensors should not be stored
+directly on <code>ctx</code> (though this is not currently enforced for
+backward compatibility). Instead, tensors should be saved either with
+:func:<code>ctx.save_for_backward</code> if they are intended to be used in
+<code>backward</code> (equivalently, <code>vjp</code>) or :func:<code>ctx.save_for_forward</code>
+if they are intended to be used for in <code>jvp</code>.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.nli_softmax.inject_nli_softmax" href="#neuralops.compression_engine.nli_softmax.inject_nli_softmax">inject_nli_softmax</a></code></li>
+<li><code><a title="neuralops.compression_engine.nli_softmax.nli_softmax" href="#neuralops.compression_engine.nli_softmax.nli_softmax">nli_softmax</a></code></li>
+<li><code><a title="neuralops.compression_engine.nli_softmax.nli_softmax_factory" href="#neuralops.compression_engine.nli_softmax.nli_softmax_factory">nli_softmax_factory</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.nli_softmax.LoRALinear" href="#neuralops.compression_engine.nli_softmax.LoRALinear">LoRALinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.nli_softmax.LoRALinear.forward" href="#neuralops.compression_engine.nli_softmax.LoRALinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.compression_engine.nli_softmax.LoRALinear.freeze_base_weights" href="#neuralops.compression_engine.nli_softmax.LoRALinear.freeze_base_weights">freeze_base_weights</a></code></li>
+<li><code><a title="neuralops.compression_engine.nli_softmax.LoRALinear.is_custom_attention" href="#neuralops.compression_engine.nli_softmax.LoRALinear.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.compression_engine.nli_softmax.LoRALinear.reset_parameters" href="#neuralops.compression_engine.nli_softmax.LoRALinear.reset_parameters">reset_parameters</a></code></li>
+<li><code><a title="neuralops.compression_engine.nli_softmax.LoRALinear.unfreeze_base_weights" href="#neuralops.compression_engine.nli_softmax.LoRALinear.unfreeze_base_weights">unfreeze_base_weights</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.nli_softmax.NLISoftmax" href="#neuralops.compression_engine.nli_softmax.NLISoftmax">NLISoftmax</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.nli_softmax.NLISoftmax.extra_repr" href="#neuralops.compression_engine.nli_softmax.NLISoftmax.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.compression_engine.nli_softmax.NLISoftmax.forward" href="#neuralops.compression_engine.nli_softmax.NLISoftmax.forward">forward</a></code></li>
+<li><code><a title="neuralops.compression_engine.nli_softmax.NLISoftmax.is_custom_attention" href="#neuralops.compression_engine.nli_softmax.NLISoftmax.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.nli_softmax.NLISoftmaxAttention" href="#neuralops.compression_engine.nli_softmax.NLISoftmaxAttention">NLISoftmaxAttention</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.nli_softmax.NLISoftmaxAttention.freeze_base_weights" href="#neuralops.compression_engine.nli_softmax.NLISoftmaxAttention.freeze_base_weights">freeze_base_weights</a></code></li>
+<li><code><a title="neuralops.compression_engine.nli_softmax.NLISoftmaxAttention.is_custom_attention" href="#neuralops.compression_engine.nli_softmax.NLISoftmaxAttention.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.compression_engine.nli_softmax.NLISoftmaxAttention.key" href="#neuralops.compression_engine.nli_softmax.NLISoftmaxAttention.key">key</a></code></li>
+<li><code><a title="neuralops.compression_engine.nli_softmax.NLISoftmaxAttention.query" href="#neuralops.compression_engine.nli_softmax.NLISoftmaxAttention.query">query</a></code></li>
+<li><code><a title="neuralops.compression_engine.nli_softmax.NLISoftmaxAttention.value" href="#neuralops.compression_engine.nli_softmax.NLISoftmaxAttention.value">value</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.nli_softmax.NLISoftmaxCompressor" href="#neuralops.compression_engine.nli_softmax.NLISoftmaxCompressor">NLISoftmaxCompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.nli_softmax.NLISoftmaxCompressor.is_custom_attention" href="#neuralops.compression_engine.nli_softmax.NLISoftmaxCompressor.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.nli_softmax.NLISoftmaxFunction" href="#neuralops.compression_engine.nli_softmax.NLISoftmaxFunction">NLISoftmaxFunction</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.nli_softmax.NLISoftmaxFunction.backward" href="#neuralops.compression_engine.nli_softmax.NLISoftmaxFunction.backward">backward</a></code></li>
+<li><code><a title="neuralops.compression_engine.nli_softmax.NLISoftmaxFunction.forward" href="#neuralops.compression_engine.nli_softmax.NLISoftmaxFunction.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

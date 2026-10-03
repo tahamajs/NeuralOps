@@ -1,0 +1,1671 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.benchmarks.run_gpt2_sweep API documentation</title>
+<meta name="description" content="Decoder Benchmark Runner: Comprehensive evaluation of attention/compression modules
+on GPT-2 with WikiText-2 …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.benchmarks.run_gpt2_sweep</code></h1>
+</header>
+<section id="section-intro">
+<p>Decoder Benchmark Runner: Comprehensive evaluation of attention/compression modules
+on GPT-2 with WikiText-2.</p>
+<p>Measures per module:
+- Perplexity (PPL) via sliding-window evaluation
+- Peak VRAM, latency, throughput
+- Parameter savings / compression ratio
+- Injection / compression statistics (real work done, not just PASS)</p>
+<p>Production features :
+1.
+Upsert-based CSV: one row per module, no duplicates across runs.
+2.
+Intelligent skip: only skips modules that ACTUALLY did work
+(num_injected_attention_layers &gt; 0 or num_compressed_layers &gt; 0).
+3.
+&ndash;no_skip / &ndash;force / &ndash;only_failed / &ndash;retry_flags flags.
+4.
+Baseline PPL caching (re-use across runs unless &ndash;recompute_baseline).
+5.
+Full metric capture: injection counts, recovery time, LoRA params, etc.
+6.
+Phantom-pass detection: PASS_WITHOUT_EFFECT status.
+7.
+tqdm progress bar with per-module timing.
+8.
+Structured logging to file + console (with optional colored output).
+9.
+Atomic CSV writes via tmp-file + rename.
+10. Multi-worker safety: single global summary + per-worker CSV.
+11. Comprehensive diag.json with dtype, shape, device info on failure.
+12. Token packing (no padding waste) for calibration.
+13. Configurable calibration size.
+14. Reproducible seeding per module.
+15. Graceful KeyboardInterrupt: saves partial results before exiting.
+16. Per-module JSON result with full stats.
+17. End-of-run Markdown report generation.
+18. Baseline sanity check: warns if baseline PPL is anomalous.
+19. Memory-leak guard: explicit gc + cuda.empty_cache between modules.
+20. Config file support (YAML/JSON).
+21. &ndash;dry_run preview with expected I/O.
+22. Better exception messages with stack locals on failure (optional).
+23. Multi-GPU aware (&ndash;device cuda:N).
+24. Summary statistics at the end (mean, median, best/worst).
+25. Auto-detection of deprecated module files from multiple locations.</p>
+<p>Usage
+-----=
+python decoder_benchmark.py &ndash;modules all &ndash;no_skip &ndash;force
+python decoder_benchmark.py &ndash;modules mla,svd_llm &ndash;only_failed
+python decoder_benchmark.py &ndash;total_workers 4 &ndash;worker_id 0</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.build_calibration_loader"><code class="name flex">
+<span>def <span class="ident">build_calibration_loader</span></span>(<span>train_dataset,<br>tokenizer,<br>num_samples: int = 500,<br>batch_size: int = 4,<br>max_length: int = 128) ‑> list[dict[str, torch.Tensor]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def build_calibration_loader(
+    train_dataset,
+    tokenizer,
+    num_samples: int = 500,
+    batch_size: int = 4,
+    max_length: int = 128,
+) -&gt; list[dict[str, torch.Tensor]]:
+    &#34;&#34;&#34;
+    Pack short WikiText lines into fixed-length chunks (no padding waste).
+    Returns a list of batches: [{&#34;input_ids&#34;: (B, T), &#34;attention_mask&#34;: (B, T)}, ...]
+    &#34;&#34;&#34;
+    # Collect enough text
+    texts: list[str] = []
+    for item in train_dataset[&#34;text&#34;]:
+        t = item.strip()
+        if len(t) &gt; 20:
+            texts.append(t)
+        if len(texts) &gt;= max(num_samples * 4, 512):
+            break
+
+    if not texts:
+        texts = [&#34;The quick brown fox jumps over the lazy dog.&#34;] * 512
+
+    # Tokenize each chunk (no padding), then concatenate
+    all_ids: list[int] = []
+    for t in texts:
+        ids = tokenizer(t, add_special_tokens=False).input_ids
+        if not ids:
+            continue
+        all_ids.extend(ids)
+        all_ids.append(tokenizer.eos_token_id or tokenizer.pad_token_id or 0)
+        if len(all_ids) &gt;= num_samples * max_length:
+            break
+
+    target = num_samples * max_length
+    if len(all_ids) &lt; target:
+        # Repeat if not enough
+        while len(all_ids) &lt; target:
+            all_ids.extend(all_ids[: max(1, target - len(all_ids))])
+
+    all_ids = all_ids[:target]
+    ids_tensor = torch.tensor(all_ids, dtype=torch.long).view(num_samples, max_length)
+
+    batches: list[dict[str, torch.Tensor]] = []
+    for i in range(0, num_samples, batch_size):
+        chunk = ids_tensor[i : i + batch_size]
+        attn = torch.ones_like(chunk)
+        batches.append({&#34;input_ids&#34;: chunk, &#34;attention_mask&#34;: attn})
+    return batches</code></pre>
+</details>
+<div class="desc"><p>Pack short WikiText lines into fixed-length chunks (no padding waste).
+Returns a list of batches: [{"input_ids": (B, T), "attention_mask": (B, T)}, &hellip;]</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.classify_status"><code class="name flex">
+<span>def <span class="ident">classify_status</span></span>(<span>ppl_ratio: float) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def classify_status(ppl_ratio: float) -&gt; str:
+    if not np.isfinite(ppl_ratio):
+        return &#34;FAIL_PPL_NAN&#34;
+    if ppl_ratio &lt;= 1.05:
+        return &#34;PASS&#34;
+    if ppl_ratio &lt;= 1.20:
+        return &#34;PASS_SLIGHT_DEGRADATION&#34;
+    if ppl_ratio &lt;= 1.50:
+        return &#34;PASS_DEGRADED&#34;
+    return &#34;FAIL_PPL_DIVERGED&#34;</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.compute_perplexity_with_metrics"><code class="name flex">
+<span>def <span class="ident">compute_perplexity_with_metrics</span></span>(<span>model: nn.Module,<br>tokenizer,<br>test_dataset,<br>seq_len: int = 1024,<br>stride: int = 512,<br>max_eval_tokens: int | None = None,<br>device: str = 'cuda') ‑> dict[str, typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_perplexity_with_metrics(
+    model: nn.Module,
+    tokenizer,
+    test_dataset,
+    seq_len: int = 1024,
+    stride: int = 512,
+    max_eval_tokens: int | None = None,
+    device: str = &#34;cuda&#34;,
+) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;
+    Sliding-window perplexity (GPT-2 / LLaMA-style).
+
+    PPL = exp( Σ NLL_t × target_len_t / Σ target_len_t )
+    &#34;&#34;&#34;
+    model.eval()
+    text = &#34;\n\n&#34;.join(test_dataset[&#34;text&#34;])
+
+    enc = tokenizer(
+        text,
+        return_tensors=&#34;pt&#34;,
+        truncation=False,
+        return_overflowing_tokens=False,
+    )
+    input_ids_all = enc.input_ids
+    if input_ids_all.dim() == 1:
+        input_ids_all = input_ids_all.unsqueeze(0)
+    if input_ids_all.size(0) &gt; 1:
+        input_ids_all = input_ids_all.view(1, -1)
+
+    total = input_ids_all.size(1)
+    if max_eval_tokens:
+        total = min(total, int(max_eval_tokens))
+
+    if device.startswith(&#34;cuda&#34;) and torch.cuda.is_available():
+        torch.cuda.reset_peak_memory_stats()
+
+    t0 = time.time()
+    nlls: list[torch.Tensor] = []
+    prev_end = 0
+    tokens_eval = 0
+
+    with (
+        torch.no_grad(),
+        torch.amp.autocast(
+            device_type=&#34;cuda&#34; if device.startswith(&#34;cuda&#34;) else &#34;cpu&#34;,
+            dtype=torch.float16,
+            enabled=device.startswith(&#34;cuda&#34;),
+        ),
+    ):
+        for begin in range(0, total, stride):
+            end = min(begin + seq_len, total)
+            trg_len = end - prev_end
+            if trg_len &lt;= 0:
+                break
+            ids = input_ids_all[:, begin:end].to(device, non_blocking=True)
+            tgt = ids.clone()
+            tgt[:, :-trg_len] = -100
+
+            out = model(ids, labels=tgt)
+            loss = out.loss
+            if torch.isnan(loss) or torch.isinf(loss):
+                # Degenerate; break and report NaN
+                nlls.append(torch.tensor(float(&#34;nan&#34;)))
+                break
+
+            nlls.append((loss * trg_len).detach().cpu())
+            tokens_eval += trg_len
+            prev_end = end
+            if end == total:
+                break
+
+    elapsed = max(1e-4, time.time() - t0)
+
+    if not nlls or any(torch.isnan(x) for x in nlls):
+        ppl = float(&#34;nan&#34;)
+    else:
+        stack = torch.stack(nlls)
+        total_nll = float(stack.sum().item())
+        ppl = float(np.exp(total_nll / max(1, prev_end)))
+
+    peak_vram_mb = (
+        float(torch.cuda.max_memory_allocated() / (1024**2))
+        if device.startswith(&#34;cuda&#34;) and torch.cuda.is_available()
+        else 0.0
+    )
+    lat = (elapsed / max(1, tokens_eval)) * 1000.0
+    tps = tokens_eval / elapsed
+
+    return {
+        &#34;perplexity&#34;: round(ppl, 4) if np.isfinite(ppl) else -1.0,
+        &#34;peak_vram_mb&#34;: round(peak_vram_mb, 2),
+        &#34;latency_ms_per_token&#34;: round(lat, 4),
+        &#34;throughput_tok_per_sec&#34;: round(tps, 2),
+        &#34;eval_elapsed_s&#34;: round(elapsed, 3),
+        &#34;tokens_evaluated&#34;: tokens_eval,
+        &#34;is_finite&#34;: bool(np.isfinite(ppl)),
+    }</code></pre>
+</details>
+<div class="desc"><p>Sliding-window perplexity (GPT-2 / LLaMA-style).</p>
+<p>PPL = exp( Σ NLL_t × target_len_t / Σ target_len_t )</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.get_all_decoder_modules"><code class="name flex">
+<span>def <span class="ident">get_all_decoder_modules</span></span>(<span>category: str = 'all') ‑> list[str]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_all_decoder_modules(category: str = &#34;all&#34;) -&gt; list[str]:
+    &#34;&#34;&#34;Dynamically discover all GPT-2-compatible attention and compressor modules.&#34;&#34;&#34;
+    import neuralops.attentions  # noqa: F401
+    import neuralops.compression_engine  # noqa: F401
+
+    items: list[tuple[str, Any]] = []
+    if category in (&#34;all&#34;, &#34;attentions&#34;):
+        items.extend(ATTENTION_REGISTRY.items())
+    if category in (&#34;all&#34;, &#34;compressors&#34;):
+        items.extend(COMPRESSOR_REGISTRY.items())
+
+    by_factory: dict[Any, list[str]] = {}
+    for name, factory in items:
+        if name == &#34;full&#34; or is_helper_module(name):
+            continue
+        try:
+            is_compat, _ = is_module_declared_compatible(name, &#34;gpt2&#34;)
+        except Exception:
+            is_compat = True
+        if is_compat:
+            by_factory.setdefault(factory, []).append(name)
+
+    canonical = [&#34;full&#34;]
+    for aliases in by_factory.values():
+        # Prefer shorter / non-`_inject` aliases as canonical names
+        canonical.append(sorted(aliases, key=lambda x: (x.endswith(&#34;_inject&#34;), len(x), x))[0])
+
+    # Preserve insertion order but ensure &#34;full&#34; is first
+    seen: set[str] = set()
+    out: list[str] = []
+    for m in canonical:
+        if m not in seen:
+            seen.add(m)
+            out.append(m)
+    return out</code></pre>
+</details>
+<div class="desc"><p>Dynamically discover all GPT-2-compatible attention and compressor modules.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.is_real_success"><code class="name flex">
+<span>def <span class="ident">is_real_success</span></span>(<span>status: str, row: dict[str, Any]) ‑> bool</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_real_success(status: str, row: dict[str, Any]) -&gt; bool:
+    &#34;&#34;&#34;A module is a &#39;real success&#39; iff it PASSED AND did measurable work.&#34;&#34;&#34;
+    if status not in (&#34;PASS&#34;, &#34;PASS_SLIGHT_DEGRADATION&#34;):
+        return False
+    try:
+        n_inj = int(row.get(&#34;num_injected_attention_layers&#34;, 0) or 0)
+        n_comp = int(row.get(&#34;num_compressed_layers&#34;, 0) or 0)
+    except (ValueError, TypeError):
+        return False
+    return (n_inj + n_comp) &gt; 0</code></pre>
+</details>
+<div class="desc"><p>A module is a 'real success' iff it PASSED AND did measurable work.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.load_deprecated_modules"><code class="name flex">
+<span>def <span class="ident">load_deprecated_modules</span></span>(<span>) ‑> set[str]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_deprecated_modules() -&gt; set[str]:
+    &#34;&#34;&#34;Collect deprecated module names from all known file locations.&#34;&#34;&#34;
+    deprecated: set[str] = set()
+    candidates = [
+        ROOT / &#34;audit&#34; / &#34;deprecated_modules.txt&#34;,
+        ROOT / &#34;deprecated_modules.txt&#34;,
+        CODES / &#34;deprecated_modules.txt&#34;,
+        HERE / &#34;deprecated_modules.txt&#34;,
+        HERE / &#34;config&#34; / &#34;deprecated_modules.txt&#34;,
+    ]
+    for p in candidates:
+        if not p.exists():
+            continue
+        try:
+            for line in p.read_text(encoding=&#34;utf-8&#34;).splitlines():
+                line = line.strip()
+                if line and not line.startswith(&#34;#&#34;):
+                    deprecated.add(line)
+        except Exception as e:
+            LOG.warning(&#34;Could not read %s: %s&#34;, p, e)
+    return deprecated</code></pre>
+</details>
+<div class="desc"><p>Collect deprecated module names from all known file locations.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.main"><code class="name flex">
+<span>def <span class="ident">main</span></span>(<span>argv: list[str] | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def main(argv: list[str] | None = None):
+    args = parse_args(argv)
+    if args.max_length:
+        args.seq_len = args.max_length
+
+    setup_logging(args.log_file)
+    _install_signal_handlers()
+
+    # Seed
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(args.seed)
+
+    # Device
+    if args.device.startswith(&#34;cuda&#34;) and not torch.cuda.is_available():
+        LOG.warning(&#34;CUDA requested but unavailable; falling back to CPU.&#34;)
+        args.device = &#34;cpu&#34;
+
+    # Module list
+    if not args.modules:
+        args.modules = [&#34;all&#34;]
+    parsed: list[str] = []
+    for item in args.modules:
+        parsed.extend([m.strip() for m in str(item).split(&#34;,&#34;) if m.strip()])
+    if not parsed or parsed == [&#34;all&#34;]:
+        parsed = get_all_decoder_modules(&#34;all&#34;)
+    if args.total_workers &gt; 1:
+        parsed = [m for i, m in enumerate(parsed) if (i % args.total_workers) == args.worker_id]
+        LOG.info(
+            &#34;Worker %d/%d assigned %d modules&#34;,
+            args.worker_id,
+            args.total_workers,
+            len(parsed),
+        )
+    args.modules = parsed
+
+    out_dir = Path(args.output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.total_workers &gt; 1:
+        worker_csv = out_dir / f&#34;summary_worker_{args.worker_id}.csv&#34;
+    else:
+        worker_csv = out_dir / &#34;summary.csv&#34;
+    main_csv = out_dir / &#34;summary.csv&#34;
+    main_lock = out_dir / &#34;summary.csv.lock&#34;
+
+    # Force: delete existing CSVs to start fresh
+    if args.force:
+        for f in [worker_csv, main_csv]:
+            if f.exists():
+                LOG.info(&#34;--force: removing %s&#34;, f)
+                f.unlink()
+
+    LOG.info(&#34;=&#34; * 78)
+    LOG.info(&#34;GPT-2 DECODER PERPLEXITY SWEEP&#34;)
+    LOG.info(&#34;  Model:        %s&#34;, args.model_path)
+    LOG.info(&#34;  Dataset:      %s (%s)&#34;, args.dataset_name, args.split)
+    LOG.info(&#34;  Window/Stride %d / %d&#34;, args.seq_len, args.stride)
+    LOG.info(&#34;  Rank:         %d&#34;, args.rank)
+    LOG.info(&#34;  Modules:      %d&#34;, len(args.modules))
+    LOG.info(&#34;  Device:       %s | fp16=%s&#34;, args.device, args.fp16)
+    LOG.info(&#34;  Output dir:   %s&#34;, out_dir)
+    LOG.info(
+        &#34;  Force:        %s | No-skip: %s | Only-failed: %s&#34;,
+        args.force,
+        args.no_skip,
+        args.only_failed,
+    )
+    LOG.info(&#34;=&#34; * 78)
+
+    if args.dry_run:
+        LOG.info(&#34;[DRY RUN] Modules that would be evaluated:&#34;)
+        for i, m in enumerate(args.modules, 1):
+            LOG.info(&#34;  %3d. %s&#34;, i, m)
+        return
+
+    deprecated = load_deprecated_modules()
+    LOG.info(&#34;Loaded %d deprecated modules.&#34;, len(deprecated))
+
+    # ---- Tokenizer + datasets ----
+    model_p = Path(args.model_path)
+    if not model_p.exists() and (ROOT / args.model_path).exists():
+        model_p = ROOT / args.model_path
+    tok_src = str(model_p) if model_p.exists() else args.model_path
+    LOG.info(&#34;Loading tokenizer from %s ...&#34;, tok_src)
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(tok_src)
+    except Exception:
+        if (ROOT / &#34;models&#34; / &#34;gpt2_wikitext&#34;).exists():
+            tok_src = str(ROOT / &#34;models&#34; / &#34;gpt2_wikitext&#34;)
+            LOG.info(&#34;Retrying tokenizer from %s ...&#34;, tok_src)
+            tokenizer = AutoTokenizer.from_pretrained(tok_src)
+        else:
+            raise
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    LOG.info(&#34;Loading WikiText-2 (%s)...&#34;, args.split)
+    try:
+        ds_test = load_dataset(&#34;wikitext&#34;, args.dataset_name, split=args.split)
+        ds_train = load_dataset(&#34;wikitext&#34;, args.dataset_name, split=&#34;train&#34;)
+    except Exception:
+        ds_test = load_dataset(&#34;Salesforce/wikitext&#34;, args.dataset_name, split=args.split)
+        ds_train = load_dataset(&#34;Salesforce/wikitext&#34;, args.dataset_name, split=&#34;train&#34;)
+
+    # ---- Calibration loader ----
+    LOG.info(
+        &#34;Building calibration loader (%d samples, batch=%d, max_len=%d)...&#34;,
+        args.calib_samples,
+        args.calib_batch_size,
+        args.calib_max_length,
+    )
+    calib_loader = build_calibration_loader(
+        ds_train,
+        tokenizer,
+        num_samples=args.calib_samples,
+        batch_size=args.calib_batch_size,
+        max_length=args.calib_max_length,
+    )
+    LOG.info(&#34;Calibration loader: %d batches.&#34;, len(calib_loader))
+
+    # ---- Baseline (reuse cached unless --recompute_baseline) ----
+    cached = _read_csv_rows(main_csv)
+    cached_base = cached.get(&#34;full&#34;)
+    baseline_ppl: float | None = None
+    if (
+        not args.recompute_baseline
+        and cached_base is not None
+        and str(cached_base.get(&#34;baseline_ppl&#34;, &#34;&#34;)) not in (&#34;&#34;, &#34;0&#34;, &#34;0.0&#34;, &#34;-1.0&#34;, &#34;nan&#34;)
+    ):
+        try:
+            baseline_ppl = float(cached_base[&#34;baseline_ppl&#34;])
+            LOG.info(&#34;Reusing cached baseline PPL: %.4f&#34;, baseline_ppl)
+        except Exception:
+            baseline_ppl = None
+
+    base_model = None
+    total_params_baseline = 0
+    base_metrics: dict[str, Any] = {}
+
+    if baseline_ppl is None:
+        LOG.info(&#34;Loading baseline GPT-2...&#34;)
+        base_model = AutoModelForCausalLM.from_pretrained(tok_src)
+        if args.fp16 and args.device.startswith(&#34;cuda&#34;):
+            base_model.half()
+        base_model.to(args.device)
+        base_model.eval()
+
+        total_params_baseline = sum(p.numel() for p in base_model.parameters())
+        LOG.info(
+            &#34;Baseline params: %d (%.2f M)&#34;,
+            total_params_baseline,
+            total_params_baseline / 1e6,
+        )
+
+        LOG.info(&#34;Computing baseline PPL...&#34;)
+        base_metrics = compute_perplexity_with_metrics(
+            base_model,
+            tokenizer,
+            ds_test,
+            seq_len=args.seq_len,
+            stride=args.stride,
+            max_eval_tokens=args.max_eval_tokens,
+            device=args.device,
+        )
+        baseline_ppl = base_metrics[&#34;perplexity&#34;]
+        LOG.info(
+            &#34;Baseline PPL: %.4f | VRAM: %.1f MB | %.1f tok/s&#34;,
+            baseline_ppl,
+            base_metrics[&#34;peak_vram_mb&#34;],
+            base_metrics[&#34;throughput_tok_per_sec&#34;],
+        )
+
+        # Sanity check
+        if not np.isfinite(baseline_ppl) or baseline_ppl &lt;= 0:
+            LOG.error(&#34;Baseline PPL is invalid (%s). Aborting.&#34;, baseline_ppl)
+            sys.exit(2)
+        if baseline_ppl &gt; 100:
+            LOG.warning(
+                &#34;Baseline PPL %.2f is unusually high — check model/dataset.&#34;,
+                baseline_ppl,
+            )
+
+        base_row = ResultRow(
+            module_name=&#34;full&#34;,
+            status=&#34;PASS&#34;,
+            perplexity=baseline_ppl,
+            baseline_ppl=baseline_ppl,
+            delta_ppl=0.0,
+            ppl_ratio=1.0,
+            compression_rate=1.0,
+            compression_ratio_pct=0.0,
+            total_params_before=total_params_baseline,
+            total_params_after=total_params_baseline,
+            delta_params=0,
+            peak_vram_mb=base_metrics[&#34;peak_vram_mb&#34;],
+            latency_ms_per_token=base_metrics[&#34;latency_ms_per_token&#34;],
+            throughput_tok_per_sec=base_metrics[&#34;throughput_tok_per_sec&#34;],
+            eval_elapsed_s=base_metrics[&#34;eval_elapsed_s&#34;],
+            wall_elapsed_s=base_metrics[&#34;eval_elapsed_s&#34;],
+            timestamp=time.strftime(&#34;%Y-%m-%dT%H:%M:%S&#34;),
+        ).to_csv_dict()
+        upsert_row(worker_csv, base_row)
+        if args.total_workers &gt; 1:
+            upsert_row(main_csv, base_row, main_lock)
+    else:
+        # Recompute baseline params anyway (cheap) for compression_rate math
+        total_params_baseline = int(cached_base.get(&#34;total_params_before&#34;, 0) or 0)
+        if total_params_baseline == 0:
+            LOG.info(&#34;Loading baseline GPT-2 just to count params...&#34;)
+            _bm = AutoModelForCausalLM.from_pretrained(tok_src)
+            total_params_baseline = sum(p.numel() for p in _bm.parameters())
+            del _bm
+            gc.collect()
+
+    # ---- Snapshot for fast restore ----
+    if base_model is None:
+        LOG.info(&#34;Loading baseline GPT-2 for snapshot...&#34;)
+        base_model = AutoModelForCausalLM.from_pretrained(tok_src)
+        if args.fp16 and args.device.startswith(&#34;cuda&#34;):
+            base_model.half()
+        base_model.cpu()
+
+    LOG.info(&#34;Creating base-model snapshot...&#34;)
+    base_snapshot = copy.deepcopy(base_model)
+    del base_model
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+    # ---- Determine which modules to skip ----
+    existing = _read_csv_rows(main_csv)
+    existing_worker = _read_csv_rows(worker_csv) if worker_csv != main_csv else {}
+    existing_all = {**existing, **existing_worker}
+
+    # Retry flags: if a module has one of these statuses, re-evaluate
+    retry_set = set(args.retry_flags or [])
+
+    skip: set[str] = set()
+    if not args.no_skip:
+        for m, r in existing_all.items():
+            st = (r.get(&#34;status&#34;) or &#34;&#34;).strip()
+            if args.only_failed:
+                # Only skip if it PASSED cleanly with real work
+                if is_real_success(st, r):
+                    skip.add(m)
+                continue
+            # Default: skip if REAL success
+            if is_real_success(st, r):
+                skip.add(m)
+            # Also honor --retry_flags
+            if st in retry_set:
+                skip.discard(m)
+
+    LOG.info(&#34;Skipping %d modules (use --no_skip to force re-run).&#34;, len(skip))
+
+    # ---- Iterate ----
+    module_list = [m for m in args.modules if m != &#34;full&#34;]
+    iterator = tqdm(module_list, desc=&#34;Modules&#34;, unit=&#34;mod&#34;) if _HAS_TQDM else module_list
+
+    n_done = 0
+    t_run_start = time.time()
+
+    for idx, mod in enumerate(iterator, 1):
+        if _INTERRUPTED[&#34;flag&#34;]:
+            LOG.warning(&#34;Interrupted — stopping before module &#39;%s&#39;.&#34;, mod)
+            break
+
+        if mod in skip:
+            LOG.info(&#34;[%d/%d] SKIP %s (already successful)&#34;, idx, len(module_list), mod)
+            continue
+
+        mod_dir = out_dir / mod
+        mod_dir.mkdir(parents=True, exist_ok=True)
+        res_json = mod_dir / &#34;result.json&#34;
+        diag_json = mod_dir / &#34;diag.json&#34;
+
+        # ---- Deprecated ----
+        if mod in deprecated:
+            LOG.info(&#34;[%d/%d] SKIP %s (deprecated)&#34;, idx, len(module_list), mod)
+            row = ResultRow(
+                module_name=mod,
+                status=&#34;SKIP_DEPRECATED&#34;,
+                baseline_ppl=baseline_ppl,
+                total_params_before=total_params_baseline,
+                total_params_after=total_params_baseline,
+                error=&#34;deprecated in deprecated_modules.txt&#34;,
+                timestamp=time.strftime(&#34;%Y-%m-%dT%H:%M:%S&#34;),
+            ).to_csv_dict()
+            res_json.write_text(json.dumps(row, indent=2), encoding=&#34;utf-8&#34;)
+            upsert_row(worker_csv, row)
+            if args.total_workers &gt; 1:
+                upsert_row(main_csv, row, main_lock)
+            continue
+
+        LOG.info(&#34;[%d/%d] EVAL %s&#34;, idx, len(module_list), mod)
+        t_mod = time.time()
+
+        # Fresh seed for each module
+        random.seed(args.seed)
+        np.random.seed(args.seed)
+        torch.manual_seed(args.seed)
+
+        cand = None
+        row = None
+        try:
+            cand = copy.deepcopy(base_snapshot)
+            cand.to(args.device)
+
+            typ = &#34;attention&#34; if mod in ATTENTION_REGISTRY else &#34;compressor&#34;
+
+            # Calibration batches on device
+            calib_on_dev = [
+                {k: v.to(args.device, non_blocking=True) for k, v in b.items()}
+                for b in calib_loader
+            ]
+            first_batch_ids = calib_on_dev[0][&#34;input_ids&#34;]
+
+            t_comp0 = time.time()
+            cand, comp_stats = apply_module_to_model(
+                cand,
+                mod,
+                typ,
+                rank=args.rank,
+                device=args.device,
+                calibration_data=first_batch_ids,
+                calibration_loader=calib_on_dev,
+                tokenizer=tokenizer,
+            )
+            comp_wall = time.time() - t_comp0
+
+            comp_stats = comp_stats or {}
+            p_after = sum(p.numel() for p in cand.parameters())
+
+            # ---- Evaluate ----
+            metrics = compute_perplexity_with_metrics(
+                cand,
+                tokenizer,
+                ds_test,
+                seq_len=args.seq_len,
+                stride=args.stride,
+                max_eval_tokens=args.max_eval_tokens,
+                device=args.device,
+            )
+            ppl = metrics[&#34;perplexity&#34;]
+
+            wall = time.time() - t_mod
+            comp_rate = round(total_params_baseline / max(1, p_after), 4)
+            comp_pct = round(100.0 * (1.0 - p_after / max(1, total_params_baseline)), 2)
+            delta_ppl = round(ppl - baseline_ppl, 4) if np.isfinite(ppl) else 999.0
+            ppl_ratio = (
+                round(ppl / max(1e-9, baseline_ppl), 4) if np.isfinite(ppl) else float(&#34;inf&#34;)
+            )
+
+            # ---- Classify ----
+            status = classify_status(ppl_ratio)
+
+            # ---- Phantom-pass detection ----
+            if isinstance(comp_stats, dict):
+                n_inj = int(comp_stats.get(&#34;num_injected_attention_layers&#34;, 0) or 0)
+                n_comp = int(comp_stats.get(&#34;num_compressed_layers&#34;, 0) or 0)
+                n_fall = int(comp_stats.get(&#34;num_fallback_layers&#34;, 0) or 0)
+            else:
+                n_inj = 12 if mod != &#34;full&#34; else 0
+                n_comp = 0
+                n_fall = 0
+            if status == &#34;PASS&#34; and mod != &#34;full&#34; and (n_inj + n_comp) == 0:
+                status = &#34;PASS_WITHOUT_EFFECT&#34;
+
+            # ---- Optional KD Recovery ----
+            post_kd_ppl = -1.0
+            delta_ppl_recovery = 0.0
+            if args.with_kd_recovery and np.isfinite(ppl) and ppl &gt; (2.0 * baseline_ppl):
+                LOG.info(
+                    &#34;[%s] Zero-shot PPL %.2f &gt; 2x baseline (%.2f); running KD recovery...&#34;,
+                    mod,
+                    ppl,
+                    2.0 * baseline_ppl,
+                )
+                try:
+                    run_kd_recovery(
+                        student=cand,
+                        teacher=base_snapshot,
+                        tokenizer=tokenizer,
+                        train_dataset=ds_train,
+                        device=args.device,
+                        steps=args.kd_recovery_steps,
+                        seq_len=128,
+                    )
+                    # Evaluate post-KD PPL
+                    post_metrics = compute_perplexity_with_metrics(
+                        cand,
+                        tokenizer,
+                        ds_test,
+                        seq_len=args.seq_len,
+                        stride=args.stride,
+                        max_eval_tokens=args.max_eval_tokens,
+                        device=args.device,
+                    )
+                    post_kd_ppl = post_metrics[&#34;perplexity&#34;]
+                    if np.isfinite(post_kd_ppl):
+                        delta_ppl_recovery = round(ppl - post_kd_ppl, 4)
+                        LOG.info(
+                            &#34;[%s] Post-KD PPL: %.2f | Delta recovery: %.2f&#34;,
+                            mod,
+                            post_kd_ppl,
+                            delta_ppl_recovery,
+                        )
+                except Exception as ex_kd:
+                    LOG.warning(&#34;[%s] KD recovery failed: %s&#34;, mod, ex_kd)
+
+            row = ResultRow(
+                module_name=mod,
+                status=status,
+                perplexity=ppl,
+                baseline_ppl=baseline_ppl,
+                delta_ppl=delta_ppl,
+                ppl_ratio=ppl_ratio,
+                compression_rate=comp_rate,
+                compression_ratio_pct=comp_pct,
+                total_params_before=total_params_baseline,
+                total_params_after=p_after,
+                delta_params=p_after - total_params_baseline,
+                num_injected_attention_layers=n_inj,
+                num_compressed_layers=n_comp,
+                num_fallback_layers=n_fall,
+                lora_params=(
+                    int(comp_stats.get(&#34;lora_params&#34;, 0) or 0)
+                    if isinstance(comp_stats, dict)
+                    else 0
+                ),
+                calibration_time_s=(
+                    float(comp_stats.get(&#34;calibration_time_s&#34;, comp_wall) or comp_wall)
+                    if isinstance(comp_stats, dict)
+                    else round(comp_wall, 3)
+                ),
+                recovery_time_s=(
+                    float(comp_stats.get(&#34;recovery_time_s&#34;, 0.0) or 0.0)
+                    if isinstance(comp_stats, dict)
+                    else 0.0
+                ),
+                peak_vram_mb=metrics[&#34;peak_vram_mb&#34;],
+                latency_ms_per_token=metrics[&#34;latency_ms_per_token&#34;],
+                throughput_tok_per_sec=metrics[&#34;throughput_tok_per_sec&#34;],
+                eval_elapsed_s=metrics[&#34;eval_elapsed_s&#34;],
+                wall_elapsed_s=round(wall, 3),
+                error=&#34;&#34;,
+                timestamp=time.strftime(&#34;%Y-%m-%dT%H:%M:%S&#34;),
+                post_kd_ppl=post_kd_ppl,
+                delta_ppl_recovery=delta_ppl_recovery,
+            )
+            LOG.info(
+                &#34;[%d/%d] %s -&gt; %s | PPL=%.3f (ratio=%.3f) | comp=%.3fx | inj=%d comp=%d | %.1fs&#34;,
+                idx,
+                len(module_list),
+                mod,
+                status,
+                ppl,
+                ppl_ratio,
+                comp_rate,
+                n_inj,
+                n_comp,
+                wall,
+            )
+
+            # Also persist to summary_with_kd.csv if KD recovery is enabled
+            if args.with_kd_recovery:
+                kd_csv = out_dir / &#34;summary_with_kd.csv&#34;
+                upsert_row(kd_csv, row.to_csv_dict())
+
+        except Exception as e:
+            wall = time.time() - t_mod
+            LOG.exception(&#34;[%d/%d] %s FAILED: %s&#34;, idx, len(module_list), mod, e)
+            extra = {
+                &#34;baseline_ppl&#34;: baseline_ppl,
+                &#34;rank&#34;: args.rank,
+                &#34;seq_len&#34;: args.seq_len,
+                &#34;device&#34;: args.device,
+                &#34;fp16&#34;: args.fp16,
+            }
+            write_diag(
+                diag_json,
+                mod,
+                e,
+                extra=extra,
+                include_locals=args.save_traceback_locals,
+            )
+
+            # Try to extract partial PPL if candidate was built
+            ppl_partial = -1.0
+            vram_partial = 0.0
+            lat_partial = 0.0
+            tps_partial = 0.0
+            if cand is not None:
+                try:
+                    pm = compute_perplexity_with_metrics(
+                        cand,
+                        tokenizer,
+                        ds_test,
+                        seq_len=args.seq_len,
+                        stride=args.stride,
+                        max_eval_tokens=min(20_000, args.max_eval_tokens or 20_000),
+                        device=args.device,
+                    )
+                    if pm[&#34;is_finite&#34;]:
+                        ppl_partial = pm[&#34;perplexity&#34;]
+                        vram_partial = pm[&#34;peak_vram_mb&#34;]
+                        lat_partial = pm[&#34;latency_ms_per_token&#34;]
+                        tps_partial = pm[&#34;throughput_tok_per_sec&#34;]
+                except Exception:
+                    pass
+
+            # Get fault location from traceback
+            tb = traceback.extract_tb(sys.exc_info()[2])
+            last = tb[-1] if tb else None
+            fault = f&#34;[{last.filename}:{last.lineno}]&#34; if last else &#34;[unknown]&#34;
+
+            row = ResultRow(
+                module_name=mod,
+                status=&#34;FAIL&#34;,
+                perplexity=ppl_partial,
+                baseline_ppl=baseline_ppl,
+                delta_ppl=999.0,
+                ppl_ratio=float(&#34;inf&#34;),
+                total_params_before=total_params_baseline,
+                total_params_after=total_params_baseline,
+                peak_vram_mb=vram_partial,
+                latency_ms_per_token=lat_partial,
+                throughput_tok_per_sec=tps_partial,
+                wall_elapsed_s=round(wall, 3),
+                error=f&#34;{fault} {type(e).__name__}: {str(e)}&#34;,
+                timestamp=time.strftime(&#34;%Y-%m-%dT%H:%M:%S&#34;),
+            )
+
+        finally:
+            if cand is not None:
+                del cand
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
+        # Persist result
+        if row is not None:
+            payload = row.to_csv_dict()
+            try:
+                res_json.write_text(json.dumps(payload, indent=2), encoding=&#34;utf-8&#34;)
+            except Exception as e:
+                LOG.warning(&#34;Could not write result.json for %s: %s&#34;, mod, e)
+            upsert_row(worker_csv, payload)
+            if args.total_workers &gt; 1:
+                upsert_row(main_csv, payload, main_lock)
+            n_done += 1
+
+    # ---- End-of-run ----
+    total_wall = time.time() - t_run_start
+    LOG.info(&#34;=&#34; * 78)
+    LOG.info(&#34;Sweep finished in %.1fs. %d modules processed.&#34;, total_wall, n_done)
+
+    # Summary
+    final_rows = _read_csv_rows(main_csv)
+    print_summary_stats(final_rows)
+    try:
+        write_markdown_report(out_dir, main_csv, baseline_ppl)
+    except Exception as e:
+        LOG.warning(&#34;Report generation failed: %s&#34;, e)
+
+    # Final JSON summary
+    try:
+        summary_payload = {
+            &#34;baseline_ppl&#34;: baseline_ppl,
+            &#34;total_params_baseline&#34;: total_params_baseline,
+            &#34;modules_evaluated&#34;: n_done,
+            &#34;wall_elapsed_s&#34;: round(total_wall, 2),
+            &#34;rows&#34;: final_rows,
+            &#34;timestamp&#34;: time.strftime(&#34;%Y-%m-%dT%H:%M:%S&#34;),
+        }
+        (out_dir / &#34;final_summary.json&#34;).write_text(
+            json.dumps(summary_payload, indent=2, default=str),
+            encoding=&#34;utf-8&#34;,
+        )
+        LOG.info(&#34;Wrote final_summary.json&#34;)
+    except Exception as e:
+        LOG.warning(&#34;Could not write final_summary.json: %s&#34;, e)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.parse_args"><code class="name flex">
+<span>def <span class="ident">parse_args</span></span>(<span>argv: list[str] | None = None) ‑> argparse.Namespace</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def parse_args(argv: list[str] | None = None) -&gt; argparse.Namespace:
+    p = argparse.ArgumentParser(
+        description=&#34;GPT-2 decoder perplexity benchmark sweep&#34;,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    # Model / data
+    p.add_argument(&#34;--model_path&#34;, type=str, default=&#34;models/gpt2_wikitext&#34;)
+    p.add_argument(&#34;--dataset_name&#34;, type=str, default=&#34;wikitext-2-raw-v1&#34;)
+    p.add_argument(&#34;--split&#34;, type=str, default=&#34;test&#34;, choices=(&#34;test&#34;, &#34;validation&#34;, &#34;train&#34;))
+    p.add_argument(&#34;--output_dir&#34;, type=str, default=&#34;results/06_adhoc_experiments/gpt2_sweep&#34;)
+
+    # Modules
+    p.add_argument(&#34;--modules&#34;, type=str, nargs=&#34;*&#34;, default=[&#34;all&#34;])
+    p.add_argument(&#34;--rank&#34;, type=int, default=64)
+    p.add_argument(&#34;--seq_len&#34;, type=int, default=1024)
+    p.add_argument(&#34;--max_length&#34;, type=int, default=None, help=&#34;Alias for --seq_len&#34;)
+    p.add_argument(&#34;--stride&#34;, type=int, default=512)
+    p.add_argument(
+        &#34;--max_eval_tokens&#34;,
+        type=int,
+        default=100_000,
+        help=&#34;Cap total evaluated tokens (None = full split)&#34;,
+    )
+
+    # Precision / device
+    p.add_argument(&#34;--fp16&#34;, action=&#34;store_true&#34;, default=True)
+    p.add_argument(&#34;--no_fp16&#34;, dest=&#34;fp16&#34;, action=&#34;store_false&#34;)
+    p.add_argument(&#34;--device&#34;, type=str, default=&#34;cuda&#34;, help=&#34;cuda, cuda:0, cuda:1, cpu&#34;)
+    p.add_argument(&#34;--seed&#34;, type=int, default=42)
+
+    # Calibration
+    p.add_argument(&#34;--calib_samples&#34;, type=int, default=500)
+    p.add_argument(&#34;--calib_batch_size&#34;, type=int, default=4)
+    p.add_argument(&#34;--calib_max_length&#34;, type=int, default=128)
+
+    # Behavior flags
+    p.add_argument(
+        &#34;--no_skip&#34;,
+        action=&#34;store_true&#34;,
+        default=False,
+        help=&#34;Re-evaluate ALL modules, even successful ones&#34;,
+    )
+    p.add_argument(
+        &#34;--force&#34;,
+        action=&#34;store_true&#34;,
+        default=False,
+        help=&#34;Overwrite existing CSV (start fresh)&#34;,
+    )
+    p.add_argument(
+        &#34;--only_failed&#34;,
+        action=&#34;store_true&#34;,
+        default=False,
+        help=&#34;Only evaluate modules whose last status is FAIL/PASS_*_DEGRADED&#34;,
+    )
+    p.add_argument(
+        &#34;--retry_flags&#34;,
+        type=str,
+        nargs=&#34;*&#34;,
+        default=[],
+        help=&#34;Statuses to treat as failed and retry &#34;
+        &#34;(e.g. --retry_flags PASS_NO_COMPRESSION FAIL_PPL_DIVERGED)&#34;,
+    )
+    p.add_argument(&#34;--dry_run&#34;, action=&#34;store_true&#34;, default=False)
+    p.add_argument(
+        &#34;--recompute_baseline&#34;,
+        action=&#34;store_true&#34;,
+        default=False,
+        help=&#34;Force recompute baseline PPL (default: reuse cached)&#34;,
+    )
+
+    # KD Recovery
+    p.add_argument(
+        &#34;--with_kd_recovery&#34;,
+        action=&#34;store_true&#34;,
+        default=False,
+        help=&#34;Run KD recovery fine-tuning if zero-shot PPL &gt; 2x baseline&#34;,
+    )
+    p.add_argument(
+        &#34;--kd_recovery_steps&#34;,
+        type=int,
+        default=100,
+        help=&#34;Number of KD steps to run for recovery&#34;,
+    )
+
+    # Parallelism
+    p.add_argument(&#34;--worker_id&#34;, type=int, default=0)
+    p.add_argument(&#34;--total_workers&#34;, type=int, default=1)
+
+    # Reporting
+    p.add_argument(&#34;--log_file&#34;, type=str, default=None)
+    p.add_argument(
+        &#34;--save_traceback_locals&#34;,
+        action=&#34;store_true&#34;,
+        default=False,
+        help=&#34;Include stack locals in diag.json (verbose)&#34;,
+    )
+    return p.parse_args(argv)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.print_summary_stats"><code class="name flex">
+<span>def <span class="ident">print_summary_stats</span></span>(<span>rows: dict[str, dict[str, str]])</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def print_summary_stats(rows: dict[str, dict[str, str]]):
+    if not rows:
+        return
+    ppls = []
+    for k, r in rows.items():
+        if k == &#34;full&#34;:
+            continue
+        try:
+            p = float(r.get(&#34;perplexity&#34;, &#34;nan&#34;))
+            if np.isfinite(p) and p &gt; 0:
+                ppls.append(p)
+        except Exception:
+            pass
+    if not ppls:
+        return
+    arr = np.array(ppls)
+    LOG.info(&#34;=&#34; * 70)
+    LOG.info(&#34;SUMMARY (excluding &#39;full&#39;):&#34;)
+    LOG.info(
+        &#34;  n = %d | min PPL = %.2f | max PPL = %.2f | median = %.2f | mean = %.2f&#34;,
+        len(arr),
+        arr.min(),
+        arr.max(),
+        np.median(arr),
+        arr.mean(),
+    )
+    # Count by status
+    status_counts: dict[str, int] = {}
+    for k, r in rows.items():
+        s = r.get(&#34;status&#34;, &#34;?&#34;)
+        status_counts[s] = status_counts.get(s, 0) + 1
+    LOG.info(&#34;  Status distribution:&#34;)
+    for s, c in sorted(status_counts.items()):
+        LOG.info(&#34;    %-30s %d&#34;, s, c)
+    LOG.info(&#34;=&#34; * 70)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.run_kd_recovery"><code class="name flex">
+<span>def <span class="ident">run_kd_recovery</span></span>(<span>student: nn.Module,<br>teacher: nn.Module,<br>tokenizer,<br>train_dataset,<br>device: str = 'cuda',<br>steps: int = 100,<br>seq_len: int = 128,<br>lr: float = 2.5e-05,<br>kl_temp: float = 4.0) ‑> float</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_kd_recovery(
+    student: nn.Module,
+    teacher: nn.Module,
+    tokenizer,
+    train_dataset,
+    device: str = &#34;cuda&#34;,
+    steps: int = 100,
+    seq_len: int = 128,
+    lr: float = 2.5e-5,
+    kl_temp: float = 4.0,
+) -&gt; float:
+    &#34;&#34;&#34;
+    Lightweight KD recovery (Method A / logits KD) on train_dataset.
+    Returns recovery time in seconds.
+    &#34;&#34;&#34;
+    LOG.info(
+        &#34;Running KD recovery: %d steps, batch=1, seq_len=%d, lr=%.2e&#34;,
+        steps,
+        seq_len,
+        lr,
+    )
+    t0 = time.time()
+
+    # Configure trainable parameters: unfreeze low-rank / SVD / injected params
+    trainable_keywords = (
+        &#34;W_u&#34;,
+        &#34;W_v&#34;,
+        &#34;weight_u&#34;,
+        &#34;weight_v&#34;,
+        &#34;lora_A&#34;,
+        &#34;lora_B&#34;,
+        &#34;adapter&#34;,
+        &#34;A&#34;,
+        &#34;B&#34;,
+    )
+    trainable_params = []
+    for name, p in student.named_parameters():
+        if &#34;.attn.&#34; not in name:
+            p.requires_grad = False
+            continue
+        sub = name.split(&#34;.attn.&#34;, 1)[-1]
+        if any(kw in name for kw in trainable_keywords):
+            p.requires_grad = True
+        elif sub.startswith(
+            (&#34;c_attn.weight&#34;, &#34;c_proj.weight&#34;, &#34;c_attn.bias&#34;, &#34;c_proj.bias&#34;)
+        ) or sub in (&#34;c_attn&#34;, &#34;c_proj&#34;):
+            p.requires_grad = False
+        else:
+            p.requires_grad = True
+
+        if p.requires_grad:
+            p.data = p.data.float()
+            trainable_params.append(p)
+
+    if not trainable_params:
+        LOG.warning(
+            &#34;No trainable parameters found for KD recovery; training all parameters with requires_grad.&#34;
+        )
+        trainable_params = [p for p in student.parameters() if p.requires_grad]
+
+    if not trainable_params:
+        LOG.warning(&#34;KD recovery: completely 0 trainable parameters, skipping recovery.&#34;)
+        return 0.0
+
+    optimizer = torch.optim.AdamW(trainable_params, lr=lr, weight_decay=0.01)
+    use_scaler = bool(device.startswith(&#34;cuda&#34;))
+    scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
+
+    # Tokenize training chunks
+    texts = [t.strip() for t in train_dataset[&#34;text&#34;] if len(t.strip()) &gt; 20][: max(steps * 2, 200)]
+    all_ids = []
+    for t in texts:
+        ids = tokenizer(t, add_special_tokens=False).input_ids
+        if ids:
+            all_ids.extend(ids)
+            all_ids.append(tokenizer.eos_token_id or 0)
+        if len(all_ids) &gt;= steps * seq_len:
+            break
+
+    target_tokens = steps * seq_len
+    if len(all_ids) &lt; target_tokens:
+        while len(all_ids) &lt; target_tokens:
+            all_ids.extend(all_ids[: max(1, target_tokens - len(all_ids))])
+    all_ids = all_ids[:target_tokens]
+    chunks = torch.tensor(all_ids, dtype=torch.long).view(steps, seq_len)
+
+    student.train()
+    teacher.eval()
+    teacher.to(device)
+
+    for step_idx in range(steps):
+        batch = chunks[step_idx : step_idx + 1].to(device)
+        optimizer.zero_grad()
+
+        with (
+            torch.no_grad(),
+            torch.cuda.amp.autocast(enabled=device.startswith(&#34;cuda&#34;)),
+        ):
+            t_out = teacher(batch)
+
+        with torch.cuda.amp.autocast(enabled=device.startswith(&#34;cuda&#34;)):
+            s_out = student(batch)
+            # Logits KD (KL divergence with temperature)
+            p_s = F.log_softmax(s_out.logits / kl_temp, dim=-1)
+            p_t = F.softmax(t_out.logits / kl_temp, dim=-1)
+            loss_kl = F.kl_div(p_s, p_t, reduction=&#34;batchmean&#34;) * (kl_temp * kl_temp)
+
+            # Next token cross-entropy
+            shift_logits = s_out.logits[..., :-1, :].contiguous()
+            shift_labels = batch[..., 1:].contiguous()
+            loss_ce = F.cross_entropy(
+                shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1)
+            )
+            loss = 0.9 * loss_kl + 0.1 * loss_ce
+
+        if use_scaler:
+            scaler.scale(loss).backward()
+            scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=0.5)
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=0.5)
+            optimizer.step()
+
+    student.eval()
+    elapsed = time.time() - t0
+    LOG.info(&#34;KD recovery finished in %.2fs&#34;, elapsed)
+    return elapsed</code></pre>
+</details>
+<div class="desc"><p>Lightweight KD recovery (Method A / logits KD) on train_dataset.
+Returns recovery time in seconds.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.setup_logging"><code class="name flex">
+<span>def <span class="ident">setup_logging</span></span>(<span>log_file: str | None, verbose: bool = False)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setup_logging(log_file: str | None, verbose: bool = False):
+    level = logging.DEBUG if verbose else logging.INFO
+    root = logging.getLogger()
+    root.setLevel(level)
+    # Clear existing handlers to avoid double logs
+    for h in list(root.handlers):
+        root.removeHandler(h)
+    fmt = logging.Formatter(_LOG_FORMAT)
+    ch = logging.StreamHandler()
+    ch.setFormatter(fmt)
+    root.addHandler(ch)
+    if log_file:
+        Path(log_file).parent.mkdir(parents=True, exist_ok=True)
+        fh = logging.FileHandler(log_file, mode=&#34;a&#34;, encoding=&#34;utf-8&#34;)
+        fh.setFormatter(fmt)
+        root.addHandler(fh)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.upsert_row"><code class="name flex">
+<span>def <span class="ident">upsert_row</span></span>(<span>csv_path: Path, row: dict[str, Any], lock_path: Path | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def upsert_row(csv_path: Path, row: dict[str, Any], lock_path: Path | None = None):
+    &#34;&#34;&#34;Atomic upsert by module_name. Uses FileLock for multiprocess safety.&#34;&#34;&#34;
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    lock = lock_path or csv_path.with_suffix(&#34;.lock&#34;)
+    with FileLock(str(lock)):
+        existing = _read_csv_rows(csv_path)
+        existing[row[&#34;module_name&#34;]] = {k: row.get(k, &#34;&#34;) for k in CSV_FIELDS}
+
+        tmp = csv_path.with_suffix(&#34;.tmp&#34;)
+        with open(tmp, &#34;w&#34;, newline=&#34;&#34;, encoding=&#34;utf-8&#34;) as f:
+            writer = csv.DictWriter(f, fieldnames=CSV_FIELDS, extrasaction=&#34;ignore&#34;)
+            writer.writeheader()
+            # Stable ordering: &#34;full&#34; first, then alphabetical
+            keys = sorted(existing.keys(), key=lambda k: (k != &#34;full&#34;, k))
+            for k in keys:
+                writer.writerow(existing[k])
+            f.flush()
+            os.fsync(f.fileno())
+        tmp.replace(csv_path)</code></pre>
+</details>
+<div class="desc"><p>Atomic upsert by module_name. Uses FileLock for multiprocess safety.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.write_diag"><code class="name flex">
+<span>def <span class="ident">write_diag</span></span>(<span>diag_path: Path,<br>module: str,<br>exc: BaseException,<br>extra: dict[str, Any] | None = None,<br>include_locals: bool = False)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def write_diag(
+    diag_path: Path,
+    module: str,
+    exc: BaseException,
+    extra: dict[str, Any] | None = None,
+    include_locals: bool = False,
+):
+    exc_type, exc_val, exc_tb = sys.exc_info()
+    tb_lines = traceback.format_exception(exc_type, exc_val, exc_tb)
+
+    last = traceback.extract_tb(exc_tb)[-1] if exc_tb else None
+    info: dict[str, Any] = {
+        &#34;module_name&#34;: module,
+        &#34;exception_type&#34;: exc_type.__name__ if exc_type else &#34;Exception&#34;,
+        &#34;exception_message&#34;: str(exc_val),
+        &#34;errno&#34;: getattr(exc_val, &#34;errno&#34;, None),
+        &#34;filename&#34;: str(getattr(exc_val, &#34;filename&#34;, &#34;&#34;)) or None,
+        &#34;fault_file&#34;: last.filename if last else &#34;unknown&#34;,
+        &#34;fault_line&#34;: last.lineno if last else -1,
+        &#34;fault_function&#34;: last.name if last else &#34;unknown&#34;,
+        &#34;cwd&#34;: os.getcwd(),
+        &#34;traceback&#34;: tb_lines,
+        &#34;torch_version&#34;: torch.__version__,
+        &#34;cuda_available&#34;: torch.cuda.is_available(),
+        &#34;timestamp&#34;: time.strftime(&#34;%Y-%m-%dT%H:%M:%S&#34;),
+    }
+    if extra:
+        info.update(extra)
+    if include_locals and exc_tb is not None:
+        frame = exc_tb.tb_frame
+        try:
+            info[&#34;locals_keys&#34;] = list(frame.f_locals.keys())
+        except Exception:
+            pass
+    try:
+        diag_path.write_text(json.dumps(info, indent=2, default=str), encoding=&#34;utf-8&#34;)
+    except Exception as e:
+        LOG.warning(&#34;Failed to write diag.json for %s: %s&#34;, module, e)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.write_markdown_report"><code class="name flex">
+<span>def <span class="ident">write_markdown_report</span></span>(<span>out_dir: Path, csv_path: Path, baseline_ppl: float)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def write_markdown_report(out_dir: Path, csv_path: Path, baseline_ppl: float):
+    rows = _read_csv_rows(csv_path)
+    if not rows:
+        return
+    md_lines = [
+        &#34;# GPT-2 Decoder Sweep Report&#34;,
+        &#34;&#34;,
+        f&#34;- Baseline PPL: **{baseline_ppl:.2f}**&#34;,
+        f&#34;- Modules evaluated: {len(rows)}&#34;,
+        &#34;&#34;,
+        &#34;| Module | Status | PPL | PPL Ratio | Comp. | Inj. Layers | Comp. Layers | Latency (ms/tok) |&#34;,
+        &#34;|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|&#34;,
+    ]
+    for m in sorted(rows.keys(), key=lambda k: (k != &#34;full&#34;, k)):
+        r = rows[m]
+        md_lines.append(
+            f&#34;| {m} | {r.get(&#39;status&#39;, &#39;?&#39;)} | &#34;
+            f&#34;{r.get(&#39;perplexity&#39;, &#39;?&#39;)} | {r.get(&#39;ppl_ratio&#39;, &#39;?&#39;)} | &#34;
+            f&#34;{r.get(&#39;compression_rate&#39;, &#39;?&#39;)} | &#34;
+            f&#34;{r.get(&#39;num_injected_attention_layers&#39;, 0)} | &#34;
+            f&#34;{r.get(&#39;num_compressed_layers&#39;, 0)} | &#34;
+            f&#34;{r.get(&#39;latency_ms_per_token&#39;, &#39;?&#39;)} |&#34;
+        )
+    out = out_dir / &#34;REPORT.md&#34;
+    out.write_text(&#34;\n&#34;.join(md_lines), encoding=&#34;utf-8&#34;)
+    LOG.info(&#34;Wrote report to %s&#34;, out)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow"><code class="flex name class">
+<span>class <span class="ident">ResultRow</span></span>
+<span>(</span><span>module_name: str,<br>status: str = 'PENDING',<br>perplexity: float = -1.0,<br>baseline_ppl: float = -1.0,<br>delta_ppl: float = 0.0,<br>ppl_ratio: float = 1.0,<br>compression_rate: float = 1.0,<br>compression_ratio_pct: float = 0.0,<br>total_params_before: int = 0,<br>total_params_after: int = 0,<br>delta_params: int = 0,<br>num_injected_attention_layers: int = 0,<br>num_compressed_layers: int = 0,<br>num_fallback_layers: int = 0,<br>lora_params: int = 0,<br>calibration_time_s: float = 0.0,<br>recovery_time_s: float = 0.0,<br>peak_vram_mb: float = 0.0,<br>latency_ms_per_token: float = 0.0,<br>throughput_tok_per_sec: float = 0.0,<br>eval_elapsed_s: float = 0.0,<br>wall_elapsed_s: float = 0.0,<br>error: str = '',<br>timestamp: str = '',<br>post_kd_ppl: float = -1.0,<br>delta_ppl_recovery: float = 0.0)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class ResultRow:
+    module_name: str
+    status: str = &#34;PENDING&#34;
+    perplexity: float = -1.0
+    baseline_ppl: float = -1.0
+    delta_ppl: float = 0.0
+    ppl_ratio: float = 1.0
+
+    compression_rate: float = 1.0
+    compression_ratio_pct: float = 0.0
+    total_params_before: int = 0
+    total_params_after: int = 0
+    delta_params: int = 0
+
+    num_injected_attention_layers: int = 0
+    num_compressed_layers: int = 0
+    num_fallback_layers: int = 0
+    lora_params: int = 0
+    calibration_time_s: float = 0.0
+    recovery_time_s: float = 0.0
+
+    peak_vram_mb: float = 0.0
+    latency_ms_per_token: float = 0.0
+    throughput_tok_per_sec: float = 0.0
+    eval_elapsed_s: float = 0.0
+    wall_elapsed_s: float = 0.0
+
+    error: str = &#34;&#34;
+    timestamp: str = &#34;&#34;
+
+    post_kd_ppl: float = -1.0
+    delta_ppl_recovery: float = 0.0
+
+    def to_csv_dict(self) -&gt; dict[str, Any]:
+        return {k: getattr(self, k, &#34;&#34;) for k in CSV_FIELDS}</code></pre>
+</details>
+<div class="desc"><p>ResultRow(module_name: 'str', status: 'str' = 'PENDING', perplexity: 'float' = -1.0, baseline_ppl: 'float' = -1.0, delta_ppl: 'float' = 0.0, ppl_ratio: 'float' = 1.0, compression_rate: 'float' = 1.0, compression_ratio_pct: 'float' = 0.0, total_params_before: 'int' = 0, total_params_after: 'int' = 0, delta_params: 'int' = 0, num_injected_attention_layers: 'int' = 0, num_compressed_layers: 'int' = 0, num_fallback_layers: 'int' = 0, lora_params: 'int' = 0, calibration_time_s: 'float' = 0.0, recovery_time_s: 'float' = 0.0, peak_vram_mb: 'float' = 0.0, latency_ms_per_token: 'float' = 0.0, throughput_tok_per_sec: 'float' = 0.0, eval_elapsed_s: 'float' = 0.0, wall_elapsed_s: 'float' = 0.0, error: 'str' = '', timestamp: 'str' = '', post_kd_ppl: 'float' = -1.0, delta_ppl_recovery: 'float' = 0.0)</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.baseline_ppl"><code class="name">var <span class="ident">baseline_ppl</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.calibration_time_s"><code class="name">var <span class="ident">calibration_time_s</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.compression_rate"><code class="name">var <span class="ident">compression_rate</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.compression_ratio_pct"><code class="name">var <span class="ident">compression_ratio_pct</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.delta_params"><code class="name">var <span class="ident">delta_params</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.delta_ppl"><code class="name">var <span class="ident">delta_ppl</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.delta_ppl_recovery"><code class="name">var <span class="ident">delta_ppl_recovery</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.error"><code class="name">var <span class="ident">error</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.eval_elapsed_s"><code class="name">var <span class="ident">eval_elapsed_s</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.latency_ms_per_token"><code class="name">var <span class="ident">latency_ms_per_token</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.lora_params"><code class="name">var <span class="ident">lora_params</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.module_name"><code class="name">var <span class="ident">module_name</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.num_compressed_layers"><code class="name">var <span class="ident">num_compressed_layers</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.num_fallback_layers"><code class="name">var <span class="ident">num_fallback_layers</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.num_injected_attention_layers"><code class="name">var <span class="ident">num_injected_attention_layers</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.peak_vram_mb"><code class="name">var <span class="ident">peak_vram_mb</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.perplexity"><code class="name">var <span class="ident">perplexity</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.post_kd_ppl"><code class="name">var <span class="ident">post_kd_ppl</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.ppl_ratio"><code class="name">var <span class="ident">ppl_ratio</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.recovery_time_s"><code class="name">var <span class="ident">recovery_time_s</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.status"><code class="name">var <span class="ident">status</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.throughput_tok_per_sec"><code class="name">var <span class="ident">throughput_tok_per_sec</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.timestamp"><code class="name">var <span class="ident">timestamp</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.total_params_after"><code class="name">var <span class="ident">total_params_after</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.total_params_before"><code class="name">var <span class="ident">total_params_before</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.wall_elapsed_s"><code class="name">var <span class="ident">wall_elapsed_s</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.benchmarks.run_gpt2_sweep.ResultRow.to_csv_dict"><code class="name flex">
+<span>def <span class="ident">to_csv_dict</span></span>(<span>self) ‑> dict[str, typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_csv_dict(self) -&gt; dict[str, Any]:
+    return {k: getattr(self, k, &#34;&#34;) for k in CSV_FIELDS}</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.benchmarks" href="index.html">neuralops.benchmarks</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.build_calibration_loader" href="#neuralops.benchmarks.run_gpt2_sweep.build_calibration_loader">build_calibration_loader</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.classify_status" href="#neuralops.benchmarks.run_gpt2_sweep.classify_status">classify_status</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.compute_perplexity_with_metrics" href="#neuralops.benchmarks.run_gpt2_sweep.compute_perplexity_with_metrics">compute_perplexity_with_metrics</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.get_all_decoder_modules" href="#neuralops.benchmarks.run_gpt2_sweep.get_all_decoder_modules">get_all_decoder_modules</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.is_real_success" href="#neuralops.benchmarks.run_gpt2_sweep.is_real_success">is_real_success</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.load_deprecated_modules" href="#neuralops.benchmarks.run_gpt2_sweep.load_deprecated_modules">load_deprecated_modules</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.main" href="#neuralops.benchmarks.run_gpt2_sweep.main">main</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.parse_args" href="#neuralops.benchmarks.run_gpt2_sweep.parse_args">parse_args</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.print_summary_stats" href="#neuralops.benchmarks.run_gpt2_sweep.print_summary_stats">print_summary_stats</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.run_kd_recovery" href="#neuralops.benchmarks.run_gpt2_sweep.run_kd_recovery">run_kd_recovery</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.setup_logging" href="#neuralops.benchmarks.run_gpt2_sweep.setup_logging">setup_logging</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.upsert_row" href="#neuralops.benchmarks.run_gpt2_sweep.upsert_row">upsert_row</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.write_diag" href="#neuralops.benchmarks.run_gpt2_sweep.write_diag">write_diag</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.write_markdown_report" href="#neuralops.benchmarks.run_gpt2_sweep.write_markdown_report">write_markdown_report</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow">ResultRow</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.baseline_ppl" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.baseline_ppl">baseline_ppl</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.calibration_time_s" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.calibration_time_s">calibration_time_s</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.compression_rate" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.compression_rate">compression_rate</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.compression_ratio_pct" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.compression_ratio_pct">compression_ratio_pct</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.delta_params" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.delta_params">delta_params</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.delta_ppl" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.delta_ppl">delta_ppl</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.delta_ppl_recovery" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.delta_ppl_recovery">delta_ppl_recovery</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.error" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.error">error</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.eval_elapsed_s" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.eval_elapsed_s">eval_elapsed_s</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.latency_ms_per_token" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.latency_ms_per_token">latency_ms_per_token</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.lora_params" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.lora_params">lora_params</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.module_name" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.module_name">module_name</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.num_compressed_layers" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.num_compressed_layers">num_compressed_layers</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.num_fallback_layers" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.num_fallback_layers">num_fallback_layers</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.num_injected_attention_layers" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.num_injected_attention_layers">num_injected_attention_layers</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.peak_vram_mb" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.peak_vram_mb">peak_vram_mb</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.perplexity" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.perplexity">perplexity</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.post_kd_ppl" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.post_kd_ppl">post_kd_ppl</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.ppl_ratio" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.ppl_ratio">ppl_ratio</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.recovery_time_s" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.recovery_time_s">recovery_time_s</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.status" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.status">status</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.throughput_tok_per_sec" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.throughput_tok_per_sec">throughput_tok_per_sec</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.timestamp" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.timestamp">timestamp</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.to_csv_dict" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.to_csv_dict">to_csv_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.total_params_after" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.total_params_after">total_params_after</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.total_params_before" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.total_params_before">total_params_before</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_gpt2_sweep.ResultRow.wall_elapsed_s" href="#neuralops.benchmarks.run_gpt2_sweep.ResultRow.wall_elapsed_s">wall_elapsed_s</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

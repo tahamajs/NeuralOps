@@ -1,0 +1,1106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.entropy_budget_allocation API documentation</title>
+<meta name="description" content="EntropyBudgetAllocation: global rank assignment via whitened activation entropy.
+Registered as &#39;entropy_budget&#39; and &#39;entropy_budget_allocation&#39;.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.entropy_budget_allocation</code></h1>
+</header>
+<section id="section-intro">
+<p>EntropyBudgetAllocation: global rank assignment via whitened activation entropy.
+Registered as 'entropy_budget' and 'entropy_budget_allocation'.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.entropy_budget_allocation.entropy_budget_allocation_factory"><code class="name flex">
+<span>def <span class="ident">entropy_budget_allocation_factory</span></span>(<span>model: Any, comp_config: Any = None, **kwargs: Any) ‑> torch.nn.modules.module.Module</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def entropy_budget_factory(model: Any, comp_config: Any = None, **kwargs: Any) -&gt; nn.Module:
+    &#34;&#34;&#34;Entropy budget factory function.&#34;&#34;&#34;
+    rank = kwargs.pop(
+        &#34;rank&#34;,
+        _cfg_get(comp_config, &#34;entropy_budget_rank&#34;, _cfg_get(comp_config, &#34;rank&#34;, None)),
+    )
+    budget_ratio = kwargs.pop(
+        &#34;total_budget_ratio&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;entropy_budget_total_budget_ratio&#34;,
+            _cfg_get(comp_config, &#34;total_budget_ratio&#34;, 0.7),
+        ),
+    )
+    max_error = kwargs.pop(
+        &#34;max_error&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;entropy_budget_max_error&#34;,
+            _cfg_get(comp_config, &#34;max_error&#34;, 0.35),
+        ),
+    )
+    target_attention_only = kwargs.pop(
+        &#34;target_attention_only&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;entropy_budget_target_attention_only&#34;,
+            _cfg_get(comp_config, &#34;target_attention_only&#34;, False),
+        ),
+    )
+    fallback = kwargs.pop(
+        &#34;fallback_to_original&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;entropy_budget_fallback_to_original&#34;,
+            _cfg_get(comp_config, &#34;fallback_to_original&#34;, True),
+        ),
+    )
+
+    compressor = EntropyBudgetCompressor(
+        model,
+        total_budget_ratio=budget_ratio,
+        rank=rank,
+        max_error=max_error,
+        target_attention_only=target_attention_only,
+        fallback_to_original=fallback,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, _ = compressor.compress()
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>Entropy budget factory function.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.entropy_budget_allocation.entropy_budget_factory"><code class="name flex">
+<span>def <span class="ident">entropy_budget_factory</span></span>(<span>model: Any, comp_config: Any = None, **kwargs: Any) ‑> torch.nn.modules.module.Module</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def entropy_budget_factory(model: Any, comp_config: Any = None, **kwargs: Any) -&gt; nn.Module:
+    &#34;&#34;&#34;Entropy budget factory function.&#34;&#34;&#34;
+    rank = kwargs.pop(
+        &#34;rank&#34;,
+        _cfg_get(comp_config, &#34;entropy_budget_rank&#34;, _cfg_get(comp_config, &#34;rank&#34;, None)),
+    )
+    budget_ratio = kwargs.pop(
+        &#34;total_budget_ratio&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;entropy_budget_total_budget_ratio&#34;,
+            _cfg_get(comp_config, &#34;total_budget_ratio&#34;, 0.7),
+        ),
+    )
+    max_error = kwargs.pop(
+        &#34;max_error&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;entropy_budget_max_error&#34;,
+            _cfg_get(comp_config, &#34;max_error&#34;, 0.35),
+        ),
+    )
+    target_attention_only = kwargs.pop(
+        &#34;target_attention_only&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;entropy_budget_target_attention_only&#34;,
+            _cfg_get(comp_config, &#34;target_attention_only&#34;, False),
+        ),
+    )
+    fallback = kwargs.pop(
+        &#34;fallback_to_original&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;entropy_budget_fallback_to_original&#34;,
+            _cfg_get(comp_config, &#34;fallback_to_original&#34;, True),
+        ),
+    )
+
+    compressor = EntropyBudgetCompressor(
+        model,
+        total_budget_ratio=budget_ratio,
+        rank=rank,
+        max_error=max_error,
+        target_attention_only=target_attention_only,
+        fallback_to_original=fallback,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, _ = compressor.compress()
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>Entropy budget factory function.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.entropy_budget_allocation.EntropyBudgetCompressor"><code class="flex name class">
+<span>class <span class="ident">EntropyBudgetCompressor</span></span>
+<span>(</span><span>model: nn.Module,<br>calibration_loader: Any | None = None,<br>total_budget_ratio: float = 0.7,<br>rank: int | None = None,<br>eps: float = 1e-06,<br>max_error: float = 0.35,<br>target_attention_only: bool = False,<br>fallback_to_original: bool = True,<br>target_modules: list[str] | None = None,<br>cfg: Any | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;entropy_budget&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;entropy_budget_allocation&#34;)
+class EntropyBudgetCompressor(BaseCompressor):
+    is_custom_attention: bool = True
+    &#34;&#34;&#34;
+    Entropy Budget Low-Rank SVD Compressor.
+
+    Computes activation covariance and whiten weights, calculates per-component
+    singular entropy contributions, allocates low-rank budgets globally across layers,
+    and replaces dense nn.Linear layers with factorized SVDLinear modules with symmetric
+    singular value splitting (U * sqrt(Sigma), sqrt(Sigma) * V^T).
+
+    Hardened for:
+    - LoRALinear wrappers &amp; Conv1D support.
+    - target_attention_only filtering.
+    - Relative Frobenius reconstruction error validation &amp; fallback.
+    - Freezing of fallback and skipped layers.
+    - Real compression metrics recording.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        model: nn.Module,
+        calibration_loader: Any | None = None,
+        total_budget_ratio: float = 0.7,
+        rank: int | None = None,
+        eps: float = 1e-6,
+        max_error: float = 0.35,
+        target_attention_only: bool = False,
+        fallback_to_original: bool = True,
+        target_modules: list[str] | None = None,
+        cfg: Any | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;entropy_budget&#34;, **kwargs)
+        cfg = cfg or kwargs.get(&#34;comp_config&#34;)
+        self.cfg = cfg
+
+        self.calibration_loader = calibration_loader or _cfg_get(cfg, &#34;calibration_loader&#34;, None)
+        self.total_budget_ratio = float(
+            _cfg_get(
+                cfg,
+                &#34;entropy_budget_total_budget_ratio&#34;,
+                _cfg_get(
+                    cfg,
+                    &#34;total_budget_ratio&#34;,
+                    _cfg_get(cfg, &#34;budget_ratio&#34;, total_budget_ratio),
+                ),
+            )
+        )
+        self.rank = _cfg_get(
+            cfg,
+            &#34;entropy_budget_rank&#34;,
+            _cfg_get(cfg, &#34;rank&#34;, _cfg_get(cfg, &#34;target_rank&#34;, rank)),
+        )
+        if self.rank is not None:
+            self.rank = int(self.rank)
+        self.eps = float(eps)
+        c_max_error = _cfg_get(
+            cfg, &#34;entropy_budget_max_error&#34;, _cfg_get(cfg, &#34;max_error&#34;, max_error)
+        )
+        if c_max_error is None or c_max_error == 0.35:
+            c_max_error = adaptive_max_error(self.rank or 64, 768, 768, &#34;distilbert&#34;)
+
+        self.max_error = float(c_max_error)
+        self.target_attention_only = bool(
+            _cfg_get(
+                cfg,
+                &#34;entropy_budget_target_attention_only&#34;,
+                _cfg_get(cfg, &#34;target_attention_only&#34;, target_attention_only),
+            )
+        )
+        self.fallback_to_original = bool(
+            _cfg_get(
+                cfg,
+                &#34;entropy_budget_fallback_to_original&#34;,
+                _cfg_get(cfg, &#34;fallback_to_original&#34;, fallback_to_original),
+            )
+        )
+        self.target_modules = target_modules
+
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_ranks: dict[str, int] = {}
+        self.layer_errors: dict[str, float] = {}
+
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        name_lower = name.lower()
+        if any(part in name.split(&#34;.&#34;) for part in [&#34;lora_A&#34;, &#34;lora_B&#34;, &#34;base_layer&#34;]):
+            return False
+        if any(
+            skip in name_lower
+            for skip in [
+                &#34;classifier&#34;,
+                &#34;score&#34;,
+                &#34;lm_head&#34;,
+                &#34;pooler&#34;,
+                &#34;embedding&#34;,
+                &#34;router&#34;,
+                &#34;gate&#34;,
+                &#34;head&#34;,
+                &#34;output_layer&#34;,
+            ]
+        ):
+            return False
+
+        target_mod = getattr(module, &#34;base_layer&#34;, module)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_linear = isinstance(target_mod, nn.Linear)
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+        if not (is_linear or is_conv1d):
+            return False
+        if isinstance(target_mod, SVDLinear):
+            return False
+
+        if not should_compress_linear(self.model, name):
+            return False
+
+        if hasattr(target_mod, &#34;in_features&#34;) and hasattr(target_mod, &#34;out_features&#34;):
+            if min(target_mod.in_features, target_mod.out_features) &lt; 16:
+                return False
+        elif hasattr(target_mod, &#34;weight&#34;) and target_mod.weight is not None:
+            if min(target_mod.weight.shape) &lt; 16:
+                return False
+
+        if self.target_modules is not None:
+            return any(t in name for t in self.target_modules)
+
+        if self.target_attention_only:
+            last_part = name.split(&#34;.&#34;)[-1]
+            is_attn = (last_part in _ATTN_NAMES) or any(
+                k in name_lower for k in (&#34;attn&#34;, &#34;attention&#34;)
+            )
+            if not is_attn:
+                return False
+
+        return True
+
+    def collect_covariances(self) -&gt; dict[str, torch.Tensor]:
+        &#34;&#34;&#34;Collect empirical input activation covariances with double-precision accumulation.&#34;&#34;&#34;
+        if self.calibration_loader is None:
+            return {}
+
+        activations: dict[str, torch.Tensor] = {}
+        sample_counts: dict[str, int] = {}
+        hooks = []
+
+        def get_hook(name: str):
+            def hook(module: nn.Module, inp: tuple[Any, ...], outp: Any) -&gt; None:
+                if not inp or inp[0] is None:
+                    return
+                x = inp[0].detach()
+                if x.ndim &gt;= 2:
+                    x_flat = x.reshape(-1, x.shape[-1]).float()
+                    cov = x_flat.T @ x_flat
+                    n = x_flat.shape[0]
+                    if name not in activations:
+                        activations[name] = cov
+                        sample_counts[name] = n
+                    else:
+                        activations[name] += cov
+                        sample_counts[name] += n
+
+            return hook
+
+        target_layers = [
+            (name, getattr(mod, &#34;base_layer&#34;, mod))
+            for name, mod in self.model.named_modules()
+            if self._is_target_module(name, mod)
+        ]
+
+        if not target_layers:
+            return {}
+
+        for name, mod in target_layers:
+            hooks.append(mod.register_forward_hook(get_hook(name)))
+
+        device = next(self.model.parameters()).device
+        self.model.eval()
+
+        try:
+            with torch.no_grad():
+                for batch in self.calibration_loader:
+                    if isinstance(batch, dict):
+                        batch = {
+                            k: v.to(device) if isinstance(v, torch.Tensor) else v
+                            for k, v in batch.items()
+                        }
+                        self.model(**batch)
+                    elif isinstance(batch, (list, tuple)):
+                        batch = [v.to(device) if isinstance(v, torch.Tensor) else v for v in batch]
+                        self.model(*batch)
+                    elif isinstance(batch, torch.Tensor):
+                        self.model(batch.to(device))
+        except Exception as e:
+            logger.warning(
+                &#34;EntropyBudget: Calibration forward pass failed (%s). Falling back to weight spectra.&#34;,
+                e,
+            )
+        finally:
+            for h in hooks:
+                h.remove()
+
+        normalized_covs: dict[str, torch.Tensor] = {}
+        for name, cov in activations.items():
+            cnt = max(1, sample_counts.get(name, 1))
+            normalized_covs[name] = cov / cnt
+
+        return normalized_covs
+
+    def compress(self) -&gt; tuple[nn.Module, dict[str, Any]]:
+        &#34;&#34;&#34;Compress model using whitened entropy budget allocation and covariance-aligned singular vectors.&#34;&#34;&#34;
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.skipped_layers = []
+        self.layer_ranks = {}
+        self.layer_errors = {}
+
+        total_orig_params = 0
+        total_comp_params = 0
+
+        # Freeze skipped layers if target_attention_only is enabled
+        if self.target_attention_only:
+            for name, module in self.model.named_modules():
+                if any(part in name.split(&#34;.&#34;) for part in [&#34;lora_A&#34;, &#34;lora_B&#34;, &#34;base_layer&#34;]):
+                    continue
+                target_mod = getattr(module, &#34;base_layer&#34;, module)
+                cls_name = target_mod.__class__.__name__.lower()
+                is_linear = isinstance(target_mod, nn.Linear)
+                is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+                if (is_linear or is_conv1d) and not self._is_target_module(name, module):
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    self.skipped_layers.append(name)
+
+        target_layers = [
+            (name, mod)
+            for name, mod in self.model.named_modules()
+            if self._is_target_module(name, mod)
+        ]
+
+        if not target_layers:
+            logger.warning(&#34;EntropyBudget: No compressible linear layers found.&#34;)
+            return self.model, self.get_compression_stats()
+
+        covs = self.collect_covariances()
+        residual_candidates = []
+        layer_decomp_info = {}
+
+        # Step 1: Compute covariance-whitened singular decomposition and singular entropy per layer
+        for name, module in target_layers:
+            target_mod = getattr(module, &#34;base_layer&#34;, module)
+            cls_name = target_mod.__class__.__name__.lower()
+            is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+            raw_w = target_mod.weight.data
+
+            if is_conv1d:
+                in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+                W = raw_w.t().contiguous().float()
+            else:
+                out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+                W = raw_w.float()
+
+            orig_layer_params = out_f * in_f
+            total_orig_params += orig_layer_params
+            max_r = min(out_f, in_f)
+            r_floor = max(1, min(16, max_r))
+
+            cov_inv_sqrt = None
+            if name in covs and covs[name].shape == (in_f, in_f):
+                cov = covs[name].to(device=W.device, dtype=torch.float32)
+                try:
+                    eigvals, eigvecs = torch.linalg.eigh(
+                        cov + 1e-4 * torch.eye(in_f, device=W.device)
+                    )
+                    eigvals_clamped = torch.clamp(eigvals, min=1e-4)
+                    cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
+                    cov_inv_sqrt = (
+                        eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.T
+                    )
+                    M = W @ cov_sqrt
+                except Exception:
+                    M = W
+                    cov_inv_sqrt = None
+            else:
+                M = W
+
+            U, S, Vt = torch.linalg.svd(M, full_matrices=False)
+            layer_decomp_info[name] = (
+                U,
+                S,
+                Vt,
+                cov_inv_sqrt,
+                max_r,
+                r_floor,
+                W,
+                is_conv1d,
+                target_mod,
+            )
+
+            total_s = S.sum() + self.eps
+            p = torch.clamp(S / total_s, min=self.eps, max=1.0)
+            # B18: Shannon entropy in bits using log2
+            entropy = -torch.sum(p * torch.log2(p)).item()
+            entropy = max(entropy, 1e-4)
+
+            for i in range(r_floor, max_r):
+                s_val = S[i].item()
+                score = (s_val**2) / entropy
+                residual_candidates.append((name, i, s_val, score))
+
+        # Step 2: Allocate ranks
+        if self.rank is not None:
+            allocated_ranks = {
+                name: max(
+                    layer_decomp_info[name][5],
+                    min(self.rank, layer_decomp_info[name][4]),
+                )
+                for name, _ in target_layers
+            }
+        else:
+            allocated_ranks = {name: layer_decomp_info[name][5] for name, _ in target_layers}
+            base_allocated = sum(allocated_ranks.values())
+            total_possible = sum(layer_decomp_info[name][4] for name, _ in target_layers)
+            target_total = max(
+                base_allocated,
+                min(total_possible, int(total_possible * self.total_budget_ratio)),
+            )
+            residual_budget = target_total - base_allocated
+
+            residual_candidates.sort(key=lambda x: x[3], reverse=True)
+            for c in residual_candidates[:residual_budget]:
+                allocated_ranks[c[0]] += 1
+
+        # Step 3: Factorized replacement with validation &amp; fallback
+        forward_check_success = True
+
+        for name, module in target_layers:
+            target_mod = getattr(module, &#34;base_layer&#34;, module)
+            r = allocated_ranks[name]
+            U, S, Vt, cov_inv_sqrt, max_r, _, W, is_conv1d, _ = layer_decomp_info[name]
+            out_f, in_f = W.shape
+            orig_layer_params = out_f * in_f
+            device = target_mod.weight.device
+            dtype = target_mod.weight.dtype
+            r = max(1, min(r, max_r))
+
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            U_r = U[:, :r] * sqrt_S.unsqueeze(0)
+            if cov_inv_sqrt is not None:
+                V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]) @ cov_inv_sqrt
+                norm_u = torch.norm(U_r, p=&#34;fro&#34;).clamp_min(1e-8)
+                norm_v = torch.norm(V_r, p=&#34;fro&#34;).clamp_min(1e-8)
+                scale = torch.sqrt(norm_u / norm_v)
+                U_r = U_r / scale
+                V_r = V_r * scale
+            else:
+                V_r = sqrt_S.unsqueeze(1) * Vt[:r, :]
+
+            # Compute reconstructed weight &amp; Frobenius error
+            W_recon = torch.matmul(U_r.float(), V_r.float())
+            norm_w = torch.norm(W, p=&#34;fro&#34;).item()
+            err = (
+                float(torch.norm(W - W_recon, p=&#34;fro&#34;).item() / max(norm_w, 1e-12))
+                if norm_w &gt; 1e-12
+                else 0.0
+            )
+            self.layer_errors[name] = err
+            self.layer_ranks[name] = r
+
+            if err &gt; self.max_error and self.fallback_to_original:
+                logger.warning(
+                    &#34;EntropyBudget error %.4f on %s &gt; max_error %.4f; falling back.&#34;,
+                    err,
+                    name,
+                    self.max_error,
+                )
+                self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
+                total_comp_params += orig_layer_params
+                continue
+
+            U_r = U_r.to(dtype=dtype, device=device)
+            V_r = V_r.to(dtype=dtype, device=device)
+
+            lora_r = getattr(module, &#34;r&#34;, 0) if hasattr(module, &#34;lora_A&#34;) else 0
+            lora_alpha = getattr(module, &#34;lora_alpha&#34;, 1.0) if hasattr(module, &#34;lora_A&#34;) else 1.0
+
+            svd_layer = SVDLinear(
+                in_features=in_f,
+                out_features=out_f,
+                rank=r,
+                bias=getattr(target_mod, &#34;bias&#34;, None) is not None and target_mod.bias is not None,
+                dtype=dtype,
+                device=device,
+                lora_r=lora_r,
+                lora_alpha=lora_alpha,
+            )
+            svd_layer.set_low_rank_factors(U_r, V_r)
+            if (
+                getattr(target_mod, &#34;bias&#34;, None) is not None
+                and target_mod.bias is not None
+                and svd_layer.bias is not None
+            ):
+                svd_layer.bias.data.copy_(target_mod.bias.data)
+
+            # If module was LoRALinear wrapper, copy existing trained adapter weights
+            if (
+                hasattr(module, &#34;lora_A&#34;)
+                and hasattr(module, &#34;lora_B&#34;)
+                and svd_layer.lora_A is not None
+                and svd_layer.lora_B is not None
+            ):
+                if hasattr(module.lora_A, &#34;weight&#34;) and module.lora_A.weight is not None:
+                    svd_layer.lora_A.data.copy_(module.lora_A.weight.data)
+                elif isinstance(module.lora_A, nn.Parameter):
+                    svd_layer.lora_A.data.copy_(module.lora_A.data)
+                if hasattr(module.lora_B, &#34;weight&#34;) and module.lora_B.weight is not None:
+                    svd_layer.lora_B.data.copy_(module.lora_B.weight.data)
+                elif isinstance(module.lora_B, nn.Parameter):
+                    svd_layer.lora_B.data.copy_(module.lora_B.data)
+
+            replace_module(self.model, name, svd_layer)
+            self.compressed_layers.append(name)
+            comp_layer_params = r * (in_f + out_f)
+            total_comp_params += comp_layer_params
+
+        # Sanity check forward pass
+        try:
+            with torch.no_grad():
+                first_p = next(self.model.parameters(), None)
+                dev = first_p.device if first_p is not None else torch.device(&#34;cpu&#34;)
+                dummy = torch.randint(0, 100, (1, 8), device=dev)
+                try:
+                    self.model(dummy)
+                except Exception as e:
+                    logger.warning(f&#34;copy_weights failed: {e}&#34;)
+        except Exception:
+            forward_check_success = False
+
+        effective_ratio = total_comp_params / total_orig_params if total_orig_params &gt; 0 else 1.0
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.compressed_layers)
+            / max(1, len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
+
+        stats = self.get_compression_stats()
+        stats.update(
+            {
+                &#34;allocated_ranks&#34;: allocated_ranks,
+                &#34;layer_ranks&#34;: self.layer_ranks,
+                &#34;layer_errors&#34;: self.layer_errors,
+                &#34;compressed_layers&#34;: self.compressed_layers,
+                &#34;compressed_layer_count&#34;: len(self.compressed_layers),
+                &#34;fallback_layers&#34;: self.fallback_layers,
+                &#34;fallback_layer_count&#34;: len(self.fallback_layers),
+                &#34;skipped_layers&#34;: self.skipped_layers,
+                &#34;skipped_layer_count&#34;: len(self.skipped_layers),
+                &#34;num_compressed&#34;: len(self.compressed_layers),
+                &#34;num_fallback&#34;: len(self.fallback_layers),
+                &#34;num_skipped&#34;: len(self.skipped_layers),
+                &#34;avg_reconstruction_error&#34;: avg_err,
+                &#34;effective_parameter_ratio&#34;: round(effective_ratio, 4),
+                &#34;total_budget_ratio&#34;: self.total_budget_ratio,
+                &#34;max_error&#34;: self.max_error,
+                &#34;target_attention_only&#34;: self.target_attention_only,
+                &#34;forward_check_success&#34;: forward_check_success,
+            }
+        )
+        logger.info(
+            &#34;Compressor entropy_budget finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f&#34;,
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error,
+        )
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Base class for all compressors. Not a nn.Module to avoid parameter storage.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.entropy_budget_allocation.EntropyBudgetCompressor.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>Entropy Budget Low-Rank SVD Compressor.</p>
+<p>Computes activation covariance and whiten weights, calculates per-component
+singular entropy contributions, allocates low-rank budgets globally across layers,
+and replaces dense nn.Linear layers with factorized SVDLinear modules with symmetric
+singular value splitting (U * sqrt(Sigma), sqrt(Sigma) * V^T).</p>
+<p>Hardened for:
+- LoRALinear wrappers &amp; Conv1D support.
+- target_attention_only filtering.
+- Relative Frobenius reconstruction error validation &amp; fallback.
+- Freezing of fallback and skipped layers.
+- Real compression metrics recording.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.entropy_budget_allocation.EntropyBudgetCompressor.collect_covariances"><code class="name flex">
+<span>def <span class="ident">collect_covariances</span></span>(<span>self) ‑> dict[str, torch.Tensor]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def collect_covariances(self) -&gt; dict[str, torch.Tensor]:
+    &#34;&#34;&#34;Collect empirical input activation covariances with double-precision accumulation.&#34;&#34;&#34;
+    if self.calibration_loader is None:
+        return {}
+
+    activations: dict[str, torch.Tensor] = {}
+    sample_counts: dict[str, int] = {}
+    hooks = []
+
+    def get_hook(name: str):
+        def hook(module: nn.Module, inp: tuple[Any, ...], outp: Any) -&gt; None:
+            if not inp or inp[0] is None:
+                return
+            x = inp[0].detach()
+            if x.ndim &gt;= 2:
+                x_flat = x.reshape(-1, x.shape[-1]).float()
+                cov = x_flat.T @ x_flat
+                n = x_flat.shape[0]
+                if name not in activations:
+                    activations[name] = cov
+                    sample_counts[name] = n
+                else:
+                    activations[name] += cov
+                    sample_counts[name] += n
+
+        return hook
+
+    target_layers = [
+        (name, getattr(mod, &#34;base_layer&#34;, mod))
+        for name, mod in self.model.named_modules()
+        if self._is_target_module(name, mod)
+    ]
+
+    if not target_layers:
+        return {}
+
+    for name, mod in target_layers:
+        hooks.append(mod.register_forward_hook(get_hook(name)))
+
+    device = next(self.model.parameters()).device
+    self.model.eval()
+
+    try:
+        with torch.no_grad():
+            for batch in self.calibration_loader:
+                if isinstance(batch, dict):
+                    batch = {
+                        k: v.to(device) if isinstance(v, torch.Tensor) else v
+                        for k, v in batch.items()
+                    }
+                    self.model(**batch)
+                elif isinstance(batch, (list, tuple)):
+                    batch = [v.to(device) if isinstance(v, torch.Tensor) else v for v in batch]
+                    self.model(*batch)
+                elif isinstance(batch, torch.Tensor):
+                    self.model(batch.to(device))
+    except Exception as e:
+        logger.warning(
+            &#34;EntropyBudget: Calibration forward pass failed (%s). Falling back to weight spectra.&#34;,
+            e,
+        )
+    finally:
+        for h in hooks:
+            h.remove()
+
+    normalized_covs: dict[str, torch.Tensor] = {}
+    for name, cov in activations.items():
+        cnt = max(1, sample_counts.get(name, 1))
+        normalized_covs[name] = cov / cnt
+
+    return normalized_covs</code></pre>
+</details>
+<div class="desc"><p>Collect empirical input activation covariances with double-precision accumulation.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.entropy_budget_allocation.EntropyBudgetCompressor.compress"><code class="name flex">
+<span>def <span class="ident">compress</span></span>(<span>self) ‑> tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress(self) -&gt; tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;Compress model using whitened entropy budget allocation and covariance-aligned singular vectors.&#34;&#34;&#34;
+    self.compressed_layers = []
+    self.fallback_layers = []
+    self.skipped_layers = []
+    self.layer_ranks = {}
+    self.layer_errors = {}
+
+    total_orig_params = 0
+    total_comp_params = 0
+
+    # Freeze skipped layers if target_attention_only is enabled
+    if self.target_attention_only:
+        for name, module in self.model.named_modules():
+            if any(part in name.split(&#34;.&#34;) for part in [&#34;lora_A&#34;, &#34;lora_B&#34;, &#34;base_layer&#34;]):
+                continue
+            target_mod = getattr(module, &#34;base_layer&#34;, module)
+            cls_name = target_mod.__class__.__name__.lower()
+            is_linear = isinstance(target_mod, nn.Linear)
+            is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+            if (is_linear or is_conv1d) and not self._is_target_module(name, module):
+                for p in module.parameters():
+                    p.requires_grad = False
+                self.skipped_layers.append(name)
+
+    target_layers = [
+        (name, mod)
+        for name, mod in self.model.named_modules()
+        if self._is_target_module(name, mod)
+    ]
+
+    if not target_layers:
+        logger.warning(&#34;EntropyBudget: No compressible linear layers found.&#34;)
+        return self.model, self.get_compression_stats()
+
+    covs = self.collect_covariances()
+    residual_candidates = []
+    layer_decomp_info = {}
+
+    # Step 1: Compute covariance-whitened singular decomposition and singular entropy per layer
+    for name, module in target_layers:
+        target_mod = getattr(module, &#34;base_layer&#34;, module)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+        raw_w = target_mod.weight.data
+
+        if is_conv1d:
+            in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+            W = raw_w.t().contiguous().float()
+        else:
+            out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+            W = raw_w.float()
+
+        orig_layer_params = out_f * in_f
+        total_orig_params += orig_layer_params
+        max_r = min(out_f, in_f)
+        r_floor = max(1, min(16, max_r))
+
+        cov_inv_sqrt = None
+        if name in covs and covs[name].shape == (in_f, in_f):
+            cov = covs[name].to(device=W.device, dtype=torch.float32)
+            try:
+                eigvals, eigvecs = torch.linalg.eigh(
+                    cov + 1e-4 * torch.eye(in_f, device=W.device)
+                )
+                eigvals_clamped = torch.clamp(eigvals, min=1e-4)
+                cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
+                cov_inv_sqrt = (
+                    eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.T
+                )
+                M = W @ cov_sqrt
+            except Exception:
+                M = W
+                cov_inv_sqrt = None
+        else:
+            M = W
+
+        U, S, Vt = torch.linalg.svd(M, full_matrices=False)
+        layer_decomp_info[name] = (
+            U,
+            S,
+            Vt,
+            cov_inv_sqrt,
+            max_r,
+            r_floor,
+            W,
+            is_conv1d,
+            target_mod,
+        )
+
+        total_s = S.sum() + self.eps
+        p = torch.clamp(S / total_s, min=self.eps, max=1.0)
+        # B18: Shannon entropy in bits using log2
+        entropy = -torch.sum(p * torch.log2(p)).item()
+        entropy = max(entropy, 1e-4)
+
+        for i in range(r_floor, max_r):
+            s_val = S[i].item()
+            score = (s_val**2) / entropy
+            residual_candidates.append((name, i, s_val, score))
+
+    # Step 2: Allocate ranks
+    if self.rank is not None:
+        allocated_ranks = {
+            name: max(
+                layer_decomp_info[name][5],
+                min(self.rank, layer_decomp_info[name][4]),
+            )
+            for name, _ in target_layers
+        }
+    else:
+        allocated_ranks = {name: layer_decomp_info[name][5] for name, _ in target_layers}
+        base_allocated = sum(allocated_ranks.values())
+        total_possible = sum(layer_decomp_info[name][4] for name, _ in target_layers)
+        target_total = max(
+            base_allocated,
+            min(total_possible, int(total_possible * self.total_budget_ratio)),
+        )
+        residual_budget = target_total - base_allocated
+
+        residual_candidates.sort(key=lambda x: x[3], reverse=True)
+        for c in residual_candidates[:residual_budget]:
+            allocated_ranks[c[0]] += 1
+
+    # Step 3: Factorized replacement with validation &amp; fallback
+    forward_check_success = True
+
+    for name, module in target_layers:
+        target_mod = getattr(module, &#34;base_layer&#34;, module)
+        r = allocated_ranks[name]
+        U, S, Vt, cov_inv_sqrt, max_r, _, W, is_conv1d, _ = layer_decomp_info[name]
+        out_f, in_f = W.shape
+        orig_layer_params = out_f * in_f
+        device = target_mod.weight.device
+        dtype = target_mod.weight.dtype
+        r = max(1, min(r, max_r))
+
+        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+        U_r = U[:, :r] * sqrt_S.unsqueeze(0)
+        if cov_inv_sqrt is not None:
+            V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]) @ cov_inv_sqrt
+            norm_u = torch.norm(U_r, p=&#34;fro&#34;).clamp_min(1e-8)
+            norm_v = torch.norm(V_r, p=&#34;fro&#34;).clamp_min(1e-8)
+            scale = torch.sqrt(norm_u / norm_v)
+            U_r = U_r / scale
+            V_r = V_r * scale
+        else:
+            V_r = sqrt_S.unsqueeze(1) * Vt[:r, :]
+
+        # Compute reconstructed weight &amp; Frobenius error
+        W_recon = torch.matmul(U_r.float(), V_r.float())
+        norm_w = torch.norm(W, p=&#34;fro&#34;).item()
+        err = (
+            float(torch.norm(W - W_recon, p=&#34;fro&#34;).item() / max(norm_w, 1e-12))
+            if norm_w &gt; 1e-12
+            else 0.0
+        )
+        self.layer_errors[name] = err
+        self.layer_ranks[name] = r
+
+        if err &gt; self.max_error and self.fallback_to_original:
+            logger.warning(
+                &#34;EntropyBudget error %.4f on %s &gt; max_error %.4f; falling back.&#34;,
+                err,
+                name,
+                self.max_error,
+            )
+            self.fallback_layers.append(name)
+            for p in module.parameters():
+                p.requires_grad = False
+            total_comp_params += orig_layer_params
+            continue
+
+        U_r = U_r.to(dtype=dtype, device=device)
+        V_r = V_r.to(dtype=dtype, device=device)
+
+        lora_r = getattr(module, &#34;r&#34;, 0) if hasattr(module, &#34;lora_A&#34;) else 0
+        lora_alpha = getattr(module, &#34;lora_alpha&#34;, 1.0) if hasattr(module, &#34;lora_A&#34;) else 1.0
+
+        svd_layer = SVDLinear(
+            in_features=in_f,
+            out_features=out_f,
+            rank=r,
+            bias=getattr(target_mod, &#34;bias&#34;, None) is not None and target_mod.bias is not None,
+            dtype=dtype,
+            device=device,
+            lora_r=lora_r,
+            lora_alpha=lora_alpha,
+        )
+        svd_layer.set_low_rank_factors(U_r, V_r)
+        if (
+            getattr(target_mod, &#34;bias&#34;, None) is not None
+            and target_mod.bias is not None
+            and svd_layer.bias is not None
+        ):
+            svd_layer.bias.data.copy_(target_mod.bias.data)
+
+        # If module was LoRALinear wrapper, copy existing trained adapter weights
+        if (
+            hasattr(module, &#34;lora_A&#34;)
+            and hasattr(module, &#34;lora_B&#34;)
+            and svd_layer.lora_A is not None
+            and svd_layer.lora_B is not None
+        ):
+            if hasattr(module.lora_A, &#34;weight&#34;) and module.lora_A.weight is not None:
+                svd_layer.lora_A.data.copy_(module.lora_A.weight.data)
+            elif isinstance(module.lora_A, nn.Parameter):
+                svd_layer.lora_A.data.copy_(module.lora_A.data)
+            if hasattr(module.lora_B, &#34;weight&#34;) and module.lora_B.weight is not None:
+                svd_layer.lora_B.data.copy_(module.lora_B.weight.data)
+            elif isinstance(module.lora_B, nn.Parameter):
+                svd_layer.lora_B.data.copy_(module.lora_B.data)
+
+        replace_module(self.model, name, svd_layer)
+        self.compressed_layers.append(name)
+        comp_layer_params = r * (in_f + out_f)
+        total_comp_params += comp_layer_params
+
+    # Sanity check forward pass
+    try:
+        with torch.no_grad():
+            first_p = next(self.model.parameters(), None)
+            dev = first_p.device if first_p is not None else torch.device(&#34;cpu&#34;)
+            dummy = torch.randint(0, 100, (1, 8), device=dev)
+            try:
+                self.model(dummy)
+            except Exception as e:
+                logger.warning(f&#34;copy_weights failed: {e}&#34;)
+    except Exception:
+        forward_check_success = False
+
+    effective_ratio = total_comp_params / total_orig_params if total_orig_params &gt; 0 else 1.0
+    avg_err = (
+        sum(self.layer_errors[k] for k in self.compressed_layers)
+        / max(1, len(self.compressed_layers))
+        if self.compressed_layers
+        else 0.0
+    )
+
+    stats = self.get_compression_stats()
+    stats.update(
+        {
+            &#34;allocated_ranks&#34;: allocated_ranks,
+            &#34;layer_ranks&#34;: self.layer_ranks,
+            &#34;layer_errors&#34;: self.layer_errors,
+            &#34;compressed_layers&#34;: self.compressed_layers,
+            &#34;compressed_layer_count&#34;: len(self.compressed_layers),
+            &#34;fallback_layers&#34;: self.fallback_layers,
+            &#34;fallback_layer_count&#34;: len(self.fallback_layers),
+            &#34;skipped_layers&#34;: self.skipped_layers,
+            &#34;skipped_layer_count&#34;: len(self.skipped_layers),
+            &#34;num_compressed&#34;: len(self.compressed_layers),
+            &#34;num_fallback&#34;: len(self.fallback_layers),
+            &#34;num_skipped&#34;: len(self.skipped_layers),
+            &#34;avg_reconstruction_error&#34;: avg_err,
+            &#34;effective_parameter_ratio&#34;: round(effective_ratio, 4),
+            &#34;total_budget_ratio&#34;: self.total_budget_ratio,
+            &#34;max_error&#34;: self.max_error,
+            &#34;target_attention_only&#34;: self.target_attention_only,
+            &#34;forward_check_success&#34;: forward_check_success,
+        }
+    )
+    logger.info(
+        &#34;Compressor entropy_budget finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f&#34;,
+        len(self.compressed_layers),
+        len(self.fallback_layers),
+        avg_err,
+        self.max_error,
+    )
+    return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Compress model using whitened entropy budget allocation and covariance-aligned singular vectors.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.entropy_budget_allocation.entropy_budget_allocation_factory" href="#neuralops.compression_engine.entropy_budget_allocation.entropy_budget_allocation_factory">entropy_budget_allocation_factory</a></code></li>
+<li><code><a title="neuralops.compression_engine.entropy_budget_allocation.entropy_budget_factory" href="#neuralops.compression_engine.entropy_budget_allocation.entropy_budget_factory">entropy_budget_factory</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.entropy_budget_allocation.EntropyBudgetCompressor" href="#neuralops.compression_engine.entropy_budget_allocation.EntropyBudgetCompressor">EntropyBudgetCompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.entropy_budget_allocation.EntropyBudgetCompressor.collect_covariances" href="#neuralops.compression_engine.entropy_budget_allocation.EntropyBudgetCompressor.collect_covariances">collect_covariances</a></code></li>
+<li><code><a title="neuralops.compression_engine.entropy_budget_allocation.EntropyBudgetCompressor.compress" href="#neuralops.compression_engine.entropy_budget_allocation.EntropyBudgetCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.compression_engine.entropy_budget_allocation.EntropyBudgetCompressor.is_custom_attention" href="#neuralops.compression_engine.entropy_budget_allocation.EntropyBudgetCompressor.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

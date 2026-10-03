@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.trainer.trainer API documentation</title>
+<meta name="description" content="SVDAwareTrainer – custom HuggingFace Trainer with SVD compression callbacks.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.trainer.trainer</code></h1>
+</header>
+<section id="section-intro">
+<p>SVDAwareTrainer – custom HuggingFace Trainer with SVD compression callbacks.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.trainer.trainer.create_trainer"><code class="name flex">
+<span>def <span class="ident">create_trainer</span></span>(<span>model,<br>train_dataset,<br>eval_dataset,<br>output_dir: str = './output',<br>learning_rate: float = 2e-05,<br>batch_size: int = 16,<br>epochs: int = 3,<br>warmup_ratio: float = 0.1,<br>max_grad_norm: float = 1.0,<br>eval_strategy: str = 'epoch',<br>save_strategy: str = 'epoch',<br>save_total_limit: int = 2,<br>load_best_model_at_end: bool = True,<br>metric_for_best_model: str = 'eval_loss',<br>compute_metrics: <class 'collections.abc.Callable'> | None = None,<br>**kwargs) ‑> <a title="neuralops.trainer.trainer.SVDAwareTrainer" href="#neuralops.trainer.trainer.SVDAwareTrainer">SVDAwareTrainer</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def create_trainer(
+    model,
+    train_dataset,
+    eval_dataset,
+    output_dir: str = &#34;./output&#34;,
+    learning_rate: float = 2e-5,
+    batch_size: int = 16,
+    epochs: int = 3,
+    warmup_ratio: float = 0.1,
+    max_grad_norm: float = 1.0,
+    eval_strategy: str = &#34;epoch&#34;,
+    save_strategy: str = &#34;epoch&#34;,
+    save_total_limit: int = 2,
+    load_best_model_at_end: bool = True,
+    metric_for_best_model: str = &#34;eval_loss&#34;,
+    compute_metrics: Callable | None = None,
+    **kwargs,
+) -&gt; SVDAwareTrainer:
+    &#34;&#34;&#34;Build and return trainer.&#34;&#34;&#34;
+    if eval_dataset is None:
+        eval_strategy = &#34;no&#34;
+        load_best_model_at_end = False
+
+    trainer_kwarg_names = {
+        &#34;visualizer&#34;,
+        &#34;pre_train_callback&#34;,
+        &#34;post_train_callback&#34;,
+        &#34;log_attention_maps&#34;,
+        &#34;attention_layers&#34;,
+        &#34;callbacks&#34;,
+        &#34;optimizers&#34;,
+    }
+    trainer_kwargs = {k: v for k, v in kwargs.items() if k in trainer_kwarg_names}
+    training_args_kwargs = {k: v for k, v in kwargs.items() if k not in trainer_kwarg_names}
+
+    per_device_train_batch_size = training_args_kwargs.pop(
+        &#34;per_device_train_batch_size&#34;, batch_size
+    )
+    per_device_eval_batch_size = training_args_kwargs.pop(&#34;per_device_eval_batch_size&#34;, batch_size)
+    learning_rate = training_args_kwargs.pop(&#34;learning_rate&#34;, learning_rate)
+    num_train_epochs = training_args_kwargs.pop(&#34;num_train_epochs&#34;, epochs)
+    warmup_ratio = training_args_kwargs.pop(&#34;warmup_ratio&#34;, warmup_ratio)
+    max_grad_norm = training_args_kwargs.pop(&#34;max_grad_norm&#34;, max_grad_norm)
+    eval_strategy = training_args_kwargs.pop(&#34;eval_strategy&#34;, eval_strategy)
+    save_strategy = training_args_kwargs.pop(&#34;save_strategy&#34;, save_strategy)
+    save_total_limit = training_args_kwargs.pop(&#34;save_total_limit&#34;, save_total_limit)
+    load_best_model_at_end = training_args_kwargs.pop(
+        &#34;load_best_model_at_end&#34;, load_best_model_at_end
+    )
+    metric_for_best_model = training_args_kwargs.pop(&#34;metric_for_best_model&#34;, metric_for_best_model)
+    if compute_metrics is None:
+        metric_for_best_model = &#34;eval_loss&#34;
+    greater_is_better = training_args_kwargs.pop(&#34;greater_is_better&#34;, None)
+    if greater_is_better is None and eval_dataset is not None:
+        greater_is_better = False if &#34;loss&#34; in metric_for_best_model else True
+
+    # Pop GPU-specific optional args that may not exist in all transformers versions
+    save_safetensors = training_args_kwargs.pop(&#34;save_safetensors&#34;, False)
+    dataloader_pin_memory = training_args_kwargs.pop(&#34;dataloader_pin_memory&#34;, True)
+    dataloader_num_workers = training_args_kwargs.pop(&#34;dataloader_num_workers&#34;, 0)
+    _ = training_args_kwargs.pop(&#34;remove_unused_columns&#34;, None)  # handled below
+
+    # Precision &amp; Linear-Time Scalability Features
+    fp16 = training_args_kwargs.pop(&#34;fp16&#34;, False)
+    bf16 = training_args_kwargs.pop(&#34;bf16&#34;, False)
+    gradient_checkpointing = training_args_kwargs.pop(&#34;gradient_checkpointing&#34;, False)
+    optim = training_args_kwargs.pop(&#34;optim&#34;, &#34;adamw_hf&#34;)
+    lr_scheduler_type = training_args_kwargs.pop(&#34;lr_scheduler_type&#34;, &#34;linear&#34;)
+
+    # Build only the kwargs that TrainingArguments actually supports
+    import inspect as _inspect
+
+    _ta_params = set(_inspect.signature(TrainingArguments.__init__).parameters)
+
+    optional_ta_kwargs = {}
+    if &#34;save_safetensors&#34; in _ta_params:
+        optional_ta_kwargs[&#34;save_safetensors&#34;] = save_safetensors
+    if &#34;dataloader_pin_memory&#34; in _ta_params:
+        optional_ta_kwargs[&#34;dataloader_pin_memory&#34;] = dataloader_pin_memory
+    if &#34;dataloader_num_workers&#34; in _ta_params:
+        optional_ta_kwargs[&#34;dataloader_num_workers&#34;] = dataloader_num_workers
+
+    training_args = TrainingArguments(
+        output_dir=output_dir,
+        learning_rate=learning_rate,
+        per_device_train_batch_size=per_device_train_batch_size,
+        per_device_eval_batch_size=per_device_eval_batch_size,
+        num_train_epochs=num_train_epochs,
+        warmup_ratio=warmup_ratio,
+        max_grad_norm=max_grad_norm,
+        eval_strategy=eval_strategy,
+        save_strategy=save_strategy,
+        save_total_limit=save_total_limit,
+        load_best_model_at_end=load_best_model_at_end,
+        metric_for_best_model=(metric_for_best_model if eval_dataset is not None else None),
+        greater_is_better=greater_is_better if eval_dataset is not None else None,
+        logging_steps=training_args_kwargs.pop(&#34;logging_steps&#34;, 10),
+        disable_tqdm=False,
+        report_to=training_args_kwargs.pop(&#34;report_to&#34;, &#34;none&#34;),
+        remove_unused_columns=False,
+        fp16=fp16,
+        bf16=bf16,
+        gradient_checkpointing=gradient_checkpointing,
+        optim=optim,
+        lr_scheduler_type=lr_scheduler_type,
+        **optional_ta_kwargs,
+        **training_args_kwargs,
+    )
+    return SVDAwareTrainer(
+        model=model,
+        args=training_args,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
+        compute_metrics=compute_metrics,
+        **trainer_kwargs,
+    )</code></pre>
+</details>
+<div class="desc"><p>Build and return trainer.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.trainer.trainer.SVDAwareTrainer"><code class="flex name class">
+<span>class <span class="ident">SVDAwareTrainer</span></span>
+<span>(</span><span>visualizer: Any | None = None,<br>pre_train_callback: <class 'collections.abc.Callable'> | None = None,<br>post_train_callback: <class 'collections.abc.Callable'> | None = None,<br>log_attention_maps: bool = False,<br>attention_layers: list | None = None,<br>**kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class SVDAwareTrainer(Trainer):
+    &#34;&#34;&#34;Trainer that supports pre/post training callbacks and attention map logging.&#34;&#34;&#34;
+
+    def __init__(
+        self,
+        visualizer: Any | None = None,
+        pre_train_callback: Callable | None = None,
+        post_train_callback: Callable | None = None,
+        log_attention_maps: bool = False,
+        attention_layers: list | None = None,
+        **kwargs,
+    ) -&gt; None:
+        super().__init__(**kwargs)
+        self.visualizer = visualizer
+        self.pre_train_callback = pre_train_callback
+        self.post_train_callback = post_train_callback
+        self.log_attention_maps = log_attention_maps
+        self.attention_layers = attention_layers or [0, 5, 11]
+        self._attention_hooks = []
+        self._attention_maps = []
+
+    def train(self, *args, **kwargs) -&gt; Any:
+        &#34;&#34;&#34;Fit the model on the provided dataset.&#34;&#34;&#34;
+        if self.pre_train_callback:
+            self.pre_train_callback(self.model, self.train_dataset)
+        if self.log_attention_maps:
+            self._register_attention_hooks()
+        result = super().train(*args, **kwargs)
+        if self.post_train_callback:
+            self.post_train_callback(self.model, self.train_dataset)
+        self._remove_attention_hooks()
+        self._cleanup_memory()
+        return result
+
+    def evaluate(self, eval_dataset=None, **kwargs) -&gt; Any:
+        &#34;&#34;&#34;Run evaluate and return results.&#34;&#34;&#34;
+        if self.log_attention_maps:
+            self._register_attention_hooks()
+        result = super().evaluate(eval_dataset, **kwargs)
+        if self.log_attention_maps and self.visualizer:
+            self._save_attention_maps()
+        self._remove_attention_hooks()
+        return result
+
+    def _register_attention_hooks(self) -&gt; None:
+        &#34;&#34;&#34;register attention hooks.&#34;&#34;&#34;
+        self._attention_maps = []
+
+        def hook_fn(module, input, output, layer_idx) -&gt; None:
+            &#34;&#34;&#34;Hook fn.&#34;&#34;&#34;
+            if isinstance(output, tuple) and len(output) &gt; 1 and output[1] is not None:
+                self._attention_maps.append(
+                    {&#34;layer&#34;: layer_idx, &#34;attention&#34;: output[1].detach().cpu()}
+                )
+
+        for name, module in self.model.named_modules():
+            if &#34;attention&#34; in name.lower() and hasattr(module, &#34;forward&#34;):
+                layer_idx = None
+                parts = name.split(&#34;.&#34;)
+                for i, part in enumerate(parts):
+                    if part == &#34;layer&#34; and i + 1 &lt; len(parts):
+                        try:
+                            layer_idx = int(parts[i + 1])
+                            break
+                        except ValueError:
+                            pass
+                if layer_idx in self.attention_layers:
+                    hook = module.register_forward_hook(
+                        lambda m, i, o, idx=layer_idx: hook_fn(m, i, o, idx)
+                    )
+                    self._attention_hooks.append(hook)
+
+    def _remove_attention_hooks(self) -&gt; None:
+        &#34;&#34;&#34;remove attention hooks.&#34;&#34;&#34;
+        for hook in self._attention_hooks:
+            hook.remove()
+        self._attention_hooks = []
+
+    def _save_attention_maps(self) -&gt; None:
+        &#34;&#34;&#34;save attention maps.&#34;&#34;&#34;
+        if self.visualizer and self._attention_maps:
+            for attn_map in self._attention_maps:
+                self.visualizer.plot_attention_heatmap(
+                    attention_matrix=attn_map[&#34;attention&#34;][0, 0].numpy(),
+                    tokens=None,
+                    layer_idx=attn_map[&#34;layer&#34;],
+                    head_idx=0,
+                    rank=getattr(self.args, &#34;rank&#34;, 64),
+                    model_name=getattr(self.model.config, &#34;_name_or_path&#34;, &#34;model&#34;),
+                    task_name=getattr(self.args, &#34;task_name&#34;, &#34;unknown&#34;),
+                )
+
+    def _determine_best_metric(self, metrics, trial=None):
+        &#34;&#34;&#34;Safely determine best metric without throwing KeyError if key mismatch occurs.&#34;&#34;&#34;
+        target = getattr(self.args, &#34;metric_for_best_model&#34;, None)
+        if target and target not in metrics:
+            candidates = [
+                target,
+                f&#34;eval_{target}&#34;,
+                target.replace(&#34;eval_&#34;, &#34;&#34;),
+                &#34;eval_accuracy&#34;,
+                &#34;accuracy&#34;,
+                &#34;eval_loss&#34;,
+                &#34;loss&#34;,
+            ]
+            found = False
+            for cand in candidates:
+                if cand in metrics:
+                    self.args.metric_for_best_model = cand
+                    found = True
+                    break
+            if not found:
+                return False
+        return super()._determine_best_metric(metrics, trial=trial)
+
+    def _cleanup_memory(self) -&gt; None:
+        &#34;&#34;&#34;Free GPU/MPS/CPU memory after each training run.&#34;&#34;&#34;
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            if hasattr(torch.cuda, &#34;ipc_collect&#34;):
+                torch.cuda.ipc_collect()
+        if hasattr(torch, &#34;mps&#34;) and hasattr(torch.mps, &#34;empty_cache&#34;):
+            try:
+                torch.mps.empty_cache()
+            except (
+                AttributeError,
+                KeyError,
+                RuntimeError,
+                TypeError,
+                ValueError,
+                OSError,
+                ImportError,
+            ):
+                pass</code></pre>
+</details>
+<div class="desc"><p>Trainer that supports pre/post training callbacks and attention map logging.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>transformers.trainer.Trainer</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.trainer.trainer.SVDAwareTrainer.evaluate"><code class="name flex">
+<span>def <span class="ident">evaluate</span></span>(<span>self, eval_dataset=None, **kwargs) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def evaluate(self, eval_dataset=None, **kwargs) -&gt; Any:
+    &#34;&#34;&#34;Run evaluate and return results.&#34;&#34;&#34;
+    if self.log_attention_maps:
+        self._register_attention_hooks()
+    result = super().evaluate(eval_dataset, **kwargs)
+    if self.log_attention_maps and self.visualizer:
+        self._save_attention_maps()
+    self._remove_attention_hooks()
+    return result</code></pre>
+</details>
+<div class="desc"><p>Run evaluate and return results.</p></div>
+</dd>
+<dt id="neuralops.trainer.trainer.SVDAwareTrainer.train"><code class="name flex">
+<span>def <span class="ident">train</span></span>(<span>self, *args, **kwargs) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def train(self, *args, **kwargs) -&gt; Any:
+    &#34;&#34;&#34;Fit the model on the provided dataset.&#34;&#34;&#34;
+    if self.pre_train_callback:
+        self.pre_train_callback(self.model, self.train_dataset)
+    if self.log_attention_maps:
+        self._register_attention_hooks()
+    result = super().train(*args, **kwargs)
+    if self.post_train_callback:
+        self.post_train_callback(self.model, self.train_dataset)
+    self._remove_attention_hooks()
+    self._cleanup_memory()
+    return result</code></pre>
+</details>
+<div class="desc"><p>Fit the model on the provided dataset.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.trainer.trainer.SVDAwareTrainer"><code class="flex name class">
+<span>class <span class="ident">CompressionTrainer</span></span>
+<span>(</span><span>visualizer: Any | None = None,<br>pre_train_callback: <class 'collections.abc.Callable'> | None = None,<br>post_train_callback: <class 'collections.abc.Callable'> | None = None,<br>log_attention_maps: bool = False,<br>attention_layers: list | None = None,<br>**kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class SVDAwareTrainer(Trainer):
+    &#34;&#34;&#34;Trainer that supports pre/post training callbacks and attention map logging.&#34;&#34;&#34;
+
+    def __init__(
+        self,
+        visualizer: Any | None = None,
+        pre_train_callback: Callable | None = None,
+        post_train_callback: Callable | None = None,
+        log_attention_maps: bool = False,
+        attention_layers: list | None = None,
+        **kwargs,
+    ) -&gt; None:
+        super().__init__(**kwargs)
+        self.visualizer = visualizer
+        self.pre_train_callback = pre_train_callback
+        self.post_train_callback = post_train_callback
+        self.log_attention_maps = log_attention_maps
+        self.attention_layers = attention_layers or [0, 5, 11]
+        self._attention_hooks = []
+        self._attention_maps = []
+
+    def train(self, *args, **kwargs) -&gt; Any:
+        &#34;&#34;&#34;Fit the model on the provided dataset.&#34;&#34;&#34;
+        if self.pre_train_callback:
+            self.pre_train_callback(self.model, self.train_dataset)
+        if self.log_attention_maps:
+            self._register_attention_hooks()
+        result = super().train(*args, **kwargs)
+        if self.post_train_callback:
+            self.post_train_callback(self.model, self.train_dataset)
+        self._remove_attention_hooks()
+        self._cleanup_memory()
+        return result
+
+    def evaluate(self, eval_dataset=None, **kwargs) -&gt; Any:
+        &#34;&#34;&#34;Run evaluate and return results.&#34;&#34;&#34;
+        if self.log_attention_maps:
+            self._register_attention_hooks()
+        result = super().evaluate(eval_dataset, **kwargs)
+        if self.log_attention_maps and self.visualizer:
+            self._save_attention_maps()
+        self._remove_attention_hooks()
+        return result
+
+    def _register_attention_hooks(self) -&gt; None:
+        &#34;&#34;&#34;register attention hooks.&#34;&#34;&#34;
+        self._attention_maps = []
+
+        def hook_fn(module, input, output, layer_idx) -&gt; None:
+            &#34;&#34;&#34;Hook fn.&#34;&#34;&#34;
+            if isinstance(output, tuple) and len(output) &gt; 1 and output[1] is not None:
+                self._attention_maps.append(
+                    {&#34;layer&#34;: layer_idx, &#34;attention&#34;: output[1].detach().cpu()}
+                )
+
+        for name, module in self.model.named_modules():
+            if &#34;attention&#34; in name.lower() and hasattr(module, &#34;forward&#34;):
+                layer_idx = None
+                parts = name.split(&#34;.&#34;)
+                for i, part in enumerate(parts):
+                    if part == &#34;layer&#34; and i + 1 &lt; len(parts):
+                        try:
+                            layer_idx = int(parts[i + 1])
+                            break
+                        except ValueError:
+                            pass
+                if layer_idx in self.attention_layers:
+                    hook = module.register_forward_hook(
+                        lambda m, i, o, idx=layer_idx: hook_fn(m, i, o, idx)
+                    )
+                    self._attention_hooks.append(hook)
+
+    def _remove_attention_hooks(self) -&gt; None:
+        &#34;&#34;&#34;remove attention hooks.&#34;&#34;&#34;
+        for hook in self._attention_hooks:
+            hook.remove()
+        self._attention_hooks = []
+
+    def _save_attention_maps(self) -&gt; None:
+        &#34;&#34;&#34;save attention maps.&#34;&#34;&#34;
+        if self.visualizer and self._attention_maps:
+            for attn_map in self._attention_maps:
+                self.visualizer.plot_attention_heatmap(
+                    attention_matrix=attn_map[&#34;attention&#34;][0, 0].numpy(),
+                    tokens=None,
+                    layer_idx=attn_map[&#34;layer&#34;],
+                    head_idx=0,
+                    rank=getattr(self.args, &#34;rank&#34;, 64),
+                    model_name=getattr(self.model.config, &#34;_name_or_path&#34;, &#34;model&#34;),
+                    task_name=getattr(self.args, &#34;task_name&#34;, &#34;unknown&#34;),
+                )
+
+    def _determine_best_metric(self, metrics, trial=None):
+        &#34;&#34;&#34;Safely determine best metric without throwing KeyError if key mismatch occurs.&#34;&#34;&#34;
+        target = getattr(self.args, &#34;metric_for_best_model&#34;, None)
+        if target and target not in metrics:
+            candidates = [
+                target,
+                f&#34;eval_{target}&#34;,
+                target.replace(&#34;eval_&#34;, &#34;&#34;),
+                &#34;eval_accuracy&#34;,
+                &#34;accuracy&#34;,
+                &#34;eval_loss&#34;,
+                &#34;loss&#34;,
+            ]
+            found = False
+            for cand in candidates:
+                if cand in metrics:
+                    self.args.metric_for_best_model = cand
+                    found = True
+                    break
+            if not found:
+                return False
+        return super()._determine_best_metric(metrics, trial=trial)
+
+    def _cleanup_memory(self) -&gt; None:
+        &#34;&#34;&#34;Free GPU/MPS/CPU memory after each training run.&#34;&#34;&#34;
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            if hasattr(torch.cuda, &#34;ipc_collect&#34;):
+                torch.cuda.ipc_collect()
+        if hasattr(torch, &#34;mps&#34;) and hasattr(torch.mps, &#34;empty_cache&#34;):
+            try:
+                torch.mps.empty_cache()
+            except (
+                AttributeError,
+                KeyError,
+                RuntimeError,
+                TypeError,
+                ValueError,
+                OSError,
+                ImportError,
+            ):
+                pass</code></pre>
+</details>
+<div class="desc"><p>Trainer that supports pre/post training callbacks and attention map logging.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>transformers.trainer.Trainer</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.trainer.trainer.SVDAwareTrainer.evaluate"><code class="name flex">
+<span>def <span class="ident">evaluate</span></span>(<span>self, eval_dataset=None, **kwargs) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def evaluate(self, eval_dataset=None, **kwargs) -&gt; Any:
+    &#34;&#34;&#34;Run evaluate and return results.&#34;&#34;&#34;
+    if self.log_attention_maps:
+        self._register_attention_hooks()
+    result = super().evaluate(eval_dataset, **kwargs)
+    if self.log_attention_maps and self.visualizer:
+        self._save_attention_maps()
+    self._remove_attention_hooks()
+    return result</code></pre>
+</details>
+<div class="desc"><p>Run evaluate and return results.</p></div>
+</dd>
+<dt id="neuralops.trainer.trainer.SVDAwareTrainer.train"><code class="name flex">
+<span>def <span class="ident">train</span></span>(<span>self, *args, **kwargs) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def train(self, *args, **kwargs) -&gt; Any:
+    &#34;&#34;&#34;Fit the model on the provided dataset.&#34;&#34;&#34;
+    if self.pre_train_callback:
+        self.pre_train_callback(self.model, self.train_dataset)
+    if self.log_attention_maps:
+        self._register_attention_hooks()
+    result = super().train(*args, **kwargs)
+    if self.post_train_callback:
+        self.post_train_callback(self.model, self.train_dataset)
+    self._remove_attention_hooks()
+    self._cleanup_memory()
+    return result</code></pre>
+</details>
+<div class="desc"><p>Fit the model on the provided dataset.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.trainer" href="index.html">neuralops.trainer</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.trainer.trainer.create_trainer" href="#neuralops.trainer.trainer.create_trainer">create_trainer</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.trainer.trainer.SVDAwareTrainer" href="#neuralops.trainer.trainer.SVDAwareTrainer">SVDAwareTrainer</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.trainer.trainer.SVDAwareTrainer.evaluate" href="#neuralops.trainer.trainer.SVDAwareTrainer.evaluate">evaluate</a></code></li>
+<li><code><a title="neuralops.trainer.trainer.SVDAwareTrainer.train" href="#neuralops.trainer.trainer.SVDAwareTrainer.train">train</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.trainer.trainer.SVDAwareTrainer" href="#neuralops.trainer.trainer.SVDAwareTrainer">SVDAwareTrainer</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.trainer.trainer.SVDAwareTrainer.evaluate" href="#neuralops.trainer.trainer.SVDAwareTrainer.evaluate">evaluate</a></code></li>
+<li><code><a title="neuralops.trainer.trainer.SVDAwareTrainer.train" href="#neuralops.trainer.trainer.SVDAwareTrainer.train">train</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

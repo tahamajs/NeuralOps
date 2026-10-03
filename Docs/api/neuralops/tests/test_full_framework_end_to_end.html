@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tests.test_full_framework_end_to_end API documentation</title>
+<meta name="description" content="Master End-to-End Test Suite for All Framework Features and Subsystems …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.tests.test_full_framework_end_to_end</code></h1>
+</header>
+<section id="section-intro">
+<p>Master End-to-End Test Suite for All Framework Features and Subsystems.</p>
+<p>Tests:
+1. Core Configuration &amp; Serialization
+2. Registries (Attentions &amp; Compressors)
+3. Universal Weight Transfer (Adapters)
+4. Attention Mask Subsystem (2D, 3D, 4D, Causal, Sliding Window)
+5. Attention Injection Pipeline
+6. Compression Engine Lifecycle
+7. Evaluation Metrics &amp; Profiler
+8. Complete Trainer Optimization Loop
+9. Worker Status &amp; Telemetry Output</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd"><code class="flex name class">
+<span>class <span class="ident">TestFullFrameworkEndToEnd</span></span>
+<span>(</span><span>methodName='runTest')</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TestFullFrameworkEndToEnd(unittest.TestCase):
+    &#34;&#34;&#34;Comprehensive test case covering all framework components and execution paths.&#34;&#34;&#34;
+
+    def setUp(self) -&gt; None:
+        self.temp_dir = tempfile.mkdtemp()
+        self.hidden_size = 64
+        self.num_heads = 4
+        self.seq_len = 16
+        self.batch_size = 2
+        self.config = DistilBertConfig(
+            vocab_size=100,
+            dim=self.hidden_size,
+            hidden_dim=self.hidden_size * 2,
+            n_heads=self.num_heads,
+            n_layers=2,
+            hidden_size=self.hidden_size,
+            num_attention_heads=self.num_heads,
+            num_labels=2,
+        )
+
+    def tearDown(self) -&gt; None:
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+
+    # --------------------------------------------------------------------------
+    # 1. Configuration &amp; Serialization Tests
+    # --------------------------------------------------------------------------
+    def test_01_configuration_lifecycle(self) -&gt; None:
+        &#34;&#34;&#34;Test ExperimentConfig creation and serialization.&#34;&#34;&#34;
+        ds_cfg = DatasetConfig(name=&#34;sst2&#34;, path=&#34;glue/sst2&#34;, task_type=&#34;single&#34;, num_labels=2)
+        exp_cfg = ExperimentConfig(
+            svd_ranks=[8, 16, 32],
+            datasets=[ds_cfg],
+            batch_size=4,
+            epochs=1,
+            learning_rate=5e-5,
+            output_dir=self.temp_dir,
+        )
+
+        self.assertEqual(exp_cfg.batch_size, 4)
+        self.assertEqual(exp_cfg.epochs, 1)
+        self.assertEqual(exp_cfg.svd_ranks, [8, 16, 32])
+        self.assertEqual(len(exp_cfg.datasets), 1)
+
+    # --------------------------------------------------------------------------
+    # 2. Registry Integrity &amp; Discovery Tests
+    # --------------------------------------------------------------------------
+    def test_02_registries_completeness(self) -&gt; None:
+        &#34;&#34;&#34;Verify ATTENTION_REGISTRY and COMPRESSOR_REGISTRY contain all expected modules.&#34;&#34;&#34;
+        attn_keys = ATTENTION_REGISTRY.keys()
+        comp_keys = COMPRESSOR_REGISTRY.keys()
+
+        self.assertGreaterEqual(len(attn_keys), 100, f&#34;Expected &gt;=100 attention keys, found {len(attn_keys)}&#34;)
+        self.assertGreaterEqual(len(comp_keys), 60, f&#34;Expected &gt;=60 compressor keys, found {len(comp_keys)}&#34;)
+
+        for k in [&#34;svd_linear_attn&#34;, &#34;asvd&#34;, &#34;aegis_v4&#34;, &#34;samba_moe&#34;, &#34;span_expanded&#34;, &#34;gated_linear_attn&#34;]:
+            self.assertIn(k, attn_keys, f&#34;Expected attention key &#39;{k}&#39; missing from registry&#34;)
+
+        for k in [&#34;aasvd&#34;, &#34;slicegpt&#34;, &#34;sparsegpt&#34;, &#34;astro&#34;, &#34;faq&#34;, &#34;admm_pruner&#34;, &#34;zerokv_neo&#34;]:
+            self.assertIn(k, comp_keys, f&#34;Expected compressor key &#39;{k}&#39; missing from registry&#34;)
+
+    # --------------------------------------------------------------------------
+    # 3. Universal Adapter &amp; Weight Copying Tests
+    # --------------------------------------------------------------------------
+    def test_03_universal_adapter_weight_extraction(self) -&gt; None:
+        &#34;&#34;&#34;Verify UniversalAdapter extracts Q, K, V, and Output projections from diverse blocks.&#34;&#34;&#34;
+        block = ToyEncoderBlock(hidden_size=64, num_heads=4)
+        
+        q_w, q_b = UniversalAdapter.get_weight_bias(block, &#34;q&#34;)
+        k_w, k_b = UniversalAdapter.get_weight_bias(block, &#34;k&#34;)
+        v_w, v_b = UniversalAdapter.get_weight_bias(block, &#34;v&#34;)
+        o_w, o_b = UniversalAdapter.get_weight_bias(block, &#34;o&#34;)
+
+        self.assertEqual(q_w.shape, (64, 64))
+        self.assertEqual(k_w.shape, (64, 64))
+        self.assertEqual(v_w.shape, (64, 64))
+        self.assertEqual(o_w.shape, (64, 64))
+        self.assertIsNotNone(q_b)
+        self.assertIsNotNone(o_b)
+
+    # --------------------------------------------------------------------------
+    # 4. Attention Mask Engine Tests (2D, 3D, 4D, Causal, Band)
+    # --------------------------------------------------------------------------
+    def test_04_attention_mask_subsystem(self) -&gt; None:
+        &#34;&#34;&#34;Verify attention mask helpers across 2D, 3D, 4D, and causal configurations.&#34;&#34;&#34;
+        B, N = 2, 8
+        device = torch.device(&#34;cpu&#34;)
+
+        mask_2d = torch.ones((B, N), dtype=torch.long)
+        mask_2d[0, 6:] = 0
+        valid = get_token_valid_mask(mask_2d, B, N, device)
+        self.assertEqual(valid.shape, (B, N))
+        self.assertEqual(valid[0, 5].item(), True)
+        self.assertEqual(valid[0, 6].item(), False)
+
+        causal = create_causal_mask(N, device)
+        self.assertEqual(causal.shape, (N, N))
+        self.assertTrue(causal[0, 0].item())
+        self.assertFalse(causal[0, 1].item())
+
+        band = create_band_mask(N, window_size=2, device=device)
+        self.assertEqual(band.shape, (N, N))
+        self.assertTrue(band[0, 2].item())
+        self.assertFalse(band[0, 4].item())
+
+        scores = torch.zeros((B, 1, N, N))
+        masked_scores = apply_attention_mask(scores, mask_2d)
+        self.assertEqual(masked_scores.shape, (B, 1, N, N))
+        self.assertLess(masked_scores[0, 0, :, 7].mean().item(), -9000.0)
+
+    # --------------------------------------------------------------------------
+    # 5. Attention Injection Subsystem
+    # --------------------------------------------------------------------------
+    def test_05_attention_injection_pipeline(self) -&gt; None:
+        &#34;&#34;&#34;Verify dynamic injection of custom attention modules into transformer backbones.&#34;&#34;&#34;
+        class DummyConfig:
+            num_attention_heads = 4
+            hidden_size = 64
+        
+        model = ToyClassifierModel(hidden_size=64, num_layers=2)
+        model.config = DummyConfig()
+        
+        dummy_input = torch.randint(0, 100, (2, 16))
+    
+        out_before = model(dummy_input)
+        self.assertEqual(out_before.logits.shape, (2, 2))
+    
+        model_injected = replace_attention(model, attention_key=&#34;svd_linear_attn&#34;, rank=16)
+        out_after = model_injected(dummy_input)
+        self.assertEqual(out_after.logits.shape, (2, 2))
+
+        loss = out_after.logits.sum()
+        loss.backward()
+        self.assertIsNotNone(model_injected.classifier.weight.grad)
+
+    # --------------------------------------------------------------------------
+    # 6. Compression Engine Lifecycle
+    # --------------------------------------------------------------------------
+    def test_06_compression_engine_lifecycle(self) -&gt; None:
+        &#34;&#34;&#34;Verify compression engine factorizes linear modules and returns accurate statistics.&#34;&#34;&#34;
+        model = ToyClassifierModel(hidden_size=64, num_layers=2)
+        compressor_fn = COMPRESSOR_REGISTRY.get(&#34;direct_svd&#34;)
+        self.assertIsNotNone(compressor_fn)
+
+        compressor = compressor_fn(model, rank=16)
+        compressed_model, stats = compressor.compress()
+        dummy_input = torch.randint(0, 100, (2, 16))
+        out = compressed_model(dummy_input)
+        self.assertEqual(out.logits.shape, (2, 2))
+
+    # --------------------------------------------------------------------------
+    # 7. Metrics &amp; ModelProfiler
+    # --------------------------------------------------------------------------
+    def test_07_metrics_and_profiler(self) -&gt; None:
+        &#34;&#34;&#34;Verify accuracy/f1 computation and ModelProfiler forward hooks.&#34;&#34;&#34;
+        preds = np.array([0, 1, 1, 0])
+        labels = np.array([0, 1, 1, 0])
+        acc = compute_accuracy(preds, labels)
+        f1 = compute_f1(preds, labels)
+
+        self.assertEqual(acc, 1.0)
+        self.assertEqual(f1, 1.0)
+
+        model = ToyClassifierModel(hidden_size=64, num_layers=2)
+        profiler = ModelProfiler(model)
+        profiler.start_profiling()
+        
+        dummy_input = torch.randint(0, 100, (2, 16))
+        _ = model(dummy_input)
+        profiler.stop_profiling()
+        
+        report = profiler.get_report()
+        self.assertIsInstance(report, dict)
+
+    # --------------------------------------------------------------------------
+    # 8. Complete Trainer Execution Loop
+    # --------------------------------------------------------------------------
+    def test_08_trainer_execution_loop(self) -&gt; None:
+        &#34;&#34;&#34;Verify end-to-end training and evaluation loops on synthetic batches.&#34;&#34;&#34;
+        model = ToyClassifierModel(hidden_size=64, num_layers=2)
+        optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
+        criterion = nn.CrossEntropyLoss()
+
+        dataset = [
+            {&#34;input_ids&#34;: torch.randint(0, 100, (4, 16)), &#34;labels&#34;: torch.tensor([0, 1, 1, 0])},
+            {&#34;input_ids&#34;: torch.randint(0, 100, (4, 16)), &#34;labels&#34;: torch.tensor([1, 0, 0, 1])},
+        ]
+
+        model.train()
+        for batch in dataset:
+            optimizer.zero_grad()
+            out = model(batch[&#34;input_ids&#34;])
+            loss = criterion(out.logits, batch[&#34;labels&#34;])
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            optimizer.step()
+
+        self.assertFalse(torch.isnan(loss))
+        self.assertGreater(loss.item(), 0.0)
+
+        model.eval()
+        all_preds = []
+        all_labels = []
+        with torch.no_grad():
+            for batch in dataset:
+                out = model(batch[&#34;input_ids&#34;])
+                preds = torch.argmax(out.logits, dim=-1)
+                all_preds.extend(preds.tolist())
+                all_labels.extend(batch[&#34;labels&#34;].tolist())
+
+        self.assertEqual(len(all_preds), 8)
+        self.assertEqual(len(all_labels), 8)
+
+    # --------------------------------------------------------------------------
+    # 9. Worker Status &amp; Telemetry Output
+    # --------------------------------------------------------------------------
+    def test_09_worker_telemetry_serialization(self) -&gt; None:
+        &#34;&#34;&#34;Verify worker telemetry status file creation and JSON schema.&#34;&#34;&#34;
+        status_data = {
+            &#34;status&#34;: &#34;running&#34;,
+            &#34;attn&#34;: &#34;svd_linear_attn&#34;,
+            &#34;task&#34;: &#34;sst2&#34;,
+            &#34;idx&#34;: &#34;1/100&#34;,
+            &#34;last_acc&#34;: 84.63,
+            &#34;last_loss&#34;: 0.4989,
+            &#34;pid&#34;: os.getpid(),
+        }
+        status_file = os.path.join(self.temp_dir, &#34;worker_status_test.json&#34;)
+        with open(status_file, &#34;w&#34;) as f:
+            json.dump(status_data, f, indent=2)
+
+        self.assertTrue(os.path.exists(status_file))
+        with open(status_file, &#34;r&#34;) as f:
+            loaded = json.load(f)
+
+        self.assertEqual(loaded[&#34;status&#34;], &#34;running&#34;)
+        self.assertEqual(loaded[&#34;last_acc&#34;], 84.63)</code></pre>
+</details>
+<div class="desc"><p>Comprehensive test case covering all framework components and execution paths.</p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>unittest.case.TestCase</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.setUp"><code class="name flex">
+<span>def <span class="ident">setUp</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setUp(self) -&gt; None:
+    self.temp_dir = tempfile.mkdtemp()
+    self.hidden_size = 64
+    self.num_heads = 4
+    self.seq_len = 16
+    self.batch_size = 2
+    self.config = DistilBertConfig(
+        vocab_size=100,
+        dim=self.hidden_size,
+        hidden_dim=self.hidden_size * 2,
+        n_heads=self.num_heads,
+        n_layers=2,
+        hidden_size=self.hidden_size,
+        num_attention_heads=self.num_heads,
+        num_labels=2,
+    )</code></pre>
+</details>
+<div class="desc"><p>Hook method for setting up the test fixture before exercising it.</p></div>
+</dd>
+<dt id="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.tearDown"><code class="name flex">
+<span>def <span class="ident">tearDown</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def tearDown(self) -&gt; None:
+    if os.path.exists(self.temp_dir):
+        shutil.rmtree(self.temp_dir)</code></pre>
+</details>
+<div class="desc"><p>Hook method for deconstructing the test fixture after testing it.</p></div>
+</dd>
+<dt id="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_01_configuration_lifecycle"><code class="name flex">
+<span>def <span class="ident">test_01_configuration_lifecycle</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_01_configuration_lifecycle(self) -&gt; None:
+    &#34;&#34;&#34;Test ExperimentConfig creation and serialization.&#34;&#34;&#34;
+    ds_cfg = DatasetConfig(name=&#34;sst2&#34;, path=&#34;glue/sst2&#34;, task_type=&#34;single&#34;, num_labels=2)
+    exp_cfg = ExperimentConfig(
+        svd_ranks=[8, 16, 32],
+        datasets=[ds_cfg],
+        batch_size=4,
+        epochs=1,
+        learning_rate=5e-5,
+        output_dir=self.temp_dir,
+    )
+
+    self.assertEqual(exp_cfg.batch_size, 4)
+    self.assertEqual(exp_cfg.epochs, 1)
+    self.assertEqual(exp_cfg.svd_ranks, [8, 16, 32])
+    self.assertEqual(len(exp_cfg.datasets), 1)</code></pre>
+</details>
+<div class="desc"><p>Test ExperimentConfig creation and serialization.</p></div>
+</dd>
+<dt id="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_02_registries_completeness"><code class="name flex">
+<span>def <span class="ident">test_02_registries_completeness</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_02_registries_completeness(self) -&gt; None:
+    &#34;&#34;&#34;Verify ATTENTION_REGISTRY and COMPRESSOR_REGISTRY contain all expected modules.&#34;&#34;&#34;
+    attn_keys = ATTENTION_REGISTRY.keys()
+    comp_keys = COMPRESSOR_REGISTRY.keys()
+
+    self.assertGreaterEqual(len(attn_keys), 100, f&#34;Expected &gt;=100 attention keys, found {len(attn_keys)}&#34;)
+    self.assertGreaterEqual(len(comp_keys), 60, f&#34;Expected &gt;=60 compressor keys, found {len(comp_keys)}&#34;)
+
+    for k in [&#34;svd_linear_attn&#34;, &#34;asvd&#34;, &#34;aegis_v4&#34;, &#34;samba_moe&#34;, &#34;span_expanded&#34;, &#34;gated_linear_attn&#34;]:
+        self.assertIn(k, attn_keys, f&#34;Expected attention key &#39;{k}&#39; missing from registry&#34;)
+
+    for k in [&#34;aasvd&#34;, &#34;slicegpt&#34;, &#34;sparsegpt&#34;, &#34;astro&#34;, &#34;faq&#34;, &#34;admm_pruner&#34;, &#34;zerokv_neo&#34;]:
+        self.assertIn(k, comp_keys, f&#34;Expected compressor key &#39;{k}&#39; missing from registry&#34;)</code></pre>
+</details>
+<div class="desc"><p>Verify ATTENTION_REGISTRY and COMPRESSOR_REGISTRY contain all expected modules.</p></div>
+</dd>
+<dt id="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_03_universal_adapter_weight_extraction"><code class="name flex">
+<span>def <span class="ident">test_03_universal_adapter_weight_extraction</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_03_universal_adapter_weight_extraction(self) -&gt; None:
+    &#34;&#34;&#34;Verify UniversalAdapter extracts Q, K, V, and Output projections from diverse blocks.&#34;&#34;&#34;
+    block = ToyEncoderBlock(hidden_size=64, num_heads=4)
+    
+    q_w, q_b = UniversalAdapter.get_weight_bias(block, &#34;q&#34;)
+    k_w, k_b = UniversalAdapter.get_weight_bias(block, &#34;k&#34;)
+    v_w, v_b = UniversalAdapter.get_weight_bias(block, &#34;v&#34;)
+    o_w, o_b = UniversalAdapter.get_weight_bias(block, &#34;o&#34;)
+
+    self.assertEqual(q_w.shape, (64, 64))
+    self.assertEqual(k_w.shape, (64, 64))
+    self.assertEqual(v_w.shape, (64, 64))
+    self.assertEqual(o_w.shape, (64, 64))
+    self.assertIsNotNone(q_b)
+    self.assertIsNotNone(o_b)</code></pre>
+</details>
+<div class="desc"><p>Verify UniversalAdapter extracts Q, K, V, and Output projections from diverse blocks.</p></div>
+</dd>
+<dt id="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_04_attention_mask_subsystem"><code class="name flex">
+<span>def <span class="ident">test_04_attention_mask_subsystem</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_04_attention_mask_subsystem(self) -&gt; None:
+    &#34;&#34;&#34;Verify attention mask helpers across 2D, 3D, 4D, and causal configurations.&#34;&#34;&#34;
+    B, N = 2, 8
+    device = torch.device(&#34;cpu&#34;)
+
+    mask_2d = torch.ones((B, N), dtype=torch.long)
+    mask_2d[0, 6:] = 0
+    valid = get_token_valid_mask(mask_2d, B, N, device)
+    self.assertEqual(valid.shape, (B, N))
+    self.assertEqual(valid[0, 5].item(), True)
+    self.assertEqual(valid[0, 6].item(), False)
+
+    causal = create_causal_mask(N, device)
+    self.assertEqual(causal.shape, (N, N))
+    self.assertTrue(causal[0, 0].item())
+    self.assertFalse(causal[0, 1].item())
+
+    band = create_band_mask(N, window_size=2, device=device)
+    self.assertEqual(band.shape, (N, N))
+    self.assertTrue(band[0, 2].item())
+    self.assertFalse(band[0, 4].item())
+
+    scores = torch.zeros((B, 1, N, N))
+    masked_scores = apply_attention_mask(scores, mask_2d)
+    self.assertEqual(masked_scores.shape, (B, 1, N, N))
+    self.assertLess(masked_scores[0, 0, :, 7].mean().item(), -9000.0)</code></pre>
+</details>
+<div class="desc"><p>Verify attention mask helpers across 2D, 3D, 4D, and causal configurations.</p></div>
+</dd>
+<dt id="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_05_attention_injection_pipeline"><code class="name flex">
+<span>def <span class="ident">test_05_attention_injection_pipeline</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_05_attention_injection_pipeline(self) -&gt; None:
+    &#34;&#34;&#34;Verify dynamic injection of custom attention modules into transformer backbones.&#34;&#34;&#34;
+    class DummyConfig:
+        num_attention_heads = 4
+        hidden_size = 64
+    
+    model = ToyClassifierModel(hidden_size=64, num_layers=2)
+    model.config = DummyConfig()
+    
+    dummy_input = torch.randint(0, 100, (2, 16))
+
+    out_before = model(dummy_input)
+    self.assertEqual(out_before.logits.shape, (2, 2))
+
+    model_injected = replace_attention(model, attention_key=&#34;svd_linear_attn&#34;, rank=16)
+    out_after = model_injected(dummy_input)
+    self.assertEqual(out_after.logits.shape, (2, 2))
+
+    loss = out_after.logits.sum()
+    loss.backward()
+    self.assertIsNotNone(model_injected.classifier.weight.grad)</code></pre>
+</details>
+<div class="desc"><p>Verify dynamic injection of custom attention modules into transformer backbones.</p></div>
+</dd>
+<dt id="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_06_compression_engine_lifecycle"><code class="name flex">
+<span>def <span class="ident">test_06_compression_engine_lifecycle</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_06_compression_engine_lifecycle(self) -&gt; None:
+    &#34;&#34;&#34;Verify compression engine factorizes linear modules and returns accurate statistics.&#34;&#34;&#34;
+    model = ToyClassifierModel(hidden_size=64, num_layers=2)
+    compressor_fn = COMPRESSOR_REGISTRY.get(&#34;direct_svd&#34;)
+    self.assertIsNotNone(compressor_fn)
+
+    compressor = compressor_fn(model, rank=16)
+    compressed_model, stats = compressor.compress()
+    dummy_input = torch.randint(0, 100, (2, 16))
+    out = compressed_model(dummy_input)
+    self.assertEqual(out.logits.shape, (2, 2))</code></pre>
+</details>
+<div class="desc"><p>Verify compression engine factorizes linear modules and returns accurate statistics.</p></div>
+</dd>
+<dt id="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_07_metrics_and_profiler"><code class="name flex">
+<span>def <span class="ident">test_07_metrics_and_profiler</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_07_metrics_and_profiler(self) -&gt; None:
+    &#34;&#34;&#34;Verify accuracy/f1 computation and ModelProfiler forward hooks.&#34;&#34;&#34;
+    preds = np.array([0, 1, 1, 0])
+    labels = np.array([0, 1, 1, 0])
+    acc = compute_accuracy(preds, labels)
+    f1 = compute_f1(preds, labels)
+
+    self.assertEqual(acc, 1.0)
+    self.assertEqual(f1, 1.0)
+
+    model = ToyClassifierModel(hidden_size=64, num_layers=2)
+    profiler = ModelProfiler(model)
+    profiler.start_profiling()
+    
+    dummy_input = torch.randint(0, 100, (2, 16))
+    _ = model(dummy_input)
+    profiler.stop_profiling()
+    
+    report = profiler.get_report()
+    self.assertIsInstance(report, dict)</code></pre>
+</details>
+<div class="desc"><p>Verify accuracy/f1 computation and ModelProfiler forward hooks.</p></div>
+</dd>
+<dt id="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_08_trainer_execution_loop"><code class="name flex">
+<span>def <span class="ident">test_08_trainer_execution_loop</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_08_trainer_execution_loop(self) -&gt; None:
+    &#34;&#34;&#34;Verify end-to-end training and evaluation loops on synthetic batches.&#34;&#34;&#34;
+    model = ToyClassifierModel(hidden_size=64, num_layers=2)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
+    criterion = nn.CrossEntropyLoss()
+
+    dataset = [
+        {&#34;input_ids&#34;: torch.randint(0, 100, (4, 16)), &#34;labels&#34;: torch.tensor([0, 1, 1, 0])},
+        {&#34;input_ids&#34;: torch.randint(0, 100, (4, 16)), &#34;labels&#34;: torch.tensor([1, 0, 0, 1])},
+    ]
+
+    model.train()
+    for batch in dataset:
+        optimizer.zero_grad()
+        out = model(batch[&#34;input_ids&#34;])
+        loss = criterion(out.logits, batch[&#34;labels&#34;])
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        optimizer.step()
+
+    self.assertFalse(torch.isnan(loss))
+    self.assertGreater(loss.item(), 0.0)
+
+    model.eval()
+    all_preds = []
+    all_labels = []
+    with torch.no_grad():
+        for batch in dataset:
+            out = model(batch[&#34;input_ids&#34;])
+            preds = torch.argmax(out.logits, dim=-1)
+            all_preds.extend(preds.tolist())
+            all_labels.extend(batch[&#34;labels&#34;].tolist())
+
+    self.assertEqual(len(all_preds), 8)
+    self.assertEqual(len(all_labels), 8)</code></pre>
+</details>
+<div class="desc"><p>Verify end-to-end training and evaluation loops on synthetic batches.</p></div>
+</dd>
+<dt id="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_09_worker_telemetry_serialization"><code class="name flex">
+<span>def <span class="ident">test_09_worker_telemetry_serialization</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_09_worker_telemetry_serialization(self) -&gt; None:
+    &#34;&#34;&#34;Verify worker telemetry status file creation and JSON schema.&#34;&#34;&#34;
+    status_data = {
+        &#34;status&#34;: &#34;running&#34;,
+        &#34;attn&#34;: &#34;svd_linear_attn&#34;,
+        &#34;task&#34;: &#34;sst2&#34;,
+        &#34;idx&#34;: &#34;1/100&#34;,
+        &#34;last_acc&#34;: 84.63,
+        &#34;last_loss&#34;: 0.4989,
+        &#34;pid&#34;: os.getpid(),
+    }
+    status_file = os.path.join(self.temp_dir, &#34;worker_status_test.json&#34;)
+    with open(status_file, &#34;w&#34;) as f:
+        json.dump(status_data, f, indent=2)
+
+    self.assertTrue(os.path.exists(status_file))
+    with open(status_file, &#34;r&#34;) as f:
+        loaded = json.load(f)
+
+    self.assertEqual(loaded[&#34;status&#34;], &#34;running&#34;)
+    self.assertEqual(loaded[&#34;last_acc&#34;], 84.63)</code></pre>
+</details>
+<div class="desc"><p>Verify worker telemetry status file creation and JSON schema.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_full_framework_end_to_end.ToyClassifierModel"><code class="flex name class">
+<span>class <span class="ident">ToyClassifierModel</span></span>
+<span>(</span><span>hidden_size: int = 64, num_layers: int = 2, num_classes: int = 2)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ToyClassifierModel(nn.Module):
+    &#34;&#34;&#34;Mock sequence classification model with transformer layers.&#34;&#34;&#34;
+
+    def __init__(self, hidden_size: int = 64, num_layers: int = 2, num_classes: int = 2) -&gt; None:
+        super().__init__()
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.embeddings = nn.Embedding(100, hidden_size)
+        self.transformer = nn.ModuleDict({
+            &#34;layer&#34;: nn.ModuleList([ToyEncoderBlock(hidden_size=hidden_size) for _ in range(num_layers)])
+        })
+        self.classifier = nn.Linear(hidden_size, num_classes)
+
+    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor = None) -&gt; Any:
+        x = self.embeddings(input_ids)
+        for layer in self.transformer[&#34;layer&#34;]:
+            x = layer(x, attention_mask=attention_mask)
+        # Sequence pooler on [CLS] token (index 0)
+        cls_rep = x[:, 0, :]
+        logits = self.classifier(cls_rep)
+        
+        class Output:
+            def __init__(self, logits, hidden_states):
+                self.logits = logits
+                self.hidden_states = hidden_states
+        return Output(logits=logits, hidden_states=x)</code></pre>
+</details>
+<div class="desc"><p>Mock sequence classification model with transformer layers.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_full_framework_end_to_end.ToyClassifierModel.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, input_ids: torch.Tensor, attention_mask: torch.Tensor = None) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor = None) -&gt; Any:
+    x = self.embeddings(input_ids)
+    for layer in self.transformer[&#34;layer&#34;]:
+        x = layer(x, attention_mask=attention_mask)
+    # Sequence pooler on [CLS] token (index 0)
+    cls_rep = x[:, 0, :]
+    logits = self.classifier(cls_rep)
+    
+    class Output:
+        def __init__(self, logits, hidden_states):
+            self.logits = logits
+            self.hidden_states = hidden_states
+    return Output(logits=logits, hidden_states=x)</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_full_framework_end_to_end.ToyEncoderBlock"><code class="flex name class">
+<span>class <span class="ident">ToyEncoderBlock</span></span>
+<span>(</span><span>hidden_size: int = 64, num_heads: int = 4)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ToyEncoderBlock(nn.Module):
+    &#34;&#34;&#34;Mock transformer block matching DistilBERT architecture.&#34;&#34;&#34;
+
+    def __init__(self, hidden_size: int = 64, num_heads: int = 4) -&gt; None:
+        super().__init__()
+        self.hidden_size = hidden_size
+        self.num_heads = num_heads
+        self.q_lin = nn.Linear(hidden_size, hidden_size)
+        self.k_lin = nn.Linear(hidden_size, hidden_size)
+        self.v_lin = nn.Linear(hidden_size, hidden_size)
+        self.out_lin = nn.Linear(hidden_size, hidden_size)
+        self.norm1 = nn.LayerNorm(hidden_size)
+        self.fc1 = nn.Linear(hidden_size, hidden_size * 2)
+        self.act = nn.GELU()
+        self.fc2 = nn.Linear(hidden_size * 2, hidden_size)
+        self.norm2 = nn.LayerNorm(hidden_size)
+
+    def forward(self, x: torch.Tensor, attention_mask: torch.Tensor = None) -&gt; torch.Tensor:
+        B, N, D = x.shape
+        q = self.q_lin(x).view(B, N, self.num_heads, D // self.num_heads).transpose(1, 2)
+        k = self.k_lin(x).view(B, N, self.num_heads, D // self.num_heads).transpose(1, 2)
+        v = self.v_lin(x).view(B, N, self.num_heads, D // self.num_heads).transpose(1, 2)
+        scores = torch.matmul(q, k.transpose(-2, -1)) / (D // self.num_heads) ** 0.5
+        probs = torch.softmax(scores, dim=-1)
+        ctx = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, N, D)
+        attn_out = self.out_lin(ctx)
+        x = self.norm1(x + attn_out)
+        ffn_out = self.fc2(self.act(self.fc1(x)))
+        return self.norm2(x + ffn_out)</code></pre>
+</details>
+<div class="desc"><p>Mock transformer block matching DistilBERT architecture.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_full_framework_end_to_end.ToyEncoderBlock.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor, attention_mask: torch.Tensor = None) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor, attention_mask: torch.Tensor = None) -&gt; torch.Tensor:
+    B, N, D = x.shape
+    q = self.q_lin(x).view(B, N, self.num_heads, D // self.num_heads).transpose(1, 2)
+    k = self.k_lin(x).view(B, N, self.num_heads, D // self.num_heads).transpose(1, 2)
+    v = self.v_lin(x).view(B, N, self.num_heads, D // self.num_heads).transpose(1, 2)
+    scores = torch.matmul(q, k.transpose(-2, -1)) / (D // self.num_heads) ** 0.5
+    probs = torch.softmax(scores, dim=-1)
+    ctx = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, N, D)
+    attn_out = self.out_lin(ctx)
+    x = self.norm1(x + attn_out)
+    ffn_out = self.fc2(self.act(self.fc1(x)))
+    return self.norm2(x + ffn_out)</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.tests" href="index.html">neuralops.tests</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd" href="#neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd">TestFullFrameworkEndToEnd</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.setUp" href="#neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.setUp">setUp</a></code></li>
+<li><code><a title="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.tearDown" href="#neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.tearDown">tearDown</a></code></li>
+<li><code><a title="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_01_configuration_lifecycle" href="#neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_01_configuration_lifecycle">test_01_configuration_lifecycle</a></code></li>
+<li><code><a title="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_02_registries_completeness" href="#neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_02_registries_completeness">test_02_registries_completeness</a></code></li>
+<li><code><a title="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_03_universal_adapter_weight_extraction" href="#neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_03_universal_adapter_weight_extraction">test_03_universal_adapter_weight_extraction</a></code></li>
+<li><code><a title="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_04_attention_mask_subsystem" href="#neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_04_attention_mask_subsystem">test_04_attention_mask_subsystem</a></code></li>
+<li><code><a title="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_05_attention_injection_pipeline" href="#neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_05_attention_injection_pipeline">test_05_attention_injection_pipeline</a></code></li>
+<li><code><a title="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_06_compression_engine_lifecycle" href="#neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_06_compression_engine_lifecycle">test_06_compression_engine_lifecycle</a></code></li>
+<li><code><a title="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_07_metrics_and_profiler" href="#neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_07_metrics_and_profiler">test_07_metrics_and_profiler</a></code></li>
+<li><code><a title="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_08_trainer_execution_loop" href="#neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_08_trainer_execution_loop">test_08_trainer_execution_loop</a></code></li>
+<li><code><a title="neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_09_worker_telemetry_serialization" href="#neuralops.tests.test_full_framework_end_to_end.TestFullFrameworkEndToEnd.test_09_worker_telemetry_serialization">test_09_worker_telemetry_serialization</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_full_framework_end_to_end.ToyClassifierModel" href="#neuralops.tests.test_full_framework_end_to_end.ToyClassifierModel">ToyClassifierModel</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_full_framework_end_to_end.ToyClassifierModel.forward" href="#neuralops.tests.test_full_framework_end_to_end.ToyClassifierModel.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_full_framework_end_to_end.ToyEncoderBlock" href="#neuralops.tests.test_full_framework_end_to_end.ToyEncoderBlock">ToyEncoderBlock</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_full_framework_end_to_end.ToyEncoderBlock.forward" href="#neuralops.tests.test_full_framework_end_to_end.ToyEncoderBlock.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

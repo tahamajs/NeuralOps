@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.attentions.samba_moe API documentation</title>
+<meta name="description" content="Samba-MoE: Hybrid Selective State Space (SAMBA-M3) + REAP-MoE Block.
+Combines local sliding-window attention, spectral Mamba SSM, and MoE routing.
+…">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.attentions.samba_moe</code></h1>
+</header>
+<section id="section-intro">
+<p>Samba-MoE: Hybrid Selective State Space (SAMBA-M3) + REAP-MoE Block.
+Combines local sliding-window attention, spectral Mamba SSM, and MoE routing.
+Hardened for production use across diverse transformer architectures:
+- DistilBERT (Flat MHA)
+- RoBERTa / BERT (Nested Encoder Self-Attention)
+- GPT-2 (Causal Decoder with Conv1D)
+- Qwen / LLaMA (GQA with Rotary Position Embeddings)</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.attentions.samba_moe.inject_samba_moe"><code class="name flex">
+<span>def <span class="ident">inject_samba_moe</span></span>(<span>layer: Any = None,<br>model: Any = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: torch.nn.modules.module.Module | None = None,<br>**kwargs: Any) ‑> <a title="neuralops.attentions.samba_moe.SambaMoEBlock" href="#neuralops.attentions.samba_moe.SambaMoEBlock">SambaMoEBlock</a> | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;samba_moe_inject&#34;)
+@ATTENTION_REGISTRY.register(&#34;inject_samba_moe&#34;)
+def inject_samba_moe(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    **kwargs: Any,
+) -&gt; SambaMoEBlock | None:
+    &#34;&#34;&#34;Safe injection hook for SambaMoEBlock.&#34;&#34;&#34;
+    try:
+        target = layer if layer is not None else model
+        if target is None:
+            target = kwargs.get(&#34;model&#34;, kwargs.get(&#34;layer&#34;))
+        if target is None:
+            return None
+
+        # 1. Whole model traversal
+        layer_list = None
+        if hasattr(target, &#34;distilbert&#34;) and hasattr(target.distilbert, &#34;transformer&#34;):
+            layer_list = target.distilbert.transformer.layer
+        elif hasattr(target, &#34;roberta&#34;) and hasattr(target.roberta, &#34;encoder&#34;):
+            layer_list = target.roberta.encoder.layer
+        elif hasattr(target, &#34;bert&#34;) and hasattr(target.bert, &#34;encoder&#34;):
+            layer_list = target.bert.encoder.layer
+        elif hasattr(target, &#34;transformer&#34;) and hasattr(target.transformer, &#34;h&#34;):
+            layer_list = target.transformer.h
+        elif hasattr(target, &#34;model&#34;) and hasattr(target.model, &#34;layers&#34;):
+            layer_list = target.model.layers
+        elif hasattr(target, &#34;encoder&#34;) and hasattr(target.encoder, &#34;layer&#34;):
+            layer_list = target.encoder.layer
+        elif hasattr(target, &#34;layers&#34;) and isinstance(target.layers, (nn.ModuleList, list)):
+            layer_list = target.layers
+
+        if layer_list is not None:
+            num_injected = 0
+            tot = len(layer_list)
+            for idx, lyr in enumerate(layer_list):
+                res = inject_samba_moe(
+                    layer=lyr,
+                    model_config=model_config,
+                    comp_config=comp_config,
+                    layer_idx=idx,
+                    total_layers=tot,
+                    **kwargs,
+                )
+                if res is not None:
+                    num_injected += 1
+            return target if num_injected &gt; 0 else None
+
+        # 2. Single layer injection
+        src = old_attn
+        if src is None:
+            for attr in (&#34;attention&#34;, &#34;self_attn&#34;, &#34;attn&#34;, &#34;self&#34;):
+                if hasattr(layer, attr):
+                    src = getattr(layer, attr)
+                    break
+
+        if src is None:
+            return None
+
+        if model_config is None and hasattr(layer, &#34;config&#34;):
+            model_config = layer.config
+        if model_config is None and hasattr(src, &#34;config&#34;):
+            model_config = src.config
+
+        d_model = 768
+        n_heads = 12
+        if src is not None:
+            d_model = getattr(
+                src,
+                &#34;hidden_size&#34;,
+                getattr(src, &#34;embed_dim&#34;, getattr(src, &#34;all_head_size&#34;, 768)),
+            )
+            if hasattr(src, &#34;q_proj&#34;) and hasattr(src.q_proj, &#34;in_features&#34;):
+                d_model = src.q_proj.in_features
+            elif hasattr(src, &#34;q_lin&#34;) and hasattr(src.q_lin, &#34;in_features&#34;):
+                d_model = src.q_lin.in_features
+            n_heads = getattr(src, &#34;num_heads&#34;, getattr(src, &#34;num_attention_heads&#34;, 12))
+
+        if model_config is not None:
+            d_model = _cfg_get(model_config, &#34;hidden_size&#34;, _cfg_get(model_config, &#34;dim&#34;, d_model))
+            n_heads = _cfg_get(model_config, &#34;num_attention_heads&#34;, n_heads)
+
+        lora_rank = kwargs.pop(&#34;lora_rank&#34;, _cfg_get(comp_config, &#34;lora_rank&#34;, 16))
+        lora_alpha = kwargs.pop(&#34;lora_alpha&#34;, _cfg_get(comp_config, &#34;lora_alpha&#34;, 32.0))
+        n_experts = kwargs.pop(&#34;n_experts&#34;, _cfg_get(comp_config, &#34;n_experts&#34;, 8))
+        kwargs.pop(&#34;d_model&#34;, None)
+        kwargs.pop(&#34;n_heads&#34;, None)
+        kwargs.pop(&#34;num_heads&#34;, None)
+        kwargs.pop(&#34;hidden_size&#34;, None)
+
+        new_block = SambaMoEBlock(
+            config=model_config,
+            d_model=d_model,
+            n_heads=n_heads,
+            n_experts=n_experts,
+            lora_rank=lora_rank,
+            lora_alpha=lora_alpha,
+            pretrained_attn=src,
+            **kwargs,
+        )
+
+        if src is not None:
+            dev = next(src.parameters()).device if list(src.parameters()) else None
+            dt = next(src.parameters()).dtype if list(src.parameters()) else None
+            if dev is not None and dt is not None:
+                new_block = new_block.to(device=dev, dtype=dt)
+
+        for attr in (&#34;self_attn&#34;, &#34;attn&#34;, &#34;self&#34;):
+            if hasattr(layer, attr):
+                setattr(layer, attr, new_block)
+                return new_block
+        if hasattr(layer, &#34;attention&#34;):
+            if hasattr(layer.attention, &#34;self&#34;):
+                layer.attention.self = new_block
+            else:
+                layer.attention = new_block
+            return new_block
+        layer.attention = new_block
+        return new_block
+    except Exception as e:
+        logger.error(&#34;inject_samba_moe failed at layer %d: %s&#34;, layer_idx, e)
+        return None</code></pre>
+</details>
+<div class="desc"><p>Safe injection hook for SambaMoEBlock.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.attentions.samba_moe.MinimalMoEFallback"><code class="flex name class">
+<span>class <span class="ident">MinimalMoEFallback</span></span>
+<span>(</span><span>d_model: int = 768, n_experts: int = 4)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class MinimalMoEFallback(nn.Module):
+    &#34;&#34;&#34;Fallback MoE layer when REAPMoE cannot be instantiated.&#34;&#34;&#34;
+
+    def __init__(self, d_model: int = 768, n_experts: int = 4):
+        super().__init__()
+        self.d_model = d_model
+        self.n_experts = n_experts
+        self.router = nn.Linear(d_model, n_experts, bias=False)
+        self.experts = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Linear(d_model, d_model * 2),
+                    nn.GELU(),
+                    nn.Linear(d_model * 2, d_model),
+                )
+                for _ in range(n_experts)
+            ]
+        )
+        self.aux_loss: torch.Tensor = torch.tensor(0.0)
+
+    def forward(self, x: torch.Tensor) -&gt; tuple[torch.Tensor, torch.Tensor]:
+        router_in = self.router.in_features
+        if x.shape[-1] != router_in:
+            x_in = (
+                F.pad(x, (0, router_in - x.shape[-1]))
+                if x.shape[-1] &lt; router_in
+                else x[..., :router_in]
+            )
+        else:
+            x_in = x
+        logits = self.router(x_in)
+        weights = F.softmax(logits, dim=-1)
+        out = torch.zeros_like(x_in)
+        for i, exp in enumerate(self.experts):
+            out = out + weights[..., i : i + 1] * exp(x_in)
+        if out.shape[-1] != x.shape[-1]:
+            out = (
+                F.pad(out, (0, x.shape[-1] - out.shape[-1]))
+                if out.shape[-1] &lt; x.shape[-1]
+                else out[..., : x.shape[-1]]
+            )
+        self.aux_loss = torch.tensor(0.0, device=x.device)
+        return out, weights</code></pre>
+</details>
+<div class="desc"><p>Fallback MoE layer when REAPMoE cannot be instantiated.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.samba_moe.MinimalMoEFallback.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> tuple[torch.Tensor, torch.Tensor]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; tuple[torch.Tensor, torch.Tensor]:
+    router_in = self.router.in_features
+    if x.shape[-1] != router_in:
+        x_in = (
+            F.pad(x, (0, router_in - x.shape[-1]))
+            if x.shape[-1] &lt; router_in
+            else x[..., :router_in]
+        )
+    else:
+        x_in = x
+    logits = self.router(x_in)
+    weights = F.softmax(logits, dim=-1)
+    out = torch.zeros_like(x_in)
+    for i, exp in enumerate(self.experts):
+        out = out + weights[..., i : i + 1] * exp(x_in)
+    if out.shape[-1] != x.shape[-1]:
+        out = (
+            F.pad(out, (0, x.shape[-1] - out.shape[-1]))
+            if out.shape[-1] &lt; x.shape[-1]
+            else out[..., : x.shape[-1]]
+        )
+    self.aux_loss = torch.tensor(0.0, device=x.device)
+    return out, weights</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.attentions.samba_moe.SambaMoEBlock"><code class="flex name class">
+<span>class <span class="ident">SambaMoEBlock</span></span>
+<span>(</span><span>config: Any | None = None,<br>d_model: int | None = None,<br>n_heads: int | None = None,<br>n_experts: int = 8,<br>window: int = 128,<br>rank: int | None = 64,<br>pretrained_attn: torch.nn.modules.module.Module | None = None,<br>lora_rank: int = 16,<br>lora_alpha: float = 32.0,<br>is_decoder: bool | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;samba_moe&#34;, supports_causal=True, supports_gqa=True)
+class SambaMoEBlock(BaseAttention):
+    r&#34;&#34;&#34;SambaMoE: SAMBA-M3 + REAP-MoE Hybrid Architecture with pretrained weight copying.&#34;&#34;&#34;
+
+    supports_gqa: bool = True
+    supports_causal: bool = True
+
+    def __init__(
+        self,
+        config: Any | None = None,
+        d_model: int | None = None,
+        n_heads: int | None = None,
+        n_experts: int = 8,
+        window: int = 128,
+        rank: int | None = 64,
+        pretrained_attn: nn.Module | None = None,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        is_decoder: bool | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(config, rank)
+        hidden_size = kwargs.get(&#34;d_model&#34;) or kwargs.get(&#34;hidden_size&#34;) or d_model
+        if pretrained_attn is not None:
+            cand = getattr(
+                pretrained_attn,
+                &#34;hidden_size&#34;,
+                getattr(
+                    pretrained_attn,
+                    &#34;embed_dim&#34;,
+                    getattr(pretrained_attn, &#34;all_head_size&#34;, None),
+                ),
+            )
+            if (
+                cand is None
+                and hasattr(pretrained_attn, &#34;q_proj&#34;)
+                and hasattr(pretrained_attn.q_proj, &#34;in_features&#34;)
+            ):
+                cand = pretrained_attn.q_proj.in_features
+            elif (
+                cand is None
+                and hasattr(pretrained_attn, &#34;q_lin&#34;)
+                and hasattr(pretrained_attn.q_lin, &#34;in_features&#34;)
+            ):
+                cand = pretrained_attn.q_lin.in_features
+            if cand is not None:
+                hidden_size = cand
+        if hidden_size is None and config is not None:
+            hidden_size = _cfg_get(config, &#34;hidden_size&#34;, _cfg_get(config, &#34;d_model&#34;, None))
+        hidden_size = int(hidden_size or 768)
+
+        if config is not None:
+            n_heads = _cfg_get(
+                config,
+                &#34;num_attention_heads&#34;,
+                _cfg_get(config, &#34;n_heads&#34;, n_heads or 12),
+            )
+            n_experts = _cfg_get(config, &#34;num_experts&#34;, _cfg_get(config, &#34;n_experts&#34;, n_experts))
+            window = _cfg_get(config, &#34;window_size&#34;, window)
+        else:
+            n_heads = n_heads or 12
+
+        self.d_model = hidden_size
+        self.n_heads = int(n_heads)
+        self.lora_rank = kwargs.get(&#34;lora_rank&#34;, _cfg_get(config, &#34;lora_rank&#34;, lora_rank))
+        self.lora_alpha = kwargs.get(&#34;lora_alpha&#34;, _cfg_get(config, &#34;lora_alpha&#34;, lora_alpha))
+
+        self.swa_mamba = SAMBAM3Block(
+            config=config,
+            d_model=self.d_model,
+            n_heads=self.n_heads,
+            window=window,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            is_decoder=is_decoder,
+            **kwargs,
+        )
+
+        if REAPMoE is not None:
+            try:
+                self.moe = REAPMoE(self.d_model, n_experts=n_experts)
+            except Exception as e:
+                logger.warning(&#34;REAPMoE construction failed: %s, using MinimalMoEFallback&#34;, e)
+                self.moe = MinimalMoEFallback(self.d_model, n_experts=min(4, n_experts))
+        else:
+            self.moe = MinimalMoEFallback(self.d_model, n_experts=min(4, n_experts))
+
+        self.norm = nn.LayerNorm(self.d_model)
+        self.aux_loss: torch.Tensor = torch.tensor(0.0)
+
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    @property
+    def is_nested_encoder(self) -&gt; bool:
+        return getattr(self.swa_mamba, &#34;is_nested_encoder&#34;, False)
+
+    @is_nested_encoder.setter
+    def is_nested_encoder(self, val: bool) -&gt; None:
+        if hasattr(self, &#34;swa_mamba&#34;):
+            self.swa_mamba.is_nested_encoder = val
+
+    @property
+    def query(self) -&gt; nn.Module:
+        return getattr(self.swa_mamba, &#34;q_lin&#34;, None)
+
+    @property
+    def key(self) -&gt; nn.Module:
+        return getattr(self.swa_mamba, &#34;k_lin&#34;, None)
+
+    @property
+    def value(self) -&gt; nn.Module:
+        return getattr(self.swa_mamba, &#34;v_lin&#34;, None)
+
+    def copy_weights(self, pretrained_attn: nn.Module) -&gt; None:
+        &#34;&#34;&#34;Propagate weight transfer to internal SAMBA-M3 and SSM components.&#34;&#34;&#34;
+        src_cls_name = getattr(pretrained_attn, &#34;__class__&#34;, type(pretrained_attn)).__name__
+        has_out_proj = any(
+            hasattr(pretrained_attn, attr)
+            for attr in (
+                &#34;dense&#34;,
+                &#34;out_proj&#34;,
+                &#34;c_proj&#34;,
+                &#34;out_lin&#34;,
+                &#34;o_proj&#34;,
+                &#34;wo&#34;,
+                &#34;o&#34;,
+                &#34;proj&#34;,
+            )
+        )
+        if (
+            src_cls_name in (&#34;BertSelfAttention&#34;, &#34;RobertaSelfAttention&#34;)
+            or (src_cls_name.endswith(&#34;SelfAttention&#34;) and not has_out_proj)
+            or (hasattr(pretrained_attn, &#34;query&#34;) and not has_out_proj)
+            or (hasattr(pretrained_attn, &#34;self&#34;) and hasattr(pretrained_attn, &#34;output&#34;))
+        ):
+            self.is_nested_encoder = True
+            if hasattr(self, &#34;swa_mamba&#34;):
+                self.swa_mamba.is_nested_encoder = True
+
+        if hasattr(self.swa_mamba, &#34;copy_weights&#34;):
+            self.swa_mamba.copy_weights(pretrained_attn)
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        *args: Any,
+        **kwargs: Any,
+    ) -&gt; tuple[torch.Tensor, torch.Tensor | None] | torch.Tensor:
+        if encoder_hidden_states is not None:
+            raise NotImplementedError(&#34;SambaMoEBlock does not support cross-attention&#34;)
+
+        x, attn_w = self.swa_mamba(
+            hidden_states,
+            attention_mask=attention_mask,
+            head_mask=head_mask,
+            encoder_hidden_states=encoder_hidden_states,
+            encoder_attention_mask=encoder_attention_mask,
+            past_key_value=past_key_value,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            return_dict=return_dict,
+            **kwargs,
+        )
+
+        router_in = getattr(self.moe, &#34;d_model&#34;, self.d_model)
+        if hasattr(self.moe, &#34;router&#34;) and hasattr(self.moe.router, &#34;in_features&#34;):
+            router_in = self.moe.router.in_features
+
+        if x.shape[-1] != router_in:
+            x_moe = (
+                F.pad(x, (0, router_in - x.shape[-1]))
+                if x.shape[-1] &lt; router_in
+                else x[..., :router_in]
+            )
+        else:
+            x_moe = x
+
+        moe_out, _ = self.moe(x_moe)
+        self.aux_loss = getattr(self.moe, &#34;aux_loss&#34;, torch.tensor(0.0, device=x.device))
+
+        if moe_out.shape[-1] != x.shape[-1]:
+            moe_out = (
+                F.pad(moe_out, (0, x.shape[-1] - moe_out.shape[-1]))
+                if moe_out.shape[-1] &lt; x.shape[-1]
+                else moe_out[..., : x.shape[-1]]
+            )
+
+        target_dtype = hidden_states.dtype
+        x = x.to(target_dtype)
+        moe_out = moe_out.to(target_dtype)
+
+        if self.is_nested_encoder:
+            # Nested encoder: bypass outer LayerNorm (self.norm) and double residual
+            out = x + moe_out
+        else:
+            out = self.norm(x + moe_out).to(target_dtype)
+
+        if out.shape[-1] != hidden_states.shape[-1]:
+            out = (
+                F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1]))
+                if out.shape[-1] &lt; hidden_states.shape[-1]
+                else out[..., : hidden_states.shape[-1]]
+            )
+        return (out.to(target_dtype), attn_w)</code></pre>
+</details>
+<div class="desc"><p>SambaMoE: SAMBA-M3 + REAP-MoE Hybrid Architecture with pretrained weight copying.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.samba_moe.SambaMoEBlock.supports_causal"><code class="name">var <span class="ident">supports_causal</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.samba_moe.SambaMoEBlock.supports_gqa"><code class="name">var <span class="ident">supports_gqa</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.samba_moe.SambaMoEBlock.is_nested_encoder"><code class="name">prop <span class="ident">is_nested_encoder</span> : bool</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def is_nested_encoder(self) -&gt; bool:
+    return getattr(self.swa_mamba, &#34;is_nested_encoder&#34;, False)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.samba_moe.SambaMoEBlock.key"><code class="name">prop <span class="ident">key</span> : torch.nn.modules.module.Module</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def key(self) -&gt; nn.Module:
+    return getattr(self.swa_mamba, &#34;k_lin&#34;, None)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.samba_moe.SambaMoEBlock.query"><code class="name">prop <span class="ident">query</span> : torch.nn.modules.module.Module</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def query(self) -&gt; nn.Module:
+    return getattr(self.swa_mamba, &#34;q_lin&#34;, None)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.samba_moe.SambaMoEBlock.value"><code class="name">prop <span class="ident">value</span> : torch.nn.modules.module.Module</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def value(self) -&gt; nn.Module:
+    return getattr(self.swa_mamba, &#34;v_lin&#34;, None)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.samba_moe.SambaMoEBlock.copy_weights"><code class="name flex">
+<span>def <span class="ident">copy_weights</span></span>(<span>self, pretrained_attn: torch.nn.modules.module.Module) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def copy_weights(self, pretrained_attn: nn.Module) -&gt; None:
+    &#34;&#34;&#34;Propagate weight transfer to internal SAMBA-M3 and SSM components.&#34;&#34;&#34;
+    src_cls_name = getattr(pretrained_attn, &#34;__class__&#34;, type(pretrained_attn)).__name__
+    has_out_proj = any(
+        hasattr(pretrained_attn, attr)
+        for attr in (
+            &#34;dense&#34;,
+            &#34;out_proj&#34;,
+            &#34;c_proj&#34;,
+            &#34;out_lin&#34;,
+            &#34;o_proj&#34;,
+            &#34;wo&#34;,
+            &#34;o&#34;,
+            &#34;proj&#34;,
+        )
+    )
+    if (
+        src_cls_name in (&#34;BertSelfAttention&#34;, &#34;RobertaSelfAttention&#34;)
+        or (src_cls_name.endswith(&#34;SelfAttention&#34;) and not has_out_proj)
+        or (hasattr(pretrained_attn, &#34;query&#34;) and not has_out_proj)
+        or (hasattr(pretrained_attn, &#34;self&#34;) and hasattr(pretrained_attn, &#34;output&#34;))
+    ):
+        self.is_nested_encoder = True
+        if hasattr(self, &#34;swa_mamba&#34;):
+            self.swa_mamba.is_nested_encoder = True
+
+    if hasattr(self.swa_mamba, &#34;copy_weights&#34;):
+        self.swa_mamba.copy_weights(pretrained_attn)</code></pre>
+</details>
+<div class="desc"><p>Propagate weight transfer to internal SAMBA-M3 and SSM components.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseAttention.extra_repr" href="../core/base.html#neuralops.core.base.BaseAttention.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.forward" href="../core/base.html#neuralops.core.base.BaseAttention.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.attentions" href="index.html">neuralops.attentions</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.attentions.samba_moe.inject_samba_moe" href="#neuralops.attentions.samba_moe.inject_samba_moe">inject_samba_moe</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.attentions.samba_moe.MinimalMoEFallback" href="#neuralops.attentions.samba_moe.MinimalMoEFallback">MinimalMoEFallback</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.samba_moe.MinimalMoEFallback.forward" href="#neuralops.attentions.samba_moe.MinimalMoEFallback.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.samba_moe.SambaMoEBlock" href="#neuralops.attentions.samba_moe.SambaMoEBlock">SambaMoEBlock</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.attentions.samba_moe.SambaMoEBlock.copy_weights" href="#neuralops.attentions.samba_moe.SambaMoEBlock.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.attentions.samba_moe.SambaMoEBlock.is_nested_encoder" href="#neuralops.attentions.samba_moe.SambaMoEBlock.is_nested_encoder">is_nested_encoder</a></code></li>
+<li><code><a title="neuralops.attentions.samba_moe.SambaMoEBlock.key" href="#neuralops.attentions.samba_moe.SambaMoEBlock.key">key</a></code></li>
+<li><code><a title="neuralops.attentions.samba_moe.SambaMoEBlock.query" href="#neuralops.attentions.samba_moe.SambaMoEBlock.query">query</a></code></li>
+<li><code><a title="neuralops.attentions.samba_moe.SambaMoEBlock.supports_causal" href="#neuralops.attentions.samba_moe.SambaMoEBlock.supports_causal">supports_causal</a></code></li>
+<li><code><a title="neuralops.attentions.samba_moe.SambaMoEBlock.supports_gqa" href="#neuralops.attentions.samba_moe.SambaMoEBlock.supports_gqa">supports_gqa</a></code></li>
+<li><code><a title="neuralops.attentions.samba_moe.SambaMoEBlock.value" href="#neuralops.attentions.samba_moe.SambaMoEBlock.value">value</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

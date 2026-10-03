@@ -1,0 +1,1019 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.direct_svd API documentation</title>
+<meta name="description" content="Direct SVD Compressor: Truncated SVD low-rank factorized layer replacement.
+Registered as &#39;direct_svd&#39;. Production hardened for multi-architecture …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.direct_svd</code></h1>
+</header>
+<section id="section-intro">
+<p>Direct SVD Compressor: Truncated SVD low-rank factorized layer replacement.
+Registered as 'direct_svd'. Production hardened for multi-architecture compatibility
+(DistilBERT, RoBERTa, GPT-2, Qwen3.5) with error validation, Conv1D support, rank bounds, and safe fallback.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.direct_svd.direct_svd_compressor_factory"><code class="name flex">
+<span>def <span class="ident">direct_svd_compressor_factory</span></span>(<span>model: Any, comp_config: Any = None, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;direct_svd_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;direct_svd_compressor_factory&#34;)
+def direct_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Direct SVD factory function.&#34;&#34;&#34;
+    return_tuple = kwargs.pop(&#34;return_stats&#34;, kwargs.pop(&#34;return_tuple&#34;, False))
+    rank = kwargs.pop(
+        &#34;rank&#34;,
+        _cfg_get(comp_config, &#34;direct_svd_rank&#34;, _cfg_get(comp_config, &#34;rank&#34;, 32)),
+    )
+    max_error = kwargs.pop(
+        &#34;max_error&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;direct_svd_max_error&#34;,
+            _cfg_get(comp_config, &#34;max_error&#34;, 0.35),
+        ),
+    )
+    fallback = kwargs.pop(
+        &#34;fallback_to_original&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;direct_svd_fallback_to_original&#34;,
+            _cfg_get(comp_config, &#34;fallback_to_original&#34;, True),
+        ),
+    )
+    lora_r = kwargs.pop(
+        &#34;lora_r&#34;, _cfg_get(comp_config, &#34;lora_r&#34;, _cfg_get(comp_config, &#34;lora_rank&#34;, 0))
+    )
+    lora_alpha = kwargs.pop(&#34;lora_alpha&#34;, _cfg_get(comp_config, &#34;lora_alpha&#34;, 1.0))
+    skip_attention_qkv = kwargs.pop(
+        &#34;skip_attention_qkv&#34;, _cfg_get(comp_config, &#34;skip_attention_qkv&#34;, True)
+    )
+    protect_critical = kwargs.pop(
+        &#34;protect_critical&#34;, _cfg_get(comp_config, &#34;protect_critical&#34;, True)
+    )
+    target_attention_only = kwargs.pop(
+        &#34;target_attention_only&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;direct_svd_target_attention_only&#34;,
+            _cfg_get(comp_config, &#34;target_attention_only&#34;, False),
+        ),
+    )
+
+    compressor = DirectSVDCompressor(
+        model,
+        rank=rank,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        skip_attention_qkv=skip_attention_qkv,
+        protect_critical=protect_critical,
+        target_attention_only=target_attention_only,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_tuple:
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>Direct SVD factory function.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.direct_svd.direct_svd_factory"><code class="name flex">
+<span>def <span class="ident">direct_svd_factory</span></span>(<span>model: Any, comp_config: Any = None, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;direct_svd_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;direct_svd_compressor_factory&#34;)
+def direct_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Direct SVD factory function.&#34;&#34;&#34;
+    return_tuple = kwargs.pop(&#34;return_stats&#34;, kwargs.pop(&#34;return_tuple&#34;, False))
+    rank = kwargs.pop(
+        &#34;rank&#34;,
+        _cfg_get(comp_config, &#34;direct_svd_rank&#34;, _cfg_get(comp_config, &#34;rank&#34;, 32)),
+    )
+    max_error = kwargs.pop(
+        &#34;max_error&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;direct_svd_max_error&#34;,
+            _cfg_get(comp_config, &#34;max_error&#34;, 0.35),
+        ),
+    )
+    fallback = kwargs.pop(
+        &#34;fallback_to_original&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;direct_svd_fallback_to_original&#34;,
+            _cfg_get(comp_config, &#34;fallback_to_original&#34;, True),
+        ),
+    )
+    lora_r = kwargs.pop(
+        &#34;lora_r&#34;, _cfg_get(comp_config, &#34;lora_r&#34;, _cfg_get(comp_config, &#34;lora_rank&#34;, 0))
+    )
+    lora_alpha = kwargs.pop(&#34;lora_alpha&#34;, _cfg_get(comp_config, &#34;lora_alpha&#34;, 1.0))
+    skip_attention_qkv = kwargs.pop(
+        &#34;skip_attention_qkv&#34;, _cfg_get(comp_config, &#34;skip_attention_qkv&#34;, True)
+    )
+    protect_critical = kwargs.pop(
+        &#34;protect_critical&#34;, _cfg_get(comp_config, &#34;protect_critical&#34;, True)
+    )
+    target_attention_only = kwargs.pop(
+        &#34;target_attention_only&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;direct_svd_target_attention_only&#34;,
+            _cfg_get(comp_config, &#34;target_attention_only&#34;, False),
+        ),
+    )
+
+    compressor = DirectSVDCompressor(
+        model,
+        rank=rank,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        skip_attention_qkv=skip_attention_qkv,
+        protect_critical=protect_critical,
+        target_attention_only=target_attention_only,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_tuple:
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>Direct SVD factory function.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.direct_svd.DirectSVDCompressor"><code class="flex name class">
+<span>class <span class="ident">DirectSVDCompressor</span></span>
+<span>(</span><span>model: nn.Module,<br>rank: int | None = 32,<br>min_rank: int = 16,<br>rank_ratio: float | None = None,<br>max_error: float = 0.35,<br>fallback_to_original: bool = True,<br>protect_critical: bool = True,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0,<br>skip_attention_qkv: bool = True,<br>target_attention_only: bool = False,<br>max_retries: int = 2,<br>target_modules: list[str] | None = None,<br>cfg: Any | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;direct_svd&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;direct_svd_compressor&#34;)
+class DirectSVDCompressor(BaseCompressor):
+    is_custom_attention: bool = True
+    &#34;&#34;&#34;
+    Direct SVD Compressor.
+
+    Performs direct truncated SVD on target linear and Conv1D layers:
+        W ≈ U_r * Sigma_r * V_r^T
+    Allocates singular energy symmetrically:
+        U_factor = U_r * sqrt(Sigma_r)
+        V_factor = sqrt(Sigma_r) * V_r^T
+    and replaces dense layers with factorized SVDLinear modules.
+
+    Production hardening features:
+    - Relative Frobenius reconstruction error validation with configurable max_error.
+    - Automatic rank escalation retries when error threshold is exceeded.
+    - Safe fallback to original layer if error remains high or decomposition fails.
+    - Fallback and non-target layers frozen (requires_grad=False) during recovery.
+    - Robust LoRALinear and Conv1D support (with transpose and adapter preservation).
+    - target_attention_only parameter: restricts SVD factorization to attention projections.
+    - Strict rank safeguard: enforces r &lt; min(in_f, out_f) and parameter reduction r * (in + out) &lt; in * out.
+    - Unified critical-layer protection via should_compress_linear.
+    - Full FP32 computation for numerical stability.
+    - Real metrics recording: original_layer_count, compressed_layer_count, fallback_layer_count, effective_parameter_ratio.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        model: nn.Module,
+        rank: int | None = 32,
+        min_rank: int = 16,
+        rank_ratio: float | None = None,
+        max_error: float = 0.35,
+        fallback_to_original: bool = True,
+        protect_critical: bool = True,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        skip_attention_qkv: bool = True,
+        target_attention_only: bool = False,
+        max_retries: int = 2,
+        target_modules: list[str] | None = None,
+        cfg: Any | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;direct_svd&#34;, **kwargs)
+        cfg_obj = cfg if cfg is not None else kwargs.get(&#34;comp_config&#34;)
+        self.cfg = cfg_obj
+
+        rank = _cfg_get(
+            cfg_obj,
+            &#34;direct_svd_rank&#34;,
+            _cfg_get(cfg_obj, &#34;svd_rank&#34;, _cfg_get(cfg_obj, &#34;rank&#34;, rank)),
+        )
+        min_rank = _cfg_get(cfg_obj, &#34;min_rank&#34;, min_rank)
+        rank_ratio = _cfg_get(
+            cfg_obj,
+            &#34;direct_svd_rank_ratio&#34;,
+            _cfg_get(cfg_obj, &#34;rank_ratio&#34;, rank_ratio),
+        )
+        max_error = _cfg_get(
+            cfg_obj, &#34;direct_svd_max_error&#34;, _cfg_get(cfg_obj, &#34;max_error&#34;, max_error)
+        )
+        fallback_to_original = _cfg_get(
+            cfg_obj,
+            &#34;direct_svd_fallback_to_original&#34;,
+            _cfg_get(cfg_obj, &#34;fallback_to_original&#34;, fallback_to_original),
+        )
+        protect_critical = _cfg_get(cfg_obj, &#34;protect_critical&#34;, protect_critical)
+        lora_r = _cfg_get(cfg_obj, &#34;lora_r&#34;, _cfg_get(cfg_obj, &#34;lora_rank&#34;, lora_r))
+        lora_alpha = _cfg_get(cfg_obj, &#34;lora_alpha&#34;, lora_alpha)
+        skip_attention_qkv = _cfg_get(cfg_obj, &#34;skip_attention_qkv&#34;, False)
+        target_attention_only = _cfg_get(
+            cfg_obj,
+            &#34;direct_svd_target_attention_only&#34;,
+            _cfg_get(cfg_obj, &#34;target_attention_only&#34;, target_attention_only),
+        )
+
+        if &#34;rank&#34; in kwargs and kwargs[&#34;rank&#34;] is not None:
+            rank = kwargs[&#34;rank&#34;]
+
+        self.rank = rank
+        self.min_rank = max(1, int(min_rank))
+        self.rank_ratio = float(rank_ratio) if rank_ratio is not None else None
+        if max_error is None:
+            max_error = 0.05
+
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.protect_critical = bool(protect_critical)
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.skip_attention_qkv = bool(skip_attention_qkv)
+        self.target_attention_only = bool(target_attention_only)
+        self.max_retries = int(max_retries)
+        self.target_modules = target_modules
+
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_ranks: dict[str, int] = {}
+        self.layer_errors: dict[str, float] = {}
+
+    def _is_gqa_asymmetric(self, name: str, module: nn.Module) -&gt; bool:
+        if not self.skip_attention_qkv:
+            return False
+        cfg = getattr(self.model, &#34;config&#34;, None)
+        num_heads = getattr(cfg, &#34;num_attention_heads&#34;, None)
+        num_kv_heads = getattr(cfg, &#34;num_key_value_heads&#34;, None)
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads &lt; num_heads:
+            name_lower = name.lower()
+            if any(
+                p in name_lower
+                for p in [
+                    &#34;q_proj&#34;,
+                    &#34;k_proj&#34;,
+                    &#34;v_proj&#34;,
+                    &#34;query&#34;,
+                    &#34;key&#34;,
+                    &#34;value&#34;,
+                    &#34;c_attn&#34;,
+                ]
+            ):
+                return True
+        return False
+
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        name_lower = name.lower()
+        if any(part in name.split(&#34;.&#34;) for part in [&#34;lora_A&#34;, &#34;lora_B&#34;, &#34;base_layer&#34;]):
+            return False
+        if self.protect_critical and any(
+            k in name_lower
+            for k in [
+                &#34;classifier&#34;,
+                &#34;score&#34;,
+                &#34;lm_head&#34;,
+                &#34;pooler&#34;,
+                &#34;embed&#34;,
+                &#34;logits_processor&#34;,
+            ]
+        ):
+            return False
+
+        target_mod = getattr(module, &#34;base_layer&#34;, module)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_linear = isinstance(target_mod, nn.Linear)
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+        if not (is_linear or is_conv1d):
+            return False
+        if isinstance(target_mod, SVDLinear) or isinstance(module, SVDLinear):
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self._is_gqa_asymmetric(name, target_mod):
+            return False
+
+        if self.target_attention_only:
+            last_part = name.split(&#34;.&#34;)[-1]
+            is_attn = (last_part in _ATTN_NAMES) or any(
+                k in name_lower for k in (&#34;attn&#34;, &#34;attention&#34;)
+            )
+            if not is_attn:
+                return False
+
+        if self.target_modules is not None:
+            return any(t in name for t in self.target_modules)
+        return True
+
+    def _determine_rank(self, in_f: int, out_f: int, target_r: int | None) -&gt; int:
+        &#34;&#34;&#34;Compute target rank guaranteeing parameter reduction and strict bounds.&#34;&#34;&#34;
+        max_reduction_r = max(1, (in_f * out_f) // (in_f + out_f) - 1)
+        max_r = max(1, min(in_f - 1, out_f - 1, max_reduction_r))
+
+        ref_dim = 768.0
+        if (
+            hasattr(self, &#34;model&#34;)
+            and hasattr(self.model, &#34;config&#34;)
+            and self.model.config is not None
+        ):
+            cfg_obj = self.model.config
+            ref_dim = float(
+                getattr(
+                    cfg_obj,
+                    &#34;hidden_size&#34;,
+                    getattr(cfg_obj, &#34;d_model&#34;, getattr(cfg_obj, &#34;n_embd&#34;, 768.0)),
+                )
+            )
+        ref_dim = max(1.0, ref_dim)
+
+        if self.rank_ratio is not None:
+            r = int(round(min(in_f, out_f) * max(0.01, min(0.99, self.rank_ratio))))
+        elif target_r is not None:
+            r = int(round(target_r * (min(in_f, out_f) / ref_dim)))
+        else:
+            r = int(round(32 * (min(in_f, out_f) / ref_dim)))
+
+        # Dynamic architecture-aware rank selection for large models
+        r = get_dynamic_compression_rank(
+            in_f,
+            out_f,
+            model_or_family=self.model,
+            default_rank=r,
+            comp_config=getattr(self, &#34;cfg&#34;, None),
+        )
+        r = max(self.min_rank, r)
+        return max(1, min(r, max_r))
+
+    def compress_linear(
+        self,
+        layer: nn.Module,
+        rank: int | None = None,
+    ) -&gt; tuple[SVDLinear | None, float, int]:
+        &#34;&#34;&#34;
+        Decompose a single linear or Conv1D layer via SVD with symmetric factor distribution.
+        Returns: (svd_layer, relative_reconstruction_error, chosen_rank)
+        &#34;&#34;&#34;
+        target_mod = getattr(layer, &#34;base_layer&#34;, layer)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+        raw_w = target_mod.weight.data
+
+        if is_conv1d:
+            in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+            W = raw_w.t().contiguous().float()  # [out_features, in_features]
+        else:
+            out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+            W = raw_w.float()  # [out_features, in_features]
+
+        max_reduction_r = max(1, (in_f * out_f) // (in_f + out_f) - 1)
+        max_r = max(1, min(in_f - 1, out_f - 1, max_reduction_r))
+
+        current_r = self._determine_rank(in_f, out_f, rank)
+        device = raw_w.device
+        dtype = raw_w.dtype
+        norm_w = torch.norm(W, p=&#34;fro&#34;).item()
+
+        try:
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        except Exception as e:
+            logger.warning(&#34;DirectSVD SVD computation failed: %s&#34;, e)
+            return None, 1.0, 0
+
+        best_svd_layer: SVDLinear | None = None
+        best_err = 1.0
+        chosen_r = current_r
+
+        # Retry with higher rank if error exceeds threshold
+        for attempt in range(self.max_retries + 1):
+            r = max(1, min(current_r, max_r))
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
+            V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
+
+            W_recon = torch.matmul(U_r.float(), V_r.float())
+            if norm_w &lt; 1e-12:
+                err = 0.0
+            else:
+                err = float(torch.norm(W - W_recon, p=&#34;fro&#34;).item() / norm_w)
+
+            best_err = err
+            chosen_r = r
+
+            # Determine LoRA parameters to preserve or initialize
+            eff_lora_r = self.lora_r
+            eff_lora_alpha = self.lora_alpha
+            if hasattr(layer, &#34;lora_A&#34;) and hasattr(layer, &#34;r&#34;):
+                eff_lora_r = getattr(layer, &#34;r&#34;, self.lora_r)
+                eff_lora_alpha = getattr(layer, &#34;lora_alpha&#34;, self.lora_alpha)
+
+            svd_layer = SVDLinear(
+                in_features=in_f,
+                out_features=out_f,
+                rank=r,
+                bias=target_mod.bias is not None,
+                dtype=dtype,
+                device=device,
+                lora_r=eff_lora_r,
+                lora_alpha=eff_lora_alpha,
+            )
+            svd_layer.set_low_rank_factors(U_r, V_r)
+            if target_mod.bias is not None and svd_layer.bias is not None:
+                svd_layer.bias.data.copy_(target_mod.bias.data)
+
+            # If the original layer was a LoRALinear wrapper, copy over existing adapter weights
+            if (
+                hasattr(layer, &#34;lora_A&#34;)
+                and hasattr(layer, &#34;lora_B&#34;)
+                and svd_layer.lora_A is not None
+            ):
+                try:
+                    if (
+                        hasattr(layer.lora_A, &#34;weight&#34;)
+                        and svd_layer.lora_A.weight.shape == layer.lora_A.weight.shape
+                    ):
+                        svd_layer.lora_A.weight.data.copy_(layer.lora_A.weight.data)
+                    if (
+                        hasattr(layer.lora_B, &#34;weight&#34;)
+                        and svd_layer.lora_B.weight.shape == layer.lora_B.weight.shape
+                    ):
+                        svd_layer.lora_B.weight.data.copy_(layer.lora_B.weight.data)
+                except Exception as e:
+                    logger.debug(&#34;DirectSVD adapter preservation notice: %s&#34;, e)
+
+            best_svd_layer = svd_layer
+
+            if err &lt;= self.max_error or r &gt;= max_r:
+                break
+
+            if attempt &lt; self.max_retries:
+                next_r = min(int(r * 1.5), max_r)
+                if next_r &lt;= r:
+                    break
+                current_r = next_r
+
+        return best_svd_layer, best_err, chosen_r
+
+    def compress(self, **kwargs: Any) -&gt; tuple[nn.Module, dict[str, Any]]:
+        &#34;&#34;&#34;Compress target linear and Conv1D layers across the model.&#34;&#34;&#34;
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.skipped_layers = []
+        self.layer_ranks = {}
+        self.layer_errors = {}
+        seen_weights: set[int] = set()
+
+        total_orig_decomp_params = 0
+        total_comp_decomp_params = 0
+
+        target_layers = [
+            (name, mod)
+            for name, mod in list(self.model.named_modules())
+            if self._is_target_module(name, mod)
+        ]
+
+        if not target_layers:
+            logger.warning(&#34;DirectSVD: No compressible linear layers found.&#34;)
+            return self.model, self.get_compression_stats()
+
+        # Handle freezing of non-target layers when target_attention_only=True
+        if self.target_attention_only:
+            for name, module in list(self.model.named_modules()):
+                target_mod = getattr(module, &#34;base_layer&#34;, module)
+                cls_name = target_mod.__class__.__name__.lower()
+                is_linear = isinstance(target_mod, nn.Linear)
+                is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+                if is_linear or is_conv1d:
+                    if not self._is_target_module(name, module):
+                        for p in module.parameters():
+                            p.requires_grad = False
+                        self.skipped_layers.append(name)
+
+        for name, module in target_layers:
+            target_mod = getattr(module, &#34;base_layer&#34;, module)
+            if not hasattr(target_mod, &#34;weight&#34;) or target_mod.weight is None:
+                continue
+            w_id = id(target_mod.weight)
+            if w_id in seen_weights:
+                self.skipped_layers.append(name)
+                continue
+            seen_weights.add(w_id)
+
+            raw_w = target_mod.weight.data
+            cls_name = target_mod.__class__.__name__.lower()
+            is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+            if is_conv1d:
+                in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+            else:
+                out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+
+            orig_params = out_f * in_f
+            total_orig_decomp_params += orig_params
+
+            svd_layer, err, r = self.compress_linear(module, rank=self.rank)
+            self.layer_errors[name] = err
+            self.layer_ranks[name] = r
+
+            if svd_layer is None or err &gt; self.max_error:
+                logger.warning(
+                    &#34;DirectSVD reconstruction error %.4f on %s exceeded threshold %.4f.&#34;,
+                    err,
+                    name,
+                    self.max_error,
+                )
+                if self.fallback_to_original:
+                    logger.info(
+                        &#34;Skipping DirectSVD compression for %s (fallback to original and frozen).&#34;,
+                        name,
+                    )
+                    self.fallback_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    total_comp_decomp_params += orig_params
+                    continue
+
+            replace_module(self.model, name, svd_layer)
+            self.compressed_layers.append(name)
+            total_comp_decomp_params += r * (in_f + out_f)
+
+        # Post-compression forward sanity check
+        forward_check_success = False
+        try:
+            self.model.eval()
+            with torch.no_grad():
+                d = next(self.model.parameters()).device
+                dummy = torch.randint(0, 100, (1, 16), device=d)
+                self.model(dummy)
+            forward_check_success = True
+        except Exception as e:
+            logger.debug(&#34;DirectSVD post-compression forward sanity check exception: %s&#34;, e)
+
+        effective_ratio = (
+            total_comp_decomp_params / total_orig_decomp_params
+            if total_orig_decomp_params &gt; 0
+            else 1.0
+        )
+        self._compressed_params = self._count_params(self.model)
+        stats = self.get_compression_stats()
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.compressed_layers)
+            / max(1, len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
+        stats.update(
+            {
+                &#34;compressed_layers&#34;: self.compressed_layers,
+                &#34;compressed_layer_count&#34;: len(self.compressed_layers),
+                &#34;fallback_layers&#34;: self.fallback_layers,
+                &#34;fallback_layer_count&#34;: len(self.fallback_layers),
+                &#34;skipped_layers&#34;: self.skipped_layers,
+                &#34;skipped_layer_count&#34;: len(self.skipped_layers),
+                &#34;original_layer_count&#34;: len(target_layers),
+                &#34;layer_ranks&#34;: self.layer_ranks,
+                &#34;layer_errors&#34;: self.layer_errors,
+                &#34;max_error&#34;: self.max_error,
+                &#34;fallback_to_original&#34;: self.fallback_to_original,
+                &#34;target_attention_only&#34;: self.target_attention_only,
+                &#34;lora_r&#34;: self.lora_r,
+                &#34;lora_alpha&#34;: self.lora_alpha,
+                &#34;avg_reconstruction_error&#34;: avg_err,
+                &#34;effective_parameter_ratio&#34;: round(effective_ratio, 4),
+                &#34;num_compressed&#34;: len(self.compressed_layers),
+                &#34;num_fallback&#34;: len(self.fallback_layers),
+                &#34;num_skipped&#34;: len(self.skipped_layers),
+                &#34;forward_check_success&#34;: forward_check_success,
+                &#34;method&#34;: &#34;direct_truncated_svd&#34;,
+            }
+        )
+        logger.info(
+            &#34;Compressor direct_svd finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f&#34;,
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error,
+        )
+        self.stats = stats
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Base class for all compressors. Not a nn.Module to avoid parameter storage.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.direct_svd.DirectSVDCompressor.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>Direct SVD Compressor.</p>
+<p>Performs direct truncated SVD on target linear and Conv1D layers:
+W ≈ U_r * Sigma_r * V_r^T
+Allocates singular energy symmetrically:
+U_factor = U_r * sqrt(Sigma_r)
+V_factor = sqrt(Sigma_r) * V_r^T
+and replaces dense layers with factorized SVDLinear modules.</p>
+<p>Production hardening features:
+- Relative Frobenius reconstruction error validation with configurable max_error.
+- Automatic rank escalation retries when error threshold is exceeded.
+- Safe fallback to original layer if error remains high or decomposition fails.
+- Fallback and non-target layers frozen (requires_grad=False) during recovery.
+- Robust LoRALinear and Conv1D support (with transpose and adapter preservation).
+- target_attention_only parameter: restricts SVD factorization to attention projections.
+- Strict rank safeguard: enforces r &lt; min(in_f, out_f) and parameter reduction r * (in + out) &lt; in * out.
+- Unified critical-layer protection via should_compress_linear.
+- Full FP32 computation for numerical stability.
+- Real metrics recording: original_layer_count, compressed_layer_count, fallback_layer_count, effective_parameter_ratio.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.direct_svd.DirectSVDCompressor.compress"><code class="name flex">
+<span>def <span class="ident">compress</span></span>(<span>self, **kwargs: Any) ‑> tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress(self, **kwargs: Any) -&gt; tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;Compress target linear and Conv1D layers across the model.&#34;&#34;&#34;
+    self.compressed_layers = []
+    self.fallback_layers = []
+    self.skipped_layers = []
+    self.layer_ranks = {}
+    self.layer_errors = {}
+    seen_weights: set[int] = set()
+
+    total_orig_decomp_params = 0
+    total_comp_decomp_params = 0
+
+    target_layers = [
+        (name, mod)
+        for name, mod in list(self.model.named_modules())
+        if self._is_target_module(name, mod)
+    ]
+
+    if not target_layers:
+        logger.warning(&#34;DirectSVD: No compressible linear layers found.&#34;)
+        return self.model, self.get_compression_stats()
+
+    # Handle freezing of non-target layers when target_attention_only=True
+    if self.target_attention_only:
+        for name, module in list(self.model.named_modules()):
+            target_mod = getattr(module, &#34;base_layer&#34;, module)
+            cls_name = target_mod.__class__.__name__.lower()
+            is_linear = isinstance(target_mod, nn.Linear)
+            is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+            if is_linear or is_conv1d:
+                if not self._is_target_module(name, module):
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    self.skipped_layers.append(name)
+
+    for name, module in target_layers:
+        target_mod = getattr(module, &#34;base_layer&#34;, module)
+        if not hasattr(target_mod, &#34;weight&#34;) or target_mod.weight is None:
+            continue
+        w_id = id(target_mod.weight)
+        if w_id in seen_weights:
+            self.skipped_layers.append(name)
+            continue
+        seen_weights.add(w_id)
+
+        raw_w = target_mod.weight.data
+        cls_name = target_mod.__class__.__name__.lower()
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+        if is_conv1d:
+            in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+        else:
+            out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+
+        orig_params = out_f * in_f
+        total_orig_decomp_params += orig_params
+
+        svd_layer, err, r = self.compress_linear(module, rank=self.rank)
+        self.layer_errors[name] = err
+        self.layer_ranks[name] = r
+
+        if svd_layer is None or err &gt; self.max_error:
+            logger.warning(
+                &#34;DirectSVD reconstruction error %.4f on %s exceeded threshold %.4f.&#34;,
+                err,
+                name,
+                self.max_error,
+            )
+            if self.fallback_to_original:
+                logger.info(
+                    &#34;Skipping DirectSVD compression for %s (fallback to original and frozen).&#34;,
+                    name,
+                )
+                self.fallback_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
+                total_comp_decomp_params += orig_params
+                continue
+
+        replace_module(self.model, name, svd_layer)
+        self.compressed_layers.append(name)
+        total_comp_decomp_params += r * (in_f + out_f)
+
+    # Post-compression forward sanity check
+    forward_check_success = False
+    try:
+        self.model.eval()
+        with torch.no_grad():
+            d = next(self.model.parameters()).device
+            dummy = torch.randint(0, 100, (1, 16), device=d)
+            self.model(dummy)
+        forward_check_success = True
+    except Exception as e:
+        logger.debug(&#34;DirectSVD post-compression forward sanity check exception: %s&#34;, e)
+
+    effective_ratio = (
+        total_comp_decomp_params / total_orig_decomp_params
+        if total_orig_decomp_params &gt; 0
+        else 1.0
+    )
+    self._compressed_params = self._count_params(self.model)
+    stats = self.get_compression_stats()
+    avg_err = (
+        sum(self.layer_errors[k] for k in self.compressed_layers)
+        / max(1, len(self.compressed_layers))
+        if self.compressed_layers
+        else 0.0
+    )
+    stats.update(
+        {
+            &#34;compressed_layers&#34;: self.compressed_layers,
+            &#34;compressed_layer_count&#34;: len(self.compressed_layers),
+            &#34;fallback_layers&#34;: self.fallback_layers,
+            &#34;fallback_layer_count&#34;: len(self.fallback_layers),
+            &#34;skipped_layers&#34;: self.skipped_layers,
+            &#34;skipped_layer_count&#34;: len(self.skipped_layers),
+            &#34;original_layer_count&#34;: len(target_layers),
+            &#34;layer_ranks&#34;: self.layer_ranks,
+            &#34;layer_errors&#34;: self.layer_errors,
+            &#34;max_error&#34;: self.max_error,
+            &#34;fallback_to_original&#34;: self.fallback_to_original,
+            &#34;target_attention_only&#34;: self.target_attention_only,
+            &#34;lora_r&#34;: self.lora_r,
+            &#34;lora_alpha&#34;: self.lora_alpha,
+            &#34;avg_reconstruction_error&#34;: avg_err,
+            &#34;effective_parameter_ratio&#34;: round(effective_ratio, 4),
+            &#34;num_compressed&#34;: len(self.compressed_layers),
+            &#34;num_fallback&#34;: len(self.fallback_layers),
+            &#34;num_skipped&#34;: len(self.skipped_layers),
+            &#34;forward_check_success&#34;: forward_check_success,
+            &#34;method&#34;: &#34;direct_truncated_svd&#34;,
+        }
+    )
+    logger.info(
+        &#34;Compressor direct_svd finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f&#34;,
+        len(self.compressed_layers),
+        len(self.fallback_layers),
+        avg_err,
+        self.max_error,
+    )
+    self.stats = stats
+    return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Compress target linear and Conv1D layers across the model.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.direct_svd.DirectSVDCompressor.compress_linear"><code class="name flex">
+<span>def <span class="ident">compress_linear</span></span>(<span>self, layer: nn.Module, rank: int | None = None) ‑> tuple[<a title="neuralops.compression_engine.aa_svd_compressor.SVDLinear" href="aa_svd_compressor.html#neuralops.compression_engine.aa_svd_compressor.SVDLinear">SVDLinear</a> | None, float, int]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress_linear(
+    self,
+    layer: nn.Module,
+    rank: int | None = None,
+) -&gt; tuple[SVDLinear | None, float, int]:
+    &#34;&#34;&#34;
+    Decompose a single linear or Conv1D layer via SVD with symmetric factor distribution.
+    Returns: (svd_layer, relative_reconstruction_error, chosen_rank)
+    &#34;&#34;&#34;
+    target_mod = getattr(layer, &#34;base_layer&#34;, layer)
+    cls_name = target_mod.__class__.__name__.lower()
+    is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+    raw_w = target_mod.weight.data
+
+    if is_conv1d:
+        in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+        W = raw_w.t().contiguous().float()  # [out_features, in_features]
+    else:
+        out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+        W = raw_w.float()  # [out_features, in_features]
+
+    max_reduction_r = max(1, (in_f * out_f) // (in_f + out_f) - 1)
+    max_r = max(1, min(in_f - 1, out_f - 1, max_reduction_r))
+
+    current_r = self._determine_rank(in_f, out_f, rank)
+    device = raw_w.device
+    dtype = raw_w.dtype
+    norm_w = torch.norm(W, p=&#34;fro&#34;).item()
+
+    try:
+        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+    except Exception as e:
+        logger.warning(&#34;DirectSVD SVD computation failed: %s&#34;, e)
+        return None, 1.0, 0
+
+    best_svd_layer: SVDLinear | None = None
+    best_err = 1.0
+    chosen_r = current_r
+
+    # Retry with higher rank if error exceeds threshold
+    for attempt in range(self.max_retries + 1):
+        r = max(1, min(current_r, max_r))
+        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+        U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
+        V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
+
+        W_recon = torch.matmul(U_r.float(), V_r.float())
+        if norm_w &lt; 1e-12:
+            err = 0.0
+        else:
+            err = float(torch.norm(W - W_recon, p=&#34;fro&#34;).item() / norm_w)
+
+        best_err = err
+        chosen_r = r
+
+        # Determine LoRA parameters to preserve or initialize
+        eff_lora_r = self.lora_r
+        eff_lora_alpha = self.lora_alpha
+        if hasattr(layer, &#34;lora_A&#34;) and hasattr(layer, &#34;r&#34;):
+            eff_lora_r = getattr(layer, &#34;r&#34;, self.lora_r)
+            eff_lora_alpha = getattr(layer, &#34;lora_alpha&#34;, self.lora_alpha)
+
+        svd_layer = SVDLinear(
+            in_features=in_f,
+            out_features=out_f,
+            rank=r,
+            bias=target_mod.bias is not None,
+            dtype=dtype,
+            device=device,
+            lora_r=eff_lora_r,
+            lora_alpha=eff_lora_alpha,
+        )
+        svd_layer.set_low_rank_factors(U_r, V_r)
+        if target_mod.bias is not None and svd_layer.bias is not None:
+            svd_layer.bias.data.copy_(target_mod.bias.data)
+
+        # If the original layer was a LoRALinear wrapper, copy over existing adapter weights
+        if (
+            hasattr(layer, &#34;lora_A&#34;)
+            and hasattr(layer, &#34;lora_B&#34;)
+            and svd_layer.lora_A is not None
+        ):
+            try:
+                if (
+                    hasattr(layer.lora_A, &#34;weight&#34;)
+                    and svd_layer.lora_A.weight.shape == layer.lora_A.weight.shape
+                ):
+                    svd_layer.lora_A.weight.data.copy_(layer.lora_A.weight.data)
+                if (
+                    hasattr(layer.lora_B, &#34;weight&#34;)
+                    and svd_layer.lora_B.weight.shape == layer.lora_B.weight.shape
+                ):
+                    svd_layer.lora_B.weight.data.copy_(layer.lora_B.weight.data)
+            except Exception as e:
+                logger.debug(&#34;DirectSVD adapter preservation notice: %s&#34;, e)
+
+        best_svd_layer = svd_layer
+
+        if err &lt;= self.max_error or r &gt;= max_r:
+            break
+
+        if attempt &lt; self.max_retries:
+            next_r = min(int(r * 1.5), max_r)
+            if next_r &lt;= r:
+                break
+            current_r = next_r
+
+    return best_svd_layer, best_err, chosen_r</code></pre>
+</details>
+<div class="desc"><p>Decompose a single linear or Conv1D layer via SVD with symmetric factor distribution.
+Returns: (svd_layer, relative_reconstruction_error, chosen_rank)</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.direct_svd.direct_svd_compressor_factory" href="#neuralops.compression_engine.direct_svd.direct_svd_compressor_factory">direct_svd_compressor_factory</a></code></li>
+<li><code><a title="neuralops.compression_engine.direct_svd.direct_svd_factory" href="#neuralops.compression_engine.direct_svd.direct_svd_factory">direct_svd_factory</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.direct_svd.DirectSVDCompressor" href="#neuralops.compression_engine.direct_svd.DirectSVDCompressor">DirectSVDCompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.direct_svd.DirectSVDCompressor.compress" href="#neuralops.compression_engine.direct_svd.DirectSVDCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.compression_engine.direct_svd.DirectSVDCompressor.compress_linear" href="#neuralops.compression_engine.direct_svd.DirectSVDCompressor.compress_linear">compress_linear</a></code></li>
+<li><code><a title="neuralops.compression_engine.direct_svd.DirectSVDCompressor.is_custom_attention" href="#neuralops.compression_engine.direct_svd.DirectSVDCompressor.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

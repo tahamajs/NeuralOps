@@ -1,0 +1,871 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.compot_compressor API documentation</title>
+<meta name="description" content="COMPOT: Compressed Orthogonal Dictionary Learning Compressor.
+Registered in COMPRESSOR_REGISTRY as &#39;compot&#39;. Production hardened for
+…">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.compot_compressor</code></h1>
+</header>
+<section id="section-intro">
+<p>COMPOT: Compressed Orthogonal Dictionary Learning Compressor.
+Registered in COMPRESSOR_REGISTRY as 'compot'. Production hardened for
+multi-architecture compatibility (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with
+reconstruction validation, Conv1D support, rank reduction bounds, and safe fallback.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.compot_compressor.compot_compressor_factory"><code class="name flex">
+<span>def <span class="ident">compot_compressor_factory</span></span>(<span>model: nn.Module,<br>comp_config: Any | None = None,<br>rank: int | None = None,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module | tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;compot&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;compot_compressor&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;compot_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;compot_compressor_factory&#34;)
+def compot_compressor_factory(
+    model: nn.Module,
+    comp_config: Any | None = None,
+    rank: int | None = None,
+    **kwargs: Any,
+) -&gt; nn.Module | tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;Factory function for COMPOT compression.&#34;&#34;&#34;
+    effective_rank = (
+        rank or getattr(comp_config, &#34;compot_rank&#34;, None) or getattr(comp_config, &#34;rank&#34;, 64)
+    )
+    cal_texts = getattr(comp_config, &#34;compot_calibration_texts&#34;, None)
+    tokenizer = getattr(comp_config, &#34;tokenizer&#34;, None) or getattr(model, &#34;tokenizer&#34;, None)
+    max_error = getattr(comp_config, &#34;compot_max_error&#34;, getattr(comp_config, &#34;max_error&#34;, 0.20))
+    fallback = getattr(
+        comp_config,
+        &#34;compot_fallback_to_original&#34;,
+        getattr(comp_config, &#34;fallback_to_original&#34;, True),
+    )
+
+    return_stats = kwargs.pop(&#34;return_stats&#34;, kwargs.pop(&#34;return_tuple&#34;, False))
+    compressor = COMPOTCompressor(
+        model,
+        rank=effective_rank,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        calibration_texts=cal_texts,
+        tokenizer=tokenizer,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    try:
+        compressed_model.compression_stats = stats
+    except Exception:
+        pass
+    if return_stats:
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>Factory function for COMPOT compression.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.compot_compressor.COMPOTCompressor"><code class="flex name class">
+<span>class <span class="ident">COMPOTCompressor</span></span>
+<span>(</span><span>model: nn.Module | None = None,<br>rank: int = 64,<br>max_error: float = 0.2,<br>fallback_to_original: bool = True,<br>calibration_texts: list[str] | None = None,<br>calibration_loader: Any | None = None,<br>tokenizer: Any | None = None,<br>cfg: Any | None = None,<br>target_attention_only: bool = False,<br>target_layers: list[str] | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;compot_compressor_class&#34;)
+class COMPOTCompressor(BaseCompressor):
+    &#34;&#34;&#34;
+    COMPOT (Compressed Orthogonal Dictionary Learning) Compressor.
+    Learns a low-rank basis from activation QR decompositions and compresses
+    linear and Conv1D layers into factorized COMPOTLinear modules.
+
+    Production hardening features:
+    - Relative Frobenius reconstruction error validation with configurable max_error.
+    - Safe fallback to original layer if error exceeds threshold or decomposition is unstable.
+    - SVD fallback if QR decomposition on activations fails.
+    - Parameter reduction guarantee: checks r * (in + out) &lt; in * out.
+    - Robust Conv1D support (GPT-2 c_attn, c_proj) via weight transposition.
+    - Unified critical-layer protection via should_compress_linear.
+    - Comprehensive per-layer stats and error reporting.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        model: nn.Module | None = None,
+        rank: int = 64,
+        max_error: float = 0.20,
+        fallback_to_original: bool = True,
+        calibration_texts: list[str] | None = None,
+        calibration_loader: Any | None = None,
+        tokenizer: Any | None = None,
+        cfg: Any | None = None,
+        target_attention_only: bool = False,
+        target_layers: list[str] | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model if model is not None else nn.Identity(), name=&#34;compot&#34;, **kwargs)
+        conf = cfg or kwargs.get(&#34;comp_config&#34;)
+        if conf is not None:
+            rank = getattr(conf, &#34;compot_rank&#34;, getattr(conf, &#34;rank&#34;, rank))
+            max_error = getattr(conf, &#34;compot_max_error&#34;, getattr(conf, &#34;max_error&#34;, max_error))
+            fallback_to_original = getattr(
+                conf,
+                &#34;compot_fallback_to_original&#34;,
+                getattr(conf, &#34;fallback_to_original&#34;, fallback_to_original),
+            )
+
+        self.rank = int(rank)
+        if max_error is None or max_error == 0.20:
+            max_error = adaptive_max_error(self.rank, 768, 768, &#34;distilbert&#34;)
+
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.calibration_texts = calibration_texts
+        self.calibration_loader = calibration_loader
+        self.tokenizer = tokenizer or getattr(model, &#34;tokenizer&#34;, None)
+        self.target_layers = target_layers
+        self.target_attention_only = target_attention_only
+
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+        self.used_activations: dict[str, bool] = {}
+
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        cls_name = module.__class__.__name__.lower()
+        is_linear = isinstance(module, nn.Linear)
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(module, &#34;nf&#34;)
+        if not (is_linear or is_conv1d):
+            return False
+        if isinstance(module, COMPOTLinear):
+            return False
+        if not should_compress_linear(self.model, name):
+            return False
+        if self.target_attention_only and not any(
+            k in name.lower()
+            for k in [
+                &#34;attn&#34;,
+                &#34;attention&#34;,
+                &#34;q_proj&#34;,
+                &#34;k_proj&#34;,
+                &#34;v_proj&#34;,
+                &#34;out_proj&#34;,
+                &#34;o_proj&#34;,
+                &#34;q_lin&#34;,
+                &#34;k_lin&#34;,
+                &#34;v_lin&#34;,
+                &#34;out_lin&#34;,
+                &#34;query&#34;,
+                &#34;key&#34;,
+                &#34;value&#34;,
+                &#34;c_attn&#34;,
+                &#34;c_proj&#34;,
+            ]
+        ):
+            return False
+        if self.target_layers is not None:
+            return any(t in name for t in self.target_layers)
+        return True
+
+    def _collect_activations(self) -&gt; dict[str, torch.Tensor]:
+        &#34;&#34;&#34;Collect input activations across target modules.&#34;&#34;&#34;
+        layer_data: dict[str, torch.Tensor] = {}
+        hooks = []
+
+        def make_hook(name: str):
+            def hook(module, input, output):
+                if len(input) &gt; 0 and isinstance(input[0], torch.Tensor):
+                    inp = input[0].detach().float()
+                    cls_name = module.__class__.__name__.lower()
+                    is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(module, &#34;nf&#34;)
+                    in_f = module.weight.shape[0] if is_conv1d else module.weight.shape[1]
+                    flat = inp.reshape(-1, in_f)
+                    if name not in layer_data:
+                        layer_data[name] = flat.cpu()
+                    else:
+                        layer_data[name] = torch.cat([layer_data[name], flat.cpu()], dim=0)
+
+            return hook
+
+        for name, module in self.model.named_modules():
+            if self._is_target_module(name, module):
+                hooks.append(module.register_forward_hook(make_hook(name)))
+
+        device = next(self.model.parameters(), torch.tensor(0.0)).device
+        calib_inputs = get_calibration_tensors(
+            self.model,
+            tokenizer=self.tokenizer,
+            calibration_loader=self.calibration_loader,
+            calibration_texts=self.calibration_texts,
+            device=device,
+        )
+
+        self.model.eval()
+        with torch.no_grad():
+            try:
+                if isinstance(calib_inputs, dict):
+                    self.model(**calib_inputs)
+                elif isinstance(calib_inputs, torch.Tensor):
+                    self.model(calib_inputs)
+                elif isinstance(calib_inputs, (list, tuple)):
+                    self.model(*calib_inputs)
+            except Exception as e:
+                logger.debug(&#34;COMPOT activation collection forward pass exception: %s&#34;, e)
+            finally:
+                for h in hooks:
+                    h.remove()
+
+        return layer_data
+
+    def compress(self, model: nn.Module | None = None) -&gt; tuple[nn.Module, dict[str, Any]]:
+        &#34;&#34;&#34;Compress linear and Conv1D layers via COMPOT orthogonal dictionary learning.&#34;&#34;&#34;
+        if model is not None:
+            self.model = model
+            self._original_params = self._count_params(self.model)
+
+        activations = self._collect_activations()
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.layer_errors = {}
+        self.layer_ranks = {}
+        self.used_activations = {}
+
+        targets = [
+            (name, mod)
+            for name, mod in list(self.model.named_modules())
+            if self._is_target_module(name, mod)
+        ]
+
+        if not targets:
+            logger.warning(&#34;COMPOT: No compressible layers found.&#34;)
+            return self.model, self.get_compression_stats()
+
+        for name, module in targets:
+            cls_name = module.__class__.__name__.lower()
+            is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(module, &#34;nf&#34;)
+            target_mod = getattr(module, &#34;base_layer&#34;, module)
+            raw_w = target_mod.weight.data
+            if is_conv1d:
+                in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+            else:
+                out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+
+            # Guarantee parameter reduction: r * (in_f + out_f) &lt; in_f * out_f
+            max_reduction_r = max(1, (in_f * out_f) // (in_f + out_f) - 1)
+            max_r = max(1, min(in_f - 1, out_f - 1, max_reduction_r))
+            r = max(1, min(self.rank, max_r))
+
+            act = activations.get(name, None)
+            compot_layer, err, used_act = COMPOTLinear.from_linear_and_activations(
+                target_mod, activations=act, rank=r
+            )
+            self.layer_errors[name] = err
+            self.layer_ranks[name] = r
+            self.used_activations[name] = used_act
+
+            # Validate dimensions
+            if compot_layer.in_features != in_f or compot_layer.out_features != out_f:
+                logger.warning(
+                    &#34;Dimension mismatch on %s: (%d, %d) vs (%d, %d)&#34;,
+                    name,
+                    compot_layer.out_features,
+                    compot_layer.in_features,
+                    out_f,
+                    in_f,
+                )
+                for p in module.parameters():
+                    p.requires_grad = False
+                self.fallback_layers.append(name)
+                continue
+
+            if err &gt; self.max_error:
+                logger.warning(
+                    &#34;COMPOT reconstruction error %.4f on %s exceeded threshold %.4f.&#34;,
+                    err,
+                    name,
+                    self.max_error,
+                )
+                if self.fallback_to_original:
+                    logger.info(
+                        &#34;Skipping COMPOT compression for %s (fallback to original).&#34;,
+                        name,
+                    )
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    self.fallback_layers.append(name)
+                    continue
+
+            if hasattr(module, &#34;base_layer&#34;):
+                if hasattr(module, &#34;lora_A&#34;):
+                    compot_layer.lora_A = module.lora_A
+                if hasattr(module, &#34;lora_B&#34;):
+                    compot_layer.lora_B = module.lora_B
+                module.base_layer = compot_layer
+                compot_layer = module
+            replace_module(self.model, name, compot_layer)
+            self.compressed_layers.append(name)
+
+        self._compressed_params = self._count_params(self.model)
+        stats = self.get_compression_stats()
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.compressed_layers)
+            / max(1, len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
+        stats.update(
+            {
+                &#34;compressed_layers&#34;: self.compressed_layers,
+                &#34;fallback_layers&#34;: self.fallback_layers,
+                &#34;layer_errors&#34;: self.layer_errors,
+                &#34;layer_ranks&#34;: self.layer_ranks,
+                &#34;used_activations&#34;: self.used_activations,
+                &#34;max_error&#34;: self.max_error,
+                &#34;fallback_to_original&#34;: self.fallback_to_original,
+                &#34;avg_reconstruction_error&#34;: avg_err,
+                &#34;num_compressed&#34;: len(self.compressed_layers),
+                &#34;num_fallback&#34;: len(self.fallback_layers),
+                &#34;compot_rank&#34;: self.rank,
+            }
+        )
+        logger.info(
+            &#34;Compressor compot finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f&#34;,
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error,
+        )
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>COMPOT (Compressed Orthogonal Dictionary Learning) Compressor.
+Learns a low-rank basis from activation QR decompositions and compresses
+linear and Conv1D layers into factorized COMPOTLinear modules.</p>
+<p>Production hardening features:
+- Relative Frobenius reconstruction error validation with configurable max_error.
+- Safe fallback to original layer if error exceeds threshold or decomposition is unstable.
+- SVD fallback if QR decomposition on activations fails.
+- Parameter reduction guarantee: checks r * (in + out) &lt; in * out.
+- Robust Conv1D support (GPT-2 c_attn, c_proj) via weight transposition.
+- Unified critical-layer protection via should_compress_linear.
+- Comprehensive per-layer stats and error reporting.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.compot_compressor.COMPOTCompressor.compress"><code class="name flex">
+<span>def <span class="ident">compress</span></span>(<span>self, model: nn.Module | None = None) ‑> tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress(self, model: nn.Module | None = None) -&gt; tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;Compress linear and Conv1D layers via COMPOT orthogonal dictionary learning.&#34;&#34;&#34;
+    if model is not None:
+        self.model = model
+        self._original_params = self._count_params(self.model)
+
+    activations = self._collect_activations()
+    self.compressed_layers = []
+    self.fallback_layers = []
+    self.layer_errors = {}
+    self.layer_ranks = {}
+    self.used_activations = {}
+
+    targets = [
+        (name, mod)
+        for name, mod in list(self.model.named_modules())
+        if self._is_target_module(name, mod)
+    ]
+
+    if not targets:
+        logger.warning(&#34;COMPOT: No compressible layers found.&#34;)
+        return self.model, self.get_compression_stats()
+
+    for name, module in targets:
+        cls_name = module.__class__.__name__.lower()
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(module, &#34;nf&#34;)
+        target_mod = getattr(module, &#34;base_layer&#34;, module)
+        raw_w = target_mod.weight.data
+        if is_conv1d:
+            in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+        else:
+            out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+
+        # Guarantee parameter reduction: r * (in_f + out_f) &lt; in_f * out_f
+        max_reduction_r = max(1, (in_f * out_f) // (in_f + out_f) - 1)
+        max_r = max(1, min(in_f - 1, out_f - 1, max_reduction_r))
+        r = max(1, min(self.rank, max_r))
+
+        act = activations.get(name, None)
+        compot_layer, err, used_act = COMPOTLinear.from_linear_and_activations(
+            target_mod, activations=act, rank=r
+        )
+        self.layer_errors[name] = err
+        self.layer_ranks[name] = r
+        self.used_activations[name] = used_act
+
+        # Validate dimensions
+        if compot_layer.in_features != in_f or compot_layer.out_features != out_f:
+            logger.warning(
+                &#34;Dimension mismatch on %s: (%d, %d) vs (%d, %d)&#34;,
+                name,
+                compot_layer.out_features,
+                compot_layer.in_features,
+                out_f,
+                in_f,
+            )
+            for p in module.parameters():
+                p.requires_grad = False
+            self.fallback_layers.append(name)
+            continue
+
+        if err &gt; self.max_error:
+            logger.warning(
+                &#34;COMPOT reconstruction error %.4f on %s exceeded threshold %.4f.&#34;,
+                err,
+                name,
+                self.max_error,
+            )
+            if self.fallback_to_original:
+                logger.info(
+                    &#34;Skipping COMPOT compression for %s (fallback to original).&#34;,
+                    name,
+                )
+                for p in module.parameters():
+                    p.requires_grad = False
+                self.fallback_layers.append(name)
+                continue
+
+        if hasattr(module, &#34;base_layer&#34;):
+            if hasattr(module, &#34;lora_A&#34;):
+                compot_layer.lora_A = module.lora_A
+            if hasattr(module, &#34;lora_B&#34;):
+                compot_layer.lora_B = module.lora_B
+            module.base_layer = compot_layer
+            compot_layer = module
+        replace_module(self.model, name, compot_layer)
+        self.compressed_layers.append(name)
+
+    self._compressed_params = self._count_params(self.model)
+    stats = self.get_compression_stats()
+    avg_err = (
+        sum(self.layer_errors[k] for k in self.compressed_layers)
+        / max(1, len(self.compressed_layers))
+        if self.compressed_layers
+        else 0.0
+    )
+    stats.update(
+        {
+            &#34;compressed_layers&#34;: self.compressed_layers,
+            &#34;fallback_layers&#34;: self.fallback_layers,
+            &#34;layer_errors&#34;: self.layer_errors,
+            &#34;layer_ranks&#34;: self.layer_ranks,
+            &#34;used_activations&#34;: self.used_activations,
+            &#34;max_error&#34;: self.max_error,
+            &#34;fallback_to_original&#34;: self.fallback_to_original,
+            &#34;avg_reconstruction_error&#34;: avg_err,
+            &#34;num_compressed&#34;: len(self.compressed_layers),
+            &#34;num_fallback&#34;: len(self.fallback_layers),
+            &#34;compot_rank&#34;: self.rank,
+        }
+    )
+    logger.info(
+        &#34;Compressor compot finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f&#34;,
+        len(self.compressed_layers),
+        len(self.fallback_layers),
+        avg_err,
+        self.max_error,
+    )
+    return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Compress linear and Conv1D layers via COMPOT orthogonal dictionary learning.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.compression_engine.compot_compressor.COMPOTLinear"><code class="flex name class">
+<span>class <span class="ident">COMPOTLinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>rank: int = 64,<br>bias: bool = True,<br>dtype: torch.dtype | None = None,<br>device: torch.device | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class COMPOTLinear(nn.Module):
+    is_custom_attention: bool = True
+    &#34;&#34;&#34;
+    Factorized Linear Layer constructed via Orthogonal Dictionary Learning (COMPOT):
+    W ≈ B @ A
+    - A in R^{rank x in_features}: input-orthogonal projection matrix
+    - B in R^{out_features x rank}: output dictionary matrix
+
+    Forward pass:
+    y = ((x @ A^T) @ B^T) + bias
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int = 64,
+        bias: bool = True,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.rank = max(1, min(rank, in_features, out_features))
+
+        self.A = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
+        self.B = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
+
+        with torch.no_grad():
+            A_f32 = torch.empty(self.rank, in_features, dtype=torch.float32)
+            nn.init.orthogonal_(A_f32)
+            self.A.copy_(A_f32.to(device=device, dtype=dtype))
+            nn.init.xavier_uniform_(self.B)
+
+        if bias:
+            self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device))
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Reconstructed effective weight matrix (out_features, in_features).&#34;&#34;&#34;
+        return torch.matmul(self.B, self.A)
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Forward pass matching standard Linear and Conv1D.&#34;&#34;&#34;
+        orig_shape = x.shape
+        x_flat = x.reshape(-1, self.in_features)
+
+        x_a = F.linear(x_flat, self.A)
+        out = F.linear(x_a, self.B, self.bias)
+
+        return out.view(*orig_shape[:-1], self.out_features)
+
+    def get_weight(self) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Materialize full weight matrix W = B @ A.&#34;&#34;&#34;
+        return torch.matmul(self.B, self.A)
+
+    def __iter__(self):
+        &#34;&#34;&#34;Allow tuple unpacking: compot_layer, err, used_act = COMPOTLinear.from_linear_and_activations(...).&#34;&#34;&#34;
+        yield self
+        yield getattr(self, &#34;reconstruction_error&#34;, 0.0)
+        yield getattr(self, &#34;used_activations&#34;, False)
+
+    def __getitem__(self, idx: int) -&gt; Any:
+        return (
+            self,
+            getattr(self, &#34;reconstruction_error&#34;, 0.0),
+            getattr(self, &#34;used_activations&#34;, False),
+        )[idx]
+
+    @classmethod
+    def from_linear_and_activations(
+        cls,
+        layer: nn.Module,
+        activations: torch.Tensor | None = None,
+        rank: int = 64,
+    ) -&gt; tuple[COMPOTLinear, float, bool]:
+        &#34;&#34;&#34;
+        Construct COMPOTLinear by learning orthogonal dictionary from activations or weights.
+        Returns: (compot_layer, relative_reconstruction_error, used_activations)
+        &#34;&#34;&#34;
+        cls_name = layer.__class__.__name__.lower()
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(layer, &#34;nf&#34;)
+        raw_w = layer.weight.data
+
+        if is_conv1d:
+            in_f, out_f = raw_w.shape[0], raw_w.shape[1]
+            W_float = raw_w.t().contiguous().float()  # [out_features, in_features]
+        else:
+            out_f, in_f = raw_w.shape[0], raw_w.shape[1]
+            W_float = raw_w.float()  # [out_features, in_features]
+
+        bias = layer.bias.data if layer.bias is not None else None
+        r = max(1, min(rank, out_f, in_f))
+        device = raw_w.device
+        dtype = raw_w.dtype
+
+        compot_layer = cls(
+            in_features=in_f,
+            out_features=out_f,
+            rank=r,
+            bias=bias is not None,
+            dtype=dtype,
+            device=device,
+        )
+
+        used_act = False
+        A_data = None
+        B_data = None
+
+        if activations is not None and activations.size(0) &gt;= 4:
+            X = activations.float().to(device)
+            if X.shape[-1] == in_f:
+                try:
+                    # QR decomposition of activations: X = Q @ R
+                    Q, R = torch.linalg.qr(X, mode=&#34;reduced&#34;)
+                    D = torch.matmul(W_float, R.t().contiguous())
+                    U, S, Vt = torch.linalg.svd(D, full_matrices=False)
+
+                    B_cand = U[:, :r] * S[:r].unsqueeze(0)  # (out_f, r)
+                    V_r = Vt[:r, :]  # (r, in_f)
+                    R_inv_T = torch.linalg.pinv(R.t().contiguous())
+                    A_cand = torch.matmul(V_r, R_inv_T)
+
+                    if not (
+                        torch.isnan(A_cand).any()
+                        or torch.isnan(B_cand).any()
+                        or torch.isinf(A_cand).any()
+                        or torch.isinf(B_cand).any()
+                    ):
+                        A_data = A_cand
+                        B_data = B_cand
+                        used_act = True
+                except Exception as e:
+                    logger.debug(&#34;COMPOT QR decomposition exception on layer: %s&#34;, e)
+
+        # Fallback to direct SVD on weight matrix
+        if A_data is None or B_data is None:
+            U, S, Vt = torch.linalg.svd(W_float, full_matrices=False)
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            B_data = U[:, :r] * sqrt_S.unsqueeze(0)
+            A_data = sqrt_S.unsqueeze(1) * Vt[:r, :]
+            used_act = False
+
+        compot_layer.A.data.copy_(A_data.to(dtype=dtype, device=device))
+        compot_layer.B.data.copy_(B_data.to(dtype=dtype, device=device))
+
+        if bias is not None and compot_layer.bias is not None:
+            compot_layer.bias.data.copy_(bias)
+
+        # Compute relative Frobenius reconstruction error
+        W_recon = torch.matmul(B_data, A_data)
+        norm_orig = torch.norm(W_float, p=&#34;fro&#34;).item()
+        if norm_orig &lt; 1e-12:
+            rel_err = 0.0
+        else:
+            rel_err = float(torch.norm(W_float - W_recon, p=&#34;fro&#34;).item() / norm_orig)
+
+        compot_layer.reconstruction_error = rel_err
+        compot_layer.used_activations = used_act
+        return compot_layer</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.compot_compressor.COMPOTLinear.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>Factorized Linear Layer constructed via Orthogonal Dictionary Learning (COMPOT):
+W ≈ B @ A
+- A in R^{rank x in_features}: input-orthogonal projection matrix
+- B in R^{out_features x rank}: output dictionary matrix</p>
+<p>Forward pass:
+y = ((x @ A^T) @ B^T) + bias</p></div>
+</dd>
+</dl>
+<h3>Static methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.compot_compressor.COMPOTLinear.from_linear_and_activations"><code class="name flex">
+<span>def <span class="ident">from_linear_and_activations</span></span>(<span>layer: nn.Module, activations: torch.Tensor | None = None, rank: int = 64) ‑> tuple[<a title="neuralops.compression_engine.compot_compressor.COMPOTLinear" href="#neuralops.compression_engine.compot_compressor.COMPOTLinear">COMPOTLinear</a>, float, bool]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Construct COMPOTLinear by learning orthogonal dictionary from activations or weights.
+Returns: (compot_layer, relative_reconstruction_error, used_activations)</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.compot_compressor.COMPOTLinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Reconstructed effective weight matrix (out_features, in_features).&#34;&#34;&#34;
+    return torch.matmul(self.B, self.A)</code></pre>
+</details>
+<div class="desc"><p>Reconstructed effective weight matrix (out_features, in_features).</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.compot_compressor.COMPOTLinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Forward pass matching standard Linear and Conv1D.&#34;&#34;&#34;
+    orig_shape = x.shape
+    x_flat = x.reshape(-1, self.in_features)
+
+    x_a = F.linear(x_flat, self.A)
+    out = F.linear(x_a, self.B, self.bias)
+
+    return out.view(*orig_shape[:-1], self.out_features)</code></pre>
+</details>
+<div class="desc"><p>Forward pass matching standard Linear and Conv1D.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.compot_compressor.COMPOTLinear.get_weight"><code class="name flex">
+<span>def <span class="ident">get_weight</span></span>(<span>self) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_weight(self) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Materialize full weight matrix W = B @ A.&#34;&#34;&#34;
+    return torch.matmul(self.B, self.A)</code></pre>
+</details>
+<div class="desc"><p>Materialize full weight matrix W = B @ A.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.compot_compressor.compot_compressor_factory" href="#neuralops.compression_engine.compot_compressor.compot_compressor_factory">compot_compressor_factory</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.compot_compressor.COMPOTCompressor" href="#neuralops.compression_engine.compot_compressor.COMPOTCompressor">COMPOTCompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.compot_compressor.COMPOTCompressor.compress" href="#neuralops.compression_engine.compot_compressor.COMPOTCompressor.compress">compress</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.compot_compressor.COMPOTLinear" href="#neuralops.compression_engine.compot_compressor.COMPOTLinear">COMPOTLinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.compot_compressor.COMPOTLinear.forward" href="#neuralops.compression_engine.compot_compressor.COMPOTLinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.compression_engine.compot_compressor.COMPOTLinear.from_linear_and_activations" href="#neuralops.compression_engine.compot_compressor.COMPOTLinear.from_linear_and_activations">from_linear_and_activations</a></code></li>
+<li><code><a title="neuralops.compression_engine.compot_compressor.COMPOTLinear.get_weight" href="#neuralops.compression_engine.compot_compressor.COMPOTLinear.get_weight">get_weight</a></code></li>
+<li><code><a title="neuralops.compression_engine.compot_compressor.COMPOTLinear.is_custom_attention" href="#neuralops.compression_engine.compot_compressor.COMPOTLinear.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.compression_engine.compot_compressor.COMPOTLinear.weight" href="#neuralops.compression_engine.compot_compressor.COMPOTLinear.weight">weight</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

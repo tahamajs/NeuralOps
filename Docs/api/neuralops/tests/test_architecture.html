@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tests.test_architecture API documentation</title>
+<meta name="description" content="Unit tests for core architecture discovery, leaf extraction, and attention injection.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.tests.test_architecture</code></h1>
+</header>
+<section id="section-intro">
+<p>Unit tests for core architecture discovery, leaf extraction, and attention injection.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.tests.test_architecture.set_random_seed"><code class="name flex">
+<span>def <span class="ident">set_random_seed</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@pytest.fixture(autouse=True)
+def set_random_seed():
+    torch.manual_seed(42)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.tests.test_architecture.TestGetAttentionModules"><code class="flex name class">
+<span>class <span class="ident">TestGetAttentionModules</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TestGetAttentionModules:
+    &#34;&#34;&#34;Verify get_attention_modules discovers only leaf submodules across all families.&#34;&#34;&#34;
+
+    def test_bert_returns_leaf_self_attention_only(self):
+        cfg = BertConfig(num_hidden_layers=2, num_attention_heads=2, hidden_size=32, intermediate_size=64, vocab_size=100)
+        model = BertForSequenceClassification(cfg)
+        modules = get_attention_modules(model)
+        assert len(modules) == 2
+        for name, mod in modules:
+            assert name.endswith(&#34;.attention.self&#34;)
+            assert mod.__class__.__name__ == &#34;BertSelfAttention&#34;
+
+    def test_roberta_returns_leaf_self_attention_only(self):
+        cfg = RobertaConfig(num_hidden_layers=2, num_attention_heads=2, hidden_size=32, intermediate_size=64, vocab_size=100)
+        model = RobertaForSequenceClassification(cfg)
+        modules = get_attention_modules(model)
+        assert len(modules) == 2
+        for name, mod in modules:
+            assert name.endswith(&#34;.attention.self&#34;)
+            assert mod.__class__.__name__ == &#34;RobertaSelfAttention&#34;
+
+    def test_distilbert_returns_leaf_attention(self):
+        cfg = DistilBertConfig(n_layers=2, n_heads=2, dim=32, hidden_dim=64, vocab_size=100)
+        model = DistilBertForSequenceClassification(cfg)
+        modules = get_attention_modules(model)
+        assert len(modules) == 2
+        for name, mod in modules:
+            assert name.endswith(&#34;.attention&#34;)
+            assert mod.__class__.__name__ in (&#34;DistilBertSelfAttention&#34;, &#34;MultiHeadSelfAttention&#34;)
+
+    def test_gpt2_returns_correct_attention_block(self):
+        cfg = GPT2Config(n_layer=2, n_head=2, n_embd=32, vocab_size=100)
+        model = GPT2ForSequenceClassification(cfg)
+        modules = get_attention_modules(model)
+        assert len(modules) == 2
+        for name, mod in modules:
+            assert name.endswith(&#34;.attn&#34;)
+            assert mod.__class__.__name__ == &#34;GPT2Attention&#34;
+
+    def test_t5_returns_encoder_and_decoder_attentions(self):
+        cfg = T5Config(num_layers=2, num_decoder_layers=2, num_heads=2, d_model=32, d_kv=16, d_ff=64, vocab_size=100)
+        model = T5ForConditionalGeneration(cfg)
+        modules = get_attention_modules(model)
+        # 2 encoder layers (1 self each) + 2 decoder layers (1 self + 1 cross each) = 6
+        assert len(modules) == 6
+        names = [n for n, _ in modules]
+        # Verify self-attention and cross-attention paths
+        assert any(&#34;encoder.block.0.layer.0.SelfAttention&#34; in n for n in names)
+        assert any(&#34;decoder.block.0.layer.0.SelfAttention&#34; in n for n in names)
+        assert any(&#34;decoder.block.0.layer.1.EncDecAttention&#34; in n for n in names)
+
+    def test_custom_nested_containers_deduplication(self):
+        &#34;&#34;&#34;Mock model with 3 levels of nested attention containers; assert only innermost leaf is returned.&#34;&#34;&#34;
+        class DeepLeaf(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.q_proj = nn.Linear(32, 32)
+                self.k_proj = nn.Linear(32, 32)
+                self.v_proj = nn.Linear(32, 32)
+
+        class MiddleContainer(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.self_attn = DeepLeaf()
+
+        class OuterAttention(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.middle = MiddleContainer()
+                self.output = nn.Linear(32, 32)
+
+        class MockModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.layer = nn.ModuleList([OuterAttention() for _ in range(3)])
+
+        mock = MockModel()
+        leaves = get_attention_modules(mock)
+        assert len(leaves) == 3
+        for name, mod in leaves:
+            assert name.endswith(&#34;.middle.self_attn&#34;)
+            assert isinstance(mod, DeepLeaf)</code></pre>
+</details>
+<div class="desc"><p>Verify get_attention_modules discovers only leaf submodules across all families.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_architecture.TestGetAttentionModules.test_bert_returns_leaf_self_attention_only"><code class="name flex">
+<span>def <span class="ident">test_bert_returns_leaf_self_attention_only</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_bert_returns_leaf_self_attention_only(self):
+    cfg = BertConfig(num_hidden_layers=2, num_attention_heads=2, hidden_size=32, intermediate_size=64, vocab_size=100)
+    model = BertForSequenceClassification(cfg)
+    modules = get_attention_modules(model)
+    assert len(modules) == 2
+    for name, mod in modules:
+        assert name.endswith(&#34;.attention.self&#34;)
+        assert mod.__class__.__name__ == &#34;BertSelfAttention&#34;</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_architecture.TestGetAttentionModules.test_custom_nested_containers_deduplication"><code class="name flex">
+<span>def <span class="ident">test_custom_nested_containers_deduplication</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_custom_nested_containers_deduplication(self):
+    &#34;&#34;&#34;Mock model with 3 levels of nested attention containers; assert only innermost leaf is returned.&#34;&#34;&#34;
+    class DeepLeaf(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.q_proj = nn.Linear(32, 32)
+            self.k_proj = nn.Linear(32, 32)
+            self.v_proj = nn.Linear(32, 32)
+
+    class MiddleContainer(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.self_attn = DeepLeaf()
+
+    class OuterAttention(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.middle = MiddleContainer()
+            self.output = nn.Linear(32, 32)
+
+    class MockModel(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.layer = nn.ModuleList([OuterAttention() for _ in range(3)])
+
+    mock = MockModel()
+    leaves = get_attention_modules(mock)
+    assert len(leaves) == 3
+    for name, mod in leaves:
+        assert name.endswith(&#34;.middle.self_attn&#34;)
+        assert isinstance(mod, DeepLeaf)</code></pre>
+</details>
+<div class="desc"><p>Mock model with 3 levels of nested attention containers; assert only innermost leaf is returned.</p></div>
+</dd>
+<dt id="neuralops.tests.test_architecture.TestGetAttentionModules.test_distilbert_returns_leaf_attention"><code class="name flex">
+<span>def <span class="ident">test_distilbert_returns_leaf_attention</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_distilbert_returns_leaf_attention(self):
+    cfg = DistilBertConfig(n_layers=2, n_heads=2, dim=32, hidden_dim=64, vocab_size=100)
+    model = DistilBertForSequenceClassification(cfg)
+    modules = get_attention_modules(model)
+    assert len(modules) == 2
+    for name, mod in modules:
+        assert name.endswith(&#34;.attention&#34;)
+        assert mod.__class__.__name__ in (&#34;DistilBertSelfAttention&#34;, &#34;MultiHeadSelfAttention&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_architecture.TestGetAttentionModules.test_gpt2_returns_correct_attention_block"><code class="name flex">
+<span>def <span class="ident">test_gpt2_returns_correct_attention_block</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_gpt2_returns_correct_attention_block(self):
+    cfg = GPT2Config(n_layer=2, n_head=2, n_embd=32, vocab_size=100)
+    model = GPT2ForSequenceClassification(cfg)
+    modules = get_attention_modules(model)
+    assert len(modules) == 2
+    for name, mod in modules:
+        assert name.endswith(&#34;.attn&#34;)
+        assert mod.__class__.__name__ == &#34;GPT2Attention&#34;</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_architecture.TestGetAttentionModules.test_roberta_returns_leaf_self_attention_only"><code class="name flex">
+<span>def <span class="ident">test_roberta_returns_leaf_self_attention_only</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_roberta_returns_leaf_self_attention_only(self):
+    cfg = RobertaConfig(num_hidden_layers=2, num_attention_heads=2, hidden_size=32, intermediate_size=64, vocab_size=100)
+    model = RobertaForSequenceClassification(cfg)
+    modules = get_attention_modules(model)
+    assert len(modules) == 2
+    for name, mod in modules:
+        assert name.endswith(&#34;.attention.self&#34;)
+        assert mod.__class__.__name__ == &#34;RobertaSelfAttention&#34;</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_architecture.TestGetAttentionModules.test_t5_returns_encoder_and_decoder_attentions"><code class="name flex">
+<span>def <span class="ident">test_t5_returns_encoder_and_decoder_attentions</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_t5_returns_encoder_and_decoder_attentions(self):
+    cfg = T5Config(num_layers=2, num_decoder_layers=2, num_heads=2, d_model=32, d_kv=16, d_ff=64, vocab_size=100)
+    model = T5ForConditionalGeneration(cfg)
+    modules = get_attention_modules(model)
+    # 2 encoder layers (1 self each) + 2 decoder layers (1 self + 1 cross each) = 6
+    assert len(modules) == 6
+    names = [n for n, _ in modules]
+    # Verify self-attention and cross-attention paths
+    assert any(&#34;encoder.block.0.layer.0.SelfAttention&#34; in n for n in names)
+    assert any(&#34;decoder.block.0.layer.0.SelfAttention&#34; in n for n in names)
+    assert any(&#34;decoder.block.0.layer.1.EncDecAttention&#34; in n for n in names)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_architecture.TestInjectAttention"><code class="flex name class">
+<span>class <span class="ident">TestInjectAttention</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TestInjectAttention:
+    &#34;&#34;&#34;Verify inject_attention preserves residuals, LayerNorm, and forward semantics.&#34;&#34;&#34;
+
+    def test_roberta_inject_preserves_output_dense_and_residual(self):
+        cfg = RobertaConfig(num_hidden_layers=2, num_attention_heads=2, hidden_size=32, intermediate_size=64, vocab_size=100)
+        model = RobertaForSequenceClassification(cfg)
+
+        # Confirm pre-injection structure
+        layer0 = model.roberta.encoder.layer[0]
+        assert hasattr(layer0.attention, &#34;output&#34;)
+        assert hasattr(layer0.attention.output, &#34;dense&#34;)
+        assert hasattr(layer0.attention.output, &#34;LayerNorm&#34;)
+
+        # Inject adaptive_svd attention
+        model = inject_attention(model, &#34;adaptive_svd&#34;, rank=8, copy_weights=True)
+
+        # Confirm post-injection outer structure intact
+        layer0_post = model.roberta.encoder.layer[0]
+        assert hasattr(layer0_post.attention, &#34;output&#34;)
+        assert hasattr(layer0_post.attention.output, &#34;dense&#34;)
+        assert hasattr(layer0_post.attention.output, &#34;LayerNorm&#34;)
+
+        # Forward pass verification
+        input_ids = torch.randint(0, 100, (2, 8))
+        out = model(input_ids)
+        assert out.logits.shape == (2, 2)
+        assert torch.isfinite(out.logits).all()
+
+    def test_gpt2_inject_conv1d_transposed_properly(self):
+        cfg = GPT2Config(n_layer=2, n_head=2, n_embd=32, vocab_size=100)
+        cfg.pad_token_id = 0
+        model = GPT2ForSequenceClassification(cfg)
+
+        model = inject_attention(model, &#34;adaptive_svd&#34;, rank=8, copy_weights=True)
+        input_ids = torch.randint(0, 100, (2, 8))
+        out = model(input_ids)
+        assert out.logits.shape == (2, 2)
+        assert torch.isfinite(out.logits).all()
+
+    def test_t5_encoder_inject(self):
+        cfg = T5Config(num_layers=2, num_decoder_layers=2, num_heads=2, d_model=32, d_kv=16, d_ff=64, vocab_size=100)
+        model = T5EncoderModel(cfg)
+
+        model = inject_attention(model, &#34;adaptive_svd&#34;, rank=8, copy_weights=True)
+        input_ids = torch.randint(0, 100, (2, 8))
+        out = model(input_ids)
+        assert out.last_hidden_state.shape == (2, 8, 32)
+        assert torch.isfinite(out.last_hidden_state).all()</code></pre>
+</details>
+<div class="desc"><p>Verify inject_attention preserves residuals, LayerNorm, and forward semantics.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_architecture.TestInjectAttention.test_gpt2_inject_conv1d_transposed_properly"><code class="name flex">
+<span>def <span class="ident">test_gpt2_inject_conv1d_transposed_properly</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_gpt2_inject_conv1d_transposed_properly(self):
+    cfg = GPT2Config(n_layer=2, n_head=2, n_embd=32, vocab_size=100)
+    cfg.pad_token_id = 0
+    model = GPT2ForSequenceClassification(cfg)
+
+    model = inject_attention(model, &#34;adaptive_svd&#34;, rank=8, copy_weights=True)
+    input_ids = torch.randint(0, 100, (2, 8))
+    out = model(input_ids)
+    assert out.logits.shape == (2, 2)
+    assert torch.isfinite(out.logits).all()</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_architecture.TestInjectAttention.test_roberta_inject_preserves_output_dense_and_residual"><code class="name flex">
+<span>def <span class="ident">test_roberta_inject_preserves_output_dense_and_residual</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_roberta_inject_preserves_output_dense_and_residual(self):
+    cfg = RobertaConfig(num_hidden_layers=2, num_attention_heads=2, hidden_size=32, intermediate_size=64, vocab_size=100)
+    model = RobertaForSequenceClassification(cfg)
+
+    # Confirm pre-injection structure
+    layer0 = model.roberta.encoder.layer[0]
+    assert hasattr(layer0.attention, &#34;output&#34;)
+    assert hasattr(layer0.attention.output, &#34;dense&#34;)
+    assert hasattr(layer0.attention.output, &#34;LayerNorm&#34;)
+
+    # Inject adaptive_svd attention
+    model = inject_attention(model, &#34;adaptive_svd&#34;, rank=8, copy_weights=True)
+
+    # Confirm post-injection outer structure intact
+    layer0_post = model.roberta.encoder.layer[0]
+    assert hasattr(layer0_post.attention, &#34;output&#34;)
+    assert hasattr(layer0_post.attention.output, &#34;dense&#34;)
+    assert hasattr(layer0_post.attention.output, &#34;LayerNorm&#34;)
+
+    # Forward pass verification
+    input_ids = torch.randint(0, 100, (2, 8))
+    out = model(input_ids)
+    assert out.logits.shape == (2, 2)
+    assert torch.isfinite(out.logits).all()</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_architecture.TestInjectAttention.test_t5_encoder_inject"><code class="name flex">
+<span>def <span class="ident">test_t5_encoder_inject</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_t5_encoder_inject(self):
+    cfg = T5Config(num_layers=2, num_decoder_layers=2, num_heads=2, d_model=32, d_kv=16, d_ff=64, vocab_size=100)
+    model = T5EncoderModel(cfg)
+
+    model = inject_attention(model, &#34;adaptive_svd&#34;, rank=8, copy_weights=True)
+    input_ids = torch.randint(0, 100, (2, 8))
+    out = model(input_ids)
+    assert out.last_hidden_state.shape == (2, 8, 32)
+    assert torch.isfinite(out.last_hidden_state).all()</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_architecture.TestReplaceModuleDottedPath"><code class="flex name class">
+<span>class <span class="ident">TestReplaceModuleDottedPath</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TestReplaceModuleDottedPath:
+    &#34;&#34;&#34;Verify replace_module works correctly with nested dotted paths.&#34;&#34;&#34;
+
+    def test_nested_dotted_path_replacement(self):
+        class SubSub(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.fc = nn.Linear(10, 10)
+
+        class Sub(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.child = SubSub()
+
+        class Root(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.sub = Sub()
+
+        root = Root()
+        new_linear = nn.Linear(10, 20)
+        replace_module(root, &#34;sub.child.fc&#34;, new_linear)
+        assert root.sub.child.fc is new_linear
+        assert root.sub.child.fc.out_features == 20</code></pre>
+</details>
+<div class="desc"><p>Verify replace_module works correctly with nested dotted paths.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_architecture.TestReplaceModuleDottedPath.test_nested_dotted_path_replacement"><code class="name flex">
+<span>def <span class="ident">test_nested_dotted_path_replacement</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_nested_dotted_path_replacement(self):
+    class SubSub(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fc = nn.Linear(10, 10)
+
+    class Sub(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.child = SubSub()
+
+    class Root(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.sub = Sub()
+
+    root = Root()
+    new_linear = nn.Linear(10, 20)
+    replace_module(root, &#34;sub.child.fc&#34;, new_linear)
+    assert root.sub.child.fc is new_linear
+    assert root.sub.child.fc.out_features == 20</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.tests" href="index.html">neuralops.tests</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.tests.test_architecture.set_random_seed" href="#neuralops.tests.test_architecture.set_random_seed">set_random_seed</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.tests.test_architecture.TestGetAttentionModules" href="#neuralops.tests.test_architecture.TestGetAttentionModules">TestGetAttentionModules</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_architecture.TestGetAttentionModules.test_bert_returns_leaf_self_attention_only" href="#neuralops.tests.test_architecture.TestGetAttentionModules.test_bert_returns_leaf_self_attention_only">test_bert_returns_leaf_self_attention_only</a></code></li>
+<li><code><a title="neuralops.tests.test_architecture.TestGetAttentionModules.test_custom_nested_containers_deduplication" href="#neuralops.tests.test_architecture.TestGetAttentionModules.test_custom_nested_containers_deduplication">test_custom_nested_containers_deduplication</a></code></li>
+<li><code><a title="neuralops.tests.test_architecture.TestGetAttentionModules.test_distilbert_returns_leaf_attention" href="#neuralops.tests.test_architecture.TestGetAttentionModules.test_distilbert_returns_leaf_attention">test_distilbert_returns_leaf_attention</a></code></li>
+<li><code><a title="neuralops.tests.test_architecture.TestGetAttentionModules.test_gpt2_returns_correct_attention_block" href="#neuralops.tests.test_architecture.TestGetAttentionModules.test_gpt2_returns_correct_attention_block">test_gpt2_returns_correct_attention_block</a></code></li>
+<li><code><a title="neuralops.tests.test_architecture.TestGetAttentionModules.test_roberta_returns_leaf_self_attention_only" href="#neuralops.tests.test_architecture.TestGetAttentionModules.test_roberta_returns_leaf_self_attention_only">test_roberta_returns_leaf_self_attention_only</a></code></li>
+<li><code><a title="neuralops.tests.test_architecture.TestGetAttentionModules.test_t5_returns_encoder_and_decoder_attentions" href="#neuralops.tests.test_architecture.TestGetAttentionModules.test_t5_returns_encoder_and_decoder_attentions">test_t5_returns_encoder_and_decoder_attentions</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_architecture.TestInjectAttention" href="#neuralops.tests.test_architecture.TestInjectAttention">TestInjectAttention</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_architecture.TestInjectAttention.test_gpt2_inject_conv1d_transposed_properly" href="#neuralops.tests.test_architecture.TestInjectAttention.test_gpt2_inject_conv1d_transposed_properly">test_gpt2_inject_conv1d_transposed_properly</a></code></li>
+<li><code><a title="neuralops.tests.test_architecture.TestInjectAttention.test_roberta_inject_preserves_output_dense_and_residual" href="#neuralops.tests.test_architecture.TestInjectAttention.test_roberta_inject_preserves_output_dense_and_residual">test_roberta_inject_preserves_output_dense_and_residual</a></code></li>
+<li><code><a title="neuralops.tests.test_architecture.TestInjectAttention.test_t5_encoder_inject" href="#neuralops.tests.test_architecture.TestInjectAttention.test_t5_encoder_inject">test_t5_encoder_inject</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_architecture.TestReplaceModuleDottedPath" href="#neuralops.tests.test_architecture.TestReplaceModuleDottedPath">TestReplaceModuleDottedPath</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_architecture.TestReplaceModuleDottedPath.test_nested_dotted_path_replacement" href="#neuralops.tests.test_architecture.TestReplaceModuleDottedPath.test_nested_dotted_path_replacement">test_nested_dotted_path_replacement</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

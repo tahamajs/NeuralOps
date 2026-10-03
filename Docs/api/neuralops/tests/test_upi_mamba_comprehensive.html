@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tests.test_upi_mamba_comprehensive API documentation</title>
+<meta name="description" content="">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.tests.test_upi_mamba_comprehensive</code></h1>
+</header>
+<section id="section-intro">
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.tests.test_upi_mamba_comprehensive.make_config"><code class="name flex">
+<span>def <span class="ident">make_config</span></span>(<span>hidden_size=64, is_decoder=False, model_type='bert')</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def make_config(hidden_size=64, is_decoder=False, model_type=&#34;bert&#34;):
+    return types.SimpleNamespace(
+        hidden_size=hidden_size,
+        is_decoder=is_decoder,
+        model_type=model_type,
+        dropout=0.0,
+        lora_rank=16,
+    )</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_causal_mode"><code class="name flex">
+<span>def <span class="ident">test_upi_mamba_causal_mode</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_upi_mamba_causal_mode():
+    cfg = make_config(hidden_size=64, is_decoder=True, model_type=&#34;gpt2&#34;)
+    attn = UPIMambaBlock(cfg, pretrained_attn=DummyAttn(64), is_decoder=True)
+    attn.eval()
+
+    B, L, D = 2, 16, 64
+    x = torch.randn(B, L, D)
+    out, _ = attn(x)
+    assert out.shape == (B, L, D)
+    assert not torch.isnan(out).any()</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_copy_weights_all_4_architectures"><code class="name flex">
+<span>def <span class="ident">test_upi_mamba_copy_weights_all_4_architectures</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_upi_mamba_copy_weights_all_4_architectures():
+    d = 64
+    cfg = make_config(hidden_size=d)
+
+    # 1. DistilBERT
+    class DummyDistilBert(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.q_lin = nn.Linear(d, d)
+            self.k_lin = nn.Linear(d, d)
+            self.v_lin = nn.Linear(d, d)
+            self.out_lin = nn.Linear(d, d)
+
+    m_distil = UPIMambaBlock(cfg, pretrained_attn=DummyDistilBert())
+    x = torch.randn(2, 8, d)
+    out1, _ = m_distil(x)
+    assert out1.shape == (2, 8, d)
+
+    # 2. RoBERTa nested
+    class DummyRoberta(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.self = nn.Module()
+            self.self.query = nn.Linear(d, d)
+            self.self.key = nn.Linear(d, d)
+            self.self.value = nn.Linear(d, d)
+            self.output = nn.Module()
+            self.output.dense = nn.Linear(d, d)
+
+    m_roberta = UPIMambaBlock(cfg, pretrained_attn=DummyRoberta())
+    out2, _ = m_roberta(x)
+    assert out2.shape == (2, 8, d)
+
+    # 3. GPT-2 Conv1D
+    class Conv1D(nn.Module):
+        def __init__(self, nf, nx):
+            super().__init__()
+            self.weight = nn.Parameter(torch.randn(nx, nf))
+            self.bias = nn.Parameter(torch.zeros(nf))
+
+    class DummyGPT2(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.c_attn = Conv1D(3 * d, d)
+            self.c_proj = Conv1D(d, d)
+
+    m_gpt2 = UPIMambaBlock(cfg, pretrained_attn=DummyGPT2(), is_decoder=True)
+    out3, _ = m_gpt2(x)
+    assert out3.shape == (2, 8, d)
+
+    # 4. Qwen GQA
+    class DummyQwen(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.q_proj = nn.Linear(d, d)
+            self.k_proj = nn.Linear(d, d // 2)
+            self.v_proj = nn.Linear(d, d // 2)
+            self.o_proj = nn.Linear(d, d)
+
+    m_qwen = UPIMambaBlock(cfg, pretrained_attn=DummyQwen())
+    out4, _ = m_qwen(x)
+    assert out4.shape == (2, 8, d)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_forward_and_shapes"><code class="name flex">
+<span>def <span class="ident">test_upi_mamba_forward_and_shapes</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_upi_mamba_forward_and_shapes():
+    cfg = make_config(hidden_size=64)
+    attn = UPIMambaBlock(cfg, pretrained_attn=DummyAttn(64), d_state=16, d_conv=4)
+    attn.eval()
+
+    for seq_len in [4, 16, 25]:
+        B, L, D = 2, seq_len, 64
+        x = torch.randn(B, L, D)
+        out, _ = attn(x)
+        assert out.shape == (B, L, D), f&#34;Expected shape {(B, L, D)}, got {out.shape}&#34;
+        assert not torch.isnan(out).any()</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_inject"><code class="name flex">
+<span>def <span class="ident">test_upi_mamba_inject</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_upi_mamba_inject():
+    class DummyLayer(nn.Module):
+        def __init__(self, d=64):
+            super().__init__()
+            self.attention = DummyAttn(d)
+
+    layer = DummyLayer(64)
+    cfg = make_config(hidden_size=64)
+    injected = inject_upi_mamba(layer, model_config=cfg, old_attn=layer.attention)
+    assert isinstance(injected, UPIMambaBlock)
+    assert layer.attention is injected
+
+    # Test None graceful handling
+    res = inject_upi_mamba(layer, model_config=cfg, old_attn=None)
+    assert res is None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_is_selective"><code class="name flex">
+<span>def <span class="ident">test_upi_mamba_is_selective</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_upi_mamba_is_selective():
+    &#34;&#34;&#34;Verify the SSM is truly selective: B_t, C_t depend on input, and a spike evolves state.&#34;&#34;&#34;
+    d = 64
+    cfg = make_config(hidden_size=d, is_decoder=True, model_type=&#34;gpt2&#34;)
+    m = UPIMambaBlock(cfg, pretrained_attn=DummyAttn(d), is_decoder=True)
+    m.eval()
+
+    L = 16
+    x1 = torch.randn(1, L, d)
+    x2 = x1.clone()
+    # Inject large perturbation only at position 5
+    x2[0, 5, :] += 10.0
+
+    with torch.no_grad():
+        out1, _ = m(x1)
+        out2, _ = m(x2)
+
+    # State evolution: outputs prior to position 5 should be identical (causal)
+    diff_before = torch.norm(out1[0, :5] - out2[0, :5]).item()
+    assert diff_before &lt; 1e-4, f&#34;Causality violated before spike: diff={diff_before}&#34;
+
+    # Output at and after position 5 must differ due to state evolution
+    diff_at_and_after = torch.norm(out1[0, 5:] - out2[0, 5:]).item()
+    assert diff_at_and_after &gt; 1.0, f&#34;Expected state to evolve after spike, got diff={diff_at_and_after}&#34;
+
+    # Verify B_t and C_t projections are input-dependent
+    x_proj_out1 = m.x_proj(x1)
+    _, B_t1, C_t1 = torch.split(x_proj_out1, [m.inner_dim, m.d_state, m.d_state], dim=-1)
+    x_proj_out2 = m.x_proj(x2)
+    _, B_t2, C_t2 = torch.split(x_proj_out2, [m.inner_dim, m.d_state, m.d_state], dim=-1)
+
+    assert not torch.allclose(B_t1[0, 5], B_t2[0, 5]), &#34;B_t must be input-dependent&#34;
+    assert not torch.allclose(C_t1[0, 5], C_t2[0, 5]), &#34;C_t must be input-dependent&#34;</code></pre>
+</details>
+<div class="desc"><p>Verify the SSM is truly selective: B_t, C_t depend on input, and a spike evolves state.</p></div>
+</dd>
+<dt id="neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_lora_and_gradients"><code class="name flex">
+<span>def <span class="ident">test_upi_mamba_lora_and_gradients</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_upi_mamba_lora_and_gradients():
+    cfg = make_config(hidden_size=64)
+    attn = UPIMambaBlock(cfg, pretrained_attn=DummyAttn(64), lora_rank=8)
+    attn.train()
+
+    # Check base weights frozen and lora weights trainable
+    assert not attn.in_proj.weight.requires_grad
+    assert attn.in_proj.lora_A.requires_grad
+    assert attn.in_proj.lora_B.requires_grad
+    assert not attn.out_proj.weight.requires_grad
+    assert attn.out_proj.lora_A.requires_grad
+    assert attn.out_proj.lora_B.requires_grad
+
+    x = torch.randn(2, 8, 64, requires_grad=True)
+    out, _ = attn(x)
+    loss = out.sum()
+    loss.backward()
+
+    assert attn.in_proj.lora_A.grad is not None
+    assert attn.in_proj.lora_B.grad is not None
+    assert attn.out_proj.lora_A.grad is not None
+    assert attn.out_proj.lora_B.grad is not None
+    assert attn.in_proj.weight.grad is None
+    assert attn.out_proj.weight.grad is None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_masks"><code class="name flex">
+<span>def <span class="ident">test_upi_mamba_masks</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_upi_mamba_masks():
+    cfg = make_config(hidden_size=64)
+    attn = UPIMambaBlock(cfg, pretrained_attn=DummyAttn(64))
+    attn.eval()
+
+    B, L, D = 2, 12, 64
+    x = torch.randn(B, L, D)
+
+    # 2D boolean/binary mask
+    mask_2d = torch.ones(B, L)
+    mask_2d[:, -3:] = 0
+    out_2d, _ = attn(x, attention_mask=mask_2d)
+    assert out_2d.shape == (B, L, D)
+    assert not torch.isnan(out_2d).any()
+
+    # 4D attention mask
+    mask_4d = torch.zeros(B, 1, L, L)
+    mask_4d[:, :, :, -3:] = -10000.0
+    out_4d, _ = attn(x, attention_mask=mask_4d)
+    assert out_4d.shape == (B, L, D)
+    assert not torch.isnan(out_4d).any()</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.tests.test_upi_mamba_comprehensive.DummyAttn"><code class="flex name class">
+<span>class <span class="ident">DummyAttn</span></span>
+<span>(</span><span>d=64)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DummyAttn(nn.Module):
+    def __init__(self, d=64):
+        super().__init__()
+        self.q_proj = nn.Linear(d, d)
+        self.k_proj = nn.Linear(d, d)
+        self.v_proj = nn.Linear(d, d)
+        self.o_proj = nn.Linear(d, d)
+        self.hidden_size = d</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.tests" href="index.html">neuralops.tests</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.tests.test_upi_mamba_comprehensive.make_config" href="#neuralops.tests.test_upi_mamba_comprehensive.make_config">make_config</a></code></li>
+<li><code><a title="neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_causal_mode" href="#neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_causal_mode">test_upi_mamba_causal_mode</a></code></li>
+<li><code><a title="neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_copy_weights_all_4_architectures" href="#neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_copy_weights_all_4_architectures">test_upi_mamba_copy_weights_all_4_architectures</a></code></li>
+<li><code><a title="neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_forward_and_shapes" href="#neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_forward_and_shapes">test_upi_mamba_forward_and_shapes</a></code></li>
+<li><code><a title="neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_inject" href="#neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_inject">test_upi_mamba_inject</a></code></li>
+<li><code><a title="neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_is_selective" href="#neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_is_selective">test_upi_mamba_is_selective</a></code></li>
+<li><code><a title="neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_lora_and_gradients" href="#neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_lora_and_gradients">test_upi_mamba_lora_and_gradients</a></code></li>
+<li><code><a title="neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_masks" href="#neuralops.tests.test_upi_mamba_comprehensive.test_upi_mamba_masks">test_upi_mamba_masks</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.tests.test_upi_mamba_comprehensive.DummyAttn" href="#neuralops.tests.test_upi_mamba_comprehensive.DummyAttn">DummyAttn</a></code></h4>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

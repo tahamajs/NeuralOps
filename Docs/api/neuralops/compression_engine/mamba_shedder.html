@@ -1,0 +1,1101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.mamba_shedder API documentation</title>
+<meta name="description" content="Mamba-Shedder: Sensitivity-Based Structured Pruning and Layer Shedding Compressor …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.mamba_shedder</code></h1>
+</header>
+<section id="section-intro">
+<p>Mamba-Shedder: Sensitivity-Based Structured Pruning and Layer Shedding Compressor.</p>
+<p>Registered as 'mamba_shedder', 'mamba_shedder_compressor', 'mamba_shedder_factory'.</p>
+<p>Mathematical Formulation:
+1. Empirical Fisher:
+I(X_j) = sqrt(mean_n X_{n,j}^2)
+2. Layer Residual:
+Δ_l = ||X_{l+1} - X_l||_F / (||X_l||_F + ε)
+3. Channel Masking:
+W_pruned = W ⊙ M_channel^T</p>
+<p>⚠️
+IMPORTANT
+⚠️</p>
+<p>Channel masking alone does NOT reduce dense storage. To actually shrink
+memory, this version replaces targeted Linear/Conv1D layers with a
+<code><a title="neuralops.compression_engine.mamba_shedder.MambaShedderPrunedLinear" href="#neuralops.compression_engine.mamba_shedder.MambaShedderPrunedLinear">MambaShedderPrunedLinear</a></code> module that stores ONLY the retained channels
+(via per-output-channel keep indices) plus LoRA adapters. The framework's
+dense parameter counter will still read 1.0 for <code>compression_rate</code> because
+the module signature is preserved; the true storage savings are reported in
+<code>storage_compression_ratio</code> and <code>storage_reduction_pct</code>.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.mamba_shedder.mamba_shedder_factory"><code class="name flex">
+<span>def <span class="ident">mamba_shedder_factory</span></span>(<span>model: Any, comp_config: Any = None, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;mamba_shedder&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;mamba_shedder_compressor&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;mamba_shedder_factory&#34;)
+def mamba_shedder_factory(model: Any, comp_config: Any = None, **kwargs: Any) -&gt; Any:
+    sparsity = kwargs.pop(
+        &#34;sparsity&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;mamba_shedder_sparsity&#34;,
+            _cfg_get(comp_config, &#34;sparsity&#34;, 0.2),
+        ),
+    )
+    shed_layers = kwargs.pop(
+        &#34;shed_layers&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;mamba_shedder_shed_layers&#34;,
+            _cfg_get(comp_config, &#34;shed_layers&#34;, 0),
+        ),
+    )
+    structured_24 = kwargs.pop(
+        &#34;structured_24&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;mamba_shedder_structured_24&#34;,
+            _cfg_get(comp_config, &#34;structured_24&#34;, False),
+        ),
+    )
+    max_error = kwargs.pop(&#34;max_error&#34;, _cfg_get(comp_config, &#34;max_error&#34;, 0.20))
+    fallback = kwargs.pop(
+        &#34;fallback_to_original&#34;, _cfg_get(comp_config, &#34;fallback_to_original&#34;, True)
+    )
+    target_attention_only = kwargs.pop(
+        &#34;target_attention_only&#34;,
+        _cfg_get(comp_config, &#34;target_attention_only&#34;, False),
+    )
+    skip_filter = kwargs.pop(
+        &#34;skip_should_compress_filter&#34;,
+        _cfg_get(comp_config, &#34;skip_should_compress_filter&#34;, False),
+    )
+    lora_r = kwargs.pop(&#34;lora_r&#34;, _cfg_get(comp_config, &#34;lora_r&#34;, 0))
+    lora_alpha = kwargs.pop(&#34;lora_alpha&#34;, _cfg_get(comp_config, &#34;lora_alpha&#34;, 1.0))
+    tokenizer = kwargs.pop(
+        &#34;tokenizer&#34;,
+        getattr(model, &#34;tokenizer&#34;, None) or _cfg_get(comp_config, &#34;tokenizer&#34;, None),
+    )
+    return_stats = kwargs.pop(&#34;return_stats&#34;, kwargs.pop(&#34;return_tuple&#34;, False))
+
+    compressor = MambaShedderCompressor(
+        model,
+        tokenizer=tokenizer,
+        sparsity=sparsity,
+        shed_layers=shed_layers,
+        structured_24=structured_24,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        target_attention_only=target_attention_only,
+        skip_should_compress_filter=skip_filter,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        comp_config=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.mamba_shedder.MambaShedderCompressor"><code class="flex name class">
+<span>class <span class="ident">MambaShedderCompressor</span></span>
+<span>(</span><span>model: nn.Module,<br>tokenizer: Any | None = None,<br>sparsity: float = 0.2,<br>shed_layers: int = 0,<br>max_error: float = 0.2,<br>fallback_to_original: bool = True,<br>validate_after_shed: bool = True,<br>calibration_loader: Any | None = None,<br>calibration_texts: list[str] | None = None,<br>device: str | torch.device | None = None,<br>structured_24: bool = False,<br>target_attention_only: bool = False,<br>target_modules: list[str] | None = None,<br>max_calibration_batches: int = 8,<br>min_layer_dim: int = 8,<br>skip_should_compress_filter: bool = False,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;mamba_shedder_class&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;mamba_shedder_compressor_class&#34;)
+class MambaShedderCompressor(BaseCompressor):
+    is_custom_attention: bool = False  # MS-FIX-01
+
+    def __init__(
+        self,
+        model: nn.Module,
+        tokenizer: Any | None = None,
+        sparsity: float = 0.2,
+        shed_layers: int = 0,
+        max_error: float = 0.20,
+        fallback_to_original: bool = True,
+        validate_after_shed: bool = True,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
+        structured_24: bool = False,
+        target_attention_only: bool = False,
+        target_modules: list[str] | None = None,
+        max_calibration_batches: int = 8,
+        min_layer_dim: int = 8,
+        skip_should_compress_filter: bool = False,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;mamba_shedder&#34;, **kwargs)
+        cfg = kwargs.get(&#34;comp_config&#34;, kwargs.get(&#34;cfg&#34;))
+
+        if cfg is not None:
+            sparsity = _cfg_get(cfg, &#34;mamba_shedder_sparsity&#34;, _cfg_get(cfg, &#34;sparsity&#34;, sparsity))
+            shed_layers = _cfg_get(
+                cfg,
+                &#34;mamba_shedder_shed_layers&#34;,
+                _cfg_get(cfg, &#34;shed_layers&#34;, shed_layers),
+            )
+            structured_24 = _cfg_get(
+                cfg,
+                &#34;mamba_shedder_structured_24&#34;,
+                _cfg_get(cfg, &#34;structured_24&#34;, structured_24),
+            )
+            max_error = _cfg_get(cfg, &#34;max_error&#34;, max_error)
+            fallback_to_original = _cfg_get(cfg, &#34;fallback_to_original&#34;, fallback_to_original)
+            target_attention_only = _cfg_get(cfg, &#34;target_attention_only&#34;, target_attention_only)
+            max_calibration_batches = _cfg_get(
+                cfg, &#34;max_calibration_batches&#34;, max_calibration_batches
+            )
+            min_layer_dim = _cfg_get(cfg, &#34;min_layer_dim&#34;, min_layer_dim)
+            skip_should_compress_filter = _cfg_get(
+                cfg,
+                &#34;skip_should_compress_filter&#34;,
+                skip_should_compress_filter,
+            )
+            lora_r = _cfg_get(cfg, &#34;lora_r&#34;, lora_r)
+            lora_alpha = _cfg_get(cfg, &#34;lora_alpha&#34;, lora_alpha)
+
+        self.tokenizer = (
+            tokenizer
+            or getattr(model, &#34;tokenizer&#34;, None)
+            or getattr(getattr(model, &#34;config&#34;, None), &#34;tokenizer&#34;, None)
+        )
+
+        self.sparsity = max(0.0, min(float(sparsity), 0.95))
+        self.shed_layers = max(0, int(shed_layers))
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
+        self.validate_after_shed = bool(validate_after_shed)
+        self.calibration_loader = calibration_loader
+        self.calibration_texts = calibration_texts
+        self.structured_24 = bool(structured_24)
+        self.target_attention_only = bool(target_attention_only)
+        self.target_modules = target_modules
+        self.max_calibration_batches = max(1, int(max_calibration_batches))
+        self.min_layer_dim = max(1, int(min_layer_dim))
+        self.skip_should_compress_filter = bool(skip_should_compress_filter)
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+
+        if device is not None:
+            self.target_device = torch.device(device)
+        else:
+            first_param = next(iter(model.parameters()), None)
+            self.target_device = (
+                first_param.device if first_param is not None else torch.device(&#34;cpu&#34;)
+            )
+
+        self.layer_errors: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
+        self._compressed_params: int = 0
+
+    # ------------------------------------------------------------------
+    # Target check (MS-FIX-16: cached)
+    # ------------------------------------------------------------------
+    def _is_target_module(self, name: str, module: nn.Module, _debug: bool = False) -&gt; bool:
+        name_lower = name.lower()
+        if any(part in name.split(&#34;.&#34;) for part in (&#34;lora_A&#34;, &#34;lora_B&#34;, &#34;base_layer&#34;)):
+            if _debug:
+                logger.info(f&#34;  [skip] {name}: lora/base_layer part&#34;)
+            return False
+
+        cls_name = module.__class__.__name__
+        if cls_name in (
+            &#34;DynamicSVDLinear&#34;,
+            &#34;SVDLinear&#34;,
+            &#34;SVDLinearLayer&#34;,
+            &#34;FactorisedLinear&#34;,
+            &#34;FactorizedLinear&#34;,
+            &#34;LowRankPlusSparseLinear&#34;,
+            &#34;MambaShedderPrunedLinear&#34;,
+        ):
+            if _debug:
+                logger.info(f&#34;  [skip] {name}: already compressed ({cls_name})&#34;)
+            return False
+
+        if not self.skip_should_compress_filter:
+            try:
+                if not should_compress_linear(self.model, name):
+                    if _debug:
+                        logger.info(f&#34;  [skip] {name}: should_compress_linear=False&#34;)
+                    return False
+            except Exception as e:
+                if _debug:
+                    logger.info(f&#34;  [skip] {name}: should_compress_linear raised {e}&#34;)
+                return False
+
+        base_mod = getattr(module, &#34;base_layer&#34;, module)
+        cls_lower = base_mod.__class__.__name__.lower()
+        is_linear_like = (
+            isinstance(base_mod, nn.Linear) or &#34;conv1d&#34; in cls_lower or hasattr(base_mod, &#34;nf&#34;)
+        )
+        if not is_linear_like:
+            if _debug:
+                logger.info(f&#34;  [skip] {name}: not linear-like&#34;)
+            return False
+
+        w = getattr(base_mod, &#34;weight&#34;, None)
+        if w is None:
+            if _debug:
+                logger.info(f&#34;  [skip] {name}: weight None&#34;)
+            return False
+        if min(w.shape[0], w.shape[1]) &lt; self.min_layer_dim:
+            if _debug:
+                logger.info(f&#34;  [skip] {name}: dim too small {tuple(w.shape)}&#34;)
+            return False
+
+        if self.target_attention_only and not any(k in name_lower for k in _ATTN_NAMES):
+            if _debug:
+                logger.info(f&#34;  [skip] {name}: not attention&#34;)
+            return False
+
+        if self.target_modules is not None:
+            ok = any(t in name for t in self.target_modules)
+            if not ok and _debug:
+                logger.info(f&#34;  [skip] {name}: not in target_modules&#34;)
+            return ok
+
+        if _debug:
+            logger.info(f&#34;  [TARGET] {name}: shape={tuple(w.shape)}&#34;)
+        return True
+
+    # ------------------------------------------------------------------
+    # Activation collection
+    # ------------------------------------------------------------------
+    def _collect_activations(self, target_names: list[str]) -&gt; dict[str, torch.Tensor]:
+        self.model.eval()
+        accum: dict[str, list[torch.Tensor]] = {}
+        hooks = []
+
+        def make_hook(layer_name: str):
+            def hook(module, inputs, output):
+                if inputs and isinstance(inputs[0], torch.Tensor):
+                    inp = inputs[0].detach()
+                    if inp.dim() &gt;= 2 and inp.shape[0] * inp.shape[1] &gt; 32768:
+                        inp = inp.reshape(-1, inp.shape[-1])[:32768].unsqueeze(0)
+                    accum.setdefault(layer_name, []).append(inp.cpu())
+
+            return hook
+
+        target_set = set(target_names)
+        for name, module in self.model.named_modules():
+            if name in target_set:
+                hooks.append(module.register_forward_hook(make_hook(name)))
+
+        try:
+            calib_inputs = get_calibration_tensors(
+                self.model,
+                tokenizer=self.tokenizer,
+                calibration_loader=self.calibration_loader,
+                calibration_texts=self.calibration_texts,
+                device=self.target_device,
+            )
+            batches = self._normalize_calibration_batches(calib_inputs)
+            n_batches = min(len(batches), self.max_calibration_batches)
+
+            with torch.no_grad():
+                for i in range(n_batches):
+                    batch = batches[i]
+                    try:
+                        if isinstance(batch, dict):
+                            self.model(**batch)
+                        elif isinstance(batch, torch.Tensor):
+                            self.model(batch)
+                        elif isinstance(batch, (list, tuple)):
+                            self.model(*batch)
+                    except Exception as e:
+                        logger.debug(&#34;Calibration batch %d failed: %s&#34;, i, e)
+        finally:
+            for h in hooks:
+                h.remove()
+
+        aggregated: dict[str, torch.Tensor] = {}
+        for name, act_list in accum.items():
+            if act_list:
+                try:
+                    aggregated[name] = torch.cat(act_list, dim=0)
+                except Exception as e:
+                    logger.debug(&#34;Activation concat failed for %s: %s&#34;, name, e)
+        return aggregated
+
+    @staticmethod
+    def _normalize_calibration_batches(calib_inputs: Any) -&gt; list[Any]:
+        if calib_inputs is None:
+            return []
+        if isinstance(calib_inputs, (list, tuple)):
+            if len(calib_inputs) == 0:
+                return []
+            first = calib_inputs[0]
+            if isinstance(first, (dict, torch.Tensor)):
+                return list(calib_inputs)
+            if isinstance(first, (list, tuple)):
+                return [calib_inputs]
+            return [calib_inputs]
+        if isinstance(calib_inputs, (dict, torch.Tensor)):
+            return [calib_inputs]
+        return [calib_inputs]
+
+    # ------------------------------------------------------------------
+    # Layer shedding
+    # ------------------------------------------------------------------
+    def _apply_layer_shedding(self) -&gt; int:
+        if self.shed_layers &lt;= 0:
+            return 0
+        if getattr(self.model, &#34;_mamba_shed_done&#34;, False):
+            logger.info(&#34;MambaShedder: layer shedding already applied; skipping.&#34;)
+            return 0
+
+        target_container = None
+        container_parent = None
+        container_attr = None
+
+        candidates = [
+            &#34;backbone.layers&#34;,
+            &#34;transformer.layer&#34;,
+            &#34;transformer.h&#34;,
+            &#34;model.layers&#34;,
+            &#34;encoder.layer&#34;,
+            &#34;layers&#34;,
+            &#34;h&#34;,
+        ]
+
+        def _resolve(path: str):
+            parts = path.split(&#34;.&#34;)
+            parent = self.model
+            for p in parts[:-1]:
+                parent = getattr(parent, p, None)
+                if parent is None:
+                    return None, None
+            container = getattr(parent, parts[-1], None)
+            if isinstance(container, (nn.ModuleList, list)):
+                return parent, parts[-1]
+            return None, None
+
+        for path in candidates:
+            parent, attr = _resolve(path)
+            if parent is None:
+                continue
+            container = getattr(parent, attr)
+            if len(container) &gt; self.shed_layers:
+                target_container = container
+                container_parent = parent
+                container_attr = attr
+                break
+
+        if target_container is None:
+            # Generic search: longest module list.
+            best_len = 0
+            for name, mod in self.model.named_modules():
+                if not isinstance(mod, nn.ModuleList):
+                    continue
+                if len(mod) &lt;= self.shed_layers or len(mod) &lt;= best_len:
+                    continue
+                parent, attr = _resolve(name)
+                if parent is None:
+                    continue
+                target_container = mod
+                container_parent = parent
+                container_attr = attr
+                best_len = len(mod)
+
+        if target_container is None or len(target_container) &lt;= self.shed_layers:
+            logger.warning(&#34;MambaShedder: no suitable ModuleList found.&#34;)
+            return 0
+
+        orig_len = len(target_container)
+        keep_len = orig_len - self.shed_layers
+
+        # Always keep first and last (per Mamba-Shedder paper).
+        keep_set = {0, orig_len - 1}
+        n_middle = keep_len - len(keep_set)
+        if n_middle &gt; 0 and orig_len &gt; 2:
+            middle = list(range(1, orig_len - 1))
+            rng = random.Random(42)
+            middle_kept = sorted(rng.sample(middle, min(n_middle, len(middle))))
+            keep_set.update(middle_kept)
+        else:
+            keep_set = set(range(keep_len))
+
+        kept_indices = sorted(keep_set)[:keep_len]
+        old_container = getattr(container_parent, container_attr)
+        new_layers = nn.ModuleList([target_container[i] for i in kept_indices])
+        setattr(container_parent, container_attr, new_layers)
+
+        # Validation with revert
+        if self.validate_after_shed:
+            try:
+                self.model.eval()
+                dummy = torch.randint(0, 100, (1, 8), device=self.target_device)
+                with torch.no_grad():
+                    try:
+                        self.model(input_ids=dummy)
+                    except Exception:
+                        try:
+                            self.model(dummy)
+                        except Exception:
+                            cfg = getattr(self.model, &#34;config&#34;, None)
+                            hidden = getattr(cfg, &#34;hidden_size&#34;, None) if cfg else None
+                            if hidden is None:
+                                first_lin = next(
+                                    (m for m in self.model.modules() if isinstance(m, nn.Linear)),
+                                    None,
+                                )
+                                hidden = getattr(first_lin, &#34;in_features&#34;, 8)
+                            dt = next(self.model.parameters()).dtype
+                            self.model(
+                                torch.randn(1, 8, hidden, device=self.target_device, dtype=dt)
+                            )
+            except Exception as e:
+                logger.warning(&#34;MambaShedder: shedding validation failed (%s); reverting.&#34;, e)
+                setattr(container_parent, container_attr, old_container)
+                return 0
+
+        shed_done = orig_len - len(new_layers)
+        logger.info(
+            &#34;MambaShedder: shed %d layers (%d → %d).&#34;,
+            shed_done,
+            orig_len,
+            len(new_layers),
+        )
+        self.model._mamba_shed_done = True
+        return shed_done
+
+    # ------------------------------------------------------------------
+    # Main compress
+    # ------------------------------------------------------------------
+    def compress(self, **kwargs: Any) -&gt; tuple[nn.Module, dict[str, Any]]:
+        from neuralops.core.model_utils import replace_module
+
+        shed_done = self._apply_layer_shedding()
+
+        # Single-pass target discovery (MS-FIX-16)
+        targets = [
+            (name, module)
+            for name, module in self.model.named_modules()
+            if self._is_target_module(name, module)
+        ]
+
+        if not targets:
+            logger.warning(&#34;MambaShedder: no target layers found.&#34;)
+            n = 0
+            for name, module in self.model.named_modules():
+                n += 1
+                self._is_target_module(name, module, _debug=True)
+            logger.warning(&#34;MambaShedder diagnostic: %d modules scanned, 0 targets.&#34;, n)
+
+        activations_map = self._collect_activations([n for n, _ in targets])
+
+        pruned_layers_count = 0
+        self.layer_errors = {}
+        layer_details: dict[str, Any] = {}
+
+        total_orig_bytes = 0
+        total_comp_bytes = 0
+        seen_weight_ids: set[int] = set()
+
+        for name, module in targets:
+            base_mod = getattr(module, &#34;base_layer&#34;, module)
+            w = getattr(base_mod, &#34;weight&#34;, None)
+            if w is None:
+                continue
+            w_id = id(w)
+            if w_id in seen_weight_ids:
+                continue
+            seen_weight_ids.add(w_id)
+
+            raw_w = w.data
+            device = raw_w.device
+            dtype = raw_w.dtype
+            cls_name = base_mod.__class__.__name__.lower()
+            is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(base_mod, &#34;nf&#34;)
+
+            W = raw_w.t().clone().float() if is_conv1d else raw_w.clone().float()
+            d_out, d_in = W.shape
+
+            orig_bytes = raw_w.numel() * raw_w.element_size()
+            if getattr(base_mod, &#34;bias&#34;, None) is not None:
+                orig_bytes += base_mod.bias.numel() * base_mod.bias.element_size()
+            total_orig_bytes += orig_bytes
+
+            # Sensitivity: Fisher or weight-norm.
+            act = activations_map.get(name, None)
+            used_act_sensitivity = False
+            if act is not None and act.numel() &gt; 0:
+                try:
+                    act_flat = act.reshape(-1, act.shape[-1]).float().to(device)
+                    if act_flat.shape[-1] == d_in:
+                        fisher = (act_flat**2).mean(dim=0).clamp(min=1e-8)
+                        sens = fisher.sqrt()
+                        used_act_sensitivity = True
+                    else:
+                        sens = torch.norm(W, dim=0)
+                except Exception as e:
+                    logger.debug(&#34;Fisher computation failed for %s: %s&#34;, name, e)
+                    sens = torch.norm(W, dim=0)
+            else:
+                sens = torch.norm(W, dim=0)
+
+            # Decide kept output channels (or 2:4 mask).
+            if self.structured_24:
+                # 2:4 → no storage savings (dense storage kept). Fallback to
+                # in-place weight modification.
+                saliency = sens.unsqueeze(0).expand_as(W)
+                try:
+                    W_pruned, _ = apply_24_structured_mask(W, saliency=saliency, dim=1)
+                except Exception as e:
+                    logger.warning(&#34;2:4 pruning failed for %s: %s&#34;, name, e)
+                    total_comp_bytes += orig_bytes
+                    continue
+
+                norm_orig = torch.norm(W, p=&#34;fro&#34;).clamp_min(1e-12)
+                rel_err = (torch.norm(W - W_pruned, p=&#34;fro&#34;) / norm_orig).item()
+                self.layer_errors[name] = rel_err
+
+                if rel_err &gt; self.max_error and self.fallback_to_original:
+                    total_comp_bytes += orig_bytes
+                    continue
+
+                final_w = W_pruned.t().contiguous() if is_conv1d else W_pruned
+                if final_w.shape != raw_w.shape:
+                    total_comp_bytes += orig_bytes
+                    continue
+
+                with torch.no_grad():
+                    base_mod.weight.data.copy_(final_w.to(dtype=dtype, device=device))
+                    base_mod.weight.requires_grad = False
+                    if getattr(base_mod, &#34;bias&#34;, None) is not None:
+                        base_mod.bias.requires_grad = False
+
+                pruned_layers_count += 1
+                total_comp_bytes += orig_bytes  # no real storage change
+                layer_details[name] = {
+                    &#34;rel_error&#34;: rel_err,
+                    &#34;used_act_sensitivity&#34;: used_act_sensitivity,
+                    &#34;storage_bytes_before&#34;: orig_bytes,
+                    &#34;storage_bytes_after&#34;: orig_bytes,
+                    &#34;note&#34;: &#34;2:4 sparsity: no storage savings&#34;,
+                }
+            else:
+                # Channel pruning → real storage savings.
+                n_keep = max(1, int(d_out * (1.0 - self.sparsity)))
+                _, keep_idx = torch.topk(sens, k=n_keep, largest=True)
+                keep_idx, _ = torch.sort(keep_idx)
+                keep_idx = keep_idx.to(device)
+
+                W_kept = W.index_select(0, keep_idx).contiguous()
+                W_pruned_full = torch.zeros_like(W)
+                W_pruned_full.index_copy_(0, keep_idx, W_kept)
+
+                norm_orig = torch.norm(W, p=&#34;fro&#34;).clamp_min(1e-12)
+                rel_err = (torch.norm(W - W_pruned_full, p=&#34;fro&#34;) / norm_orig).item()
+                self.layer_errors[name] = rel_err
+
+                if rel_err &gt; self.max_error and self.fallback_to_original:
+                    logger.warning(
+                        &#34;MambaShedder: err %.4f on %s &gt; %.4f; keeping original.&#34;,
+                        rel_err,
+                        name,
+                        self.max_error,
+                    )
+                    total_comp_bytes += orig_bytes
+                    continue
+
+                bias_kept = None
+                if getattr(base_mod, &#34;bias&#34;, None) is not None:
+                    b_full = base_mod.bias.data.float()
+                    bias_kept = (
+                        b_full.index_select(0, keep_idx).contiguous().to(dtype=dtype, device=device)
+                    )
+
+                # Existing LoRA
+                lora_A_src = getattr(module, &#34;lora_A&#34;, None)
+                lora_B_src = getattr(module, &#34;lora_B&#34;, None)
+                eff_lora_r = self.lora_r
+                if lora_A_src is not None and hasattr(lora_A_src, &#34;weight&#34;):
+                    eff_lora_r = int(lora_A_src.weight.shape[0])
+
+                new_layer = MambaShedderPrunedLinear(
+                    in_features=d_in,
+                    original_out_features=d_out,
+                    W_kept=W_kept.to(dtype=dtype, device=device),
+                    keep_idx=keep_idx.cpu(),
+                    bias_kept=bias_kept,
+                    lora_r=eff_lora_r,
+                    lora_alpha=self.lora_alpha,
+                )
+
+                # Preserve LoRA weights if shapes match.
+                if (
+                    lora_A_src is not None
+                    and lora_B_src is not None
+                    and new_layer.lora_A is not None
+                ):
+                    with torch.no_grad():
+                        src_A = (
+                            lora_A_src.weight.data
+                            if hasattr(lora_A_src, &#34;weight&#34;)
+                            else lora_A_src.data
+                        )
+                        src_B = (
+                            lora_B_src.weight.data
+                            if hasattr(lora_B_src, &#34;weight&#34;)
+                            else lora_B_src.data
+                        )
+                        if (
+                            src_A.shape == new_layer.lora_A.shape
+                            and src_B.shape == new_layer.lora_B.shape
+                        ):
+                            new_layer.lora_A.copy_(
+                                src_A.to(
+                                    new_layer.lora_A.device,
+                                    dtype=new_layer.lora_A.dtype,
+                                )
+                            )
+                            new_layer.lora_B.copy_(
+                                src_B.to(
+                                    new_layer.lora_B.device,
+                                    dtype=new_layer.lora_B.dtype,
+                                )
+                            )
+
+                # Splice with wrapper preservation (MS-FIX-18)
+                if hasattr(module, &#34;base_layer&#34;):
+                    module.base_layer = new_layer
+                else:
+                    replace_module(self.model, name, new_layer)
+
+                pruned_layers_count += 1
+                total_comp_bytes += new_layer.storage_bytes()
+                layer_details[name] = {
+                    &#34;rel_error&#34;: rel_err,
+                    &#34;used_act_sensitivity&#34;: used_act_sensitivity,
+                    &#34;storage_bytes_before&#34;: orig_bytes,
+                    &#34;storage_bytes_after&#34;: new_layer.storage_bytes(),
+                    &#34;keep_ratio&#34;: n_keep / d_out,
+                }
+
+        # ------------------------------------------------------------------
+        # Forward sanity check (MS-FIX-17)
+        # ------------------------------------------------------------------
+        forward_check_success = True
+        try:
+            with torch.no_grad():
+                dev = next(self.model.parameters(), torch.tensor(0.0)).device
+                dummy = torch.randint(0, 100, (1, 8), device=dev, dtype=torch.long)
+                try:
+                    self.model(input_ids=dummy)
+                except Exception:
+                    try:
+                        self.model(dummy)
+                    except Exception:
+                        cfg = getattr(self.model, &#34;config&#34;, None)
+                        hidden = getattr(cfg, &#34;hidden_size&#34;, None) if cfg else None
+                        if hidden is None:
+                            first_lin = next(
+                                (m for m in self.model.modules() if isinstance(m, nn.Linear)),
+                                None,
+                            )
+                            hidden = getattr(first_lin, &#34;in_features&#34;, 8)
+                        dt = next(self.model.parameters()).dtype
+                        self.model(torch.randn(1, 8, hidden, device=dev, dtype=dt))
+        except Exception as e:
+            logger.warning(&#34;MambaShedder forward sanity check failed: %s&#34;, e)
+            forward_check_success = False
+
+        # ------------------------------------------------------------------
+        # Stats
+        # ------------------------------------------------------------------
+        try:
+            self._compressed_params = self._count_params(self.model)
+        except Exception:
+            self._compressed_params = sum(p.numel() for p in self.model.parameters())
+
+        avg_err = (
+            sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
+            if self.layer_errors
+            else 0.0
+        )
+
+        storage_ratio = total_orig_bytes / max(1, total_comp_bytes) if total_comp_bytes &gt; 0 else 1.0
+        effective_ratio = (
+            total_comp_bytes / max(1, total_orig_bytes) if total_orig_bytes &gt; 0 else 1.0
+        )
+
+        try:
+            stats = self.get_compression_stats()
+        except Exception:
+            stats = {}
+
+        stats.update(
+            {
+                &#34;pruned_layers&#34;: pruned_layers_count,
+                &#34;shed_layers&#34;: shed_done,
+                &#34;sparsity_target&#34;: self.sparsity,
+                &#34;structured_24&#34;: self.structured_24,
+                &#34;max_error&#34;: self.max_error,
+                &#34;fallback_to_original&#34;: self.fallback_to_original,
+                &#34;avg_reconstruction_error&#34;: avg_err,
+                &#34;layer_errors&#34;: self.layer_errors,
+                &#34;layer_details&#34;: layer_details,
+                &#34;orig_storage_bytes&#34;: total_orig_bytes,
+                &#34;comp_storage_bytes&#34;: total_comp_bytes,
+                &#34;storage_compression_ratio&#34;: round(storage_ratio, 3),
+                &#34;storage_reduction_pct&#34;: round(100.0 * (1.0 - effective_ratio), 2),
+                &#34;effective_parameter_ratio&#34;: round(effective_ratio, 4),
+                &#34;forward_check_success&#34;: forward_check_success,
+                &#34;method&#34;: &#34;mamba_shedder_sensitivity&#34;,
+                &#34;note&#34;: (
+                    &#34;Channel pruning now replaces target layers with &#34;
+                    &#34;MambaShedderPrunedLinear (real storage reduction). &#34;
+                    &#34;2:4 sparsity stores dense weights, so its storage &#34;
+                    &#34;compression ratio stays at 1.0.&#34;
+                ),
+            }
+        )
+        self.stats = stats
+
+        logger.info(
+            &#34;MambaShedder: %d pruned, %d shed, avg_err=%.4f, storage=%.2fx.&#34;,
+            pruned_layers_count,
+            shed_done,
+            avg_err,
+            storage_ratio,
+        )
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Base class for all compressors. Not a nn.Module to avoid parameter storage.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.mamba_shedder.MambaShedderCompressor.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.compress" href="../core/base.html#neuralops.core.base.BaseCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.compression_engine.mamba_shedder.MambaShedderPrunedLinear"><code class="flex name class">
+<span>class <span class="ident">MambaShedderPrunedLinear</span></span>
+<span>(</span><span>in_features: int,<br>original_out_features: int,<br>W_kept: torch.Tensor,<br>keep_idx: torch.Tensor,<br>bias_kept: torch.Tensor | None = None,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class MambaShedderPrunedLinear(nn.Module):
+    &#34;&#34;&#34;
+    Linear layer with pruned output channels.
+
+    Stores only the kept rows of W:
+      - W_kept:    (k, in_features)
+      - bias_kept: (k,) or None
+      - keep_idx:  (k,) int64 (output positions of kept rows)
+      - original_out_features: int
+
+    Forward:
+      h = F.linear(x, W_kept, bias_kept)              # (..., k)
+      out = zeros(..., original_out) then scatter to keep_idx
+      + LoRA(x) if present.
+
+    Storage: k * in instead of out * in.
+    &#34;&#34;&#34;
+
+    is_custom_attention: bool = False
+
+    def __init__(
+        self,
+        in_features: int,
+        original_out_features: int,
+        W_kept: torch.Tensor,
+        keep_idx: torch.Tensor,
+        bias_kept: torch.Tensor | None = None,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = int(in_features)
+        self.original_out_features = int(original_out_features)
+        self.out_features = self.original_out_features
+        self.nf = self.out_features
+        self.num_kept = int(W_kept.shape[0])
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r &gt; 0 else 1.0
+
+        self.register_buffer(&#34;keep_idx&#34;, keep_idx.long(), persistent=True)
+        self.W_kept = nn.Parameter(W_kept, requires_grad=False)
+
+        if bias_kept is not None:
+            self.bias_kept = nn.Parameter(bias_kept, requires_grad=False)
+        else:
+            self.register_parameter(&#34;bias_kept&#34;, None)
+
+        if self.lora_r &gt; 0:
+            self.lora_A = nn.Parameter(
+                torch.empty(
+                    (self.lora_r, self.in_features),
+                    dtype=torch.float32,
+                    device=W_kept.device,
+                )
+            )
+            self.lora_B = nn.Parameter(
+                torch.zeros(
+                    (self.original_out_features, self.lora_r),
+                    dtype=torch.float32,
+                    device=W_kept.device,
+                )
+            )
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Reconstruct (original_out, in) weight with zeros in pruned rows.&#34;&#34;&#34;
+        W = self.W_kept.new_zeros(self.original_out_features, self.in_features)
+        W.index_copy_(0, self.keep_idx, self.W_kept)
+        return W
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        h = F.linear(x, self.W_kept, self.bias_kept)  # (..., k)
+        out = torch.zeros(
+            *x.shape[:-1],
+            self.original_out_features,
+            dtype=h.dtype,
+            device=h.device,
+        )
+        out.scatter_(-1, self.keep_idx.expand(*x.shape[:-1], -1), h)
+        if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x.float(), self.lora_A), self.lora_B)
+            out = out + self.scaling * lora_out.to(out.dtype)
+        return out
+
+    def storage_bytes(self) -&gt; int:
+        total = self.W_kept.numel() * self.W_kept.element_size()
+        total += self.keep_idx.numel() * self.keep_idx.element_size()
+        if self.bias_kept is not None:
+            total += self.bias_kept.numel() * self.bias_kept.element_size()
+        if self.lora_A is not None:
+            total += self.lora_A.numel() * self.lora_A.element_size()
+        if self.lora_B is not None:
+            total += self.lora_B.numel() * self.lora_B.element_size()
+        return total</code></pre>
+</details>
+<div class="desc"><p>Linear layer with pruned output channels.</p>
+<p>Stores only the kept rows of W:
+- W_kept:
+(k, in_features)
+- bias_kept: (k,) or None
+- keep_idx:
+(k,) int64 (output positions of kept rows)
+- original_out_features: int</p>
+<p>Forward
+-----=
+h = F.linear(x, W_kept, bias_kept)
+# (&hellip;, k)
+out = zeros(&hellip;, original_out) then scatter to keep_idx
++ LoRA(x) if present.</p>
+<p>Storage: k * in instead of out * in.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.mamba_shedder.MambaShedderPrunedLinear.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.mamba_shedder.MambaShedderPrunedLinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Reconstruct (original_out, in) weight with zeros in pruned rows.&#34;&#34;&#34;
+    W = self.W_kept.new_zeros(self.original_out_features, self.in_features)
+    W.index_copy_(0, self.keep_idx, self.W_kept)
+    return W</code></pre>
+</details>
+<div class="desc"><p>Reconstruct (original_out, in) weight with zeros in pruned rows.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.mamba_shedder.MambaShedderPrunedLinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    h = F.linear(x, self.W_kept, self.bias_kept)  # (..., k)
+    out = torch.zeros(
+        *x.shape[:-1],
+        self.original_out_features,
+        dtype=h.dtype,
+        device=h.device,
+    )
+    out.scatter_(-1, self.keep_idx.expand(*x.shape[:-1], -1), h)
+    if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        lora_out = F.linear(F.linear(x.float(), self.lora_A), self.lora_B)
+        out = out + self.scaling * lora_out.to(out.dtype)
+    return out</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+<dt id="neuralops.compression_engine.mamba_shedder.MambaShedderPrunedLinear.storage_bytes"><code class="name flex">
+<span>def <span class="ident">storage_bytes</span></span>(<span>self) ‑> int</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def storage_bytes(self) -&gt; int:
+    total = self.W_kept.numel() * self.W_kept.element_size()
+    total += self.keep_idx.numel() * self.keep_idx.element_size()
+    if self.bias_kept is not None:
+        total += self.bias_kept.numel() * self.bias_kept.element_size()
+    if self.lora_A is not None:
+        total += self.lora_A.numel() * self.lora_A.element_size()
+    if self.lora_B is not None:
+        total += self.lora_B.numel() * self.lora_B.element_size()
+    return total</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.mamba_shedder.mamba_shedder_factory" href="#neuralops.compression_engine.mamba_shedder.mamba_shedder_factory">mamba_shedder_factory</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.mamba_shedder.MambaShedderCompressor" href="#neuralops.compression_engine.mamba_shedder.MambaShedderCompressor">MambaShedderCompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.mamba_shedder.MambaShedderCompressor.is_custom_attention" href="#neuralops.compression_engine.mamba_shedder.MambaShedderCompressor.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.mamba_shedder.MambaShedderPrunedLinear" href="#neuralops.compression_engine.mamba_shedder.MambaShedderPrunedLinear">MambaShedderPrunedLinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.mamba_shedder.MambaShedderPrunedLinear.forward" href="#neuralops.compression_engine.mamba_shedder.MambaShedderPrunedLinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.compression_engine.mamba_shedder.MambaShedderPrunedLinear.is_custom_attention" href="#neuralops.compression_engine.mamba_shedder.MambaShedderPrunedLinear.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.compression_engine.mamba_shedder.MambaShedderPrunedLinear.storage_bytes" href="#neuralops.compression_engine.mamba_shedder.MambaShedderPrunedLinear.storage_bytes">storage_bytes</a></code></li>
+<li><code><a title="neuralops.compression_engine.mamba_shedder.MambaShedderPrunedLinear.weight" href="#neuralops.compression_engine.mamba_shedder.MambaShedderPrunedLinear.weight">weight</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

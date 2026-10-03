@@ -1,0 +1,880 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.roast_hashed_linear API documentation</title>
+<meta name="description" content="ROAST: Hardware-Aware Weight Sharing with Tiling.
+Reference: &#39;ROAST: A Hardware-Aware Weight Sharing Scheme for Efficient Neural Networks&#39;
+Registered …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.roast_hashed_linear</code></h1>
+</header>
+<section id="section-intro">
+<p>ROAST: Hardware-Aware Weight Sharing with Tiling.
+Reference: 'ROAST: A Hardware-Aware Weight Sharing Scheme for Efficient Neural Networks'
+Registered in COMPRESSOR_REGISTRY as 'roast', 'roast_compressor', and 'roast_factory'.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.roast_hashed_linear.roast_factory"><code class="name flex">
+<span>def <span class="ident">roast_factory</span></span>(<span>model: Any,<br>comp_config: Any = None,<br>return_stats: bool = False,<br>return_tuple: bool = False,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module | tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;roast_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;roast_compressor_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;roast_hashed_linear_factory&#34;)
+def roast_factory(
+    model: Any,
+    comp_config: Any = None,
+    return_stats: bool = False,
+    return_tuple: bool = False,
+    **kwargs: Any,
+) -&gt; nn.Module | tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;ROAST compressor factory function returning (compressed_model, stats) when requested.&#34;&#34;&#34;
+    n_buckets = kwargs.pop(&#34;n_buckets&#34;, _cfg_get(comp_config, &#34;n_buckets&#34;, 1024))
+    tile_size = kwargs.pop(&#34;tile_size&#34;, _cfg_get(comp_config, &#34;tile_size&#34;, 32))
+    target_attention_only = kwargs.pop(
+        &#34;target_attention_only&#34;, _cfg_get(comp_config, &#34;target_attention_only&#34;, False)
+    )
+    skip_attention_qkv = kwargs.pop(
+        &#34;skip_attention_qkv&#34;, _cfg_get(comp_config, &#34;skip_attention_qkv&#34;, True)
+    )
+    use_lora = kwargs.pop(&#34;use_lora&#34;, _cfg_get(comp_config, &#34;use_lora&#34;, False))
+    lora_r = kwargs.pop(&#34;lora_r&#34;, _cfg_get(comp_config, &#34;lora_r&#34;, 0))
+    lora_alpha = kwargs.pop(&#34;lora_alpha&#34;, _cfg_get(comp_config, &#34;lora_alpha&#34;, 1.0))
+    max_error = kwargs.pop(&#34;max_error&#34;, _cfg_get(comp_config, &#34;max_error&#34;, 0.50))
+    fallback = kwargs.pop(
+        &#34;fallback_to_original&#34;, _cfg_get(comp_config, &#34;fallback_to_original&#34;, True)
+    )
+
+    compressor = ROASTCompressor(
+        model,
+        n_buckets=n_buckets,
+        tile_size=tile_size,
+        target_attention_only=target_attention_only,
+        skip_attention_qkv=skip_attention_qkv,
+        use_lora=use_lora,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_stats or return_tuple or kwargs.pop(&#34;return_both&#34;, False):
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>ROAST compressor factory function returning (compressed_model, stats) when requested.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.roast_hashed_linear.ROASTCompressor"><code class="flex name class">
+<span>class <span class="ident">ROASTCompressor</span></span>
+<span>(</span><span>model: nn.Module,<br>n_buckets: int = 1024,<br>tile_size: int = 32,<br>skip_attention_qkv: bool = True,<br>use_lora: bool = False,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0,<br>target_modules: list[str] | None = None,<br>target_attention_only: bool = False,<br>max_error: float = 0.5,<br>fallback_to_original: bool = True,<br>min_numel: int = 16,<br>device: str | torch.device | None = None,<br>cfg: Any | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;roast&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;roast_compressor&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;roast_hashed_linear&#34;)
+class ROASTCompressor(BaseCompressor):
+    &#34;&#34;&#34;
+    Replace eligible linear and Conv1D layers with ROASTLinear (hardware-aware weight sharing).
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        model: nn.Module,
+        n_buckets: int = 1024,
+        tile_size: int = 32,
+        skip_attention_qkv: bool = True,
+        use_lora: bool = False,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        target_modules: list[str] | None = None,
+        target_attention_only: bool = False,
+        max_error: float = 0.50,
+        fallback_to_original: bool = True,
+        min_numel: int = 16,
+        device: str | torch.device | None = None,
+        cfg: Any | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;roast&#34;, **kwargs)
+        cfg_obj = cfg or kwargs.get(&#34;comp_config&#34;)
+
+        self.n_buckets = max(
+            1,
+            int(n_buckets if n_buckets is not None else _cfg_get(cfg_obj, &#34;n_buckets&#34;, 1024)),
+        )
+        self.tile_size = max(
+            1,
+            int(tile_size if tile_size is not None else _cfg_get(cfg_obj, &#34;tile_size&#34;, 32)),
+        )
+        self.target_attention_only = bool(
+            target_attention_only
+            or _cfg_get(
+                cfg_obj,
+                &#34;target_attention_only&#34;,
+                kwargs.get(&#34;target_attention_only&#34;, False),
+            )
+        )
+        self.skip_attention_qkv = (
+            bool(
+                skip_attention_qkv
+                if skip_attention_qkv is not None
+                else _cfg_get(cfg_obj, &#34;skip_attention_qkv&#34;, True)
+            )
+            and not self.target_attention_only
+        )
+        self.use_lora = bool(use_lora or _cfg_get(cfg_obj, &#34;use_lora&#34;, False) or (lora_r &gt; 0))
+        self.lora_r = int(lora_r or _cfg_get(cfg_obj, &#34;lora_r&#34;, 0))
+        self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, &#34;lora_alpha&#34;, 1.0))
+        self.target_modules = target_modules
+        self.max_error = float(
+            max_error if max_error is not None else _cfg_get(cfg_obj, &#34;max_error&#34;, 0.50)
+        )
+        self.fallback_to_original = bool(
+            fallback_to_original
+            if fallback_to_original is not None
+            else _cfg_get(cfg_obj, &#34;fallback_to_original&#34;, True)
+        )
+        self.min_numel = max(
+            1,
+            int(min_numel if min_numel is not None else _cfg_get(cfg_obj, &#34;min_numel&#34;, 16)),
+        )
+
+        # Target device derivation
+        if device is not None:
+            try:
+                self.target_device = torch.device(device)
+            except Exception:
+                self.target_device = (
+                    next(model.parameters()).device
+                    if list(model.parameters())
+                    else torch.device(&#34;cpu&#34;)
+                )
+        else:
+            self.target_device = (
+                next(model.parameters()).device if list(model.parameters()) else torch.device(&#34;cpu&#34;)
+            )
+
+        # Diagnostics &amp; Tracking
+        self.visited_modules: set[int] = set()
+        self.compressed_layers: list[str] = []
+        self.protected_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.failed_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+
+    def _is_gqa_asymmetric(self, name: str, module: nn.Module) -&gt; bool:
+        &#34;&#34;&#34;Check if layer belongs to an attention projection in a GQA architecture.&#34;&#34;&#34;
+        if self.target_attention_only:
+            return False
+        cfg = getattr(self.model, &#34;config&#34;, None)
+        num_heads = getattr(cfg, &#34;num_attention_heads&#34;, None)
+        num_kv_heads = getattr(cfg, &#34;num_key_value_heads&#34;, None)
+        is_gqa = num_heads is not None and num_kv_heads is not None and num_kv_heads &lt; num_heads
+
+        name_l = name.lower()
+        is_attn_qkv = any(
+            p in name_l
+            for p in [
+                &#34;q_proj&#34;,
+                &#34;k_proj&#34;,
+                &#34;v_proj&#34;,
+                &#34;c_attn&#34;,
+                &#34;query&#34;,
+                &#34;key&#34;,
+                &#34;value&#34;,
+                &#34;q_lin&#34;,
+                &#34;k_lin&#34;,
+                &#34;v_lin&#34;,
+                &#34;self_attn.q&#34;,
+                &#34;self_attn.k&#34;,
+                &#34;self_attn.v&#34;,
+            ]
+        )
+        return (is_gqa or self.skip_attention_qkv) and is_attn_qkv
+
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        name_l = name.lower()
+        if any(
+            k in name_l
+            for k in [
+                &#34;classifier&#34;,
+                &#34;score&#34;,
+                &#34;lm_head&#34;,
+                &#34;pooler&#34;,
+                &#34;embed&#34;,
+                &#34;embedding&#34;,
+                &#34;cls_head&#34;,
+                &#34;head&#34;,
+                &#34;logits_processor&#34;,
+            ]
+        ):
+            self.protected_layers.append(name)
+            return False
+
+        if self.target_attention_only:
+            attn_keywords = [
+                &#34;attn&#34;,
+                &#34;attention&#34;,
+                &#34;q_proj&#34;,
+                &#34;k_proj&#34;,
+                &#34;v_proj&#34;,
+                &#34;o_proj&#34;,
+                &#34;c_attn&#34;,
+                &#34;c_proj&#34;,
+                &#34;query&#34;,
+                &#34;key&#34;,
+                &#34;value&#34;,
+                &#34;dense&#34;,
+            ]
+            if not any(k in name_l for k in attn_keywords):
+                self.skipped_layers.append(name)
+                return False
+
+        if self._is_gqa_asymmetric(name, module):
+            self.skipped_layers.append(name)
+            return False
+
+        base_mod = getattr(module, &#34;base_layer&#34;, module)
+        cls_name = base_mod.__class__.__name__
+        raw_w = getattr(base_mod, &#34;weight&#34;, None)
+        if raw_w is None or not isinstance(raw_w, torch.Tensor):
+            return False
+
+        is_conv1d = &#34;conv1d&#34; in cls_name.lower() or hasattr(base_mod, &#34;nf&#34;)
+        is_linear_like = isinstance(base_mod, nn.Linear) or is_conv1d
+        if not is_linear_like or isinstance(module, ROASTLinear):
+            return False
+
+        if raw_w.numel() &lt; self.min_numel:
+            self.skipped_layers.append(name)
+            return False
+
+        if not should_compress_linear(self.model, name):
+            self.protected_layers.append(name)
+            return False
+
+        if self.target_modules is not None:
+            return any(t in name for t in self.target_modules)
+        return True
+
+    def compress(self, **kwargs: Any) -&gt; tuple[nn.Module, dict[str, Any]]:
+        &#34;&#34;&#34;Compress the target modules using ROAST tiling with LoRA support.&#34;&#34;&#34;
+        self.compressed_layers.clear()
+        self.visited_modules.clear()
+        self.protected_layers.clear()
+        self.skipped_layers.clear()
+        self.fallback_layers.clear()
+        self.failed_layers.clear()
+        self.layer_errors.clear()
+
+        for name, module in list(self.model.named_modules()):
+            if self._is_target_module(name, module):
+                mod_id = id(module)
+                if mod_id in self.visited_modules:
+                    logger.debug(&#34;ROAST: Skipping tied module %s&#34;, name)
+                    self.skipped_layers.append(name)
+                    continue
+                self.visited_modules.add(mod_id)
+
+                try:
+                    base_mod = getattr(module, &#34;base_layer&#34;, module)
+                    raw_w = base_mod.weight.data
+                    cls_name = base_mod.__class__.__name__
+                    is_conv1d = &#34;conv1d&#34; in cls_name.lower() or hasattr(base_mod, &#34;nf&#34;)
+                    W_orig = (
+                        raw_w.t().contiguous().float() if is_conv1d else raw_w.contiguous().float()
+                    )
+
+                    new_layer = ROASTLinear.from_linear(
+                        module,
+                        n_buckets=self.n_buckets,
+                        tile_size=self.tile_size,
+                        lora_r=self.lora_r if self.use_lora else 0,
+                        lora_alpha=self.lora_alpha,
+                    )
+                    W_rec = new_layer.weight.float()
+                    norm_orig = torch.norm(W_orig, p=&#34;fro&#34;).clamp_min(1e-8)
+                    err = (torch.norm(W_orig - W_rec, p=&#34;fro&#34;) / norm_orig).item()
+                    self.layer_errors[name] = float(err)
+
+                    is_invalid = torch.isnan(W_rec).any() or torch.isinf(W_rec).any()
+                    if err &gt; self.max_error:
+                        logger.warning(
+                            &#34;ROAST: reconstruction error %.4f on %s exceeded threshold %.4f.&#34;,
+                            err,
+                            name,
+                            self.max_error,
+                        )
+                        is_invalid = True
+
+                    if is_invalid and self.fallback_to_original:
+                        self.fallback_layers.append(name)
+                        for p in module.parameters():
+                            p.requires_grad = False
+                        continue
+
+                    replace_module(self.model, name, new_layer)
+                    self.compressed_layers.append(name)
+
+                except Exception as e_roast:
+                    logger.warning(&#34;ROAST: Failed to process %s: %s&#34;, name, e_roast)
+                    self.failed_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
+
+        # Post-compression forward sanity check
+        forward_check_success = True
+        try:
+            with torch.no_grad():
+                dummy_input = torch.randint(0, 100, (1, 8), device=self.target_device)
+                self.model(dummy_input)
+        except Exception as ex_sanity:
+            logger.warning(&#34;ROAST post-compression forward sanity check warning: %s&#34;, ex_sanity)
+            forward_check_success = False
+
+        self._compressed_params = self._count_params(self.model)
+        avg_err = (
+            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
+        )
+        stats = self.get_compression_stats()
+        stats.update(
+            {
+                &#34;compressed_layers&#34;: self.compressed_layers,
+                &#34;compressed_layer_count&#34;: len(self.compressed_layers),
+                &#34;protected_layers&#34;: self.protected_layers,
+                &#34;protected_layer_count&#34;: len(self.protected_layers),
+                &#34;skipped_layers&#34;: self.skipped_layers,
+                &#34;skipped_layer_count&#34;: len(self.skipped_layers),
+                &#34;fallback_layers&#34;: self.fallback_layers,
+                &#34;fallback_layer_count&#34;: len(self.fallback_layers),
+                &#34;failed_layers&#34;: self.failed_layers,
+                &#34;failed_layer_count&#34;: len(self.failed_layers),
+                &#34;layer_errors&#34;: self.layer_errors,
+                &#34;avg_reconstruction_error&#34;: avg_err,
+                &#34;forward_check_success&#34;: forward_check_success,
+                &#34;target_attention_only&#34;: self.target_attention_only,
+                &#34;n_buckets&#34;: self.n_buckets,
+                &#34;tile_size&#34;: self.tile_size,
+                &#34;skip_attention_qkv&#34;: self.skip_attention_qkv,
+                &#34;use_lora&#34;: self.use_lora,
+                &#34;lora_r&#34;: self.lora_r,
+                &#34;method&#34;: &#34;roast&#34;,
+            }
+        )
+        self.stats = stats
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Replace eligible linear and Conv1D layers with ROASTLinear (hardware-aware weight sharing).</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.roast_hashed_linear.ROASTCompressor.compress"><code class="name flex">
+<span>def <span class="ident">compress</span></span>(<span>self, **kwargs: Any) ‑> tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress(self, **kwargs: Any) -&gt; tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;Compress the target modules using ROAST tiling with LoRA support.&#34;&#34;&#34;
+    self.compressed_layers.clear()
+    self.visited_modules.clear()
+    self.protected_layers.clear()
+    self.skipped_layers.clear()
+    self.fallback_layers.clear()
+    self.failed_layers.clear()
+    self.layer_errors.clear()
+
+    for name, module in list(self.model.named_modules()):
+        if self._is_target_module(name, module):
+            mod_id = id(module)
+            if mod_id in self.visited_modules:
+                logger.debug(&#34;ROAST: Skipping tied module %s&#34;, name)
+                self.skipped_layers.append(name)
+                continue
+            self.visited_modules.add(mod_id)
+
+            try:
+                base_mod = getattr(module, &#34;base_layer&#34;, module)
+                raw_w = base_mod.weight.data
+                cls_name = base_mod.__class__.__name__
+                is_conv1d = &#34;conv1d&#34; in cls_name.lower() or hasattr(base_mod, &#34;nf&#34;)
+                W_orig = (
+                    raw_w.t().contiguous().float() if is_conv1d else raw_w.contiguous().float()
+                )
+
+                new_layer = ROASTLinear.from_linear(
+                    module,
+                    n_buckets=self.n_buckets,
+                    tile_size=self.tile_size,
+                    lora_r=self.lora_r if self.use_lora else 0,
+                    lora_alpha=self.lora_alpha,
+                )
+                W_rec = new_layer.weight.float()
+                norm_orig = torch.norm(W_orig, p=&#34;fro&#34;).clamp_min(1e-8)
+                err = (torch.norm(W_orig - W_rec, p=&#34;fro&#34;) / norm_orig).item()
+                self.layer_errors[name] = float(err)
+
+                is_invalid = torch.isnan(W_rec).any() or torch.isinf(W_rec).any()
+                if err &gt; self.max_error:
+                    logger.warning(
+                        &#34;ROAST: reconstruction error %.4f on %s exceeded threshold %.4f.&#34;,
+                        err,
+                        name,
+                        self.max_error,
+                    )
+                    is_invalid = True
+
+                if is_invalid and self.fallback_to_original:
+                    self.fallback_layers.append(name)
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    continue
+
+                replace_module(self.model, name, new_layer)
+                self.compressed_layers.append(name)
+
+            except Exception as e_roast:
+                logger.warning(&#34;ROAST: Failed to process %s: %s&#34;, name, e_roast)
+                self.failed_layers.append(name)
+                for p in module.parameters():
+                    p.requires_grad = False
+
+    # Post-compression forward sanity check
+    forward_check_success = True
+    try:
+        with torch.no_grad():
+            dummy_input = torch.randint(0, 100, (1, 8), device=self.target_device)
+            self.model(dummy_input)
+    except Exception as ex_sanity:
+        logger.warning(&#34;ROAST post-compression forward sanity check warning: %s&#34;, ex_sanity)
+        forward_check_success = False
+
+    self._compressed_params = self._count_params(self.model)
+    avg_err = (
+        (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
+    )
+    stats = self.get_compression_stats()
+    stats.update(
+        {
+            &#34;compressed_layers&#34;: self.compressed_layers,
+            &#34;compressed_layer_count&#34;: len(self.compressed_layers),
+            &#34;protected_layers&#34;: self.protected_layers,
+            &#34;protected_layer_count&#34;: len(self.protected_layers),
+            &#34;skipped_layers&#34;: self.skipped_layers,
+            &#34;skipped_layer_count&#34;: len(self.skipped_layers),
+            &#34;fallback_layers&#34;: self.fallback_layers,
+            &#34;fallback_layer_count&#34;: len(self.fallback_layers),
+            &#34;failed_layers&#34;: self.failed_layers,
+            &#34;failed_layer_count&#34;: len(self.failed_layers),
+            &#34;layer_errors&#34;: self.layer_errors,
+            &#34;avg_reconstruction_error&#34;: avg_err,
+            &#34;forward_check_success&#34;: forward_check_success,
+            &#34;target_attention_only&#34;: self.target_attention_only,
+            &#34;n_buckets&#34;: self.n_buckets,
+            &#34;tile_size&#34;: self.tile_size,
+            &#34;skip_attention_qkv&#34;: self.skip_attention_qkv,
+            &#34;use_lora&#34;: self.use_lora,
+            &#34;lora_r&#34;: self.lora_r,
+            &#34;method&#34;: &#34;roast&#34;,
+        }
+    )
+    self.stats = stats
+    return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Compress the target modules using ROAST tiling with LoRA support.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.compression_engine.roast_hashed_linear.ROASTLinear"><code class="flex name class">
+<span>class <span class="ident">ROASTLinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>n_buckets: int = 1024,<br>tile_size: int = 32,<br>bias: bool = True,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0,<br>device: torch.device | None = None,<br>dtype: torch.dtype | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ROASTLinear(nn.Module):
+    &#34;&#34;&#34;
+    Linear layer with weight sharing based on tiles (blocks) rather than
+    individual scalar weights. Each tile of size (tile_size, tile_size) shares
+    a single weight from a small table, with optional trainable LoRA adapters.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        n_buckets: int = 1024,
+        tile_size: int = 32,
+        bias: bool = True,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.tile_size = max(1, int(tile_size))
+        self.n_buckets = max(1, int(n_buckets))
+        self.lora_r = int(lora_r)
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r &gt; 0 else 1.0
+
+        # Number of tiles along each dimension (padded)
+        self.tiles_out = (out_features + self.tile_size - 1) // self.tile_size
+        self.tiles_in = (in_features + self.tile_size - 1) // self.tile_size
+
+        # Weight table: frozen if LoRA is active
+        requires_grad = not (self.lora_r &gt; 0)
+        self.weight_table = nn.Parameter(
+            torch.randn(self.n_buckets, device=device, dtype=dtype),
+            requires_grad=requires_grad,
+        )
+
+        if bias:
+            self.bias = nn.Parameter(
+                torch.zeros(out_features, device=device, dtype=dtype),
+                requires_grad=requires_grad,
+            )
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+        # Precompute tile indices with high-entropy bitwise mixing (B11, J1)
+        tile_idx_i = (
+            torch.arange(self.tiles_out, device=device).unsqueeze(1).expand(-1, self.tiles_in)
+        )
+        tile_idx_j = (
+            torch.arange(self.tiles_in, device=device).unsqueeze(0).expand(self.tiles_out, -1)
+        )
+        h = (tile_idx_i.long() * 0x9E3779B1) ^ (tile_idx_j.long() * 0x85EBCA77)
+        h = h ^ (h &gt;&gt; 16)
+        h = h * 0x7FEB352D
+        h = (h ^ (h &gt;&gt; 15)) &amp; 0x7FFFFFFF
+        self.register_buffer(
+            &#34;tile_hash_idx&#34;,
+            (h % self.n_buckets).long(),
+            persistent=False,
+        )
+
+        self._cached_weight: torch.Tensor | None = None
+        self._cache_stale: bool = True
+
+        if self.lora_r &gt; 0:
+            self.lora_A = nn.Parameter(
+                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device)
+            )
+            self.lora_B = nn.Parameter(
+                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device)
+            )
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+    def _invalidate_cache(self) -&gt; None:
+        self._cached_weight = None
+        self._cache_stale = True
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Reconstructed effective weight matrix (out_features, in_features) with evaluation caching.&#34;&#34;&#34;
+        if self._cached_weight is not None and not self._cache_stale and not self.training:
+            return self._cached_weight
+        W_tiles = self.weight_table[self.tile_hash_idx]  # (tiles_out, tiles_in)
+        W_full = torch.repeat_interleave(
+            torch.repeat_interleave(W_tiles, self.tile_size, dim=0),
+            self.tile_size,
+            dim=1,
+        )
+        W_res = W_full[: self.out_features, : self.in_features]
+        if not self.training:
+            self._cached_weight = W_res
+            self._cache_stale = False
+        return W_res
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Vectorized forward pass without per-element python loops.&#34;&#34;&#34;
+        W = self.weight.to(device=x.device, dtype=x.dtype)
+        out = F.linear(x, W, self.bias.to(dtype=x.dtype) if self.bias is not None else None)
+        if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x.float(), self.lora_A), self.lora_B) * self.scaling
+            out = out + lora_out.to(out.dtype)
+        return out
+
+    @classmethod
+    def from_linear(
+        cls,
+        linear: nn.Module,
+        n_buckets: int = 1024,
+        tile_size: int = 32,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+    ) -&gt; ROASTLinear:
+        &#34;&#34;&#34;Initialize from a pretrained nn.Linear, Conv1D, or LoRALinear base_layer.&#34;&#34;&#34;
+        base_mod = getattr(linear, &#34;base_layer&#34;, linear)
+        raw_w = base_mod.weight.data
+        cls_name = base_mod.__class__.__name__
+        is_conv1d = &#34;conv1d&#34; in cls_name.lower() or hasattr(base_mod, &#34;nf&#34;)
+
+        if is_conv1d:
+            W = raw_w.t().contiguous().float()
+            out_f, in_f = W.shape
+        else:
+            W = raw_w.contiguous().float()
+            out_f, in_f = W.shape
+
+        bias = getattr(base_mod, &#34;bias&#34;, None) is not None
+        roast = cls(
+            in_features=in_f,
+            out_features=out_f,
+            n_buckets=n_buckets,
+            tile_size=tile_size,
+            bias=bias,
+            lora_r=lora_r,
+            lora_alpha=lora_alpha,
+            device=raw_w.device,
+            dtype=raw_w.dtype,
+        )
+        if bias and base_mod.bias is not None:
+            roast.bias.data.copy_(base_mod.bias.data)
+
+        # Preserve existing source LoRA weights if present
+        if (
+            hasattr(linear, &#34;lora_A&#34;)
+            and hasattr(linear, &#34;lora_B&#34;)
+            and linear.lora_A is not None
+            and linear.lora_B is not None
+        ):
+            src_A = getattr(linear.lora_A, &#34;weight&#34;, linear.lora_A)
+            src_B = getattr(linear.lora_B, &#34;weight&#34;, linear.lora_B)
+            if roast.lora_A is not None and roast.lora_B is not None:
+                if src_A.shape == roast.lora_A.shape:
+                    roast.lora_A.data.copy_(src_A.data)
+                if src_B.shape == roast.lora_B.shape:
+                    roast.lora_B.data.copy_(src_B.data)
+
+        ts = max(1, tile_size)
+        tiles_out = (out_f + ts - 1) // ts
+        tiles_in = (in_f + ts - 1) // ts
+
+        # Vectorized computation of per-tile means and scatter into weight_table
+        with torch.no_grad():
+            pad_out = tiles_out * ts - out_f
+            pad_in = tiles_in * ts - in_f
+            if pad_out &gt; 0 or pad_in &gt; 0:
+                W_padded = F.pad(W, (0, pad_in, 0, pad_out), mode=&#34;constant&#34;, value=0.0)
+                mask = F.pad(
+                    torch.ones_like(W),
+                    (0, pad_in, 0, pad_out),
+                    mode=&#34;constant&#34;,
+                    value=0.0,
+                )
+                W_blocks = (
+                    W_padded.view(tiles_out, ts, tiles_in, ts)
+                    .permute(0, 2, 1, 3)
+                    .contiguous()
+                    .view(tiles_out, tiles_in, -1)
+                )
+                mask_blocks = (
+                    mask.view(tiles_out, ts, tiles_in, ts)
+                    .permute(0, 2, 1, 3)
+                    .contiguous()
+                    .view(tiles_out, tiles_in, -1)
+                )
+                tile_means = W_blocks.sum(dim=-1) / mask_blocks.sum(dim=-1).clamp(min=1.0)
+            else:
+                tile_means = (
+                    W.view(tiles_out, ts, tiles_in, ts)
+                    .permute(0, 2, 1, 3)
+                    .contiguous()
+                    .view(tiles_out, tiles_in, -1)
+                    .mean(dim=-1)
+                )
+
+            flat_idx = roast.tile_hash_idx.view(-1).to(device=roast.weight_table.device)
+            flat_means = tile_means.view(-1).to(
+                device=roast.weight_table.device, dtype=roast.weight_table.dtype
+            )
+            roast.weight_table.data.scatter_(0, flat_idx, flat_means)
+
+        return roast</code></pre>
+</details>
+<div class="desc"><p>Linear layer with weight sharing based on tiles (blocks) rather than
+individual scalar weights. Each tile of size (tile_size, tile_size) shares
+a single weight from a small table, with optional trainable LoRA adapters.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.roast_hashed_linear.ROASTLinear.from_linear"><code class="name flex">
+<span>def <span class="ident">from_linear</span></span>(<span>linear: nn.Module,<br>n_buckets: int = 1024,<br>tile_size: int = 32,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0) ‑> <a title="neuralops.compression_engine.roast_hashed_linear.ROASTLinear" href="#neuralops.compression_engine.roast_hashed_linear.ROASTLinear">ROASTLinear</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Initialize from a pretrained nn.Linear, Conv1D, or LoRALinear base_layer.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.roast_hashed_linear.ROASTLinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Reconstructed effective weight matrix (out_features, in_features) with evaluation caching.&#34;&#34;&#34;
+    if self._cached_weight is not None and not self._cache_stale and not self.training:
+        return self._cached_weight
+    W_tiles = self.weight_table[self.tile_hash_idx]  # (tiles_out, tiles_in)
+    W_full = torch.repeat_interleave(
+        torch.repeat_interleave(W_tiles, self.tile_size, dim=0),
+        self.tile_size,
+        dim=1,
+    )
+    W_res = W_full[: self.out_features, : self.in_features]
+    if not self.training:
+        self._cached_weight = W_res
+        self._cache_stale = False
+    return W_res</code></pre>
+</details>
+<div class="desc"><p>Reconstructed effective weight matrix (out_features, in_features) with evaluation caching.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.roast_hashed_linear.ROASTLinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Vectorized forward pass without per-element python loops.&#34;&#34;&#34;
+    W = self.weight.to(device=x.device, dtype=x.dtype)
+    out = F.linear(x, W, self.bias.to(dtype=x.dtype) if self.bias is not None else None)
+    if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        lora_out = F.linear(F.linear(x.float(), self.lora_A), self.lora_B) * self.scaling
+        out = out + lora_out.to(out.dtype)
+    return out</code></pre>
+</details>
+<div class="desc"><p>Vectorized forward pass without per-element python loops.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.roast_hashed_linear.roast_factory" href="#neuralops.compression_engine.roast_hashed_linear.roast_factory">roast_factory</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.roast_hashed_linear.ROASTCompressor" href="#neuralops.compression_engine.roast_hashed_linear.ROASTCompressor">ROASTCompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.roast_hashed_linear.ROASTCompressor.compress" href="#neuralops.compression_engine.roast_hashed_linear.ROASTCompressor.compress">compress</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.roast_hashed_linear.ROASTLinear" href="#neuralops.compression_engine.roast_hashed_linear.ROASTLinear">ROASTLinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.roast_hashed_linear.ROASTLinear.forward" href="#neuralops.compression_engine.roast_hashed_linear.ROASTLinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.compression_engine.roast_hashed_linear.ROASTLinear.from_linear" href="#neuralops.compression_engine.roast_hashed_linear.ROASTLinear.from_linear">from_linear</a></code></li>
+<li><code><a title="neuralops.compression_engine.roast_hashed_linear.ROASTLinear.weight" href="#neuralops.compression_engine.roast_hashed_linear.ROASTLinear.weight">weight</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

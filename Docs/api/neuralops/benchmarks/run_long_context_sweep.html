@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.benchmarks.run_long_context_sweep API documentation</title>
+<meta name="description" content="Long-Context Sweep Runner: Evaluates compression modules on Byte-Level IMDb (4096 tokens) …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.benchmarks.run_long_context_sweep</code></h1>
+</header>
+<section id="section-intro">
+<p>Long-Context Sweep Runner: Evaluates compression modules on Byte-Level IMDb (4096 tokens).</p>
+<p>Evaluates
+-----=
+- Sequence length: 4096 bytes
+- Batch size: 2 (safely fits 8 GB GPU VRAM)
+- Metrics: Classification Accuracy (%), Peak VRAM (MB), Latency (ms/sample), Compression Rate</p>
+<p>Usage
+-----=
+python run_long_context_sweep.py &ndash;dry_run
+python run_long_context_sweep.py &ndash;model_path models/distilbert_sst2 &ndash;rank 64</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.benchmarks.run_long_context_sweep.adapt_model_pos_embeddings"><code class="name flex">
+<span>def <span class="ident">adapt_model_pos_embeddings</span></span>(<span>model: nn.Module, target_seq_len: int = 4096) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def adapt_model_pos_embeddings(model: nn.Module, target_seq_len: int = 4096) -&gt; None:
+    &#34;&#34;&#34;Expands position embeddings to target_seq_len via linear interpolation if needed.&#34;&#34;&#34;
+    cfg = getattr(model, &#34;config&#34;, None)
+    if cfg is None:
+        return
+    max_pos = getattr(cfg, &#34;max_position_embeddings&#34;, None)
+    if max_pos is not None and max_pos &lt; target_seq_len:
+        # DistilBERT
+        if hasattr(model, &#34;distilbert&#34;) and hasattr(model.distilbert, &#34;embeddings&#34;):
+            pos_emb = model.distilbert.embeddings.position_embeddings
+            old_w = pos_emb.weight.data  # [max_pos, dim]
+            # Interpolate: [1, dim, max_pos] -&gt; [1, dim, target_seq_len]
+            new_w = (
+                torch.nn.functional.interpolate(
+                    old_w.t().unsqueeze(0),
+                    size=target_seq_len,
+                    mode=&#34;linear&#34;,
+                    align_corners=False,
+                )
+                .squeeze(0)
+                .t()
+            )
+            new_pos_emb = torch.nn.Embedding(
+                target_seq_len, old_w.shape[1], device=old_w.device, dtype=old_w.dtype
+            )
+            new_pos_emb.weight.data.copy_(new_w)
+            model.distilbert.embeddings.position_embeddings = new_pos_emb
+            if hasattr(model.distilbert.embeddings, &#34;register_buffer&#34;):
+                model.distilbert.embeddings.register_buffer(
+                    &#34;position_ids&#34;,
+                    torch.arange(target_seq_len).expand((1, -1)).to(old_w.device),
+                )
+            cfg.max_position_embeddings = target_seq_len
+        # RoBERTa / BERT
+        elif hasattr(model, &#34;roberta&#34;) and hasattr(model.roberta, &#34;embeddings&#34;):
+            pos_emb = model.roberta.embeddings.position_embeddings
+            old_w = pos_emb.weight.data
+            new_w = (
+                torch.nn.functional.interpolate(
+                    old_w.t().unsqueeze(0),
+                    size=target_seq_len + 2,
+                    mode=&#34;linear&#34;,
+                    align_corners=False,
+                )
+                .squeeze(0)
+                .t()
+            )
+            new_pos_emb = torch.nn.Embedding(
+                target_seq_len + 2,
+                old_w.shape[1],
+                device=old_w.device,
+                dtype=old_w.dtype,
+            )
+            new_pos_emb.weight.data.copy_(new_w)
+            model.roberta.embeddings.position_embeddings = new_pos_emb
+            cfg.max_position_embeddings = target_seq_len + 2</code></pre>
+</details>
+<div class="desc"><p>Expands position embeddings to target_seq_len via linear interpolation if needed.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_long_context_sweep.evaluate_long_context"><code class="name flex">
+<span>def <span class="ident">evaluate_long_context</span></span>(<span>model, dataloader, max_samples=None, device='cuda')</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def evaluate_long_context(model, dataloader, max_samples=None, device=&#34;cuda&#34;):
+    &#34;&#34;&#34;
+    Evaluates sequence classification on long context with VRAM and latency tracking.
+    &#34;&#34;&#34;
+    model.eval()
+    if device == &#34;cuda&#34; and torch.cuda.is_available():
+        torch.cuda.reset_peak_memory_stats()
+        torch.cuda.empty_cache()
+
+    correct = 0
+    total = 0
+    t0 = time.time()
+    total_tokens = 0
+
+    with torch.no_grad():
+        for batch in dataloader:
+            input_ids = batch[&#34;input_ids&#34;].to(device)
+            attention_mask = batch[&#34;attention_mask&#34;].to(device)
+            labels = batch[&#34;labels&#34;].to(device)
+
+            outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+            logits = outputs.logits
+            preds = logits.argmax(dim=-1)
+
+            correct += (preds == labels).sum().item()
+            total += labels.size(0)
+            total_tokens += input_ids.numel()
+
+            if max_samples and total &gt;= max_samples:
+                break
+
+    elapsed_s = max(1e-4, time.time() - t0)
+    acc = round(100.0 * correct / max(1, total), 2)
+
+    if device == &#34;cuda&#34; and torch.cuda.is_available():
+        peak_vram_mb = round(torch.cuda.max_memory_allocated() / (1024**2), 2)
+    else:
+        peak_vram_mb = 0.0
+
+    latency_ms = round((elapsed_s / max(1, total)) * 1000.0, 2)
+    tokens_per_sec = round(total_tokens / elapsed_s, 1)
+
+    return {
+        &#34;accuracy_pct&#34;: acc,
+        &#34;peak_vram_mb&#34;: peak_vram_mb,
+        &#34;latency_ms_per_sample&#34;: latency_ms,
+        &#34;tokens_per_sec&#34;: tokens_per_sec,
+        &#34;elapsed_s&#34;: round(elapsed_s, 2),
+        &#34;total_evaluated&#34;: total,
+    }</code></pre>
+</details>
+<div class="desc"><p>Evaluates sequence classification on long context with VRAM and latency tracking.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_long_context_sweep.get_byte_imdb_dataloader"><code class="name flex">
+<span>def <span class="ident">get_byte_imdb_dataloader</span></span>(<span>split: str = 'test',<br>batch_size: int = 8,<br>max_length: int = 4096,<br>dataset_dir: str = 'data/long_context/byte_imdb') ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_byte_imdb_dataloader(
+    split: str = &#34;test&#34;,
+    batch_size: int = 8,
+    max_length: int = 4096,
+    dataset_dir: str = &#34;data/long_context/byte_imdb&#34;,
+) -&gt; Any:
+    &#34;&#34;&#34;Loads or creates a Byte-level IMDb DataLoader for long context evaluations.&#34;&#34;&#34;
+    from datasets import Dataset, load_dataset
+    from torch.utils.data import DataLoader
+
+    p = Path(dataset_dir)
+    if p.exists():
+        try:
+            from datasets import load_from_disk
+
+            raw = load_from_disk(str(p))
+            ds = raw[split] if split in raw else raw
+        except Exception:
+            ds = None
+    else:
+        ds = None
+
+    if ds is None:
+        try:
+            ds = load_dataset(&#34;imdb&#34;, split=split)
+        except Exception:
+            ds = Dataset.from_dict(
+                {
+                    &#34;text&#34;: [&#34;Sample long movie review text &#34; * 100] * 32,
+                    &#34;label&#34;: [1] * 16 + [0] * 16,
+                }
+            )
+
+    def encode(batch):
+        res = []
+        masks = []
+        for t in batch[&#34;text&#34;]:
+            b = list(t.encode(&#34;utf-8&#34;))[:max_length]
+            mask = [1] * len(b)
+            if len(b) &lt; max_length:
+                mask += [0] * (max_length - len(b))
+                b += [0] * (max_length - len(b))
+            res.append(b)
+            masks.append(mask)
+        return {&#34;input_ids&#34;: res, &#34;attention_mask&#34;: masks, &#34;labels&#34;: batch[&#34;label&#34;]}
+
+    ds = ds.map(
+        encode,
+        batched=True,
+        remove_columns=[c for c in ds.column_names if c not in (&#34;label&#34;, &#34;labels&#34;)],
+    )
+    if &#34;label&#34; in ds.column_names and &#34;labels&#34; not in ds.column_names:
+        ds = ds.rename_column(&#34;label&#34;, &#34;labels&#34;)
+    ds.set_format(type=&#34;torch&#34;, columns=[&#34;input_ids&#34;, &#34;attention_mask&#34;, &#34;labels&#34;])
+    return DataLoader(ds, batch_size=batch_size, shuffle=False)</code></pre>
+</details>
+<div class="desc"><p>Loads or creates a Byte-level IMDb DataLoader for long context evaluations.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.run_long_context_sweep.main"><code class="name flex">
+<span>def <span class="ident">main</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def main():
+    args = parse_args()
+    if args.max_length:
+        args.seq_len = args.max_length
+
+    # Parse comma-separated modules if passed as a single string
+    parsed_mods = []
+    if isinstance(args.modules, list):
+        for item in args.modules:
+            parsed_mods.extend([m.strip() for m in item.split(&#34;,&#34;) if m.strip()])
+    elif isinstance(args.modules, str):
+        parsed_mods = [m.strip() for m in args.modules.split(&#34;,&#34;) if m.strip()]
+    args.modules = parsed_mods or DEFAULT_LONG_CONTEXT_MODULES
+
+    device = &#34;cuda&#34; if torch.cuda.is_available() else &#34;cpu&#34;
+
+    print(&#34;=&#34; * 80)
+    print(&#34;LONG-CONTEXT SWEEP: BYTE-LEVEL IMDB (4096 TOKENS)&#34;)
+    print(f&#34;Model Path:      {args.model_path}&#34;)
+    print(f&#34;Dataset Dir:     {args.dataset_dir}&#34;)
+    print(f&#34;Sequence Length: {args.seq_len}&#34;)
+    print(f&#34;Batch Size:      {args.batch_size}&#34;)
+    print(f&#34;Modules:         {len(args.modules)} modules&#34;)
+    print(f&#34;Max Samples:     {args.max_eval_samples}&#34;)
+    print(&#34;=&#34; * 80)
+
+    if args.dry_run:
+        print(&#34;\n[DRY RUN] Planned evaluation sequence:&#34;)
+        for idx, mod in enumerate(args.modules, 1):
+            print(
+                f&#34;  {idx:2d}. Module: {mod:&lt;25} | Rank: {args.rank} | Output: {args.output_dir}/{mod}/result.json&#34;
+            )
+        print(&#34;\n[DRY RUN COMPLETE] No hardware sweeps executed.&#34;)
+        return
+
+    out_dir = Path(args.output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    summary_csv = out_dir / &#34;summary.csv&#34;
+
+    # Prepare DataLoader
+    loader = get_byte_imdb_dataloader(
+        split=&#34;test&#34;,
+        batch_size=args.batch_size,
+        max_length=args.seq_len,
+        dataset_dir=args.dataset_dir,
+    )
+
+    # 1. Baseline Evaluation
+    LOG.info(&#34;Evaluating baseline uncompressed model on 4096-token Byte IMDb...&#34;)
+    base_model = AutoModelForSequenceClassification.from_pretrained(args.model_path)
+    adapt_model_pos_embeddings(base_model, target_seq_len=args.seq_len)
+    if args.fp16 and device == &#34;cuda&#34;:
+        base_model.half()
+    base_model.to(device)
+
+    total_params_baseline = sum(p.numel() for p in base_model.parameters())
+    base_metrics = evaluate_long_context(
+        base_model, loader, max_samples=args.max_eval_samples, device=device
+    )
+    baseline_acc = base_metrics[&#34;accuracy_pct&#34;]
+
+    LOG.info(
+        &#34;Baseline 4096-token Acc: %.2f%% | VRAM: %.1f MB | Latency: %.1f ms/sample&#34;,
+        baseline_acc,
+        base_metrics[&#34;peak_vram_mb&#34;],
+        base_metrics[&#34;latency_ms_per_sample&#34;],
+    )
+
+    results = []
+    base_row = {
+        &#34;module_name&#34;: &#34;full&#34;,
+        &#34;status&#34;: &#34;PASS&#34;,
+        &#34;accuracy_pct&#34;: baseline_acc,
+        &#34;baseline_acc&#34;: baseline_acc,
+        &#34;delta_acc&#34;: 0.0,
+        &#34;compression_rate&#34;: 1.0,
+        &#34;compression_ratio_pct&#34;: 0.0,
+        &#34;peak_vram_mb&#34;: base_metrics[&#34;peak_vram_mb&#34;],
+        &#34;latency_ms_per_sample&#34;: base_metrics[&#34;latency_ms_per_sample&#34;],
+        &#34;tokens_per_sec&#34;: base_metrics[&#34;tokens_per_sec&#34;],
+        &#34;elapsed_s&#34;: base_metrics[&#34;elapsed_s&#34;],
+        &#34;total_params_before&#34;: total_params_baseline,
+        &#34;total_params_after&#34;: total_params_baseline,
+        &#34;error&#34;: &#34;&#34;,
+        &#34;timestamp&#34;: time.strftime(&#34;%Y-%m-%dT%H:%M:%S&#34;),
+    }
+    results.append(base_row)
+
+    del base_model
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+    # 2. Iterate through modules
+    for idx, mod in enumerate(args.modules, 1):
+        if mod == &#34;full&#34;:
+            continue
+
+        LOG.info(&#34;[%d/%d] Evaluating long-context module: %s...&#34;, idx, len(args.modules), mod)
+        t_mod = time.time()
+        mod_dir = out_dir / mod
+        mod_dir.mkdir(parents=True, exist_ok=True)
+        res_json = mod_dir / &#34;result.json&#34;
+
+        try:
+            cand_model = AutoModelForSequenceClassification.from_pretrained(args.model_path)
+            adapt_model_pos_embeddings(cand_model, target_seq_len=args.seq_len)
+            if args.fp16 and device == &#34;cuda&#34;:
+                cand_model.half()
+            cand_model.to(device)
+
+            typ = &#34;attention&#34; if mod in ATTENTION_REGISTRY else &#34;compressor&#34;
+            cand_model, comp_stats = apply_module_to_model(
+                cand_model, mod, typ, rank=args.rank, device=device
+            )
+
+            p_after = sum(p.numel() for p in cand_model.parameters())
+            comp_rate = round(total_params_baseline / max(1, p_after), 4)
+            comp_pct = round(100.0 * (1.0 - p_after / max(1, total_params_baseline)), 2)
+
+            metrics = evaluate_long_context(
+                cand_model, loader, max_samples=args.max_eval_samples, device=device
+            )
+            delta_acc = round(metrics[&#34;accuracy_pct&#34;] - baseline_acc, 2)
+            status = &#34;PASS&#34; if metrics[&#34;accuracy_pct&#34;] &gt;= 50.0 else &#34;PASS_LOW&#34;
+
+            row = {
+                &#34;module_name&#34;: mod,
+                &#34;status&#34;: status,
+                &#34;accuracy_pct&#34;: metrics[&#34;accuracy_pct&#34;],
+                &#34;baseline_acc&#34;: baseline_acc,
+                &#34;delta_acc&#34;: delta_acc,
+                &#34;compression_rate&#34;: comp_rate,
+                &#34;compression_ratio_pct&#34;: comp_pct,
+                &#34;peak_vram_mb&#34;: metrics[&#34;peak_vram_mb&#34;],
+                &#34;latency_ms_per_sample&#34;: metrics[&#34;latency_ms_per_sample&#34;],
+                &#34;tokens_per_sec&#34;: metrics[&#34;tokens_per_sec&#34;],
+                &#34;elapsed_s&#34;: metrics[&#34;elapsed_s&#34;],
+                &#34;total_params_before&#34;: total_params_baseline,
+                &#34;total_params_after&#34;: p_after,
+                &#34;error&#34;: &#34;&#34;,
+                &#34;timestamp&#34;: time.strftime(&#34;%Y-%m-%dT%H:%M:%S&#34;),
+            }
+
+            del cand_model
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
+        except Exception as e:
+            LOG.exception(&#34;Long-context module %s error: %s&#34;, mod, e)
+            row = {
+                &#34;module_name&#34;: mod,
+                &#34;status&#34;: &#34;FAIL&#34;,
+                &#34;accuracy_pct&#34;: 0.0,
+                &#34;baseline_acc&#34;: baseline_acc,
+                &#34;delta_acc&#34;: -baseline_acc,
+                &#34;compression_rate&#34;: 1.0,
+                &#34;compression_ratio_pct&#34;: 0.0,
+                &#34;peak_vram_mb&#34;: 0.0,
+                &#34;latency_ms_per_sample&#34;: 0.0,
+                &#34;tokens_per_sec&#34;: 0.0,
+                &#34;elapsed_s&#34;: round(time.time() - t_mod, 2),
+                &#34;total_params_before&#34;: total_params_baseline,
+                &#34;total_params_after&#34;: total_params_baseline,
+                &#34;error&#34;: str(e),
+                &#34;timestamp&#34;: time.strftime(&#34;%Y-%m-%dT%H:%M:%S&#34;),
+            }
+
+        results.append(row)
+        res_json.write_text(json.dumps(row, indent=2), encoding=&#34;utf-8&#34;)
+
+        with open(summary_csv, &#34;w&#34;, newline=&#34;&#34;, encoding=&#34;utf-8&#34;) as f:
+            writer = csv.DictWriter(f, fieldnames=CSV_FIELDS)
+            writer.writeheader()
+            for r in results:
+                writer.writerow(r)
+
+    print(f&#34;\n[DONE] Long-context sweep finished. Results: {summary_csv}&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.run_long_context_sweep.parse_args"><code class="name flex">
+<span>def <span class="ident">parse_args</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def parse_args():
+    parser = argparse.ArgumentParser(
+        description=&#34;Run 4096-token long-context evaluation sweep on Byte-Level IMDb&#34;,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        &#34;--model_path&#34;,
+        type=str,
+        default=&#34;models/distilbert_sst2&#34;,
+        help=&#34;Path to pre-trained/fine-tuned classification model&#34;,
+    )
+    parser.add_argument(
+        &#34;--dataset_dir&#34;,
+        type=str,
+        default=&#34;neuralops/data/byte_imdb&#34;,
+        help=&#34;Path to pre-cached byte-imdb dataset directory&#34;,
+    )
+    parser.add_argument(
+        &#34;--output_dir&#34;,
+        type=str,
+        default=&#34;results/06_adhoc_experiments/perplexity_seqlen/long_context&#34;,
+        help=&#34;Directory to save sweep results and summary.csv&#34;,
+    )
+    parser.add_argument(
+        &#34;--modules&#34;,
+        type=str,
+        nargs=&#34;*&#34;,
+        default=DEFAULT_LONG_CONTEXT_MODULES,
+        help=&#34;Modules to evaluate&#34;,
+    )
+    parser.add_argument(
+        &#34;--batch_size&#34;,
+        type=int,
+        default=2,
+        help=&#34;Evaluation batch size (kept small for 4096 tokens to avoid OOM)&#34;,
+    )
+    parser.add_argument(
+        &#34;--seq_len&#34;,
+        type=int,
+        default=4096,
+        help=&#34;Target sequence length in tokens/bytes&#34;,
+    )
+    parser.add_argument(&#34;--max_length&#34;, type=int, default=None, help=&#34;Alias for --seq_len&#34;)
+    parser.add_argument(&#34;--parallel&#34;, type=int, default=1, help=&#34;Parallel workers (default 1)&#34;)
+    parser.add_argument(
+        &#34;--max_eval_samples&#34;,
+        type=int,
+        default=500,
+        help=&#34;Number of test samples to evaluate (None for full split)&#34;,
+    )
+    parser.add_argument(&#34;--rank&#34;, type=int, default=64, help=&#34;Compression rank&#34;)
+    parser.add_argument(&#34;--fp16&#34;, action=&#34;store_true&#34;, default=True, help=&#34;Use FP16 precision&#34;)
+    parser.add_argument(
+        &#34;--dry_run&#34;,
+        action=&#34;store_true&#34;,
+        default=False,
+        help=&#34;Dry run: print planned steps without executing&#34;,
+    )
+    return parser.parse_args()</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.benchmarks" href="index.html">neuralops.benchmarks</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.benchmarks.run_long_context_sweep.adapt_model_pos_embeddings" href="#neuralops.benchmarks.run_long_context_sweep.adapt_model_pos_embeddings">adapt_model_pos_embeddings</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_long_context_sweep.evaluate_long_context" href="#neuralops.benchmarks.run_long_context_sweep.evaluate_long_context">evaluate_long_context</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_long_context_sweep.get_byte_imdb_dataloader" href="#neuralops.benchmarks.run_long_context_sweep.get_byte_imdb_dataloader">get_byte_imdb_dataloader</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_long_context_sweep.main" href="#neuralops.benchmarks.run_long_context_sweep.main">main</a></code></li>
+<li><code><a title="neuralops.benchmarks.run_long_context_sweep.parse_args" href="#neuralops.benchmarks.run_long_context_sweep.parse_args">parse_args</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

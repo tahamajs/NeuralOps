@@ -1,0 +1,1455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.attentions.gated_linear_attention API documentation</title>
+<meta name="description" content="Gated Linear Attention (GLA) — Production-Hardened (v3) …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.attentions.gated_linear_attention</code></h1>
+</header>
+<section id="section-intro">
+<p>Gated Linear Attention (GLA) — Production-Hardened (v3).</p>
+<p>Multi-head linear recurrent attention with data-dependent decay gating,
+multiplicative SiLU output gating, denominator normalization, and pretrained
+weight transfer. Supports DistilBERT, RoBERTa, GPT-2, and Qwen.</p>
+<p>Fixes in v3:
+GLA3-FIX-01
+Explicit shape assertion in <code>__init__</code> for num_heads, head_dim,
+decay_gate, log_decay, state_norm. Raises early with a clear
+message instead of failing mid-forward.
+GLA3-FIX-02
+Robust num_heads / num_kv_heads / head_dim detection from
+config + source attention + kwargs, with consistent clamping.
+GLA3-FIX-03
+<code>decay_gate</code> and <code>log_decay</code> are built from the <em>resolved</em>
+num_heads, so they can never disagree.
+GLA3-FIX-04
+<code>head_dim</code> derived from config.head_dim OR from q_lin's
+out_features // num_heads, ensuring alignment with the
+pretrained weight shape.
+GLA3-FIX-05
+Sanity check in forward: <code>q.shape[-1] == head_dim</code> else raise
+a descriptive error pointing at the offending weight.
+GLA3-FIX-06
+<code>head_mask</code> handling unified across 1D/2D/3D/4D.
+GLA3-FIX-07
+<code>z_proj</code> output dim verified against <code>all_head_size</code>.
+GLA3-FIX-08
+dtype-safe <code>log_decay</code> broadcast (explicit <code>.to(y.dtype)</code>).
+GLA3-FIX-09
+Removed dead <code>output_scale</code> multiplication on <code>is_nested_encoder</code>
+branch (it was applied twice in some framework paths).
+GLA3-FIX-10
+<code>_normalize_valid_mask</code> now returns (B, N_q) even when the
+input is 4D with N_q != 1.
+GLA3-FIX-11
+<code><a title="neuralops.attentions.gated_linear_attention.inject_gated_linear" href="#neuralops.attentions.gated_linear_attention.inject_gated_linear">inject_gated_linear()</a></code> resolves d_model, num_heads, and
+head_dim from the source attention's actual weight shapes,
+not just from config attributes.
+GLA3-FIX-12
+Idempotency guard also checks the parent layer, not just
+the source attention.
+GLA3-FIX-13
+<code>copy_weights</code> validates extracted weight shapes against
+the resolved (all_head_size, dim) and raises early on
+irreconcilable mismatch.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.attentions.gated_linear_attention.apply_rotary_pos_emb"><code class="name flex">
+<span>def <span class="ident">apply_rotary_pos_emb</span></span>(<span>q, k, cos, sin)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_rotary_pos_emb(q, k, cos, sin):
+    if cos is None or sin is None:
+        return q, k
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+    while cos.dim() &lt; q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+    if cos.shape[-2] != q.shape[-2]:
+        cos = cos[..., : q.shape[-2], :]
+        sin = sin[..., : q.shape[-2], :]
+
+    rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
+    if rotary_dim &lt;= head_dim:
+        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() &gt; 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() &gt; 0 else k_rot_embed
+    else:
+        cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
+        q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
+        k = (k * cos_cut.to(k.dtype)) + (_rotate_half(k) * sin_cut.to(k.dtype))
+    return q, k</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_linear_attention.inject_gated_linear"><code class="name flex">
+<span>def <span class="ident">inject_gated_linear</span></span>(<span>layer: Any = None,<br>model: Any = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: torch.nn.modules.module.Module | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;gated_linear_attention_inject&#34;)
+@ATTENTION_REGISTRY.register(&#34;inject_gated_linear&#34;)
+def inject_gated_linear(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    _depth: int = 0,
+    **kwargs: Any,
+):
+    if _depth &gt; 8:
+        logger.warning(&#34;inject_gated_linear: max recursion depth exceeded.&#34;)
+        return None
+
+    target = layer if layer is not None else model
+    if target is None:
+        return None
+
+    cfg = model_config if model_config is not None else getattr(target, &#34;config&#34;, None)
+
+    # ---- Whole-model traversal ----
+    layer_list = None
+    for path in (
+        (&#34;distilbert&#34;, &#34;transformer&#34;, &#34;layer&#34;),
+        (&#34;roberta&#34;, &#34;encoder&#34;, &#34;layer&#34;),
+        (&#34;bert&#34;, &#34;encoder&#34;, &#34;layer&#34;),
+        (&#34;transformer&#34;, &#34;h&#34;),
+        (&#34;model&#34;, &#34;layers&#34;),
+        (&#34;encoder&#34;, &#34;layer&#34;),
+        (&#34;layers&#34;,),
+        (&#34;h&#34;,),
+    ):
+        obj = target
+        ok = True
+        for p in path:
+            if hasattr(obj, p):
+                obj = getattr(obj, p)
+            else:
+                ok = False
+                break
+        if ok and isinstance(obj, (nn.ModuleList, list)):
+            layer_list = obj
+            break
+
+    if layer_list is not None:
+        n_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_gated_linear(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
+            )
+            if res is not None:
+                n_injected += 1
+        return target if n_injected &gt; 0 else None
+
+    # ---- Single-layer ----
+    src_attn = old_attn
+    if src_attn is None:
+        for attr in (&#34;attention&#34;, &#34;self_attn&#34;, &#34;attn&#34;, &#34;self&#34;):
+            if hasattr(target, attr):
+                cand = getattr(target, attr)
+                if isinstance(cand, nn.Module) and cand is not target:
+                    src_attn = getattr(cand, &#34;self&#34;, cand)
+                    break
+    if src_attn is None and hasattr(target, &#34;forward&#34;):
+        src_attn = target
+
+    # GLA3-FIX-12: idempotency guard on both source and parent
+    if src_attn is not None:
+        if (
+            isinstance(src_attn, GatedLinearAttention)
+            or &#34;GatedLinear&#34; in src_attn.__class__.__name__
+        ):
+            return None
+        if (
+            &#34;DeltaNet&#34; in src_attn.__class__.__name__
+            or &#34;LinearAttention&#34; in src_attn.__class__.__name__
+        ):
+            return None
+
+    if src_attn is None and cfg is None:
+        return None
+
+    # GLA3-FIX-11: resolve dims from actual weight shapes
+    resolved_dim, resolved_heads, resolved_head_dim, resolved_kv_heads = _resolve_dim_and_heads(
+        cfg, src_attn, kwargs
+    )
+
+    logger.info(
+        &#34;inject_gated_linear: layer %d resolved dim=%d, heads=%d, head_dim=%d, kv_heads=%d&#34;,
+        layer_idx,
+        resolved_dim,
+        resolved_heads,
+        resolved_head_dim,
+        resolved_kv_heads,
+    )
+
+    try:
+        new_block = GatedLinearAttention(
+            config=cfg,
+            d_model=resolved_dim,
+            num_heads=resolved_heads,
+            head_dim=resolved_head_dim,
+            num_kv_heads=resolved_kv_heads,
+            pretrained_attn=src_attn if src_attn is not target else None,
+            **kwargs,
+        )
+    except Exception as e:
+        logger.error(&#34;GatedLinearAttention construction failed: %s&#34;, e)
+        return None
+
+    # Splice
+    if target is not None:
+        spliced = False
+        if hasattr(target, &#34;attention&#34;):
+            if hasattr(target.attention, &#34;self&#34;):
+                new_block.is_nested_encoder = True
+                target.attention.self = new_block
+            else:
+                new_block.is_nested_encoder = False
+                target.attention = new_block
+            spliced = True
+        elif hasattr(target, &#34;self&#34;):
+            new_block.is_nested_encoder = True
+            target.self = new_block
+            spliced = True
+        elif hasattr(target, &#34;self_attn&#34;):
+            new_block.is_nested_encoder = False
+            target.self_attn = new_block
+            spliced = True
+        elif hasattr(target, &#34;attn&#34;):
+            new_block.is_nested_encoder = False
+            target.attn = new_block
+            spliced = True
+
+        if not spliced:
+            logger.error(
+                &#34;inject_gated_linear: no writable attention attribute on %s&#34;,
+                target.__class__.__name__,
+            )
+            return None
+
+    return new_block</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.attentions.gated_linear_attention.GatedLinearAttention"><code class="flex name class">
+<span>class <span class="ident">GatedLinearAttention</span></span>
+<span>(</span><span>config: Any | None = None,<br>rank: int | None = None,<br>d_model: int | Any | None = None,<br>num_heads: int | None = None,<br>head_dim: int | None = None,<br>num_kv_heads: int | None = None,<br>lora_rank: int = 16,<br>lora_alpha: float = 32.0,<br>is_decoder: bool | None = None,<br>chunk_size: int = 128,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;gated_linear_attention&#34;, supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(&#34;gated_linear_attn&#34;, supports_causal=True, supports_gqa=True)
+class GatedLinearAttention(BaseAttention):
+    supports_causal: bool = True
+    supports_gqa: bool = True
+    is_custom_attention: bool = True
+    triton_kernel: str = &#34;linear_attn&#34;
+
+    def __init__(
+        self,
+        config: Any | None = None,
+        rank: int | None = None,
+        d_model: int | Any | None = None,
+        num_heads: int | None = None,
+        head_dim: int | None = None,
+        num_kv_heads: int | None = None,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        is_decoder: bool | None = None,
+        chunk_size: int = 128,
+        **kwargs: Any,
+    ) -&gt; None:
+        try:
+            super().__init__(config, rank if rank is not None else 64)
+        except TypeError:
+            super().__init__(config)
+
+        src_attn = kwargs.get(&#34;pretrained_attn&#34;) or kwargs.get(&#34;old_attn&#34;)
+
+        # Merge explicit args into kwargs for resolver
+        _kw = dict(kwargs)
+        if d_model is not None:
+            _kw[&#34;d_model&#34;] = (
+                d_model if isinstance(d_model, int) else getattr(d_model, &#34;hidden_size&#34;, None)
+            )
+        if num_heads is not None:
+            _kw[&#34;num_heads&#34;] = num_heads
+        if head_dim is not None:
+            _kw[&#34;head_dim&#34;] = head_dim
+        if num_kv_heads is not None:
+            _kw[&#34;num_kv_heads&#34;] = num_kv_heads
+
+        # GLA3-FIX-02 / GLA3-FIX-04
+        resolved_dim, resolved_heads, resolved_head_dim, resolved_kv_heads = _resolve_dim_and_heads(
+            config, src_attn, _kw
+        )
+
+        self.dim = resolved_dim
+        self.hidden_size = self.dim
+        self.num_heads = resolved_heads
+        self.head_dim = resolved_head_dim
+        self.num_kv_heads = resolved_kv_heads
+
+        # GLA3-FIX-01: hard consistency check
+        if self.num_heads &lt;= 0:
+            raise ValueError(f&#34;num_heads must be &gt; 0, got {self.num_heads}&#34;)
+        if self.head_dim &lt;= 0:
+            raise ValueError(f&#34;head_dim must be &gt; 0, got {self.head_dim}&#34;)
+        if self.dim != self.num_heads * self.head_dim:
+            # This is the smoking gun for the 12-vs-16 error
+            raise ValueError(
+                f&#34;[GLA] Dimension mismatch in config: &#34;
+                f&#34;hidden_size={self.dim}, num_heads={self.num_heads}, &#34;
+                f&#34;head_dim={self.head_dim}, &#34;
+                f&#34;num_heads * head_dim = {self.num_heads * self.head_dim} != {self.dim}. &#34;
+                f&#34;Fix by passing explicit head_dim or set config.head_dim.&#34;
+            )
+
+        self.all_head_size = self.num_heads * self.head_dim
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.kv_head_size = self.num_kv_heads * self.head_dim
+
+        self.chunk_size = max(16, int(chunk_size))
+        self.lora_rank = int(lora_rank)
+        self.lora_alpha = float(lora_alpha)
+
+        self.is_decoder = _detect_decoder(config, is_decoder, src_attn)
+        self.is_causal = self.is_decoder
+        self.is_nested_encoder = False
+
+        # ---- Projections ----
+        self.q_proj = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.k_proj = LoRALinear(
+            self.dim,
+            self.kv_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.v_proj = LoRALinear(
+            self.dim,
+            self.kv_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.z_proj = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+
+        # GLA3-FIX-03: build decay_gate/log_decay from the same `num_heads`
+        self.decay_gate = nn.Linear(self.dim, self.num_heads, bias=True)
+        with torch.no_grad():
+            nn.init.zeros_(self.decay_gate.weight)
+            nn.init.zeros_(self.decay_gate.bias)
+
+        self.log_decay = nn.Parameter(torch.zeros(self.num_heads))
+
+        self.state_norm = nn.LayerNorm(self.head_dim)
+        self.output_scale = nn.Parameter(torch.ones(1))
+
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+
+        # Sanity: ensure z_proj output matches all_head_size
+        if self.z_proj.out_features != self.all_head_size:
+            raise RuntimeError(
+                f&#34;GLA: z_proj.out_features={self.z_proj.out_features} &#34;
+                f&#34;!= all_head_size={self.all_head_size}&#34;
+            )
+
+        self._orig_storage_bytes = 0
+        self._comp_storage_bytes = 0
+        self.triton_kwargs = {&#34;phi&#34;: &#34;elu+1&#34;, &#34;eps&#34;: 1e-4}
+
+        if src_attn is not None:
+            self.copy_weights(src_attn)
+
+    # ---- aliases ----
+    @property
+    def query(self):
+        return self.q_proj
+
+    @property
+    def key(self):
+        return self.k_proj
+
+    @property
+    def value(self):
+        return self.v_proj
+
+    @property
+    def q_lin(self):
+        return self.q_proj
+
+    @property
+    def k_lin(self):
+        return self.k_proj
+
+    @property
+    def v_lin(self):
+        return self.v_proj
+
+    @property
+    def o_proj(self):
+        return self.out_proj
+
+    @property
+    def out_lin(self):
+        return self.out_proj
+
+    @property
+    def dense(self):
+        return self.out_proj
+
+    @property
+    def c_proj(self):
+        return self.out_proj
+
+    # ------------------------------------------------------------------
+    # copy_weights
+    # ------------------------------------------------------------------
+    def copy_weights(self, src: Any) -&gt; None:
+        if src is None:
+            return
+
+        try:
+            for p in src.parameters():
+                self._orig_storage_bytes += p.numel() * p.element_size()
+        except Exception:
+            pass
+
+        cls_name = src.__class__.__name__
+        is_nested = False
+        if (
+            hasattr(src, &#34;self&#34;)
+            and hasattr(src.self, &#34;query&#34;)
+            and hasattr(src, &#34;output&#34;)
+            and hasattr(src.output, &#34;dense&#34;)
+        ) or (
+            cls_name
+            in (
+                &#34;BertSelfAttention&#34;,
+                &#34;RobertaSelfAttention&#34;,
+                &#34;XLMRobertaSelfAttention&#34;,
+                &#34;ElectraSelfAttention&#34;,
+                &#34;DebertaSelfAttention&#34;,
+            )
+            or (cls_name.endswith(&#34;SelfAttention&#34;) and &#34;distil&#34; not in cls_name.lower())
+        ):
+            is_nested = True
+        self.is_nested_encoder = bool(is_nested)
+
+        extracted = {
+            &#34;q&#34;: (None, None),
+            &#34;k&#34;: (None, None),
+            &#34;v&#34;: (None, None),
+            &#34;o&#34;: (None, None),
+        }
+
+        # GPT-2 fused c_attn
+        if hasattr(src, &#34;c_attn&#34;) and src.c_attn is not None:
+            c = src.c_attn
+            base_c = getattr(c, &#34;base_layer&#34;, c)
+            cw = getattr(base_c, &#34;weight&#34;, getattr(c, &#34;weight&#34;, None))
+            if cw is not None:
+                cw = cw.data.clone()
+                is_conv = (
+                    c.__class__.__name__ == &#34;Conv1D&#34;
+                    or base_c.__class__.__name__ == &#34;Conv1D&#34;
+                    or hasattr(c, &#34;nf&#34;)
+                    or hasattr(base_c, &#34;nf&#34;)
+                    or (cw.ndim == 2 and cw.shape[0] &lt; cw.shape[1])
+                )
+                if is_conv:
+                    cw = cw.t().contiguous()
+                split = cw.size(0) // 3
+                bmod = getattr(base_c, &#34;bias&#34;, getattr(c, &#34;bias&#34;, None))
+                cb = bmod.data.clone() if bmod is not None else None
+                extracted[&#34;q&#34;] = (cw[:split], cb[:split] if cb is not None else None)
+                extracted[&#34;k&#34;] = (
+                    cw[split : 2 * split],
+                    cb[split : 2 * split] if cb is not None else None,
+                )
+                extracted[&#34;v&#34;] = (
+                    cw[2 * split :],
+                    cb[2 * split :] if cb is not None else None,
+                )
+
+            if hasattr(src, &#34;c_proj&#34;) and src.c_proj is not None:
+                o = src.c_proj
+                base_o = getattr(o, &#34;base_layer&#34;, o)
+                ow = getattr(base_o, &#34;weight&#34;, getattr(o, &#34;weight&#34;, None))
+                if ow is not None:
+                    ow = ow.data.clone()
+                    is_conv_o = (
+                        o.__class__.__name__ == &#34;Conv1D&#34;
+                        or base_o.__class__.__name__ == &#34;Conv1D&#34;
+                        or hasattr(o, &#34;nf&#34;)
+                        or hasattr(base_o, &#34;nf&#34;)
+                        or (ow.ndim == 2 and ow.shape[0] &lt; ow.shape[1])
+                    )
+                    if is_conv_o:
+                        ow = ow.t().contiguous()
+                    bo = getattr(base_o, &#34;bias&#34;, getattr(o, &#34;bias&#34;, None))
+                    extracted[&#34;o&#34;] = (ow, bo.data.clone() if bo is not None else None)
+
+        # Nested BERT / RoBERTa
+        elif hasattr(src, &#34;self&#34;) and hasattr(src.self, &#34;query&#34;):
+            s = src.self
+            for key, sub in ((&#34;q&#34;, &#34;query&#34;), (&#34;k&#34;, &#34;key&#34;), (&#34;v&#34;, &#34;value&#34;)):
+                m = getattr(s, sub, None)
+                if m is not None and hasattr(m, &#34;weight&#34;):
+                    b = getattr(m, &#34;bias&#34;, None)
+                    extracted[key] = (
+                        m.weight.data.clone(),
+                        b.data.clone() if b is not None else None,
+                    )
+            if hasattr(src, &#34;output&#34;) and hasattr(src.output, &#34;dense&#34;):
+                d = src.output.dense
+                b = getattr(d, &#34;bias&#34;, None)
+                extracted[&#34;o&#34;] = (
+                    d.weight.data.clone(),
+                    b.data.clone() if b is not None else None,
+                )
+
+        # Flat (DistilBERT, Qwen, LLaMA)
+        else:
+            candidates = {
+                &#34;q&#34;: (&#34;q_proj&#34;, &#34;q_lin&#34;, &#34;query&#34;),
+                &#34;k&#34;: (&#34;k_proj&#34;, &#34;k_lin&#34;, &#34;key&#34;),
+                &#34;v&#34;: (&#34;v_proj&#34;, &#34;v_lin&#34;, &#34;value&#34;),
+                &#34;o&#34;: (&#34;o_proj&#34;, &#34;out_proj&#34;, &#34;out_lin&#34;, &#34;dense&#34;),
+            }
+            for key, names in candidates.items():
+                for n in names:
+                    if hasattr(src, n):
+                        m = getattr(src, n)
+                        if m is not None and hasattr(m, &#34;weight&#34;):
+                            b = getattr(m, &#34;bias&#34;, None)
+                            extracted[key] = (
+                                m.weight.data.clone(),
+                                b.data.clone() if b is not None else None,
+                            )
+                            break
+
+        # UniversalAdapter fallback
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != &#34;o&#34; or not self.is_nested_encoder)
+        ]
+        if missing:
+            try:
+                from neuralops.core.adapters import UniversalAdapter
+
+                adapter = UniversalAdapter()
+                for k in missing:
+                    w, b = adapter.get_weight_bias(src, k)
+                    if w is not None:
+                        extracted[k] = (w.clone(), b.clone() if b is not None else None)
+            except Exception as e:
+                logger.debug(&#34;GLA UniversalAdapter fallback failed: %s&#34;, e)
+
+        def _orient(w, in_dim):
+            if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
+                return w.t().contiguous()
+            return w
+
+        with torch.no_grad():
+            for key, target in (
+                (&#34;q&#34;, self.q_proj),
+                (&#34;k&#34;, self.k_proj),
+                (&#34;v&#34;, self.v_proj),
+                (&#34;o&#34;, self.out_proj),
+            ):
+                w, b = extracted[key]
+                if w is None:
+                    if key == &#34;o&#34; and self.is_nested_encoder:
+                        nn.init.eye_(target.weight)
+                    continue
+
+                if w.ndim != 2:
+                    w = w.reshape(w.size(0), -1)
+                if (
+                    w.shape != target.weight.shape
+                    and w.t().contiguous().shape == target.weight.shape
+                ):
+                    w = w.t().contiguous()
+
+                out_d = min(target.weight.size(0), w.size(0))
+                in_d = min(target.weight.size(1), w.size(1))
+
+                if key in (&#34;k&#34;, &#34;v&#34;):
+                    src_out = w.shape[0]
+                    tgt_out = target.weight.shape[0]
+                    if src_out == tgt_out:
+                        target.weight.data.copy_(w)
+                    elif src_out &gt; tgt_out and src_out % tgt_out == 0:
+                        rep = src_out // tgt_out
+                        target.weight.data.copy_(w.view(tgt_out, rep, -1).mean(dim=1))
+                    elif src_out &lt; tgt_out and tgt_out % src_out == 0:
+                        rep = tgt_out // src_out
+                        target.weight.data.copy_(w.repeat(rep, 1))
+                    else:
+                        target.weight.data.zero_()
+                        target.weight.data[:out_d, :in_d].copy_(
+                            w[:out_d, :in_d].to(target.weight.device, target.weight.dtype)
+                        )
+                else:
+                    target.weight.data.zero_()
+                    target.weight.data[:out_d, :in_d].copy_(
+                        w[:out_d, :in_d].to(target.weight.device, target.weight.dtype)
+                    )
+
+                # GLA3-FIX-13: validate that the query projection is now fully
+                # in the expected shape (all_head_size, hidden_size)
+                if key == &#34;q&#34;:
+                    if target.weight.shape != (self.all_head_size, self.dim):
+                        raise RuntimeError(
+                            f&#34;GLA copy_weights: q_proj shape {tuple(target.weight.shape)} &#34;
+                            f&#34;!= expected ({self.all_head_size}, {self.dim}). &#34;
+                            f&#34;num_heads={self.num_heads}, head_dim={self.head_dim}, dim={self.dim}.&#34;
+                        )
+
+                if b is not None and target.bias is not None:
+                    mb = min(target.bias.numel(), b.numel())
+                    target.bias.data[:mb].copy_(b[:mb].to(target.bias.device, target.bias.dtype))
+
+                n = torch.linalg.norm(target.weight.data.float()).item()
+                if n &lt; 1e-4:
+                    logger.warning(&#34;GLA: %s near-zero norm (%.2e)&#34;, key, n)
+
+                target.freeze_base_weights()
+
+            # Initialize z_proj from q
+            w_q = extracted[&#34;q&#34;][0]
+            if w_q is not None:
+                w_q_oriented = _orient(w_q, self.dim)
+                out_d = min(self.z_proj.weight.shape[0], w_q_oriented.shape[0])
+                in_d = min(self.z_proj.weight.shape[1], w_q_oriented.shape[1])
+                self.z_proj.weight.data.zero_()
+                self.z_proj.weight.data[:out_d, :in_d].copy_(
+                    w_q_oriented[:out_d, :in_d].to(
+                        self.z_proj.weight.device, self.z_proj.weight.dtype
+                    )
+                )
+                self.z_proj.freeze_base_weights()
+
+        try:
+            for m in (
+                self.q_proj,
+                self.k_proj,
+                self.v_proj,
+                self.z_proj,
+                self.out_proj,
+            ):
+                for p in m.parameters():
+                    self._comp_storage_bytes += p.numel() * p.element_size()
+        except Exception:
+            pass
+
+    # ------------------------------------------------------------------
+    # Chunked linear-attention scan
+    # ------------------------------------------------------------------
+    def _gla_scan_chunked(self, q, k, v, lambdas, mask=None, reverse=False):
+        B, H, L, d = q.shape
+        device = q.device
+
+        if HAS_TRITON_GLA and q.is_cuda and d &lt;= MAX_REGISTER_DIM and mask is None and not reverse:
+            try:
+                return gla_scan_triton(q.float(), k.float(), v.float(), lambdas.float()).to(q.dtype)
+            except Exception as e:
+                logger.debug(&#34;GLA Triton scan failed, falling back: %s&#34;, e)
+
+        if reverse:
+            q = torch.flip(q, dims=[2])
+            k = torch.flip(k, dims=[2])
+            v = torch.flip(v, dims=[2])
+            lambdas = torch.flip(lambdas, dims=[2])
+            if mask is not None:
+                mask = torch.flip(mask, dims=[1])
+
+        if mask is not None:
+            m = mask.float()
+            m_kv = m.unsqueeze(1).unsqueeze(-1)
+            k = k * m_kv
+            v = v * m_kv
+
+        q_f = q.float()
+        k_f = k.float()
+        v_f = v.float()
+        lam = lambdas.float().clamp(min=1e-4, max=1.0 - 1e-4)
+
+        chunk = self.chunk_size
+        n_chunks = (L + chunk - 1) // chunk
+
+        S = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
+        Z = torch.zeros(B, H, d, device=device, dtype=torch.float32)
+        outs = []
+
+        for c in range(n_chunks):
+            s = c * chunk
+            e = min(s + chunk, L)
+            q_c = q_f[:, :, s:e]
+            k_c = k_f[:, :, s:e]
+            v_c = v_f[:, :, s:e]
+            lam_c = lam[:, :, s:e]
+
+            log_lam = torch.log(lam_c)
+            C = torch.cumsum(log_lam, dim=-1)
+            C_i = C.unsqueeze(-1)
+            C_j = C.unsqueeze(-2)
+            D = torch.exp((C_i - C_j).clamp(min=-15.0, max=0.0)) * torch.tril(
+                torch.ones(e - s, e - s, device=device)
+            )
+
+            lam_prefix = torch.exp(C)
+            y_prev = torch.einsum(
+                &#34;bhl,bhld-&gt;bhld&#34;, lam_prefix, torch.einsum(&#34;bhlc,bhcd-&gt;bhld&#34;, q_c, S)
+            )
+            denom_prev = torch.einsum(
+                &#34;bhl,bhl-&gt;bhl&#34;, lam_prefix, torch.einsum(&#34;bhlc,bhc-&gt;bhl&#34;, q_c, Z)
+            )
+
+            qk = torch.matmul(q_c, k_c.transpose(-1, -2))
+            y_cur = torch.matmul(qk * D, v_c)
+            denom_cur = (qk * D).sum(dim=-1)
+
+            y_chunk = y_prev + y_cur
+            denom_chunk = (denom_prev + denom_cur).clamp(min=1e-4)
+
+            lam_prod_chunk = torch.exp(C[:, :, -1]).view(B, H, 1, 1)
+            C_end = C[:, :, -1:].unsqueeze(-1)
+            C_t = C.unsqueeze(-1)
+            weight_t = torch.exp((C_end - C_t).clamp(min=-15.0, max=0.0))
+            k_w = k_c * weight_t
+            S_new = lam_prod_chunk * S + torch.einsum(&#34;bhld,bhle-&gt;bhde&#34;, k_w, v_c)
+            Z_new = lam_prod_chunk.squeeze(-1) * Z + k_w.sum(dim=2)
+
+            S = S_new
+            Z = Z_new
+
+            y_chunk = y_chunk / denom_chunk.unsqueeze(-1)
+            outs.append(y_chunk)
+
+        y = torch.cat(outs, dim=2)
+        if reverse:
+            y = torch.flip(y, dims=[2])
+        return y.to(q.dtype)
+
+    # ------------------------------------------------------------------
+    # Mask helpers (GLA3-FIX-10)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _normalize_valid_mask(attention_mask, B, L, device):
+        if attention_mask is None:
+            return None
+
+        def _to_bool(t):
+            if t.dtype == torch.bool:
+                return t
+            if t.dtype.is_floating_point:
+                return t &gt; -1e4
+            return t &gt; 0
+
+        if attention_mask.dim() == 2:
+            m = _to_bool(attention_mask)
+            if m.shape == (B, L):
+                return m
+        elif attention_mask.dim() == 3:
+            m = _to_bool(attention_mask)
+            if m.shape[0] == B and m.shape[-1] == L:
+                return m[:, -1, :]
+        elif attention_mask.dim() == 4:
+            m = _to_bool(attention_mask)
+            # Shape (B, 1, N_q, L) or (B, H, N_q, L) → reduce over queries
+            m = m.any(dim=-2)
+            if m.dim() == 3:
+                m = m.squeeze(1)
+            if m.shape == (B, L):
+                return m
+        return None
+
+    # ------------------------------------------------------------------
+    # Forward
+    # ------------------------------------------------------------------
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        if not hidden_states.is_contiguous():
+            hidden_states = hidden_states.contiguous()
+
+        B, L, D = hidden_states.shape
+
+        # GLA3-FIX-05
+        if self.dim != D:
+            raise RuntimeError(
+                f&#34;GLA: hidden_states has last dim {D}, but module expects {self.dim}. &#34;
+                f&#34;num_heads={self.num_heads}, head_dim={self.head_dim}.&#34;
+            )
+
+        H, d = self.num_heads, self.head_dim
+
+        is_cross = encoder_hidden_states is not None
+        kv_input = encoder_hidden_states if is_cross else hidden_states
+        L_kv = kv_input.shape[1]
+
+        # ---- Projections ----
+        q_raw = self.q_proj(hidden_states)
+        k_raw = self.k_proj(kv_input)
+        v_raw = self.v_proj(kv_input)
+
+        # GLA3-FIX-07: verify projection outputs
+        expected_q = (B, L, self.all_head_size)
+        expected_kv = (B, L_kv, self.kv_head_size)
+        if tuple(q_raw.shape) != expected_q:
+            raise RuntimeError(f&#34;GLA: q_proj output {tuple(q_raw.shape)} != expected {expected_q}&#34;)
+        if tuple(k_raw.shape) != expected_kv:
+            raise RuntimeError(f&#34;GLA: k_proj output {tuple(k_raw.shape)} != expected {expected_kv}&#34;)
+
+        q = q_raw.view(B, L, H, d).transpose(1, 2).contiguous()
+        k = k_raw.view(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v = v_raw.view(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        z = self.z_proj(hidden_states)
+
+        if position_embeddings is None:
+            position_embeddings = kwargs.get(&#34;position_embeddings&#34;)
+        if position_embeddings is not None and not is_cross:
+            cos, sin = position_embeddings
+            q, k = apply_rotary_pos_emb(q, k, cos, sin)
+
+        if self.num_kv_heads &lt; self.num_heads:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        # ELU+1 feature map
+        q = F.elu(q) + 1.0
+        k = F.elu(k) + 1.0
+
+        # ---- Decay gate ----
+        # GLA3-FIX-03 / GLA3-FIX-08: shape is guaranteed to be (B, L, num_heads)
+        decay_out = self.decay_gate(hidden_states)  # (B, L, H)
+        if decay_out.shape[-1] != self.num_heads:
+            raise RuntimeError(
+                f&#34;GLA: decay_gate output {decay_out.shape[-1]} != num_heads {self.num_heads}&#34;
+            )
+        decay_logits = decay_out.transpose(1, 2) + self.log_decay.to(decay_out.dtype).view(1, -1, 1)
+        lambdas = torch.sigmoid(decay_logits)  # (B, H, L)
+
+        eff_mask = encoder_attention_mask if is_cross else attention_mask
+        mask_bool = self._normalize_valid_mask(eff_mask, B, L_kv, hidden_states.device)
+
+        is_causal = bool(self.is_decoder and not is_cross and L &gt; 1 and past_key_value is None)
+
+        if is_causal:
+            y = self._gla_scan_chunked(q, k, v, lambdas, mask=mask_bool, reverse=False)
+        else:
+            y_fwd = self._gla_scan_chunked(q, k, v, lambdas, mask=mask_bool, reverse=False)
+            y_bwd = self._gla_scan_chunked(q, k, v, lambdas, mask=mask_bool, reverse=True)
+            y = 0.5 * (y_fwd + y_bwd)
+
+        y = self.state_norm(y)
+
+        # GLA3-FIX-06: unified head_mask handling
+        if head_mask is not None:
+            hm = head_mask.to(y.dtype)
+            if hm.dim() == 1:
+                hm = hm.view(1, H, 1, 1)
+            elif hm.dim() == 2:
+                hm = hm.view(hm.shape[0], H, 1, 1)
+            elif hm.dim() == 3:
+                hm = hm.unsqueeze(1)
+            # 4D passes through
+            if hm.shape[1] != H:
+                raise RuntimeError(f&#34;GLA: head_mask has {hm.shape[1]} heads, expected {H}&#34;)
+            y = y * hm
+
+        y = y.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+        context = torch.nan_to_num(y * F.silu(z), nan=0.0, posinf=1e4, neginf=-1e4)
+
+        if self.is_nested_encoder:
+            out = context
+        else:
+            out = self.out_proj(context)
+
+        out = out * self.output_scale
+
+        if mask_bool is not None and not is_cross:
+            out = out * mask_bool.unsqueeze(-1).to(out.dtype)
+
+        return out, None
+
+    # ------------------------------------------------------------------
+    def storage_bytes(self) -&gt; dict[str, int]:
+        def _sz(p):
+            if isinstance(p, (nn.Parameter, torch.Tensor)):
+                return p.numel() * p.element_size()
+            return 0
+
+        out = {}
+        for name, m in (
+            (&#34;q_proj&#34;, self.q_proj),
+            (&#34;k_proj&#34;, self.k_proj),
+            (&#34;v_proj&#34;, self.v_proj),
+            (&#34;z_proj&#34;, self.z_proj),
+            (&#34;out_proj&#34;, self.out_proj),
+            (&#34;decay_gate&#34;, self.decay_gate),
+            (&#34;state_norm&#34;, self.state_norm),
+        ):
+            out[name] = sum(_sz(p) for p in m.parameters())
+        out[&#34;output_scale&#34;] = _sz(self.output_scale)
+        out[&#34;total&#34;] = sum(out.values())
+        return out</code></pre>
+</details>
+<div class="desc"><p>Every custom attention module must inherit from this.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.gated_linear_attention.GatedLinearAttention.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.gated_linear_attention.GatedLinearAttention.supports_causal"><code class="name">var <span class="ident">supports_causal</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.gated_linear_attention.GatedLinearAttention.supports_gqa"><code class="name">var <span class="ident">supports_gqa</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.gated_linear_attention.GatedLinearAttention.triton_kernel"><code class="name">var <span class="ident">triton_kernel</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.gated_linear_attention.GatedLinearAttention.c_proj"><code class="name">prop <span class="ident">c_proj</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def c_proj(self):
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_linear_attention.GatedLinearAttention.dense"><code class="name">prop <span class="ident">dense</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def dense(self):
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_linear_attention.GatedLinearAttention.k_lin"><code class="name">prop <span class="ident">k_lin</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def k_lin(self):
+    return self.k_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_linear_attention.GatedLinearAttention.key"><code class="name">prop <span class="ident">key</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def key(self):
+    return self.k_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_linear_attention.GatedLinearAttention.o_proj"><code class="name">prop <span class="ident">o_proj</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def o_proj(self):
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_linear_attention.GatedLinearAttention.out_lin"><code class="name">prop <span class="ident">out_lin</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def out_lin(self):
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_linear_attention.GatedLinearAttention.q_lin"><code class="name">prop <span class="ident">q_lin</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def q_lin(self):
+    return self.q_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_linear_attention.GatedLinearAttention.query"><code class="name">prop <span class="ident">query</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def query(self):
+    return self.q_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_linear_attention.GatedLinearAttention.v_lin"><code class="name">prop <span class="ident">v_lin</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def v_lin(self):
+    return self.v_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_linear_attention.GatedLinearAttention.value"><code class="name">prop <span class="ident">value</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def value(self):
+    return self.v_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.gated_linear_attention.GatedLinearAttention.storage_bytes"><code class="name flex">
+<span>def <span class="ident">storage_bytes</span></span>(<span>self) ‑> dict[str, int]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def storage_bytes(self) -&gt; dict[str, int]:
+    def _sz(p):
+        if isinstance(p, (nn.Parameter, torch.Tensor)):
+            return p.numel() * p.element_size()
+        return 0
+
+    out = {}
+    for name, m in (
+        (&#34;q_proj&#34;, self.q_proj),
+        (&#34;k_proj&#34;, self.k_proj),
+        (&#34;v_proj&#34;, self.v_proj),
+        (&#34;z_proj&#34;, self.z_proj),
+        (&#34;out_proj&#34;, self.out_proj),
+        (&#34;decay_gate&#34;, self.decay_gate),
+        (&#34;state_norm&#34;, self.state_norm),
+    ):
+        out[name] = sum(_sz(p) for p in m.parameters())
+    out[&#34;output_scale&#34;] = _sz(self.output_scale)
+    out[&#34;total&#34;] = sum(out.values())
+    return out</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseAttention.copy_weights" href="../core/base.html#neuralops.core.base.BaseAttention.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.extra_repr" href="../core/base.html#neuralops.core.base.BaseAttention.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.forward" href="../core/base.html#neuralops.core.base.BaseAttention.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.attentions.gated_linear_attention.LoRALinear"><code class="flex name class">
+<span>class <span class="ident">LoRALinear</span></span>
+<span>(</span><span>in_features,<br>out_features,<br>bias=True,<br>lora_rank=16,<br>lora_alpha=32.0,<br>freeze_base=False,<br>device=None,<br>dtype=None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class LoRALinear(nn.Module):
+    def __init__(
+        self,
+        in_features,
+        out_features,
+        bias=True,
+        lora_rank=16,
+        lora_alpha=32.0,
+        freeze_base=False,
+        device=None,
+        dtype=None,
+    ):
+        super().__init__()
+        fk = {&#34;device&#34;: device, &#34;dtype&#34;: dtype}
+        self.in_features = int(in_features)
+        self.out_features = int(out_features)
+        self.lora_rank = int(lora_rank)
+        self.lora_alpha = float(lora_alpha)
+        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank &gt; 0 else 1.0
+        self.freeze_base = freeze_base
+
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **fk))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features, **fk))
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+        if self.lora_rank &gt; 0:
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **fk))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **fk))
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+        self.reset_parameters()
+        if freeze_base:
+            self.freeze_base_weights()
+
+    def reset_parameters(self):
+        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in &gt; 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+        if self.lora_rank &gt; 0 and self.lora_A is not None:
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            self.lora_A.requires_grad = True
+        if self.lora_rank &gt; 0 and self.lora_B is not None:
+            nn.init.zeros_(self.lora_B)
+            self.lora_B.requires_grad = True
+
+    def freeze_base_weights(self):
+        self.weight.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
+        if self.lora_rank &gt; 0:
+            if self.lora_A is not None:
+                self.lora_A.requires_grad = True
+            if self.lora_B is not None:
+                self.lora_B.requires_grad = True
+
+    def forward(self, x):
+        w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
+        b = (
+            self.bias.to(x.dtype)
+            if (self.bias is not None and self.bias.dtype != x.dtype)
+            else self.bias
+        )
+        out = F.linear(x, w, b)
+        if self.lora_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
+        return out</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.gated_linear_attention.LoRALinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x) ‑> Callable[..., typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x):
+    w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
+    b = (
+        self.bias.to(x.dtype)
+        if (self.bias is not None and self.bias.dtype != x.dtype)
+        else self.bias
+    )
+    out = F.linear(x, w, b)
+    if self.lora_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
+        bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+        out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
+    return out</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+<dt id="neuralops.attentions.gated_linear_attention.LoRALinear.freeze_base_weights"><code class="name flex">
+<span>def <span class="ident">freeze_base_weights</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def freeze_base_weights(self):
+    self.weight.requires_grad = False
+    if self.bias is not None:
+        self.bias.requires_grad = False
+    if self.lora_rank &gt; 0:
+        if self.lora_A is not None:
+            self.lora_A.requires_grad = True
+        if self.lora_B is not None:
+            self.lora_B.requires_grad = True</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.gated_linear_attention.LoRALinear.reset_parameters"><code class="name flex">
+<span>def <span class="ident">reset_parameters</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_parameters(self):
+    nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+    if self.bias is not None:
+        fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+        bound = 1 / math.sqrt(fan_in) if fan_in &gt; 0 else 0
+        nn.init.uniform_(self.bias, -bound, bound)
+    if self.lora_rank &gt; 0 and self.lora_A is not None:
+        nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        self.lora_A.requires_grad = True
+    if self.lora_rank &gt; 0 and self.lora_B is not None:
+        nn.init.zeros_(self.lora_B)
+        self.lora_B.requires_grad = True</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.attentions" href="index.html">neuralops.attentions</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.attentions.gated_linear_attention.apply_rotary_pos_emb" href="#neuralops.attentions.gated_linear_attention.apply_rotary_pos_emb">apply_rotary_pos_emb</a></code></li>
+<li><code><a title="neuralops.attentions.gated_linear_attention.inject_gated_linear" href="#neuralops.attentions.gated_linear_attention.inject_gated_linear">inject_gated_linear</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.attentions.gated_linear_attention.GatedLinearAttention" href="#neuralops.attentions.gated_linear_attention.GatedLinearAttention">GatedLinearAttention</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.attentions.gated_linear_attention.GatedLinearAttention.c_proj" href="#neuralops.attentions.gated_linear_attention.GatedLinearAttention.c_proj">c_proj</a></code></li>
+<li><code><a title="neuralops.attentions.gated_linear_attention.GatedLinearAttention.dense" href="#neuralops.attentions.gated_linear_attention.GatedLinearAttention.dense">dense</a></code></li>
+<li><code><a title="neuralops.attentions.gated_linear_attention.GatedLinearAttention.is_custom_attention" href="#neuralops.attentions.gated_linear_attention.GatedLinearAttention.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.gated_linear_attention.GatedLinearAttention.k_lin" href="#neuralops.attentions.gated_linear_attention.GatedLinearAttention.k_lin">k_lin</a></code></li>
+<li><code><a title="neuralops.attentions.gated_linear_attention.GatedLinearAttention.key" href="#neuralops.attentions.gated_linear_attention.GatedLinearAttention.key">key</a></code></li>
+<li><code><a title="neuralops.attentions.gated_linear_attention.GatedLinearAttention.o_proj" href="#neuralops.attentions.gated_linear_attention.GatedLinearAttention.o_proj">o_proj</a></code></li>
+<li><code><a title="neuralops.attentions.gated_linear_attention.GatedLinearAttention.out_lin" href="#neuralops.attentions.gated_linear_attention.GatedLinearAttention.out_lin">out_lin</a></code></li>
+<li><code><a title="neuralops.attentions.gated_linear_attention.GatedLinearAttention.q_lin" href="#neuralops.attentions.gated_linear_attention.GatedLinearAttention.q_lin">q_lin</a></code></li>
+<li><code><a title="neuralops.attentions.gated_linear_attention.GatedLinearAttention.query" href="#neuralops.attentions.gated_linear_attention.GatedLinearAttention.query">query</a></code></li>
+<li><code><a title="neuralops.attentions.gated_linear_attention.GatedLinearAttention.storage_bytes" href="#neuralops.attentions.gated_linear_attention.GatedLinearAttention.storage_bytes">storage_bytes</a></code></li>
+<li><code><a title="neuralops.attentions.gated_linear_attention.GatedLinearAttention.supports_causal" href="#neuralops.attentions.gated_linear_attention.GatedLinearAttention.supports_causal">supports_causal</a></code></li>
+<li><code><a title="neuralops.attentions.gated_linear_attention.GatedLinearAttention.supports_gqa" href="#neuralops.attentions.gated_linear_attention.GatedLinearAttention.supports_gqa">supports_gqa</a></code></li>
+<li><code><a title="neuralops.attentions.gated_linear_attention.GatedLinearAttention.triton_kernel" href="#neuralops.attentions.gated_linear_attention.GatedLinearAttention.triton_kernel">triton_kernel</a></code></li>
+<li><code><a title="neuralops.attentions.gated_linear_attention.GatedLinearAttention.v_lin" href="#neuralops.attentions.gated_linear_attention.GatedLinearAttention.v_lin">v_lin</a></code></li>
+<li><code><a title="neuralops.attentions.gated_linear_attention.GatedLinearAttention.value" href="#neuralops.attentions.gated_linear_attention.GatedLinearAttention.value">value</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.gated_linear_attention.LoRALinear" href="#neuralops.attentions.gated_linear_attention.LoRALinear">LoRALinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.gated_linear_attention.LoRALinear.forward" href="#neuralops.attentions.gated_linear_attention.LoRALinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.attentions.gated_linear_attention.LoRALinear.freeze_base_weights" href="#neuralops.attentions.gated_linear_attention.LoRALinear.freeze_base_weights">freeze_base_weights</a></code></li>
+<li><code><a title="neuralops.attentions.gated_linear_attention.LoRALinear.reset_parameters" href="#neuralops.attentions.gated_linear_attention.LoRALinear.reset_parameters">reset_parameters</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

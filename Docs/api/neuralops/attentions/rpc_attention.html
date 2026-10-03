@@ -1,0 +1,1755 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.attentions.rpc_attention API documentation</title>
+<meta name="description" content="Random Projection Compressed (RPC) Attention — Production-Hardened (v2) …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.attentions.rpc_attention</code></h1>
+</header>
+<section id="section-intro">
+<p>Random Projection Compressed (RPC) Attention — Production-Hardened (v2).</p>
+<p>Randomized linear subspace sketching via fixed head-wise Gaussian random
+projection buffers to compress query-key similarity evaluations.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.attentions.rpc_attention.apply_rotary_pos_emb"><code class="name flex">
+<span>def <span class="ident">apply_rotary_pos_emb</span></span>(<span>q: torch.Tensor, k: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) ‑> tuple[torch.Tensor, torch.Tensor]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+) -&gt; tuple[torch.Tensor, torch.Tensor]:
+    if cos is None or sin is None:
+        return q, k
+
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    while cos.dim() &lt; q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    if cos.shape[-2] != q.shape[-2]:
+        raise ValueError(f&#34;RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}&#34;)
+
+    rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
+
+    if rotary_dim &lt;= head_dim:
+        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() &gt; 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() &gt; 0 else k_rot_embed
+    else:
+        cos_cut = cos[..., :head_dim].to(q.dtype)
+        sin_cut = sin[..., :head_dim].to(q.dtype)
+        q = (q * cos_cut) + (_rotate_half(q) * sin_cut)
+        cos_k = cos[..., :head_dim].to(k.dtype)
+        sin_k = sin[..., :head_dim].to(k.dtype)
+        k = (k * cos_k) + (_rotate_half(k) * sin_k)
+
+    return q, k</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.rpc_attention.inject_rpc"><code class="name flex">
+<span>def <span class="ident">inject_rpc</span></span>(<span>layer: Any = None,<br>model: Any = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: nn.Module | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;rpc&#34;)
+@ATTENTION_REGISTRY.register(&#34;rpc_attention&#34;)
+@ATTENTION_REGISTRY.register(&#34;rpc_inject&#34;)
+@ATTENTION_REGISTRY.register(&#34;inject_rpc&#34;)
+def inject_rpc(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    _depth: int = 0,
+    **kwargs: Any,
+):
+    if _depth &gt; 8:
+        logger.warning(&#34;inject_rpc: max recursion depth exceeded.&#34;)
+        return None
+
+    target = layer if layer is not None else model
+    if target is None:
+        target = kwargs.get(&#34;model&#34;, kwargs.get(&#34;layer&#34;))
+    if target is None:
+        return None
+
+    cfg = model_config if model_config is not None else getattr(target, &#34;config&#34;, None)
+
+    # ---- Whole-model traversal ----
+    layer_list = None
+    if hasattr(target, &#34;distilbert&#34;) and hasattr(target.distilbert, &#34;transformer&#34;):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, &#34;roberta&#34;) and hasattr(target.roberta, &#34;encoder&#34;):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, &#34;transformer&#34;) and hasattr(target.transformer, &#34;h&#34;):
+        layer_list = target.transformer.h
+    elif hasattr(target, &#34;h&#34;) and isinstance(target.h, (torch.nn.ModuleList, list)):
+        layer_list = target.h
+    elif hasattr(target, &#34;model&#34;) and hasattr(target.model, &#34;layers&#34;):
+        layer_list = target.model.layers
+    elif hasattr(target, &#34;encoder&#34;) and hasattr(target.encoder, &#34;layer&#34;):
+        layer_list = target.encoder.layer
+    elif (
+        hasattr(target, &#34;bert&#34;)
+        and hasattr(target.bert, &#34;encoder&#34;)
+        and hasattr(target.bert.encoder, &#34;layer&#34;)
+    ):
+        layer_list = target.bert.encoder.layer
+    elif hasattr(target, &#34;layers&#34;) and isinstance(target.layers, (torch.nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_rpc(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected &gt; 0 else None
+
+    # ---- Single-layer injection ----
+    try:
+        src = old_attn
+        if src is None:
+            for attr in (&#34;attention&#34;, &#34;self_attn&#34;, &#34;attn&#34;, &#34;self&#34;):
+                if hasattr(target, attr):
+                    candidate = getattr(target, attr)
+                    if isinstance(candidate, nn.Module) and candidate is not target:
+                        src = candidate
+                        break
+        if src is None:
+            src = target
+
+        # Double-injection guard
+        if isinstance(src, RPCAttention) or &#34;RPCAttention&#34; in src.__class__.__name__:
+            return None
+        if &#34;DeltaNet&#34; in src.__class__.__name__ or &#34;LinearAttention&#34; in src.__class__.__name__:
+            return None
+
+        new_attn = RPCAttention(
+            config=cfg or getattr(src, &#34;config&#34;, None),
+            rank=kwargs.pop(&#34;rank&#34;, _cfg_get(comp_config, &#34;rank&#34;, 64)),
+            pretrained_attn=src if src is not target else None,
+            **kwargs,
+        )
+
+        if hasattr(target, &#34;attention&#34;):
+            if hasattr(target.attention, &#34;self&#34;):
+                new_attn.is_nested_encoder = True
+                target.attention.self = new_attn
+            else:
+                new_attn.is_nested_encoder = False
+                target.attention = new_attn
+        elif hasattr(target, &#34;self_attn&#34;):
+            new_attn.is_nested_encoder = False
+            target.self_attn = new_attn
+        elif hasattr(target, &#34;attn&#34;):
+            new_attn.is_nested_encoder = False
+            target.attn = new_attn
+        elif hasattr(target, &#34;self&#34;):
+            new_attn.is_nested_encoder = True
+            target.self = new_attn
+
+        return new_attn
+    except Exception as e:
+        logger.exception(&#34;inject_rpc failed at layer %d: %s&#34;, layer_idx, e)
+        return None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.rpc_attention.inject_rpc_attention"><code class="name flex">
+<span>def <span class="ident">inject_rpc_attention</span></span>(<span>layer: Any = None,<br>model: Any = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: nn.Module | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;rpc&#34;)
+@ATTENTION_REGISTRY.register(&#34;rpc_attention&#34;)
+@ATTENTION_REGISTRY.register(&#34;rpc_inject&#34;)
+@ATTENTION_REGISTRY.register(&#34;inject_rpc&#34;)
+def inject_rpc(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    _depth: int = 0,
+    **kwargs: Any,
+):
+    if _depth &gt; 8:
+        logger.warning(&#34;inject_rpc: max recursion depth exceeded.&#34;)
+        return None
+
+    target = layer if layer is not None else model
+    if target is None:
+        target = kwargs.get(&#34;model&#34;, kwargs.get(&#34;layer&#34;))
+    if target is None:
+        return None
+
+    cfg = model_config if model_config is not None else getattr(target, &#34;config&#34;, None)
+
+    # ---- Whole-model traversal ----
+    layer_list = None
+    if hasattr(target, &#34;distilbert&#34;) and hasattr(target.distilbert, &#34;transformer&#34;):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, &#34;roberta&#34;) and hasattr(target.roberta, &#34;encoder&#34;):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, &#34;transformer&#34;) and hasattr(target.transformer, &#34;h&#34;):
+        layer_list = target.transformer.h
+    elif hasattr(target, &#34;h&#34;) and isinstance(target.h, (torch.nn.ModuleList, list)):
+        layer_list = target.h
+    elif hasattr(target, &#34;model&#34;) and hasattr(target.model, &#34;layers&#34;):
+        layer_list = target.model.layers
+    elif hasattr(target, &#34;encoder&#34;) and hasattr(target.encoder, &#34;layer&#34;):
+        layer_list = target.encoder.layer
+    elif (
+        hasattr(target, &#34;bert&#34;)
+        and hasattr(target.bert, &#34;encoder&#34;)
+        and hasattr(target.bert.encoder, &#34;layer&#34;)
+    ):
+        layer_list = target.bert.encoder.layer
+    elif hasattr(target, &#34;layers&#34;) and isinstance(target.layers, (torch.nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_rpc(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected &gt; 0 else None
+
+    # ---- Single-layer injection ----
+    try:
+        src = old_attn
+        if src is None:
+            for attr in (&#34;attention&#34;, &#34;self_attn&#34;, &#34;attn&#34;, &#34;self&#34;):
+                if hasattr(target, attr):
+                    candidate = getattr(target, attr)
+                    if isinstance(candidate, nn.Module) and candidate is not target:
+                        src = candidate
+                        break
+        if src is None:
+            src = target
+
+        # Double-injection guard
+        if isinstance(src, RPCAttention) or &#34;RPCAttention&#34; in src.__class__.__name__:
+            return None
+        if &#34;DeltaNet&#34; in src.__class__.__name__ or &#34;LinearAttention&#34; in src.__class__.__name__:
+            return None
+
+        new_attn = RPCAttention(
+            config=cfg or getattr(src, &#34;config&#34;, None),
+            rank=kwargs.pop(&#34;rank&#34;, _cfg_get(comp_config, &#34;rank&#34;, 64)),
+            pretrained_attn=src if src is not target else None,
+            **kwargs,
+        )
+
+        if hasattr(target, &#34;attention&#34;):
+            if hasattr(target.attention, &#34;self&#34;):
+                new_attn.is_nested_encoder = True
+                target.attention.self = new_attn
+            else:
+                new_attn.is_nested_encoder = False
+                target.attention = new_attn
+        elif hasattr(target, &#34;self_attn&#34;):
+            new_attn.is_nested_encoder = False
+            target.self_attn = new_attn
+        elif hasattr(target, &#34;attn&#34;):
+            new_attn.is_nested_encoder = False
+            target.attn = new_attn
+        elif hasattr(target, &#34;self&#34;):
+            new_attn.is_nested_encoder = True
+            target.self = new_attn
+
+        return new_attn
+    except Exception as e:
+        logger.exception(&#34;inject_rpc failed at layer %d: %s&#34;, layer_idx, e)
+        return None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.attentions.rpc_attention.FactorizedLoRALinear"><code class="flex name class">
+<span>class <span class="ident">FactorizedLoRALinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>rank: int = 64,<br>lora_rank: int = 16,<br>lora_alpha: float = 32.0,<br>bias: bool = True,<br>device: torch.device | None = None,<br>dtype: torch.dtype | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FactorizedLoRALinear(nn.Module):
+    &#34;&#34;&#34;
+    SVD-factorized linear + LoRA:
+        y = up(down(x)) + (lora_B @ lora_A)(x) * scaling
+    Base (down, up) frozen; LoRA trainable.
+    &#34;&#34;&#34;
+
+    is_custom_attention = False
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int = 64,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        bias: bool = True,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = int(in_features)
+        self.out_features = int(out_features)
+        self.rank = max(1, min(int(rank), self.in_features, self.out_features))
+        self.svd_rank = self.rank
+        self.lora_rank = int(lora_rank) if lora_rank &gt; 0 else 0
+        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank &gt; 0 else 1.0
+
+        factory = {&#34;device&#34;: device, &#34;dtype&#34;: dtype}
+        self.down = nn.Linear(self.in_features, self.rank, bias=False, **factory)
+        self.up = nn.Linear(self.rank, self.out_features, bias=bias, **factory)
+
+        self.down.weight.requires_grad = False
+        self.up.weight.requires_grad = False
+        if self.up.bias is not None:
+            self.up.bias.requires_grad = False
+
+        if self.lora_rank &gt; 0:
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **factory))
+            self.lora_B = nn.Parameter(torch.empty(self.out_features, self.lora_rank, **factory))
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+        # RPC-16: cache
+        self._cached_weight: torch.Tensor | None = None
+        self._cached_versions: tuple[int, ...] = ()
+
+    def _current_versions(self) -&gt; tuple[int, ...]:
+        v = [
+            getattr(self.down.weight, &#34;_version&#34;, 0),
+            getattr(self.up.weight, &#34;_version&#34;, 0),
+        ]
+        if self.lora_A is not None:
+            v.append(getattr(self.lora_A, &#34;_version&#34;, 0))
+            v.append(getattr(self.lora_B, &#34;_version&#34;, 0))
+        return tuple(v)
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        if (
+            not self.training
+            and self._cached_weight is not None
+            and self._cached_versions == self._current_versions()
+        ):
+            return self._cached_weight
+        w = torch.matmul(self.up.weight.float(), self.down.weight.float())
+        if self.lora_A is not None and self.lora_B is not None:
+            w = w + (self.lora_B.float() @ self.lora_A.float()) * self.lora_scaling
+        w = w.to(self.down.weight.dtype)
+        if not self.training:
+            self._cached_weight = w
+            self._cached_versions = self._current_versions()
+        return w
+
+    @property
+    def bias(self) -&gt; torch.Tensor | None:
+        return self.up.bias
+
+    def freeze_base_weights(self) -&gt; None:
+        self.down.weight.requires_grad = False
+        self.up.weight.requires_grad = False
+        if self.up.bias is not None:
+            self.up.bias.requires_grad = False
+        if self.lora_A is not None:
+            self.lora_A.requires_grad = True
+        if self.lora_B is not None:
+            self.lora_B.requires_grad = True
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        d_w = (
+            self.down.weight.to(x.dtype) if self.down.weight.dtype != x.dtype else self.down.weight
+        )
+        u_w = self.up.weight.to(x.dtype) if self.up.weight.dtype != x.dtype else self.up.weight
+        u_b = (
+            self.up.bias.to(x.dtype)
+            if (self.up.bias is not None and self.up.bias.dtype != x.dtype)
+            else self.up.bias
+        )
+        out = F.linear(F.linear(x, d_w), u_w, u_b)
+        if self.lora_A is not None and self.lora_B is not None:
+            a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
+            b = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            out = out + F.linear(F.linear(x, a), b) * self.lora_scaling
+        return out
+
+    def storage_bytes(self) -&gt; int:
+        b = 0
+        for p in self.parameters():
+            b += p.numel() * p.element_size()
+        return b</code></pre>
+</details>
+<div class="desc"><p>SVD-factorized linear + LoRA:
+y = up(down(x)) + (lora_B @ lora_A)(x) * scaling
+Base (down, up) frozen; LoRA trainable.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.rpc_attention.FactorizedLoRALinear.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.rpc_attention.FactorizedLoRALinear.bias"><code class="name">prop <span class="ident">bias</span> : torch.Tensor | None</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def bias(self) -&gt; torch.Tensor | None:
+    return self.up.bias</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.rpc_attention.FactorizedLoRALinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    if (
+        not self.training
+        and self._cached_weight is not None
+        and self._cached_versions == self._current_versions()
+    ):
+        return self._cached_weight
+    w = torch.matmul(self.up.weight.float(), self.down.weight.float())
+    if self.lora_A is not None and self.lora_B is not None:
+        w = w + (self.lora_B.float() @ self.lora_A.float()) * self.lora_scaling
+    w = w.to(self.down.weight.dtype)
+    if not self.training:
+        self._cached_weight = w
+        self._cached_versions = self._current_versions()
+    return w</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.rpc_attention.FactorizedLoRALinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    d_w = (
+        self.down.weight.to(x.dtype) if self.down.weight.dtype != x.dtype else self.down.weight
+    )
+    u_w = self.up.weight.to(x.dtype) if self.up.weight.dtype != x.dtype else self.up.weight
+    u_b = (
+        self.up.bias.to(x.dtype)
+        if (self.up.bias is not None and self.up.bias.dtype != x.dtype)
+        else self.up.bias
+    )
+    out = F.linear(F.linear(x, d_w), u_w, u_b)
+    if self.lora_A is not None and self.lora_B is not None:
+        a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
+        b = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+        out = out + F.linear(F.linear(x, a), b) * self.lora_scaling
+    return out</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+<dt id="neuralops.attentions.rpc_attention.FactorizedLoRALinear.freeze_base_weights"><code class="name flex">
+<span>def <span class="ident">freeze_base_weights</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def freeze_base_weights(self) -&gt; None:
+    self.down.weight.requires_grad = False
+    self.up.weight.requires_grad = False
+    if self.up.bias is not None:
+        self.up.bias.requires_grad = False
+    if self.lora_A is not None:
+        self.lora_A.requires_grad = True
+    if self.lora_B is not None:
+        self.lora_B.requires_grad = True</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.rpc_attention.FactorizedLoRALinear.storage_bytes"><code class="name flex">
+<span>def <span class="ident">storage_bytes</span></span>(<span>self) ‑> int</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def storage_bytes(self) -&gt; int:
+    b = 0
+    for p in self.parameters():
+        b += p.numel() * p.element_size()
+    return b</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.attentions.rpc_attention.FactorizedLoRALinear"><code class="flex name class">
+<span>class <span class="ident">LoRALinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>rank: int = 64,<br>lora_rank: int = 16,<br>lora_alpha: float = 32.0,<br>bias: bool = True,<br>device: torch.device | None = None,<br>dtype: torch.dtype | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FactorizedLoRALinear(nn.Module):
+    &#34;&#34;&#34;
+    SVD-factorized linear + LoRA:
+        y = up(down(x)) + (lora_B @ lora_A)(x) * scaling
+    Base (down, up) frozen; LoRA trainable.
+    &#34;&#34;&#34;
+
+    is_custom_attention = False
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int = 64,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        bias: bool = True,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = int(in_features)
+        self.out_features = int(out_features)
+        self.rank = max(1, min(int(rank), self.in_features, self.out_features))
+        self.svd_rank = self.rank
+        self.lora_rank = int(lora_rank) if lora_rank &gt; 0 else 0
+        self.lora_scaling = (lora_alpha / lora_rank) if lora_rank &gt; 0 else 1.0
+
+        factory = {&#34;device&#34;: device, &#34;dtype&#34;: dtype}
+        self.down = nn.Linear(self.in_features, self.rank, bias=False, **factory)
+        self.up = nn.Linear(self.rank, self.out_features, bias=bias, **factory)
+
+        self.down.weight.requires_grad = False
+        self.up.weight.requires_grad = False
+        if self.up.bias is not None:
+            self.up.bias.requires_grad = False
+
+        if self.lora_rank &gt; 0:
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **factory))
+            self.lora_B = nn.Parameter(torch.empty(self.out_features, self.lora_rank, **factory))
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+        # RPC-16: cache
+        self._cached_weight: torch.Tensor | None = None
+        self._cached_versions: tuple[int, ...] = ()
+
+    def _current_versions(self) -&gt; tuple[int, ...]:
+        v = [
+            getattr(self.down.weight, &#34;_version&#34;, 0),
+            getattr(self.up.weight, &#34;_version&#34;, 0),
+        ]
+        if self.lora_A is not None:
+            v.append(getattr(self.lora_A, &#34;_version&#34;, 0))
+            v.append(getattr(self.lora_B, &#34;_version&#34;, 0))
+        return tuple(v)
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        if (
+            not self.training
+            and self._cached_weight is not None
+            and self._cached_versions == self._current_versions()
+        ):
+            return self._cached_weight
+        w = torch.matmul(self.up.weight.float(), self.down.weight.float())
+        if self.lora_A is not None and self.lora_B is not None:
+            w = w + (self.lora_B.float() @ self.lora_A.float()) * self.lora_scaling
+        w = w.to(self.down.weight.dtype)
+        if not self.training:
+            self._cached_weight = w
+            self._cached_versions = self._current_versions()
+        return w
+
+    @property
+    def bias(self) -&gt; torch.Tensor | None:
+        return self.up.bias
+
+    def freeze_base_weights(self) -&gt; None:
+        self.down.weight.requires_grad = False
+        self.up.weight.requires_grad = False
+        if self.up.bias is not None:
+            self.up.bias.requires_grad = False
+        if self.lora_A is not None:
+            self.lora_A.requires_grad = True
+        if self.lora_B is not None:
+            self.lora_B.requires_grad = True
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        d_w = (
+            self.down.weight.to(x.dtype) if self.down.weight.dtype != x.dtype else self.down.weight
+        )
+        u_w = self.up.weight.to(x.dtype) if self.up.weight.dtype != x.dtype else self.up.weight
+        u_b = (
+            self.up.bias.to(x.dtype)
+            if (self.up.bias is not None and self.up.bias.dtype != x.dtype)
+            else self.up.bias
+        )
+        out = F.linear(F.linear(x, d_w), u_w, u_b)
+        if self.lora_A is not None and self.lora_B is not None:
+            a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
+            b = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            out = out + F.linear(F.linear(x, a), b) * self.lora_scaling
+        return out
+
+    def storage_bytes(self) -&gt; int:
+        b = 0
+        for p in self.parameters():
+            b += p.numel() * p.element_size()
+        return b</code></pre>
+</details>
+<div class="desc"><p>SVD-factorized linear + LoRA:
+y = up(down(x)) + (lora_B @ lora_A)(x) * scaling
+Base (down, up) frozen; LoRA trainable.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.rpc_attention.FactorizedLoRALinear.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.rpc_attention.FactorizedLoRALinear.bias"><code class="name">prop <span class="ident">bias</span> : torch.Tensor | None</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def bias(self) -&gt; torch.Tensor | None:
+    return self.up.bias</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.rpc_attention.FactorizedLoRALinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    if (
+        not self.training
+        and self._cached_weight is not None
+        and self._cached_versions == self._current_versions()
+    ):
+        return self._cached_weight
+    w = torch.matmul(self.up.weight.float(), self.down.weight.float())
+    if self.lora_A is not None and self.lora_B is not None:
+        w = w + (self.lora_B.float() @ self.lora_A.float()) * self.lora_scaling
+    w = w.to(self.down.weight.dtype)
+    if not self.training:
+        self._cached_weight = w
+        self._cached_versions = self._current_versions()
+    return w</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.rpc_attention.FactorizedLoRALinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    d_w = (
+        self.down.weight.to(x.dtype) if self.down.weight.dtype != x.dtype else self.down.weight
+    )
+    u_w = self.up.weight.to(x.dtype) if self.up.weight.dtype != x.dtype else self.up.weight
+    u_b = (
+        self.up.bias.to(x.dtype)
+        if (self.up.bias is not None and self.up.bias.dtype != x.dtype)
+        else self.up.bias
+    )
+    out = F.linear(F.linear(x, d_w), u_w, u_b)
+    if self.lora_A is not None and self.lora_B is not None:
+        a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
+        b = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+        out = out + F.linear(F.linear(x, a), b) * self.lora_scaling
+    return out</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+<dt id="neuralops.attentions.rpc_attention.FactorizedLoRALinear.freeze_base_weights"><code class="name flex">
+<span>def <span class="ident">freeze_base_weights</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def freeze_base_weights(self) -&gt; None:
+    self.down.weight.requires_grad = False
+    self.up.weight.requires_grad = False
+    if self.up.bias is not None:
+        self.up.bias.requires_grad = False
+    if self.lora_A is not None:
+        self.lora_A.requires_grad = True
+    if self.lora_B is not None:
+        self.lora_B.requires_grad = True</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.rpc_attention.FactorizedLoRALinear.storage_bytes"><code class="name flex">
+<span>def <span class="ident">storage_bytes</span></span>(<span>self) ‑> int</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def storage_bytes(self) -&gt; int:
+    b = 0
+    for p in self.parameters():
+        b += p.numel() * p.element_size()
+    return b</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.attentions.rpc_attention.RPCAttention"><code class="flex name class">
+<span>class <span class="ident">RPCAttention</span></span>
+<span>(</span><span>config: Any = None,<br>rank: int = 64,<br>pretrained_attn: nn.Module | None = None,<br>is_decoder: bool | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;rpc_class&#34;)
+@ATTENTION_REGISTRY.register(&#34;rpc_attention_class&#34;)
+class RPCAttention(BaseAttention):
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        config: Any = None,
+        rank: int = 64,
+        pretrained_attn: nn.Module | None = None,
+        is_decoder: bool | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        try:
+            super().__init__(config, rank if rank is not None else 64)
+        except TypeError:
+            super().__init__(config)
+
+        comp_config = kwargs.get(&#34;comp_config&#34;, getattr(config, &#34;compression_config&#34;, None))
+
+        self.dim = int(_cfg_get(config, &#34;hidden_size&#34;, kwargs.get(&#34;hidden_size&#34;, 768)))
+        self.num_heads = int(
+            _cfg_get(config, &#34;num_attention_heads&#34;, kwargs.get(&#34;num_attention_heads&#34;, 12))
+        )
+        self.num_kv_heads = int(
+            _cfg_get(
+                config,
+                &#34;num_key_value_heads&#34;,
+                _cfg_get(
+                    config,
+                    &#34;num_kv_heads&#34;,
+                    kwargs.get(&#34;num_key_value_heads&#34;, self.num_heads),
+                ),
+            )
+        )
+
+        cfg_head_dim = _cfg_get(config, &#34;head_dim&#34;, None)
+        kw_head_dim = kwargs.get(&#34;head_dim&#34;)
+        inferred = cfg_head_dim or kw_head_dim
+
+        if inferred is None and pretrained_attn is not None:
+            for attr in (&#34;q_proj&#34;, &#34;query&#34;, &#34;q_lin&#34;):
+                if hasattr(pretrained_attn, attr):
+                    layer_q = getattr(pretrained_attn, attr)
+                    if hasattr(layer_q, &#34;weight&#34;):
+                        inferred = layer_q.weight.shape[0] // max(1, self.num_heads)
+                        break
+
+        self.head_dim = int(
+            inferred or (self.dim // max(1, self.num_heads) if self.num_heads &gt; 0 else 64)
+        )
+        self.all_head_size = self.num_heads * self.head_dim
+        self.all_kv_head_size = self.num_kv_heads * self.head_dim
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+
+        # ---- sketch rank ----
+        raw_rank = kwargs.pop(
+            &#34;rank&#34;,
+            _cfg_get(
+                comp_config,
+                &#34;rank&#34;,
+                _cfg_get(config, &#34;rank&#34;, rank if rank is not None else 64),
+            ),
+        )
+        self.sketch_rank = max(1, min(int(raw_rank), self.head_dim))
+
+        # ---- projection rank for FactorizedLoRALinear ----
+        raw_proj_rank = int(
+            kwargs.get(
+                &#34;proj_rank&#34;,
+                _cfg_get(comp_config, &#34;proj_rank&#34;, _cfg_get(config, &#34;proj_rank&#34;, 64)),
+            )
+        )
+        # RPC-13: clamp and log
+        self.proj_rank = max(1, raw_proj_rank)
+
+        # ---- decoder detection ----
+        if is_decoder is not None:
+            self.is_decoder = bool(is_decoder)
+        else:
+            mt = str(_cfg_get(config, &#34;model_type&#34;, &#34;&#34;) or &#34;&#34;).lower()
+            self.is_decoder = (
+                bool(_cfg_get(config, &#34;is_decoder&#34;, False))
+                or bool(kwargs.get(&#34;is_causal&#34;, False))
+                or any(
+                    mt.startswith(p)
+                    for p in (
+                        &#34;gpt&#34;,
+                        &#34;qwen&#34;,
+                        &#34;llama&#34;,
+                        &#34;mistral&#34;,
+                        &#34;gemma&#34;,
+                        &#34;phi&#34;,
+                        &#34;opt&#34;,
+                        &#34;bloom&#34;,
+                        &#34;falcon&#34;,
+                        &#34;olmo&#34;,
+                        &#34;mpt&#34;,
+                        &#34;stablelm&#34;,
+                    )
+                )
+                or (pretrained_attn is not None and hasattr(pretrained_attn, &#34;c_attn&#34;))
+            )
+        self.is_causal = self.is_decoder
+        self.is_nested_encoder = False
+
+        # ---- LoRA config ----
+        self.lora_rank = int(
+            kwargs.get(
+                &#34;lora_rank&#34;,
+                _cfg_get(comp_config, &#34;lora_rank&#34;, _cfg_get(config, &#34;lora_rank&#34;, 16)),
+            )
+        )
+        self.lora_alpha = float(
+            kwargs.get(
+                &#34;lora_alpha&#34;,
+                _cfg_get(comp_config, &#34;lora_alpha&#34;, _cfg_get(config, &#34;lora_alpha&#34;, 32.0)),
+            )
+        )
+
+        # ---- projections ----
+        FF = FactorizedLoRALinear
+        self.W_q = FF(
+            self.dim,
+            self.all_head_size,
+            rank=self.proj_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
+        )
+        self.W_k = FF(
+            self.dim,
+            self.all_kv_head_size,
+            rank=self.proj_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
+        )
+        self.W_v = FF(
+            self.dim,
+            self.all_kv_head_size,
+            rank=self.proj_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
+        )
+        self.out_proj = FF(
+            self.all_head_size,
+            self.dim,
+            rank=self.proj_rank,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            bias=True,
+        )
+
+        self.q_proj = self.W_q
+        self.k_proj = self.W_k
+        self.v_proj = self.W_v
+        self.query = self.W_q
+        self.key = self.W_k
+        self.value = self.W_v
+
+        # ---- RPC-14: seeded random projection buffers ----
+        # RPC-19: non-persistent (recomputed on load with same seed)
+        seed = int(kwargs.get(&#34;sketch_seed&#34;, 0xC0FFEE))
+        gen = torch.Generator(device=&#34;cpu&#34;).manual_seed(seed)
+        std = self.head_dim**-0.5
+        proj_q = torch.randn(self.num_heads, self.head_dim, self.sketch_rank, generator=gen) * std
+        proj_k = torch.randn(self.num_heads, self.head_dim, self.sketch_rank, generator=gen) * std
+        self.register_buffer(&#34;proj_q&#34;, proj_q.float(), persistent=False)
+        self.register_buffer(&#34;proj_k&#34;, proj_k.float(), persistent=False)
+
+        # ---- RPC-15: configurable sketch scale ----
+        # Default: 1/sqrt(head_dim) — matches the original attention scale
+        # because sketching preserves the expected inner product.
+        default_scale = 1.0 / math.sqrt(self.head_dim)
+        self.sketch_scale = float(
+            kwargs.get(
+                &#34;sketch_scale&#34;,
+                _cfg_get(comp_config, &#34;sketch_scale&#34;, default_scale),
+            )
+        )
+
+        dropout_p = (
+            getattr(config, &#34;dropout&#34;, getattr(config, &#34;attention_probs_dropout_prob&#34;, 0.1))
+            if config
+            else 0.1
+        )
+        self.dropout = nn.Dropout(dropout_p)
+
+        # ---- RPC-18: storage accounting ----
+        self._orig_storage_bytes = 0
+        self._comp_storage_bytes = 0
+
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+        logger.info(
+            &#34;RPCAttention: hidden=%d, heads=%d, head_dim=%d, sketch_rank=%d, &#34;
+            &#34;proj_rank=%d, is_decoder=%s, lora_rank=%d, scale=%.4f&#34;,
+            self.dim,
+            self.num_heads,
+            self.head_dim,
+            self.sketch_rank,
+            self.proj_rank,
+            self.is_decoder,
+            self.lora_rank,
+            self.sketch_scale,
+        )
+
+    # ------------------------------------------------------------------
+    @property
+    def dense(self):
+        return self.out_proj
+
+    @property
+    def c_proj(self):
+        return self.out_proj
+
+    @property
+    def o_proj(self):
+        return self.out_proj
+
+    @property
+    def q_lin(self):
+        return self.W_q
+
+    @property
+    def k_lin(self):
+        return self.W_k
+
+    @property
+    def v_lin(self):
+        return self.W_v
+
+    @property
+    def out_lin(self):
+        return self.out_proj
+
+    # ------------------------------------------------------------------
+    # SVD init
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _svd_init(w: torch.Tensor, b: torch.Tensor | None, proj: FactorizedLoRALinear) -&gt; None:
+        with torch.no_grad():
+            W = w.detach().float()
+            if W.ndim != 2:
+                W = W.reshape(W.size(0), -1)
+
+            out_t, in_t = proj.out_features, proj.in_features
+            if W.shape[0] != out_t or W.shape[1] != in_t:
+                padded = torch.zeros(out_t, in_t, dtype=W.dtype, device=W.device)
+                r = min(out_t, W.shape[0])
+                c = min(in_t, W.shape[1])
+                padded[:r, :c] = W[:r, :c]
+                W = padded
+
+            try:
+                U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+            except Exception as e:
+                logger.warning(&#34;RPC._svd_init SVD failed: %s&#34;, e)
+                return
+
+            r = min(proj.rank, U.size(1), Vh.size(0))
+            proj.down.weight.data.zero_()
+            proj.up.weight.data.zero_()
+            proj.down.weight.data[:r, :].copy_(Vh[:r, :].to(proj.down.weight.dtype))
+            US = U[:, :r] @ torch.diag(S[:r])
+            proj.up.weight.data[:, :r].copy_(US.to(proj.up.weight.dtype))
+
+            if b is not None and proj.up.bias is not None:
+                n = min(b.numel(), proj.up.bias.numel())
+                proj.up.bias.data[:n].copy_(b[:n].to(proj.up.bias.dtype))
+            elif proj.up.bias is not None:
+                proj.up.bias.data.zero_()
+
+            # RPC-17: freeze base after SVD init.
+            proj.freeze_base_weights()
+
+    # ------------------------------------------------------------------
+    # Weight copy
+    # ------------------------------------------------------------------
+    def copy_weights(self, src: Any) -&gt; None:
+        if src is None:
+            return
+
+        cls_name = src.__class__.__name__
+        has_out_lin = hasattr(src, &#34;out_lin&#34;) or hasattr(src, &#34;c_proj&#34;) or hasattr(src, &#34;o_proj&#34;)
+        is_nested = False
+        if (
+            (
+                hasattr(src, &#34;self&#34;)
+                and hasattr(src.self, &#34;query&#34;)
+                and hasattr(src, &#34;output&#34;)
+                and hasattr(src.output, &#34;dense&#34;)
+            )
+            or (
+                cls_name
+                in (
+                    &#34;BertSelfAttention&#34;,
+                    &#34;RobertaSelfAttention&#34;,
+                    &#34;XLMRobertaSelfAttention&#34;,
+                    &#34;ElectraSelfAttention&#34;,
+                    &#34;DebertaSelfAttention&#34;,
+                )
+                or (cls_name.endswith(&#34;SelfAttention&#34;) and &#34;distil&#34; not in cls_name.lower())
+            )
+            and not has_out_lin
+        ):
+            is_nested = True
+        self.is_nested_encoder = bool(is_nested)
+
+        # RPC-18: track original storage
+        try:
+            for p in src.parameters():
+                self._orig_storage_bytes += p.numel() * p.element_size()
+        except Exception:
+            pass
+
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
+            &#34;q&#34;: (None, None),
+            &#34;k&#34;: (None, None),
+            &#34;v&#34;: (None, None),
+            &#34;o&#34;: (None, None),
+        }
+
+        # GPT-2 fused c_attn
+        if hasattr(src, &#34;c_attn&#34;) and src.c_attn is not None:
+            c = src.c_attn
+            base_c = getattr(c, &#34;base_layer&#34;, c)
+            c_w = getattr(base_c, &#34;weight&#34;, getattr(c, &#34;weight&#34;, None))
+            if c_w is not None:
+                c_w = c_w.data.clone()
+                is_conv = (
+                    c.__class__.__name__ == &#34;Conv1D&#34;
+                    or base_c.__class__.__name__ == &#34;Conv1D&#34;
+                    or (c_w.ndim == 2 and c_w.shape[0] &lt; c_w.shape[1])
+                )
+                if is_conv:
+                    c_w = c_w.t().contiguous()
+                split = c_w.size(0) // 3
+                bmod = getattr(base_c, &#34;bias&#34;, getattr(c, &#34;bias&#34;, None))
+                c_b = bmod.data.clone() if bmod is not None else None
+                extracted[&#34;q&#34;] = (c_w[:split], c_b[:split] if c_b is not None else None)
+                extracted[&#34;k&#34;] = (
+                    c_w[split : 2 * split],
+                    c_b[split : 2 * split] if c_b is not None else None,
+                )
+                extracted[&#34;v&#34;] = (
+                    c_w[2 * split :],
+                    c_b[2 * split :] if c_b is not None else None,
+                )
+
+            if hasattr(src, &#34;c_proj&#34;) and src.c_proj is not None:
+                o = src.c_proj
+                base_o = getattr(o, &#34;base_layer&#34;, o)
+                o_w = getattr(base_o, &#34;weight&#34;, getattr(o, &#34;weight&#34;, None))
+                if o_w is not None:
+                    o_w = o_w.data.clone()
+                    is_conv_o = (
+                        o.__class__.__name__ == &#34;Conv1D&#34;
+                        or base_o.__class__.__name__ == &#34;Conv1D&#34;
+                        or (o_w.ndim == 2 and o_w.shape[0] &lt; o_w.shape[1])
+                    )
+                    if is_conv_o:
+                        o_w = o_w.t().contiguous()
+                    bo = getattr(base_o, &#34;bias&#34;, getattr(o, &#34;bias&#34;, None))
+                    extracted[&#34;o&#34;] = (o_w, bo.data.clone() if bo is not None else None)
+
+        # BERT / RoBERTa nested
+        elif hasattr(src, &#34;self&#34;) and hasattr(src.self, &#34;query&#34;):
+            s = src.self
+            for key, sub in ((&#34;q&#34;, &#34;query&#34;), (&#34;k&#34;, &#34;key&#34;), (&#34;v&#34;, &#34;value&#34;)):
+                m = getattr(s, sub, None)
+                if m is not None and hasattr(m, &#34;weight&#34;):
+                    extracted[key] = (
+                        m.weight.data.clone(),
+                        m.bias.data.clone() if m.bias is not None else None,
+                    )
+            if hasattr(src, &#34;output&#34;) and hasattr(src.output, &#34;dense&#34;):
+                om = src.output.dense
+                extracted[&#34;o&#34;] = (
+                    om.weight.data.clone(),
+                    om.bias.data.clone() if om.bias is not None else None,
+                )
+
+        # Flat modules
+        else:
+            cand = {
+                &#34;q&#34;: (&#34;q_lin&#34;, &#34;q_proj&#34;, &#34;query&#34;),
+                &#34;k&#34;: (&#34;k_lin&#34;, &#34;k_proj&#34;, &#34;key&#34;),
+                &#34;v&#34;: (&#34;v_lin&#34;, &#34;v_proj&#34;, &#34;value&#34;),
+                &#34;o&#34;: (&#34;out_lin&#34;, &#34;out_proj&#34;, &#34;dense&#34;, &#34;o_proj&#34;),
+            }
+            for key, names in cand.items():
+                for n in names:
+                    if hasattr(src, n):
+                        m = getattr(src, n)
+                        if m is not None and hasattr(m, &#34;weight&#34;):
+                            extracted[key] = (
+                                m.weight.data.clone(),
+                                m.bias.data.clone() if m.bias is not None else None,
+                            )
+                            break
+
+        # UniversalAdapter fallback
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != &#34;o&#34; or not self.is_nested_encoder)
+        ]
+        if missing:
+            try:
+                from neuralops.core.adapters import UniversalAdapter
+
+                ua = UniversalAdapter()
+                for k in missing:
+                    w, b = ua.get_weight_bias(src, k)
+                    if w is not None:
+                        extracted[k] = (w.clone(), b.clone() if b is not None else None)
+            except Exception as e:
+                logger.debug(&#34;UniversalAdapter failed: %s&#34;, e)
+
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != &#34;o&#34; or not self.is_nested_encoder)
+        ]
+        if missing_after:
+            raise RuntimeError(
+                f&#34;RPCAttention.copy_weights: missing {missing_after} from {cls_name}.&#34;
+            )
+
+        # ---- SVD init for each projection ----
+        for key, target in (
+            (&#34;q&#34;, self.W_q),
+            (&#34;k&#34;, self.W_k),
+            (&#34;v&#34;, self.W_v),
+            (&#34;o&#34;, self.out_proj),
+        ):
+            w, b = extracted[key]
+            if w is None:
+                if key == &#34;o&#34; and self.is_nested_encoder:
+                    eye = torch.eye(
+                        target.out_features,
+                        target.in_features,
+                        device=target.down.weight.device,
+                        dtype=target.down.weight.dtype,
+                    )
+                    self._svd_init(eye, None, target)
+                continue
+
+            # GQA handling for k, v
+            if key in (&#34;k&#34;, &#34;v&#34;):
+                out_t = target.out_features
+                src_out = w.shape[0]
+                if src_out &gt; out_t and src_out % out_t == 0:
+                    rep = src_out // out_t
+                    w = w.view(out_t, rep, -1).mean(dim=1)
+                    if b is not None:
+                        b = b.view(out_t, rep).mean(dim=1)
+                elif src_out &lt; out_t and out_t % src_out == 0:
+                    rep = out_t // src_out
+                    w = w.repeat(rep, 1)
+                    if b is not None:
+                        b = b.repeat(rep)
+
+            self._svd_init(w, b, target)
+
+        # ---- storage accounting ----
+        try:
+            for m in (self.W_q, self.W_k, self.W_v, self.out_proj):
+                self._comp_storage_bytes += m.storage_bytes()
+            for buf in (self.proj_q, self.proj_k):
+                self._comp_storage_bytes += buf.numel() * buf.element_size()
+        except Exception:
+            pass
+
+        if hasattr(src, &#34;is_decoder&#34;):
+            self.is_decoder = bool(src.is_decoder)
+
+    # ------------------------------------------------------------------
+    # RPC-06 / RPC-20: robust mask helper
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _prepare_valid_mask(
+        attention_mask: torch.Tensor | None,
+        B: int,
+        L: int,
+        device: torch.device,
+    ) -&gt; torch.Tensor | None:
+        &#34;&#34;&#34;
+        Returns a bool mask of shape (B, L) where True = valid token.
+        If the input mask cannot be interpreted, returns None (no masking).
+        &#34;&#34;&#34;
+        if attention_mask is None:
+            return None
+
+        def _to_bool(t: torch.Tensor) -&gt; torch.Tensor:
+            if t.dtype == torch.bool:
+                return t
+            if t.dtype.is_floating_point:
+                return t &gt; -1e4
+            return t &gt; 0
+
+        if attention_mask.dim() == 2:
+            m = _to_bool(attention_mask)
+            if m.shape[-1] == L:
+                return m
+            return None
+        if attention_mask.dim() == 3:
+            m = _to_bool(attention_mask).squeeze(1)
+            if m.shape[-1] == L:
+                return m
+            return None
+        if attention_mask.dim() == 4:
+            m = _to_bool(attention_mask).any(dim=-2).squeeze(1)
+            if m.shape[-1] == L:
+                return m
+            return None
+
+        raise ValueError(f&#34;Unsupported attention_mask dim: {attention_mask.dim()}&#34;)
+
+    # ------------------------------------------------------------------
+    # Forward
+    # ------------------------------------------------------------------
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        layer_idx: int = 0,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        B, L, D = hidden_states.shape
+        device = hidden_states.device
+        dtype = hidden_states.dtype
+
+        is_cross = encoder_hidden_states is not None
+        kv_input = encoder_hidden_states if is_cross else hidden_states
+        L_kv = kv_input.shape[1]
+
+        # ---- Projections ----
+        q = self.W_q(hidden_states).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        k = self.W_k(kv_input).view(B, L_kv, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        v = self.W_v(kv_input).view(B, L_kv, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+
+        # ---- RPC-08: RoPE with past_len ----
+        if position_embeddings is None:
+            position_embeddings = kwargs.get(&#34;position_embeddings&#34;)
+        if position_embeddings is not None and not is_cross:
+            cos, sin = position_embeddings
+            past_len = 0
+            if past_key_value is not None:
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) &gt;= 1:
+                    past_len = past_key_value[0].shape[-2]
+                elif hasattr(past_key_value, &#34;key_cache&#34;) and past_key_value.key_cache:
+                    past_len = past_key_value.key_cache[0].shape[-2]
+            cos = cos[..., past_len : past_len + L, :]
+            sin = sin[..., past_len : past_len + L, :]
+            q, k = apply_rotary_pos_emb(q, k, cos, sin)
+
+        # ---- GQA ----
+        if self.kv_repeat &gt; 1:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        # ---- Sketching ----
+        proj_q = self.proj_q.to(dtype=q.dtype, device=q.device)
+        proj_k = self.proj_k.to(dtype=k.dtype, device=k.device)
+
+        # (B, H, L, head_dim) @ (H, head_dim, r) -&gt; (B, H, L, r)
+        q_sketched = torch.einsum(&#34;bhld,hdr-&gt;bhlr&#34;, q, proj_q)
+        k_sketched = torch.einsum(&#34;bhld,hdr-&gt;bhlr&#34;, k, proj_k)
+
+        scores = (
+            torch.matmul(
+                q_sketched.float(),
+                k_sketched.float().transpose(-2, -1).contiguous(),
+            )
+            * self.sketch_scale
+        )
+
+        # ---- RPC-07 / RPC-21: causal only for self-attention ----
+        if self.is_decoder and not is_cross:
+            diag = 1 + max(0, L_kv - L)
+            causal = (
+                torch.triu(
+                    torch.full((L, L_kv), float(&#34;-inf&#34;), device=device, dtype=torch.float32),
+                    diagonal=diag,
+                )
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
+            scores = scores + causal
+
+        # ---- Attention mask ----
+        eff_mask = encoder_attention_mask if is_cross else attention_mask
+        valid_mask = self._prepare_valid_mask(eff_mask, B, L_kv, device)
+        if valid_mask is not None:
+            scores = scores.masked_fill(~valid_mask[:, None, None, :], -1e4)
+
+        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+        probs = F.softmax(scores, dim=-1).to(dtype)
+        probs = torch.nan_to_num(probs, nan=0.0)
+        probs = self.dropout(probs)
+
+        if head_mask is not None:
+            if head_mask.dim() == 1:
+                head_mask = head_mask.view(1, -1, 1, 1)
+            elif head_mask.dim() == 2:
+                head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)
+            elif head_mask.dim() == 3:
+                head_mask = head_mask[:, :, :1].unsqueeze(-1)
+            probs = probs * head_mask.to(probs.dtype)
+
+        context = torch.matmul(probs, v)
+        context = context.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+        context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        # ---- Output projection (RPC-10: assert shape) ----
+        if self.is_nested_encoder:
+            out = context
+        else:
+            out = self.out_proj(context)
+
+        if out.shape[-1] != D:
+            raise RuntimeError(f&#34;RPCAttention: output feature dim {out.shape[-1]} != input {D}&#34;)
+
+        return out, (probs if output_attentions else None)
+
+    # ------------------------------------------------------------------
+    def storage_bytes(self) -&gt; dict[str, int]:
+        &#34;&#34;&#34;Report per-component storage.&#34;&#34;&#34;
+
+        def _sz(p):
+            if p is None:
+                return 0
+            if isinstance(p, nn.Parameter):
+                return p.numel() * p.element_size()
+            if isinstance(p, torch.Tensor):
+                return p.numel() * p.element_size()
+            return 0
+
+        out = {}
+        for name, m in (
+            (&#34;W_q&#34;, self.W_q),
+            (&#34;W_k&#34;, self.W_k),
+            (&#34;W_v&#34;, self.W_v),
+            (&#34;out_proj&#34;, self.out_proj),
+        ):
+            out[name] = m.storage_bytes()
+        out[&#34;proj_q&#34;] = self.proj_q.numel() * self.proj_q.element_size()
+        out[&#34;proj_k&#34;] = self.proj_k.numel() * self.proj_k.element_size()
+        out[&#34;total&#34;] = sum(out.values())
+        return out</code></pre>
+</details>
+<div class="desc"><p>Every custom attention module must inherit from this.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.rpc_attention.RPCAttention.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.rpc_attention.RPCAttention.c_proj"><code class="name">prop <span class="ident">c_proj</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def c_proj(self):
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.rpc_attention.RPCAttention.dense"><code class="name">prop <span class="ident">dense</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def dense(self):
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.rpc_attention.RPCAttention.k_lin"><code class="name">prop <span class="ident">k_lin</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def k_lin(self):
+    return self.W_k</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.rpc_attention.RPCAttention.o_proj"><code class="name">prop <span class="ident">o_proj</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def o_proj(self):
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.rpc_attention.RPCAttention.out_lin"><code class="name">prop <span class="ident">out_lin</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def out_lin(self):
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.rpc_attention.RPCAttention.q_lin"><code class="name">prop <span class="ident">q_lin</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def q_lin(self):
+    return self.W_q</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.rpc_attention.RPCAttention.v_lin"><code class="name">prop <span class="ident">v_lin</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def v_lin(self):
+    return self.W_v</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.rpc_attention.RPCAttention.storage_bytes"><code class="name flex">
+<span>def <span class="ident">storage_bytes</span></span>(<span>self) ‑> dict[str, int]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def storage_bytes(self) -&gt; dict[str, int]:
+    &#34;&#34;&#34;Report per-component storage.&#34;&#34;&#34;
+
+    def _sz(p):
+        if p is None:
+            return 0
+        if isinstance(p, nn.Parameter):
+            return p.numel() * p.element_size()
+        if isinstance(p, torch.Tensor):
+            return p.numel() * p.element_size()
+        return 0
+
+    out = {}
+    for name, m in (
+        (&#34;W_q&#34;, self.W_q),
+        (&#34;W_k&#34;, self.W_k),
+        (&#34;W_v&#34;, self.W_v),
+        (&#34;out_proj&#34;, self.out_proj),
+    ):
+        out[name] = m.storage_bytes()
+    out[&#34;proj_q&#34;] = self.proj_q.numel() * self.proj_q.element_size()
+    out[&#34;proj_k&#34;] = self.proj_k.numel() * self.proj_k.element_size()
+    out[&#34;total&#34;] = sum(out.values())
+    return out</code></pre>
+</details>
+<div class="desc"><p>Report per-component storage.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseAttention.copy_weights" href="../core/base.html#neuralops.core.base.BaseAttention.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.extra_repr" href="../core/base.html#neuralops.core.base.BaseAttention.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.forward" href="../core/base.html#neuralops.core.base.BaseAttention.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.attentions" href="index.html">neuralops.attentions</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.attentions.rpc_attention.apply_rotary_pos_emb" href="#neuralops.attentions.rpc_attention.apply_rotary_pos_emb">apply_rotary_pos_emb</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.inject_rpc" href="#neuralops.attentions.rpc_attention.inject_rpc">inject_rpc</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.inject_rpc_attention" href="#neuralops.attentions.rpc_attention.inject_rpc_attention">inject_rpc_attention</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.attentions.rpc_attention.FactorizedLoRALinear" href="#neuralops.attentions.rpc_attention.FactorizedLoRALinear">FactorizedLoRALinear</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.attentions.rpc_attention.FactorizedLoRALinear.bias" href="#neuralops.attentions.rpc_attention.FactorizedLoRALinear.bias">bias</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.FactorizedLoRALinear.forward" href="#neuralops.attentions.rpc_attention.FactorizedLoRALinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.FactorizedLoRALinear.freeze_base_weights" href="#neuralops.attentions.rpc_attention.FactorizedLoRALinear.freeze_base_weights">freeze_base_weights</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.FactorizedLoRALinear.is_custom_attention" href="#neuralops.attentions.rpc_attention.FactorizedLoRALinear.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.FactorizedLoRALinear.storage_bytes" href="#neuralops.attentions.rpc_attention.FactorizedLoRALinear.storage_bytes">storage_bytes</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.FactorizedLoRALinear.weight" href="#neuralops.attentions.rpc_attention.FactorizedLoRALinear.weight">weight</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.rpc_attention.FactorizedLoRALinear" href="#neuralops.attentions.rpc_attention.FactorizedLoRALinear">FactorizedLoRALinear</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.attentions.rpc_attention.FactorizedLoRALinear.bias" href="#neuralops.attentions.rpc_attention.FactorizedLoRALinear.bias">bias</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.FactorizedLoRALinear.forward" href="#neuralops.attentions.rpc_attention.FactorizedLoRALinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.FactorizedLoRALinear.freeze_base_weights" href="#neuralops.attentions.rpc_attention.FactorizedLoRALinear.freeze_base_weights">freeze_base_weights</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.FactorizedLoRALinear.is_custom_attention" href="#neuralops.attentions.rpc_attention.FactorizedLoRALinear.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.FactorizedLoRALinear.storage_bytes" href="#neuralops.attentions.rpc_attention.FactorizedLoRALinear.storage_bytes">storage_bytes</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.FactorizedLoRALinear.weight" href="#neuralops.attentions.rpc_attention.FactorizedLoRALinear.weight">weight</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.rpc_attention.RPCAttention" href="#neuralops.attentions.rpc_attention.RPCAttention">RPCAttention</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.attentions.rpc_attention.RPCAttention.c_proj" href="#neuralops.attentions.rpc_attention.RPCAttention.c_proj">c_proj</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.RPCAttention.dense" href="#neuralops.attentions.rpc_attention.RPCAttention.dense">dense</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.RPCAttention.is_custom_attention" href="#neuralops.attentions.rpc_attention.RPCAttention.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.RPCAttention.k_lin" href="#neuralops.attentions.rpc_attention.RPCAttention.k_lin">k_lin</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.RPCAttention.o_proj" href="#neuralops.attentions.rpc_attention.RPCAttention.o_proj">o_proj</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.RPCAttention.out_lin" href="#neuralops.attentions.rpc_attention.RPCAttention.out_lin">out_lin</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.RPCAttention.q_lin" href="#neuralops.attentions.rpc_attention.RPCAttention.q_lin">q_lin</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.RPCAttention.storage_bytes" href="#neuralops.attentions.rpc_attention.RPCAttention.storage_bytes">storage_bytes</a></code></li>
+<li><code><a title="neuralops.attentions.rpc_attention.RPCAttention.v_lin" href="#neuralops.attentions.rpc_attention.RPCAttention.v_lin">v_lin</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

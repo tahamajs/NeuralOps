@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tests.test_admm_hardened API documentation</title>
+<meta name="description" content="Unit tests for production-hardened ADMM Compressor …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.tests.test_admm_hardened</code></h1>
+</header>
+<section id="section-intro">
+<p>Unit tests for production-hardened ADMM Compressor.</p>
+<p>Verifies:
+1. Support for LoRALinear and Conv1D (shape transposition, preserving LoRA wrappers, trainable LoRA).
+2. Factory robustness when comp_config is None, dict, or object.
+3. Reconstruction error validation and fallback mechanism when error exceeds max_error.
+4. Quantized + pruned weight shape matches original and contains no NaN / Inf.
+5. target_attention_only=True compresses attention layers while strictly skipping FFN/MLP.
+6. Fallback layers are strictly frozen (requires_grad=False) during recovery parameter selection.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.tests.test_admm_hardened.MockConv1D"><code class="flex name class">
+<span>class <span class="ident">MockConv1D</span></span>
+<span>(</span><span>in_features: int, out_features: int)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class MockConv1D(nn.Module):
+    &#34;&#34;&#34;Mock of HuggingFace Conv1D (GPT-2 style) with weight shape [in_features, out_features].&#34;&#34;&#34;
+
+    def __init__(self, in_features: int, out_features: int):
+        super().__init__()
+        self.nf = out_features
+        self.in_features = in_features
+        self.out_features = out_features
+        self.weight = nn.Parameter(torch.randn(in_features, out_features) * 0.02)
+        self.bias = nn.Parameter(torch.zeros(out_features))
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        size_out = x.size()[:-1] + (self.nf,)
+        x = torch.addmm(self.bias, x.view(-1, x.size(-1)), self.weight)
+        x = x.view(*size_out)
+        return x</code></pre>
+</details>
+<div class="desc"><p>Mock of HuggingFace Conv1D (GPT-2 style) with weight shape [in_features, out_features].</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_admm_hardened.MockConv1D.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    size_out = x.size()[:-1] + (self.nf,)
+    x = torch.addmm(self.bias, x.view(-1, x.size(-1)), self.weight)
+    x = x.view(*size_out)
+    return x</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_admm_hardened.MockLoRALinear"><code class="flex name class">
+<span>class <span class="ident">MockLoRALinear</span></span>
+<span>(</span><span>base_layer: torch.nn.modules.module.Module, r: int = 16)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class MockLoRALinear(nn.Module):
+    &#34;&#34;&#34;Mock of LoRALinear wrapper around a base layer.&#34;&#34;&#34;
+
+    def __init__(self, base_layer: nn.Module, r: int = 16):
+        super().__init__()
+        self.base_layer = base_layer
+        self.r = r
+        in_dim = getattr(base_layer, &#34;in_features&#34;, base_layer.weight.shape[0])
+        out_dim = getattr(base_layer, &#34;out_features&#34;, base_layer.weight.shape[1])
+        self.lora_A = nn.Linear(in_dim, r, bias=False)
+        self.lora_B = nn.Linear(r, out_dim, bias=False)
+        self.scaling = 2.0
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        base = self.base_layer(x)
+        lora = self.lora_B(self.lora_A(x)) * self.scaling
+        return base + lora</code></pre>
+</details>
+<div class="desc"><p>Mock of LoRALinear wrapper around a base layer.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_admm_hardened.MockLoRALinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    base = self.base_layer(x)
+    lora = self.lora_B(self.lora_A(x)) * self.scaling
+    return base + lora</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_admm_hardened.TestADMMHardened"><code class="flex name class">
+<span>class <span class="ident">TestADMMHardened</span></span>
+<span>(</span><span>methodName='runTest')</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TestADMMHardened(unittest.TestCase):
+
+    def setUp(self):
+        torch.manual_seed(42)
+
+    def test_lora_linear_and_conv1d_detection(self):
+        &#34;&#34;&#34;1. Verify LoRALinear and Conv1D detection, shape transposition, and LoRA preservation.&#34;&#34;&#34;
+        model = ToyTransformer()
+        orig_conv_shape = model.attn[&#34;c_attn&#34;].base_layer.weight.shape
+        self.assertEqual(orig_conv_shape, (64, 192))
+
+        compressor = ADMMCompressor(
+            model,
+            max_error=0.60,
+            target_attention_only=True,
+            quant_bits=4,
+            structured_24=True,
+        )
+        _, stats = compressor.compress()
+
+        # Check that LoRA linear and Conv1D were compressed
+        self.assertIn(&#34;attn.v_proj&#34;, compressor.compressed_layers)
+        self.assertIn(&#34;attn.c_attn&#34;, compressor.compressed_layers)
+        self.assertIn(&#34;attn.o_proj&#34;, compressor.compressed_layers)
+
+        # Check that shapes were strictly preserved
+        self.assertEqual(model.attn[&#34;c_attn&#34;].base_layer.weight.shape, (64, 192))
+        self.assertEqual(model.attn[&#34;o_proj&#34;].weight.shape, (64, 64))
+
+        # Check that LoRA wrappers are intact
+        self.assertTrue(isinstance(model.attn[&#34;c_attn&#34;], MockLoRALinear))
+        self.assertTrue(model.attn[&#34;c_attn&#34;].lora_A.weight.requires_grad)
+        self.assertTrue(model.attn[&#34;c_attn&#34;].lora_B.weight.requires_grad)
+        # Base layer should be frozen
+        self.assertFalse(model.attn[&#34;c_attn&#34;].base_layer.weight.requires_grad)
+
+    def test_admm_factory_with_none_config(self):
+        &#34;&#34;&#34;2. Verify admm_factory works safely with None, dict, and config object.&#34;&#34;&#34;
+        # None config
+        model1 = ToyTransformer()
+        res_model1 = admm_factory(model1, comp_config=None, max_error=0.60, target_attention_only=True)
+        self.assertTrue(hasattr(res_model1, &#34;compression_stats&#34;))
+        self.assertGreater(res_model1.compression_stats[&#34;num_compressed&#34;], 0)
+
+        # Dict config
+        model2 = ToyTransformer()
+        cfg_dict = {&#34;admm_max_error&#34;: 0.60, &#34;admm_quant_bits&#34;: 4, &#34;admm_target_attention_only&#34;: True}
+        res_model2 = admm_factory(model2, comp_config=cfg_dict)
+        self.assertEqual(res_model2.compression_stats[&#34;quant_bits&#34;], 4)
+
+    def test_reconstruction_error_and_fallback(self):
+        &#34;&#34;&#34;3. Verify error thresholding triggers fallback to original weights when error &gt; max_error.&#34;&#34;&#34;
+        model = ToyTransformer()
+        orig_q_weight = model.attn[&#34;q_proj&#34;].weight.clone()
+
+        # Set impossible max_error = 0.01 -&gt; must trigger fallback
+        compressor = ADMMCompressor(
+            model,
+            max_error=0.01,
+            target_attention_only=True,
+            fallback_to_original=True,
+        )
+        _, stats = compressor.compress()
+
+        self.assertIn(&#34;attn.q_proj&#34;, compressor.fallback_layers)
+        self.assertEqual(len(compressor.compressed_layers), 0)
+        # Weight must remain completely unchanged
+        self.assertTrue(torch.equal(model.attn[&#34;q_proj&#34;].weight, orig_q_weight))
+
+    def test_quantized_pruned_weight_properties(self):
+        &#34;&#34;&#34;4. Verify weight shape match, no NaN/Inf, and 2:4 structured sparsity pattern.&#34;&#34;&#34;
+        model = ToyTransformer()
+        compressor = ADMMCompressor(
+            model,
+            max_error=0.60,
+            quant_bits=4,
+            structured_24=True,
+            target_attention_only=True,
+        )
+        _, stats = compressor.compress()
+
+        q_w = model.attn[&#34;q_proj&#34;].weight.data
+        self.assertEqual(q_w.shape, (64, 64))
+        self.assertFalse(torch.isnan(q_w).any())
+        self.assertFalse(torch.isinf(q_w).any())
+
+        # Check 2:4 pattern: in every group of 4 columns, at least 2 should be zero (2:4 structure preserved under quantization)
+        q_blocks = q_w.reshape(64, 16, 4)
+        zeros_per_block = (q_blocks == 0).sum(dim=-1)
+        self.assertTrue(torch.all(zeros_per_block &gt;= 2))
+
+        # Check reported actual sparsity and effective compression rate
+        self.assertGreaterEqual(stats[&#34;actual_sparsity&#34;], 0.50)
+        self.assertEqual(stats[&#34;effective_compression_rate&#34;], 4.0)
+
+    def test_target_attention_only_skips_ffn(self):
+        &#34;&#34;&#34;5. Verify target_attention_only=True strictly skips MLP/FFN and classifier.&#34;&#34;&#34;
+        model = ToyTransformer()
+        orig_mlp_down = model.mlp[&#34;down_proj&#34;].weight.clone()
+        orig_classifier = model.classifier.weight.clone()
+
+        compressor = ADMMCompressor(
+            model,
+            max_error=0.60,
+            target_attention_only=True,
+        )
+        _, stats = compressor.compress()
+
+        # All compressed layers must be attention
+        for name in compressor.compressed_layers:
+            self.assertTrue(name.startswith(&#34;attn.&#34;))
+            self.assertFalse(&#34;mlp&#34; in name)
+            self.assertFalse(&#34;classifier&#34; in name)
+
+        # MLP and classifier weights must be pristine
+        self.assertTrue(torch.equal(model.mlp[&#34;down_proj&#34;].weight, orig_mlp_down))
+        self.assertTrue(torch.equal(model.classifier.weight, orig_classifier))
+
+    def test_fallback_layers_are_frozen(self):
+        &#34;&#34;&#34;6. Verify that fallback layers have requires_grad=False and are excluded from recovery.&#34;&#34;&#34;
+        model = ToyTransformer()
+        # Ensure parameters initially require grad
+        for p in model.parameters():
+            p.requires_grad = True
+
+        compressor = ADMMCompressor(
+            model,
+            max_error=0.01,  # triggers 100% fallback
+            fallback_to_original=True,
+            target_attention_only=True,
+        )
+        compressed_model, stats = compressor.compress()
+        setattr(compressed_model, &#34;compression_stats&#34;, stats)
+
+        # Fallback layers must have requires_grad=False
+        for name in compressor.fallback_layers:
+            mod = dict(compressed_model.named_modules())[name]
+            for p in mod.parameters():
+                self.assertFalse(p.requires_grad, f&#34;Parameter in fallback layer {name} was not frozen!&#34;)
+
+        # get_recovery_params must not include any fallback parameters
+        recovery_params = get_recovery_params(compressed_model)
+        recovery_param_ids = {id(rp) for rp in recovery_params}
+        for name in compressor.fallback_layers:
+            mod = dict(compressed_model.named_modules())[name]
+            for p in mod.parameters():
+                self.assertNotIn(id(p), recovery_param_ids, f&#34;Parameter in fallback layer {name} was included in recovery!&#34;)</code></pre>
+</details>
+<div class="desc"><p>A class whose instances are single test cases.</p>
+<p>By default, the test code itself should be placed in a method named
+'runTest'.</p>
+<p>If the fixture may be used for many test cases, create as
+many test methods as are needed. When instantiating such a TestCase
+subclass, specify in the constructor arguments the name of the test method
+that the instance is to execute.</p>
+<p>Test authors should subclass TestCase for their own tests. Construction
+and deconstruction of the test's environment ('fixture') can be
+implemented by overriding the 'setUp' and 'tearDown' methods respectively.</p>
+<p>If it is necessary to override the <strong>init</strong> method, the base class
+<strong>init</strong> method must always be called. It is important that subclasses
+should not change the signature of their <strong>init</strong> method, since instances
+of the classes are instantiated automatically by parts of the framework
+in order to be run.</p>
+<p>When subclassing TestCase, you can set these attributes:
+* failureException: determines which exception will be raised when
+the instance's assertion methods fail; test methods raising this
+exception will be deemed to have 'failed' rather than 'errored'.
+* longMessage: determines whether long messages (including repr of
+objects used in assert methods) will be printed on failure in <em>addition</em>
+to any explicit message passed.
+* maxDiff: sets the maximum length of a diff in failure messages
+by assert methods using difflib. It is looked up as an instance
+attribute so can be configured by individual tests if required.</p>
+<p>Create an instance of the class that will use the named test
+method when executed. Raises a ValueError if the instance does
+not have a method with the specified name.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>unittest.case.TestCase</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_admm_hardened.TestADMMHardened.setUp"><code class="name flex">
+<span>def <span class="ident">setUp</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setUp(self):
+    torch.manual_seed(42)</code></pre>
+</details>
+<div class="desc"><p>Hook method for setting up the test fixture before exercising it.</p></div>
+</dd>
+<dt id="neuralops.tests.test_admm_hardened.TestADMMHardened.test_admm_factory_with_none_config"><code class="name flex">
+<span>def <span class="ident">test_admm_factory_with_none_config</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_admm_factory_with_none_config(self):
+    &#34;&#34;&#34;2. Verify admm_factory works safely with None, dict, and config object.&#34;&#34;&#34;
+    # None config
+    model1 = ToyTransformer()
+    res_model1 = admm_factory(model1, comp_config=None, max_error=0.60, target_attention_only=True)
+    self.assertTrue(hasattr(res_model1, &#34;compression_stats&#34;))
+    self.assertGreater(res_model1.compression_stats[&#34;num_compressed&#34;], 0)
+
+    # Dict config
+    model2 = ToyTransformer()
+    cfg_dict = {&#34;admm_max_error&#34;: 0.60, &#34;admm_quant_bits&#34;: 4, &#34;admm_target_attention_only&#34;: True}
+    res_model2 = admm_factory(model2, comp_config=cfg_dict)
+    self.assertEqual(res_model2.compression_stats[&#34;quant_bits&#34;], 4)</code></pre>
+</details>
+<div class="desc"><ol>
+<li>Verify admm_factory works safely with None, dict, and config object.</li>
+</ol></div>
+</dd>
+<dt id="neuralops.tests.test_admm_hardened.TestADMMHardened.test_fallback_layers_are_frozen"><code class="name flex">
+<span>def <span class="ident">test_fallback_layers_are_frozen</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_fallback_layers_are_frozen(self):
+    &#34;&#34;&#34;6. Verify that fallback layers have requires_grad=False and are excluded from recovery.&#34;&#34;&#34;
+    model = ToyTransformer()
+    # Ensure parameters initially require grad
+    for p in model.parameters():
+        p.requires_grad = True
+
+    compressor = ADMMCompressor(
+        model,
+        max_error=0.01,  # triggers 100% fallback
+        fallback_to_original=True,
+        target_attention_only=True,
+    )
+    compressed_model, stats = compressor.compress()
+    setattr(compressed_model, &#34;compression_stats&#34;, stats)
+
+    # Fallback layers must have requires_grad=False
+    for name in compressor.fallback_layers:
+        mod = dict(compressed_model.named_modules())[name]
+        for p in mod.parameters():
+            self.assertFalse(p.requires_grad, f&#34;Parameter in fallback layer {name} was not frozen!&#34;)
+
+    # get_recovery_params must not include any fallback parameters
+    recovery_params = get_recovery_params(compressed_model)
+    recovery_param_ids = {id(rp) for rp in recovery_params}
+    for name in compressor.fallback_layers:
+        mod = dict(compressed_model.named_modules())[name]
+        for p in mod.parameters():
+            self.assertNotIn(id(p), recovery_param_ids, f&#34;Parameter in fallback layer {name} was included in recovery!&#34;)</code></pre>
+</details>
+<div class="desc"><ol>
+<li>Verify that fallback layers have requires_grad=False and are excluded from recovery.</li>
+</ol></div>
+</dd>
+<dt id="neuralops.tests.test_admm_hardened.TestADMMHardened.test_lora_linear_and_conv1d_detection"><code class="name flex">
+<span>def <span class="ident">test_lora_linear_and_conv1d_detection</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_lora_linear_and_conv1d_detection(self):
+    &#34;&#34;&#34;1. Verify LoRALinear and Conv1D detection, shape transposition, and LoRA preservation.&#34;&#34;&#34;
+    model = ToyTransformer()
+    orig_conv_shape = model.attn[&#34;c_attn&#34;].base_layer.weight.shape
+    self.assertEqual(orig_conv_shape, (64, 192))
+
+    compressor = ADMMCompressor(
+        model,
+        max_error=0.60,
+        target_attention_only=True,
+        quant_bits=4,
+        structured_24=True,
+    )
+    _, stats = compressor.compress()
+
+    # Check that LoRA linear and Conv1D were compressed
+    self.assertIn(&#34;attn.v_proj&#34;, compressor.compressed_layers)
+    self.assertIn(&#34;attn.c_attn&#34;, compressor.compressed_layers)
+    self.assertIn(&#34;attn.o_proj&#34;, compressor.compressed_layers)
+
+    # Check that shapes were strictly preserved
+    self.assertEqual(model.attn[&#34;c_attn&#34;].base_layer.weight.shape, (64, 192))
+    self.assertEqual(model.attn[&#34;o_proj&#34;].weight.shape, (64, 64))
+
+    # Check that LoRA wrappers are intact
+    self.assertTrue(isinstance(model.attn[&#34;c_attn&#34;], MockLoRALinear))
+    self.assertTrue(model.attn[&#34;c_attn&#34;].lora_A.weight.requires_grad)
+    self.assertTrue(model.attn[&#34;c_attn&#34;].lora_B.weight.requires_grad)
+    # Base layer should be frozen
+    self.assertFalse(model.attn[&#34;c_attn&#34;].base_layer.weight.requires_grad)</code></pre>
+</details>
+<div class="desc"><ol>
+<li>Verify LoRALinear and Conv1D detection, shape transposition, and LoRA preservation.</li>
+</ol></div>
+</dd>
+<dt id="neuralops.tests.test_admm_hardened.TestADMMHardened.test_quantized_pruned_weight_properties"><code class="name flex">
+<span>def <span class="ident">test_quantized_pruned_weight_properties</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_quantized_pruned_weight_properties(self):
+    &#34;&#34;&#34;4. Verify weight shape match, no NaN/Inf, and 2:4 structured sparsity pattern.&#34;&#34;&#34;
+    model = ToyTransformer()
+    compressor = ADMMCompressor(
+        model,
+        max_error=0.60,
+        quant_bits=4,
+        structured_24=True,
+        target_attention_only=True,
+    )
+    _, stats = compressor.compress()
+
+    q_w = model.attn[&#34;q_proj&#34;].weight.data
+    self.assertEqual(q_w.shape, (64, 64))
+    self.assertFalse(torch.isnan(q_w).any())
+    self.assertFalse(torch.isinf(q_w).any())
+
+    # Check 2:4 pattern: in every group of 4 columns, at least 2 should be zero (2:4 structure preserved under quantization)
+    q_blocks = q_w.reshape(64, 16, 4)
+    zeros_per_block = (q_blocks == 0).sum(dim=-1)
+    self.assertTrue(torch.all(zeros_per_block &gt;= 2))
+
+    # Check reported actual sparsity and effective compression rate
+    self.assertGreaterEqual(stats[&#34;actual_sparsity&#34;], 0.50)
+    self.assertEqual(stats[&#34;effective_compression_rate&#34;], 4.0)</code></pre>
+</details>
+<div class="desc"><ol>
+<li>Verify weight shape match, no NaN/Inf, and 2:4 structured sparsity pattern.</li>
+</ol></div>
+</dd>
+<dt id="neuralops.tests.test_admm_hardened.TestADMMHardened.test_reconstruction_error_and_fallback"><code class="name flex">
+<span>def <span class="ident">test_reconstruction_error_and_fallback</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_reconstruction_error_and_fallback(self):
+    &#34;&#34;&#34;3. Verify error thresholding triggers fallback to original weights when error &gt; max_error.&#34;&#34;&#34;
+    model = ToyTransformer()
+    orig_q_weight = model.attn[&#34;q_proj&#34;].weight.clone()
+
+    # Set impossible max_error = 0.01 -&gt; must trigger fallback
+    compressor = ADMMCompressor(
+        model,
+        max_error=0.01,
+        target_attention_only=True,
+        fallback_to_original=True,
+    )
+    _, stats = compressor.compress()
+
+    self.assertIn(&#34;attn.q_proj&#34;, compressor.fallback_layers)
+    self.assertEqual(len(compressor.compressed_layers), 0)
+    # Weight must remain completely unchanged
+    self.assertTrue(torch.equal(model.attn[&#34;q_proj&#34;].weight, orig_q_weight))</code></pre>
+</details>
+<div class="desc"><ol>
+<li>Verify error thresholding triggers fallback to original weights when error &gt; max_error.</li>
+</ol></div>
+</dd>
+<dt id="neuralops.tests.test_admm_hardened.TestADMMHardened.test_target_attention_only_skips_ffn"><code class="name flex">
+<span>def <span class="ident">test_target_attention_only_skips_ffn</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_target_attention_only_skips_ffn(self):
+    &#34;&#34;&#34;5. Verify target_attention_only=True strictly skips MLP/FFN and classifier.&#34;&#34;&#34;
+    model = ToyTransformer()
+    orig_mlp_down = model.mlp[&#34;down_proj&#34;].weight.clone()
+    orig_classifier = model.classifier.weight.clone()
+
+    compressor = ADMMCompressor(
+        model,
+        max_error=0.60,
+        target_attention_only=True,
+    )
+    _, stats = compressor.compress()
+
+    # All compressed layers must be attention
+    for name in compressor.compressed_layers:
+        self.assertTrue(name.startswith(&#34;attn.&#34;))
+        self.assertFalse(&#34;mlp&#34; in name)
+        self.assertFalse(&#34;classifier&#34; in name)
+
+    # MLP and classifier weights must be pristine
+    self.assertTrue(torch.equal(model.mlp[&#34;down_proj&#34;].weight, orig_mlp_down))
+    self.assertTrue(torch.equal(model.classifier.weight, orig_classifier))</code></pre>
+</details>
+<div class="desc"><ol>
+<li>Verify target_attention_only=True strictly skips MLP/FFN and classifier.</li>
+</ol></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_admm_hardened.ToyTransformer"><code class="flex name class">
+<span>class <span class="ident">ToyTransformer</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ToyTransformer(nn.Module):
+    &#34;&#34;&#34;Toy model containing attention and FFN layers for filtering tests.&#34;&#34;&#34;
+
+    def __init__(self):
+        super().__init__()
+        # Attention projection layers
+        self.attn = nn.ModuleDict({
+            &#34;q_proj&#34;: nn.Linear(64, 64),
+            &#34;k_proj&#34;: nn.Linear(64, 64),
+            &#34;v_proj&#34;: MockLoRALinear(nn.Linear(64, 64), r=8),
+            &#34;c_attn&#34;: MockLoRALinear(MockConv1D(64, 192), r=8),
+            &#34;o_proj&#34;: MockConv1D(64, 64),
+        })
+        # FFN / MLP layers
+        self.mlp = nn.ModuleDict({
+            &#34;gate_proj&#34;: nn.Linear(64, 128),
+            &#34;up_proj&#34;: nn.Linear(64, 128),
+            &#34;down_proj&#34;: nn.Linear(128, 64),
+            &#34;c_fc&#34;: MockConv1D(64, 128),
+        })
+        # Classification head
+        self.classifier = nn.Linear(64, 2)</code></pre>
+</details>
+<div class="desc"><p>Toy model containing attention and FFN layers for filtering tests.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.tests" href="index.html">neuralops.tests</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.tests.test_admm_hardened.MockConv1D" href="#neuralops.tests.test_admm_hardened.MockConv1D">MockConv1D</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_admm_hardened.MockConv1D.forward" href="#neuralops.tests.test_admm_hardened.MockConv1D.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_admm_hardened.MockLoRALinear" href="#neuralops.tests.test_admm_hardened.MockLoRALinear">MockLoRALinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_admm_hardened.MockLoRALinear.forward" href="#neuralops.tests.test_admm_hardened.MockLoRALinear.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_admm_hardened.TestADMMHardened" href="#neuralops.tests.test_admm_hardened.TestADMMHardened">TestADMMHardened</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_admm_hardened.TestADMMHardened.setUp" href="#neuralops.tests.test_admm_hardened.TestADMMHardened.setUp">setUp</a></code></li>
+<li><code><a title="neuralops.tests.test_admm_hardened.TestADMMHardened.test_admm_factory_with_none_config" href="#neuralops.tests.test_admm_hardened.TestADMMHardened.test_admm_factory_with_none_config">test_admm_factory_with_none_config</a></code></li>
+<li><code><a title="neuralops.tests.test_admm_hardened.TestADMMHardened.test_fallback_layers_are_frozen" href="#neuralops.tests.test_admm_hardened.TestADMMHardened.test_fallback_layers_are_frozen">test_fallback_layers_are_frozen</a></code></li>
+<li><code><a title="neuralops.tests.test_admm_hardened.TestADMMHardened.test_lora_linear_and_conv1d_detection" href="#neuralops.tests.test_admm_hardened.TestADMMHardened.test_lora_linear_and_conv1d_detection">test_lora_linear_and_conv1d_detection</a></code></li>
+<li><code><a title="neuralops.tests.test_admm_hardened.TestADMMHardened.test_quantized_pruned_weight_properties" href="#neuralops.tests.test_admm_hardened.TestADMMHardened.test_quantized_pruned_weight_properties">test_quantized_pruned_weight_properties</a></code></li>
+<li><code><a title="neuralops.tests.test_admm_hardened.TestADMMHardened.test_reconstruction_error_and_fallback" href="#neuralops.tests.test_admm_hardened.TestADMMHardened.test_reconstruction_error_and_fallback">test_reconstruction_error_and_fallback</a></code></li>
+<li><code><a title="neuralops.tests.test_admm_hardened.TestADMMHardened.test_target_attention_only_skips_ffn" href="#neuralops.tests.test_admm_hardened.TestADMMHardened.test_target_attention_only_skips_ffn">test_target_attention_only_skips_ffn</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_admm_hardened.ToyTransformer" href="#neuralops.tests.test_admm_hardened.ToyTransformer">ToyTransformer</a></code></h4>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

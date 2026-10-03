@@ -1,0 +1,3293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.attentions.aegis_v5 API documentation</title>
+<meta name="description" content="AEGIS-Attention V5 (Corrected): Adaptive Enhanced Global-Local Integrated Sparse Attention …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.attentions.aegis_v5</code></h1>
+</header>
+<section id="section-intro">
+<p>AEGIS-Attention V5 (Corrected): Adaptive Enhanced Global-Local Integrated Sparse Attention.</p>
+<p>Architecture
+-----=
+* FactorisedLinear: SVD-factorized linear layers with energy-based rank selection + LoRA.
+* Split-head attention: some heads perform local sliding-window attention,
+other heads perform global kernel linear attention (RFF / FAVOR+).
+* Adaptive gate: blends local-head outputs with the mean of global-head outputs.
+* SDPA fast path: used for very short sequences (N_kv &lt;= local_window) where the
+split-head mechanism provides no benefit.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.attentions.aegis_v5.apply_rotary_pos_emb"><code class="name flex">
+<span>def <span class="ident">apply_rotary_pos_emb</span></span>(<span>q: torch.Tensor, k: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) ‑> tuple[torch.Tensor, torch.Tensor]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+) -&gt; tuple[torch.Tensor, torch.Tensor]:
+    &#34;&#34;&#34;Apply RoPE. Caller must slice cos/sin to the current window (past_len : past_len+N).&#34;&#34;&#34;
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+
+    while cos.dim() &lt; q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    if cos.shape[-2] != q.shape[-2]:
+        raise ValueError(
+            f&#34;apply_rotary_pos_emb: cos/sin seq len {cos.shape[-2]} &#34;
+            f&#34;does not match q seq len {q.shape[-2]}.&#34;
+        )
+
+    rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
+
+    if rotary_dim &lt;= head_dim:
+        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() &gt; 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() &gt; 0 else k_rot_embed
+    else:
+        cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
+        q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
+        k = (k * cos_cut.to(k.dtype)) + (_rotate_half(k) * sin_cut.to(k.dtype))
+
+    return q, k</code></pre>
+</details>
+<div class="desc"><p>Apply RoPE. Caller must slice cos/sin to the current window (past_len : past_len+N).</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.causal_kernel_linear_attention"><code class="name flex">
+<span>def <span class="ident">causal_kernel_linear_attention</span></span>(<span>Q_feat: torch.Tensor, K_feat: torch.Tensor, V: torch.Tensor, chunk_size: int = 64) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def causal_kernel_linear_attention(
+    Q_feat: torch.Tensor,
+    K_feat: torch.Tensor,
+    V: torch.Tensor,
+    chunk_size: int = 64,
+) -&gt; torch.Tensor:
+    &#34;&#34;&#34;
+    V5-FIX-03: causal kernel linear attention using chunked cumsum.
+
+    Inputs:
+        Q_feat: (B, H, N, F) — query features (after exp)
+        K_feat: (B, H, N, F) — key features (after exp)
+        V:      (B, H, N, D) — values
+    Output:
+        context: (B, H, N, D)
+
+    Memory: O(B*H*chunk_size*F*D) at peak, vs O(B*H*N*F*D) for the naive version.
+    Time:   O(N * F * D) forward.
+    &#34;&#34;&#34;
+    B, H, N, F_dim = Q_feat.shape
+    D = V.shape[-1]
+    device = Q_feat.device
+    dtype = Q_feat.dtype
+
+    state_kv = torch.zeros(B, H, F_dim, D, device=device, dtype=dtype)
+    state_k = torch.zeros(B, H, F_dim, device=device, dtype=dtype)
+
+    outputs = []
+    for start in range(0, N, chunk_size):
+        end = min(start + chunk_size, N)
+        Qc = Q_feat[:, :, start:end]  # (B, H, C, F)
+        Kc = K_feat[:, :, start:end]  # (B, H, C, F)
+        Vc = V[:, :, start:end]  # (B, H, C, D)
+
+        # Per-chunk cumulative outer product. Shape (B, H, C, F, D). C is small.
+        KV_local = (Kc.unsqueeze(-1) * Vc.unsqueeze(-2)).cumsum(dim=2)
+        K_local = Kc.cumsum(dim=2)
+
+        KV_total = KV_local + state_kv.unsqueeze(2)
+        K_total = K_local + state_k.unsqueeze(2)
+
+        num = torch.einsum(&#34;bhcf,bhcfd-&gt;bhcd&#34;, Qc, KV_total)
+        den = torch.einsum(&#34;bhcf,bhcf-&gt;bhc&#34;, Qc, K_total).clamp(min=1e-6)
+        outputs.append(num / den.unsqueeze(-1))
+
+        state_kv = KV_total[:, :, -1]
+        state_k = K_total[:, :, -1]
+
+    return torch.nan_to_num(torch.cat(outputs, dim=2), nan=0.0)</code></pre>
+</details>
+<div class="desc"><p>V5-FIX-03: causal kernel linear attention using chunked cumsum.</p>
+<p>Inputs
+-----=
+Q_feat: (B, H, N, F) — query features (after exp)
+K_feat: (B, H, N, F) — key features (after exp)
+V:
+(B, H, N, D) — values</p>
+<p>Output
+-----=
+context: (B, H, N, D)</p>
+<p>Memory: O(B<em>H</em>chunk_size<em>F</em>D) at peak, vs O(B<em>H</em>N<em>F</em>D) for the naive version.
+Time:
+O(N * F * D) forward.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.inject_aegis_into_distilbert"><code class="name flex">
+<span>def <span class="ident">inject_aegis_into_distilbert</span></span>(<span>layer: Any = None,<br>model: Any = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: torch.nn.modules.module.Module | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;aegis_v5_fn&#34;)
+@ATTENTION_REGISTRY.register(&#34;aegis_v5_inject&#34;)
+def inject_aegis_v5(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    _depth: int = 0,  # V5-FIX-04: recursion guard
+    **kwargs: Any,
+):
+    if _depth &gt; 8:
+        logger.warning(&#34;inject_aegis_v5: max recursion depth exceeded, aborting.&#34;)
+        return None
+
+    target = layer if layer is not None else model
+    if target is None:
+        target = kwargs.get(&#34;model&#34;, kwargs.get(&#34;layer&#34;))
+    if target is None:
+        return None
+
+    cfg = model_config if model_config is not None else getattr(target, &#34;config&#34;, None)
+
+    # Whole-model traversal
+    layer_list = None
+    if hasattr(target, &#34;distilbert&#34;) and hasattr(target.distilbert, &#34;transformer&#34;):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, &#34;roberta&#34;) and hasattr(target.roberta, &#34;encoder&#34;):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, &#34;transformer&#34;) and hasattr(target.transformer, &#34;h&#34;):
+        layer_list = target.transformer.h
+    elif hasattr(target, &#34;h&#34;) and isinstance(target.h, (nn.ModuleList, list)):
+        layer_list = target.h
+    elif hasattr(target, &#34;model&#34;) and hasattr(target.model, &#34;layers&#34;):
+        layer_list = target.model.layers
+    elif hasattr(target, &#34;encoder&#34;) and hasattr(target.encoder, &#34;layer&#34;):
+        layer_list = target.encoder.layer
+    elif (
+        hasattr(target, &#34;bert&#34;)
+        and hasattr(target.bert, &#34;encoder&#34;)
+        and hasattr(target.bert.encoder, &#34;layer&#34;)
+    ):
+        layer_list = target.bert.encoder.layer
+    elif hasattr(target, &#34;layers&#34;) and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_aegis_v5(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected &gt; 0 else None
+
+    layer = target
+    try:
+        if model_config is None:
+            if any(hasattr(layer, a) for a in (&#34;hidden_size&#34;, &#34;d_model&#34;, &#34;n_embd&#34;, &#34;dim&#34;)):
+                model_config = layer
+            elif hasattr(layer, &#34;attention&#34;):
+                old_attn = layer.attention
+
+        aegis_cfg = AegisConfigV5(
+            svd_energy=getattr(comp_config, &#34;svd_energy&#34;, 0.95),
+            min_rank=getattr(comp_config, &#34;min_rank&#34;, 4),
+            max_rank=getattr(comp_config, &#34;max_rank&#34;, 384),
+            num_local_heads=getattr(comp_config, &#34;num_local_heads&#34;, 8),
+            num_global_heads=getattr(comp_config, &#34;num_global_heads&#34;, 4),
+            local_window=getattr(comp_config, &#34;block_size&#34;, 64),
+            rff_features=getattr(comp_config, &#34;rff_features&#34;, 128),
+            gate_init_bias=getattr(comp_config, &#34;gate_init_bias&#34;, 1.8),
+            dropout=getattr(comp_config, &#34;dropout&#34;, 0.1),
+            rff_trainable=getattr(comp_config, &#34;rff_trainable&#34;, False),
+            use_sdpa_fast_path=getattr(comp_config, &#34;use_sdpa_fast_path&#34;, True),
+            causal_chunk_size=getattr(comp_config, &#34;causal_chunk_size&#34;, 64),
+        )
+
+        src_attn = (
+            old_attn
+            if old_attn is not None
+            else getattr(
+                layer,
+                &#34;attention&#34;,
+                getattr(layer, &#34;self&#34;, getattr(layer, &#34;attn&#34;, None)),
+            )
+        )
+
+        # V5-FIX-05: robust decoder detection.
+        is_dec = _detect_decoder(model_config, None, src_attn)
+
+        new_attn = AegisAttention(
+            model_config=model_config,
+            aegis_cfg=aegis_cfg,
+            is_decoder=is_dec,
+        )
+        if src_attn is not None:
+            try:
+                new_attn.copy_weights(src_attn)
+            except Exception as e:
+                logger.error(
+                    &#34;inject_aegis_v5: copy_weights failed for %s: %s&#34;,
+                    src_attn.__class__.__name__,
+                    e,
+                )
+                return None
+            p = next(src_attn.parameters(), None)
+            if p is not None:
+                new_attn.to(device=p.device, dtype=p.dtype)
+
+        if hasattr(layer, &#34;attention&#34;):
+            if hasattr(layer.attention, &#34;self&#34;):
+                layer.attention.self = new_attn
+            else:
+                layer.attention = new_attn
+        elif hasattr(layer, &#34;self&#34;):
+            layer.self = new_attn
+        elif hasattr(layer, &#34;attn&#34;):
+            layer.attn = new_attn
+        return new_attn
+    except Exception as e:
+        logger.exception(&#34;Failed to inject AEGIS-V5: %s&#34;, e)
+        return None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.inject_aegis_v5"><code class="name flex">
+<span>def <span class="ident">inject_aegis_v5</span></span>(<span>layer: Any = None,<br>model: Any = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: torch.nn.modules.module.Module | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;aegis_v5_fn&#34;)
+@ATTENTION_REGISTRY.register(&#34;aegis_v5_inject&#34;)
+def inject_aegis_v5(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    _depth: int = 0,  # V5-FIX-04: recursion guard
+    **kwargs: Any,
+):
+    if _depth &gt; 8:
+        logger.warning(&#34;inject_aegis_v5: max recursion depth exceeded, aborting.&#34;)
+        return None
+
+    target = layer if layer is not None else model
+    if target is None:
+        target = kwargs.get(&#34;model&#34;, kwargs.get(&#34;layer&#34;))
+    if target is None:
+        return None
+
+    cfg = model_config if model_config is not None else getattr(target, &#34;config&#34;, None)
+
+    # Whole-model traversal
+    layer_list = None
+    if hasattr(target, &#34;distilbert&#34;) and hasattr(target.distilbert, &#34;transformer&#34;):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, &#34;roberta&#34;) and hasattr(target.roberta, &#34;encoder&#34;):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, &#34;transformer&#34;) and hasattr(target.transformer, &#34;h&#34;):
+        layer_list = target.transformer.h
+    elif hasattr(target, &#34;h&#34;) and isinstance(target.h, (nn.ModuleList, list)):
+        layer_list = target.h
+    elif hasattr(target, &#34;model&#34;) and hasattr(target.model, &#34;layers&#34;):
+        layer_list = target.model.layers
+    elif hasattr(target, &#34;encoder&#34;) and hasattr(target.encoder, &#34;layer&#34;):
+        layer_list = target.encoder.layer
+    elif (
+        hasattr(target, &#34;bert&#34;)
+        and hasattr(target.bert, &#34;encoder&#34;)
+        and hasattr(target.bert.encoder, &#34;layer&#34;)
+    ):
+        layer_list = target.bert.encoder.layer
+    elif hasattr(target, &#34;layers&#34;) and isinstance(target.layers, (nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_aegis_v5(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected &gt; 0 else None
+
+    layer = target
+    try:
+        if model_config is None:
+            if any(hasattr(layer, a) for a in (&#34;hidden_size&#34;, &#34;d_model&#34;, &#34;n_embd&#34;, &#34;dim&#34;)):
+                model_config = layer
+            elif hasattr(layer, &#34;attention&#34;):
+                old_attn = layer.attention
+
+        aegis_cfg = AegisConfigV5(
+            svd_energy=getattr(comp_config, &#34;svd_energy&#34;, 0.95),
+            min_rank=getattr(comp_config, &#34;min_rank&#34;, 4),
+            max_rank=getattr(comp_config, &#34;max_rank&#34;, 384),
+            num_local_heads=getattr(comp_config, &#34;num_local_heads&#34;, 8),
+            num_global_heads=getattr(comp_config, &#34;num_global_heads&#34;, 4),
+            local_window=getattr(comp_config, &#34;block_size&#34;, 64),
+            rff_features=getattr(comp_config, &#34;rff_features&#34;, 128),
+            gate_init_bias=getattr(comp_config, &#34;gate_init_bias&#34;, 1.8),
+            dropout=getattr(comp_config, &#34;dropout&#34;, 0.1),
+            rff_trainable=getattr(comp_config, &#34;rff_trainable&#34;, False),
+            use_sdpa_fast_path=getattr(comp_config, &#34;use_sdpa_fast_path&#34;, True),
+            causal_chunk_size=getattr(comp_config, &#34;causal_chunk_size&#34;, 64),
+        )
+
+        src_attn = (
+            old_attn
+            if old_attn is not None
+            else getattr(
+                layer,
+                &#34;attention&#34;,
+                getattr(layer, &#34;self&#34;, getattr(layer, &#34;attn&#34;, None)),
+            )
+        )
+
+        # V5-FIX-05: robust decoder detection.
+        is_dec = _detect_decoder(model_config, None, src_attn)
+
+        new_attn = AegisAttention(
+            model_config=model_config,
+            aegis_cfg=aegis_cfg,
+            is_decoder=is_dec,
+        )
+        if src_attn is not None:
+            try:
+                new_attn.copy_weights(src_attn)
+            except Exception as e:
+                logger.error(
+                    &#34;inject_aegis_v5: copy_weights failed for %s: %s&#34;,
+                    src_attn.__class__.__name__,
+                    e,
+                )
+                return None
+            p = next(src_attn.parameters(), None)
+            if p is not None:
+                new_attn.to(device=p.device, dtype=p.dtype)
+
+        if hasattr(layer, &#34;attention&#34;):
+            if hasattr(layer.attention, &#34;self&#34;):
+                layer.attention.self = new_attn
+            else:
+                layer.attention = new_attn
+        elif hasattr(layer, &#34;self&#34;):
+            layer.self = new_attn
+        elif hasattr(layer, &#34;attn&#34;):
+            layer.attn = new_attn
+        return new_attn
+    except Exception as e:
+        logger.exception(&#34;Failed to inject AEGIS-V5: %s&#34;, e)
+        return None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.kernel_linear_attention"><code class="name flex">
+<span>def <span class="ident">kernel_linear_attention</span></span>(<span>Q: torch.Tensor,<br>K: torch.Tensor,<br>V: torch.Tensor,<br>rff_proj: torch.Tensor,<br>use_zero_sum: bool = True,<br>max_clamp: float = 11.0) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def kernel_linear_attention(
+    Q: torch.Tensor,
+    K: torch.Tensor,
+    V: torch.Tensor,
+    rff_proj: torch.Tensor,
+    use_zero_sum: bool = True,
+    max_clamp: float = 11.0,
+) -&gt; torch.Tensor:
+    &#34;&#34;&#34;
+    Non-causal global kernel linear attention (FAVOR+ style).
+
+    rff_proj: (H_g, D, F) random Fourier features for global heads.
+    Returns context of shape (B, H_g, N, D).
+    &#34;&#34;&#34;
+    B, H, N, D = Q.shape
+    F_dim = rff_proj.size(-1)
+    orig_dtype = Q.dtype
+
+    Q_f = Q.float()
+    K_f = K.float()
+    V_f = V.float()
+    rff_proj_f = rff_proj.float()
+
+    if use_zero_sum:
+        K_f = K_f - K_f.mean(dim=2, keepdim=True)
+
+    Q_norm = F.normalize(Q_f, p=2, dim=-1)
+    K_norm = F.normalize(K_f, p=2, dim=-1)
+
+    Q_proj = torch.einsum(&#34;bhnd,hdf-&gt;bhnf&#34;, Q_norm, rff_proj_f).clamp(max=max_clamp)
+    K_proj = torch.einsum(&#34;bhnd,hdf-&gt;bhnf&#34;, K_norm, rff_proj_f).clamp(max=max_clamp)
+    Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
+    K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
+
+    KV = torch.einsum(&#34;bhnf,bhnd-&gt;bhfd&#34;, K_feat, V_f)
+    K_sum = K_feat.sum(dim=2)
+    denom = torch.einsum(&#34;bhnf,bhf-&gt;bhn&#34;, Q_feat, K_sum).unsqueeze(-1)
+    ctx = torch.einsum(&#34;bhnf,bhfd-&gt;bhnd&#34;, Q_feat, KV) / (denom + 1e-5)
+
+    return torch.nan_to_num(ctx, nan=0.0).to(orig_dtype)</code></pre>
+</details>
+<div class="desc"><p>Non-causal global kernel linear attention (FAVOR+ style).</p>
+<p>rff_proj: (H_g, D, F) random Fourier features for global heads.
+Returns context of shape (B, H_g, N, D).</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.local_window_attention"><code class="name flex">
+<span>def <span class="ident">local_window_attention</span></span>(<span>Q: torch.Tensor,<br>K: torch.Tensor,<br>V: torch.Tensor,<br>window: int,<br>softpick_temperature: float = 1.0,<br>token_valid: torch.Tensor | None = None,<br>is_decoder: bool = False,<br>past_len: int = 0) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def local_window_attention(
+    Q: torch.Tensor,
+    K: torch.Tensor,
+    V: torch.Tensor,
+    window: int,
+    softpick_temperature: float = 1.0,
+    token_valid: torch.Tensor | None = None,
+    is_decoder: bool = False,
+    past_len: int = 0,
+) -&gt; torch.Tensor:
+    &#34;&#34;&#34;
+    Sliding-window attention.
+
+    V5-FIX-02: `past_len` shifts the query positions so that the window is
+    measured in absolute token positions. In prefill, past_len=0. In decode
+    with a KV-cache of length L and N new tokens, past_len=L.
+
+    V5-FIX-09: `window` is the full width of the sliding window. The effective
+    radius used for masking is `window // 2`, so a query at position q attends
+    to keys in [q - window//2, q + window//2].
+    &#34;&#34;&#34;
+    B, H, N, D = Q.shape
+    N_k = K.shape[2]
+    radius = window // 2
+    scale = (D**-0.5) / max(1e-4, float(softpick_temperature))
+
+    abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)  # (N, 1)
+    abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)  # (1, N_k)
+    dist = (abs_q - abs_k).abs()
+    mask = (dist &lt;= radius).unsqueeze(0).unsqueeze(0)
+
+    if is_decoder:
+        causal = (abs_k &lt;= abs_q).unsqueeze(0).unsqueeze(0)
+        mask = mask &amp; causal
+
+    scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+    mask_val = -10000.0
+    scores = scores.masked_fill(~mask, mask_val)
+    if token_valid is not None:
+        # token_valid: (B, N_k)
+        kv_valid = token_valid[:, None, None, :].to(torch.bool)
+        scores = scores.masked_fill(~kv_valid, mask_val)
+    scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+
+    # Guard against all-masked rows: softmax on -1e4 gives uniform, which is wrong.
+    any_valid = (
+        mask
+        &amp; (
+            token_valid[:, None, None, :]
+            if token_valid is not None
+            else torch.ones_like(mask, dtype=torch.bool)
+        )
+    ).any(dim=-1, keepdim=True)
+    attn = temperature_softmax(scores, dim=-1, temperature=softpick_temperature)
+    attn = attn * any_valid.to(attn.dtype)
+
+    return torch.matmul(attn, V.to(attn.dtype))</code></pre>
+</details>
+<div class="desc"><p>Sliding-window attention.</p>
+<p>V5-FIX-02: <code>past_len</code> shifts the query positions so that the window is
+measured in absolute token positions. In prefill, past_len=0. In decode
+with a KV-cache of length L and N new tokens, past_len=L.</p>
+<p>V5-FIX-09: <code>window</code> is the full width of the sliding window. The effective
+radius used for masking is <code>window // 2</code>, so a query at position q attends
+to keys in [q - window//2, q + window//2].</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.temperature_softmax"><code class="name flex">
+<span>def <span class="ident">temperature_softmax</span></span>(<span>x: torch.Tensor, dim: int = -1, temperature: float = 1.0) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def temperature_softmax(
+    x: torch.Tensor,
+    dim: int = -1,
+    temperature: float = 1.0,
+) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Softmax with temperature. Stable under fp32 computation (V5-FIX-08: renamed).&#34;&#34;&#34;
+    x_f = x.float()
+    if temperature &lt;= 0 or temperature == 1.0:
+        return F.softmax(x_f, dim=dim).to(x.dtype)
+    return F.softmax(x_f / temperature, dim=dim).to(x.dtype)</code></pre>
+</details>
+<div class="desc"><p>Softmax with temperature. Stable under fp32 computation (V5-FIX-08: renamed).</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention"><code class="flex name class">
+<span>class <span class="ident">AegisAttention</span></span>
+<span>(</span><span>model_config: Any = None,<br>config: Any = None,<br>aegis_cfg: <a title="neuralops.attentions.aegis_v5.AegisConfigV5" href="#neuralops.attentions.aegis_v5.AegisConfigV5">AegisConfigV5</a> | None = None,<br>pretrained_attn: torch.nn.modules.module.Module | None = None,<br>is_decoder: bool | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;aegis_v5_module&#34;, supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(&#34;AegisAttention&#34;, supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(&#34;aegis_v5&#34;, supports_causal=True, supports_gqa=True)
+class AegisAttention(BaseAttention):
+    supports_causal: bool = True
+    supports_gqa: bool = True
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        model_config: Any = None,
+        config: Any = None,
+        aegis_cfg: AegisConfigV5 | None = None,
+        pretrained_attn: nn.Module | None = None,
+        is_decoder: bool | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        cfg = model_config if model_config is not None else config
+        super().__init__(cfg, **kwargs)
+
+        self.hidden_size: int = kwargs.get(
+            &#34;hidden_size&#34;,
+            kwargs.get(
+                &#34;d_model&#34;,
+                (
+                    getattr(
+                        cfg,
+                        &#34;hidden_size&#34;,
+                        getattr(cfg, &#34;d_model&#34;, getattr(cfg, &#34;dim&#34;, 768)),
+                    )
+                    if cfg is not None
+                    else 768
+                ),
+            ),
+        )
+        self.num_heads: int = kwargs.get(
+            &#34;num_heads&#34;,
+            kwargs.get(
+                &#34;num_attention_heads&#34;,
+                (
+                    getattr(cfg, &#34;num_attention_heads&#34;, getattr(cfg, &#34;num_heads&#34;, 4))
+                    if cfg is not None
+                    else 4
+                ),
+            ),
+        )
+        self.head_dim: int = kwargs.get(
+            &#34;head_dim&#34;,
+            (
+                getattr(
+                    cfg,
+                    &#34;head_dim&#34;,
+                    getattr(cfg, &#34;d_kv&#34;, self.hidden_size // max(1, self.num_heads)),
+                )
+                if cfg is not None
+                else self.hidden_size // max(1, self.num_heads)
+            ),
+        )
+        self.num_kv_heads: int = kwargs.get(
+            &#34;num_kv_heads&#34;,
+            kwargs.get(
+                &#34;num_key_value_heads&#34;,
+                (
+                    getattr(
+                        cfg,
+                        &#34;num_key_value_heads&#34;,
+                        getattr(cfg, &#34;num_kv_heads&#34;, self.num_heads),
+                    )
+                    if cfg is not None
+                    else self.num_heads
+                ),
+            ),
+        )
+        if self.num_heads % max(1, self.num_kv_heads) != 0:
+            raise ValueError(
+                f&#34;num_heads ({self.num_heads}) must be divisible by &#34;
+                f&#34;num_kv_heads ({self.num_kv_heads}).&#34;
+            )
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.rank: int = int(kwargs.pop(&#34;rank&#34;, 192))
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
+        self.cfg: AegisConfigV5 = aegis_cfg if aegis_cfg is not None else AegisConfigV5()
+
+        self.is_decoder: bool = _detect_decoder(cfg, is_decoder, pretrained_attn)
+        self.is_nested_encoder: bool = False
+
+        # Split-head allocation
+        if self.cfg.num_local_heads + self.cfg.num_global_heads != self.num_heads:
+            self.num_local_heads = (self.num_heads * 2) // 3
+            self.num_global_heads = self.num_heads - self.num_local_heads
+        else:
+            self.num_local_heads = self.cfg.num_local_heads
+            self.num_global_heads = self.cfg.num_global_heads
+        if self.num_local_heads &lt;= 0:
+            self.num_local_heads = max(1, self.num_heads // 2)
+            self.num_global_heads = self.num_heads - self.num_local_heads
+
+        # Projections
+        self.q_proj = FactorisedLinear(
+            self.hidden_size,
+            self.all_head_size,
+            energy=self.cfg.svd_energy,
+            min_rank=self.cfg.min_rank,
+            max_rank=self.cfg.max_rank,
+            rank=self.rank,
+        )
+        self.k_proj = FactorisedLinear(
+            self.hidden_size,
+            self.all_kv_head_size,
+            energy=self.cfg.svd_energy,
+            min_rank=self.cfg.min_rank,
+            max_rank=self.cfg.max_rank,
+            rank=self.rank,
+        )
+        self.v_proj = FactorisedLinear(
+            self.hidden_size,
+            self.all_kv_head_size,
+            energy=self.cfg.svd_energy,
+            min_rank=self.cfg.min_rank,
+            max_rank=self.cfg.max_rank,
+            rank=self.rank,
+        )
+        self.out_proj = FactorisedLinear(
+            self.all_head_size,
+            self.hidden_size,
+            energy=self.cfg.svd_energy,
+            min_rank=self.cfg.min_rank,
+            max_rank=self.cfg.max_rank,
+            rank=self.rank,
+        )
+
+        # RFF projection for global heads (V5-FIX-14: buffer by default)
+        rff_init = torch.empty(self.num_global_heads, self.head_dim, self.cfg.rff_features)
+        for h in range(self.num_global_heads):
+            dim = max(self.head_dim, self.cfg.rff_features)
+            q_mat, _ = torch.linalg.qr(torch.randn(dim, dim))
+            rff_init[h] = q_mat[: self.head_dim, : self.cfg.rff_features] / math.sqrt(
+                self.cfg.rff_features
+            )
+        if self.cfg.rff_trainable:
+            self.rff_proj = nn.Parameter(rff_init)
+        else:
+            self.register_buffer(&#34;rff_proj&#34;, rff_init)
+        self.rff_features = self.cfg.rff_features
+
+        # Adaptive gate (V5-FIX-10/11: only local heads need the blend).
+        if self.cfg.use_adaptive_gate:
+            self.blend_logits = nn.Parameter(torch.zeros(self.num_local_heads))
+            self.gate_bias: float = float(self.cfg.gate_init_bias)
+        else:
+            self.register_parameter(&#34;blend_logits&#34;, None)
+            self.gate_bias = 0.0
+
+        self.dropout = nn.Dropout(self.cfg.dropout)
+
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    # ------------------------------------------------------------------
+    # Aliases
+    # ------------------------------------------------------------------
+    @property
+    def query(self) -&gt; FactorisedLinear:
+        return self.q_proj
+
+    @property
+    def key(self) -&gt; FactorisedLinear:
+        return self.k_proj
+
+    @property
+    def value(self) -&gt; FactorisedLinear:
+        return self.v_proj
+
+    @property
+    def q_lin(self) -&gt; FactorisedLinear:
+        return self.q_proj
+
+    @property
+    def k_lin(self) -&gt; FactorisedLinear:
+        return self.k_proj
+
+    @property
+    def v_lin(self) -&gt; FactorisedLinear:
+        return self.v_proj
+
+    @property
+    def out_lin(self) -&gt; FactorisedLinear:
+        return self.out_proj
+
+    @property
+    def dense(self) -&gt; FactorisedLinear:
+        return self.out_proj
+
+    @property
+    def o_proj(self) -&gt; FactorisedLinear:
+        return self.out_proj
+
+    @property
+    def c_proj(self) -&gt; FactorisedLinear:
+        return self.out_proj
+
+    # ------------------------------------------------------------------
+    # Weight transfer
+    # ------------------------------------------------------------------
+    def copy_weights(self, old_attn: Any) -&gt; None:
+        from neuralops.core.adapters import UniversalAdapter
+
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
+            &#34;q&#34;: (None, None),
+            &#34;k&#34;: (None, None),
+            &#34;v&#34;: (None, None),
+            &#34;o&#34;: (None, None),
+        }
+
+        for proj in [&#34;q&#34;, &#34;k&#34;, &#34;v&#34;, &#34;o&#34;]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
+                if w is not None:
+                    extracted[proj] = (w, b)
+            except Exception as e:
+                logger.debug(&#34;UniversalAdapter failed for %s: %s&#34;, proj, e)
+
+        # GPT-2 fused c_attn (Conv1D)
+        if hasattr(old_attn, &#34;c_attn&#34;) and any(extracted[k][0] is None for k in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;)):
+            weight = old_attn.c_attn.weight.data
+            bias = getattr(old_attn.c_attn, &#34;bias&#34;, None)
+            bias_data = bias.data if bias is not None else None
+            if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
+                weight = weight.t().contiguous()
+            split = weight.shape[0] // 3
+            extracted[&#34;q&#34;] = (
+                weight[:split, :],
+                bias_data[:split] if bias_data is not None else None,
+            )
+            extracted[&#34;k&#34;] = (
+                weight[split : 2 * split, :],
+                bias_data[split : 2 * split] if bias_data is not None else None,
+            )
+            extracted[&#34;v&#34;] = (
+                weight[2 * split :, :],
+                bias_data[2 * split :] if bias_data is not None else None,
+            )
+
+        if hasattr(old_attn, &#34;c_proj&#34;) and extracted[&#34;o&#34;][0] is None:
+            w_o = old_attn.c_proj.weight.data
+            if (
+                w_o.dim() == 2
+                and w_o.shape[0] != self.hidden_size
+                and w_o.shape[1] == self.hidden_size
+            ):
+                w_o = w_o.t().contiguous()
+            b_o = getattr(old_attn.c_proj, &#34;bias&#34;, None)
+            extracted[&#34;o&#34;] = (w_o, b_o.data if b_o is not None else None)
+
+        # BERT / RoBERTa nested encoder
+        if hasattr(old_attn, &#34;self&#34;) and any(extracted[k][0] is None for k in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;)):
+            s = old_attn.self
+            if hasattr(s, &#34;query&#34;):
+                extracted[&#34;q&#34;] = (s.query.weight.data, getattr(s.query, &#34;bias&#34;, None))
+            if hasattr(s, &#34;key&#34;):
+                extracted[&#34;k&#34;] = (s.key.weight.data, getattr(s.key, &#34;bias&#34;, None))
+            if hasattr(s, &#34;value&#34;):
+                extracted[&#34;v&#34;] = (s.value.weight.data, getattr(s.value, &#34;bias&#34;, None))
+
+        if (
+            hasattr(old_attn, &#34;output&#34;)
+            and hasattr(old_attn.output, &#34;dense&#34;)
+            and extracted[&#34;o&#34;][0] is None
+        ):
+            dense = old_attn.output.dense
+            extracted[&#34;o&#34;] = (dense.weight.data, getattr(dense, &#34;bias&#34;, None))
+
+        # Modern decoders / DistilBERT named mapping
+        named_map = {
+            &#34;q&#34;: [&#34;q_proj&#34;, &#34;q_lin&#34;, &#34;query&#34;],
+            &#34;k&#34;: [&#34;k_proj&#34;, &#34;k_lin&#34;, &#34;key&#34;],
+            &#34;v&#34;: [&#34;v_proj&#34;, &#34;v_lin&#34;, &#34;value&#34;],
+            &#34;o&#34;: [&#34;o_proj&#34;, &#34;out_proj&#34;, &#34;out_lin&#34;, &#34;dense&#34;],
+        }
+        for proj, names in named_map.items():
+            if extracted[proj][0] is None:
+                for name in names:
+                    if hasattr(old_attn, name):
+                        layer = getattr(old_attn, name)
+                        if hasattr(layer, &#34;weight&#34;):
+                            extracted[proj] = (
+                                layer.weight.data,
+                                getattr(layer, &#34;bias&#34;, None),
+                            )
+                            break
+
+        # Nested encoder detection
+        cls_name = old_attn.__class__.__name__
+        has_out_proj = any(
+            hasattr(old_attn, a)
+            for a in (
+                &#34;dense&#34;,
+                &#34;out_proj&#34;,
+                &#34;c_proj&#34;,
+                &#34;out_lin&#34;,
+                &#34;o_proj&#34;,
+                &#34;wo&#34;,
+                &#34;o&#34;,
+                &#34;proj&#34;,
+            )
+        )
+        if (
+            hasattr(old_attn, &#34;out_lin&#34;)
+            or hasattr(old_attn, &#34;c_proj&#34;)
+            or hasattr(old_attn, &#34;o_proj&#34;)
+        ):
+            self.is_nested_encoder = False
+        elif (
+            hasattr(old_attn, &#34;self&#34;)
+            and hasattr(old_attn.self, &#34;query&#34;)
+            and hasattr(old_attn, &#34;output&#34;)
+            and hasattr(old_attn.output, &#34;dense&#34;)
+        ) or (
+            cls_name in (&#34;BertSelfAttention&#34;, &#34;RobertaSelfAttention&#34;)
+            or (cls_name.endswith(&#34;SelfAttention&#34;) and not has_out_proj)
+        ):
+            self.is_nested_encoder = True
+        else:
+            self.is_nested_encoder = False
+
+        missing = [k for k in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;) if extracted[k][0] is None]
+        if not self.is_nested_encoder and extracted[&#34;o&#34;][0] is None:
+            missing.append(&#34;o&#34;)
+        if missing:
+            raise RuntimeError(
+                f&#34;AegisAttention.copy_weights: could not extract mandatory projections &#34;
+                f&#34;{missing} from {old_attn.__class__.__name__}.&#34;
+            )
+
+        for proj_key in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;):
+            w = extracted[proj_key][0]
+            if w is not None:
+                norm = torch.linalg.norm(w.float()).item()
+                if norm &lt; 1e-4:
+                    logger.warning(
+                        &#34;AegisAttention: extracted weight for &#39;%s&#39; has near-zero &#34;
+                        &#34;Frobenius norm (%.2e).&#34;,
+                        proj_key,
+                        norm,
+                    )
+        if extracted[&#34;o&#34;][0] is not None:
+            norm_o = torch.linalg.norm(extracted[&#34;o&#34;][0].float()).item()
+            if norm_o &lt; 1e-4:
+                logger.warning(
+                    &#34;AegisAttention: extracted weight for output projection has &#34;
+                    &#34;near-zero Frobenius norm (%.2e).&#34;,
+                    norm_o,
+                )
+
+        def _orient(w: torch.Tensor, in_dim: int) -&gt; torch.Tensor:
+            if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
+                return w.t().contiguous()
+            return w
+
+        with torch.no_grad():
+            for proj_key, target in (
+                (&#34;q&#34;, self.q_proj),
+                (&#34;k&#34;, self.k_proj),
+                (&#34;v&#34;, self.v_proj),
+                (&#34;o&#34;, self.out_proj),
+            ):
+                w, b = extracted[proj_key]
+                if w is not None:
+                    in_dim = self.all_head_size if proj_key == &#34;o&#34; else self.hidden_size
+                    target.decompose_from_weight(_orient(w, in_dim), b, self.cfg.svd_energy)
+                elif proj_key == &#34;o&#34; and self.is_nested_encoder:
+                    eye_w = torch.eye(
+                        self.all_head_size,
+                        self.all_head_size,
+                        device=self.out_proj.up.weight.device,
+                        dtype=self.out_proj.up.weight.dtype,
+                    )
+                    target.decompose_from_weight(eye_w, None, self.cfg.svd_energy)
+
+        if hasattr(old_attn, &#34;is_decoder&#34;):
+            self.is_decoder = bool(old_attn.is_decoder)
+
+    # ------------------------------------------------------------------
+    # Mask handling (V5-FIX-18: centralized)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _prepare_valid_mask(
+        attention_mask: torch.Tensor | None,
+        B: int,
+        N_kv: int,
+        device: torch.device,
+    ) -&gt; torch.Tensor | None:
+        &#34;&#34;&#34;
+        Return a boolean tensor (B, N_kv): True = key is valid (padding).
+        Returns None when no mask is provided.
+        &#34;&#34;&#34;
+        if attention_mask is None:
+            return None
+        if attention_mask.dim() == 2:
+            if attention_mask.dtype == torch.bool:
+                return attention_mask
+            if attention_mask.dtype.is_floating_point:
+                return attention_mask &gt; -1e4
+            return attention_mask &gt; 0
+        if attention_mask.dim() == 4:
+            if attention_mask.dtype == torch.bool:
+                v = attention_mask
+            elif attention_mask.dtype.is_floating_point:
+                v = attention_mask &gt; -1e4
+            else:
+                v = attention_mask &gt; 0
+            # (B, 1, N_q, N_kv) -&gt; OR over query dim -&gt; (B, N_kv)
+            return v.any(dim=-2).squeeze(1)
+        raise ValueError(f&#34;Unsupported attention_mask dim: {attention_mask.dim()}&#34;)
+
+    # ------------------------------------------------------------------
+    # Forward
+    # ------------------------------------------------------------------
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -&gt; tuple[torch.Tensor, torch.Tensor | None]:
+        B, N, _ = hidden_states.shape
+        H, D = self.num_heads, self.head_dim
+        Hkv = self.num_kv_heads
+        device = hidden_states.device
+
+        is_cross = encoder_hidden_states is not None
+        kv_input = encoder_hidden_states if is_cross else hidden_states
+        N_kv_new = kv_input.shape[1]
+
+        # --- Projections ---
+        Q = self.q_proj(hidden_states).view(B, N, H, D).transpose(1, 2).contiguous()
+        K_new = self.k_proj(kv_input).view(B, N_kv_new, Hkv, D).transpose(1, 2).contiguous()
+        V_new = self.v_proj(kv_input).view(B, N_kv_new, Hkv, D).transpose(1, 2).contiguous()
+
+        # --- RoPE with past offset ---
+        if position_embeddings is not None and not is_cross:
+            cos, sin = position_embeddings
+            past_k_probe = None
+            if past_key_value is not None:
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) &gt;= 1:
+                    past_k_probe = past_key_value[0]
+                elif hasattr(past_key_value, &#34;key_cache&#34;) and past_key_value.key_cache:
+                    past_k_probe = past_key_value.key_cache[0]
+            past_len = 0 if past_k_probe is None else past_k_probe.shape[-2]
+            cos = cos[..., past_len : past_len + N, :]
+            sin = sin[..., past_len : past_len + N, :]
+            Q, K_new = apply_rotary_pos_emb(Q, K_new, cos, sin)
+
+        # --- KV cache concat ---
+        past_k = past_v = None
+        if past_key_value is not None and not is_cross:
+            if isinstance(past_key_value, (tuple, list)) and len(past_key_value) &gt;= 2:
+                past_k, past_v = past_key_value[0], past_key_value[1]
+            elif hasattr(past_key_value, &#34;key_cache&#34;) and past_key_value.key_cache:
+                idx = getattr(self, &#34;layer_idx&#34;, 0)
+                idx = min(idx, len(past_key_value.key_cache) - 1)
+                past_k, past_v = (
+                    past_key_value.key_cache[idx],
+                    past_key_value.value_cache[idx],
+                )
+
+        if past_k is not None and not is_cross:
+            K_cat = torch.cat([past_k, K_new], dim=-2)
+            V_cat = torch.cat([past_v, V_new], dim=-2)
+        else:
+            K_cat = K_new
+            V_cat = V_new
+
+        # Update DynamicCache in place if applicable (V5-FIX-K2 semantic).
+        if past_key_value is not None and hasattr(past_key_value, &#34;update&#34;) and not is_cross:
+            idx = getattr(self, &#34;layer_idx&#34;, 0)
+            past_key_value.update(K_new, V_new, idx)
+        else:
+            pass
+
+        N_kv = K_cat.shape[2]
+        past_len = N_kv - N if (self.is_decoder and not is_cross) else 0
+
+        # --- GQA expansion ---
+        K_full = repeat_kv(K_cat, self.kv_repeat) if self.kv_repeat &gt; 1 else K_cat
+        V_full = repeat_kv(V_cat, self.kv_repeat) if self.kv_repeat &gt; 1 else V_cat
+
+        # --- Mask ---
+        eff_mask = encoder_attention_mask if is_cross else attention_mask
+        token_valid = self._prepare_valid_mask(eff_mask, B, N_kv, device)
+
+        # --- Decide path: SDPA fast path vs split-head ---
+        use_sdpa = (
+            self.cfg.use_sdpa_fast_path
+            and N_kv &lt;= max(self.cfg.local_window, 32)
+            and not output_attentions
+        )
+
+        if use_sdpa:
+            # ------------------------------------------------------------------
+            # SDPA fast path
+            # ------------------------------------------------------------------
+            q_sdp = Q.half() if Q.dtype == torch.float32 else Q
+            k_sdp = K_full.half() if K_full.dtype == torch.float32 else K_full
+            v_sdp = V_full.half() if V_full.dtype == torch.float32 else V_full
+
+            attn_bias_sdp = None
+            if eff_mask is not None and eff_mask.dim() == 4:
+                attn_bias_sdp = eff_mask.to(q_sdp.dtype)
+            elif eff_mask is not None and eff_mask.dim() == 2:
+                attn_bias_sdp = ((eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0).to(
+                    q_sdp.dtype
+                )
+            is_causal_sdp = self.is_decoder and not is_cross and N &gt; 1
+
+            out = F.scaled_dot_product_attention(
+                q_sdp,
+                k_sdp,
+                v_sdp,
+                attn_mask=attn_bias_sdp,
+                dropout_p=self.dropout.p if self.training else 0.0,
+                is_causal=is_causal_sdp,
+            )
+            out = out.to(hidden_states.dtype)
+            attn_weights_out = None
+        else:
+            # ------------------------------------------------------------------
+            # Split-head path
+            # ------------------------------------------------------------------
+            Hl, _Hg = self.num_local_heads, self.num_global_heads
+            Q_local, Q_global = Q[:, :Hl], Q[:, Hl:]
+            K_local, K_global = K_full[:, :Hl], K_full[:, Hl:]
+            V_local, V_global = V_full[:, :Hl], V_full[:, Hl:]
+
+            # Local heads: sliding-window attention.
+            ctx_local = local_window_attention(
+                Q_local,
+                K_local,
+                V_local,
+                window=self.cfg.local_window,
+                softpick_temperature=self.cfg.softpick_temperature,
+                token_valid=token_valid,
+                is_decoder=self.is_decoder and not is_cross,
+                past_len=past_len,
+            )
+
+            # Global heads: kernel linear attention.
+            Q_g_norm = F.normalize(Q_global.float(), p=2, dim=-1)
+            K_g_norm = F.normalize(K_global.float(), p=2, dim=-1)
+            if self.cfg.use_zero_sum_keys:
+                K_g_norm = K_g_norm - K_g_norm.mean(dim=2, keepdim=True)
+
+            rff_proj_f = self.rff_proj.float()
+            max_clamp = 11.0
+            Q_proj = torch.einsum(&#34;bhnd,hdf-&gt;bhnf&#34;, Q_g_norm, rff_proj_f).clamp(max=max_clamp)
+            K_proj = torch.einsum(&#34;bhnd,hdf-&gt;bhnf&#34;, K_g_norm, rff_proj_f).clamp(max=max_clamp)
+            scale_rff = 1.0 / math.sqrt(self.rff_features)
+            Q_feat = torch.exp(Q_proj) * scale_rff
+            K_feat = torch.exp(K_proj) * scale_rff
+
+            # Zero-out invalid keys.
+            if token_valid is not None:
+                kv_valid = token_valid[:, None, :, None].to(K_feat.dtype)
+                K_feat = K_feat * kv_valid
+                V_global_f = V_global.float() * kv_valid.to(V_global.dtype)
+            else:
+                V_global_f = V_global.float()
+
+            if self.is_decoder and not is_cross:
+                ctx_global = causal_kernel_linear_attention(
+                    Q_feat,
+                    K_feat,
+                    V_global_f,
+                    chunk_size=self.cfg.causal_chunk_size,
+                ).to(Q.dtype)
+            else:
+                KV = torch.einsum(&#34;bhnf,bhnd-&gt;bhfd&#34;, K_feat, V_global_f)
+                K_sum = K_feat.sum(dim=2)
+                denom = torch.einsum(&#34;bhnf,bhf-&gt;bhn&#34;, Q_feat, K_sum).unsqueeze(-1).clamp(min=1e-5)
+                ctx_global = torch.einsum(&#34;bhnf,bhfd-&gt;bhnd&#34;, Q_feat, KV) / denom
+                ctx_global = torch.nan_to_num(ctx_global, nan=0.0).to(Q.dtype)
+
+            # Adaptive gate (V5-FIX-10): blend local heads with global mean.
+            if self.blend_logits is not None:
+                global_mean = ctx_global.mean(dim=1, keepdim=True)  # (B, 1, N, D)
+                gate_local = torch.sigmoid(
+                    self.blend_logits.view(1, Hl, 1, 1) + self.gate_bias
+                )  # (1, Hl, 1, 1)
+                ctx_local = gate_local * ctx_local + (1.0 - gate_local) * global_mean.to(
+                    ctx_local.dtype
+                )
+            context = torch.cat([ctx_local, ctx_global], dim=1)
+
+            # Reshape to (B, N, H, D)
+            out = context.transpose(1, 2).contiguous().view(B, N, H * D)
+            attn_weights_out = None  # not available in split-head path
+
+        # --- head_mask (V5-FIX-01/19) ---
+        if head_mask is not None:
+            if head_mask.dim() == 1:
+                head_mask = head_mask.view(1, -1, 1, 1)
+            elif head_mask.dim() == 2:
+                head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)  # (B, H, 1, 1)
+            elif head_mask.dim() == 3:
+                head_mask = head_mask[:, :, :1].unsqueeze(-1)  # (B, H, 1, 1)
+            # Normalize to (B, H, 1, 1) whether `out` is (B, H, N, D) or (B, N, H, D).
+            if out.dim() == 4 and out.shape[1] == H:
+                out = out * head_mask.to(out.dtype)
+            else:
+                # out is (B, N, H*D) — reshape
+                out = out.view(B, N, H, D) * head_mask.to(out.dtype)
+                out = out.reshape(B, N, H * D)
+
+        # --- Ensure out is (B, N, H*D) ---
+        if out.dim() == 4:
+            if out.shape[1] == H:
+                out = out.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+            else:
+                out = out.contiguous().view(B, N, self.all_head_size)
+
+        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        # --- Output projection (skipped for nested encoders) ---
+        if self.is_nested_encoder:
+            output = out
+        else:
+            output = self.out_proj(out)
+        output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        return output.to(hidden_states.dtype), attn_weights_out
+
+    def get_ortho_loss(self) -&gt; torch.Tensor:
+        return torch.zeros((), device=self.out_proj.up.weight.device)</code></pre>
+</details>
+<div class="desc"><p>Every custom attention module must inherit from this.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.supports_causal"><code class="name">var <span class="ident">supports_causal</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.supports_gqa"><code class="name">var <span class="ident">supports_gqa</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.c_proj"><code class="name">prop <span class="ident">c_proj</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def c_proj(self) -&gt; FactorisedLinear:
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.dense"><code class="name">prop <span class="ident">dense</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def dense(self) -&gt; FactorisedLinear:
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.k_lin"><code class="name">prop <span class="ident">k_lin</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def k_lin(self) -&gt; FactorisedLinear:
+    return self.k_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.key"><code class="name">prop <span class="ident">key</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def key(self) -&gt; FactorisedLinear:
+    return self.k_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.o_proj"><code class="name">prop <span class="ident">o_proj</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def o_proj(self) -&gt; FactorisedLinear:
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.out_lin"><code class="name">prop <span class="ident">out_lin</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def out_lin(self) -&gt; FactorisedLinear:
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.q_lin"><code class="name">prop <span class="ident">q_lin</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def q_lin(self) -&gt; FactorisedLinear:
+    return self.q_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.query"><code class="name">prop <span class="ident">query</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def query(self) -&gt; FactorisedLinear:
+    return self.q_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.v_lin"><code class="name">prop <span class="ident">v_lin</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def v_lin(self) -&gt; FactorisedLinear:
+    return self.v_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.value"><code class="name">prop <span class="ident">value</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def value(self) -&gt; FactorisedLinear:
+    return self.v_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.copy_weights"><code class="name flex">
+<span>def <span class="ident">copy_weights</span></span>(<span>self, old_attn: Any) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def copy_weights(self, old_attn: Any) -&gt; None:
+    from neuralops.core.adapters import UniversalAdapter
+
+    extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
+        &#34;q&#34;: (None, None),
+        &#34;k&#34;: (None, None),
+        &#34;v&#34;: (None, None),
+        &#34;o&#34;: (None, None),
+    }
+
+    for proj in [&#34;q&#34;, &#34;k&#34;, &#34;v&#34;, &#34;o&#34;]:
+        try:
+            w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
+            if w is not None:
+                extracted[proj] = (w, b)
+        except Exception as e:
+            logger.debug(&#34;UniversalAdapter failed for %s: %s&#34;, proj, e)
+
+    # GPT-2 fused c_attn (Conv1D)
+    if hasattr(old_attn, &#34;c_attn&#34;) and any(extracted[k][0] is None for k in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;)):
+        weight = old_attn.c_attn.weight.data
+        bias = getattr(old_attn.c_attn, &#34;bias&#34;, None)
+        bias_data = bias.data if bias is not None else None
+        if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
+            weight = weight.t().contiguous()
+        split = weight.shape[0] // 3
+        extracted[&#34;q&#34;] = (
+            weight[:split, :],
+            bias_data[:split] if bias_data is not None else None,
+        )
+        extracted[&#34;k&#34;] = (
+            weight[split : 2 * split, :],
+            bias_data[split : 2 * split] if bias_data is not None else None,
+        )
+        extracted[&#34;v&#34;] = (
+            weight[2 * split :, :],
+            bias_data[2 * split :] if bias_data is not None else None,
+        )
+
+    if hasattr(old_attn, &#34;c_proj&#34;) and extracted[&#34;o&#34;][0] is None:
+        w_o = old_attn.c_proj.weight.data
+        if (
+            w_o.dim() == 2
+            and w_o.shape[0] != self.hidden_size
+            and w_o.shape[1] == self.hidden_size
+        ):
+            w_o = w_o.t().contiguous()
+        b_o = getattr(old_attn.c_proj, &#34;bias&#34;, None)
+        extracted[&#34;o&#34;] = (w_o, b_o.data if b_o is not None else None)
+
+    # BERT / RoBERTa nested encoder
+    if hasattr(old_attn, &#34;self&#34;) and any(extracted[k][0] is None for k in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;)):
+        s = old_attn.self
+        if hasattr(s, &#34;query&#34;):
+            extracted[&#34;q&#34;] = (s.query.weight.data, getattr(s.query, &#34;bias&#34;, None))
+        if hasattr(s, &#34;key&#34;):
+            extracted[&#34;k&#34;] = (s.key.weight.data, getattr(s.key, &#34;bias&#34;, None))
+        if hasattr(s, &#34;value&#34;):
+            extracted[&#34;v&#34;] = (s.value.weight.data, getattr(s.value, &#34;bias&#34;, None))
+
+    if (
+        hasattr(old_attn, &#34;output&#34;)
+        and hasattr(old_attn.output, &#34;dense&#34;)
+        and extracted[&#34;o&#34;][0] is None
+    ):
+        dense = old_attn.output.dense
+        extracted[&#34;o&#34;] = (dense.weight.data, getattr(dense, &#34;bias&#34;, None))
+
+    # Modern decoders / DistilBERT named mapping
+    named_map = {
+        &#34;q&#34;: [&#34;q_proj&#34;, &#34;q_lin&#34;, &#34;query&#34;],
+        &#34;k&#34;: [&#34;k_proj&#34;, &#34;k_lin&#34;, &#34;key&#34;],
+        &#34;v&#34;: [&#34;v_proj&#34;, &#34;v_lin&#34;, &#34;value&#34;],
+        &#34;o&#34;: [&#34;o_proj&#34;, &#34;out_proj&#34;, &#34;out_lin&#34;, &#34;dense&#34;],
+    }
+    for proj, names in named_map.items():
+        if extracted[proj][0] is None:
+            for name in names:
+                if hasattr(old_attn, name):
+                    layer = getattr(old_attn, name)
+                    if hasattr(layer, &#34;weight&#34;):
+                        extracted[proj] = (
+                            layer.weight.data,
+                            getattr(layer, &#34;bias&#34;, None),
+                        )
+                        break
+
+    # Nested encoder detection
+    cls_name = old_attn.__class__.__name__
+    has_out_proj = any(
+        hasattr(old_attn, a)
+        for a in (
+            &#34;dense&#34;,
+            &#34;out_proj&#34;,
+            &#34;c_proj&#34;,
+            &#34;out_lin&#34;,
+            &#34;o_proj&#34;,
+            &#34;wo&#34;,
+            &#34;o&#34;,
+            &#34;proj&#34;,
+        )
+    )
+    if (
+        hasattr(old_attn, &#34;out_lin&#34;)
+        or hasattr(old_attn, &#34;c_proj&#34;)
+        or hasattr(old_attn, &#34;o_proj&#34;)
+    ):
+        self.is_nested_encoder = False
+    elif (
+        hasattr(old_attn, &#34;self&#34;)
+        and hasattr(old_attn.self, &#34;query&#34;)
+        and hasattr(old_attn, &#34;output&#34;)
+        and hasattr(old_attn.output, &#34;dense&#34;)
+    ) or (
+        cls_name in (&#34;BertSelfAttention&#34;, &#34;RobertaSelfAttention&#34;)
+        or (cls_name.endswith(&#34;SelfAttention&#34;) and not has_out_proj)
+    ):
+        self.is_nested_encoder = True
+    else:
+        self.is_nested_encoder = False
+
+    missing = [k for k in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;) if extracted[k][0] is None]
+    if not self.is_nested_encoder and extracted[&#34;o&#34;][0] is None:
+        missing.append(&#34;o&#34;)
+    if missing:
+        raise RuntimeError(
+            f&#34;AegisAttention.copy_weights: could not extract mandatory projections &#34;
+            f&#34;{missing} from {old_attn.__class__.__name__}.&#34;
+        )
+
+    for proj_key in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;):
+        w = extracted[proj_key][0]
+        if w is not None:
+            norm = torch.linalg.norm(w.float()).item()
+            if norm &lt; 1e-4:
+                logger.warning(
+                    &#34;AegisAttention: extracted weight for &#39;%s&#39; has near-zero &#34;
+                    &#34;Frobenius norm (%.2e).&#34;,
+                    proj_key,
+                    norm,
+                )
+    if extracted[&#34;o&#34;][0] is not None:
+        norm_o = torch.linalg.norm(extracted[&#34;o&#34;][0].float()).item()
+        if norm_o &lt; 1e-4:
+            logger.warning(
+                &#34;AegisAttention: extracted weight for output projection has &#34;
+                &#34;near-zero Frobenius norm (%.2e).&#34;,
+                norm_o,
+            )
+
+    def _orient(w: torch.Tensor, in_dim: int) -&gt; torch.Tensor:
+        if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
+            return w.t().contiguous()
+        return w
+
+    with torch.no_grad():
+        for proj_key, target in (
+            (&#34;q&#34;, self.q_proj),
+            (&#34;k&#34;, self.k_proj),
+            (&#34;v&#34;, self.v_proj),
+            (&#34;o&#34;, self.out_proj),
+        ):
+            w, b = extracted[proj_key]
+            if w is not None:
+                in_dim = self.all_head_size if proj_key == &#34;o&#34; else self.hidden_size
+                target.decompose_from_weight(_orient(w, in_dim), b, self.cfg.svd_energy)
+            elif proj_key == &#34;o&#34; and self.is_nested_encoder:
+                eye_w = torch.eye(
+                    self.all_head_size,
+                    self.all_head_size,
+                    device=self.out_proj.up.weight.device,
+                    dtype=self.out_proj.up.weight.dtype,
+                )
+                target.decompose_from_weight(eye_w, None, self.cfg.svd_energy)
+
+    if hasattr(old_attn, &#34;is_decoder&#34;):
+        self.is_decoder = bool(old_attn.is_decoder)</code></pre>
+</details>
+<div class="desc"><p>Universal fallback: copy pretrained weights from old attention layer.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self,<br>hidden_states: torch.Tensor,<br>attention_mask: torch.Tensor | None = None,<br>head_mask: torch.Tensor | None = None,<br>encoder_hidden_states: torch.Tensor | None = None,<br>encoder_attention_mask: torch.Tensor | None = None,<br>past_key_value: Any | None = None,<br>output_attentions: bool | None = False,<br>output_hidden_states: bool | None = False,<br>return_dict: bool | None = True,<br>position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,<br>*args: Any,<br>**kwargs: Any) ‑> tuple[torch.Tensor, torch.Tensor | None]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(
+    self,
+    hidden_states: torch.Tensor,
+    attention_mask: torch.Tensor | None = None,
+    head_mask: torch.Tensor | None = None,
+    encoder_hidden_states: torch.Tensor | None = None,
+    encoder_attention_mask: torch.Tensor | None = None,
+    past_key_value: Any | None = None,
+    output_attentions: bool | None = False,
+    output_hidden_states: bool | None = False,
+    return_dict: bool | None = True,
+    position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+    *args: Any,
+    **kwargs: Any,
+) -&gt; tuple[torch.Tensor, torch.Tensor | None]:
+    B, N, _ = hidden_states.shape
+    H, D = self.num_heads, self.head_dim
+    Hkv = self.num_kv_heads
+    device = hidden_states.device
+
+    is_cross = encoder_hidden_states is not None
+    kv_input = encoder_hidden_states if is_cross else hidden_states
+    N_kv_new = kv_input.shape[1]
+
+    # --- Projections ---
+    Q = self.q_proj(hidden_states).view(B, N, H, D).transpose(1, 2).contiguous()
+    K_new = self.k_proj(kv_input).view(B, N_kv_new, Hkv, D).transpose(1, 2).contiguous()
+    V_new = self.v_proj(kv_input).view(B, N_kv_new, Hkv, D).transpose(1, 2).contiguous()
+
+    # --- RoPE with past offset ---
+    if position_embeddings is not None and not is_cross:
+        cos, sin = position_embeddings
+        past_k_probe = None
+        if past_key_value is not None:
+            if isinstance(past_key_value, (tuple, list)) and len(past_key_value) &gt;= 1:
+                past_k_probe = past_key_value[0]
+            elif hasattr(past_key_value, &#34;key_cache&#34;) and past_key_value.key_cache:
+                past_k_probe = past_key_value.key_cache[0]
+        past_len = 0 if past_k_probe is None else past_k_probe.shape[-2]
+        cos = cos[..., past_len : past_len + N, :]
+        sin = sin[..., past_len : past_len + N, :]
+        Q, K_new = apply_rotary_pos_emb(Q, K_new, cos, sin)
+
+    # --- KV cache concat ---
+    past_k = past_v = None
+    if past_key_value is not None and not is_cross:
+        if isinstance(past_key_value, (tuple, list)) and len(past_key_value) &gt;= 2:
+            past_k, past_v = past_key_value[0], past_key_value[1]
+        elif hasattr(past_key_value, &#34;key_cache&#34;) and past_key_value.key_cache:
+            idx = getattr(self, &#34;layer_idx&#34;, 0)
+            idx = min(idx, len(past_key_value.key_cache) - 1)
+            past_k, past_v = (
+                past_key_value.key_cache[idx],
+                past_key_value.value_cache[idx],
+            )
+
+    if past_k is not None and not is_cross:
+        K_cat = torch.cat([past_k, K_new], dim=-2)
+        V_cat = torch.cat([past_v, V_new], dim=-2)
+    else:
+        K_cat = K_new
+        V_cat = V_new
+
+    # Update DynamicCache in place if applicable (V5-FIX-K2 semantic).
+    if past_key_value is not None and hasattr(past_key_value, &#34;update&#34;) and not is_cross:
+        idx = getattr(self, &#34;layer_idx&#34;, 0)
+        past_key_value.update(K_new, V_new, idx)
+    else:
+        pass
+
+    N_kv = K_cat.shape[2]
+    past_len = N_kv - N if (self.is_decoder and not is_cross) else 0
+
+    # --- GQA expansion ---
+    K_full = repeat_kv(K_cat, self.kv_repeat) if self.kv_repeat &gt; 1 else K_cat
+    V_full = repeat_kv(V_cat, self.kv_repeat) if self.kv_repeat &gt; 1 else V_cat
+
+    # --- Mask ---
+    eff_mask = encoder_attention_mask if is_cross else attention_mask
+    token_valid = self._prepare_valid_mask(eff_mask, B, N_kv, device)
+
+    # --- Decide path: SDPA fast path vs split-head ---
+    use_sdpa = (
+        self.cfg.use_sdpa_fast_path
+        and N_kv &lt;= max(self.cfg.local_window, 32)
+        and not output_attentions
+    )
+
+    if use_sdpa:
+        # ------------------------------------------------------------------
+        # SDPA fast path
+        # ------------------------------------------------------------------
+        q_sdp = Q.half() if Q.dtype == torch.float32 else Q
+        k_sdp = K_full.half() if K_full.dtype == torch.float32 else K_full
+        v_sdp = V_full.half() if V_full.dtype == torch.float32 else V_full
+
+        attn_bias_sdp = None
+        if eff_mask is not None and eff_mask.dim() == 4:
+            attn_bias_sdp = eff_mask.to(q_sdp.dtype)
+        elif eff_mask is not None and eff_mask.dim() == 2:
+            attn_bias_sdp = ((eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0).to(
+                q_sdp.dtype
+            )
+        is_causal_sdp = self.is_decoder and not is_cross and N &gt; 1
+
+        out = F.scaled_dot_product_attention(
+            q_sdp,
+            k_sdp,
+            v_sdp,
+            attn_mask=attn_bias_sdp,
+            dropout_p=self.dropout.p if self.training else 0.0,
+            is_causal=is_causal_sdp,
+        )
+        out = out.to(hidden_states.dtype)
+        attn_weights_out = None
+    else:
+        # ------------------------------------------------------------------
+        # Split-head path
+        # ------------------------------------------------------------------
+        Hl, _Hg = self.num_local_heads, self.num_global_heads
+        Q_local, Q_global = Q[:, :Hl], Q[:, Hl:]
+        K_local, K_global = K_full[:, :Hl], K_full[:, Hl:]
+        V_local, V_global = V_full[:, :Hl], V_full[:, Hl:]
+
+        # Local heads: sliding-window attention.
+        ctx_local = local_window_attention(
+            Q_local,
+            K_local,
+            V_local,
+            window=self.cfg.local_window,
+            softpick_temperature=self.cfg.softpick_temperature,
+            token_valid=token_valid,
+            is_decoder=self.is_decoder and not is_cross,
+            past_len=past_len,
+        )
+
+        # Global heads: kernel linear attention.
+        Q_g_norm = F.normalize(Q_global.float(), p=2, dim=-1)
+        K_g_norm = F.normalize(K_global.float(), p=2, dim=-1)
+        if self.cfg.use_zero_sum_keys:
+            K_g_norm = K_g_norm - K_g_norm.mean(dim=2, keepdim=True)
+
+        rff_proj_f = self.rff_proj.float()
+        max_clamp = 11.0
+        Q_proj = torch.einsum(&#34;bhnd,hdf-&gt;bhnf&#34;, Q_g_norm, rff_proj_f).clamp(max=max_clamp)
+        K_proj = torch.einsum(&#34;bhnd,hdf-&gt;bhnf&#34;, K_g_norm, rff_proj_f).clamp(max=max_clamp)
+        scale_rff = 1.0 / math.sqrt(self.rff_features)
+        Q_feat = torch.exp(Q_proj) * scale_rff
+        K_feat = torch.exp(K_proj) * scale_rff
+
+        # Zero-out invalid keys.
+        if token_valid is not None:
+            kv_valid = token_valid[:, None, :, None].to(K_feat.dtype)
+            K_feat = K_feat * kv_valid
+            V_global_f = V_global.float() * kv_valid.to(V_global.dtype)
+        else:
+            V_global_f = V_global.float()
+
+        if self.is_decoder and not is_cross:
+            ctx_global = causal_kernel_linear_attention(
+                Q_feat,
+                K_feat,
+                V_global_f,
+                chunk_size=self.cfg.causal_chunk_size,
+            ).to(Q.dtype)
+        else:
+            KV = torch.einsum(&#34;bhnf,bhnd-&gt;bhfd&#34;, K_feat, V_global_f)
+            K_sum = K_feat.sum(dim=2)
+            denom = torch.einsum(&#34;bhnf,bhf-&gt;bhn&#34;, Q_feat, K_sum).unsqueeze(-1).clamp(min=1e-5)
+            ctx_global = torch.einsum(&#34;bhnf,bhfd-&gt;bhnd&#34;, Q_feat, KV) / denom
+            ctx_global = torch.nan_to_num(ctx_global, nan=0.0).to(Q.dtype)
+
+        # Adaptive gate (V5-FIX-10): blend local heads with global mean.
+        if self.blend_logits is not None:
+            global_mean = ctx_global.mean(dim=1, keepdim=True)  # (B, 1, N, D)
+            gate_local = torch.sigmoid(
+                self.blend_logits.view(1, Hl, 1, 1) + self.gate_bias
+            )  # (1, Hl, 1, 1)
+            ctx_local = gate_local * ctx_local + (1.0 - gate_local) * global_mean.to(
+                ctx_local.dtype
+            )
+        context = torch.cat([ctx_local, ctx_global], dim=1)
+
+        # Reshape to (B, N, H, D)
+        out = context.transpose(1, 2).contiguous().view(B, N, H * D)
+        attn_weights_out = None  # not available in split-head path
+
+    # --- head_mask (V5-FIX-01/19) ---
+    if head_mask is not None:
+        if head_mask.dim() == 1:
+            head_mask = head_mask.view(1, -1, 1, 1)
+        elif head_mask.dim() == 2:
+            head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)  # (B, H, 1, 1)
+        elif head_mask.dim() == 3:
+            head_mask = head_mask[:, :, :1].unsqueeze(-1)  # (B, H, 1, 1)
+        # Normalize to (B, H, 1, 1) whether `out` is (B, H, N, D) or (B, N, H, D).
+        if out.dim() == 4 and out.shape[1] == H:
+            out = out * head_mask.to(out.dtype)
+        else:
+            # out is (B, N, H*D) — reshape
+            out = out.view(B, N, H, D) * head_mask.to(out.dtype)
+            out = out.reshape(B, N, H * D)
+
+    # --- Ensure out is (B, N, H*D) ---
+    if out.dim() == 4:
+        if out.shape[1] == H:
+            out = out.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+        else:
+            out = out.contiguous().view(B, N, self.all_head_size)
+
+    out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+
+    # --- Output projection (skipped for nested encoders) ---
+    if self.is_nested_encoder:
+        output = out
+    else:
+        output = self.out_proj(out)
+    output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
+
+    return output.to(hidden_states.dtype), attn_weights_out</code></pre>
+</details>
+<div class="desc"><p>Must return (output, attention_weights_or_None).</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.get_ortho_loss"><code class="name flex">
+<span>def <span class="ident">get_ortho_loss</span></span>(<span>self) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_ortho_loss(self) -&gt; torch.Tensor:
+    return torch.zeros((), device=self.out_proj.up.weight.device)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention"><code class="flex name class">
+<span>class <span class="ident">AegisAttentionV5</span></span>
+<span>(</span><span>model_config: Any = None,<br>config: Any = None,<br>aegis_cfg: <a title="neuralops.attentions.aegis_v5.AegisConfigV5" href="#neuralops.attentions.aegis_v5.AegisConfigV5">AegisConfigV5</a> | None = None,<br>pretrained_attn: torch.nn.modules.module.Module | None = None,<br>is_decoder: bool | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;aegis_v5_module&#34;, supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(&#34;AegisAttention&#34;, supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(&#34;aegis_v5&#34;, supports_causal=True, supports_gqa=True)
+class AegisAttention(BaseAttention):
+    supports_causal: bool = True
+    supports_gqa: bool = True
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        model_config: Any = None,
+        config: Any = None,
+        aegis_cfg: AegisConfigV5 | None = None,
+        pretrained_attn: nn.Module | None = None,
+        is_decoder: bool | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        cfg = model_config if model_config is not None else config
+        super().__init__(cfg, **kwargs)
+
+        self.hidden_size: int = kwargs.get(
+            &#34;hidden_size&#34;,
+            kwargs.get(
+                &#34;d_model&#34;,
+                (
+                    getattr(
+                        cfg,
+                        &#34;hidden_size&#34;,
+                        getattr(cfg, &#34;d_model&#34;, getattr(cfg, &#34;dim&#34;, 768)),
+                    )
+                    if cfg is not None
+                    else 768
+                ),
+            ),
+        )
+        self.num_heads: int = kwargs.get(
+            &#34;num_heads&#34;,
+            kwargs.get(
+                &#34;num_attention_heads&#34;,
+                (
+                    getattr(cfg, &#34;num_attention_heads&#34;, getattr(cfg, &#34;num_heads&#34;, 4))
+                    if cfg is not None
+                    else 4
+                ),
+            ),
+        )
+        self.head_dim: int = kwargs.get(
+            &#34;head_dim&#34;,
+            (
+                getattr(
+                    cfg,
+                    &#34;head_dim&#34;,
+                    getattr(cfg, &#34;d_kv&#34;, self.hidden_size // max(1, self.num_heads)),
+                )
+                if cfg is not None
+                else self.hidden_size // max(1, self.num_heads)
+            ),
+        )
+        self.num_kv_heads: int = kwargs.get(
+            &#34;num_kv_heads&#34;,
+            kwargs.get(
+                &#34;num_key_value_heads&#34;,
+                (
+                    getattr(
+                        cfg,
+                        &#34;num_key_value_heads&#34;,
+                        getattr(cfg, &#34;num_kv_heads&#34;, self.num_heads),
+                    )
+                    if cfg is not None
+                    else self.num_heads
+                ),
+            ),
+        )
+        if self.num_heads % max(1, self.num_kv_heads) != 0:
+            raise ValueError(
+                f&#34;num_heads ({self.num_heads}) must be divisible by &#34;
+                f&#34;num_kv_heads ({self.num_kv_heads}).&#34;
+            )
+        self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
+        self.rank: int = int(kwargs.pop(&#34;rank&#34;, 192))
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
+        self.cfg: AegisConfigV5 = aegis_cfg if aegis_cfg is not None else AegisConfigV5()
+
+        self.is_decoder: bool = _detect_decoder(cfg, is_decoder, pretrained_attn)
+        self.is_nested_encoder: bool = False
+
+        # Split-head allocation
+        if self.cfg.num_local_heads + self.cfg.num_global_heads != self.num_heads:
+            self.num_local_heads = (self.num_heads * 2) // 3
+            self.num_global_heads = self.num_heads - self.num_local_heads
+        else:
+            self.num_local_heads = self.cfg.num_local_heads
+            self.num_global_heads = self.cfg.num_global_heads
+        if self.num_local_heads &lt;= 0:
+            self.num_local_heads = max(1, self.num_heads // 2)
+            self.num_global_heads = self.num_heads - self.num_local_heads
+
+        # Projections
+        self.q_proj = FactorisedLinear(
+            self.hidden_size,
+            self.all_head_size,
+            energy=self.cfg.svd_energy,
+            min_rank=self.cfg.min_rank,
+            max_rank=self.cfg.max_rank,
+            rank=self.rank,
+        )
+        self.k_proj = FactorisedLinear(
+            self.hidden_size,
+            self.all_kv_head_size,
+            energy=self.cfg.svd_energy,
+            min_rank=self.cfg.min_rank,
+            max_rank=self.cfg.max_rank,
+            rank=self.rank,
+        )
+        self.v_proj = FactorisedLinear(
+            self.hidden_size,
+            self.all_kv_head_size,
+            energy=self.cfg.svd_energy,
+            min_rank=self.cfg.min_rank,
+            max_rank=self.cfg.max_rank,
+            rank=self.rank,
+        )
+        self.out_proj = FactorisedLinear(
+            self.all_head_size,
+            self.hidden_size,
+            energy=self.cfg.svd_energy,
+            min_rank=self.cfg.min_rank,
+            max_rank=self.cfg.max_rank,
+            rank=self.rank,
+        )
+
+        # RFF projection for global heads (V5-FIX-14: buffer by default)
+        rff_init = torch.empty(self.num_global_heads, self.head_dim, self.cfg.rff_features)
+        for h in range(self.num_global_heads):
+            dim = max(self.head_dim, self.cfg.rff_features)
+            q_mat, _ = torch.linalg.qr(torch.randn(dim, dim))
+            rff_init[h] = q_mat[: self.head_dim, : self.cfg.rff_features] / math.sqrt(
+                self.cfg.rff_features
+            )
+        if self.cfg.rff_trainable:
+            self.rff_proj = nn.Parameter(rff_init)
+        else:
+            self.register_buffer(&#34;rff_proj&#34;, rff_init)
+        self.rff_features = self.cfg.rff_features
+
+        # Adaptive gate (V5-FIX-10/11: only local heads need the blend).
+        if self.cfg.use_adaptive_gate:
+            self.blend_logits = nn.Parameter(torch.zeros(self.num_local_heads))
+            self.gate_bias: float = float(self.cfg.gate_init_bias)
+        else:
+            self.register_parameter(&#34;blend_logits&#34;, None)
+            self.gate_bias = 0.0
+
+        self.dropout = nn.Dropout(self.cfg.dropout)
+
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    # ------------------------------------------------------------------
+    # Aliases
+    # ------------------------------------------------------------------
+    @property
+    def query(self) -&gt; FactorisedLinear:
+        return self.q_proj
+
+    @property
+    def key(self) -&gt; FactorisedLinear:
+        return self.k_proj
+
+    @property
+    def value(self) -&gt; FactorisedLinear:
+        return self.v_proj
+
+    @property
+    def q_lin(self) -&gt; FactorisedLinear:
+        return self.q_proj
+
+    @property
+    def k_lin(self) -&gt; FactorisedLinear:
+        return self.k_proj
+
+    @property
+    def v_lin(self) -&gt; FactorisedLinear:
+        return self.v_proj
+
+    @property
+    def out_lin(self) -&gt; FactorisedLinear:
+        return self.out_proj
+
+    @property
+    def dense(self) -&gt; FactorisedLinear:
+        return self.out_proj
+
+    @property
+    def o_proj(self) -&gt; FactorisedLinear:
+        return self.out_proj
+
+    @property
+    def c_proj(self) -&gt; FactorisedLinear:
+        return self.out_proj
+
+    # ------------------------------------------------------------------
+    # Weight transfer
+    # ------------------------------------------------------------------
+    def copy_weights(self, old_attn: Any) -&gt; None:
+        from neuralops.core.adapters import UniversalAdapter
+
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
+            &#34;q&#34;: (None, None),
+            &#34;k&#34;: (None, None),
+            &#34;v&#34;: (None, None),
+            &#34;o&#34;: (None, None),
+        }
+
+        for proj in [&#34;q&#34;, &#34;k&#34;, &#34;v&#34;, &#34;o&#34;]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
+                if w is not None:
+                    extracted[proj] = (w, b)
+            except Exception as e:
+                logger.debug(&#34;UniversalAdapter failed for %s: %s&#34;, proj, e)
+
+        # GPT-2 fused c_attn (Conv1D)
+        if hasattr(old_attn, &#34;c_attn&#34;) and any(extracted[k][0] is None for k in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;)):
+            weight = old_attn.c_attn.weight.data
+            bias = getattr(old_attn.c_attn, &#34;bias&#34;, None)
+            bias_data = bias.data if bias is not None else None
+            if weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size:
+                weight = weight.t().contiguous()
+            split = weight.shape[0] // 3
+            extracted[&#34;q&#34;] = (
+                weight[:split, :],
+                bias_data[:split] if bias_data is not None else None,
+            )
+            extracted[&#34;k&#34;] = (
+                weight[split : 2 * split, :],
+                bias_data[split : 2 * split] if bias_data is not None else None,
+            )
+            extracted[&#34;v&#34;] = (
+                weight[2 * split :, :],
+                bias_data[2 * split :] if bias_data is not None else None,
+            )
+
+        if hasattr(old_attn, &#34;c_proj&#34;) and extracted[&#34;o&#34;][0] is None:
+            w_o = old_attn.c_proj.weight.data
+            if (
+                w_o.dim() == 2
+                and w_o.shape[0] != self.hidden_size
+                and w_o.shape[1] == self.hidden_size
+            ):
+                w_o = w_o.t().contiguous()
+            b_o = getattr(old_attn.c_proj, &#34;bias&#34;, None)
+            extracted[&#34;o&#34;] = (w_o, b_o.data if b_o is not None else None)
+
+        # BERT / RoBERTa nested encoder
+        if hasattr(old_attn, &#34;self&#34;) and any(extracted[k][0] is None for k in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;)):
+            s = old_attn.self
+            if hasattr(s, &#34;query&#34;):
+                extracted[&#34;q&#34;] = (s.query.weight.data, getattr(s.query, &#34;bias&#34;, None))
+            if hasattr(s, &#34;key&#34;):
+                extracted[&#34;k&#34;] = (s.key.weight.data, getattr(s.key, &#34;bias&#34;, None))
+            if hasattr(s, &#34;value&#34;):
+                extracted[&#34;v&#34;] = (s.value.weight.data, getattr(s.value, &#34;bias&#34;, None))
+
+        if (
+            hasattr(old_attn, &#34;output&#34;)
+            and hasattr(old_attn.output, &#34;dense&#34;)
+            and extracted[&#34;o&#34;][0] is None
+        ):
+            dense = old_attn.output.dense
+            extracted[&#34;o&#34;] = (dense.weight.data, getattr(dense, &#34;bias&#34;, None))
+
+        # Modern decoders / DistilBERT named mapping
+        named_map = {
+            &#34;q&#34;: [&#34;q_proj&#34;, &#34;q_lin&#34;, &#34;query&#34;],
+            &#34;k&#34;: [&#34;k_proj&#34;, &#34;k_lin&#34;, &#34;key&#34;],
+            &#34;v&#34;: [&#34;v_proj&#34;, &#34;v_lin&#34;, &#34;value&#34;],
+            &#34;o&#34;: [&#34;o_proj&#34;, &#34;out_proj&#34;, &#34;out_lin&#34;, &#34;dense&#34;],
+        }
+        for proj, names in named_map.items():
+            if extracted[proj][0] is None:
+                for name in names:
+                    if hasattr(old_attn, name):
+                        layer = getattr(old_attn, name)
+                        if hasattr(layer, &#34;weight&#34;):
+                            extracted[proj] = (
+                                layer.weight.data,
+                                getattr(layer, &#34;bias&#34;, None),
+                            )
+                            break
+
+        # Nested encoder detection
+        cls_name = old_attn.__class__.__name__
+        has_out_proj = any(
+            hasattr(old_attn, a)
+            for a in (
+                &#34;dense&#34;,
+                &#34;out_proj&#34;,
+                &#34;c_proj&#34;,
+                &#34;out_lin&#34;,
+                &#34;o_proj&#34;,
+                &#34;wo&#34;,
+                &#34;o&#34;,
+                &#34;proj&#34;,
+            )
+        )
+        if (
+            hasattr(old_attn, &#34;out_lin&#34;)
+            or hasattr(old_attn, &#34;c_proj&#34;)
+            or hasattr(old_attn, &#34;o_proj&#34;)
+        ):
+            self.is_nested_encoder = False
+        elif (
+            hasattr(old_attn, &#34;self&#34;)
+            and hasattr(old_attn.self, &#34;query&#34;)
+            and hasattr(old_attn, &#34;output&#34;)
+            and hasattr(old_attn.output, &#34;dense&#34;)
+        ) or (
+            cls_name in (&#34;BertSelfAttention&#34;, &#34;RobertaSelfAttention&#34;)
+            or (cls_name.endswith(&#34;SelfAttention&#34;) and not has_out_proj)
+        ):
+            self.is_nested_encoder = True
+        else:
+            self.is_nested_encoder = False
+
+        missing = [k for k in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;) if extracted[k][0] is None]
+        if not self.is_nested_encoder and extracted[&#34;o&#34;][0] is None:
+            missing.append(&#34;o&#34;)
+        if missing:
+            raise RuntimeError(
+                f&#34;AegisAttention.copy_weights: could not extract mandatory projections &#34;
+                f&#34;{missing} from {old_attn.__class__.__name__}.&#34;
+            )
+
+        for proj_key in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;):
+            w = extracted[proj_key][0]
+            if w is not None:
+                norm = torch.linalg.norm(w.float()).item()
+                if norm &lt; 1e-4:
+                    logger.warning(
+                        &#34;AegisAttention: extracted weight for &#39;%s&#39; has near-zero &#34;
+                        &#34;Frobenius norm (%.2e).&#34;,
+                        proj_key,
+                        norm,
+                    )
+        if extracted[&#34;o&#34;][0] is not None:
+            norm_o = torch.linalg.norm(extracted[&#34;o&#34;][0].float()).item()
+            if norm_o &lt; 1e-4:
+                logger.warning(
+                    &#34;AegisAttention: extracted weight for output projection has &#34;
+                    &#34;near-zero Frobenius norm (%.2e).&#34;,
+                    norm_o,
+                )
+
+        def _orient(w: torch.Tensor, in_dim: int) -&gt; torch.Tensor:
+            if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
+                return w.t().contiguous()
+            return w
+
+        with torch.no_grad():
+            for proj_key, target in (
+                (&#34;q&#34;, self.q_proj),
+                (&#34;k&#34;, self.k_proj),
+                (&#34;v&#34;, self.v_proj),
+                (&#34;o&#34;, self.out_proj),
+            ):
+                w, b = extracted[proj_key]
+                if w is not None:
+                    in_dim = self.all_head_size if proj_key == &#34;o&#34; else self.hidden_size
+                    target.decompose_from_weight(_orient(w, in_dim), b, self.cfg.svd_energy)
+                elif proj_key == &#34;o&#34; and self.is_nested_encoder:
+                    eye_w = torch.eye(
+                        self.all_head_size,
+                        self.all_head_size,
+                        device=self.out_proj.up.weight.device,
+                        dtype=self.out_proj.up.weight.dtype,
+                    )
+                    target.decompose_from_weight(eye_w, None, self.cfg.svd_energy)
+
+        if hasattr(old_attn, &#34;is_decoder&#34;):
+            self.is_decoder = bool(old_attn.is_decoder)
+
+    # ------------------------------------------------------------------
+    # Mask handling (V5-FIX-18: centralized)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _prepare_valid_mask(
+        attention_mask: torch.Tensor | None,
+        B: int,
+        N_kv: int,
+        device: torch.device,
+    ) -&gt; torch.Tensor | None:
+        &#34;&#34;&#34;
+        Return a boolean tensor (B, N_kv): True = key is valid (padding).
+        Returns None when no mask is provided.
+        &#34;&#34;&#34;
+        if attention_mask is None:
+            return None
+        if attention_mask.dim() == 2:
+            if attention_mask.dtype == torch.bool:
+                return attention_mask
+            if attention_mask.dtype.is_floating_point:
+                return attention_mask &gt; -1e4
+            return attention_mask &gt; 0
+        if attention_mask.dim() == 4:
+            if attention_mask.dtype == torch.bool:
+                v = attention_mask
+            elif attention_mask.dtype.is_floating_point:
+                v = attention_mask &gt; -1e4
+            else:
+                v = attention_mask &gt; 0
+            # (B, 1, N_q, N_kv) -&gt; OR over query dim -&gt; (B, N_kv)
+            return v.any(dim=-2).squeeze(1)
+        raise ValueError(f&#34;Unsupported attention_mask dim: {attention_mask.dim()}&#34;)
+
+    # ------------------------------------------------------------------
+    # Forward
+    # ------------------------------------------------------------------
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -&gt; tuple[torch.Tensor, torch.Tensor | None]:
+        B, N, _ = hidden_states.shape
+        H, D = self.num_heads, self.head_dim
+        Hkv = self.num_kv_heads
+        device = hidden_states.device
+
+        is_cross = encoder_hidden_states is not None
+        kv_input = encoder_hidden_states if is_cross else hidden_states
+        N_kv_new = kv_input.shape[1]
+
+        # --- Projections ---
+        Q = self.q_proj(hidden_states).view(B, N, H, D).transpose(1, 2).contiguous()
+        K_new = self.k_proj(kv_input).view(B, N_kv_new, Hkv, D).transpose(1, 2).contiguous()
+        V_new = self.v_proj(kv_input).view(B, N_kv_new, Hkv, D).transpose(1, 2).contiguous()
+
+        # --- RoPE with past offset ---
+        if position_embeddings is not None and not is_cross:
+            cos, sin = position_embeddings
+            past_k_probe = None
+            if past_key_value is not None:
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) &gt;= 1:
+                    past_k_probe = past_key_value[0]
+                elif hasattr(past_key_value, &#34;key_cache&#34;) and past_key_value.key_cache:
+                    past_k_probe = past_key_value.key_cache[0]
+            past_len = 0 if past_k_probe is None else past_k_probe.shape[-2]
+            cos = cos[..., past_len : past_len + N, :]
+            sin = sin[..., past_len : past_len + N, :]
+            Q, K_new = apply_rotary_pos_emb(Q, K_new, cos, sin)
+
+        # --- KV cache concat ---
+        past_k = past_v = None
+        if past_key_value is not None and not is_cross:
+            if isinstance(past_key_value, (tuple, list)) and len(past_key_value) &gt;= 2:
+                past_k, past_v = past_key_value[0], past_key_value[1]
+            elif hasattr(past_key_value, &#34;key_cache&#34;) and past_key_value.key_cache:
+                idx = getattr(self, &#34;layer_idx&#34;, 0)
+                idx = min(idx, len(past_key_value.key_cache) - 1)
+                past_k, past_v = (
+                    past_key_value.key_cache[idx],
+                    past_key_value.value_cache[idx],
+                )
+
+        if past_k is not None and not is_cross:
+            K_cat = torch.cat([past_k, K_new], dim=-2)
+            V_cat = torch.cat([past_v, V_new], dim=-2)
+        else:
+            K_cat = K_new
+            V_cat = V_new
+
+        # Update DynamicCache in place if applicable (V5-FIX-K2 semantic).
+        if past_key_value is not None and hasattr(past_key_value, &#34;update&#34;) and not is_cross:
+            idx = getattr(self, &#34;layer_idx&#34;, 0)
+            past_key_value.update(K_new, V_new, idx)
+        else:
+            pass
+
+        N_kv = K_cat.shape[2]
+        past_len = N_kv - N if (self.is_decoder and not is_cross) else 0
+
+        # --- GQA expansion ---
+        K_full = repeat_kv(K_cat, self.kv_repeat) if self.kv_repeat &gt; 1 else K_cat
+        V_full = repeat_kv(V_cat, self.kv_repeat) if self.kv_repeat &gt; 1 else V_cat
+
+        # --- Mask ---
+        eff_mask = encoder_attention_mask if is_cross else attention_mask
+        token_valid = self._prepare_valid_mask(eff_mask, B, N_kv, device)
+
+        # --- Decide path: SDPA fast path vs split-head ---
+        use_sdpa = (
+            self.cfg.use_sdpa_fast_path
+            and N_kv &lt;= max(self.cfg.local_window, 32)
+            and not output_attentions
+        )
+
+        if use_sdpa:
+            # ------------------------------------------------------------------
+            # SDPA fast path
+            # ------------------------------------------------------------------
+            q_sdp = Q.half() if Q.dtype == torch.float32 else Q
+            k_sdp = K_full.half() if K_full.dtype == torch.float32 else K_full
+            v_sdp = V_full.half() if V_full.dtype == torch.float32 else V_full
+
+            attn_bias_sdp = None
+            if eff_mask is not None and eff_mask.dim() == 4:
+                attn_bias_sdp = eff_mask.to(q_sdp.dtype)
+            elif eff_mask is not None and eff_mask.dim() == 2:
+                attn_bias_sdp = ((eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0).to(
+                    q_sdp.dtype
+                )
+            is_causal_sdp = self.is_decoder and not is_cross and N &gt; 1
+
+            out = F.scaled_dot_product_attention(
+                q_sdp,
+                k_sdp,
+                v_sdp,
+                attn_mask=attn_bias_sdp,
+                dropout_p=self.dropout.p if self.training else 0.0,
+                is_causal=is_causal_sdp,
+            )
+            out = out.to(hidden_states.dtype)
+            attn_weights_out = None
+        else:
+            # ------------------------------------------------------------------
+            # Split-head path
+            # ------------------------------------------------------------------
+            Hl, _Hg = self.num_local_heads, self.num_global_heads
+            Q_local, Q_global = Q[:, :Hl], Q[:, Hl:]
+            K_local, K_global = K_full[:, :Hl], K_full[:, Hl:]
+            V_local, V_global = V_full[:, :Hl], V_full[:, Hl:]
+
+            # Local heads: sliding-window attention.
+            ctx_local = local_window_attention(
+                Q_local,
+                K_local,
+                V_local,
+                window=self.cfg.local_window,
+                softpick_temperature=self.cfg.softpick_temperature,
+                token_valid=token_valid,
+                is_decoder=self.is_decoder and not is_cross,
+                past_len=past_len,
+            )
+
+            # Global heads: kernel linear attention.
+            Q_g_norm = F.normalize(Q_global.float(), p=2, dim=-1)
+            K_g_norm = F.normalize(K_global.float(), p=2, dim=-1)
+            if self.cfg.use_zero_sum_keys:
+                K_g_norm = K_g_norm - K_g_norm.mean(dim=2, keepdim=True)
+
+            rff_proj_f = self.rff_proj.float()
+            max_clamp = 11.0
+            Q_proj = torch.einsum(&#34;bhnd,hdf-&gt;bhnf&#34;, Q_g_norm, rff_proj_f).clamp(max=max_clamp)
+            K_proj = torch.einsum(&#34;bhnd,hdf-&gt;bhnf&#34;, K_g_norm, rff_proj_f).clamp(max=max_clamp)
+            scale_rff = 1.0 / math.sqrt(self.rff_features)
+            Q_feat = torch.exp(Q_proj) * scale_rff
+            K_feat = torch.exp(K_proj) * scale_rff
+
+            # Zero-out invalid keys.
+            if token_valid is not None:
+                kv_valid = token_valid[:, None, :, None].to(K_feat.dtype)
+                K_feat = K_feat * kv_valid
+                V_global_f = V_global.float() * kv_valid.to(V_global.dtype)
+            else:
+                V_global_f = V_global.float()
+
+            if self.is_decoder and not is_cross:
+                ctx_global = causal_kernel_linear_attention(
+                    Q_feat,
+                    K_feat,
+                    V_global_f,
+                    chunk_size=self.cfg.causal_chunk_size,
+                ).to(Q.dtype)
+            else:
+                KV = torch.einsum(&#34;bhnf,bhnd-&gt;bhfd&#34;, K_feat, V_global_f)
+                K_sum = K_feat.sum(dim=2)
+                denom = torch.einsum(&#34;bhnf,bhf-&gt;bhn&#34;, Q_feat, K_sum).unsqueeze(-1).clamp(min=1e-5)
+                ctx_global = torch.einsum(&#34;bhnf,bhfd-&gt;bhnd&#34;, Q_feat, KV) / denom
+                ctx_global = torch.nan_to_num(ctx_global, nan=0.0).to(Q.dtype)
+
+            # Adaptive gate (V5-FIX-10): blend local heads with global mean.
+            if self.blend_logits is not None:
+                global_mean = ctx_global.mean(dim=1, keepdim=True)  # (B, 1, N, D)
+                gate_local = torch.sigmoid(
+                    self.blend_logits.view(1, Hl, 1, 1) + self.gate_bias
+                )  # (1, Hl, 1, 1)
+                ctx_local = gate_local * ctx_local + (1.0 - gate_local) * global_mean.to(
+                    ctx_local.dtype
+                )
+            context = torch.cat([ctx_local, ctx_global], dim=1)
+
+            # Reshape to (B, N, H, D)
+            out = context.transpose(1, 2).contiguous().view(B, N, H * D)
+            attn_weights_out = None  # not available in split-head path
+
+        # --- head_mask (V5-FIX-01/19) ---
+        if head_mask is not None:
+            if head_mask.dim() == 1:
+                head_mask = head_mask.view(1, -1, 1, 1)
+            elif head_mask.dim() == 2:
+                head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)  # (B, H, 1, 1)
+            elif head_mask.dim() == 3:
+                head_mask = head_mask[:, :, :1].unsqueeze(-1)  # (B, H, 1, 1)
+            # Normalize to (B, H, 1, 1) whether `out` is (B, H, N, D) or (B, N, H, D).
+            if out.dim() == 4 and out.shape[1] == H:
+                out = out * head_mask.to(out.dtype)
+            else:
+                # out is (B, N, H*D) — reshape
+                out = out.view(B, N, H, D) * head_mask.to(out.dtype)
+                out = out.reshape(B, N, H * D)
+
+        # --- Ensure out is (B, N, H*D) ---
+        if out.dim() == 4:
+            if out.shape[1] == H:
+                out = out.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+            else:
+                out = out.contiguous().view(B, N, self.all_head_size)
+
+        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        # --- Output projection (skipped for nested encoders) ---
+        if self.is_nested_encoder:
+            output = out
+        else:
+            output = self.out_proj(out)
+        output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        return output.to(hidden_states.dtype), attn_weights_out
+
+    def get_ortho_loss(self) -&gt; torch.Tensor:
+        return torch.zeros((), device=self.out_proj.up.weight.device)</code></pre>
+</details>
+<div class="desc"><p>Every custom attention module must inherit from this.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.supports_causal"><code class="name">var <span class="ident">supports_causal</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.supports_gqa"><code class="name">var <span class="ident">supports_gqa</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.c_proj"><code class="name">prop <span class="ident">c_proj</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def c_proj(self) -&gt; FactorisedLinear:
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.dense"><code class="name">prop <span class="ident">dense</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def dense(self) -&gt; FactorisedLinear:
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.k_lin"><code class="name">prop <span class="ident">k_lin</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def k_lin(self) -&gt; FactorisedLinear:
+    return self.k_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.key"><code class="name">prop <span class="ident">key</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def key(self) -&gt; FactorisedLinear:
+    return self.k_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.o_proj"><code class="name">prop <span class="ident">o_proj</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def o_proj(self) -&gt; FactorisedLinear:
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.out_lin"><code class="name">prop <span class="ident">out_lin</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def out_lin(self) -&gt; FactorisedLinear:
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.q_lin"><code class="name">prop <span class="ident">q_lin</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def q_lin(self) -&gt; FactorisedLinear:
+    return self.q_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.query"><code class="name">prop <span class="ident">query</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def query(self) -&gt; FactorisedLinear:
+    return self.q_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.v_lin"><code class="name">prop <span class="ident">v_lin</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def v_lin(self) -&gt; FactorisedLinear:
+    return self.v_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.value"><code class="name">prop <span class="ident">value</span> : <a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def value(self) -&gt; FactorisedLinear:
+    return self.v_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.aegis_v5.AegisAttention.get_ortho_loss"><code class="name flex">
+<span>def <span class="ident">get_ortho_loss</span></span>(<span>self) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_ortho_loss(self) -&gt; torch.Tensor:
+    return torch.zeros((), device=self.out_proj.up.weight.device)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseAttention.copy_weights" href="../core/base.html#neuralops.core.base.BaseAttention.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.extra_repr" href="../core/base.html#neuralops.core.base.BaseAttention.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.forward" href="../core/base.html#neuralops.core.base.BaseAttention.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisConfigV5"><code class="flex name class">
+<span>class <span class="ident">AegisConfigV5</span></span>
+<span>(</span><span>svd_energy: float = 0.95,<br>min_rank: int = 4,<br>max_rank: int = 384,<br>num_local_heads: int = 8,<br>num_global_heads: int = 4,<br>local_window: int = 64,<br>softpick_temperature: float = 1.0,<br>rff_features: int = 128,<br>use_zero_sum_keys: bool = True,<br>use_adaptive_gate: bool = True,<br>gate_init_bias: float = 1.8,<br>dropout: float = 0.1,<br>is_decoder: bool = False,<br>rff_trainable: bool = False,<br>use_sdpa_fast_path: bool = True,<br>causal_chunk_size: int = 64)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class AegisConfigV5:
+    &#34;&#34;&#34;Configuration for AegisAttention V5.&#34;&#34;&#34;
+
+    svd_energy: float = 0.95
+    min_rank: int = 4
+    max_rank: int = 384
+    num_local_heads: int = 8
+    num_global_heads: int = 4
+    # V5-FIX-09: local_window = full width of the sliding window.
+    # Effective radius = local_window // 2 (queried keys are |q - k| &lt;= radius).
+    local_window: int = 64
+    softpick_temperature: float = 1.0
+    rff_features: int = 128
+    use_zero_sum_keys: bool = True
+    use_adaptive_gate: bool = True
+    gate_init_bias: float = 1.8
+    dropout: float = 0.1
+    is_decoder: bool = False
+    # V5-FIX-14: rff_proj as buffer (fixed random features). Set True to make trainable.
+    rff_trainable: bool = False
+    # SDPA fast path for very short sequences.
+    use_sdpa_fast_path: bool = True
+    # Chunk size for causal kernel linear attention (lower = less memory, slower).
+    causal_chunk_size: int = 64</code></pre>
+</details>
+<div class="desc"><p>Configuration for AegisAttention V5.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.aegis_v5.AegisConfigV5.causal_chunk_size"><code class="name">var <span class="ident">causal_chunk_size</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisConfigV5.dropout"><code class="name">var <span class="ident">dropout</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisConfigV5.gate_init_bias"><code class="name">var <span class="ident">gate_init_bias</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisConfigV5.is_decoder"><code class="name">var <span class="ident">is_decoder</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisConfigV5.local_window"><code class="name">var <span class="ident">local_window</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisConfigV5.max_rank"><code class="name">var <span class="ident">max_rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisConfigV5.min_rank"><code class="name">var <span class="ident">min_rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisConfigV5.num_global_heads"><code class="name">var <span class="ident">num_global_heads</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisConfigV5.num_local_heads"><code class="name">var <span class="ident">num_local_heads</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisConfigV5.rff_features"><code class="name">var <span class="ident">rff_features</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisConfigV5.rff_trainable"><code class="name">var <span class="ident">rff_trainable</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisConfigV5.softpick_temperature"><code class="name">var <span class="ident">softpick_temperature</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisConfigV5.svd_energy"><code class="name">var <span class="ident">svd_energy</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisConfigV5.use_adaptive_gate"><code class="name">var <span class="ident">use_adaptive_gate</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisConfigV5.use_sdpa_fast_path"><code class="name">var <span class="ident">use_sdpa_fast_path</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.AegisConfigV5.use_zero_sum_keys"><code class="name">var <span class="ident">use_zero_sum_keys</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.FactorisedLinear"><code class="flex name class">
+<span>class <span class="ident">FactorisedLinear</span></span>
+<span>(</span><span>in_features_or_weight: Any,<br>out_features_or_bias: Any | None = None,<br>energy: float = 0.95,<br>min_rank: int = 4,<br>max_rank: int = 384,<br>rank: int | None = None,<br>bias: bool = True,<br>lora_rank: int = 16,<br>lora_alpha: float = 32.0,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FactorisedLinear(nn.Module):
+    is_custom_attention: bool = True
+    r&#34;&#34;&#34;
+    SVD-factorized linear layer with energy-based rank selection and LoRA adapters.
+
+    Forward: y = up(down(x)) + (B @ A)(x) * (lora_alpha / lora_rank)
+    Base SVD weights (down, up) are frozen; only LoRA (A, B) is trainable.
+
+    Note on naming: `lora_A` has shape (rank, in) and `lora_B` has shape (out, rank),
+    matching the PEFT convention. This differs from AegisAttentionV6 which uses the
+    opposite convention.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        in_features_or_weight: Any,
+        out_features_or_bias: Any | None = None,
+        energy: float = 0.95,
+        min_rank: int = 4,
+        max_rank: int = 384,
+        rank: int | None = None,
+        bias: bool = True,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__()
+
+        self.energy = float(energy)
+        self.min_rank = int(min_rank)
+        self.max_rank = int(max_rank)
+        self.lora_rank = int(lora_rank)
+        self.lora_alpha = float(lora_alpha)
+        self.lora_scaling = (self.lora_alpha / self.lora_rank) if self.lora_rank &gt; 0 else 1.0
+
+        # --- Weight-tensor init path ---
+        if isinstance(in_features_or_weight, torch.Tensor):
+            W = in_features_or_weight
+            b = out_features_or_bias if isinstance(out_features_or_bias, torch.Tensor) else None
+            out_dim, in_dim = W.shape
+            self.in_features = in_dim
+            self.out_features = out_dim
+            self.rank = min(self.max_rank, max(self.min_rank, min(in_dim, out_dim)))
+            device = W.device
+            dtype = W.dtype
+
+            self.down = nn.Linear(in_dim, self.rank, bias=False, device=device, dtype=dtype)
+            self.up = nn.Linear(
+                self.rank,
+                out_dim,
+                bias=(b is not None or bias),
+                device=device,
+                dtype=dtype,
+            )
+            if self.lora_rank &gt; 0:
+                self.lora_A = nn.Parameter(
+                    torch.empty(self.lora_rank, in_dim, device=device, dtype=dtype)
+                )
+                self.lora_B = nn.Parameter(
+                    torch.zeros(out_dim, self.lora_rank, device=device, dtype=dtype)
+                )
+                # V5-FIX-12: consistent init with int path
+                nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+                nn.init.zeros_(self.lora_B)
+            else:
+                self.register_parameter(&#34;lora_A&#34;, None)
+                self.register_parameter(&#34;lora_B&#34;, None)
+
+            self.decompose_from_weight(W, b, self.energy)
+
+        # --- Dimension init path ---
+        else:
+            in_dim = int(in_features_or_weight)
+            out_dim = int(out_features_or_bias) if out_features_or_bias is not None else in_dim
+            self.in_features = in_dim
+            self.out_features = out_dim
+            self.rank = (
+                int(rank)
+                if rank is not None
+                else min(self.max_rank, max(self.min_rank, min(in_dim, out_dim)))
+            )
+
+            self.down = nn.Linear(in_dim, self.rank, bias=False)
+            self.up = nn.Linear(self.rank, out_dim, bias=bias)
+            if self.lora_rank &gt; 0:
+                self.lora_A = nn.Parameter(torch.empty(self.lora_rank, in_dim))
+                self.lora_B = nn.Parameter(torch.zeros(out_dim, self.lora_rank))
+            else:
+                self.register_parameter(&#34;lora_A&#34;, None)
+                self.register_parameter(&#34;lora_B&#34;, None)
+
+            self.reset_parameters()
+
+    def reset_parameters(self) -&gt; None:
+        nn.init.orthogonal_(self.down.weight)
+        nn.init.orthogonal_(self.up.weight)
+        if self.up.bias is not None:
+            nn.init.zeros_(self.up.bias)
+        if self.lora_rank &gt; 0:
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+
+    def decompose_from_weight(
+        self,
+        weight: torch.Tensor,
+        bias: torch.Tensor | None = None,
+        energy: float | None = None,
+    ) -&gt; None:
+        # V5-FIX-17: document the padding / repeat handling.
+        # If the source weight does not match (out_features, in_features), we
+        # either repeat (upsample), average (downsample), or zero-pad. The
+        # zero-pad case silently discards information for out-of-range entries,
+        # which is safe but lossy. Prefer exact shape matches whenever possible.
+        with torch.no_grad():
+            W = weight.float()
+            if W.shape[0] &lt; self.out_features and self.out_features % W.shape[0] == 0:
+                rep = self.out_features // W.shape[0]
+                W = W.repeat(rep, 1)
+                if bias is not None:
+                    bias = bias.repeat(rep)
+            elif W.shape[0] &gt; self.out_features and W.shape[0] % self.out_features == 0:
+                rep = W.shape[0] // self.out_features
+                W = W.view(self.out_features, rep, -1).mean(dim=1)
+                if bias is not None:
+                    bias = bias.view(self.out_features, rep).mean(dim=1)
+            elif W.shape[0] != self.out_features or W.shape[1] != self.in_features:
+                padded = torch.zeros(
+                    self.out_features, self.in_features, device=W.device, dtype=W.dtype
+                )
+                r = min(self.out_features, W.shape[0])
+                c = min(self.in_features, W.shape[1])
+                padded[:r, :c] = W[:r, :c]
+                W = padded
+
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+
+            target_energy = float(energy) if energy is not None else self.energy
+            total = (S**2).sum()
+            cum = torch.cumsum(S**2, dim=0) / (total + 1e-5)
+            calc_rank = int((cum &lt; target_energy).sum().item()) + 1
+
+            r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
+            r = max(1, r)
+
+            A = U[:, :r] * S[:r].unsqueeze(0)  # (out, r)
+            B = Vt[:r, :]  # (r, in)
+
+            self.down.weight.data.zero_()
+            self.up.weight.data.zero_()
+            self.down.weight.data[:r, :] = B.to(self.down.weight.dtype)
+            self.up.weight.data[:, :r] = A.to(self.up.weight.dtype)
+
+            if bias is not None and self.up.bias is not None:
+                n = min(len(self.up.bias), len(bias))
+                self.up.bias.data[:n].copy_(bias[:n].to(self.up.bias.dtype))
+            elif self.up.bias is not None:
+                self.up.bias.data.zero_()
+
+            self.freeze_base_weights()
+
+    def freeze_base_weights(self) -&gt; None:
+        self.down.weight.requires_grad = False
+        self.up.weight.requires_grad = False
+        if self.up.bias is not None:
+            self.up.bias.requires_grad = False
+        if self.lora_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            self.lora_A.requires_grad = True
+            self.lora_B.requires_grad = True
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        base_w = torch.matmul(self.up.weight, self.down.weight)
+        if self.lora_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            return base_w + (self.lora_B @ self.lora_A) * self.lora_scaling
+        return base_w
+
+    @property
+    def bias(self) -&gt; torch.Tensor | None:
+        return self.up.bias
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        out = self.up(self.down(x))
+        if self.lora_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        return out</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.aegis_v5.FactorisedLinear.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>SVD-factorized linear layer with energy-based rank selection and LoRA adapters.</p>
+<p>Forward: y = up(down(x)) + (B @ A)(x) * (lora_alpha / lora_rank)
+Base SVD weights (down, up) are frozen; only LoRA (A, B) is trainable.</p>
+<p>Note on naming: <code>lora_A</code> has shape (rank, in) and <code>lora_B</code> has shape (out, rank),
+matching the PEFT convention. This differs from AegisAttentionV6 which uses the
+opposite convention.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.aegis_v5.FactorisedLinear.bias"><code class="name">prop <span class="ident">bias</span> : torch.Tensor | None</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def bias(self) -&gt; torch.Tensor | None:
+    return self.up.bias</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.FactorisedLinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    base_w = torch.matmul(self.up.weight, self.down.weight)
+    if self.lora_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        return base_w + (self.lora_B @ self.lora_A) * self.lora_scaling
+    return base_w</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.aegis_v5.FactorisedLinear.decompose_from_weight"><code class="name flex">
+<span>def <span class="ident">decompose_from_weight</span></span>(<span>self,<br>weight: torch.Tensor,<br>bias: torch.Tensor | None = None,<br>energy: float | None = None) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def decompose_from_weight(
+    self,
+    weight: torch.Tensor,
+    bias: torch.Tensor | None = None,
+    energy: float | None = None,
+) -&gt; None:
+    # V5-FIX-17: document the padding / repeat handling.
+    # If the source weight does not match (out_features, in_features), we
+    # either repeat (upsample), average (downsample), or zero-pad. The
+    # zero-pad case silently discards information for out-of-range entries,
+    # which is safe but lossy. Prefer exact shape matches whenever possible.
+    with torch.no_grad():
+        W = weight.float()
+        if W.shape[0] &lt; self.out_features and self.out_features % W.shape[0] == 0:
+            rep = self.out_features // W.shape[0]
+            W = W.repeat(rep, 1)
+            if bias is not None:
+                bias = bias.repeat(rep)
+        elif W.shape[0] &gt; self.out_features and W.shape[0] % self.out_features == 0:
+            rep = W.shape[0] // self.out_features
+            W = W.view(self.out_features, rep, -1).mean(dim=1)
+            if bias is not None:
+                bias = bias.view(self.out_features, rep).mean(dim=1)
+        elif W.shape[0] != self.out_features or W.shape[1] != self.in_features:
+            padded = torch.zeros(
+                self.out_features, self.in_features, device=W.device, dtype=W.dtype
+            )
+            r = min(self.out_features, W.shape[0])
+            c = min(self.in_features, W.shape[1])
+            padded[:r, :c] = W[:r, :c]
+            W = padded
+
+        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+
+        target_energy = float(energy) if energy is not None else self.energy
+        total = (S**2).sum()
+        cum = torch.cumsum(S**2, dim=0) / (total + 1e-5)
+        calc_rank = int((cum &lt; target_energy).sum().item()) + 1
+
+        r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
+        r = max(1, r)
+
+        A = U[:, :r] * S[:r].unsqueeze(0)  # (out, r)
+        B = Vt[:r, :]  # (r, in)
+
+        self.down.weight.data.zero_()
+        self.up.weight.data.zero_()
+        self.down.weight.data[:r, :] = B.to(self.down.weight.dtype)
+        self.up.weight.data[:, :r] = A.to(self.up.weight.dtype)
+
+        if bias is not None and self.up.bias is not None:
+            n = min(len(self.up.bias), len(bias))
+            self.up.bias.data[:n].copy_(bias[:n].to(self.up.bias.dtype))
+        elif self.up.bias is not None:
+            self.up.bias.data.zero_()
+
+        self.freeze_base_weights()</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.FactorisedLinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    out = self.up(self.down(x))
+    if self.lora_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+    return out</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.FactorisedLinear.freeze_base_weights"><code class="name flex">
+<span>def <span class="ident">freeze_base_weights</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def freeze_base_weights(self) -&gt; None:
+    self.down.weight.requires_grad = False
+    self.up.weight.requires_grad = False
+    if self.up.bias is not None:
+        self.up.bias.requires_grad = False
+    if self.lora_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        self.lora_A.requires_grad = True
+        self.lora_B.requires_grad = True</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.aegis_v5.FactorisedLinear.reset_parameters"><code class="name flex">
+<span>def <span class="ident">reset_parameters</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_parameters(self) -&gt; None:
+    nn.init.orthogonal_(self.down.weight)
+    nn.init.orthogonal_(self.up.weight)
+    if self.up.bias is not None:
+        nn.init.zeros_(self.up.bias)
+    if self.lora_rank &gt; 0:
+        nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        nn.init.zeros_(self.lora_B)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.attentions" href="index.html">neuralops.attentions</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.attentions.aegis_v5.apply_rotary_pos_emb" href="#neuralops.attentions.aegis_v5.apply_rotary_pos_emb">apply_rotary_pos_emb</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.causal_kernel_linear_attention" href="#neuralops.attentions.aegis_v5.causal_kernel_linear_attention">causal_kernel_linear_attention</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.inject_aegis_into_distilbert" href="#neuralops.attentions.aegis_v5.inject_aegis_into_distilbert">inject_aegis_into_distilbert</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.inject_aegis_v5" href="#neuralops.attentions.aegis_v5.inject_aegis_v5">inject_aegis_v5</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.kernel_linear_attention" href="#neuralops.attentions.aegis_v5.kernel_linear_attention">kernel_linear_attention</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.local_window_attention" href="#neuralops.attentions.aegis_v5.local_window_attention">local_window_attention</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.temperature_softmax" href="#neuralops.attentions.aegis_v5.temperature_softmax">temperature_softmax</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.attentions.aegis_v5.AegisAttention" href="#neuralops.attentions.aegis_v5.AegisAttention">AegisAttention</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.c_proj" href="#neuralops.attentions.aegis_v5.AegisAttention.c_proj">c_proj</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.copy_weights" href="#neuralops.attentions.aegis_v5.AegisAttention.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.dense" href="#neuralops.attentions.aegis_v5.AegisAttention.dense">dense</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.forward" href="#neuralops.attentions.aegis_v5.AegisAttention.forward">forward</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.get_ortho_loss" href="#neuralops.attentions.aegis_v5.AegisAttention.get_ortho_loss">get_ortho_loss</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.is_custom_attention" href="#neuralops.attentions.aegis_v5.AegisAttention.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.k_lin" href="#neuralops.attentions.aegis_v5.AegisAttention.k_lin">k_lin</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.key" href="#neuralops.attentions.aegis_v5.AegisAttention.key">key</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.o_proj" href="#neuralops.attentions.aegis_v5.AegisAttention.o_proj">o_proj</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.out_lin" href="#neuralops.attentions.aegis_v5.AegisAttention.out_lin">out_lin</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.q_lin" href="#neuralops.attentions.aegis_v5.AegisAttention.q_lin">q_lin</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.query" href="#neuralops.attentions.aegis_v5.AegisAttention.query">query</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.supports_causal" href="#neuralops.attentions.aegis_v5.AegisAttention.supports_causal">supports_causal</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.supports_gqa" href="#neuralops.attentions.aegis_v5.AegisAttention.supports_gqa">supports_gqa</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.v_lin" href="#neuralops.attentions.aegis_v5.AegisAttention.v_lin">v_lin</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.value" href="#neuralops.attentions.aegis_v5.AegisAttention.value">value</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.aegis_v5.AegisAttention" href="#neuralops.attentions.aegis_v5.AegisAttention">AegisAttention</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.c_proj" href="#neuralops.attentions.aegis_v5.AegisAttention.c_proj">c_proj</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.dense" href="#neuralops.attentions.aegis_v5.AegisAttention.dense">dense</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.get_ortho_loss" href="#neuralops.attentions.aegis_v5.AegisAttention.get_ortho_loss">get_ortho_loss</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.is_custom_attention" href="#neuralops.attentions.aegis_v5.AegisAttention.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.k_lin" href="#neuralops.attentions.aegis_v5.AegisAttention.k_lin">k_lin</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.key" href="#neuralops.attentions.aegis_v5.AegisAttention.key">key</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.o_proj" href="#neuralops.attentions.aegis_v5.AegisAttention.o_proj">o_proj</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.out_lin" href="#neuralops.attentions.aegis_v5.AegisAttention.out_lin">out_lin</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.q_lin" href="#neuralops.attentions.aegis_v5.AegisAttention.q_lin">q_lin</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.query" href="#neuralops.attentions.aegis_v5.AegisAttention.query">query</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.supports_causal" href="#neuralops.attentions.aegis_v5.AegisAttention.supports_causal">supports_causal</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.supports_gqa" href="#neuralops.attentions.aegis_v5.AegisAttention.supports_gqa">supports_gqa</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.v_lin" href="#neuralops.attentions.aegis_v5.AegisAttention.v_lin">v_lin</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisAttention.value" href="#neuralops.attentions.aegis_v5.AegisAttention.value">value</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.aegis_v5.AegisConfigV5" href="#neuralops.attentions.aegis_v5.AegisConfigV5">AegisConfigV5</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.aegis_v5.AegisConfigV5.causal_chunk_size" href="#neuralops.attentions.aegis_v5.AegisConfigV5.causal_chunk_size">causal_chunk_size</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisConfigV5.dropout" href="#neuralops.attentions.aegis_v5.AegisConfigV5.dropout">dropout</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisConfigV5.gate_init_bias" href="#neuralops.attentions.aegis_v5.AegisConfigV5.gate_init_bias">gate_init_bias</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisConfigV5.is_decoder" href="#neuralops.attentions.aegis_v5.AegisConfigV5.is_decoder">is_decoder</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisConfigV5.local_window" href="#neuralops.attentions.aegis_v5.AegisConfigV5.local_window">local_window</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisConfigV5.max_rank" href="#neuralops.attentions.aegis_v5.AegisConfigV5.max_rank">max_rank</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisConfigV5.min_rank" href="#neuralops.attentions.aegis_v5.AegisConfigV5.min_rank">min_rank</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisConfigV5.num_global_heads" href="#neuralops.attentions.aegis_v5.AegisConfigV5.num_global_heads">num_global_heads</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisConfigV5.num_local_heads" href="#neuralops.attentions.aegis_v5.AegisConfigV5.num_local_heads">num_local_heads</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisConfigV5.rff_features" href="#neuralops.attentions.aegis_v5.AegisConfigV5.rff_features">rff_features</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisConfigV5.rff_trainable" href="#neuralops.attentions.aegis_v5.AegisConfigV5.rff_trainable">rff_trainable</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisConfigV5.softpick_temperature" href="#neuralops.attentions.aegis_v5.AegisConfigV5.softpick_temperature">softpick_temperature</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisConfigV5.svd_energy" href="#neuralops.attentions.aegis_v5.AegisConfigV5.svd_energy">svd_energy</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisConfigV5.use_adaptive_gate" href="#neuralops.attentions.aegis_v5.AegisConfigV5.use_adaptive_gate">use_adaptive_gate</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisConfigV5.use_sdpa_fast_path" href="#neuralops.attentions.aegis_v5.AegisConfigV5.use_sdpa_fast_path">use_sdpa_fast_path</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.AegisConfigV5.use_zero_sum_keys" href="#neuralops.attentions.aegis_v5.AegisConfigV5.use_zero_sum_keys">use_zero_sum_keys</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.aegis_v5.FactorisedLinear" href="#neuralops.attentions.aegis_v5.FactorisedLinear">FactorisedLinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.aegis_v5.FactorisedLinear.bias" href="#neuralops.attentions.aegis_v5.FactorisedLinear.bias">bias</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.FactorisedLinear.decompose_from_weight" href="#neuralops.attentions.aegis_v5.FactorisedLinear.decompose_from_weight">decompose_from_weight</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.FactorisedLinear.forward" href="#neuralops.attentions.aegis_v5.FactorisedLinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.FactorisedLinear.freeze_base_weights" href="#neuralops.attentions.aegis_v5.FactorisedLinear.freeze_base_weights">freeze_base_weights</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.FactorisedLinear.is_custom_attention" href="#neuralops.attentions.aegis_v5.FactorisedLinear.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.FactorisedLinear.reset_parameters" href="#neuralops.attentions.aegis_v5.FactorisedLinear.reset_parameters">reset_parameters</a></code></li>
+<li><code><a title="neuralops.attentions.aegis_v5.FactorisedLinear.weight" href="#neuralops.attentions.aegis_v5.FactorisedLinear.weight">weight</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

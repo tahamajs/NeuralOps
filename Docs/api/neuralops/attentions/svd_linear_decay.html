@@ -1,0 +1,2249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.attentions.svd_linear_decay API documentation</title>
+<meta name="description" content="SVD Linear Decay Gated Attention Alias.
+Maps to `framework.attentions.svd_linear_attention.SVDLinearAttention`.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.attentions.svd_linear_decay</code></h1>
+</header>
+<section id="section-intro">
+<p>SVD Linear Decay Gated Attention Alias.
+Maps to <code>framework.attentions.svd_linear_attention.SVDLinearAttention</code>.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.attentions.svd_linear_decay.inject_svd_linear_decay"><code class="name flex">
+<span>def <span class="ident">inject_svd_linear_decay</span></span>(<span>layer: Any = None,<br>model: Any = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: torch.nn.modules.module.Module | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def inject_svd_linear_decay(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    **kwargs: Any,
+):
+    target = layer if layer is not None else model
+    if target is None:
+        target = kwargs.get(&#34;model&#34;, kwargs.get(&#34;layer&#34;))
+    if target is None:
+        return None
+
+    cfg = model_config if model_config is not None else getattr(target, &#34;config&#34;, None)
+
+    # ---- Whole-model traversal ----
+    layer_list = None
+    if hasattr(target, &#34;distilbert&#34;) and hasattr(target.distilbert, &#34;transformer&#34;):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, &#34;roberta&#34;) and hasattr(target.roberta, &#34;encoder&#34;):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, &#34;transformer&#34;) and hasattr(target.transformer, &#34;h&#34;):
+        layer_list = target.transformer.h
+    elif hasattr(target, &#34;h&#34;) and isinstance(target.h, (torch.nn.ModuleList, list)):
+        layer_list = target.h
+    elif hasattr(target, &#34;model&#34;) and hasattr(target.model, &#34;layers&#34;):
+        layer_list = target.model.layers
+    elif hasattr(target, &#34;encoder&#34;) and hasattr(target.encoder, &#34;layer&#34;):
+        layer_list = target.encoder.layer
+    elif (
+        hasattr(target, &#34;bert&#34;)
+        and hasattr(target.bert, &#34;encoder&#34;)
+        and hasattr(target.bert.encoder, &#34;layer&#34;)
+    ):
+        layer_list = target.bert.encoder.layer
+    elif hasattr(target, &#34;layers&#34;) and isinstance(target.layers, (torch.nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_svd_linear_decay(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=(
+                    comp_config if &#34;comp_config&#34; in locals() or &#34;comp_config&#34; in kwargs else None
+                ),
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected &gt; 0 else None
+
+    # ---- Single-layer injection ----
+    layer = target
+
+    # ============================================================
+    # FIX-1: Discover source attention across all architecture variants
+    # ============================================================
+    src_attn = old_attn
+    src_attr_name: str | None = None
+    src_is_nested: bool = False
+
+    if src_attn is None:
+        for attr in (&#34;attn&#34;, &#34;attention&#34;, &#34;self_attn&#34;, &#34;self&#34;):
+            candidate = getattr(layer, attr, None)
+            if candidate is None:
+                continue
+
+            # FIX-4: idempotency guard
+            if (
+                isinstance(candidate, SVDLinearAttention)
+                or &#34;SVDLinear&#34; in candidate.__class__.__name__
+            ):
+                logger.debug(
+                    &#34;inject_svd_linear_decay: %s.%s is already SVDLinearAttention, skipping&#34;,
+                    type(layer).__name__,
+                    attr,
+                )
+                return None
+
+            # RoBERTa/BERT nested: layer.attention.self has .query
+            if hasattr(candidate, &#34;self&#34;) and hasattr(candidate.self, &#34;query&#34;):
+                src_attn = candidate.self
+                src_attr_name = attr
+                src_is_nested = True
+            else:
+                src_attn = candidate
+                src_attr_name = attr
+                src_is_nested = False
+            break
+
+    if src_attn is None:
+        # FIX-5: explicit error logging
+        logger.warning(
+            &#34;inject_svd_linear_decay: no source attention found on %s &#34;
+            &#34;(checked: attn, attention, self_attn, self)&#34;,
+            type(layer).__name__,
+        )
+        return None
+
+    # ============================================================
+    # Delegate to underlying injector with explicit old_attn
+    # (so it never has to guess the source attribute)
+    # ============================================================
+    kwargs[&#34;use_decay_gating&#34;] = True
+    try:
+        result = inject_svd_linear_attention(
+            model=model,
+            layer=layer,
+            model_config=model_config,
+            old_attn=src_attn,
+            **kwargs,
+        )
+    except Exception as e:
+        logger.error(&#34;inject_svd_linear_attention delegate failed: %s&#34;, e)
+        return None
+
+    if result is None:
+        return None
+
+    # ============================================================
+    # FIX-3: Fallback replacement for GPT-2 and other missed architectures
+    # ============================================================
+    if src_attr_name is not None and result is not layer:
+        if src_is_nested:
+            parent = getattr(layer, src_attr_name, None)
+            if parent is not None and getattr(parent, &#34;self&#34;, None) is src_attn:
+                parent.self = result
+                logger.debug(
+                    &#34;inject_svd_linear_decay: forced replacement of %s.%s.self&#34;,
+                    type(layer).__name__,
+                    src_attr_name,
+                )
+        else:
+            if getattr(layer, src_attr_name, None) is src_attn:
+                setattr(layer, src_attr_name, result)
+                logger.debug(
+                    &#34;inject_svd_linear_decay: forced replacement of %s.%s&#34;,
+                    type(layer).__name__,
+                    src_attr_name,
+                )
+
+    return result</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.svd_linear_decay.inject_svd_linear_decay_attention"><code class="name flex">
+<span>def <span class="ident">inject_svd_linear_decay_attention</span></span>(<span>layer: Any = None,<br>model: Any = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: torch.nn.modules.module.Module | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def inject_svd_linear_decay(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    **kwargs: Any,
+):
+    target = layer if layer is not None else model
+    if target is None:
+        target = kwargs.get(&#34;model&#34;, kwargs.get(&#34;layer&#34;))
+    if target is None:
+        return None
+
+    cfg = model_config if model_config is not None else getattr(target, &#34;config&#34;, None)
+
+    # ---- Whole-model traversal ----
+    layer_list = None
+    if hasattr(target, &#34;distilbert&#34;) and hasattr(target.distilbert, &#34;transformer&#34;):
+        layer_list = target.distilbert.transformer.layer
+    elif hasattr(target, &#34;roberta&#34;) and hasattr(target.roberta, &#34;encoder&#34;):
+        layer_list = target.roberta.encoder.layer
+    elif hasattr(target, &#34;transformer&#34;) and hasattr(target.transformer, &#34;h&#34;):
+        layer_list = target.transformer.h
+    elif hasattr(target, &#34;h&#34;) and isinstance(target.h, (torch.nn.ModuleList, list)):
+        layer_list = target.h
+    elif hasattr(target, &#34;model&#34;) and hasattr(target.model, &#34;layers&#34;):
+        layer_list = target.model.layers
+    elif hasattr(target, &#34;encoder&#34;) and hasattr(target.encoder, &#34;layer&#34;):
+        layer_list = target.encoder.layer
+    elif (
+        hasattr(target, &#34;bert&#34;)
+        and hasattr(target.bert, &#34;encoder&#34;)
+        and hasattr(target.bert.encoder, &#34;layer&#34;)
+    ):
+        layer_list = target.bert.encoder.layer
+    elif hasattr(target, &#34;layers&#34;) and isinstance(target.layers, (torch.nn.ModuleList, list)):
+        layer_list = target.layers
+
+    if layer_list is not None:
+        num_injected = 0
+        tot = len(layer_list)
+        for idx, lyr in enumerate(layer_list):
+            res = inject_svd_linear_decay(
+                layer=lyr,
+                model_config=cfg,
+                comp_config=(
+                    comp_config if &#34;comp_config&#34; in locals() or &#34;comp_config&#34; in kwargs else None
+                ),
+                layer_idx=idx,
+                total_layers=tot,
+                **kwargs,
+            )
+            if res is not None:
+                num_injected += 1
+        return target if num_injected &gt; 0 else None
+
+    # ---- Single-layer injection ----
+    layer = target
+
+    # ============================================================
+    # FIX-1: Discover source attention across all architecture variants
+    # ============================================================
+    src_attn = old_attn
+    src_attr_name: str | None = None
+    src_is_nested: bool = False
+
+    if src_attn is None:
+        for attr in (&#34;attn&#34;, &#34;attention&#34;, &#34;self_attn&#34;, &#34;self&#34;):
+            candidate = getattr(layer, attr, None)
+            if candidate is None:
+                continue
+
+            # FIX-4: idempotency guard
+            if (
+                isinstance(candidate, SVDLinearAttention)
+                or &#34;SVDLinear&#34; in candidate.__class__.__name__
+            ):
+                logger.debug(
+                    &#34;inject_svd_linear_decay: %s.%s is already SVDLinearAttention, skipping&#34;,
+                    type(layer).__name__,
+                    attr,
+                )
+                return None
+
+            # RoBERTa/BERT nested: layer.attention.self has .query
+            if hasattr(candidate, &#34;self&#34;) and hasattr(candidate.self, &#34;query&#34;):
+                src_attn = candidate.self
+                src_attr_name = attr
+                src_is_nested = True
+            else:
+                src_attn = candidate
+                src_attr_name = attr
+                src_is_nested = False
+            break
+
+    if src_attn is None:
+        # FIX-5: explicit error logging
+        logger.warning(
+            &#34;inject_svd_linear_decay: no source attention found on %s &#34;
+            &#34;(checked: attn, attention, self_attn, self)&#34;,
+            type(layer).__name__,
+        )
+        return None
+
+    # ============================================================
+    # Delegate to underlying injector with explicit old_attn
+    # (so it never has to guess the source attribute)
+    # ============================================================
+    kwargs[&#34;use_decay_gating&#34;] = True
+    try:
+        result = inject_svd_linear_attention(
+            model=model,
+            layer=layer,
+            model_config=model_config,
+            old_attn=src_attn,
+            **kwargs,
+        )
+    except Exception as e:
+        logger.error(&#34;inject_svd_linear_attention delegate failed: %s&#34;, e)
+        return None
+
+    if result is None:
+        return None
+
+    # ============================================================
+    # FIX-3: Fallback replacement for GPT-2 and other missed architectures
+    # ============================================================
+    if src_attr_name is not None and result is not layer:
+        if src_is_nested:
+            parent = getattr(layer, src_attr_name, None)
+            if parent is not None and getattr(parent, &#34;self&#34;, None) is src_attn:
+                parent.self = result
+                logger.debug(
+                    &#34;inject_svd_linear_decay: forced replacement of %s.%s.self&#34;,
+                    type(layer).__name__,
+                    src_attr_name,
+                )
+        else:
+            if getattr(layer, src_attr_name, None) is src_attn:
+                setattr(layer, src_attr_name, result)
+                logger.debug(
+                    &#34;inject_svd_linear_decay: forced replacement of %s.%s&#34;,
+                    type(layer).__name__,
+                    src_attr_name,
+                )
+
+    return result</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.attentions.svd_linear_decay.DecayGatedLinearAttention"><code class="flex name class">
+<span>class <span class="ident">DecayGatedLinearAttention</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;svd_linear_decay&#34;)
+@ATTENTION_REGISTRY.register(&#34;decay_gated_linear_attention&#34;)
+class DecayGatedLinearAttention(SVDLinearAttention):
+    r&#34;&#34;&#34;Decay Gated SVD Linear Attention.&#34;&#34;&#34;
+
+    is_custom_attention: bool = True
+
+    def __init__(self, *args, **kwargs):
+        kwargs[&#34;use_decay_gating&#34;] = True
+        super().__init__(*args, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Decay Gated SVD Linear Attention.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.attentions.svd_linear_attention.SVDLinearAttention" href="svd_linear_attention.html#neuralops.attentions.svd_linear_attention.SVDLinearAttention">SVDLinearAttention</a></li>
+<li><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.attentions.svd_linear_attention.SVDLinearAttention" href="svd_linear_attention.html#neuralops.attentions.svd_linear_attention.SVDLinearAttention">SVDLinearAttention</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.attentions.svd_linear_attention.SVDLinearAttention.copy_weights" href="svd_linear_attention.html#neuralops.attentions.svd_linear_attention.SVDLinearAttention.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_attention.SVDLinearAttention.extra_repr" href="../core/base.html#neuralops.core.base.BaseAttention.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_attention.SVDLinearAttention.forward" href="../core/base.html#neuralops.core.base.BaseAttention.forward">forward</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_attention.SVDLinearAttention.is_custom_attention" href="svd_linear_attention.html#neuralops.attentions.svd_linear_attention.SVDLinearAttention.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_attention.SVDLinearAttention.supports_bidirectional" href="svd_linear_attention.html#neuralops.attentions.svd_linear_attention.SVDLinearAttention.supports_bidirectional">supports_bidirectional</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_attention.SVDLinearAttention.supports_causal" href="svd_linear_attention.html#neuralops.attentions.svd_linear_attention.SVDLinearAttention.supports_causal">supports_causal</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_attention.SVDLinearAttention.supports_gqa" href="svd_linear_attention.html#neuralops.attentions.svd_linear_attention.SVDLinearAttention.supports_gqa">supports_gqa</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_attention.SVDLinearAttention.triton_kernel" href="svd_linear_attention.html#neuralops.attentions.svd_linear_attention.SVDLinearAttention.triton_kernel">triton_kernel</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.attentions.svd_linear_decay.SVDLinear"><code class="flex name class">
+<span>class <span class="ident">SVDLinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>rank: int,<br>bias: bool = True,<br>freeze_svd: bool = False,<br>lora_rank: int | None = 16,<br>lora_alpha: float = 32.0,<br>use_fused_kernel: bool = False,<br>use_rms_norm: bool = False,<br>eps: float = 1e-06,<br>dtype: torch.dtype = torch.float32,<br>device: torch.device | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class SVDLinear(nn.Module):
+    &#34;&#34;&#34;
+    Low-rank factorized linear layer:
+        y = (x V^T) U^T + b + (alpha / r_lora) (x A^T) B^T
+    &#34;&#34;&#34;
+
+    # SVDLA-FIX-12: this is NOT an attention module
+    is_custom_attention: bool = False
+
+    triton_kernel: str = &#34;low_rank&#34;
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int,
+        bias: bool = True,
+        freeze_svd: bool = False,
+        lora_rank: int | None = 16,
+        lora_alpha: float = 32.0,
+        use_fused_kernel: bool = False,
+        use_rms_norm: bool = False,
+        eps: float = 1e-6,
+        dtype: torch.dtype = torch.float32,
+        device: torch.device | None = None,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = int(in_features)
+        self.out_features = int(out_features)
+        self.rank = int(rank)
+        self.freeze_svd = bool(freeze_svd)
+        self.lora_rank = int(lora_rank) if lora_rank is not None else 16
+        self.lora_alpha = float(lora_alpha)
+        self.use_fused_kernel = bool(use_fused_kernel) and HAS_FUSED_KERNEL
+        self.use_rms_norm = bool(use_rms_norm)
+        self.eps = float(eps)
+
+        self.V = nn.Parameter(torch.empty(self.rank, self.in_features, dtype=dtype, device=device))
+        self.U = nn.Parameter(torch.empty(self.out_features, self.rank, dtype=dtype, device=device))
+
+        if self.use_rms_norm:
+            self.norm_weight = nn.Parameter(torch.ones(self.rank, dtype=dtype, device=device))
+        else:
+            self.register_parameter(&#34;norm_weight&#34;, None)
+
+        if self.freeze_svd:
+            self.U.requires_grad = False
+            self.V.requires_grad = False
+
+        if self.lora_rank &gt; 0:
+            self.lora_A = nn.Parameter(
+                torch.empty(self.lora_rank, self.in_features, dtype=dtype, device=device)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty(self.out_features, self.lora_rank, dtype=dtype, device=device)
+            )
+            self.lora_scaling = self.lora_alpha / max(1, self.lora_rank)
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+            self.lora_scaling = 1.0
+
+        if bias:
+            self.bias = nn.Parameter(torch.empty(self.out_features, dtype=dtype, device=device))
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+        self.reset_parameters()
+
+    def get_weight(self) -&gt; torch.Tensor:
+        W = torch.matmul(self.U, self.V)
+        if self.lora_A is not None and self.lora_B is not None:
+            W = W + torch.matmul(self.lora_B, self.lora_A) * self.lora_scaling
+        return W
+
+    def reset_parameters(self) -&gt; None:
+        for param in (self.U, self.V):
+            orig_dtype = param.data.dtype
+            if orig_dtype in (torch.float16, torch.bfloat16):
+                param.data = param.data.float()
+                nn.init.orthogonal_(param)
+                param.data = param.data.to(orig_dtype)
+            else:
+                nn.init.orthogonal_(param)
+        if self.norm_weight is not None:
+            nn.init.ones_(self.norm_weight)
+        if self.lora_A is not None and self.lora_B is not None:
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+        if self.bias is not None:
+            nn.init.zeros_(self.bias)
+
+    def _safe_triton_dispatch(self, x: torch.Tensor) -&gt; torch.Tensor:
+        &#34;&#34;&#34;
+        SVDLA-FIX-03: wrap triton_dispatch with try/except. On any failure
+        (including native-level crashes that Python can catch), fall back to
+        plain F.linear. This prevents STATUS_ACCESS_VIOLATION at high ranks.
+        &#34;&#34;&#34;
+        if _HAS_TRITON and triton_dispatch is not None:
+            try:
+                return triton_dispatch(self.triton_kernel, x, self.U, self.V, bias=self.bias)
+            except Exception as e:
+                logger.warning(
+                    &#34;SVDLinear: triton_dispatch(&#39;%s&#39;) failed (%s); falling back to F.linear.&#34;,
+                    self.triton_kernel,
+                    e,
+                )
+        # Fallback: plain F.linear
+        Vx = F.linear(x, self.V)
+        return F.linear(Vx, self.U, self.bias)
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        if self.use_fused_kernel and HAS_FUSED_KERNEL:
+            try:
+                out = fused_svd_linear(
+                    x=x,
+                    V=self.V,
+                    U=self.U,
+                    norm_weight=self.norm_weight if self.use_rms_norm else None,
+                    bias=self.bias,
+                    eps=self.eps,
+                    use_rms_norm=self.use_rms_norm,
+                )
+            except Exception as e:
+                logger.warning(&#34;SVDLinear: fused_svd_linear failed (%s); fallback.&#34;, e)
+                Vx = F.linear(x, self.V)
+                out = F.linear(Vx, self.U, self.bias)
+        elif not self.use_rms_norm:
+            out = self._safe_triton_dispatch(x)
+        else:
+            Vx = F.linear(x, self.V)
+            if self.norm_weight is not None:
+                norm = torch.rsqrt(Vx.pow(2).mean(-1, keepdim=True) + self.eps)
+                Vx = Vx * norm * self.norm_weight
+            out = F.linear(Vx, self.U, self.bias)
+
+        if self.lora_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            out = out + lora_out
+
+        return out
+
+    def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -&gt; None:
+        # SVDLA-FIX-15
+        with torch.no_grad():
+            r = min(self.rank, U_factor.size(1), V_factor.size(0))
+            if r &lt; self.rank:
+                logger.debug(
+                    &#34;SVDLinear: factor rank %d &lt; allocated rank %d; zeroing remainder.&#34;,
+                    r,
+                    self.rank,
+                )
+            out_d = min(self.out_features, U_factor.size(0))
+            in_d = min(self.in_features, V_factor.size(1))
+            self.U.data.zero_()
+            self.V.data.zero_()
+            self.U.data[:out_d, :r].copy_(U_factor[:out_d, :r].to(self.U.device, self.U.dtype))
+            self.V.data[:r, :in_d].copy_(V_factor[:r, :in_d].to(self.V.device, self.V.dtype))
+
+    def get_orthogonality_loss(self) -&gt; torch.Tensor:
+        U_orth = torch.matmul(self.U.t().contiguous(), self.U) - torch.eye(
+            self.rank, device=self.U.device, dtype=self.U.dtype
+        )
+        V_orth = torch.matmul(self.V, self.V.t().contiguous()) - torch.eye(
+            self.rank, device=self.V.device, dtype=self.V.dtype
+        )
+        return torch.norm(U_orth, p=&#34;fro&#34;) + torch.norm(V_orth, p=&#34;fro&#34;)</code></pre>
+</details>
+<div class="desc"><p>Low-rank factorized linear layer:
+y = (x V^T) U^T + b + (alpha / r_lora) (x A^T) B^T</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.svd_linear_decay.SVDLinear.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.svd_linear_decay.SVDLinear.triton_kernel"><code class="name">var <span class="ident">triton_kernel</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.svd_linear_decay.SVDLinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    if self.use_fused_kernel and HAS_FUSED_KERNEL:
+        try:
+            out = fused_svd_linear(
+                x=x,
+                V=self.V,
+                U=self.U,
+                norm_weight=self.norm_weight if self.use_rms_norm else None,
+                bias=self.bias,
+                eps=self.eps,
+                use_rms_norm=self.use_rms_norm,
+            )
+        except Exception as e:
+            logger.warning(&#34;SVDLinear: fused_svd_linear failed (%s); fallback.&#34;, e)
+            Vx = F.linear(x, self.V)
+            out = F.linear(Vx, self.U, self.bias)
+    elif not self.use_rms_norm:
+        out = self._safe_triton_dispatch(x)
+    else:
+        Vx = F.linear(x, self.V)
+        if self.norm_weight is not None:
+            norm = torch.rsqrt(Vx.pow(2).mean(-1, keepdim=True) + self.eps)
+            Vx = Vx * norm * self.norm_weight
+        out = F.linear(Vx, self.U, self.bias)
+
+    if self.lora_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        out = out + lora_out
+
+    return out</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+<dt id="neuralops.attentions.svd_linear_decay.SVDLinear.get_orthogonality_loss"><code class="name flex">
+<span>def <span class="ident">get_orthogonality_loss</span></span>(<span>self) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_orthogonality_loss(self) -&gt; torch.Tensor:
+    U_orth = torch.matmul(self.U.t().contiguous(), self.U) - torch.eye(
+        self.rank, device=self.U.device, dtype=self.U.dtype
+    )
+    V_orth = torch.matmul(self.V, self.V.t().contiguous()) - torch.eye(
+        self.rank, device=self.V.device, dtype=self.V.dtype
+    )
+    return torch.norm(U_orth, p=&#34;fro&#34;) + torch.norm(V_orth, p=&#34;fro&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.svd_linear_decay.SVDLinear.get_weight"><code class="name flex">
+<span>def <span class="ident">get_weight</span></span>(<span>self) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_weight(self) -&gt; torch.Tensor:
+    W = torch.matmul(self.U, self.V)
+    if self.lora_A is not None and self.lora_B is not None:
+        W = W + torch.matmul(self.lora_B, self.lora_A) * self.lora_scaling
+    return W</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.svd_linear_decay.SVDLinear.reset_parameters"><code class="name flex">
+<span>def <span class="ident">reset_parameters</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_parameters(self) -&gt; None:
+    for param in (self.U, self.V):
+        orig_dtype = param.data.dtype
+        if orig_dtype in (torch.float16, torch.bfloat16):
+            param.data = param.data.float()
+            nn.init.orthogonal_(param)
+            param.data = param.data.to(orig_dtype)
+        else:
+            nn.init.orthogonal_(param)
+    if self.norm_weight is not None:
+        nn.init.ones_(self.norm_weight)
+    if self.lora_A is not None and self.lora_B is not None:
+        nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        nn.init.zeros_(self.lora_B)
+    if self.bias is not None:
+        nn.init.zeros_(self.bias)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.svd_linear_decay.SVDLinear.set_low_rank_factors"><code class="name flex">
+<span>def <span class="ident">set_low_rank_factors</span></span>(<span>self, U_factor: torch.Tensor, V_factor: torch.Tensor) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -&gt; None:
+    # SVDLA-FIX-15
+    with torch.no_grad():
+        r = min(self.rank, U_factor.size(1), V_factor.size(0))
+        if r &lt; self.rank:
+            logger.debug(
+                &#34;SVDLinear: factor rank %d &lt; allocated rank %d; zeroing remainder.&#34;,
+                r,
+                self.rank,
+            )
+        out_d = min(self.out_features, U_factor.size(0))
+        in_d = min(self.in_features, V_factor.size(1))
+        self.U.data.zero_()
+        self.V.data.zero_()
+        self.U.data[:out_d, :r].copy_(U_factor[:out_d, :r].to(self.U.device, self.U.dtype))
+        self.V.data[:r, :in_d].copy_(V_factor[:r, :in_d].to(self.V.device, self.V.dtype))</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.attentions.svd_linear_decay.SVDLinearAttention"><code class="flex name class">
+<span>class <span class="ident">SVDLinearAttention</span></span>
+<span>(</span><span>config: Any | None = None,<br>old_attn: nn.Module | None = None,<br>rank: int | None = None,<br>mode: str = 'exact',<br>freeze_svd: bool = False,<br>lora_rank: int | None = 16,<br>lora_alpha: float = 32.0,<br>is_decoder: bool | None = None,<br>use_decay_gating: bool = False,<br>decay_activation: str = 'softplus',<br>decay_channel_wise: bool = False,<br>use_fused_kernel: bool = False,<br>use_rms_norm: bool = False,<br>chunk_size: int = 64,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(
+    &#34;svd_linear_attn&#34;,
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
+    &#34;svd_linear_attention&#34;,
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
+    &#34;svd_linear&#34;, supports_causal=True, supports_bidirectional=True, supports_gqa=True
+)
+class SVDLinearAttention(BaseAttention):
+    &#34;&#34;&#34;
+    SVD Factorized Linear Attention with optional exponential decay gating.
+    &#34;&#34;&#34;
+
+    supports_gqa: bool = True
+    supports_causal: bool = True
+    supports_bidirectional: bool = True
+    is_custom_attention: bool = True
+
+    triton_kernel: str = &#34;linear_attn&#34;
+
+    _VALID_MODES = {
+        &#34;exact&#34;,
+        &#34;linear&#34;,
+        &#34;decay_linear&#34;,
+        &#34;linear_decay&#34;,
+        &#34;decay&#34;,
+        &#34;gated_linear&#34;,
+    }
+
+    def __init__(
+        self,
+        config: Any | None = None,
+        old_attn: nn.Module | None = None,
+        rank: int | None = None,
+        mode: str = &#34;exact&#34;,
+        freeze_svd: bool = False,
+        lora_rank: int | None = 16,
+        lora_alpha: float = 32.0,
+        is_decoder: bool | None = None,
+        use_decay_gating: bool = False,
+        decay_activation: str = &#34;softplus&#34;,
+        decay_channel_wise: bool = False,
+        use_fused_kernel: bool = False,
+        use_rms_norm: bool = False,
+        chunk_size: int = 64,
+        **kwargs: Any,
+    ) -&gt; None:
+        actual_rank = rank or _cfg_get(config, &#34;svd_rank&#34;, _cfg_get(config, &#34;rank&#34;, 192))
+        super().__init__(config, rank=actual_rank)
+
+        # ---- dimension detection ----
+        detected_hidden = None
+        detected_heads = None
+        detected_head_dim = None
+        if old_attn is not None:
+            for attr in (&#34;all_head_size&#34;, &#34;embed_dim&#34;, &#34;hidden_size&#34;, &#34;d_model&#34;):
+                if hasattr(old_attn, attr):
+                    detected_hidden = getattr(old_attn, attr)
+                    break
+            if detected_hidden is None:
+                for proj_name in (&#34;query&#34;, &#34;q_proj&#34;, &#34;q_lin&#34;):
+                    if hasattr(old_attn, proj_name):
+                        proj = getattr(old_attn, proj_name)
+                        if hasattr(proj, &#34;in_features&#34;):
+                            detected_hidden = proj.in_features
+                            break
+                        if hasattr(proj, &#34;weight&#34;):
+                            detected_hidden = proj.weight.shape[-1]
+                            break
+            for attr in (&#34;num_attention_heads&#34;, &#34;num_heads&#34;, &#34;n_head&#34;, &#34;n_heads&#34;):
+                if hasattr(old_attn, attr):
+                    detected_heads = getattr(old_attn, attr)
+                    break
+            for attr in (&#34;attention_head_size&#34;, &#34;head_dim&#34;, &#34;d_head&#34;):
+                if hasattr(old_attn, attr):
+                    detected_head_dim = getattr(old_attn, attr)
+                    break
+
+        self.hidden_size = int(
+            _cfg_get(
+                config,
+                &#34;hidden_size&#34;,
+                kwargs.get(&#34;hidden_size&#34;, kwargs.get(&#34;embed_dim&#34;, detected_hidden or 768)),
+            )
+        )
+        self.num_heads = int(
+            _cfg_get(
+                config,
+                &#34;num_attention_heads&#34;,
+                _cfg_get(
+                    config,
+                    &#34;num_heads&#34;,
+                    kwargs.get(
+                        &#34;num_attention_heads&#34;,
+                        kwargs.get(&#34;num_heads&#34;, detected_heads or 12),
+                    ),
+                ),
+            )
+        )
+        self.head_dim = int(
+            _cfg_get(
+                config,
+                &#34;head_dim&#34;,
+                kwargs.get(
+                    &#34;head_dim&#34;,
+                    detected_head_dim or (self.hidden_size // max(1, self.num_heads)),
+                ),
+            )
+        )
+
+        cfg_kv = _cfg_get(config, &#34;num_key_value_heads&#34;, _cfg_get(config, &#34;num_kv_heads&#34;, None))
+        if cfg_kv is not None:
+            self.num_kv_heads = int(cfg_kv)
+        elif kwargs.get(&#34;num_kv_heads&#34;) is not None:
+            self.num_kv_heads = int(kwargs[&#34;num_kv_heads&#34;])
+        elif hasattr(old_attn, &#34;num_key_value_heads&#34;):
+            self.num_kv_heads = int(old_attn.num_key_value_heads)
+        else:
+            self.num_kv_heads = self.num_heads
+
+        self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
+        self.kv_repeat = self.num_heads // self.num_kv_heads
+        self.kv_head_size = self.num_kv_heads * self.head_dim
+        self.q_head_size = self.num_heads * self.head_dim
+        self.all_head_size = self.q_head_size
+
+        self.rank = actual_rank
+
+        # SVDLA-FIX-09: normalize mode
+        mode_norm = str(mode).strip().lower()
+        if mode_norm not in self._VALID_MODES:
+            logger.warning(&#34;SVDLinearAttention: unknown mode &#39;%s&#39;; defaulting to &#39;exact&#39;.&#34;, mode)
+            mode_norm = &#34;exact&#34;
+        self.mode = mode_norm
+
+        self.dropout_rate = float(
+            _cfg_get(
+                config,
+                &#34;attention_probs_dropout_prob&#34;,
+                _cfg_get(config, &#34;dropout&#34;, 0.1),
+            )
+        )
+        self.eps = float(_cfg_get(config, &#34;linear_attention_eps&#34;, 1e-6))
+        self.triton_kwargs = {&#34;phi&#34;: &#34;elu+1&#34;, &#34;eps&#34;: self.eps}
+
+        # ---- decoder detection ----
+        if is_decoder is not None:
+            self.is_decoder = bool(is_decoder)
+        else:
+            _mt = str(_cfg_get(config, &#34;model_type&#34;, &#34;&#34;) or &#34;&#34;).lower()
+            self.is_decoder = (
+                bool(_cfg_get(config, &#34;is_decoder&#34;, False))
+                or any(
+                    _mt.startswith(p)
+                    for p in (
+                        &#34;gpt&#34;,
+                        &#34;qwen&#34;,
+                        &#34;llama&#34;,
+                        &#34;mistral&#34;,
+                        &#34;falcon&#34;,
+                        &#34;bloom&#34;,
+                        &#34;opt&#34;,
+                        &#34;gemma&#34;,
+                        &#34;phi&#34;,
+                        &#34;olmo&#34;,
+                        &#34;mpt&#34;,
+                        &#34;stablelm&#34;,
+                    )
+                )
+                or (old_attn is not None and hasattr(old_attn, &#34;c_attn&#34;))
+            )
+
+        self.is_nested_encoder = False
+        self.lora_rank = int(lora_rank) if lora_rank is not None else 16
+        self.lora_alpha = float(lora_alpha)
+
+        self.use_decay_gating = bool(
+            use_decay_gating
+            or _cfg_get(config, &#34;use_decay_gating&#34;, False)
+            or (self.mode in (&#34;decay_linear&#34;, &#34;linear_decay&#34;, &#34;decay&#34;, &#34;gated_linear&#34;))
+        )
+        self.decay_activation = str(_cfg_get(config, &#34;decay_activation&#34;, decay_activation))
+        self.decay_channel_wise = bool(_cfg_get(config, &#34;decay_channel_wise&#34;, decay_channel_wise))
+        self.use_fused_kernel = bool(
+            use_fused_kernel or _cfg_get(config, &#34;use_fused_kernel&#34;, False)
+        )
+        self.use_rms_norm = bool(use_rms_norm or _cfg_get(config, &#34;use_rms_norm&#34;, False))
+        # SVDLA-FIX-07
+        self.chunk_size = max(8, int(_cfg_get(config, &#34;chunk_size&#34;, chunk_size)))
+
+        # ---- projections ----
+        self.q_proj = SVDLinear(
+            self.hidden_size,
+            self.q_head_size,
+            rank=self.rank,
+            freeze_svd=freeze_svd,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            use_fused_kernel=self.use_fused_kernel,
+            use_rms_norm=self.use_rms_norm,
+            eps=self.eps,
+        )
+        self.k_proj = SVDLinear(
+            self.hidden_size,
+            self.kv_head_size,
+            rank=self.rank,
+            freeze_svd=freeze_svd,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            use_fused_kernel=self.use_fused_kernel,
+            use_rms_norm=self.use_rms_norm,
+            eps=self.eps,
+        )
+        self.v_proj = SVDLinear(
+            self.hidden_size,
+            self.kv_head_size,
+            rank=self.rank,
+            freeze_svd=freeze_svd,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            use_fused_kernel=self.use_fused_kernel,
+            use_rms_norm=self.use_rms_norm,
+            eps=self.eps,
+        )
+        self.out_proj = SVDLinear(
+            self.q_head_size,
+            self.hidden_size,
+            rank=self.rank,
+            freeze_svd=freeze_svd,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            use_fused_kernel=self.use_fused_kernel,
+            use_rms_norm=self.use_rms_norm,
+            eps=self.eps,
+        )
+
+        gate_out_dim = self.all_head_size if self.decay_channel_wise else self.num_heads
+        self.decay_gate = nn.Linear(self.hidden_size, gate_out_dim, bias=True)
+        self.dropout = nn.Dropout(self.dropout_rate)
+        self._init_decay_gate()
+
+        # storage accounting
+        self._orig_storage_bytes = 0
+        self._comp_storage_bytes = 0
+
+        if old_attn is not None:
+            self.copy_weights(old_attn)
+
+    # ------------------------------------------------------------------
+    def _init_decay_gate(self) -&gt; None:
+        # SVDLA-FIX-08
+        with torch.no_grad():
+            nn.init.kaiming_uniform_(self.decay_gate.weight, a=math.sqrt(5))
+            log_min = math.log(1.0)
+            log_max = math.log(1024.0)
+            if self.decay_channel_wise:
+                decay_times = torch.exp(torch.linspace(log_min, log_max, self.num_heads))
+                decay_times = decay_times.repeat_interleave(self.head_dim)
+            else:
+                decay_times = torch.exp(torch.linspace(log_min, log_max, self.num_heads))
+            bias_target = -torch.log(decay_times)
+            bias_target = torch.clamp(bias_target, min=-20.0, max=20.0)
+            if bias_target.numel() == self.decay_gate.bias.numel():
+                self.decay_gate.bias.copy_(bias_target)
+            else:
+                logger.debug(
+                    &#34;SVDLinearAttention: decay_gate bias size mismatch (%d vs %d); zeroing.&#34;,
+                    bias_target.numel(),
+                    self.decay_gate.bias.numel(),
+                )
+                nn.init.zeros_(self.decay_gate.bias)
+
+    # ------------------------------------------------------------------
+    def _factorize_and_set(
+        self,
+        target_linear: SVDLinear,
+        weight: torch.Tensor,
+        bias: torch.Tensor | None = None,
+    ) -&gt; None:
+        with torch.no_grad():
+            dev = weight.device
+            try:
+                U, S, Vt = torch.linalg.svd(weight.detach().float(), full_matrices=False)
+            except Exception:
+                U, S, Vt = torch.linalg.svd(weight.detach().cpu().float(), full_matrices=False)
+                U = U.to(dev)
+                S = S.to(dev)
+                Vt = Vt.to(dev)
+
+            r = min(target_linear.rank, U.size(1), Vt.size(0))
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-5))
+            U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(device=dev, dtype=weight.dtype)
+            V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(device=dev, dtype=weight.dtype)
+            target_linear.set_low_rank_factors(U_r, V_r)
+            if bias is not None and target_linear.bias is not None:
+                target_linear.bias.data.copy_(
+                    bias.to(target_linear.bias.device, target_linear.bias.dtype)
+                )
+
+    # ------------------------------------------------------------------
+    def copy_weights(self, old_attn: nn.Module) -&gt; None:
+        &#34;&#34;&#34;
+        SVDLA-FIX-01: never raise. On missing projections, log a warning
+        and fall back to the randomly-initialized state.
+        &#34;&#34;&#34;
+        with torch.no_grad():
+            w_q, b_q = None, None
+            w_k, b_k = None, None
+            w_v, b_v = None, None
+            w_o, b_o = None, None
+
+            # nested encoder
+            if hasattr(old_attn, &#34;self&#34;) and hasattr(old_attn, &#34;output&#34;):
+                src = old_attn.self
+                self.is_nested_encoder = True
+                if hasattr(old_attn.output, &#34;dense&#34;):
+                    w_o = old_attn.output.dense.weight
+                    b_o = old_attn.output.dense.bias
+            else:
+                src = old_attn
+
+            # PyTorch MultiheadAttention
+            if hasattr(src, &#34;in_proj_weight&#34;) and src.in_proj_weight is not None:
+                in_proj_w = getattr(src, &#34;in_proj_weight&#34;, None)
+                in_proj_b = getattr(src, &#34;in_proj_bias&#34;, None)
+                if in_proj_w is not None:
+                    w_q, w_k, w_v = in_proj_w.chunk(3, dim=0)
+                if in_proj_b is not None:
+                    b_q, b_k, b_v = in_proj_b.chunk(3, dim=0)
+                if hasattr(src, &#34;out_proj&#34;):
+                    w_o, b_o = _unpack_weight_bias(src.out_proj)
+
+            # GPT-2 fused
+            elif hasattr(src, &#34;c_attn&#34;) and hasattr(src, &#34;c_proj&#34;):
+                c_attn_w, c_attn_b = _unpack_weight_bias(src.c_attn)
+                if c_attn_w is not None:
+                    if (
+                        c_attn_w.shape[0] == self.hidden_size
+                        and c_attn_w.shape[1] != self.hidden_size
+                    ):
+                        c_attn_w = c_attn_w.t().contiguous()
+                    q_dim = self.q_head_size
+                    k_dim = self.kv_head_size
+                    v_dim = self.kv_head_size
+                    w_q = c_attn_w[:q_dim, :]
+                    w_k = c_attn_w[q_dim : q_dim + k_dim, :]
+                    w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
+                    if c_attn_b is not None:
+                        b_q = c_attn_b[:q_dim]
+                        b_k = c_attn_b[q_dim : q_dim + k_dim]
+                        b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
+                out_w, out_b = _unpack_weight_bias(src.c_proj)
+                if (
+                    out_w is not None
+                    and out_w.shape[0] == self.hidden_size
+                    and out_w.shape[1] != self.hidden_size
+                ):
+                    out_w = out_w.t().contiguous()
+                w_o, b_o = out_w, out_b
+
+            # BERT / RoBERTa nested
+            elif hasattr(src, &#34;query&#34;) and hasattr(src, &#34;key&#34;) and hasattr(src, &#34;value&#34;):
+                w_q, b_q = _unpack_weight_bias(src.query)
+                w_k, b_k = _unpack_weight_bias(src.key)
+                w_v, b_v = _unpack_weight_bias(src.value)
+                if w_o is None:
+                    for attr in (&#34;dense&#34;, &#34;out_proj&#34;, &#34;o_proj&#34;):
+                        if hasattr(src, attr):
+                            w_o, b_o = _unpack_weight_bias(getattr(src, attr))
+                            break
+
+            # Qwen / LLaMA
+            elif hasattr(src, &#34;q_proj&#34;) and hasattr(src, &#34;k_proj&#34;) and hasattr(src, &#34;v_proj&#34;):
+                w_q, b_q = _unpack_weight_bias(src.q_proj)
+                w_k, b_k = _unpack_weight_bias(src.k_proj)
+                w_v, b_v = _unpack_weight_bias(src.v_proj)
+                if hasattr(src, &#34;o_proj&#34;):
+                    w_o, b_o = _unpack_weight_bias(src.o_proj)
+
+            # DistilBERT
+            elif hasattr(src, &#34;q_lin&#34;) and hasattr(src, &#34;k_lin&#34;) and hasattr(src, &#34;v_lin&#34;):
+                w_q, b_q = _unpack_weight_bias(src.q_lin)
+                w_k, b_k = _unpack_weight_bias(src.k_lin)
+                w_v, b_v = _unpack_weight_bias(src.v_lin)
+                if hasattr(src, &#34;out_lin&#34;):
+                    w_o, b_o = _unpack_weight_bias(src.out_lin)
+
+            # UniversalAdapter fallback
+            if w_q is None or w_k is None or w_v is None:
+                try:
+                    adapter = UniversalAdapter()
+                    if w_q is None:
+                        w_q, b_q = adapter.get_weight_bias(old_attn, &#34;q&#34;)
+                    if w_k is None:
+                        w_k, b_k = adapter.get_weight_bias(old_attn, &#34;k&#34;)
+                    if w_v is None:
+                        w_v, b_v = adapter.get_weight_bias(old_attn, &#34;v&#34;)
+                    if w_o is None and not self.is_nested_encoder:
+                        w_o, b_o = adapter.get_weight_bias(old_attn, &#34;o&#34;)
+                except Exception as e:
+                    logger.debug(&#34;UniversalAdapter fallback failed: %s&#34;, e)
+
+            # ---- missing check: WARN, do not raise ----
+            missing = []
+            if w_q is None:
+                missing.append(&#34;q&#34;)
+            if w_k is None:
+                missing.append(&#34;k&#34;)
+            if w_v is None:
+                missing.append(&#34;v&#34;)
+            if missing:
+                logger.warning(
+                    &#34;SVDLinearAttention: could not extract %s from %s; &#34;
+                    &#34;keeping random init. This will likely reduce quality.&#34;,
+                    missing,
+                    type(old_attn).__name__,
+                )
+                return  # early return; projections keep their SVD init
+
+            # ---- near-zero norm check: WARN only ----
+            for name, w in ((&#34;w_q&#34;, w_q), (&#34;w_k&#34;, w_k), (&#34;w_v&#34;, w_v)):
+                if w is None:
+                    continue
+                try:
+                    n = torch.norm(w.float(), p=&#34;fro&#34;).item()
+                except Exception:
+                    n = float(&#34;nan&#34;)
+                if not math.isfinite(n) or n &lt; 1e-4:
+                    logger.warning(
+                        &#34;SVDLinearAttention: %s has near-zero/NaN norm (%.2e); proceeding anyway.&#34;,
+                        name,
+                        n,
+                    )
+
+            # ---- factorize Q ----
+            try:
+                self._factorize_and_set(self.q_proj, w_q, b_q)
+            except Exception as e:
+                logger.warning(&#34;SVDLinearAttention: Q factorization failed (%s).&#34;, e)
+                return
+
+            # ---- factorize K and V with GQA adaptation ----
+            def _adapt_to_kv_size(weight, bias, mode=&#34;mean&#34;):
+                w, b = weight, bias
+                if w.shape[0] == self.kv_head_size:
+                    return w, b
+                if w.shape[0] &gt; self.kv_head_size and w.shape[0] % self.kv_head_size == 0:
+                    rep = w.shape[0] // self.kv_head_size
+                    if mode == &#34;slice&#34;:
+                        w = w.contiguous().view(self.num_kv_heads, rep, -1)[:, 0, :].contiguous()
+                        if b is not None:
+                            b = (
+                                b.contiguous()
+                                .view(self.num_kv_heads, rep, -1)[:, 0, :]
+                                .contiguous()
+                                .view(-1)
+                            )
+                    elif mode == &#34;first&#34;:
+                        w = w[: self.kv_head_size, :].contiguous()
+                        if b is not None:
+                            b = b[: self.kv_head_size].contiguous()
+                    else:  # mean
+                        w = w.contiguous().view(self.num_kv_heads, rep, -1).mean(dim=1)
+                        if b is not None:
+                            b = b.contiguous().view(self.num_kv_heads, rep, -1).mean(dim=1).view(-1)
+                elif w.shape[0] &lt; self.kv_head_size and self.kv_head_size % w.shape[0] == 0:
+                    rep = self.kv_head_size // w.shape[0]
+                    w = w.repeat(rep, 1)
+                    if b is not None:
+                        b = b.repeat(rep)
+                else:
+                    padded_w = torch.zeros(
+                        self.kv_head_size,
+                        w.shape[1],
+                        device=w.device,
+                        dtype=w.dtype,
+                    )
+                    min_rows = min(self.kv_head_size, w.shape[0])
+                    padded_w[:min_rows, :] = w[:min_rows, :]
+                    w = padded_w
+                    if b is not None:
+                        padded_b = torch.zeros(
+                            self.kv_head_size,
+                            device=b.device,
+                            dtype=b.dtype,
+                        )
+                        padded_b[:min_rows] = b[:min_rows]
+                        b = padded_b
+                return w, b
+
+            try:
+                w_k_a, b_k_a = _adapt_to_kv_size(w_k, b_k, mode=&#34;slice&#34;)
+                self._factorize_and_set(self.k_proj, w_k_a, b_k_a)
+            except Exception as e:
+                logger.warning(&#34;SVDLinearAttention: K factorization failed (%s).&#34;, e)
+                return
+
+            try:
+                w_v_a, b_v_a = _adapt_to_kv_size(w_v, b_v, mode=&#34;slice&#34;)
+                self._factorize_and_set(self.v_proj, w_v_a, b_v_a)
+            except Exception as e:
+                logger.warning(&#34;SVDLinearAttention: V factorization failed (%s).&#34;, e)
+                return
+
+            # ---- output projection ----
+            if w_o is not None and not self.is_nested_encoder:
+                try:
+                    n_o = torch.norm(w_o.float(), p=&#34;fro&#34;).item()
+                except Exception:
+                    n_o = float(&#34;nan&#34;)
+                if not math.isfinite(n_o) or n_o &lt; 1e-4:
+                    logger.warning(
+                        &#34;SVDLinearAttention: out_proj has near-zero/NaN norm (%.2e); &#34;
+                        &#34;proceeding anyway.&#34;,
+                        n_o,
+                    )
+                try:
+                    self._factorize_and_set(self.out_proj, w_o, b_o)
+                except Exception as e:
+                    logger.warning(&#34;SVDLinearAttention: out_proj factorization failed (%s).&#34;, e)
+
+    # ------------------------------------------------------------------
+    # Forward paths
+    # ------------------------------------------------------------------
+    def _forward_decay_gated_linear_kernel(
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        hidden_states: torch.Tensor,
+        mask: torch.Tensor | None = None,
+        past_state: tuple[torch.Tensor, torch.Tensor] | None = None,
+    ) -&gt; tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
+        B, H, N, D_k = q.shape
+        D_v = v.shape[-1]
+
+        compute_dtype = torch.bfloat16 if q.dtype == torch.bfloat16 else torch.float32
+
+        phi_q = F.elu(q.to(compute_dtype)) + 1.0
+        phi_k = F.elu(k.to(compute_dtype)) + 1.0
+        v_f = v.to(compute_dtype)
+
+        mask_expanded = _normalize_mask(mask, B, H, N, compute_dtype, q.device)
+        if mask_expanded is not None:
+            # mask_expanded shape (B, 1, N, 1) or (B, H, N, 1)
+            if mask_expanded.shape[1] == 1:
+                phi_k = phi_k * mask_expanded
+            else:
+                phi_k = phi_k * mask_expanded
+
+        # decay
+        decay_logits = self.decay_gate(hidden_states)
+        if self.decay_channel_wise:
+            decay_logits = decay_logits.view(B, N, H, D_k).permute(0, 2, 1, 3)
+            lambda_decay = (
+                compute_exponential_decay(decay_logits, activation=self.decay_activation)
+                .unsqueeze(-1)
+                .to(compute_dtype)
+            )
+        else:
+            decay_logits = decay_logits.permute(0, 2, 1).unsqueeze(-1).unsqueeze(-1)
+            lambda_decay = compute_exponential_decay(
+                decay_logits, activation=self.decay_activation
+            ).to(compute_dtype)
+
+        # padded positions do not decay
+        if mask_expanded is not None:
+            m_dec = mask_expanded
+            while m_dec.dim() &lt; lambda_decay.dim():
+                m_dec = m_dec.unsqueeze(-1)
+            lambda_decay = torch.where(m_dec &gt; 0, lambda_decay, torch.ones_like(lambda_decay))
+
+        # ---- chunked scan for non-channel-wise and no past state ----
+        if past_state is None and not self.decay_channel_wise:
+            chunk_size = self.chunk_size
+            num_chunks = (N + chunk_size - 1) // chunk_size
+            S_chunk = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=compute_dtype)
+            Z_chunk = torch.zeros(B, H, D_k, 1, device=q.device, dtype=compute_dtype)
+            outputs = []
+
+            for c in range(num_chunks):
+                start = c * chunk_size
+                end = min(start + chunk_size, N)
+                qc = phi_q[:, :, start:end, :]
+                kc = phi_k[:, :, start:end, :]
+                vc = v_f[:, :, start:end, :]
+                lam_c = lambda_decay[:, :, start:end].squeeze(-1).squeeze(-1)
+                Lc = end - start
+
+                # SVDLA-FIX-11: safe log with floor
+                log_lam_c = torch.log(torch.clamp(lam_c, min=1e-6, max=1.0))
+                log_gamma_c = torch.cumsum(log_lam_c, dim=-1)
+
+                log_M_intra = log_gamma_c.unsqueeze(-1) - log_gamma_c.unsqueeze(-2)
+                causal_bool = torch.tril(torch.ones(Lc, Lc, dtype=torch.bool, device=qc.device))
+                M_intra = torch.exp(torch.clamp(log_M_intra, max=0.0)) * causal_bool.unsqueeze(
+                    0
+                ).unsqueeze(0)
+
+                aff_intra = torch.matmul(qc, kc.transpose(-1, -2).contiguous()) * M_intra
+                num_intra = torch.matmul(aff_intra, vc)
+                den_intra = aff_intra.sum(dim=-1, keepdim=True)
+
+                decay_from_past = torch.exp(torch.clamp(log_gamma_c, max=0.0)).unsqueeze(-1)
+                num_inter = torch.matmul(qc, S_chunk) * decay_from_past
+                den_inter = torch.matmul(qc, Z_chunk) * decay_from_past
+
+                out_c = (num_intra + num_inter) / (den_intra + den_inter + self.eps)
+                outputs.append(out_c)
+
+                total_chunk_decay = torch.exp(
+                    torch.clamp(log_gamma_c[:, :, -1:], max=0.0)
+                ).unsqueeze(-1)
+                log_w_to_end = log_gamma_c[:, :, -1:] - log_gamma_c
+                w_to_end = torch.exp(torch.clamp(log_w_to_end, max=0.0)).unsqueeze(-1)
+                kc_w = kc * w_to_end
+
+                S_chunk = total_chunk_decay * S_chunk + torch.matmul(
+                    kc_w.transpose(-1, -2).contiguous(), vc
+                )
+                Z_chunk = (
+                    total_chunk_decay * Z_chunk
+                    + kc_w.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
+                )
+
+            context = torch.cat(outputs, dim=2).to(q.dtype)
+            return context, (S_chunk, Z_chunk)
+
+        # ---- sequential recurrent scan ----
+        if past_state is not None:
+            S, Z = past_state
+            S = S.to(device=q.device, dtype=compute_dtype)
+            Z = Z.to(device=q.device, dtype=compute_dtype)
+        else:
+            S = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=compute_dtype)
+            Z = torch.zeros(B, H, D_k, 1, device=q.device, dtype=compute_dtype)
+
+        outputs = []
+        for t in range(N):
+            qt = phi_q[:, :, t : t + 1, :]
+            kt = phi_k[:, :, t : t + 1, :]
+            vt = v_f[:, :, t : t + 1, :]
+            lam_t = lambda_decay[:, :, t]
+
+            kt_t = kt.transpose(-1, -2).contiguous()
+            kv_t = torch.matmul(kt_t, vt)
+            S = lam_t * S + kv_t
+            Z = lam_t * Z + kt_t
+
+            num_t = torch.matmul(qt, S)
+            den_t = torch.matmul(qt, Z) + self.eps
+            outputs.append(num_t / den_t)
+
+        context = torch.cat(outputs, dim=2).to(q.dtype)
+        return context, (S, Z)
+
+    def _forward_linear_kernel(
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        mask: torch.Tensor | None,
+    ) -&gt; torch.Tensor:
+        if mask is None and _HAS_TRITON and triton_dispatch is not None:
+            try:
+                return triton_dispatch(
+                    self.triton_kernel,
+                    q,
+                    k,
+                    v,
+                    is_causal=self.is_decoder,
+                    **self.triton_kwargs,
+                )
+            except Exception as e:
+                logger.warning(
+                    &#34;SVDLinearAttention: triton linear_attn failed (%s); fallback.&#34;,
+                    e,
+                )
+
+        B, H, N, D_k = q.shape
+        D_v = v.shape[-1]
+
+        phi_q = F.elu(q.float()) + 1.0
+        phi_k = F.elu(k.float()) + 1.0
+        v_f = v.float()
+
+        mask_expanded = _normalize_mask(mask, B, H, N, torch.float32, q.device)
+        if mask_expanded is not None:
+            phi_k = phi_k * mask_expanded
+
+        if self.is_decoder and N &gt; 1:
+            chunk_size = self.chunk_size
+            num_chunks = (N + chunk_size - 1) // chunk_size
+            S_chunk = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=torch.float32)
+            Z_chunk = torch.zeros(B, H, D_k, 1, device=q.device, dtype=torch.float32)
+            outputs = []
+
+            for c in range(num_chunks):
+                start = c * chunk_size
+                end = min(start + chunk_size, N)
+                qc = phi_q[:, :, start:end, :]
+                kc = phi_k[:, :, start:end, :]
+                vc = v_f[:, :, start:end, :]
+                Lc = end - start
+
+                aff_intra = torch.matmul(qc, kc.transpose(-1, -2).contiguous())
+                causal_intra = (
+                    torch.tril(torch.ones(Lc, Lc, device=q.device, dtype=torch.bool))
+                    .unsqueeze(0)
+                    .unsqueeze(0)
+                )
+                aff_intra = aff_intra * causal_intra
+                num_intra = torch.matmul(aff_intra, vc)
+                den_intra = aff_intra.sum(dim=-1, keepdim=True)
+
+                num_inter = torch.matmul(qc, S_chunk)
+                den_inter = torch.matmul(qc, Z_chunk)
+
+                out_c = (num_intra + num_inter) / (den_intra + den_inter + self.eps)
+                outputs.append(out_c)
+
+                S_chunk = S_chunk + torch.matmul(kc.transpose(-1, -2).contiguous(), vc)
+                Z_chunk = Z_chunk + kc.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
+
+            context = torch.cat(outputs, dim=2).to(q.dtype)
+        else:
+            kv_state = torch.matmul(phi_k.transpose(-1, -2).contiguous(), v_f)
+            numerator = torch.matmul(phi_q, kv_state)
+            k_sum = phi_k.sum(dim=-2, keepdim=True)
+            denominator = torch.matmul(phi_q, k_sum.transpose(-1, -2).contiguous()) + self.eps
+            context = (numerator / denominator).to(q.dtype)
+
+        return context
+
+    def _forward_exact_softmax(
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        mask: torch.Tensor | None,
+        is_cross: bool = False,
+        output_attentions: bool = False,
+    ) -&gt; tuple[torch.Tensor, torch.Tensor | None]:
+        is_causal_attn = self.is_decoder and not is_cross and q.shape[-2] &gt; 1
+
+        if not output_attentions:
+            try:
+                sdpa_mask = None
+                can_use_sdpa = False
+                if mask is None:
+                    can_use_sdpa = True
+                elif mask.dim() == 2 and not is_causal_attn:
+                    sdpa_mask = mask.bool().view(mask.shape[0], 1, 1, mask.shape[1])
+                    can_use_sdpa = True
+                elif mask.dim() == 4 and not is_causal_attn:
+                    sdpa_mask = mask.bool() if mask.dtype == torch.bool else mask
+                    can_use_sdpa = True
+
+                if can_use_sdpa:
+                    drop_p = self.dropout.p if self.training else 0.0
+                    context = F.scaled_dot_product_attention(
+                        q,
+                        k,
+                        v,
+                        attn_mask=sdpa_mask,
+                        dropout_p=drop_p,
+                        is_causal=is_causal_attn if sdpa_mask is None else False,
+                    )
+                    return context, None
+            except Exception:
+                pass
+
+        scale = 1.0 / math.sqrt(self.head_dim)
+        scores = torch.matmul(q.float(), k.float().transpose(-1, -2).contiguous()) * scale
+
+        if is_causal_attn:
+            causal_mask = (
+                torch.triu(
+                    torch.full(
+                        (q.shape[-2], k.shape[-2]),
+                        float(&#34;-inf&#34;),
+                        device=scores.device,
+                        dtype=torch.float32,
+                    ),
+                    diagonal=1,
+                )
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
+            scores = scores + causal_mask
+
+        if mask is not None:
+            scores = apply_attention_mask(scores, mask)
+
+        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+        probs = F.softmax(scores, dim=-1).to(q.dtype)
+        probs = self.dropout(probs)
+        context = torch.matmul(probs, v)
+        return context, probs
+
+    # ------------------------------------------------------------------
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        query = kwargs.get(&#34;query&#34;)
+        key = kwargs.get(&#34;key&#34;)
+        mask = kwargs.get(&#34;mask&#34;)
+        return_state = kwargs.get(&#34;return_state&#34;, False)
+        past_state = kwargs.get(&#34;past_state&#34;)
+
+        if return_state and (
+            not self.use_decay_gating
+            and self.mode not in (&#34;decay_linear&#34;, &#34;linear_decay&#34;, &#34;decay&#34;, &#34;gated_linear&#34;)
+        ):
+            raise ValueError(
+                f&#34;return_state=True is only supported in decay/gated modes, got mode=&#39;{self.mode}&#39;&#34;
+            )
+
+        if hidden_states is None:
+            hidden_states = query if query is not None else key
+        if attention_mask is None:
+            attention_mask = mask
+
+        B, N, _ = hidden_states.shape
+        is_cross = encoder_hidden_states is not None
+        kv_input = encoder_hidden_states if is_cross else hidden_states
+        kv_len = kv_input.shape[1]
+
+        # 1. projections
+        q = (
+            self.q_proj(hidden_states)
+            .view(B, N, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        k = (
+            self.k_proj(kv_input)
+            .view(B, kv_len, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_proj(kv_input)
+            .view(B, kv_len, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+
+        # 2. RoPE
+        if position_embeddings is None:
+            position_embeddings = kwargs.get(&#34;position_embeddings&#34;)
+        if position_embeddings is not None and not is_cross:
+            cos, sin = position_embeddings
+            q, k = apply_rotary_pos_emb(q, k, cos, sin)
+
+        # 3. GQA repeat
+        if self.num_kv_heads &lt; self.num_heads:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        eff_mask = encoder_attention_mask if is_cross else attention_mask
+        updated_state: tuple[torch.Tensor, torch.Tensor] | None = None
+
+        # 4. dispatch
+        if self.mode == &#34;exact&#34;:
+            context, attn_probs = self._forward_exact_softmax(
+                q,
+                k,
+                v,
+                eff_mask,
+                is_cross=is_cross,
+                output_attentions=bool(output_attentions),
+            )
+        elif self.use_decay_gating or self.mode in (
+            &#34;decay_linear&#34;,
+            &#34;linear_decay&#34;,
+            &#34;decay&#34;,
+            &#34;gated_linear&#34;,
+        ):
+            context, updated_state = self._forward_decay_gated_linear_kernel(
+                q=q,
+                k=k,
+                v=v,
+                hidden_states=hidden_states,
+                mask=eff_mask,
+                past_state=past_state,
+            )
+            attn_probs = None
+        else:
+            context = self._forward_linear_kernel(q, k, v, eff_mask)
+            attn_probs = None
+
+        # 5. head_mask
+        if head_mask is not None:
+            hm = head_mask
+            if hm.dim() == 1:
+                hm = hm.view(1, -1, 1, 1)
+            elif hm.dim() == 2:
+                hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
+            elif hm.dim() == 3:
+                hm = hm.unsqueeze(1)
+            hm = hm.to(context.dtype)
+            if attn_probs is not None:
+                attn_probs = attn_probs * hm
+            context = context * hm
+
+        # 6. head merge &amp; output projection
+        context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+        context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        if self.is_nested_encoder:
+            output = context
+        else:
+            output = self.out_proj(context)
+
+        # SVDLA-FIX-06: explicit error on shape mismatch
+        if output.shape[-1] != hidden_states.shape[-1]:
+            raise RuntimeError(
+                f&#34;SVDLinearAttention: output dim {output.shape[-1]} != &#34;
+                f&#34;input hidden dim {hidden_states.shape[-1]}&#34;
+            )
+
+        attn_out = attn_probs if output_attentions else None
+
+        if return_state and updated_state is not None:
+            return output, attn_out, updated_state
+        return output, attn_out
+
+    # ------------------------------------------------------------------
+    def step_recurrent(
+        self,
+        x_t: torch.Tensor,
+        past_state: tuple[torch.Tensor, torch.Tensor] | None = None,
+    ) -&gt; tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
+        if x_t.dim() == 2:
+            x_t = x_t.unsqueeze(1)
+
+        B = x_t.shape[0]
+        q = self.q_proj(x_t).view(B, 1, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = (
+            self.k_proj(x_t)
+            .view(B, 1, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_proj(x_t)
+            .view(B, 1, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+
+        if self.num_kv_heads &lt; self.num_heads:
+            k = repeat_kv(k, self.kv_repeat)
+            v = repeat_kv(v, self.kv_repeat)
+
+        phi_q = F.elu(q.float()) + 1.0
+        phi_k = F.elu(k.float()) + 1.0
+
+        _, H, _, D_k = q.shape
+        D_v = v.shape[-1]
+
+        if self.use_decay_gating:
+            decay_logits = self.decay_gate(x_t)
+            if self.decay_channel_wise:
+                decay_logits = decay_logits.view(B, 1, H, D_k).permute(0, 2, 1, 3)
+                lam_t = (
+                    compute_exponential_decay(decay_logits, activation=self.decay_activation)
+                    .unsqueeze(-1)
+                    .squeeze(2)
+                )
+            else:
+                decay_logits = decay_logits.permute(0, 2, 1).unsqueeze(-1).unsqueeze(-1)
+                lam_t = compute_exponential_decay(
+                    decay_logits, activation=self.decay_activation
+                ).squeeze(2)
+        else:
+            lam_t = torch.ones(B, H, 1, 1, device=x_t.device, dtype=torch.float32)
+
+        if past_state is not None:
+            S_prev, Z_prev = past_state
+        else:
+            S_prev = torch.zeros(B, H, D_k, D_v, device=x_t.device, dtype=torch.float32)
+            Z_prev = torch.zeros(B, H, D_k, 1, device=x_t.device, dtype=torch.float32)
+
+        kt_t = phi_k.transpose(-1, -2).contiguous()
+        kv_t = torch.matmul(kt_t, v.float())
+
+        S_t = lam_t * S_prev + kv_t
+        Z_t = lam_t * Z_prev + kt_t
+
+        num_t = torch.matmul(phi_q, S_t)
+        den_t = torch.matmul(phi_q, Z_t) + self.eps
+        y_t = num_t / den_t
+
+        context = y_t.transpose(1, 2).contiguous().view(B, 1, self.all_head_size).to(x_t.dtype)
+        if self.is_nested_encoder:
+            out_t = context
+        else:
+            out_t = self.out_proj(context)
+
+        if out_t.shape[-1] != x_t.shape[-1]:
+            raise RuntimeError(
+                f&#34;SVDLinearAttention.step_recurrent: output dim &#34;
+                f&#34;{out_t.shape[-1]} != input dim {x_t.shape[-1]}&#34;
+            )
+
+        return out_t, (S_t, Z_t)
+
+    def get_orthogonality_loss(self) -&gt; torch.Tensor:
+        return (
+            self.q_proj.get_orthogonality_loss()
+            + self.k_proj.get_orthogonality_loss()
+            + self.v_proj.get_orthogonality_loss()
+            + self.out_proj.get_orthogonality_loss()
+        )</code></pre>
+</details>
+<div class="desc"><p>SVD Factorized Linear Attention with optional exponential decay gating.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="neuralops.attentions.projection_factorized_attn.ProjectionFactorizedAttention" href="projection_factorized_attn.html#neuralops.attentions.projection_factorized_attn.ProjectionFactorizedAttention">ProjectionFactorizedAttention</a></li>
+<li><a title="neuralops.attentions.svd_linear_decay.DecayGatedLinearAttention" href="#neuralops.attentions.svd_linear_decay.DecayGatedLinearAttention">DecayGatedLinearAttention</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.svd_linear_decay.SVDLinearAttention.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.svd_linear_decay.SVDLinearAttention.supports_bidirectional"><code class="name">var <span class="ident">supports_bidirectional</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.svd_linear_decay.SVDLinearAttention.supports_causal"><code class="name">var <span class="ident">supports_causal</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.svd_linear_decay.SVDLinearAttention.supports_gqa"><code class="name">var <span class="ident">supports_gqa</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.svd_linear_decay.SVDLinearAttention.triton_kernel"><code class="name">var <span class="ident">triton_kernel</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.svd_linear_decay.SVDLinearAttention.copy_weights"><code class="name flex">
+<span>def <span class="ident">copy_weights</span></span>(<span>self, old_attn: nn.Module) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def copy_weights(self, old_attn: nn.Module) -&gt; None:
+    &#34;&#34;&#34;
+    SVDLA-FIX-01: never raise. On missing projections, log a warning
+    and fall back to the randomly-initialized state.
+    &#34;&#34;&#34;
+    with torch.no_grad():
+        w_q, b_q = None, None
+        w_k, b_k = None, None
+        w_v, b_v = None, None
+        w_o, b_o = None, None
+
+        # nested encoder
+        if hasattr(old_attn, &#34;self&#34;) and hasattr(old_attn, &#34;output&#34;):
+            src = old_attn.self
+            self.is_nested_encoder = True
+            if hasattr(old_attn.output, &#34;dense&#34;):
+                w_o = old_attn.output.dense.weight
+                b_o = old_attn.output.dense.bias
+        else:
+            src = old_attn
+
+        # PyTorch MultiheadAttention
+        if hasattr(src, &#34;in_proj_weight&#34;) and src.in_proj_weight is not None:
+            in_proj_w = getattr(src, &#34;in_proj_weight&#34;, None)
+            in_proj_b = getattr(src, &#34;in_proj_bias&#34;, None)
+            if in_proj_w is not None:
+                w_q, w_k, w_v = in_proj_w.chunk(3, dim=0)
+            if in_proj_b is not None:
+                b_q, b_k, b_v = in_proj_b.chunk(3, dim=0)
+            if hasattr(src, &#34;out_proj&#34;):
+                w_o, b_o = _unpack_weight_bias(src.out_proj)
+
+        # GPT-2 fused
+        elif hasattr(src, &#34;c_attn&#34;) and hasattr(src, &#34;c_proj&#34;):
+            c_attn_w, c_attn_b = _unpack_weight_bias(src.c_attn)
+            if c_attn_w is not None:
+                if (
+                    c_attn_w.shape[0] == self.hidden_size
+                    and c_attn_w.shape[1] != self.hidden_size
+                ):
+                    c_attn_w = c_attn_w.t().contiguous()
+                q_dim = self.q_head_size
+                k_dim = self.kv_head_size
+                v_dim = self.kv_head_size
+                w_q = c_attn_w[:q_dim, :]
+                w_k = c_attn_w[q_dim : q_dim + k_dim, :]
+                w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
+                if c_attn_b is not None:
+                    b_q = c_attn_b[:q_dim]
+                    b_k = c_attn_b[q_dim : q_dim + k_dim]
+                    b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
+            out_w, out_b = _unpack_weight_bias(src.c_proj)
+            if (
+                out_w is not None
+                and out_w.shape[0] == self.hidden_size
+                and out_w.shape[1] != self.hidden_size
+            ):
+                out_w = out_w.t().contiguous()
+            w_o, b_o = out_w, out_b
+
+        # BERT / RoBERTa nested
+        elif hasattr(src, &#34;query&#34;) and hasattr(src, &#34;key&#34;) and hasattr(src, &#34;value&#34;):
+            w_q, b_q = _unpack_weight_bias(src.query)
+            w_k, b_k = _unpack_weight_bias(src.key)
+            w_v, b_v = _unpack_weight_bias(src.value)
+            if w_o is None:
+                for attr in (&#34;dense&#34;, &#34;out_proj&#34;, &#34;o_proj&#34;):
+                    if hasattr(src, attr):
+                        w_o, b_o = _unpack_weight_bias(getattr(src, attr))
+                        break
+
+        # Qwen / LLaMA
+        elif hasattr(src, &#34;q_proj&#34;) and hasattr(src, &#34;k_proj&#34;) and hasattr(src, &#34;v_proj&#34;):
+            w_q, b_q = _unpack_weight_bias(src.q_proj)
+            w_k, b_k = _unpack_weight_bias(src.k_proj)
+            w_v, b_v = _unpack_weight_bias(src.v_proj)
+            if hasattr(src, &#34;o_proj&#34;):
+                w_o, b_o = _unpack_weight_bias(src.o_proj)
+
+        # DistilBERT
+        elif hasattr(src, &#34;q_lin&#34;) and hasattr(src, &#34;k_lin&#34;) and hasattr(src, &#34;v_lin&#34;):
+            w_q, b_q = _unpack_weight_bias(src.q_lin)
+            w_k, b_k = _unpack_weight_bias(src.k_lin)
+            w_v, b_v = _unpack_weight_bias(src.v_lin)
+            if hasattr(src, &#34;out_lin&#34;):
+                w_o, b_o = _unpack_weight_bias(src.out_lin)
+
+        # UniversalAdapter fallback
+        if w_q is None or w_k is None or w_v is None:
+            try:
+                adapter = UniversalAdapter()
+                if w_q is None:
+                    w_q, b_q = adapter.get_weight_bias(old_attn, &#34;q&#34;)
+                if w_k is None:
+                    w_k, b_k = adapter.get_weight_bias(old_attn, &#34;k&#34;)
+                if w_v is None:
+                    w_v, b_v = adapter.get_weight_bias(old_attn, &#34;v&#34;)
+                if w_o is None and not self.is_nested_encoder:
+                    w_o, b_o = adapter.get_weight_bias(old_attn, &#34;o&#34;)
+            except Exception as e:
+                logger.debug(&#34;UniversalAdapter fallback failed: %s&#34;, e)
+
+        # ---- missing check: WARN, do not raise ----
+        missing = []
+        if w_q is None:
+            missing.append(&#34;q&#34;)
+        if w_k is None:
+            missing.append(&#34;k&#34;)
+        if w_v is None:
+            missing.append(&#34;v&#34;)
+        if missing:
+            logger.warning(
+                &#34;SVDLinearAttention: could not extract %s from %s; &#34;
+                &#34;keeping random init. This will likely reduce quality.&#34;,
+                missing,
+                type(old_attn).__name__,
+            )
+            return  # early return; projections keep their SVD init
+
+        # ---- near-zero norm check: WARN only ----
+        for name, w in ((&#34;w_q&#34;, w_q), (&#34;w_k&#34;, w_k), (&#34;w_v&#34;, w_v)):
+            if w is None:
+                continue
+            try:
+                n = torch.norm(w.float(), p=&#34;fro&#34;).item()
+            except Exception:
+                n = float(&#34;nan&#34;)
+            if not math.isfinite(n) or n &lt; 1e-4:
+                logger.warning(
+                    &#34;SVDLinearAttention: %s has near-zero/NaN norm (%.2e); proceeding anyway.&#34;,
+                    name,
+                    n,
+                )
+
+        # ---- factorize Q ----
+        try:
+            self._factorize_and_set(self.q_proj, w_q, b_q)
+        except Exception as e:
+            logger.warning(&#34;SVDLinearAttention: Q factorization failed (%s).&#34;, e)
+            return
+
+        # ---- factorize K and V with GQA adaptation ----
+        def _adapt_to_kv_size(weight, bias, mode=&#34;mean&#34;):
+            w, b = weight, bias
+            if w.shape[0] == self.kv_head_size:
+                return w, b
+            if w.shape[0] &gt; self.kv_head_size and w.shape[0] % self.kv_head_size == 0:
+                rep = w.shape[0] // self.kv_head_size
+                if mode == &#34;slice&#34;:
+                    w = w.contiguous().view(self.num_kv_heads, rep, -1)[:, 0, :].contiguous()
+                    if b is not None:
+                        b = (
+                            b.contiguous()
+                            .view(self.num_kv_heads, rep, -1)[:, 0, :]
+                            .contiguous()
+                            .view(-1)
+                        )
+                elif mode == &#34;first&#34;:
+                    w = w[: self.kv_head_size, :].contiguous()
+                    if b is not None:
+                        b = b[: self.kv_head_size].contiguous()
+                else:  # mean
+                    w = w.contiguous().view(self.num_kv_heads, rep, -1).mean(dim=1)
+                    if b is not None:
+                        b = b.contiguous().view(self.num_kv_heads, rep, -1).mean(dim=1).view(-1)
+            elif w.shape[0] &lt; self.kv_head_size and self.kv_head_size % w.shape[0] == 0:
+                rep = self.kv_head_size // w.shape[0]
+                w = w.repeat(rep, 1)
+                if b is not None:
+                    b = b.repeat(rep)
+            else:
+                padded_w = torch.zeros(
+                    self.kv_head_size,
+                    w.shape[1],
+                    device=w.device,
+                    dtype=w.dtype,
+                )
+                min_rows = min(self.kv_head_size, w.shape[0])
+                padded_w[:min_rows, :] = w[:min_rows, :]
+                w = padded_w
+                if b is not None:
+                    padded_b = torch.zeros(
+                        self.kv_head_size,
+                        device=b.device,
+                        dtype=b.dtype,
+                    )
+                    padded_b[:min_rows] = b[:min_rows]
+                    b = padded_b
+            return w, b
+
+        try:
+            w_k_a, b_k_a = _adapt_to_kv_size(w_k, b_k, mode=&#34;slice&#34;)
+            self._factorize_and_set(self.k_proj, w_k_a, b_k_a)
+        except Exception as e:
+            logger.warning(&#34;SVDLinearAttention: K factorization failed (%s).&#34;, e)
+            return
+
+        try:
+            w_v_a, b_v_a = _adapt_to_kv_size(w_v, b_v, mode=&#34;slice&#34;)
+            self._factorize_and_set(self.v_proj, w_v_a, b_v_a)
+        except Exception as e:
+            logger.warning(&#34;SVDLinearAttention: V factorization failed (%s).&#34;, e)
+            return
+
+        # ---- output projection ----
+        if w_o is not None and not self.is_nested_encoder:
+            try:
+                n_o = torch.norm(w_o.float(), p=&#34;fro&#34;).item()
+            except Exception:
+                n_o = float(&#34;nan&#34;)
+            if not math.isfinite(n_o) or n_o &lt; 1e-4:
+                logger.warning(
+                    &#34;SVDLinearAttention: out_proj has near-zero/NaN norm (%.2e); &#34;
+                    &#34;proceeding anyway.&#34;,
+                    n_o,
+                )
+            try:
+                self._factorize_and_set(self.out_proj, w_o, b_o)
+            except Exception as e:
+                logger.warning(&#34;SVDLinearAttention: out_proj factorization failed (%s).&#34;, e)</code></pre>
+</details>
+<div class="desc"><p>SVDLA-FIX-01: never raise. On missing projections, log a warning
+and fall back to the randomly-initialized state.</p></div>
+</dd>
+<dt id="neuralops.attentions.svd_linear_decay.SVDLinearAttention.get_orthogonality_loss"><code class="name flex">
+<span>def <span class="ident">get_orthogonality_loss</span></span>(<span>self) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_orthogonality_loss(self) -&gt; torch.Tensor:
+    return (
+        self.q_proj.get_orthogonality_loss()
+        + self.k_proj.get_orthogonality_loss()
+        + self.v_proj.get_orthogonality_loss()
+        + self.out_proj.get_orthogonality_loss()
+    )</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.svd_linear_decay.SVDLinearAttention.step_recurrent"><code class="name flex">
+<span>def <span class="ident">step_recurrent</span></span>(<span>self,<br>x_t: torch.Tensor,<br>past_state: tuple[torch.Tensor, torch.Tensor] | None = None) ‑> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def step_recurrent(
+    self,
+    x_t: torch.Tensor,
+    past_state: tuple[torch.Tensor, torch.Tensor] | None = None,
+) -&gt; tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
+    if x_t.dim() == 2:
+        x_t = x_t.unsqueeze(1)
+
+    B = x_t.shape[0]
+    q = self.q_proj(x_t).view(B, 1, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+    k = (
+        self.k_proj(x_t)
+        .view(B, 1, self.num_kv_heads, self.head_dim)
+        .transpose(1, 2)
+        .contiguous()
+    )
+    v = (
+        self.v_proj(x_t)
+        .view(B, 1, self.num_kv_heads, self.head_dim)
+        .transpose(1, 2)
+        .contiguous()
+    )
+
+    if self.num_kv_heads &lt; self.num_heads:
+        k = repeat_kv(k, self.kv_repeat)
+        v = repeat_kv(v, self.kv_repeat)
+
+    phi_q = F.elu(q.float()) + 1.0
+    phi_k = F.elu(k.float()) + 1.0
+
+    _, H, _, D_k = q.shape
+    D_v = v.shape[-1]
+
+    if self.use_decay_gating:
+        decay_logits = self.decay_gate(x_t)
+        if self.decay_channel_wise:
+            decay_logits = decay_logits.view(B, 1, H, D_k).permute(0, 2, 1, 3)
+            lam_t = (
+                compute_exponential_decay(decay_logits, activation=self.decay_activation)
+                .unsqueeze(-1)
+                .squeeze(2)
+            )
+        else:
+            decay_logits = decay_logits.permute(0, 2, 1).unsqueeze(-1).unsqueeze(-1)
+            lam_t = compute_exponential_decay(
+                decay_logits, activation=self.decay_activation
+            ).squeeze(2)
+    else:
+        lam_t = torch.ones(B, H, 1, 1, device=x_t.device, dtype=torch.float32)
+
+    if past_state is not None:
+        S_prev, Z_prev = past_state
+    else:
+        S_prev = torch.zeros(B, H, D_k, D_v, device=x_t.device, dtype=torch.float32)
+        Z_prev = torch.zeros(B, H, D_k, 1, device=x_t.device, dtype=torch.float32)
+
+    kt_t = phi_k.transpose(-1, -2).contiguous()
+    kv_t = torch.matmul(kt_t, v.float())
+
+    S_t = lam_t * S_prev + kv_t
+    Z_t = lam_t * Z_prev + kt_t
+
+    num_t = torch.matmul(phi_q, S_t)
+    den_t = torch.matmul(phi_q, Z_t) + self.eps
+    y_t = num_t / den_t
+
+    context = y_t.transpose(1, 2).contiguous().view(B, 1, self.all_head_size).to(x_t.dtype)
+    if self.is_nested_encoder:
+        out_t = context
+    else:
+        out_t = self.out_proj(context)
+
+    if out_t.shape[-1] != x_t.shape[-1]:
+        raise RuntimeError(
+            f&#34;SVDLinearAttention.step_recurrent: output dim &#34;
+            f&#34;{out_t.shape[-1]} != input dim {x_t.shape[-1]}&#34;
+        )
+
+    return out_t, (S_t, Z_t)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseAttention" href="../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseAttention.extra_repr" href="../core/base.html#neuralops.core.base.BaseAttention.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.forward" href="../core/base.html#neuralops.core.base.BaseAttention.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.attentions" href="index.html">neuralops.attentions</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.attentions.svd_linear_decay.inject_svd_linear_decay" href="#neuralops.attentions.svd_linear_decay.inject_svd_linear_decay">inject_svd_linear_decay</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_decay.inject_svd_linear_decay_attention" href="#neuralops.attentions.svd_linear_decay.inject_svd_linear_decay_attention">inject_svd_linear_decay_attention</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.attentions.svd_linear_decay.DecayGatedLinearAttention" href="#neuralops.attentions.svd_linear_decay.DecayGatedLinearAttention">DecayGatedLinearAttention</a></code></h4>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.svd_linear_decay.SVDLinear" href="#neuralops.attentions.svd_linear_decay.SVDLinear">SVDLinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.svd_linear_decay.SVDLinear.forward" href="#neuralops.attentions.svd_linear_decay.SVDLinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_decay.SVDLinear.get_orthogonality_loss" href="#neuralops.attentions.svd_linear_decay.SVDLinear.get_orthogonality_loss">get_orthogonality_loss</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_decay.SVDLinear.get_weight" href="#neuralops.attentions.svd_linear_decay.SVDLinear.get_weight">get_weight</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_decay.SVDLinear.is_custom_attention" href="#neuralops.attentions.svd_linear_decay.SVDLinear.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_decay.SVDLinear.reset_parameters" href="#neuralops.attentions.svd_linear_decay.SVDLinear.reset_parameters">reset_parameters</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_decay.SVDLinear.set_low_rank_factors" href="#neuralops.attentions.svd_linear_decay.SVDLinear.set_low_rank_factors">set_low_rank_factors</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_decay.SVDLinear.triton_kernel" href="#neuralops.attentions.svd_linear_decay.SVDLinear.triton_kernel">triton_kernel</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.svd_linear_decay.SVDLinearAttention" href="#neuralops.attentions.svd_linear_decay.SVDLinearAttention">SVDLinearAttention</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.svd_linear_decay.SVDLinearAttention.copy_weights" href="#neuralops.attentions.svd_linear_decay.SVDLinearAttention.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_decay.SVDLinearAttention.get_orthogonality_loss" href="#neuralops.attentions.svd_linear_decay.SVDLinearAttention.get_orthogonality_loss">get_orthogonality_loss</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_decay.SVDLinearAttention.is_custom_attention" href="#neuralops.attentions.svd_linear_decay.SVDLinearAttention.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_decay.SVDLinearAttention.step_recurrent" href="#neuralops.attentions.svd_linear_decay.SVDLinearAttention.step_recurrent">step_recurrent</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_decay.SVDLinearAttention.supports_bidirectional" href="#neuralops.attentions.svd_linear_decay.SVDLinearAttention.supports_bidirectional">supports_bidirectional</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_decay.SVDLinearAttention.supports_causal" href="#neuralops.attentions.svd_linear_decay.SVDLinearAttention.supports_causal">supports_causal</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_decay.SVDLinearAttention.supports_gqa" href="#neuralops.attentions.svd_linear_decay.SVDLinearAttention.supports_gqa">supports_gqa</a></code></li>
+<li><code><a title="neuralops.attentions.svd_linear_decay.SVDLinearAttention.triton_kernel" href="#neuralops.attentions.svd_linear_decay.SVDLinearAttention.triton_kernel">triton_kernel</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,1574 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.cur_compressor API documentation</title>
+<meta name="description" content="CUR Compressor: replaces Linear and Conv1D layers with CUR decomposition.
+Uses leverage score sampling or energy sampling for column/row selection.
+…">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.cur_compressor</code></h1>
+</header>
+<section id="section-intro">
+<p>CUR Compressor: replaces Linear and Conv1D layers with CUR decomposition.
+Uses leverage score sampling or energy sampling for column/row selection.
+Registered in COMPRESSOR_REGISTRY as 'cur' and 'cur_compressor'.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.cur_compressor.compute_energy_scores"><code class="name flex">
+<span>def <span class="ident">compute_energy_scores</span></span>(<span>W: torch.Tensor) ‑> tuple[torch.Tensor, torch.Tensor]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_energy_scores(W: torch.Tensor) -&gt; tuple[torch.Tensor, torch.Tensor]:
+    &#34;&#34;&#34;
+    Compute Frobenius energy sampling probabilities for columns and rows.
+    &#34;&#34;&#34;
+    frob_sq = (W.float() ** 2).sum().clamp_min(1e-12)
+    col_scores = (W.float() ** 2).sum(dim=0) / frob_sq
+    row_scores = (W.float() ** 2).sum(dim=1) / frob_sq
+    return col_scores, row_scores</code></pre>
+</details>
+<div class="desc"><p>Compute Frobenius energy sampling probabilities for columns and rows.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.cur_compressor.compute_leverage_scores"><code class="name flex">
+<span>def <span class="ident">compute_leverage_scores</span></span>(<span>W: torch.Tensor, rank: int) ‑> tuple[torch.Tensor, torch.Tensor]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_leverage_scores(W: torch.Tensor, rank: int) -&gt; tuple[torch.Tensor, torch.Tensor]:
+    &#34;&#34;&#34;
+    Compute exact statistical leverage scores from the top-k singular vectors of W.
+    W: shape (out_features, in_features)
+    Returns:
+        (col_scores, row_scores) normalized to valid probability distributions summing to 1.0.
+    &#34;&#34;&#34;
+    m, n = W.shape
+    k = max(1, min(rank, m, n))
+    U, S, Vt = torch.linalg.svd(W.float(), full_matrices=False)
+    # Row leverage scores: norm of rows of U_k
+    row_scores = (U[:, :k] ** 2).sum(dim=1) / float(k)
+    # Column leverage scores: norm of cols of V_k (rows of Vt_k)
+    col_scores = (Vt[:k, :] ** 2).sum(dim=0) / float(k)
+    # Normalize leverage scores
+    row_scores = row_scores / row_scores.sum().clamp_min(1e-12)
+    col_scores = col_scores / col_scores.sum().clamp_min(1e-12)
+    return col_scores, row_scores</code></pre>
+</details>
+<div class="desc"><p>Compute exact statistical leverage scores from the top-k singular vectors of W.
+W: shape (out_features, in_features)</p>
+<p>Returns
+-----=
+(col_scores, row_scores) normalized to valid probability distributions summing to 1.0.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.cur_compressor.cur_compressor_factory"><code class="name flex">
+<span>def <span class="ident">cur_compressor_factory</span></span>(<span>model: nn.Module,<br>comp_config: Any | None = None,<br>rank: int | None = None,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module | tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;cur&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;cur_linear&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;cure&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;cur_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;cur_linear_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;cure_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;cur_compressor_factory&#34;)
+def cur_compressor_factory(
+    model: nn.Module,
+    comp_config: Any | None = None,
+    rank: int | None = None,
+    **kwargs: Any,
+) -&gt; nn.Module | tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;Factory function for CUR compression.&#34;&#34;&#34;
+    effective_rank = kwargs.pop(
+        &#34;rank&#34;,
+        rank or _cfg_get(comp_config, &#34;cur_rank&#34;, _cfg_get(comp_config, &#34;rank&#34;, 64)),
+    )
+    min_rank = kwargs.pop(&#34;min_rank&#34;, _cfg_get(comp_config, &#34;min_rank&#34;, 8))
+    method = kwargs.pop(
+        &#34;method&#34;,
+        _cfg_get(comp_config, &#34;cur_method&#34;, _cfg_get(comp_config, &#34;method&#34;, &#34;leverage&#34;)),
+    )
+    deterministic = kwargs.pop(&#34;deterministic&#34;, _cfg_get(comp_config, &#34;deterministic&#34;, True))
+    max_error = kwargs.pop(
+        &#34;max_error&#34;,
+        _cfg_get(comp_config, &#34;cur_max_error&#34;, _cfg_get(comp_config, &#34;max_error&#34;, 0.20)),
+    )
+    fallback = kwargs.pop(
+        &#34;fallback_to_original&#34;, _cfg_get(comp_config, &#34;fallback_to_original&#34;, True)
+    )
+    lora_r = kwargs.pop(
+        &#34;lora_r&#34;,
+        _cfg_get(comp_config, &#34;cur_lora_r&#34;, _cfg_get(comp_config, &#34;lora_r&#34;, 0)),
+    )
+    lora_alpha = kwargs.pop(
+        &#34;lora_alpha&#34;,
+        _cfg_get(comp_config, &#34;cur_lora_alpha&#34;, _cfg_get(comp_config, &#34;lora_alpha&#34;, 1.0)),
+    )
+    target_attention_only = kwargs.pop(
+        &#34;target_attention_only&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;cur_target_attention_only&#34;,
+            _cfg_get(comp_config, &#34;target_attention_only&#34;, False),
+        ),
+    )
+    target_names = kwargs.pop(&#34;target_names&#34;, _cfg_get(comp_config, &#34;cur_target_names&#34;, None))
+    exclude_names = kwargs.pop(&#34;exclude_names&#34;, _cfg_get(comp_config, &#34;cur_exclude_names&#34;, None))
+    return_stats = kwargs.pop(&#34;return_stats&#34;, kwargs.pop(&#34;return_tuple&#34;, False))
+
+    compressor = CURCompressor(
+        model,
+        rank=effective_rank,
+        min_rank=min_rank,
+        method=method,
+        deterministic=deterministic,
+        max_error=max_error,
+        fallback_to_original=fallback,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        target_attention_only=target_attention_only,
+        target_names=target_names,
+        exclude_names=exclude_names,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    try:
+        compressed_model.compression_stats = stats
+    except Exception:
+        pass
+    if return_stats:
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"><p>Factory function for CUR compression.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.cur_compressor.select_indices"><code class="name flex">
+<span>def <span class="ident">select_indices</span></span>(<span>scores: torch.Tensor, k: int, deterministic: bool = True) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def select_indices(scores: torch.Tensor, k: int, deterministic: bool = True) -&gt; torch.Tensor:
+    &#34;&#34;&#34;
+    Select k indices based on scores (either deterministic top-k or multinomial sampling).
+    &#34;&#34;&#34;
+    n = scores.numel()
+    k = min(k, n)
+    if deterministic:
+        _, idx = torch.topk(scores, k=k, largest=True, sorted=True)
+        return idx
+    else:
+        probs = (scores / scores.sum().clamp_min(1e-12)).clamp_min(1e-8)
+        probs = probs / probs.sum()
+        idx = torch.multinomial(probs, num_samples=k, replacement=False)
+        return idx</code></pre>
+</details>
+<div class="desc"><p>Select k indices based on scores (either deterministic top-k or multinomial sampling).</p></div>
+</dd>
+<dt id="neuralops.compression_engine.cur_compressor.tikhonov_pinv"><code class="name flex">
+<span>def <span class="ident">tikhonov_pinv</span></span>(<span>A: torch.Tensor, reg: float = 0.001) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def tikhonov_pinv(A: torch.Tensor, reg: float = 1e-3) -&gt; torch.Tensor:
+    &#34;&#34;&#34;
+    Computes Tikhonov regularized pseudo-inverse of matrix A: (A^T A + reg * I)^(-1) A^T
+    or via SVD regularized inversion for numerical stability.
+    &#34;&#34;&#34;
+    try:
+        u, s, vt = torch.linalg.svd(A.float(), full_matrices=False)
+        eps = reg * s.max().clamp_min(1e-6)
+        s_inv = s / (s**2 + eps**2)
+        return torch.matmul(vt.T, torch.matmul(torch.diag(s_inv), u.T)).to(dtype=A.dtype)
+    except Exception:
+        return torch.linalg.pinv(A.float(), rcond=reg).to(dtype=A.dtype)</code></pre>
+</details>
+<div class="desc"><p>Computes Tikhonov regularized pseudo-inverse of matrix A: (A^T A + reg * I)^(-1) A^T
+or via SVD regularized inversion for numerical stability.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.cur_compressor.CURCompressor"><code class="flex name class">
+<span>class <span class="ident">CURCompressor</span></span>
+<span>(</span><span>model: nn.Module | None = None,<br>rank: int = 64,<br>min_rank: int = 8,<br>method: str = 'leverage',<br>deterministic: bool = True,<br>max_error: float = 0.2,<br>fallback_to_original: bool = True,<br>max_retries: int = 2,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0,<br>freeze_skeletons: bool = False,<br>target_attention_only: bool = False,<br>target_names: list[str] | None = None,<br>exclude_names: list[str] | None = None,<br>cfg: Any | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;cur_compressor&#34;)
+class CURCompressor(BaseCompressor):
+    &#34;&#34;&#34;
+    Compressor that replaces eligible Linear and Conv1D layers with CURLinear.
+
+    Args:
+        model: PyTorch model.
+        rank: Target rank for skeleton column and row selection (default 64).
+        min_rank: Minimum allowable rank for compression (default 8).
+        method: Selection method (&#39;leverage&#39; or &#39;energy&#39;, default &#39;leverage&#39;).
+        deterministic: Deterministic top-k selection if True (default True).
+        max_error: Maximum relative Frobenius reconstruction error allowed (default 0.20).
+        fallback_to_original: If True, retains original layer when reconstruction error exceeds max_error (default True).
+        max_retries: Number of adaptive rank retries when error threshold is exceeded (default 2).
+        lora_r: LoRA adapter rank if adding fine-tuning adapters (default 0).
+        lora_alpha: LoRA scaling factor (default 1.0).
+        freeze_skeletons: If True, freeze C and R parameters during post-compression training (default False).
+        target_attention_only: If True, restrict compression to attention projections only.
+        target_names: Optional list of layer name substrings to target.
+        exclude_names: Optional list of layer name substrings to exclude.
+        cfg: Optional configuration object.
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        model: nn.Module | None = None,
+        rank: int = 64,
+        min_rank: int = 8,
+        method: str = &#34;leverage&#34;,
+        deterministic: bool = True,
+        max_error: float = 0.20,
+        fallback_to_original: bool = True,
+        max_retries: int = 2,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        freeze_skeletons: bool = False,
+        target_attention_only: bool = False,
+        target_names: list[str] | None = None,
+        exclude_names: list[str] | None = None,
+        cfg: Any | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model if model is not None else nn.Identity(), name=&#34;cur&#34;, **kwargs)
+        c_rank = _cfg_get(cfg, &#34;cur_rank&#34;, _cfg_get(cfg, &#34;rank&#34;, rank))
+        c_min_rank = _cfg_get(cfg, &#34;cur_min_rank&#34;, _cfg_get(cfg, &#34;min_rank&#34;, min_rank))
+        c_method = _cfg_get(cfg, &#34;cur_method&#34;, _cfg_get(cfg, &#34;method&#34;, method))
+        c_det = _cfg_get(cfg, &#34;cur_deterministic&#34;, _cfg_get(cfg, &#34;deterministic&#34;, deterministic))
+        c_max_error = _cfg_get(cfg, &#34;cur_max_error&#34;, _cfg_get(cfg, &#34;max_error&#34;, max_error))
+        c_fallback = _cfg_get(cfg, &#34;fallback_to_original&#34;, fallback_to_original)
+        c_lora_r = _cfg_get(cfg, &#34;cur_lora_r&#34;, _cfg_get(cfg, &#34;lora_r&#34;, lora_r))
+        c_lora_alpha = _cfg_get(cfg, &#34;cur_lora_alpha&#34;, _cfg_get(cfg, &#34;lora_alpha&#34;, lora_alpha))
+        c_freeze = _cfg_get(cfg, &#34;freeze_skeletons&#34;, freeze_skeletons)
+        c_target_attn = _cfg_get(
+            cfg,
+            &#34;cur_target_attention_only&#34;,
+            _cfg_get(cfg, &#34;target_attention_only&#34;, target_attention_only),
+        )
+
+        if c_max_error is None or c_max_error == 0.20:
+            c_max_error = adaptive_max_error(c_rank, 768, 768, &#34;distilbert&#34;)
+
+        self.rank = int(c_rank) if c_rank is not None else 64
+        self.min_rank = int(c_min_rank) if c_min_rank is not None else 8
+        self.method = str(c_method)
+        self.deterministic = bool(c_det)
+        self.max_error = float(c_max_error)
+        self.fallback_to_original = bool(c_fallback)
+        self.max_retries = max(0, int(max_retries))
+        self.lora_r = int(c_lora_r or 0)
+        self.lora_alpha = float(c_lora_alpha or 1.0)
+        self.freeze_skeletons = bool(c_freeze)
+        self.target_attention_only = bool(c_target_attn)
+        self.cfg = cfg
+        self.target_names = target_names or _cfg_get(
+            cfg, &#34;cur_target_names&#34;, _cfg_get(cfg, &#34;target_layers&#34;, None)
+        )
+        self.exclude_names = exclude_names or _cfg_get(
+            cfg,
+            &#34;cur_exclude_names&#34;,
+            [
+                &#34;lm_head&#34;,
+                &#34;classifier&#34;,
+                &#34;head&#34;,
+                &#34;score&#34;,
+                &#34;pooler&#34;,
+                &#34;embedding&#34;,
+                &#34;router&#34;,
+                &#34;gate&#34;,
+            ],
+        )
+
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        &#34;&#34;&#34;Identify candidate linear/Conv1D/LoRALinear layers.&#34;&#34;&#34;
+        cls_name = module.__class__.__name__.lower()
+        has_base = hasattr(module, &#34;base_layer&#34;)
+        base_cls = module.base_layer.__class__.__name__.lower() if has_base else &#34;&#34;
+
+        is_linear = isinstance(module, nn.Linear) or &#34;linear&#34; in cls_name
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(module, &#34;nf&#34;)
+        is_lora = has_base and (
+            isinstance(module.base_layer, nn.Linear)
+            or &#34;conv1d&#34; in base_cls
+            or hasattr(module.base_layer, &#34;nf&#34;)
+        )
+
+        if not (is_linear or is_conv1d or is_lora):
+            return False
+
+        if isinstance(module, CURLinear) or (has_base and isinstance(module.base_layer, CURLinear)):
+            return False
+
+        name_lower = name.lower()
+        if any(skip in name_lower for skip in self.exclude_names):
+            return False
+
+        if self.target_attention_only:
+            ffn_patterns = [
+                &#34;ffn&#34;,
+                &#34;mlp&#34;,
+                &#34;lin1&#34;,
+                &#34;lin2&#34;,
+                &#34;intermediate&#34;,
+                &#34;gate_proj&#34;,
+                &#34;up_proj&#34;,
+                &#34;down_proj&#34;,
+                &#34;c_fc&#34;,
+            ]
+            if any(p in name_lower for p in ffn_patterns):
+                return False
+            if &#34;output.dense&#34; in name_lower and &#34;attention&#34; not in name_lower:
+                return False
+            attn_patterns = [
+                &#34;attn&#34;,
+                &#34;attention&#34;,
+                &#34;q_proj&#34;,
+                &#34;k_proj&#34;,
+                &#34;v_proj&#34;,
+                &#34;o_proj&#34;,
+                &#34;out_lin&#34;,
+                &#34;q_lin&#34;,
+                &#34;k_lin&#34;,
+                &#34;v_lin&#34;,
+                &#34;c_attn&#34;,
+                &#34;c_proj&#34;,
+                &#34;query&#34;,
+                &#34;key&#34;,
+                &#34;value&#34;,
+                &#34;in_proj_qkv&#34;,
+                &#34;out_proj&#34;,
+            ]
+            if not any(p in name_lower for p in attn_patterns):
+                return False
+
+        if self.target_names and not any(t in name for t in self.target_names):
+            return False
+
+        return True
+
+    def compress(self, model: nn.Module | None = None) -&gt; tuple[nn.Module, dict[str, Any]]:
+        &#34;&#34;&#34;Replace eligible Linear and Conv1D layers with CURLinear.&#34;&#34;&#34;
+        if model is not None:
+            self.model = model
+            self._original_params = self._count_params(self.model)
+
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.layer_errors = {}
+        self.layer_ranks = {}
+        visited_weight_ids: set[int] = set()
+
+        total_orig_decomp_params = 0
+        total_comp_decomp_params = 0
+
+        for name, module in list(self.model.named_modules()):
+            if not self._is_target_module(name, module):
+                if self.target_attention_only:
+                    is_lin_like = (
+                        isinstance(module, nn.Linear)
+                        or &#34;conv1d&#34; in module.__class__.__name__.lower()
+                        or hasattr(module, &#34;base_layer&#34;)
+                    )
+                    if is_lin_like:
+                        for p in module.parameters():
+                            p.requires_grad = False
+                continue
+
+            target_mod = getattr(module, &#34;base_layer&#34;, getattr(module, &#34;linear&#34;, module))
+            cls_name = module.__class__.__name__.lower()
+            is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(module, &#34;nf&#34;) or hasattr(target_mod, &#34;nf&#34;)
+            has_lora = (hasattr(module, &#34;lora_A&#34;) and module.lora_A is not None) or hasattr(
+                module, &#34;base_layer&#34;
+            )
+
+            # Check tied weights
+            if not hasattr(target_mod, &#34;weight&#34;) or target_mod.weight is None:
+                for p in module.parameters():
+                    p.requires_grad = False
+                continue
+            weight_id = id(target_mod.weight)
+            if weight_id in visited_weight_ids:
+                logger.info(&#34;CURCompressor: Skipping tied weight layer %s&#34;, name)
+                for p in module.parameters():
+                    p.requires_grad = False
+                continue
+
+            raw_w = target_mod.weight.data
+            orig_w = raw_w.t().float() if is_conv1d else raw_w.float()
+            out_f, in_f = orig_w.shape
+            max_rank = min(out_f, in_f)
+
+            if max_rank &lt; self.min_rank:
+                for p in module.parameters():
+                    p.requires_grad = False
+                continue
+
+            # Parameter reduction check: r*(in_f + out_f + r) &lt; in_f * out_f
+            target_r = min(self.rank, max_rank)
+            while target_r &gt;= self.min_rank and (target_r * (in_f + out_f + target_r)) &gt;= 0.85 * (
+                in_f * out_f
+            ):
+                target_r = int(target_r * 0.8)
+
+            if target_r &lt; self.min_rank:
+                logger.debug(
+                    &#34;CURCompressor: Skipping %s as target rank %d violates parameter reduction constraint&#34;,
+                    name,
+                    target_r,
+                )
+                for p in module.parameters():
+                    p.requires_grad = False
+                continue
+
+            cur_r = target_r
+            best_cur_layer = None
+            best_err = float(&#34;inf&#34;)
+            best_r = cur_r
+            norm_orig = torch.norm(orig_w, p=&#34;fro&#34;).clamp_min(1e-8)
+            effective_lora_r = 0 if has_lora else self.lora_r
+
+            for _ in range(self.max_retries + 1):
+                try:
+                    candidate = CURLinear.from_linear(
+                        target_mod,
+                        rank=cur_r,
+                        method=self.method,
+                        deterministic=self.deterministic,
+                        lora_r=effective_lora_r,
+                        lora_alpha=self.lora_alpha,
+                        freeze_skeletons=self.freeze_skeletons,
+                    )
+                    recon_w = candidate.get_weight().float()
+                    err = (torch.norm(orig_w - recon_w, p=&#34;fro&#34;) / norm_orig).item()
+
+                    if err &lt; best_err:
+                        best_err = err
+                        best_cur_layer = candidate
+                        best_r = cur_r
+
+                    if err &lt;= self.max_error:
+                        break
+
+                    next_r = min(int(cur_r * 1.5), max_rank - 1)
+                    if next_r &lt;= cur_r or (next_r * (in_f + out_f + next_r)) &gt;= 0.85 * (
+                        in_f * out_f
+                    ):
+                        break
+                    cur_r = next_r
+                except Exception as ex:
+                    logger.warning(
+                        &#34;CURCompressor: Failed CUR decomposition on %s at rank %d: %s&#34;,
+                        name,
+                        cur_r,
+                        ex,
+                    )
+                    break
+
+            if best_err &gt; self.max_error:
+                logger.warning(
+                    &#34;CURCompressor: Layer %s error %.4f exceeded max_error %.4f&#34;,
+                    name,
+                    best_err,
+                    self.max_error,
+                )
+                if self.fallback_to_original:
+                    self.fallback_layers.append(name)
+                    # Freeze fallback layers
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    continue
+
+            if best_cur_layer is not None:
+                new_layer = best_cur_layer
+                compressed_layer = new_layer
+                # Preserve existing LoRA adapter weights if the source module has them
+                if (
+                    hasattr(module, &#34;lora_A&#34;)
+                    and hasattr(module, &#34;lora_B&#34;)
+                    and module.lora_A is not None
+                    and module.lora_B is not None
+                ):
+                    src_lA = getattr(module.lora_A, &#34;weight&#34;, module.lora_A)
+                    src_lB = getattr(module.lora_B, &#34;weight&#34;, module.lora_B)
+                    if hasattr(new_layer, &#34;lora_A&#34;) and new_layer.lora_A is not None:
+                        if hasattr(src_lA, &#34;data&#34;) and src_lA.shape == new_layer.lora_A.shape:
+                            new_layer.lora_A.data.copy_(src_lA.data)
+                    if hasattr(new_layer, &#34;lora_B&#34;) and new_layer.lora_B is not None:
+                        if hasattr(src_lB, &#34;data&#34;) and src_lB.shape == new_layer.lora_B.shape:
+                            new_layer.lora_B.data.copy_(src_lB.data)
+
+                if hasattr(module, &#34;base_layer&#34;):
+                    module.base_layer = compressed_layer  # put compressed layer inside wrapper
+                    # module itself (LoRALinear wrapper) remains the replacement
+                    new_module = module
+                else:
+                    new_module = compressed_layer
+
+                if hasattr(module, &#34;base_layer&#34;):
+                    for p_name, p in module.named_parameters():
+                        if any(t in p_name.lower() for t in (&#34;lora_a&#34;, &#34;lora_b&#34;, &#34;adapter&#34;)):
+                            p.requires_grad = True
+                else:
+                    if name == &#34;&#34;:
+                        self.model = new_module
+                    else:
+                        replace_module(self.model, name, new_module)
+
+                self.compressed_layers.append(name)
+                self.layer_errors[name] = float(best_err)
+                self.layer_ranks[name] = int(best_r)
+                visited_weight_ids.add(weight_id)
+
+                total_orig_decomp_params += in_f * out_f
+                total_comp_decomp_params += best_r * (in_f + out_f + best_r)
+
+        self._compressed_params = self._count_params(self.model)
+        stats = self.get_compression_stats()
+        avg_err = (
+            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
+        )
+        effective_param_ratio = (
+            total_comp_decomp_params / total_orig_decomp_params
+            if total_orig_decomp_params &gt; 0
+            else 1.0
+        )
+        stats.update(
+            {
+                &#34;compressed_layers&#34;: self.compressed_layers,
+                &#34;compressed_layer_count&#34;: len(self.compressed_layers),
+                &#34;fallback_layers&#34;: self.fallback_layers,
+                &#34;fallback_layer_count&#34;: len(self.fallback_layers),
+                &#34;layer_errors&#34;: self.layer_errors,
+                &#34;layer_ranks&#34;: self.layer_ranks,
+                &#34;avg_reconstruction_error&#34;: avg_err,
+                &#34;max_error&#34;: self.max_error,
+                &#34;fallback_to_original&#34;: self.fallback_to_original,
+                &#34;cur_method&#34;: self.method,
+                &#34;cur_rank&#34;: self.rank,
+                &#34;min_rank&#34;: self.min_rank,
+                &#34;deterministic&#34;: self.deterministic,
+                &#34;lora_r&#34;: self.lora_r,
+                &#34;lora_alpha&#34;: self.lora_alpha,
+                &#34;target_attention_only&#34;: self.target_attention_only,
+                &#34;effective_parameter_ratio&#34;: round(effective_param_ratio, 4),
+            }
+        )
+        logger.info(
+            &#34;Compressor cur finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f&#34;,
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error,
+        )
+        return self.model, stats
+
+    def compress_linear(self, linear: nn.Linear | Any) -&gt; CURLinear:
+        &#34;&#34;&#34;Compress a single linear layer into CURLinear.&#34;&#34;&#34;
+        return CURLinear.from_linear(
+            linear,
+            rank=self.rank,
+            method=self.method,
+            deterministic=self.deterministic,
+            lora_r=self.lora_r,
+            lora_alpha=self.lora_alpha,
+            freeze_skeletons=self.freeze_skeletons,
+        )</code></pre>
+</details>
+<div class="desc"><p>Compressor that replaces eligible Linear and Conv1D layers with CURLinear.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>model</code></strong></dt>
+<dd>PyTorch model.</dd>
+<dt><strong><code>rank</code></strong></dt>
+<dd>Target rank for skeleton column and row selection (default 64).</dd>
+<dt><strong><code>min_rank</code></strong></dt>
+<dd>Minimum allowable rank for compression (default 8).</dd>
+<dt><strong><code>method</code></strong></dt>
+<dd>Selection method ('leverage' or 'energy', default 'leverage').</dd>
+<dt><strong><code>deterministic</code></strong></dt>
+<dd>Deterministic top-k selection if True (default True).</dd>
+<dt><strong><code>max_error</code></strong></dt>
+<dd>Maximum relative Frobenius reconstruction error allowed (default 0.20).</dd>
+<dt><strong><code>fallback_to_original</code></strong></dt>
+<dd>If True, retains original layer when reconstruction error exceeds max_error (default True).</dd>
+<dt><strong><code>max_retries</code></strong></dt>
+<dd>Number of adaptive rank retries when error threshold is exceeded (default 2).</dd>
+<dt><strong><code>lora_r</code></strong></dt>
+<dd>LoRA adapter rank if adding fine-tuning adapters (default 0).</dd>
+<dt><strong><code>lora_alpha</code></strong></dt>
+<dd>LoRA scaling factor (default 1.0).</dd>
+<dt><strong><code>freeze_skeletons</code></strong></dt>
+<dd>If True, freeze C and R parameters during post-compression training (default False).</dd>
+<dt><strong><code>target_attention_only</code></strong></dt>
+<dd>If True, restrict compression to attention projections only.</dd>
+<dt><strong><code>target_names</code></strong></dt>
+<dd>Optional list of layer name substrings to target.</dd>
+<dt><strong><code>exclude_names</code></strong></dt>
+<dd>Optional list of layer name substrings to exclude.</dd>
+<dt><strong><code>cfg</code></strong></dt>
+<dd>Optional configuration object.</dd>
+</dl></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.cur_compressor.CURCompressor.compress"><code class="name flex">
+<span>def <span class="ident">compress</span></span>(<span>self, model: nn.Module | None = None) ‑> tuple[torch.nn.modules.module.Module, dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress(self, model: nn.Module | None = None) -&gt; tuple[nn.Module, dict[str, Any]]:
+    &#34;&#34;&#34;Replace eligible Linear and Conv1D layers with CURLinear.&#34;&#34;&#34;
+    if model is not None:
+        self.model = model
+        self._original_params = self._count_params(self.model)
+
+    self.compressed_layers = []
+    self.fallback_layers = []
+    self.layer_errors = {}
+    self.layer_ranks = {}
+    visited_weight_ids: set[int] = set()
+
+    total_orig_decomp_params = 0
+    total_comp_decomp_params = 0
+
+    for name, module in list(self.model.named_modules()):
+        if not self._is_target_module(name, module):
+            if self.target_attention_only:
+                is_lin_like = (
+                    isinstance(module, nn.Linear)
+                    or &#34;conv1d&#34; in module.__class__.__name__.lower()
+                    or hasattr(module, &#34;base_layer&#34;)
+                )
+                if is_lin_like:
+                    for p in module.parameters():
+                        p.requires_grad = False
+            continue
+
+        target_mod = getattr(module, &#34;base_layer&#34;, getattr(module, &#34;linear&#34;, module))
+        cls_name = module.__class__.__name__.lower()
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(module, &#34;nf&#34;) or hasattr(target_mod, &#34;nf&#34;)
+        has_lora = (hasattr(module, &#34;lora_A&#34;) and module.lora_A is not None) or hasattr(
+            module, &#34;base_layer&#34;
+        )
+
+        # Check tied weights
+        if not hasattr(target_mod, &#34;weight&#34;) or target_mod.weight is None:
+            for p in module.parameters():
+                p.requires_grad = False
+            continue
+        weight_id = id(target_mod.weight)
+        if weight_id in visited_weight_ids:
+            logger.info(&#34;CURCompressor: Skipping tied weight layer %s&#34;, name)
+            for p in module.parameters():
+                p.requires_grad = False
+            continue
+
+        raw_w = target_mod.weight.data
+        orig_w = raw_w.t().float() if is_conv1d else raw_w.float()
+        out_f, in_f = orig_w.shape
+        max_rank = min(out_f, in_f)
+
+        if max_rank &lt; self.min_rank:
+            for p in module.parameters():
+                p.requires_grad = False
+            continue
+
+        # Parameter reduction check: r*(in_f + out_f + r) &lt; in_f * out_f
+        target_r = min(self.rank, max_rank)
+        while target_r &gt;= self.min_rank and (target_r * (in_f + out_f + target_r)) &gt;= 0.85 * (
+            in_f * out_f
+        ):
+            target_r = int(target_r * 0.8)
+
+        if target_r &lt; self.min_rank:
+            logger.debug(
+                &#34;CURCompressor: Skipping %s as target rank %d violates parameter reduction constraint&#34;,
+                name,
+                target_r,
+            )
+            for p in module.parameters():
+                p.requires_grad = False
+            continue
+
+        cur_r = target_r
+        best_cur_layer = None
+        best_err = float(&#34;inf&#34;)
+        best_r = cur_r
+        norm_orig = torch.norm(orig_w, p=&#34;fro&#34;).clamp_min(1e-8)
+        effective_lora_r = 0 if has_lora else self.lora_r
+
+        for _ in range(self.max_retries + 1):
+            try:
+                candidate = CURLinear.from_linear(
+                    target_mod,
+                    rank=cur_r,
+                    method=self.method,
+                    deterministic=self.deterministic,
+                    lora_r=effective_lora_r,
+                    lora_alpha=self.lora_alpha,
+                    freeze_skeletons=self.freeze_skeletons,
+                )
+                recon_w = candidate.get_weight().float()
+                err = (torch.norm(orig_w - recon_w, p=&#34;fro&#34;) / norm_orig).item()
+
+                if err &lt; best_err:
+                    best_err = err
+                    best_cur_layer = candidate
+                    best_r = cur_r
+
+                if err &lt;= self.max_error:
+                    break
+
+                next_r = min(int(cur_r * 1.5), max_rank - 1)
+                if next_r &lt;= cur_r or (next_r * (in_f + out_f + next_r)) &gt;= 0.85 * (
+                    in_f * out_f
+                ):
+                    break
+                cur_r = next_r
+            except Exception as ex:
+                logger.warning(
+                    &#34;CURCompressor: Failed CUR decomposition on %s at rank %d: %s&#34;,
+                    name,
+                    cur_r,
+                    ex,
+                )
+                break
+
+        if best_err &gt; self.max_error:
+            logger.warning(
+                &#34;CURCompressor: Layer %s error %.4f exceeded max_error %.4f&#34;,
+                name,
+                best_err,
+                self.max_error,
+            )
+            if self.fallback_to_original:
+                self.fallback_layers.append(name)
+                # Freeze fallback layers
+                for p in module.parameters():
+                    p.requires_grad = False
+                continue
+
+        if best_cur_layer is not None:
+            new_layer = best_cur_layer
+            compressed_layer = new_layer
+            # Preserve existing LoRA adapter weights if the source module has them
+            if (
+                hasattr(module, &#34;lora_A&#34;)
+                and hasattr(module, &#34;lora_B&#34;)
+                and module.lora_A is not None
+                and module.lora_B is not None
+            ):
+                src_lA = getattr(module.lora_A, &#34;weight&#34;, module.lora_A)
+                src_lB = getattr(module.lora_B, &#34;weight&#34;, module.lora_B)
+                if hasattr(new_layer, &#34;lora_A&#34;) and new_layer.lora_A is not None:
+                    if hasattr(src_lA, &#34;data&#34;) and src_lA.shape == new_layer.lora_A.shape:
+                        new_layer.lora_A.data.copy_(src_lA.data)
+                if hasattr(new_layer, &#34;lora_B&#34;) and new_layer.lora_B is not None:
+                    if hasattr(src_lB, &#34;data&#34;) and src_lB.shape == new_layer.lora_B.shape:
+                        new_layer.lora_B.data.copy_(src_lB.data)
+
+            if hasattr(module, &#34;base_layer&#34;):
+                module.base_layer = compressed_layer  # put compressed layer inside wrapper
+                # module itself (LoRALinear wrapper) remains the replacement
+                new_module = module
+            else:
+                new_module = compressed_layer
+
+            if hasattr(module, &#34;base_layer&#34;):
+                for p_name, p in module.named_parameters():
+                    if any(t in p_name.lower() for t in (&#34;lora_a&#34;, &#34;lora_b&#34;, &#34;adapter&#34;)):
+                        p.requires_grad = True
+            else:
+                if name == &#34;&#34;:
+                    self.model = new_module
+                else:
+                    replace_module(self.model, name, new_module)
+
+            self.compressed_layers.append(name)
+            self.layer_errors[name] = float(best_err)
+            self.layer_ranks[name] = int(best_r)
+            visited_weight_ids.add(weight_id)
+
+            total_orig_decomp_params += in_f * out_f
+            total_comp_decomp_params += best_r * (in_f + out_f + best_r)
+
+    self._compressed_params = self._count_params(self.model)
+    stats = self.get_compression_stats()
+    avg_err = (
+        (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
+    )
+    effective_param_ratio = (
+        total_comp_decomp_params / total_orig_decomp_params
+        if total_orig_decomp_params &gt; 0
+        else 1.0
+    )
+    stats.update(
+        {
+            &#34;compressed_layers&#34;: self.compressed_layers,
+            &#34;compressed_layer_count&#34;: len(self.compressed_layers),
+            &#34;fallback_layers&#34;: self.fallback_layers,
+            &#34;fallback_layer_count&#34;: len(self.fallback_layers),
+            &#34;layer_errors&#34;: self.layer_errors,
+            &#34;layer_ranks&#34;: self.layer_ranks,
+            &#34;avg_reconstruction_error&#34;: avg_err,
+            &#34;max_error&#34;: self.max_error,
+            &#34;fallback_to_original&#34;: self.fallback_to_original,
+            &#34;cur_method&#34;: self.method,
+            &#34;cur_rank&#34;: self.rank,
+            &#34;min_rank&#34;: self.min_rank,
+            &#34;deterministic&#34;: self.deterministic,
+            &#34;lora_r&#34;: self.lora_r,
+            &#34;lora_alpha&#34;: self.lora_alpha,
+            &#34;target_attention_only&#34;: self.target_attention_only,
+            &#34;effective_parameter_ratio&#34;: round(effective_param_ratio, 4),
+        }
+    )
+    logger.info(
+        &#34;Compressor cur finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f&#34;,
+        len(self.compressed_layers),
+        len(self.fallback_layers),
+        avg_err,
+        self.max_error,
+    )
+    return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>Replace eligible Linear and Conv1D layers with CURLinear.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.cur_compressor.CURCompressor.compress_linear"><code class="name flex">
+<span>def <span class="ident">compress_linear</span></span>(<span>self, linear: nn.Linear | Any) ‑> <a title="neuralops.compression_engine.cur_compressor.CURLinear" href="#neuralops.compression_engine.cur_compressor.CURLinear">CURLinear</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compress_linear(self, linear: nn.Linear | Any) -&gt; CURLinear:
+    &#34;&#34;&#34;Compress a single linear layer into CURLinear.&#34;&#34;&#34;
+    return CURLinear.from_linear(
+        linear,
+        rank=self.rank,
+        method=self.method,
+        deterministic=self.deterministic,
+        lora_r=self.lora_r,
+        lora_alpha=self.lora_alpha,
+        freeze_skeletons=self.freeze_skeletons,
+    )</code></pre>
+</details>
+<div class="desc"><p>Compress a single linear layer into CURLinear.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.compression_engine.cur_compressor.CURLinear"><code class="flex name class">
+<span>class <span class="ident">CURLinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>rank: int = 64,<br>bias: bool = True,<br>method: str = 'leverage',<br>lora_r: int = 0,<br>lora_alpha: float = 1.0,<br>freeze_skeletons: bool = False,<br>dtype: torch.dtype | None = None,<br>device: torch.device | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class CURLinear(nn.Module):
+    &#34;&#34;&#34;
+    Linear layer whose weight matrix is factorized via CUR cross-approximation:
+    W ≈ C @ U @ R
+    - C in R^{out_features x rank}: selected columns of W
+    - U in R^{rank x rank}: Moore-Penrose pseudo-inverse core matrix
+    - R in R^{rank x in_features}: selected rows of W
+
+    Executes forward pass in factorized form:
+    y = ((x @ R^T) @ U^T) @ C^T + bias
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int = 64,
+        bias: bool = True,
+        method: str = &#34;leverage&#34;,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        freeze_skeletons: bool = False,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.rank = max(1, min(rank, in_features, out_features))
+        self.method = method
+        self.lora_r = max(0, int(lora_r))
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = (self.lora_alpha / max(1, self.lora_r)) if self.lora_r &gt; 0 else 1.0
+
+        # C: (out_features, rank), U: (rank, rank), R: (rank, in_features)
+        self.C = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
+        self.U = nn.Parameter(torch.empty(self.rank, self.rank, dtype=dtype, device=device))
+        self.R = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
+
+        bound = 1.0 / math.sqrt(max(1, in_features))
+        nn.init.uniform_(self.C, -bound, bound)
+        nn.init.eye_(self.U)
+        nn.init.uniform_(self.R, -bound, bound)
+
+        if freeze_skeletons:
+            self.C.requires_grad = False
+            self.R.requires_grad = False
+
+        if bias:
+            self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device))
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+        if self.lora_r &gt; 0:
+            self.lora_A = nn.Parameter(
+                torch.empty(self.lora_r, in_features, dtype=dtype, device=device)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty(out_features, self.lora_r, dtype=dtype, device=device)
+            )
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Reconstructed effective weight matrix for compatibility.&#34;&#34;&#34;
+        W_core = torch.matmul(torch.matmul(self.C, self.U), self.R)
+        if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            W_core = W_core + (torch.matmul(self.lora_B, self.lora_A) * self.scaling)
+        return W_core
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        &#34;&#34;&#34;
+        Sub-quadratic forward execution:
+        x: (..., in_features)
+        y = ((x @ R^T) @ U^T) @ C^T + bias
+        &#34;&#34;&#34;
+        orig_shape = x.shape
+        x_flat = x.reshape(-1, self.in_features)
+
+        # Factorized forward pass:
+        # x_r = x @ R^T: (K, rank)
+        x_r = F.linear(x_flat, self.R)
+        # x_ru = x_r @ U^T: (K, rank)
+        x_ru = F.linear(x_r, self.U)
+        # out = x_ru @ C^T + bias: (K, out_features)
+        out = F.linear(x_ru, self.C, self.bias)
+
+        if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x_flat, self.lora_A), self.lora_B) * self.scaling
+            out = out + lora_out
+
+        return out.view(*orig_shape[:-1], self.out_features)
+
+    def get_weight(self) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Materialize reconstructed weight matrix W = C @ U @ R.&#34;&#34;&#34;
+        return self.weight
+
+    @classmethod
+    def from_linear(
+        cls,
+        linear: nn.Linear | Any,
+        rank: int = 64,
+        method: str = &#34;leverage&#34;,
+        deterministic: bool = True,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        freeze_skeletons: bool = False,
+    ) -&gt; CURLinear:
+        &#34;&#34;&#34;
+        Construct CURLinear from existing nn.Linear or Conv1D using leverage scores or energy sampling.
+        &#34;&#34;&#34;
+        target_mod = getattr(linear, &#34;base_layer&#34;, getattr(linear, &#34;linear&#34;, linear))
+        raw_w = target_mod.weight.data
+        bias = target_mod.bias.data if getattr(target_mod, &#34;bias&#34;, None) is not None else None
+        cls_name = target_mod.__class__.__name__.lower()
+        wrapper_name = linear.__class__.__name__.lower()
+
+        is_conv1d = (
+            &#34;conv1d&#34; in cls_name
+            or &#34;conv1d&#34; in wrapper_name
+            or hasattr(target_mod, &#34;nf&#34;)
+            or hasattr(linear, &#34;nf&#34;)
+        )
+        if is_conv1d:
+            W = raw_w.t().contiguous()
+        else:
+            W = raw_w.contiguous()
+
+        out_features, in_features = W.shape
+        r = max(1, min(rank, out_features, in_features))
+
+        cur_layer = cls(
+            in_features=in_features,
+            out_features=out_features,
+            rank=r,
+            bias=bias is not None,
+            method=method,
+            lora_r=lora_r,
+            lora_alpha=lora_alpha,
+            freeze_skeletons=freeze_skeletons,
+            dtype=W.dtype,
+            device=W.device,
+        )
+
+        W_float = W.float()
+        if method == &#34;leverage&#34;:
+            col_scores, row_scores = compute_leverage_scores(W_float, rank=r)
+        elif method == &#34;energy&#34;:
+            col_scores, row_scores = compute_energy_scores(W_float)
+        else:
+            col_scores = torch.ones(in_features, device=W.device)
+            row_scores = torch.ones(out_features, device=W.device)
+
+        col_idx = select_indices(col_scores, k=r, deterministic=deterministic)
+        row_idx = select_indices(row_scores, k=r, deterministic=deterministic)
+
+        # C = W[:, col_idx] (out_features, r)
+        # R = W[row_idx, :] (r, in_features)
+        C = W_float[:, col_idx]
+        R = W_float[row_idx, :]
+
+        # Optimal core matrix: U = C^+ @ W @ R^+
+        # This is the exact least-squares solution argmin_U ||W - C U R||_F
+        try:
+            C_pinv = torch.linalg.pinv(C, rcond=1e-4)
+            R_pinv = torch.linalg.pinv(R, rcond=1e-4)
+            U = torch.matmul(torch.matmul(C_pinv, W_float), R_pinv)
+        except Exception:
+            W_int = W_float[row_idx][:, col_idx]
+            U = torch.linalg.pinv(W_int, rcond=1e-3)
+
+        cur_layer.C.data.copy_(C.to(dtype=W.dtype))
+        cur_layer.U.data.copy_(U.to(dtype=W.dtype))
+        cur_layer.R.data.copy_(R.to(dtype=W.dtype))
+
+        if bias is not None and cur_layer.bias is not None:
+            cur_layer.bias.data.copy_(bias)
+
+        return cur_layer</code></pre>
+</details>
+<div class="desc"><p>Linear layer whose weight matrix is factorized via CUR cross-approximation:
+W ≈ C @ U @ R
+- C in R^{out_features x rank}: selected columns of W
+- U in R^{rank x rank}: Moore-Penrose pseudo-inverse core matrix
+- R in R^{rank x in_features}: selected rows of W</p>
+<p>Executes forward pass in factorized form:
+y = ((x @ R^T) @ U^T) @ C^T + bias</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.cur_compressor.CURLinear.from_linear"><code class="name flex">
+<span>def <span class="ident">from_linear</span></span>(<span>linear: nn.Linear | Any,<br>rank: int = 64,<br>method: str = 'leverage',<br>deterministic: bool = True,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0,<br>freeze_skeletons: bool = False) ‑> <a title="neuralops.compression_engine.cur_compressor.CURLinear" href="#neuralops.compression_engine.cur_compressor.CURLinear">CURLinear</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Construct CURLinear from existing nn.Linear or Conv1D using leverage scores or energy sampling.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.cur_compressor.CURLinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Reconstructed effective weight matrix for compatibility.&#34;&#34;&#34;
+    W_core = torch.matmul(torch.matmul(self.C, self.U), self.R)
+    if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        W_core = W_core + (torch.matmul(self.lora_B, self.lora_A) * self.scaling)
+    return W_core</code></pre>
+</details>
+<div class="desc"><p>Reconstructed effective weight matrix for compatibility.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.cur_compressor.CURLinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    &#34;&#34;&#34;
+    Sub-quadratic forward execution:
+    x: (..., in_features)
+    y = ((x @ R^T) @ U^T) @ C^T + bias
+    &#34;&#34;&#34;
+    orig_shape = x.shape
+    x_flat = x.reshape(-1, self.in_features)
+
+    # Factorized forward pass:
+    # x_r = x @ R^T: (K, rank)
+    x_r = F.linear(x_flat, self.R)
+    # x_ru = x_r @ U^T: (K, rank)
+    x_ru = F.linear(x_r, self.U)
+    # out = x_ru @ C^T + bias: (K, out_features)
+    out = F.linear(x_ru, self.C, self.bias)
+
+    if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        lora_out = F.linear(F.linear(x_flat, self.lora_A), self.lora_B) * self.scaling
+        out = out + lora_out
+
+    return out.view(*orig_shape[:-1], self.out_features)</code></pre>
+</details>
+<div class="desc"><p>Sub-quadratic forward execution:
+x: (&hellip;, in_features)
+y = ((x @ R^T) @ U^T) @ C^T + bias</p></div>
+</dd>
+<dt id="neuralops.compression_engine.cur_compressor.CURLinear.get_weight"><code class="name flex">
+<span>def <span class="ident">get_weight</span></span>(<span>self) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_weight(self) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Materialize reconstructed weight matrix W = C @ U @ R.&#34;&#34;&#34;
+    return self.weight</code></pre>
+</details>
+<div class="desc"><p>Materialize reconstructed weight matrix W = C @ U @ R.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.compression_engine.cur_compressor.CURLinear"><code class="flex name class">
+<span>class <span class="ident">CURLowRankLinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>rank: int = 64,<br>bias: bool = True,<br>method: str = 'leverage',<br>lora_r: int = 0,<br>lora_alpha: float = 1.0,<br>freeze_skeletons: bool = False,<br>dtype: torch.dtype | None = None,<br>device: torch.device | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class CURLinear(nn.Module):
+    &#34;&#34;&#34;
+    Linear layer whose weight matrix is factorized via CUR cross-approximation:
+    W ≈ C @ U @ R
+    - C in R^{out_features x rank}: selected columns of W
+    - U in R^{rank x rank}: Moore-Penrose pseudo-inverse core matrix
+    - R in R^{rank x in_features}: selected rows of W
+
+    Executes forward pass in factorized form:
+    y = ((x @ R^T) @ U^T) @ C^T + bias
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int = 64,
+        bias: bool = True,
+        method: str = &#34;leverage&#34;,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        freeze_skeletons: bool = False,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.rank = max(1, min(rank, in_features, out_features))
+        self.method = method
+        self.lora_r = max(0, int(lora_r))
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = (self.lora_alpha / max(1, self.lora_r)) if self.lora_r &gt; 0 else 1.0
+
+        # C: (out_features, rank), U: (rank, rank), R: (rank, in_features)
+        self.C = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
+        self.U = nn.Parameter(torch.empty(self.rank, self.rank, dtype=dtype, device=device))
+        self.R = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
+
+        bound = 1.0 / math.sqrt(max(1, in_features))
+        nn.init.uniform_(self.C, -bound, bound)
+        nn.init.eye_(self.U)
+        nn.init.uniform_(self.R, -bound, bound)
+
+        if freeze_skeletons:
+            self.C.requires_grad = False
+            self.R.requires_grad = False
+
+        if bias:
+            self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device))
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+        if self.lora_r &gt; 0:
+            self.lora_A = nn.Parameter(
+                torch.empty(self.lora_r, in_features, dtype=dtype, device=device)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty(out_features, self.lora_r, dtype=dtype, device=device)
+            )
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Reconstructed effective weight matrix for compatibility.&#34;&#34;&#34;
+        W_core = torch.matmul(torch.matmul(self.C, self.U), self.R)
+        if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            W_core = W_core + (torch.matmul(self.lora_B, self.lora_A) * self.scaling)
+        return W_core
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        &#34;&#34;&#34;
+        Sub-quadratic forward execution:
+        x: (..., in_features)
+        y = ((x @ R^T) @ U^T) @ C^T + bias
+        &#34;&#34;&#34;
+        orig_shape = x.shape
+        x_flat = x.reshape(-1, self.in_features)
+
+        # Factorized forward pass:
+        # x_r = x @ R^T: (K, rank)
+        x_r = F.linear(x_flat, self.R)
+        # x_ru = x_r @ U^T: (K, rank)
+        x_ru = F.linear(x_r, self.U)
+        # out = x_ru @ C^T + bias: (K, out_features)
+        out = F.linear(x_ru, self.C, self.bias)
+
+        if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x_flat, self.lora_A), self.lora_B) * self.scaling
+            out = out + lora_out
+
+        return out.view(*orig_shape[:-1], self.out_features)
+
+    def get_weight(self) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Materialize reconstructed weight matrix W = C @ U @ R.&#34;&#34;&#34;
+        return self.weight
+
+    @classmethod
+    def from_linear(
+        cls,
+        linear: nn.Linear | Any,
+        rank: int = 64,
+        method: str = &#34;leverage&#34;,
+        deterministic: bool = True,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        freeze_skeletons: bool = False,
+    ) -&gt; CURLinear:
+        &#34;&#34;&#34;
+        Construct CURLinear from existing nn.Linear or Conv1D using leverage scores or energy sampling.
+        &#34;&#34;&#34;
+        target_mod = getattr(linear, &#34;base_layer&#34;, getattr(linear, &#34;linear&#34;, linear))
+        raw_w = target_mod.weight.data
+        bias = target_mod.bias.data if getattr(target_mod, &#34;bias&#34;, None) is not None else None
+        cls_name = target_mod.__class__.__name__.lower()
+        wrapper_name = linear.__class__.__name__.lower()
+
+        is_conv1d = (
+            &#34;conv1d&#34; in cls_name
+            or &#34;conv1d&#34; in wrapper_name
+            or hasattr(target_mod, &#34;nf&#34;)
+            or hasattr(linear, &#34;nf&#34;)
+        )
+        if is_conv1d:
+            W = raw_w.t().contiguous()
+        else:
+            W = raw_w.contiguous()
+
+        out_features, in_features = W.shape
+        r = max(1, min(rank, out_features, in_features))
+
+        cur_layer = cls(
+            in_features=in_features,
+            out_features=out_features,
+            rank=r,
+            bias=bias is not None,
+            method=method,
+            lora_r=lora_r,
+            lora_alpha=lora_alpha,
+            freeze_skeletons=freeze_skeletons,
+            dtype=W.dtype,
+            device=W.device,
+        )
+
+        W_float = W.float()
+        if method == &#34;leverage&#34;:
+            col_scores, row_scores = compute_leverage_scores(W_float, rank=r)
+        elif method == &#34;energy&#34;:
+            col_scores, row_scores = compute_energy_scores(W_float)
+        else:
+            col_scores = torch.ones(in_features, device=W.device)
+            row_scores = torch.ones(out_features, device=W.device)
+
+        col_idx = select_indices(col_scores, k=r, deterministic=deterministic)
+        row_idx = select_indices(row_scores, k=r, deterministic=deterministic)
+
+        # C = W[:, col_idx] (out_features, r)
+        # R = W[row_idx, :] (r, in_features)
+        C = W_float[:, col_idx]
+        R = W_float[row_idx, :]
+
+        # Optimal core matrix: U = C^+ @ W @ R^+
+        # This is the exact least-squares solution argmin_U ||W - C U R||_F
+        try:
+            C_pinv = torch.linalg.pinv(C, rcond=1e-4)
+            R_pinv = torch.linalg.pinv(R, rcond=1e-4)
+            U = torch.matmul(torch.matmul(C_pinv, W_float), R_pinv)
+        except Exception:
+            W_int = W_float[row_idx][:, col_idx]
+            U = torch.linalg.pinv(W_int, rcond=1e-3)
+
+        cur_layer.C.data.copy_(C.to(dtype=W.dtype))
+        cur_layer.U.data.copy_(U.to(dtype=W.dtype))
+        cur_layer.R.data.copy_(R.to(dtype=W.dtype))
+
+        if bias is not None and cur_layer.bias is not None:
+            cur_layer.bias.data.copy_(bias)
+
+        return cur_layer</code></pre>
+</details>
+<div class="desc"><p>Linear layer whose weight matrix is factorized via CUR cross-approximation:
+W ≈ C @ U @ R
+- C in R^{out_features x rank}: selected columns of W
+- U in R^{rank x rank}: Moore-Penrose pseudo-inverse core matrix
+- R in R^{rank x in_features}: selected rows of W</p>
+<p>Executes forward pass in factorized form:
+y = ((x @ R^T) @ U^T) @ C^T + bias</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.cur_compressor.CURLinear.from_linear"><code class="name flex">
+<span>def <span class="ident">from_linear</span></span>(<span>linear: nn.Linear | Any,<br>rank: int = 64,<br>method: str = 'leverage',<br>deterministic: bool = True,<br>lora_r: int = 0,<br>lora_alpha: float = 1.0,<br>freeze_skeletons: bool = False) ‑> <a title="neuralops.compression_engine.cur_compressor.CURLinear" href="#neuralops.compression_engine.cur_compressor.CURLinear">CURLinear</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Construct CURLinear from existing nn.Linear or Conv1D using leverage scores or energy sampling.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.cur_compressor.CURLinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Reconstructed effective weight matrix for compatibility.&#34;&#34;&#34;
+    W_core = torch.matmul(torch.matmul(self.C, self.U), self.R)
+    if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        W_core = W_core + (torch.matmul(self.lora_B, self.lora_A) * self.scaling)
+    return W_core</code></pre>
+</details>
+<div class="desc"><p>Reconstructed effective weight matrix for compatibility.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.cur_compressor.CURLinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    &#34;&#34;&#34;
+    Sub-quadratic forward execution:
+    x: (..., in_features)
+    y = ((x @ R^T) @ U^T) @ C^T + bias
+    &#34;&#34;&#34;
+    orig_shape = x.shape
+    x_flat = x.reshape(-1, self.in_features)
+
+    # Factorized forward pass:
+    # x_r = x @ R^T: (K, rank)
+    x_r = F.linear(x_flat, self.R)
+    # x_ru = x_r @ U^T: (K, rank)
+    x_ru = F.linear(x_r, self.U)
+    # out = x_ru @ C^T + bias: (K, out_features)
+    out = F.linear(x_ru, self.C, self.bias)
+
+    if self.lora_r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        lora_out = F.linear(F.linear(x_flat, self.lora_A), self.lora_B) * self.scaling
+        out = out + lora_out
+
+    return out.view(*orig_shape[:-1], self.out_features)</code></pre>
+</details>
+<div class="desc"><p>Sub-quadratic forward execution:
+x: (&hellip;, in_features)
+y = ((x @ R^T) @ U^T) @ C^T + bias</p></div>
+</dd>
+<dt id="neuralops.compression_engine.cur_compressor.CURLinear.get_weight"><code class="name flex">
+<span>def <span class="ident">get_weight</span></span>(<span>self) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_weight(self) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Materialize reconstructed weight matrix W = C @ U @ R.&#34;&#34;&#34;
+    return self.weight</code></pre>
+</details>
+<div class="desc"><p>Materialize reconstructed weight matrix W = C @ U @ R.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.cur_compressor.compute_energy_scores" href="#neuralops.compression_engine.cur_compressor.compute_energy_scores">compute_energy_scores</a></code></li>
+<li><code><a title="neuralops.compression_engine.cur_compressor.compute_leverage_scores" href="#neuralops.compression_engine.cur_compressor.compute_leverage_scores">compute_leverage_scores</a></code></li>
+<li><code><a title="neuralops.compression_engine.cur_compressor.cur_compressor_factory" href="#neuralops.compression_engine.cur_compressor.cur_compressor_factory">cur_compressor_factory</a></code></li>
+<li><code><a title="neuralops.compression_engine.cur_compressor.select_indices" href="#neuralops.compression_engine.cur_compressor.select_indices">select_indices</a></code></li>
+<li><code><a title="neuralops.compression_engine.cur_compressor.tikhonov_pinv" href="#neuralops.compression_engine.cur_compressor.tikhonov_pinv">tikhonov_pinv</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.cur_compressor.CURCompressor" href="#neuralops.compression_engine.cur_compressor.CURCompressor">CURCompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.cur_compressor.CURCompressor.compress" href="#neuralops.compression_engine.cur_compressor.CURCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.compression_engine.cur_compressor.CURCompressor.compress_linear" href="#neuralops.compression_engine.cur_compressor.CURCompressor.compress_linear">compress_linear</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.cur_compressor.CURLinear" href="#neuralops.compression_engine.cur_compressor.CURLinear">CURLinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.cur_compressor.CURLinear.forward" href="#neuralops.compression_engine.cur_compressor.CURLinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.compression_engine.cur_compressor.CURLinear.from_linear" href="#neuralops.compression_engine.cur_compressor.CURLinear.from_linear">from_linear</a></code></li>
+<li><code><a title="neuralops.compression_engine.cur_compressor.CURLinear.get_weight" href="#neuralops.compression_engine.cur_compressor.CURLinear.get_weight">get_weight</a></code></li>
+<li><code><a title="neuralops.compression_engine.cur_compressor.CURLinear.weight" href="#neuralops.compression_engine.cur_compressor.CURLinear.weight">weight</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.cur_compressor.CURLinear" href="#neuralops.compression_engine.cur_compressor.CURLinear">CURLinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.cur_compressor.CURLinear.forward" href="#neuralops.compression_engine.cur_compressor.CURLinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.compression_engine.cur_compressor.CURLinear.from_linear" href="#neuralops.compression_engine.cur_compressor.CURLinear.from_linear">from_linear</a></code></li>
+<li><code><a title="neuralops.compression_engine.cur_compressor.CURLinear.get_weight" href="#neuralops.compression_engine.cur_compressor.CURLinear.get_weight">get_weight</a></code></li>
+<li><code><a title="neuralops.compression_engine.cur_compressor.CURLinear.weight" href="#neuralops.compression_engine.cur_compressor.CURLinear.weight">weight</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

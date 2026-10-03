@@ -1,0 +1,878 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.flat_llm API documentation</title>
+<meta name="description" content="FLAT-LLM: Activation-Aware Structured Dimension &amp; Neuron Pruning …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.flat_llm</code></h1>
+</header>
+<section id="section-intro">
+<p>FLAT-LLM: Activation-Aware Structured Dimension &amp; Neuron Pruning.</p>
+<p>Registered as 'flat_llm', 'flat_llm_compressor'.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.flat_llm.flat_llm_factory"><code class="name flex">
+<span>def <span class="ident">flat_llm_factory</span></span>(<span>model: Any, comp_config: Any = None, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;flat_llm_factory&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;flat_llm_compressor_factory&#34;)
+def flat_llm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -&gt; Any:
+    return_stats = kwargs.pop(&#34;return_stats&#34;, kwargs.pop(&#34;return_tuple&#34;, False))
+    keep_ratio = kwargs.pop(
+        &#34;keep_ratio&#34;,
+        _cfg_get(comp_config, &#34;flat_llm_keep_ratio&#34;, _cfg_get(comp_config, &#34;keep_ratio&#34;, 0.7)),
+    )
+    damping = kwargs.pop(
+        &#34;damping&#34;,
+        _cfg_get(comp_config, &#34;flat_llm_damping&#34;, _cfg_get(comp_config, &#34;damping&#34;, 1e-4)),
+    )
+    structured_24 = kwargs.pop(
+        &#34;structured_24&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;flat_llm_structured_24&#34;,
+            _cfg_get(comp_config, &#34;structured_24&#34;, False),
+        ),
+    )
+    max_error = kwargs.pop(
+        &#34;max_error&#34;,
+        _cfg_get(comp_config, &#34;flat_llm_max_error&#34;, _cfg_get(comp_config, &#34;max_error&#34;, 0.35)),
+    )
+    target_attention_only = kwargs.pop(
+        &#34;target_attention_only&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;flat_llm_target_attention_only&#34;,
+            _cfg_get(comp_config, &#34;target_attention_only&#34;, False),
+        ),
+    )
+    fallback = kwargs.pop(
+        &#34;fallback_to_original&#34;,
+        _cfg_get(
+            comp_config,
+            &#34;flat_llm_fallback_to_original&#34;,
+            _cfg_get(comp_config, &#34;fallback_to_original&#34;, True),
+        ),
+    )
+    tokenizer = kwargs.pop(
+        &#34;tokenizer&#34;,
+        getattr(model, &#34;tokenizer&#34;, None) or _cfg_get(comp_config, &#34;tokenizer&#34;, None),
+    )
+    num_calib = kwargs.pop(
+        &#34;num_calibration_batches&#34;,
+        _cfg_get(comp_config, &#34;num_calibration_batches&#34;, 8),
+    )
+
+    compressor = FLATLLMCompressor(
+        model,
+        tokenizer=tokenizer,
+        keep_ratio=keep_ratio,
+        damping=damping,
+        structured_24=structured_24,
+        max_error=max_error,
+        target_attention_only=target_attention_only,
+        fallback_to_original=fallback,
+        num_calibration_batches=num_calib,
+        cfg=comp_config,
+        **kwargs,
+    )
+    compressed_model, stats = compressor.compress()
+    if return_stats:
+        return compressed_model, stats
+    return compressed_model</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.flat_llm.FLATLLMCompressor"><code class="flex name class">
+<span>class <span class="ident">FLATLLMCompressor</span></span>
+<span>(</span><span>model: nn.Module,<br>tokenizer: Any | None = None,<br>keep_ratio: float = 0.7,<br>damping: float = 0.0001,<br>max_error: float = 0.35,<br>target_attention_only: bool = False,<br>fallback_to_original: bool = True,<br>calibration_loader: Any | None = None,<br>calibration_texts: list[str] | None = None,<br>device: str | torch.device | None = None,<br>structured_24: bool = False,<br>target_modules: list[str] | None = None,<br>cfg: Any | None = None,<br>num_calibration_batches: int = 8,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@COMPRESSOR_REGISTRY.register(&#34;flat_llm&#34;)
+@COMPRESSOR_REGISTRY.register(&#34;flat_llm_compressor&#34;)
+class FLATLLMCompressor(BaseCompressor):
+    &#34;&#34;&#34;
+    FLAT-LLM compressor: Activation-aware output-channel pruning.
+
+    Pipeline:
+      1. Collect per-output-channel energy from calibration activations.
+      2. Rank channels by energy.
+      3. Keep top-k channels (k = round(keep_ratio * out_features)).
+      4. Replace Linear with PrunedChannelLinear (factorized storage).
+
+    Optionally applies 2:4 structured sparsity (compute-only; no storage savings
+    unless a sparse kernel is used).
+    &#34;&#34;&#34;
+
+    # FLT-FIX-09
+    is_custom_attention: bool = False
+
+    def __init__(
+        self,
+        model: nn.Module,
+        tokenizer: Any | None = None,
+        keep_ratio: float = 0.7,
+        damping: float = 1e-4,
+        max_error: float = 0.35,
+        target_attention_only: bool = False,
+        fallback_to_original: bool = True,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
+        structured_24: bool = False,
+        target_modules: list[str] | None = None,
+        cfg: Any | None = None,
+        num_calibration_batches: int = 8,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(model, name=&#34;flat_llm&#34;, **kwargs)
+        cfg = cfg or kwargs.get(&#34;comp_config&#34;)
+        self.cfg = cfg
+
+        self.tokenizer = tokenizer or getattr(model, &#34;tokenizer&#34;, None)
+        raw_kr = _cfg_get(cfg, &#34;flat_llm_keep_ratio&#34;, _cfg_get(cfg, &#34;keep_ratio&#34;, keep_ratio))
+        self.keep_ratio = max(0.05, min(float(raw_kr), 1.0))
+        # FLT-FIX-04
+        self.damping = max(
+            0.0,
+            float(_cfg_get(cfg, &#34;flat_llm_damping&#34;, _cfg_get(cfg, &#34;damping&#34;, damping))),
+        )
+        self.structured_24 = bool(
+            _cfg_get(
+                cfg,
+                &#34;flat_llm_structured_24&#34;,
+                _cfg_get(cfg, &#34;structured_24&#34;, structured_24),
+            )
+        )
+        c_max_error = _cfg_get(cfg, &#34;flat_llm_max_error&#34;, _cfg_get(cfg, &#34;max_error&#34;, max_error))
+        if c_max_error is None or c_max_error == 0.35:
+            c_max_error = adaptive_max_error(int(self.keep_ratio * 768), 768, 768, &#34;distilbert&#34;)
+            c_max_error = max(c_max_error, 0.60)
+
+        self.max_error = float(c_max_error)
+        self.target_attention_only = bool(
+            _cfg_get(
+                cfg,
+                &#34;flat_llm_target_attention_only&#34;,
+                _cfg_get(cfg, &#34;target_attention_only&#34;, target_attention_only),
+            )
+        )
+        self.fallback_to_original = bool(
+            _cfg_get(
+                cfg,
+                &#34;flat_llm_fallback_to_original&#34;,
+                _cfg_get(cfg, &#34;fallback_to_original&#34;, fallback_to_original),
+            )
+        )
+        self.calibration_loader = calibration_loader or _cfg_get(cfg, &#34;calibration_loader&#34;, None)
+        self.calibration_texts = calibration_texts
+        self.target_modules = target_modules
+        self.target_device = (
+            torch.device(device)
+            if device is not None
+            else next(model.parameters(), torch.tensor(0.0)).device
+        )
+        self.num_calibration_batches = max(
+            1, int(_cfg_get(cfg, &#34;num_calibration_batches&#34;, num_calibration_batches))
+        )
+
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_keep_ratios: dict[str, float] = {}
+        self._compressed_params: int = 0
+
+    # ------------------------------------------------------------------
+    def _is_target_module(self, name: str, module: nn.Module) -&gt; bool:
+        name_lower = name.lower()
+        if any(part in name.split(&#34;.&#34;) for part in [&#34;lora_A&#34;, &#34;lora_B&#34;, &#34;base_layer&#34;]):
+            return False
+        if any(
+            skip in name_lower
+            for skip in (
+                &#34;classifier&#34;,
+                &#34;score&#34;,
+                &#34;lm_head&#34;,
+                &#34;pooler&#34;,
+                &#34;embedding&#34;,
+                &#34;router&#34;,
+                &#34;gate&#34;,
+                &#34;norm&#34;,
+                &#34;layernorm&#34;,
+                &#34;rmsnorm&#34;,
+            )
+        ):
+            return False
+
+        if isinstance(
+            module,
+            (
+                nn.LayerNorm,
+                nn.RMSNorm,
+                nn.Embedding,
+                nn.BatchNorm1d,
+                nn.BatchNorm2d,
+                PrunedChannelLinear,
+            ),
+        ):
+            return False
+
+        if self.target_attention_only:
+            if not any(attn_kw in name_lower for attn_kw in _ATTN_NAMES):
+                return False
+
+        target_mod = getattr(module, &#34;base_layer&#34;, module)
+        cls_name = target_mod.__class__.__name__.lower()
+        is_linear = isinstance(target_mod, nn.Linear)
+        is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+        if not (is_linear or is_conv1d):
+            return False
+
+        try:
+            if not should_compress_linear(self.model, name):
+                return False
+        except Exception:
+            pass
+
+        if self.target_modules is not None:
+            return any(t in name for t in self.target_modules)
+        return True
+
+    # ------------------------------------------------------------------
+    # Calibration: per-output-channel energy (FLT-FIX-05)
+    # ------------------------------------------------------------------
+    def _normalize_calibration_batches(self, calib_inputs: Any) -&gt; list[Any]:
+        if calib_inputs is None:
+            return []
+        if isinstance(calib_inputs, (torch.Tensor, dict)):
+            return [calib_inputs]
+        if isinstance(calib_inputs, (list, tuple)):
+            if len(calib_inputs) == 0:
+                return []
+            first = calib_inputs[0]
+            if isinstance(first, (dict, torch.Tensor)):
+                return list(calib_inputs)
+            return [calib_inputs]
+        return [calib_inputs]
+
+    def _collect_layer_outputs(self) -&gt; dict[str, torch.Tensor]:
+        &#34;&#34;&#34;
+        Capture per-output-channel energy across calibration batches.
+
+        Energy metric: E[x_out^2] per output channel, computed as the mean of
+        per-batch variance of the output activations. For Conv1D, the axis is
+        transposed accordingly.
+        &#34;&#34;&#34;
+        self.model.eval()
+        energy_sum: dict[str, torch.Tensor] = {}
+        batch_count: dict[str, int] = {}
+        hooks = []
+
+        def make_hook(layer_name: str):
+            def hook(module, inputs, output):
+                if not isinstance(output, torch.Tensor):
+                    return
+                out = output.detach().float()
+                target_mod = getattr(module, &#34;base_layer&#34;, module)
+                cls_name = target_mod.__class__.__name__.lower()
+                is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+                out_f = target_mod.weight.shape[1] if is_conv1d else target_mod.weight.shape[0]
+                if out.shape[-1] != out_f:
+                    return
+                flat = out.reshape(-1, out_f).cpu()
+                if flat.size(0) &gt;= 2:
+                    var = flat.var(dim=0)
+                else:
+                    var = flat.abs().mean(dim=0)
+                if layer_name not in energy_sum:
+                    energy_sum[layer_name] = var
+                    batch_count[layer_name] = 1
+                else:
+                    energy_sum[layer_name] += var
+                    batch_count[layer_name] += 1
+
+            return hook
+
+        for name, module in self.model.named_modules():
+            if self._is_target_module(name, module):
+                hooks.append(module.register_forward_hook(make_hook(name)))
+
+        try:
+            calib_inputs = get_calibration_tensors(
+                self.model,
+                tokenizer=self.tokenizer,
+                calibration_loader=self.calibration_loader,
+                calibration_texts=self.calibration_texts,
+                device=self.target_device,
+            )
+            batches = self._normalize_calibration_batches(calib_inputs)
+            n = min(len(batches), self.num_calibration_batches)
+
+            with torch.no_grad():
+                for i in range(n):
+                    b = batches[i]
+                    try:
+                        if isinstance(b, dict):
+                            self.model(**b)
+                        elif isinstance(b, torch.Tensor):
+                            self.model(b)
+                        elif isinstance(b, (list, tuple)):
+                            self.model(*b)
+                    except Exception as e:
+                        logger.debug(&#34;FLAT-LLM calibration batch %d failed: %s&#34;, i, e)
+        finally:
+            for h in hooks:
+                h.remove()
+
+        aggregated: dict[str, torch.Tensor] = {}
+        for name, esum in energy_sum.items():
+            aggregated[name] = (esum / max(1, batch_count[name])).to(self.target_device)
+        return aggregated
+
+    # ------------------------------------------------------------------
+    def compress(self, **kwargs: Any) -&gt; tuple[nn.Module, dict[str, Any]]:
+        from neuralops.core.model_utils import replace_module
+
+        outputs_map = self._collect_layer_outputs()
+        self.compressed_layers = []
+        self.fallback_layers = []
+        self.skipped_layers = []
+        self.layer_errors = {}
+        self.layer_keep_ratios = {}
+
+        # Honest accounting: storage params, not &#34;effective&#34; made-up numbers.
+        total_orig_storage = 0
+        total_comp_storage = 0
+
+        targets = [
+            (name, mod)
+            for name, mod in self.model.named_modules()
+            if self._is_target_module(name, mod)
+        ]
+
+        if not targets:
+            logger.warning(&#34;FLAT-LLM: no compressible layers found.&#34;)
+            return self.model, self.get_compression_stats()
+
+        for name, module in targets:
+            target_mod = getattr(module, &#34;base_layer&#34;, module)
+            cls_name = target_mod.__class__.__name__.lower()
+            is_conv1d = &#34;conv1d&#34; in cls_name or hasattr(target_mod, &#34;nf&#34;)
+            raw_w = target_mod.weight.data
+            device = raw_w.device
+            dtype = raw_w.dtype
+
+            W = raw_w.t().float().contiguous() if is_conv1d else raw_w.float()
+            d_out, d_in = W.shape
+            orig_layer_storage = d_out * d_in
+            total_orig_storage += orig_layer_storage
+            norm_w = torch.norm(W, p=&#34;fro&#34;).item()
+
+            # Activation-aware saliency
+            act = outputs_map.get(name, None)
+            if act is not None and act.numel() &gt; 0 and act.shape[0] == d_out:
+                saliency = act.float().clamp(min=0.0).to(device)
+            else:
+                saliency = W.pow(2).sum(dim=1)
+
+            # Apply damping to stabilize near-zero channels
+            if self.damping &gt; 0:
+                saliency = saliency + self.damping * saliency.mean().clamp_min(1e-12)
+
+            # ---- Decide kept channels ----
+            if self.structured_24:
+                # 2:4 is a compute-only structured sparsity. For storage, we still
+                # keep all output channels; only the mask reduces the values.
+                sal_mat = saliency.unsqueeze(1).expand_as(W)
+                W_pruned, _mask = apply_24_structured_mask(W, saliency=sal_mat, dim=0)
+                # Storage: unchanged (dense)
+                kept_idx = torch.arange(d_out, device=device)
+                W_kept = W_pruned.contiguous()
+                keep_ratio_actual = 1.0
+                bias_kept = (
+                    target_mod.bias.data.float()
+                    if getattr(target_mod, &#34;bias&#34;, None) is not None and target_mod.bias is not None
+                    else None
+                )
+                comp_layer_storage = orig_layer_storage
+            else:
+                keep_dims = max(1, min(int(round(d_out * self.keep_ratio)), d_out))
+                _, keep_idx = torch.topk(saliency, k=keep_dims, largest=True)
+                keep_idx, _ = torch.sort(keep_idx)  # stable order
+                kept_idx = keep_idx.to(device)
+                W_kept = W.index_select(0, kept_idx).contiguous()
+                keep_ratio_actual = keep_dims / d_out
+
+                # Compute error vs original (with pruned rows treated as zero)
+                W_pruned = torch.zeros_like(W)
+                W_pruned.index_copy_(0, kept_idx, W_kept)
+
+                # Bias handling: keep only the corresponding entries
+                if getattr(target_mod, &#34;bias&#34;, None) is not None and target_mod.bias is not None:
+                    bias_full = target_mod.bias.data.float()
+                    bias_kept = bias_full.index_select(0, kept_idx).contiguous()
+                else:
+                    bias_kept = None
+
+                # Storage: k * in instead of out * in
+                comp_layer_storage = int(keep_dims) * d_in
+
+            # ---- Error check ----
+            if norm_w &lt; 1e-12:
+                final_err = 0.0
+            else:
+                if self.structured_24:
+                    final_err = float(torch.norm(W - W_pruned, p=&#34;fro&#34;).item() / norm_w)
+                else:
+                    W_pruned_full = torch.zeros_like(W)
+                    W_pruned_full.index_copy_(0, kept_idx, W_kept)
+                    final_err = float(torch.norm(W - W_pruned_full, p=&#34;fro&#34;).item() / norm_w)
+
+            self.layer_errors[name] = final_err
+            self.layer_keep_ratios[name] = float(keep_ratio_actual)
+
+            if final_err &gt; self.max_error:
+                logger.warning(
+                    &#34;FLAT-LLM error %.4f on %s exceeds %.4f.&#34;,
+                    final_err,
+                    name,
+                    self.max_error,
+                )
+                if self.fallback_to_original:
+                    self.fallback_layers.append(name)
+                    total_comp_storage += orig_layer_storage
+                    for p in module.parameters():
+                        p.requires_grad = False
+                    continue
+
+            # ---- Build the new module ----
+            if self.structured_24:
+                # No storage reduction: keep original Linear, just overwrite
+                # its weight with the masked values (compute-only sparsity).
+                new_module = target_mod
+                with torch.no_grad():
+                    if is_conv1d:
+                        target_mod.weight.data.copy_(W_kept.t().to(dtype=dtype, device=device))
+                    else:
+                        target_mod.weight.data.copy_(W_kept.to(dtype=dtype, device=device))
+            else:
+                new_module = PrunedChannelLinear(
+                    in_features=d_in,
+                    original_out_features=d_out,
+                    kept_idx=kept_idx.cpu(),
+                    W_kept=W_kept.to(dtype=dtype, device=device),
+                    bias_kept=(
+                        bias_kept.to(dtype=dtype, device=device) if bias_kept is not None else None
+                    ),
+                )
+
+            # ---- Splice into the model (preserve LoRA wrappers) ----
+            if hasattr(module, &#34;base_layer&#34;):
+                module.base_layer = new_module
+                # Keep LoRA params trainable
+                for pn, p in module.named_parameters():
+                    if &#34;lora_&#34; in pn.lower() and not pn.startswith(&#34;base_layer&#34;):
+                        p.requires_grad = True
+            else:
+                replace_module(self.model, name, new_module)
+
+            self.compressed_layers.append(name)
+            total_comp_storage += comp_layer_storage
+
+        # ---- Forward sanity check (FLT-FIX-07) ----
+        forward_check_success = True
+        try:
+            with torch.no_grad():
+                first_p = next(self.model.parameters(), None)
+                dev = first_p.device if first_p is not None else torch.device(&#34;cpu&#34;)
+                dummy = torch.randint(0, 100, (1, 8), device=dev, dtype=torch.long)
+                attn = torch.ones_like(dummy)
+                try:
+                    self.model(input_ids=dummy, attention_mask=attn)
+                except Exception:
+                    try:
+                        self.model(dummy)
+                    except Exception:
+                        first_linear = next(
+                            (
+                                m
+                                for m in self.model.modules()
+                                if isinstance(m, (nn.Linear, PrunedChannelLinear))
+                            ),
+                            None,
+                        )
+                        in_dim = getattr(first_linear, &#34;in_features&#34;, 8)
+                        dt = first_p.dtype if first_p is not None else torch.float32
+                        self.model(torch.randn(1, 8, in_dim, device=dev, dtype=dt))
+        except Exception as e:
+            logger.debug(&#34;FLAT-LLM forward sanity check failed: %s&#34;, e)
+            forward_check_success = False
+
+        # Honest storage ratio
+        storage_ratio = total_orig_storage / total_comp_storage if total_comp_storage &gt; 0 else 1.0
+        effective_ratio = total_comp_storage / total_orig_storage if total_orig_storage &gt; 0 else 1.0
+
+        try:
+            self._compressed_params = self._count_params(self.model)
+        except Exception:
+            self._compressed_params = sum(p.numel() for p in self.model.parameters())
+
+        try:
+            stats = self.get_compression_stats()
+        except Exception:
+            stats = {}
+
+        avg_err = (
+            sum(self.layer_errors[k] for k in self.compressed_layers)
+            / max(1, len(self.compressed_layers))
+            if self.compressed_layers
+            else 0.0
+        )
+
+        stats.update(
+            {
+                &#34;compressed_layers&#34;: self.compressed_layers,
+                &#34;fallback_layers&#34;: self.fallback_layers,
+                &#34;skipped_layers&#34;: self.skipped_layers,
+                &#34;layer_errors&#34;: self.layer_errors,
+                &#34;layer_keep_ratios&#34;: self.layer_keep_ratios,
+                &#34;keep_ratio&#34;: self.keep_ratio,
+                &#34;damping&#34;: self.damping,
+                &#34;structured_24&#34;: self.structured_24,
+                &#34;max_error&#34;: self.max_error,
+                &#34;target_attention_only&#34;: self.target_attention_only,
+                &#34;fallback_to_original&#34;: self.fallback_to_original,
+                &#34;avg_reconstruction_error&#34;: avg_err,
+                &#34;num_compressed&#34;: len(self.compressed_layers),
+                &#34;num_fallback&#34;: len(self.fallback_layers),
+                &#34;num_skipped&#34;: len(self.skipped_layers),
+                # Honest accounting (FLT-FIX-02)
+                &#34;orig_layer_storage_params&#34;: total_orig_storage,
+                &#34;comp_layer_storage_params&#34;: total_comp_storage,
+                &#34;effective_parameter_ratio&#34;: round(effective_ratio, 4),
+                &#34;storage_compression_ratio&#34;: round(storage_ratio, 3),
+                &#34;storage_reduction_pct&#34;: round(100.0 * (1.0 - effective_ratio), 2),
+                &#34;forward_check_success&#34;: forward_check_success,
+                &#34;method&#34;: &#34;flat_llm_channel_pruning&#34;,
+            }
+        )
+
+        logger.info(
+            &#34;Compressor flat_llm finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f&#34;,
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error,
+        )
+        return self.model, stats</code></pre>
+</details>
+<div class="desc"><p>FLAT-LLM compressor: Activation-aware output-channel pruning.</p>
+<p>Pipeline
+-----=
+1. Collect per-output-channel energy from calibration activations.
+2. Rank channels by energy.
+3. Keep top-k channels (k = round(keep_ratio * out_features)).
+4. Replace Linear with PrunedChannelLinear (factorized storage).</p>
+<p>Optionally applies 2:4 structured sparsity (compute-only; no storage savings
+unless a sparse kernel is used).</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.flat_llm.FLATLLMCompressor.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseCompressor" href="../core/base.html#neuralops.core.base.BaseCompressor">BaseCompressor</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseCompressor.compress" href="../core/base.html#neuralops.core.base.BaseCompressor.compress">compress</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.get_compression_stats" href="../core/base.html#neuralops.core.base.BaseCompressor.get_compression_stats">get_compression_stats</a></code></li>
+<li><code><a title="neuralops.core.base.BaseCompressor.summary" href="../core/base.html#neuralops.core.base.BaseCompressor.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.compression_engine.flat_llm.PrunedChannelLinear"><code class="flex name class">
+<span>class <span class="ident">PrunedChannelLinear</span></span>
+<span>(</span><span>in_features: int,<br>original_out_features: int,<br>kept_idx: torch.Tensor,<br>W_kept: torch.Tensor,<br>bias_kept: torch.Tensor | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class PrunedChannelLinear(nn.Module):
+    &#34;&#34;&#34;
+    Linear layer with pruned output channels.
+
+    Stores only the kept rows of the effective weight matrix:
+      - W_kept:      (k, in_features)  fp16/fp32   -- only kept rows
+      - bias_kept:   (k,)              optional
+      - kept_idx:    (k,)              int64  -- output positions of kept rows
+      - original_out_features: int
+
+    Forward:
+      h = F.linear(x, W_kept, bias_kept)          # (..., k)
+      out = zeros(..., original_out_features)
+      out.scatter_(-1, kept_idx, h)               # (..., original_out)
+    &#34;&#34;&#34;
+
+    is_custom_attention = False
+
+    def __init__(
+        self,
+        in_features: int,
+        original_out_features: int,
+        kept_idx: torch.Tensor,  # (k,) int64
+        W_kept: torch.Tensor,  # (k, in_features)
+        bias_kept: torch.Tensor | None = None,
+    ) -&gt; None:
+        super().__init__()
+        self.in_features = int(in_features)
+        self.original_out_features = int(original_out_features)
+        self.out_features = self.original_out_features  # for API compatibility
+        self.num_kept = int(W_kept.shape[0])
+
+        self.register_buffer(&#34;kept_idx&#34;, kept_idx.long(), persistent=True)
+        self.W_kept = nn.Parameter(W_kept, requires_grad=False)
+
+        if bias_kept is not None:
+            self.bias_kept = nn.Parameter(bias_kept, requires_grad=False)
+        else:
+            self.register_parameter(&#34;bias_kept&#34;, None)
+
+        self._cached_weight: torch.Tensor | None = None
+
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Reconstruct effective (original_out, in) weight with zeros in pruned rows.&#34;&#34;&#34;
+        if self._cached_weight is not None:
+            return self._cached_weight
+        W = self.W_kept.new_zeros(self.original_out_features, self.in_features)
+        W[self.kept_idx] = self.W_kept
+        self._cached_weight = W
+        return W
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        h = F.linear(x, self.W_kept, self.bias_kept)  # (..., k)
+        out = torch.zeros(
+            *x.shape[:-1],
+            self.original_out_features,
+            dtype=h.dtype,
+            device=h.device,
+        )
+        out.scatter_(-1, self.kept_idx.expand(*x.shape[:-1], -1), h)
+        return out
+
+    def extra_repr(self) -&gt; str:
+        return (
+            f&#34;in_features={self.in_features}, original_out_features={self.original_out_features}, &#34;
+            f&#34;num_kept={self.num_kept}&#34;
+        )</code></pre>
+</details>
+<div class="desc"><p>Linear layer with pruned output channels.</p>
+<p>Stores only the kept rows of the effective weight matrix:
+- W_kept:
+(k, in_features)
+fp16/fp32
+&ndash; only kept rows
+- bias_kept:
+(k,)
+optional
+- kept_idx:
+(k,)
+int64
+&ndash; output positions of kept rows
+- original_out_features: int</p>
+<p>Forward
+-----=
+h = F.linear(x, W_kept, bias_kept)
+# (&hellip;, k)
+out = zeros(&hellip;, original_out_features)
+out.scatter_(-1, kept_idx, h)
+# (&hellip;, original_out)</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.flat_llm.PrunedChannelLinear.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span></code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.compression_engine.flat_llm.PrunedChannelLinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Reconstruct effective (original_out, in) weight with zeros in pruned rows.&#34;&#34;&#34;
+    if self._cached_weight is not None:
+        return self._cached_weight
+    W = self.W_kept.new_zeros(self.original_out_features, self.in_features)
+    W[self.kept_idx] = self.W_kept
+    self._cached_weight = W
+    return W</code></pre>
+</details>
+<div class="desc"><p>Reconstruct effective (original_out, in) weight with zeros in pruned rows.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.flat_llm.PrunedChannelLinear.extra_repr"><code class="name flex">
+<span>def <span class="ident">extra_repr</span></span>(<span>self) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def extra_repr(self) -&gt; str:
+    return (
+        f&#34;in_features={self.in_features}, original_out_features={self.original_out_features}, &#34;
+        f&#34;num_kept={self.num_kept}&#34;
+    )</code></pre>
+</details>
+<div class="desc"><p>Return the extra representation of the module.</p>
+<p>To print customized extra information, you should re-implement
+this method in your own modules. Both single-line and multi-line
+strings are acceptable.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.flat_llm.PrunedChannelLinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    h = F.linear(x, self.W_kept, self.bias_kept)  # (..., k)
+    out = torch.zeros(
+        *x.shape[:-1],
+        self.original_out_features,
+        dtype=h.dtype,
+        device=h.device,
+    )
+    out.scatter_(-1, self.kept_idx.expand(*x.shape[:-1], -1), h)
+    return out</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine" href="index.html">neuralops.compression_engine</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.flat_llm.flat_llm_factory" href="#neuralops.compression_engine.flat_llm.flat_llm_factory">flat_llm_factory</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.flat_llm.FLATLLMCompressor" href="#neuralops.compression_engine.flat_llm.FLATLLMCompressor">FLATLLMCompressor</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.flat_llm.FLATLLMCompressor.is_custom_attention" href="#neuralops.compression_engine.flat_llm.FLATLLMCompressor.is_custom_attention">is_custom_attention</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.compression_engine.flat_llm.PrunedChannelLinear" href="#neuralops.compression_engine.flat_llm.PrunedChannelLinear">PrunedChannelLinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.flat_llm.PrunedChannelLinear.extra_repr" href="#neuralops.compression_engine.flat_llm.PrunedChannelLinear.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.compression_engine.flat_llm.PrunedChannelLinear.forward" href="#neuralops.compression_engine.flat_llm.PrunedChannelLinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.compression_engine.flat_llm.PrunedChannelLinear.is_custom_attention" href="#neuralops.compression_engine.flat_llm.PrunedChannelLinear.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.compression_engine.flat_llm.PrunedChannelLinear.weight" href="#neuralops.compression_engine.flat_llm.PrunedChannelLinear.weight">weight</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>
