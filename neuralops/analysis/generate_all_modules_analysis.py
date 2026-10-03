@@ -825,7 +825,7 @@ def main():
     print("=" * 70)
 
     # 1. Load registries
-    sys.path.insert(0, str(PROJECT_ROOT / "neuralops"))
+    sys.path.insert(0, str(PROJECT_ROOT))
     try:
         from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
     except Exception as e:
