@@ -163,171 +163,53 @@ if not any(isinstance(finder, _ModuleAliasFinder) for finder in sys.meta_path):
 
 # Symbol to (module_path, attr_name) mapping for fast, lazy resolution
 _LAZY_EXPORTS = {
-    # Core Interfaces & Registries
+    "ABTestResult": ("neuralops.evaluation.ab_testing", "ABTestResult"),
+    "ABTester": ("neuralops.evaluation.ab_testing", "ABTester"),
+    "ATTENTION_REGISTRY": ("neuralops.core.registry", "ATTENTION_REGISTRY"),
     "BaseAttention": ("neuralops.core.base", "BaseAttention"),
     "BaseCompressor": ("neuralops.core.base", "BaseCompressor"),
-    "ATTENTION_REGISTRY": ("neuralops.core.registry", "ATTENTION_REGISTRY"),
-    "COMPRESSOR_REGISTRY": ("neuralops.core.registry", "COMPRESSOR_REGISTRY"),
-    "available_attention_types": (
-        "neuralops.core.registry",
-        "available_attention_types",
-    ),
-    "register_attention": ("neuralops.core.registry", "register_attention"),
-    "register_compressor": ("neuralops.core.registry", "register_compressor"),
-    "inject_attention": ("neuralops.core.attention_utils", "inject_attention"),
-    "compress_model": ("neuralops.core.compression_engine", "compress_model"),
-    "CompressionPipeline": ("neuralops.core.compression_engine", "CompressionPipeline"),
-    "detect_architecture": ("neuralops.core.architecture", "detect_architecture"),
-    "UnifiedTransformerConfig": (
-        "neuralops.core.model_wrapper",
-        "UnifiedTransformerConfig",
-    ),
-    "UnifiedTransformerModel": (
-        "neuralops.core.model_wrapper",
-        "UnifiedTransformerModel",
-    ),
-    "MultiModeBenchmarkRunner": (
-        "neuralops.core.multi_mode_benchmark",
-        "MultiModeBenchmarkRunner",
-    ),
-    # Models
-    "BaseModel": ("neuralops.models", "BaseModel"),
-    # Trainers & Metrics
     "BaseTrainer": ("neuralops.trainer.base_trainer", "BaseTrainer"),
-    "HuggingFaceTrainer": ("neuralops.trainer.hf_trainer", "HuggingFaceTrainer"),
+    "BenchmarkDatasetInfo": ("neuralops.data.benchmark_datasets", "BenchmarkDatasetInfo"),
+    "BenchmarkDatasetRegistry": ("neuralops.data.benchmark_datasets", "BenchmarkDatasetRegistry"),
+    "COMPRESSOR_REGISTRY": ("neuralops.core.registry", "COMPRESSOR_REGISTRY"),
+    "CompressionPipeline": ("neuralops.core.compression_engine", "CompressionPipeline"),
     "CustomLoopTrainer": ("neuralops.trainer.custom_loop_trainer", "CustomLoopTrainer"),
-    "TrainerRegistry": ("neuralops.trainer.registry", "TrainerRegistry"),
-    "get_task_metrics": ("neuralops.trainer.metrics", "get_task_metrics"),
-    "aggregate_results": ("neuralops.trainer.metrics", "aggregate_results"),
-    # Data & Benchmark Datasets
     "DataConfig": ("neuralops.data.base", "DataConfig"),
-    "TaskType": ("neuralops.data.base", "TaskType"),
-    "create_dataloader": ("neuralops.data.base", "create_dataloader"),
-    "preprocess_function": ("neuralops.data.base", "preprocess_function"),
     "ExperimentConfig": ("neuralops.data.dataset_loader", "ExperimentConfig"),
-    "load_dataset": ("neuralops.data.dataset_loader", "load_dataset"),
-    "load_glue_local": ("neuralops.data.glue_loader", "load_glue_local"),
-    "GLUE_TASK_KEYS": ("neuralops.data.glue_loader", "GLUE_TASK_KEYS"),
-    "BenchmarkDatasetInfo": (
-        "neuralops.data.benchmark_datasets",
-        "BenchmarkDatasetInfo",
-    ),
-    "BenchmarkDatasetRegistry": (
-        "neuralops.data.benchmark_datasets",
-        "BenchmarkDatasetRegistry",
-    ),
-    "load_benchmark_dataset": (
-        "neuralops.data.benchmark_datasets",
-        "load_benchmark_dataset",
-    ),
-    "generate_synthetic_data": (
-        "neuralops.data.synthetic_generator",
-        "generate_synthetic_data",
-    ),
-    "run_universal_generation": (
-        "neuralops.data.synthetic_generator",
-        "run_universal_generation",
-    ),
-    # Benchmark & Pipeline
-    "build_attention_module": (
-        "neuralops.benchmark_attention",
-        "build_attention_module",
-    ),
-    "benchmark_single_module": (
-        "neuralops.benchmark_attention",
-        "benchmark_single_module",
-    ),
-    "run_benchmark_suite": ("neuralops.benchmark_attention", "run_benchmark_suite"),
-    "ResultWriter": ("neuralops.pipeline.result_writer", "ResultWriter"),
-    # Evaluation & Robustness
-    "ABTester": ("neuralops.evaluation.ab_testing", "ABTester"),
-    "ABTestResult": ("neuralops.evaluation.ab_testing", "ABTestResult"),
     "FairnessEvaluator": ("neuralops.evaluation.fairness", "FairnessEvaluator"),
     "FairnessReport": ("neuralops.evaluation.fairness", "FairnessReport"),
-    "LabelQualityDetector": (
-        "neuralops.evaluation.label_quality",
-        "LabelQualityDetector",
-    ),
+    "GLUE_TASK_KEYS": ("neuralops.data.glue_loader", "GLUE_TASK_KEYS"),
+    "HuggingFaceTrainer": ("neuralops.trainer.hf_trainer", "HuggingFaceTrainer"),
+    "LabelQualityDetector": ("neuralops.evaluation.label_quality", "LabelQualityDetector"),
     "LabelQualityReport": ("neuralops.evaluation.label_quality", "LabelQualityReport"),
+    "MultiModeBenchmarkRunner": ("neuralops.core.multi_mode_benchmark", "MultiModeBenchmarkRunner"),
+    "ResultWriter": ("neuralops.pipeline.result_writer", "ResultWriter"),
+    "ResultsSaver": ("neuralops.results_saver", "ResultsSaver"),
     "RetrainDecision": ("neuralops.evaluation.retraining", "RetrainDecision"),
     "RetrainPolicy": ("neuralops.evaluation.retraining", "RetrainPolicy"),
-    "RetrainingOrchestrator": (
-        "neuralops.evaluation.retraining",
-        "RetrainingOrchestrator",
-    ),
-    "RobustnessReport": ("neuralops.evaluation.robustness", "RobustnessReport"),
-    "TextAdversarialTester": (
-        "neuralops.evaluation.robustness",
-        "TextAdversarialTester",
-    ),
-    # Visualization & Dashboards
-    "ChartGenerator": ("neuralops.visualization.chart_generator", "ChartGenerator"),
-    "BaseVisualizer": ("neuralops.visualization.base", "BaseVisualizer"),
-    "VISUALIZER_REGISTRY": ("neuralops.visualization.base", "VISUALIZER_REGISTRY"),
-    "PLOT_REGISTRY": ("neuralops.visualization.plot_registry", "PLOT_REGISTRY"),
-    "register_default_plots": (
-        "neuralops.visualization.plot_registry",
-        "register_default_plots",
-    ),
-    "generate_csv_summary": (
-        "neuralops.visualization.report_generator",
-        "generate_csv_summary",
-    ),
-    "generate_html_report": (
-        "neuralops.visualization.report_generator",
-        "generate_html_report",
-    ),
-    "generate_latex_table": (
-        "neuralops.visualization.report_generator",
-        "generate_latex_table",
-    ),
-    "plot_accuracy_vs_rank": (
-        "neuralops.visualization.report_generator",
-        "plot_accuracy_vs_rank",
-    ),
-    "plot_radar_chart": (
-        "neuralops.visualization.report_generator",
-        "plot_radar_chart",
-    ),
-    "plot_attention_heatmap": (
-        "neuralops.visualization.benchmark_visualizer",
-        "plot_attention_heatmap",
-    ),
-    "plot_singular_value_decay": (
-        "neuralops.visualization.benchmark_visualizer",
-        "plot_singular_value_decay",
-    ),
-    "plot_kv_cache_scaling": (
-        "neuralops.visualization.benchmark_visualizer",
-        "plot_kv_cache_scaling",
-    ),
-    "plot_pareto_frontier": (
-        "neuralops.visualization.benchmark_visualizer",
-        "plot_pareto_frontier",
-    ),
-    "plot_dataset_radar_chart": (
-        "neuralops.visualization.benchmark_visualizer",
-        "plot_dataset_radar_chart",
-    ),
-    "plot_layerwise_sparsity_rank": (
-        "neuralops.visualization.benchmark_visualizer",
-        "plot_layerwise_sparsity_rank",
-    ),
-    "generate_dashboard_html": (
-        "neuralops.visualization.dashboard_generator",
-        "generate_dashboard_html",
-    ),
-    "generate_summary_json": (
-        "neuralops.visualization.dashboard_generator",
-        "generate_summary_json",
-    ),
-    "set_plot_style": ("neuralops.visualization.utils", "set_plot_style"),
-    "save_figure": ("neuralops.visualization.utils", "save_figure"),
-    "get_color_palette": ("neuralops.visualization.utils", "get_color_palette"),
-    "create_custom_colormap": (
-        "neuralops.visualization.utils",
-        "create_custom_colormap",
-    ),
+    "RetrainingOrchestrator": ("neuralops.evaluation.retraining", "RetrainingOrchestrator"),
+    "TaskType": ("neuralops.data.base", "TaskType"),
+    "TrainerRegistry": ("neuralops.trainer.registry", "TrainerRegistry"),
+    "UnifiedTransformerConfig": ("neuralops.core.model_wrapper", "UnifiedTransformerConfig"),
+    "UnifiedTransformerModel": ("neuralops.core.model_wrapper", "UnifiedTransformerModel"),
+    "aggregate_results": ("neuralops.trainer.metrics", "aggregate_results"),
+    "compress_model": ("neuralops.core.compression_engine", "compress_model"),
+    "create_dataloader": ("neuralops.data.base", "create_dataloader"),
+    "detect_architecture": ("neuralops.core.architecture", "detect_architecture"),
+    "fms_scan_triton": ("neuralops.core.triton_kernels", "fms_scan_triton"),
+    "generate_synthetic_data": ("neuralops.data.synthetic_generator", "generate_synthetic_data"),
+    "get_calibration_dataloader": ("neuralops.data", "get_calibration_dataloader"),
+    "get_task_metrics": ("neuralops.trainer.metrics", "get_task_metrics"),
+    "gla_scan_triton": ("neuralops.core.triton_kernels", "gla_scan_triton"),
+    "inject_attention": ("neuralops.core.attention_utils", "inject_attention"),
+    "linear_attn": ("neuralops.core.triton_kernels", "linear_attn"),
+    "load_benchmark_dataset": ("neuralops.data.benchmark_datasets", "load_benchmark_dataset"),
+    "load_dataset": ("neuralops.data.dataset_loader", "load_dataset"),
+    "load_glue_local": ("neuralops.data.glue_loader", "load_glue_local"),
+    "preprocess_function": ("neuralops.data.base", "preprocess_function"),
+    "run_universal_generation": ("neuralops.data.synthetic_generator", "run_universal_generation"),
+    "selective_scan_fn": ("neuralops.core.triton_kernels", "selective_scan_fn"),
+    "triton_dispatch": ("neuralops.core.triton_kernels", "triton_dispatch"),
 }
 
 __all__: list[str] = ["__version__"] + sorted(list(_LAZY_EXPORTS.keys()))

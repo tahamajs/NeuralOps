@@ -112,6 +112,10 @@ def count_parameters(model: nn.Module, trainable_only: bool = False) -> int:
     return sum(p.numel() for p in model.parameters())
 
 
+# Alias for backward-compatibility with core lazy imports
+count_params = count_parameters
+
+
 @contextmanager
 def activation_hooks(
     model: nn.Module,
