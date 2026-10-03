@@ -108,6 +108,31 @@ class _ModuleAliasFinder(MetaPathFinder):
         "framework.compression_engine.hashed_linear": "framework.compression_engine.hashed_net_compressor",
         "framework.compression_engine.come": "framework.compression_engine.come_compressor",
         "framework.compression_engine.rala_compressor": "framework.attentions.rala_attention",
+        # Reorganized Benchmarks & Sweepers
+        "framework.run_quality_sweep": "framework.benchmarks.run_quality_sweep",
+        "framework.run_rank_sweeper": "framework.benchmarks.run_rank_sweeper",
+        "framework.run_all_benchmarks": "framework.benchmarks.run_all_benchmarks",
+        "framework.run_gpt2_sweep": "framework.benchmarks.run_gpt2_sweep",
+        "framework.run_long_context_sweep": "framework.benchmarks.run_long_context_sweep",
+        "framework.run_seqlen_scaling": "framework.benchmarks.run_seqlen_scaling",
+        "framework.run_seqlen_scaling_bench": "framework.benchmarks.run_seqlen_scaling_bench",
+        "framework.run_multiseed": "framework.benchmarks.run_multiseed",
+        "framework.run_multiseed_rigor": "framework.benchmarks.run_multiseed_rigor",
+        "framework.run_one_module_isolated": "framework.benchmarks.run_one_module_isolated",
+        "framework.run_ruler_benchmark": "framework.benchmarks.run_ruler_benchmark",
+        "framework.run_whitened_svd": "framework.benchmarks.run_whitened_svd",
+        "framework.launch_parallel_sweep": "framework.benchmarks.launch_parallel_sweep",
+        "framework.run_all_modules_scheduler": "framework.benchmarks.run_all_modules_scheduler",
+        "framework.kd_quick_test": "framework.benchmarks.kd_quick_test",
+        # Reorganized Evaluation & Verification
+        "framework.eval_all_models_datasets": "framework.evaluation.eval_all_models_datasets",
+        "framework.eval_perplexity": "framework.evaluation.eval_perplexity",
+        "framework.full_mnli_validation": "framework.evaluation.full_mnli_validation",
+        "framework.run_lm_eval_harness": "framework.evaluation.run_lm_eval_harness",
+        "framework.run_baseline_comparison": "framework.evaluation.run_baseline_comparison",
+        # Reorganized Trainer & Analysis
+        "framework.train_lra": "framework.trainer.train_lra",
+        "framework.generate_all_modules_analysis": "framework.analysis.generate_all_modules_analysis",
     }
 
     def find_spec(self, fullname, path, target=None):
