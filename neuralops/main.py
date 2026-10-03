@@ -808,7 +808,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
-    """Main entry point — parse CLI args, import framework, run pipeline."""
+    """Main entry point — parse CLI args, import neuralops, run pipeline."""
     parser = build_parser()
     args = parser.parse_args()
 
