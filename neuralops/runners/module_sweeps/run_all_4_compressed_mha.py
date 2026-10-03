@@ -3,7 +3,7 @@
 Wrapper for orchestrating compressed_mha.
 """
 
-from .unified_orchestrator import run_orchestrator
+from ..unified_orchestrator import run_orchestrator
 
 if __name__ == "__main__":
     run_orchestrator("compressed_mha", ["--lora_rank", "16", "--rank", "32"])
