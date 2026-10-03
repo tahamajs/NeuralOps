@@ -334,7 +334,7 @@ check_nha.py
 check_nha2.py
 check_svd_count.py
 fix_gen.py
-test_*.py
+# test_*.py
 debug_*.py
 
 # ═══════════════════════════════════════════════
