@@ -1,12 +1,9 @@
 import pytest
 import torch
 import torch.nn as nn
-
 from framework.attentions.span_expanded_attention import (
-    SpanExpandedAttention,
-    inject_span_expanded,
-    inject_span_expanded_attention,
-)
+    SpanExpandedAttention, inject_span_expanded,
+    inject_span_expanded_attention)
 
 
 class MockConfig:

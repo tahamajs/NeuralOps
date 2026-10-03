@@ -1,9 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.mamba_inject import inject_mamba
 from framework.attentions.mamba import Mamba
+from framework.attentions.mamba_inject import inject_mamba
 
 
 class MockConfig:

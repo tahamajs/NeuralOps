@@ -1,13 +1,15 @@
+import framework.attentions.span_expanded_attention
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.span_expanded_attention
+
 
 def test_span_expanded_attention_module_present():
     assert hasattr(framework.attentions, 'span_expanded_attention')
 
 def test_span_expanded_attention_injection_safe():
-    from framework.attentions.span_expanded_attention import inject_span_expanded
+    from framework.attentions.span_expanded_attention import \
+        inject_span_expanded
     class DummyLayer(nn.Module):
         def __init__(self):
             super().__init__()

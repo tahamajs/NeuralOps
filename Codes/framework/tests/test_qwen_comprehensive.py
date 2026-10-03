@@ -14,10 +14,12 @@ import math
 import os
 import sys
 from pathlib import Path
+
 import pytest
 import torch
 import torch.nn as nn
-from transformers import Qwen2Config, Qwen2ForSequenceClassification, Qwen2ForCausalLM
+from transformers import (Qwen2Config, Qwen2ForCausalLM,
+                          Qwen2ForSequenceClassification)
 
 _HERE = Path(__file__).resolve().parent
 _CODES = _HERE.parent.parent
@@ -29,25 +31,17 @@ if str(_HERE.parent) not in sys.path:
 import framework.attentions
 import framework.compression_engine
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+from framework.eval_all_models_datasets import (apply_module_to_model,
+                                                build_model_instance)
+from framework.utils.compat import (FamilyModuleWrapper, convert_mask,
+                                    fp32_linalg, install_projection_aliases,
+                                    module_family_support,
+                                    should_compress_linear, wrap_for_family)
 from framework.utils.model_family import ModelAdapter, detect_family
-from framework.utils.compat import (
-    FamilyModuleWrapper,
-    convert_mask,
-    fp32_linalg,
-    install_projection_aliases,
-    module_family_support,
-    wrap_for_family,
-    should_compress_linear,
-)
-from framework.utils.qwen_compat import (
-    QwenConfigProxy,
-    install_qwen_aliases,
-    is_qwen_attention,
-    is_qwen_model,
-    qwen_attention_mask,
-    qwen_config_proxy,
-)
-from framework.eval_all_models_datasets import build_model_instance, apply_module_to_model
+from framework.utils.qwen_compat import (QwenConfigProxy, install_qwen_aliases,
+                                         is_qwen_attention, is_qwen_model,
+                                         qwen_attention_mask,
+                                         qwen_config_proxy)
 
 
 def extract_output_tensor(out):

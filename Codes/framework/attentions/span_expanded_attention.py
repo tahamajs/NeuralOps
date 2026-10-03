@@ -25,7 +25,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.attention_mask import apply_attention_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
@@ -102,15 +101,21 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -146,7 +151,9 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            lora_out = (
+                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            )
             out = out + lora_out
         return out
 
@@ -171,9 +178,13 @@ class SpanExpandedAttention(BaseAttention):
         self.config = config
         comp_config = getattr(config, "compression_config", None)
 
-        self.hidden_size: int = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
+        self.hidden_size: int = getattr(
+            config, "hidden_size", kwargs.get("hidden_size", 768)
+        )
         self.dim = self.hidden_size
-        self.num_heads: int = getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
+        self.num_heads: int = getattr(
+            config, "num_attention_heads", kwargs.get("num_attention_heads", 12)
+        )
         self.num_kv_heads: int = getattr(
             config,
             "num_key_value_heads",
@@ -192,7 +203,9 @@ class SpanExpandedAttention(BaseAttention):
         # Number of leading "sink" tokens to always preserve in the cache.
         # StreamingLLM (Xiao et al. 2024) shows the first few tokens act as
         # attention sinks and must be kept for long-context stability.
-        self.num_sink_tokens: int = max(0, min(int(num_sink_tokens), self.expansion_span))
+        self.num_sink_tokens: int = max(
+            0, min(int(num_sink_tokens), self.expansion_span)
+        )
 
         is_dec = getattr(config, "is_decoder", kwargs.get("is_decoder", False))
         if kwargs.get("is_causal", False):
@@ -201,36 +214,86 @@ class SpanExpandedAttention(BaseAttention):
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
 
-        self.lora_rank = getattr(
-            config, "lora_rank",
-            getattr(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank)),
-        ) if config else lora_rank
-        self.lora_alpha = getattr(
-            config, "lora_alpha",
-            getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
-        ) if config else 32.0
-        self.freeze_base = (self.lora_rank > 0)
+        self.lora_rank = (
+            getattr(
+                config,
+                "lora_rank",
+                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank)),
+            )
+            if config
+            else lora_rank
+        )
+        self.lora_alpha = (
+            getattr(
+                config,
+                "lora_alpha",
+                getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
+            )
+            if config
+            else 32.0
+        )
+        self.freeze_base = self.lora_rank > 0
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
 
         # Projections
-        self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.k_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.v_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.q_proj = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.k_proj = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.v_proj = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
         self.query = self.q_proj
         self.key = self.k_proj
         self.value = self.v_proj
 
-        dropout_p = getattr(
-            config, "dropout",
-            getattr(config, "hidden_dropout_prob",
-                    getattr(config, "attention_probs_dropout_prob", 0.1)),
-        ) if config else 0.1
+        dropout_p = (
+            getattr(
+                config,
+                "dropout",
+                getattr(
+                    config,
+                    "hidden_dropout_prob",
+                    getattr(config, "attention_probs_dropout_prob", 0.1),
+                ),
+            )
+            if config
+            else 0.1
+        )
         self.dropout = nn.Dropout(dropout_p)
 
-        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
+        source_attn = (
+            pretrained_attn
+            if pretrained_attn is not None
+            else kwargs.get("source_attn")
+        )
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -242,22 +305,41 @@ class SpanExpandedAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        has_out_lin = (
+            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        )
         is_nested = False
         if (
-            hasattr(src, "self")
-            and hasattr(src.self, "query")
-            and hasattr(src, "output")
-            and hasattr(src.output, "dense")
-        ) or (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
-            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin:
+            (
+                hasattr(src, "self")
+                and hasattr(src.self, "query")
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
+            )
+            or (
+                cls_name
+                in [
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                ]
+                or (
+                    cls_name.endswith("SelfAttention")
+                    and "distil" not in cls_name.lower()
+                )
+            )
+            and not has_out_lin
+        ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         # 1. GPT-2 fused c_attn
@@ -267,14 +349,27 @@ class SpanExpandedAttention(BaseAttention):
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                if (
+                    (c_attn_mod.__class__.__name__ == "Conv1D")
+                    or (base_c.__class__.__name__ == "Conv1D")
+                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
+                ):
                     c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
+                extracted["q"] = (
+                    c_w[:split_size, :],
+                    c_b[:split_size] if c_b is not None else None,
+                )
+                extracted["k"] = (
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted["v"] = (
+                    c_w[2 * split_size :, :],
+                    c_b[2 * split_size :] if c_b is not None else None,
+                )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = src.c_proj
@@ -282,10 +377,17 @@ class SpanExpandedAttention(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                    if (
+                        (c_proj_mod.__class__.__name__ == "Conv1D")
+                        or (base_o.__class__.__name__ == "Conv1D")
+                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
+                    ):
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    extracted["o"] = (
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
+                    )
 
         # 2. RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
@@ -293,10 +395,16 @@ class SpanExpandedAttention(BaseAttention):
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
-                    extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                    extracted[proj_key] = (
+                        mod.weight.data.clone(),
+                        mod.bias.data.clone() if mod.bias is not None else None,
+                    )
             if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
-                extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
+                extracted["o"] = (
+                    out_mod.weight.data.clone(),
+                    out_mod.bias.data.clone() if out_mod.bias is not None else None,
+                )
 
         # 3. Flat modules (GPT-2 alt, Qwen, LLaMA, DistilBERT)
         else:
@@ -311,13 +419,21 @@ class SpanExpandedAttention(BaseAttention):
                     if hasattr(src, name):
                         mod = getattr(src, name)
                         if mod is not None and hasattr(mod, "weight"):
-                            extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                            extracted[proj_key] = (
+                                mod.weight.data.clone(),
+                                mod.bias.data.clone() if mod.bias is not None else None,
+                            )
                             break
 
-        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -326,13 +442,22 @@ class SpanExpandedAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing_after:
             raise RuntimeError(
                 f"SpanExpandedAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}."
             )
 
-        target_map = {"q": self.q_proj, "k": self.k_proj, "v": self.v_proj, "o": self.out_proj}
+        target_map = {
+            "q": self.q_proj,
+            "k": self.k_proj,
+            "v": self.v_proj,
+            "o": self.out_proj,
+        }
 
         with torch.no_grad():
             for proj_key, target_mod in target_map.items():
@@ -344,13 +469,19 @@ class SpanExpandedAttention(BaseAttention):
                             nn.init.zeros_(target_mod.bias)
                         continue
                     else:
-                        logger.warning("SpanExpandedAttention copy_weights: missing %s, using initialized weights", proj_key)
+                        logger.warning(
+                            "SpanExpandedAttention copy_weights: missing %s, using initialized weights",
+                            proj_key,
+                        )
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
                 elif w.t().contiguous().shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w.t().contiguous())
-                elif w.shape[0] < target_mod.weight.shape[0] and target_mod.weight.shape[0] % w.shape[0] == 0:
+                elif (
+                    w.shape[0] < target_mod.weight.shape[0]
+                    and target_mod.weight.shape[0] % w.shape[0] == 0
+                ):
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
                 else:
@@ -362,7 +493,10 @@ class SpanExpandedAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     if b.shape == target_mod.bias.shape:
                         target_mod.bias.copy_(b)
-                    elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
+                    elif (
+                        b.shape[0] < target_mod.bias.shape[0]
+                        and target_mod.bias.shape[0] % b.shape[0] == 0
+                    ):
                         repeats = target_mod.bias.shape[0] // b.shape[0]
                         target_mod.bias.copy_(b.repeat(repeats))
                     else:
@@ -374,7 +508,11 @@ class SpanExpandedAttention(BaseAttention):
 
                 fnorm = torch.linalg.norm(target_mod.weight.float()).item()
                 if fnorm < 1e-4:
-                    logger.warning("SpanExpandedAttention copy_weights: %s has near-zero norm (%.2e)", proj_key, fnorm)
+                    logger.warning(
+                        "SpanExpandedAttention copy_weights: %s has near-zero norm (%.2e)",
+                        proj_key,
+                        fnorm,
+                    )
 
         if self.freeze_base:
             for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
@@ -383,7 +521,9 @@ class SpanExpandedAttention(BaseAttention):
     # ------------------------------------------------------------------
     # Cache management helpers
     # ------------------------------------------------------------------
-    def _get_past_kv(self, past_key_value: Any) -> tuple[torch.Tensor | None, torch.Tensor | None, int]:
+    def _get_past_kv(
+        self, past_key_value: Any
+    ) -> tuple[torch.Tensor | None, torch.Tensor | None, int]:
         """Extract (past_k, past_v, past_len) from various cache formats."""
         if past_key_value is None:
             return None, None, 0
@@ -394,7 +534,11 @@ class SpanExpandedAttention(BaseAttention):
 
         if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
             past_k = past_key_value.key_cache[0]
-            past_v = past_key_value.value_cache[0] if hasattr(past_key_value, "value_cache") else None
+            past_v = (
+                past_key_value.value_cache[0]
+                if hasattr(past_key_value, "value_cache")
+                else None
+            )
             return past_k, past_v, past_k.shape[-2]
 
         return None, None, 0
@@ -426,9 +570,11 @@ class SpanExpandedAttention(BaseAttention):
         # Keep first `sink` tokens + most recent `span - sink` tokens
         sink_k = k[..., :sink, :]
         sink_v = v[..., :sink, :]
-        recent_k = k[..., -(span - sink):, :]
-        recent_v = v[..., -(span - sink):, :]
-        return torch.cat([sink_k, recent_k], dim=-2), torch.cat([sink_v, recent_v], dim=-2)
+        recent_k = k[..., -(span - sink) :, :]
+        recent_v = v[..., -(span - sink) :, :]
+        return torch.cat([sink_k, recent_k], dim=-2), torch.cat(
+            [sink_v, recent_v], dim=-2
+        )
 
     # ------------------------------------------------------------------
     # Forward
@@ -447,14 +593,24 @@ class SpanExpandedAttention(BaseAttention):
         position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor, torch.Tensor] | None]:
+    ) -> tuple[
+        torch.Tensor, torch.Tensor | None, tuple[torch.Tensor, torch.Tensor] | None
+    ]:
         B, L, D = hidden_states.shape
         H, Dh = self.num_heads, self.head_dim
 
         # ---- QKV projections ----
         q = self.q_proj(hidden_states).view(B, L, H, Dh).permute(0, 2, 1, 3)
-        k = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).permute(0, 2, 1, 3)
-        v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).permute(0, 2, 1, 3)
+        k = (
+            self.k_proj(hidden_states)
+            .view(B, L, self.num_kv_heads, Dh)
+            .permute(0, 2, 1, 3)
+        )
+        v = (
+            self.v_proj(hidden_states)
+            .view(B, L, self.num_kv_heads, Dh)
+            .permute(0, 2, 1, 3)
+        )
 
         # ---- Extract past cache ----
         past_k, past_v, past_len = self._get_past_kv(past_key_value)
@@ -464,8 +620,16 @@ class SpanExpandedAttention(BaseAttention):
             position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
-            cos_curr = cos[..., past_len : past_len + L, :] if cos.shape[-2] >= past_len + L else cos
-            sin_curr = sin[..., past_len : past_len + L, :] if sin.shape[-2] >= past_len + L else sin
+            cos_curr = (
+                cos[..., past_len : past_len + L, :]
+                if cos.shape[-2] >= past_len + L
+                else cos
+            )
+            sin_curr = (
+                sin[..., past_len : past_len + L, :]
+                if sin.shape[-2] >= past_len + L
+                else sin
+            )
             q, k = apply_rotary_pos_emb(q, k, cos_curr, sin_curr)
 
         # ---- GQA repeat (before cache concat, so cache stays compact) ----
@@ -500,7 +664,7 @@ class SpanExpandedAttention(BaseAttention):
         else:
             present_key_value = (k, v)
 
-        scale = Dh ** -0.5
+        scale = Dh**-0.5
 
         # ---- Fast path: PyTorch SDPA ----
         if attention_mask is None and head_mask is None and not output_attentions:
@@ -512,18 +676,34 @@ class SpanExpandedAttention(BaseAttention):
                 # When past cache is present and we process 1 token, no causal mask needed.
                 _is_causal = bool(self.is_decoder) and L > 1 and past_len == 0
                 _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
-                    _qs, _ks, _vs, is_causal=_is_causal,
+                    _qs,
+                    _ks,
+                    _vs,
+                    is_causal=_is_causal,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
-                _sdpa_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-                _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
-                out = self.out_proj(_sdpa_out) if not self.is_nested_encoder else _sdpa_out
+                _sdpa_out = (
+                    _sdpa_out.to(hidden_states.dtype)
+                    .transpose(1, 2)
+                    .contiguous()
+                    .view(B, L, self.all_head_size)
+                )
+                _sdpa_out = torch.nan_to_num(
+                    _sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4
+                )
+                out = (
+                    self.out_proj(_sdpa_out)
+                    if not self.is_nested_encoder
+                    else _sdpa_out
+                )
                 return out, None, present_key_value
             except Exception:
                 pass  # fall through to manual path
 
         # ---- Manual path ----
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+        scores = (
+            torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+        )
 
         # Causal masking: query i (position past_len + i) attends to keys 0..(past_len + i)
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
@@ -548,11 +728,18 @@ class SpanExpandedAttention(BaseAttention):
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                 attn = attn * head_mask.view(1, self.num_heads, 1, 1).to(attn.dtype)
             elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                attn = attn * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(attn.dtype)
+                attn = attn * head_mask.view(
+                    head_mask.size(0), self.num_heads, 1, 1
+                ).to(attn.dtype)
             elif head_mask.dim() == 4:
                 attn = attn * head_mask.to(attn.dtype)
 
-        context = torch.matmul(attn, v).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+        context = (
+            torch.matmul(attn, v)
+            .permute(0, 2, 1, 3)
+            .contiguous()
+            .view(B, L, self.all_head_size)
+        )
 
         if self.is_nested_encoder:
             return context, (attn if output_attentions else None), present_key_value
@@ -597,9 +784,15 @@ def inject_span_expanded(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+    elif hasattr(target, "layers") and isinstance(
+        target.layers, (torch.nn.ModuleList, list)
+    ):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -658,7 +851,12 @@ def inject_span_expanded(
         replaced = 0
         for name, module in model.named_modules():
             is_attn = False
-            if hasattr(module, "q_lin") or hasattr(module, "query") or hasattr(module, "q_proj") or hasattr(module, "c_attn"):
+            if (
+                hasattr(module, "q_lin")
+                or hasattr(module, "query")
+                or hasattr(module, "q_proj")
+                or hasattr(module, "c_attn")
+            ):
                 is_attn = True
 
             if is_attn:

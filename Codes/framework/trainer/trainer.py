@@ -3,8 +3,8 @@ SVDAwareTrainer – custom HuggingFace Trainer with SVD compression callbacks.
 """
 
 import gc
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
 import torch
 from transformers import Trainer, TrainingArguments
@@ -55,7 +55,7 @@ class SVDAwareTrainer(Trainer):
         return result
 
     def _register_attention_hooks(self) -> None:
-        """ register attention hooks."""
+        """register attention hooks."""
         self._attention_maps = []
 
         def hook_fn(module, input, output, layer_idx) -> None:
@@ -83,13 +83,13 @@ class SVDAwareTrainer(Trainer):
                     self._attention_hooks.append(hook)
 
     def _remove_attention_hooks(self) -> None:
-        """ remove attention hooks."""
+        """remove attention hooks."""
         for hook in self._attention_hooks:
             hook.remove()
         self._attention_hooks = []
 
     def _save_attention_maps(self) -> None:
-        """ save attention maps."""
+        """save attention maps."""
         if self.visualizer and self._attention_maps:
             for attn_map in self._attention_maps:
                 self.visualizer.plot_attention_heatmap(
@@ -135,7 +135,15 @@ class SVDAwareTrainer(Trainer):
         if hasattr(torch, "mps") and hasattr(torch.mps, "empty_cache"):
             try:
                 torch.mps.empty_cache()
-            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+            except (
+                AttributeError,
+                KeyError,
+                RuntimeError,
+                TypeError,
+                ValueError,
+                OSError,
+                ImportError,
+            ):
                 pass
 
 
@@ -172,10 +180,16 @@ def create_trainer(
         "optimizers",
     }
     trainer_kwargs = {k: v for k, v in kwargs.items() if k in trainer_kwarg_names}
-    training_args_kwargs = {k: v for k, v in kwargs.items() if k not in trainer_kwarg_names}
+    training_args_kwargs = {
+        k: v for k, v in kwargs.items() if k not in trainer_kwarg_names
+    }
 
-    per_device_train_batch_size = training_args_kwargs.pop("per_device_train_batch_size", batch_size)
-    per_device_eval_batch_size = training_args_kwargs.pop("per_device_eval_batch_size", batch_size)
+    per_device_train_batch_size = training_args_kwargs.pop(
+        "per_device_train_batch_size", batch_size
+    )
+    per_device_eval_batch_size = training_args_kwargs.pop(
+        "per_device_eval_batch_size", batch_size
+    )
     learning_rate = training_args_kwargs.pop("learning_rate", learning_rate)
     num_train_epochs = training_args_kwargs.pop("num_train_epochs", epochs)
     warmup_ratio = training_args_kwargs.pop("warmup_ratio", warmup_ratio)
@@ -183,8 +197,12 @@ def create_trainer(
     eval_strategy = training_args_kwargs.pop("eval_strategy", eval_strategy)
     save_strategy = training_args_kwargs.pop("save_strategy", save_strategy)
     save_total_limit = training_args_kwargs.pop("save_total_limit", save_total_limit)
-    load_best_model_at_end = training_args_kwargs.pop("load_best_model_at_end", load_best_model_at_end)
-    metric_for_best_model = training_args_kwargs.pop("metric_for_best_model", metric_for_best_model)
+    load_best_model_at_end = training_args_kwargs.pop(
+        "load_best_model_at_end", load_best_model_at_end
+    )
+    metric_for_best_model = training_args_kwargs.pop(
+        "metric_for_best_model", metric_for_best_model
+    )
     if compute_metrics is None:
         metric_for_best_model = "eval_loss"
     greater_is_better = training_args_kwargs.pop("greater_is_better", None)
@@ -206,6 +224,7 @@ def create_trainer(
 
     # Build only the kwargs that TrainingArguments actually supports
     import inspect as _inspect
+
     _ta_params = set(_inspect.signature(TrainingArguments.__init__).parameters)
 
     optional_ta_kwargs = {}
@@ -228,7 +247,9 @@ def create_trainer(
         save_strategy=save_strategy,
         save_total_limit=save_total_limit,
         load_best_model_at_end=load_best_model_at_end,
-        metric_for_best_model=metric_for_best_model if eval_dataset is not None else None,
+        metric_for_best_model=(
+            metric_for_best_model if eval_dataset is not None else None
+        ),
         greater_is_better=greater_is_better if eval_dataset is not None else None,
         logging_steps=training_args_kwargs.pop("logging_steps", 10),
         disable_tqdm=False,

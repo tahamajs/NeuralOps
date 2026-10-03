@@ -1,7 +1,8 @@
+import framework.attentions.minimal_nova
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.minimal_nova
+
 
 def test_minimal_nova_module_present():
     assert hasattr(framework.attentions, 'minimal_nova')

@@ -14,14 +14,14 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+from framework.utils.model_family import ModelAdapter, detect_family
+from framework.utils.qwen_compat import QwenIncompatibleError
 
 from .adapters import get_adapter
 from .architecture import detect_architecture, get_attention_modules
 from .gqa_utils import repeat_kv
 from .model_utils import replace_module
 from .registry import ATTENTION_REGISTRY
-from framework.utils.model_family import ModelAdapter, detect_family
-from framework.utils.qwen_compat import QwenIncompatibleError
 
 logger = logging.getLogger(__name__)
 
@@ -63,11 +63,14 @@ PROJ_REGEX_PATTERNS: dict[str, list[re.Pattern]] = {
 
 # FIX: Regex matcher for unified multi-head projection layers (Falcon, StarCoder, GPT-2, GPT-NeoX, LLaMA-fused)
 FUSED_QKV_REGEX: re.Pattern = re.compile(
-    r"^(qkv_proj|query_key_value|c_attn|qkv|Wqkv|W_qkv|in_proj|fused_qkv|qkv_linear)$", re.I
+    r"^(qkv_proj|query_key_value|c_attn|qkv|Wqkv|W_qkv|in_proj|fused_qkv|qkv_linear)$",
+    re.I,
 )
 
 
-def _find_submodule_by_regex(module: nn.Module, patterns: list[re.Pattern]) -> nn.Module | None:
+def _find_submodule_by_regex(
+    module: nn.Module, patterns: list[re.Pattern]
+) -> nn.Module | None:
     """Find the first submodule matching any compiled regex pattern."""
     for name, sub in module.named_children():
         for pattern in patterns:
@@ -76,9 +79,11 @@ def _find_submodule_by_regex(module: nn.Module, patterns: list[re.Pattern]) -> n
     return None
 
 
-def compute_reconstruction_error(src_weight: torch.Tensor, target_mod: nn.Module) -> float:
+def compute_reconstruction_error(
+    src_weight: torch.Tensor, target_mod: nn.Module
+) -> float:
     """Computes relative Frobenius reconstruction error ||W_src - W_target||_F / (||W_src||_F + 1e-9).
-    
+
     Can be called standalone to verify weight copying fidelity across any module architecture.
     """
     if src_weight is None or target_mod is None:
@@ -86,7 +91,10 @@ def compute_reconstruction_error(src_weight: torch.Tensor, target_mod: nn.Module
 
     with torch.no_grad():
         W_s = src_weight.detach().cpu().float()
-        if hasattr(target_mod, "__class__") and target_mod.__class__.__name__ == "Conv1D":
+        if (
+            hasattr(target_mod, "__class__")
+            and target_mod.__class__.__name__ == "Conv1D"
+        ):
             W_s = W_s.t() if (W_s.ndim == 2 and W_s.size(0) > W_s.size(1)) else W_s
 
         W_t = None
@@ -94,14 +102,21 @@ def compute_reconstruction_error(src_weight: torch.Tensor, target_mod: nn.Module
         p_weight = getattr(target_mod, "weight", None)
         if isinstance(p_weight, nn.Parameter):
             W_t = p_weight.detach().cpu().float()
-        elif hasattr(target_mod, "weight") and isinstance(target_mod.weight, torch.Tensor):
+        elif hasattr(target_mod, "weight") and isinstance(
+            target_mod.weight, torch.Tensor
+        ):
             W_t = target_mod.weight.detach().cpu().float()
         elif hasattr(target_mod, "U") and hasattr(target_mod, "V"):
             W_t = (target_mod.U @ target_mod.V).detach().cpu().float()
         elif hasattr(target_mod, "up") and hasattr(target_mod, "down"):
             W_t = (target_mod.up.weight @ target_mod.down.weight).detach().cpu().float()
         elif hasattr(target_mod, "up_proj") and hasattr(target_mod, "down_proj"):
-            W_t = (target_mod.up_proj.weight @ target_mod.down_proj.weight).detach().cpu().float()
+            W_t = (
+                (target_mod.up_proj.weight @ target_mod.down_proj.weight)
+                .detach()
+                .cpu()
+                .float()
+            )
 
         if W_t is None:
             return 1.0
@@ -144,7 +159,11 @@ def _slice_fused_qkv_weights(
         # Shape-based Conv1D orientation: [in_dim, total_out_dim] where total_out_dim > in_dim (e.g. 2304 > 768)
         is_conv1d = True
 
-    if is_conv1d and fused_weight.ndim == 2 and fused_weight.size(0) < fused_weight.size(1):
+    if (
+        is_conv1d
+        and fused_weight.ndim == 2
+        and fused_weight.size(0) < fused_weight.size(1)
+    ):
         fused_weight = fused_weight.t()
 
     total_out_dim = fused_weight.size(0)
@@ -158,7 +177,9 @@ def _slice_fused_qkv_weights(
         v_w = fused_weight[2 * split_size :, :]
 
         q_b = fused_bias[:split_size] if fused_bias is not None else None
-        k_b = fused_bias[split_size : 2 * split_size] if fused_bias is not None else None
+        k_b = (
+            fused_bias[split_size : 2 * split_size] if fused_bias is not None else None
+        )
         v_b = fused_bias[2 * split_size :] if fused_bias is not None else None
     else:
         # Grouped-Query Attention (GQA) fused layout
@@ -172,7 +193,11 @@ def _slice_fused_qkv_weights(
 
         q_b = fused_bias[:q_dim] if fused_bias is not None else None
         k_b = fused_bias[q_dim : q_dim + kv_dim] if fused_bias is not None else None
-        v_b = fused_bias[q_dim + kv_dim : q_dim + 2 * kv_dim] if fused_bias is not None else None
+        v_b = (
+            fused_bias[q_dim + kv_dim : q_dim + 2 * kv_dim]
+            if fused_bias is not None
+            else None
+        )
 
     return {
         "q": (q_w.contiguous(), q_b.contiguous() if q_b is not None else None),
@@ -209,20 +234,27 @@ def _copy_projection_weights(
 
             if target_mod.weight.shape == src_weight_2d.shape:
                 target_mod.weight.data.copy_(src_weight_2d)
-            elif src_weight_2d.ndim == 2 and target_mod.weight.shape == src_weight_2d.t().shape:
+            elif (
+                src_weight_2d.ndim == 2
+                and target_mod.weight.shape == src_weight_2d.t().shape
+            ):
                 target_mod.weight.data.copy_(src_weight_2d.t())
             elif (
                 src_weight_2d.ndim == 2
                 and target_mod.weight.shape[1] == src_weight_2d.shape[1]
                 and target_mod.weight.shape[0] < src_weight_2d.shape[0]
             ):
-                target_mod.weight.data.copy_(src_weight_2d[: target_mod.weight.shape[0]])
+                target_mod.weight.data.copy_(
+                    src_weight_2d[: target_mod.weight.shape[0]]
+                )
             elif (
                 src_weight_2d.ndim == 2
                 and target_mod.weight.shape[1] == src_weight_2d.shape[0]
                 and target_mod.weight.shape[0] < src_weight_2d.shape[1]
             ):
-                target_mod.weight.data.copy_(src_weight_2d.t()[: target_mod.weight.shape[0]])
+                target_mod.weight.data.copy_(
+                    src_weight_2d.t()[: target_mod.weight.shape[0]]
+                )
             elif (
                 src_weight_2d.ndim == 2
                 and target_mod.weight.shape[1] == src_weight_2d.shape[1]
@@ -232,10 +264,15 @@ def _copy_projection_weights(
                 repeat_factor = target_mod.weight.shape[0] // src_weight_2d.shape[0]
                 target_mod.weight.data.copy_(src_weight_2d.repeat(repeat_factor, 1))
 
-            if hasattr(target_mod, "bias") and isinstance(getattr(target_mod, "bias", None), nn.Parameter):
+            if hasattr(target_mod, "bias") and isinstance(
+                getattr(target_mod, "bias", None), nn.Parameter
+            ):
                 if src_bias is not None and target_mod.bias.shape == src_bias.shape:
                     target_mod.bias.data.copy_(src_bias)
-                elif src_bias is not None and target_mod.bias.shape[0] <= src_bias.shape[0]:
+                elif (
+                    src_bias is not None
+                    and target_mod.bias.shape[0] <= src_bias.shape[0]
+                ):
                     target_mod.bias.data.copy_(src_bias[: target_mod.bias.shape[0]])
                 elif (
                     src_bias is not None
@@ -258,7 +295,11 @@ def _copy_projection_weights(
         or (down_mod is not None and up_mod is not None)
     )
     if is_low_rank:
-        setter_fn = getattr(target_mod, "set_low_rank_factors", getattr(target_mod, "set_svd_factors", None))
+        setter_fn = getattr(
+            target_mod,
+            "set_low_rank_factors",
+            getattr(target_mod, "set_svd_factors", None),
+        )
         with torch.no_grad():
             W_float = src_weight.detach().cpu().float()
             if W_float.dim() > 2:
@@ -279,7 +320,11 @@ def _copy_projection_weights(
                 elif hasattr(target_mod, "V") and hasattr(target_mod.V, "shape"):
                     target_in_dim = target_mod.V.shape[1]
 
-            if target_in_dim is not None and W_float.shape[1] != target_in_dim and W_float.shape[0] == target_in_dim:
+            if (
+                target_in_dim is not None
+                and W_float.shape[1] != target_in_dim
+                and W_float.shape[0] == target_in_dim
+            ):
                 W_float = W_float.t()
 
             if target_out_dim is not None and W_float.shape[0] > target_out_dim:
@@ -300,7 +345,11 @@ def _copy_projection_weights(
             target_rank = getattr(
                 target_mod,
                 "rank",
-                getattr(target_mod, "svd_rank", getattr(getattr(target_mod, "U", None), "size", lambda i: 32)(1)),
+                getattr(
+                    target_mod,
+                    "svd_rank",
+                    getattr(getattr(target_mod, "U", None), "size", lambda i: 32)(1),
+                ),
             )
             if down_mod is not None and hasattr(down_mod, "weight"):
                 target_rank = down_mod.weight.shape[0]
@@ -331,16 +380,36 @@ def _copy_projection_weights(
                 r_u0 = min(up_mod.weight.shape[0], U_balanced.shape[0])
                 r_u1 = min(up_mod.weight.shape[1], U_balanced.shape[1])
                 up_mod.weight.data[:r_u0, :r_u1].copy_(U_balanced[:r_u0, :r_u1])
-                if hasattr(up_mod, "bias") and up_mod.bias is not None and src_bias is not None:
+                if (
+                    hasattr(up_mod, "bias")
+                    and up_mod.bias is not None
+                    and src_bias is not None
+                ):
                     min_b = min(up_mod.bias.shape[0], src_bias.shape[0])
-                    up_mod.bias.data[:min_b].copy_(src_bias[:min_b].to(up_mod.bias.device, up_mod.bias.dtype))
-                elif hasattr(target_mod, "bias") and target_mod.bias is not None and src_bias is not None:
+                    up_mod.bias.data[:min_b].copy_(
+                        src_bias[:min_b].to(up_mod.bias.device, up_mod.bias.dtype)
+                    )
+                elif (
+                    hasattr(target_mod, "bias")
+                    and target_mod.bias is not None
+                    and src_bias is not None
+                ):
                     min_b = min(target_mod.bias.shape[0], src_bias.shape[0])
-                    target_mod.bias.data[:min_b].copy_(src_bias[:min_b].to(target_mod.bias.device, target_mod.bias.dtype))
+                    target_mod.bias.data[:min_b].copy_(
+                        src_bias[:min_b].to(
+                            target_mod.bias.device, target_mod.bias.dtype
+                        )
+                    )
 
-            if hasattr(target_mod, "bias") and target_mod.bias is not None and isinstance(target_mod.bias, nn.Parameter):
+            if (
+                hasattr(target_mod, "bias")
+                and target_mod.bias is not None
+                and isinstance(target_mod.bias, nn.Parameter)
+            ):
                 if src_bias is not None:
-                    target_mod.bias.data.copy_(src_bias.to(target_mod.bias.device, target_mod.bias.dtype))
+                    target_mod.bias.data.copy_(
+                        src_bias.to(target_mod.bias.device, target_mod.bias.dtype)
+                    )
                 else:
                     nn.init.zeros_(target_mod.bias)
         return
@@ -360,14 +429,14 @@ def apply_rope_after_up_projection(
     """
     FIX: Applies Rotary Position Embeddings (RoPE) AFTER low-rank up-projection to full
     head dimensions, preserving spatial coordinate geometry and relative frequency angles.
-    
+
     Args:
         q: Query tensor of shape [B, H, N, D_head]
         k: Key tensor of shape [B, H, N, D_head]
         cos: Cosine rotary embedding tensor
         sin: Sine rotary embedding tensor
         position_ids: Optional token position indices
-        
+
     Returns:
         Tuple of (q_embedded, k_embedded) with RoPE relative rotation applied.
     """
@@ -400,7 +469,9 @@ def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
     if n_rep <= 1:
         return x
     if x.dim() != 4:
-        raise ValueError(f"repeat_kv expects [B, Hkv, L, D], got shape {tuple(x.shape)}")
+        raise ValueError(
+            f"repeat_kv expects [B, Hkv, L, D], got shape {tuple(x.shape)}"
+        )
     b, h, l, d = x.shape
     return x[:, :, None, :, :].expand(b, h, n_rep, l, d).reshape(b, h * n_rep, l, d)
 
@@ -416,18 +487,52 @@ def inject_attention(
     attn_class = ATTENTION_REGISTRY.resolve(attention_type)
     if callable(attn_class) and not isinstance(attn_class, type):
         try:
-            res = attn_class(model=model, rank=rank, copy_weights=copy_weights, **kwargs)
+            res = attn_class(
+                model=model, rank=rank, copy_weights=copy_weights, **kwargs
+            )
             if res is not None:
                 return res
         except Exception as inj_err:
-            logger.debug("Dedicated injector %s failed, falling back to layer replacement: %s", attention_type, inj_err)
+            logger.debug(
+                "Dedicated injector %s failed, falling back to layer replacement: %s",
+                attention_type,
+                inj_err,
+            )
 
     config = getattr(model, "config", None)
     if config is not None:
         cfg_source = getattr(config, "text_config", config)
-        hidden_size = getattr(cfg_source, "hidden_size", getattr(cfg_source, "d_model", getattr(cfg_source, "n_embd", getattr(cfg_source, "dim", None))))
-        num_heads = getattr(cfg_source, "num_attention_heads", getattr(cfg_source, "num_heads", getattr(cfg_source, "n_heads", getattr(cfg_source, "n_head", None))))
-        head_dim = getattr(cfg_source, "head_dim", getattr(cfg_source, "d_kv", (hidden_size // max(1, num_heads) if (hidden_size and num_heads) else None)))
+        hidden_size = getattr(
+            cfg_source,
+            "hidden_size",
+            getattr(
+                cfg_source,
+                "d_model",
+                getattr(cfg_source, "n_embd", getattr(cfg_source, "dim", None)),
+            ),
+        )
+        num_heads = getattr(
+            cfg_source,
+            "num_attention_heads",
+            getattr(
+                cfg_source,
+                "num_heads",
+                getattr(cfg_source, "n_heads", getattr(cfg_source, "n_head", None)),
+            ),
+        )
+        head_dim = getattr(
+            cfg_source,
+            "head_dim",
+            getattr(
+                cfg_source,
+                "d_kv",
+                (
+                    hidden_size // max(1, num_heads)
+                    if (hidden_size and num_heads)
+                    else None
+                ),
+            ),
+        )
         num_kv_heads = getattr(cfg_source, "num_key_value_heads", num_heads)
         if hidden_size is not None:
             config.hidden_size = hidden_size
@@ -464,11 +569,15 @@ def inject_attention(
     replaced = 0
     modules_list = list(get_attention_modules(model))
     if not modules_list:
-        logger.warning("No attention modules found to replace for architecture '%s'", arch)
+        logger.warning(
+            "No attention modules found to replace for architecture '%s'", arch
+        )
 
     for name, old_attn in modules_list:
         # In hybrid architectures (like Qwen3.5), only replace linear_attn if candidate explicitly supports DeltaNet
-        if "linear_attn" in name and not getattr(attn_class, "supports_delta_net", False):
+        if "linear_attn" in name and not getattr(
+            attn_class, "supports_delta_net", False
+        ):
             continue
 
         # Dynamically infer dimensions from family_adapter and old_attn
@@ -484,21 +593,35 @@ def inject_attention(
 
         if hidden_size is None or num_heads is None:
             for _, child in old_attn.named_children():
-                if hasattr(child, "weight") and isinstance(child.weight, torch.Tensor) and child.weight.ndim == 2:
+                if (
+                    hasattr(child, "weight")
+                    and isinstance(child.weight, torch.Tensor)
+                    and child.weight.ndim == 2
+                ):
                     if hidden_size is None:
                         hidden_size = child.weight.shape[1]
                     break
             if num_heads is None:
-                num_heads = getattr(old_attn, "num_heads", getattr(old_attn, "num_attention_heads", None))
+                num_heads = getattr(
+                    old_attn,
+                    "num_heads",
+                    getattr(old_attn, "num_attention_heads", None),
+                )
             if num_kv_heads is None:
                 num_kv_heads = getattr(old_attn, "num_key_value_heads", num_heads)
             if head_dim is None and hidden_size is not None and num_heads is not None:
-                head_dim = getattr(old_attn, "head_dim", hidden_size // max(1, num_heads))
+                head_dim = getattr(
+                    old_attn, "head_dim", hidden_size // max(1, num_heads)
+                )
 
         # Ensure config exists or construct minimal namespace config
         if config is None:
             from types import SimpleNamespace
-            is_decoder_family_bool = bool(is_dec or family in ("gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral"))
+
+            is_decoder_family_bool = bool(
+                is_dec
+                or family in ("gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral")
+            )
             config = SimpleNamespace(
                 hidden_size=hidden_size,
                 num_attention_heads=num_heads,
@@ -510,7 +633,10 @@ def inject_attention(
                 model_type=family,
             )
         else:
-            if family in ("gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral") or is_dec:
+            if (
+                family in ("gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral")
+                or is_dec
+            ):
                 config.is_decoder = True
                 config.is_causal = True
 
@@ -522,9 +648,19 @@ def inject_attention(
             ("o", ["dense", "out_proj", "o_proj", "out_lin", "c_proj", "wo", "o"]),
         ]:
             try:
-                existing_mod = next((getattr(old_attn, a) for a in alias_list if hasattr(old_attn, a)), None)
+                existing_mod = next(
+                    (getattr(old_attn, a) for a in alias_list if hasattr(old_attn, a)),
+                    None,
+                )
                 if existing_mod is None and hasattr(old_attn, "self"):
-                    existing_mod = next((getattr(old_attn.self, a) for a in alias_list if hasattr(old_attn.self, a)), None)
+                    existing_mod = next(
+                        (
+                            getattr(old_attn.self, a)
+                            for a in alias_list
+                            if hasattr(old_attn.self, a)
+                        ),
+                        None,
+                    )
 
                 if existing_mod is not None:
                     for a in alias_list:
@@ -536,7 +672,13 @@ def inject_attention(
                 else:
                     w, b = adapter.get_weight_bias(old_attn, proj_key)
                     if w is not None:
-                        proxy = nn.Linear(w.shape[1], w.shape[0], bias=(b is not None), device=w.device, dtype=w.dtype)
+                        proxy = nn.Linear(
+                            w.shape[1],
+                            w.shape[0],
+                            bias=(b is not None),
+                            device=w.device,
+                            dtype=w.dtype,
+                        )
                         proxy.weight.data.copy_(w)
                         if b is not None:
                             proxy.bias.data.copy_(b)
@@ -547,14 +689,21 @@ def inject_attention(
                                 except Exception:
                                     pass
             except Exception as ex:
-                logger.debug("Failed to set projection aliases for %s on %s: %s", proj_key, name, ex)
+                logger.debug(
+                    "Failed to set projection aliases for %s on %s: %s",
+                    proj_key,
+                    name,
+                    ex,
+                )
 
         effective_rank = rank if rank is not None else getattr(config, "rank", 32)
 
         # Standardized instantiation: try passing pretrained_attn=old_attn first so modules
         # can inherit pretrained weights during initialization, then fallback without it
         attempts = [
-            lambda: attn_class(config, rank=effective_rank, pretrained_attn=old_attn, **kwargs),
+            lambda: attn_class(
+                config, rank=effective_rank, pretrained_attn=old_attn, **kwargs
+            ),
             lambda: attn_class(config, pretrained_attn=old_attn, **kwargs),
             lambda: attn_class(config=config, pretrained_attn=old_attn, **kwargs),
             lambda: attn_class(config, rank=effective_rank, **kwargs),
@@ -574,27 +723,40 @@ def inject_attention(
                 continue
 
         if new_attn is None:
-            raise RuntimeError(f"Could not instantiate attention class {attn_class.__name__}")
-
+            raise RuntimeError(
+                f"Could not instantiate attention class {attn_class.__name__}"
+            )
 
         # Do not let a legacy full-MHA replacement silently retain randomly
         # initialized K/V projections on GQA decoders.  Such a module must
         # explicitly advertise the geometry it implements.
-        is_gqa = (family in ("qwen", "qwen3_5") and family_adapter.num_key_value_heads != family_adapter.num_heads)
+        is_gqa = (
+            family in ("qwen", "qwen3_5")
+            and family_adapter.num_key_value_heads != family_adapter.num_heads
+        )
         if is_gqa and not getattr(new_attn, "supports_gqa", False):
             expected = {
                 "q": family_adapter.q_proj_out,
                 "k": family_adapter.kv_proj_out,
                 "v": family_adapter.kv_proj_out,
             }
-            for key, patterns in (("q", PROJ_REGEX_PATTERNS["q"]),
-                                  ("k", PROJ_REGEX_PATTERNS["k"]),
-                                  ("v", PROJ_REGEX_PATTERNS["v"])):
+            for key, patterns in (
+                ("q", PROJ_REGEX_PATTERNS["q"]),
+                ("k", PROJ_REGEX_PATTERNS["k"]),
+                ("v", PROJ_REGEX_PATTERNS["v"]),
+            ):
                 target = _find_submodule_by_regex(new_attn, patterns)
                 out_features = getattr(target, "out_features", None)
                 if target is not None and out_features not in {expected[key], None}:
                     if expected[key] is not None and out_features is not None:
-                        if out_features % expected[key] == 0 or expected[key] % out_features == 0 or _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS["o"]) is not None:
+                        if (
+                            out_features % expected[key] == 0
+                            or expected[key] % out_features == 0
+                            or _find_submodule_by_regex(
+                                new_attn, PROJ_REGEX_PATTERNS["o"]
+                            )
+                            is not None
+                        ):
                             pass
                         else:
                             raise QwenIncompatibleError(
@@ -609,7 +771,11 @@ def inject_attention(
 
         if copy_weights:
             custom_copied = False
-            if is_dec or hasattr(old_attn, "c_attn") or "gpt" in old_attn.__class__.__name__.lower():
+            if (
+                is_dec
+                or hasattr(old_attn, "c_attn")
+                or "gpt" in old_attn.__class__.__name__.lower()
+            ):
                 old_attn.is_decoder = True
                 if hasattr(new_attn, "is_decoder"):
                     new_attn.is_decoder = True
@@ -624,17 +790,27 @@ def inject_attention(
                 except (AttributeError, RuntimeError, ValueError) as e:
                     logger.debug("Custom copy_weights failed on %s: %s", name, e)
                 except Exception as e:
-                        logger.warning("Unexpected error in custom copy_weights on %s: %s", name, e)
+                    logger.warning(
+                        "Unexpected error in custom copy_weights on %s: %s", name, e
+                    )
 
                 if not custom_copied:
                     # Detect fused QKV projection modules via regex and slice parameters
                     fused_mod = None
                     for child_name, child_mod in old_attn.named_children():
-                        if FUSED_QKV_REGEX.match(child_name) and hasattr(child_mod, "weight"):
+                        if FUSED_QKV_REGEX.match(child_name) and hasattr(
+                            child_mod, "weight"
+                        ):
                             fused_mod = child_mod
                             break
                     if fused_mod is None:
-                        for candidate in ["c_attn", "qkv_proj", "query_key_value", "in_proj", "Wqkv"]:
+                        for candidate in [
+                            "c_attn",
+                            "qkv_proj",
+                            "query_key_value",
+                            "in_proj",
+                            "Wqkv",
+                        ]:
                             mod = getattr(old_attn, candidate, None)
                             if mod is not None and hasattr(mod, "weight"):
                                 fused_mod = mod
@@ -644,7 +820,12 @@ def inject_attention(
                         # Sliced Fused QKV handling
                         sliced = _slice_fused_qkv_weights(
                             fused_mod.weight.data,
-                            fused_mod.bias.data if hasattr(fused_mod, "bias") and fused_mod.bias is not None else None,
+                            (
+                                fused_mod.bias.data
+                                if hasattr(fused_mod, "bias")
+                                and fused_mod.bias is not None
+                                else None
+                            ),
                             num_heads=num_heads if num_heads is not None else 12,
                             num_kv_heads=num_kv_heads or num_heads,
                             head_dim=head_dim,
@@ -652,7 +833,9 @@ def inject_attention(
                         )
                         for proj_key in ["q", "k", "v"]:
                             w, b = sliced[proj_key]
-                            target_proj = _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS[proj_key])
+                            target_proj = _find_submodule_by_regex(
+                                new_attn, PROJ_REGEX_PATTERNS[proj_key]
+                            )
                             if target_proj is not None:
                                 _copy_projection_weights(target_proj, w, b)
                             else:
@@ -662,129 +845,349 @@ def inject_attention(
                                     _copy_projection_weights(lin1, w, None)
                                     with torch.no_grad():
                                         W_f = w.detach().float()
-                                        if hasattr(lin1, "weight") and hasattr(lin2, "weight"):
-                                            if W_f.shape[1] != lin1.weight.shape[1] and W_f.shape[0] == lin1.weight.shape[1]:
+                                        if hasattr(lin1, "weight") and hasattr(
+                                            lin2, "weight"
+                                        ):
+                                            if (
+                                                W_f.shape[1] != lin1.weight.shape[1]
+                                                and W_f.shape[0] == lin1.weight.shape[1]
+                                            ):
                                                 W_f = W_f.t()
-                                            U, S, Vt = torch.linalg.svd(W_f, full_matrices=False)
-                                            r = min(lin1.weight.shape[0], lin2.weight.shape[1], U.size(1), Vt.size(0))
-                                            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-                                            U_b = (U[:, :r] * sqrt_S.unsqueeze(0)).to(device=w.device, dtype=w.dtype)
-                                            V_b = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(device=w.device, dtype=w.dtype)
+                                            U, S, Vt = torch.linalg.svd(
+                                                W_f, full_matrices=False
+                                            )
+                                            r = min(
+                                                lin1.weight.shape[0],
+                                                lin2.weight.shape[1],
+                                                U.size(1),
+                                                Vt.size(0),
+                                            )
+                                            sqrt_S = torch.sqrt(
+                                                torch.clamp(S[:r], min=1e-12)
+                                            )
+                                            U_b = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
+                                                device=w.device, dtype=w.dtype
+                                            )
+                                            V_b = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(
+                                                device=w.device, dtype=w.dtype
+                                            )
                                             lin1.weight.data[:r, :].copy_(V_b)
                                             lin2.weight.data[:, :r].copy_(U_b)
-                                            if b is not None and getattr(lin2, "bias", None) is not None:
-                                                lin2.bias.data.copy_(b.to(lin2.bias.device, lin2.bias.dtype))
+                                            if (
+                                                b is not None
+                                                and getattr(lin2, "bias", None)
+                                                is not None
+                                            ):
+                                                lin2.bias.data.copy_(
+                                                    b.to(
+                                                        lin2.bias.device,
+                                                        lin2.bias.dtype,
+                                                    )
+                                                )
 
                         # Output projection
                         try:
                             src_w_o, src_b_o = adapter.get_weight_bias(old_attn, "o")
-                            target_o = _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS["o"])
+                            target_o = _find_submodule_by_regex(
+                                new_attn, PROJ_REGEX_PATTERNS["o"]
+                            )
                             if target_o is not None:
                                 _copy_projection_weights(target_o, src_w_o, src_b_o)
                             else:
-                                lin1_o = getattr(new_attn, "out_proj1", getattr(new_attn, "o_proj1", None))
-                                lin2_o = getattr(new_attn, "out_proj2", getattr(new_attn, "o_proj2", None))
+                                lin1_o = getattr(
+                                    new_attn,
+                                    "out_proj1",
+                                    getattr(new_attn, "o_proj1", None),
+                                )
+                                lin2_o = getattr(
+                                    new_attn,
+                                    "out_proj2",
+                                    getattr(new_attn, "o_proj2", None),
+                                )
                                 if lin1_o is not None and lin2_o is not None:
                                     with torch.no_grad():
                                         W_f = src_w_o.detach().float()
-                                        if W_f.shape[1] != lin1_o.weight.shape[1] and W_f.shape[0] == lin1_o.weight.shape[1]:
+                                        if (
+                                            W_f.shape[1] != lin1_o.weight.shape[1]
+                                            and W_f.shape[0] == lin1_o.weight.shape[1]
+                                        ):
                                             W_f = W_f.t()
-                                        U, S, Vt = torch.linalg.svd(W_f, full_matrices=False)
-                                        r = min(lin1_o.weight.shape[0], lin2_o.weight.shape[1], U.size(1), Vt.size(0))
-                                        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-                                        U_b = (U[:, :r] * sqrt_S.unsqueeze(0)).to(device=src_w_o.device, dtype=src_w_o.dtype)
-                                        V_b = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(device=src_w_o.device, dtype=src_w_o.dtype)
-                                        min_out = min(lin2_o.weight.shape[0], U_b.shape[0])
-                                        min_in = min(lin1_o.weight.shape[1], V_b.shape[1])
-                                        lin1_o.weight.data[:r, :min_in].copy_(V_b[:, :min_in])
-                                        lin2_o.weight.data[:min_out, :r].copy_(U_b[:min_out, :])
-                                        if src_b_o is not None and getattr(lin2_o, "bias", None) is not None:
-                                            min_b = min(lin2_o.bias.shape[0], src_b_o.shape[0])
-                                            lin2_o.bias.data[:min_b].copy_(src_b_o[:min_b].to(lin2_o.bias.device, lin2_o.bias.dtype))
+                                        U, S, Vt = torch.linalg.svd(
+                                            W_f, full_matrices=False
+                                        )
+                                        r = min(
+                                            lin1_o.weight.shape[0],
+                                            lin2_o.weight.shape[1],
+                                            U.size(1),
+                                            Vt.size(0),
+                                        )
+                                        sqrt_S = torch.sqrt(
+                                            torch.clamp(S[:r], min=1e-12)
+                                        )
+                                        U_b = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
+                                            device=src_w_o.device, dtype=src_w_o.dtype
+                                        )
+                                        V_b = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(
+                                            device=src_w_o.device, dtype=src_w_o.dtype
+                                        )
+                                        min_out = min(
+                                            lin2_o.weight.shape[0], U_b.shape[0]
+                                        )
+                                        min_in = min(
+                                            lin1_o.weight.shape[1], V_b.shape[1]
+                                        )
+                                        lin1_o.weight.data[:r, :min_in].copy_(
+                                            V_b[:, :min_in]
+                                        )
+                                        lin2_o.weight.data[:min_out, :r].copy_(
+                                            U_b[:min_out, :]
+                                        )
+                                        if (
+                                            src_b_o is not None
+                                            and getattr(lin2_o, "bias", None)
+                                            is not None
+                                        ):
+                                            min_b = min(
+                                                lin2_o.bias.shape[0], src_b_o.shape[0]
+                                            )
+                                            lin2_o.bias.data[:min_b].copy_(
+                                                src_b_o[:min_b].to(
+                                                    lin2_o.bias.device,
+                                                    lin2_o.bias.dtype,
+                                                )
+                                            )
                         except (ValueError, AttributeError) as e:
-                            logger.debug("Could not copy output projection for %s: %s", name, e)
+                            logger.debug(
+                                "Could not copy output projection for %s: %s", name, e
+                            )
                     else:
                         # Standard decoupled Q, K, V, O projections
                         for proj_key in ["q", "k", "v", "o"]:
                             src_weight, src_bias = None, None
                             try:
-                                src_weight, src_bias = adapter.get_weight_bias(old_attn, proj_key)
+                                src_weight, src_bias = adapter.get_weight_bias(
+                                    old_attn, proj_key
+                                )
                             except (ValueError, AttributeError) as e:
-                                logger.debug("Could not get %s projection weights for %s: %s", proj_key, name, e)
+                                logger.debug(
+                                    "Could not get %s projection weights for %s: %s",
+                                    proj_key,
+                                    name,
+                                    e,
+                                )
 
-                            target_proj = _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS[proj_key])
+                            target_proj = _find_submodule_by_regex(
+                                new_attn, PROJ_REGEX_PATTERNS[proj_key]
+                            )
                             if target_proj is not None:
                                 if src_weight is not None:
-                                    _copy_projection_weights(target_proj, src_weight, src_bias)
+                                    _copy_projection_weights(
+                                        target_proj, src_weight, src_bias
+                                    )
                                 elif proj_key == "o":
                                     # Encoder self-attention (BERT/RoBERTa .self) has no internal out_proj
                                     # because the outer attention container already applies output.dense.
                                     # Initialize new_attn.out_proj to Identity so context passes through transparently.
                                     with torch.no_grad():
-                                        if hasattr(target_proj, "weight") and target_proj.weight.ndim == 2:
-                                            if target_proj.weight.shape[0] == target_proj.weight.shape[1]:
+                                        if (
+                                            hasattr(target_proj, "weight")
+                                            and target_proj.weight.ndim == 2
+                                        ):
+                                            if (
+                                                target_proj.weight.shape[0]
+                                                == target_proj.weight.shape[1]
+                                            ):
                                                 nn.init.eye_(target_proj.weight)
                                             else:
                                                 nn.init.zeros_(target_proj.weight)
-                                                min_d = min(target_proj.weight.shape[0], target_proj.weight.shape[1])
-                                                target_proj.weight.data[:min_d, :min_d].fill_diagonal_(1.0)
-                                        elif hasattr(target_proj, "set_svd_factors") or (hasattr(target_proj, "U") and hasattr(target_proj, "V")):
+                                                min_d = min(
+                                                    target_proj.weight.shape[0],
+                                                    target_proj.weight.shape[1],
+                                                )
+                                                target_proj.weight.data[
+                                                    :min_d, :min_d
+                                                ].fill_diagonal_(1.0)
+                                        elif hasattr(
+                                            target_proj, "set_svd_factors"
+                                        ) or (
+                                            hasattr(target_proj, "U")
+                                            and hasattr(target_proj, "V")
+                                        ):
                                             # Low-rank / factorized linear layer: set factors to truncated identity
-                                            d_out = getattr(target_proj, "out_features", getattr(target_proj, "d_out", hidden_size or 768))
-                                            d_in = getattr(target_proj, "in_features", getattr(target_proj, "d_in", hidden_size or 768))
-                                            eye_mat = torch.eye(d_out, d_in, device=target_proj.U.device if hasattr(target_proj, "U") else None)
-                                            _copy_projection_weights(target_proj, eye_mat, None)
-                                        if hasattr(target_proj, "bias") and target_proj.bias is not None:
+                                            d_out = getattr(
+                                                target_proj,
+                                                "out_features",
+                                                getattr(
+                                                    target_proj,
+                                                    "d_out",
+                                                    hidden_size or 768,
+                                                ),
+                                            )
+                                            d_in = getattr(
+                                                target_proj,
+                                                "in_features",
+                                                getattr(
+                                                    target_proj,
+                                                    "d_in",
+                                                    hidden_size or 768,
+                                                ),
+                                            )
+                                            eye_mat = torch.eye(
+                                                d_out,
+                                                d_in,
+                                                device=(
+                                                    target_proj.U.device
+                                                    if hasattr(target_proj, "U")
+                                                    else None
+                                                ),
+                                            )
+                                            _copy_projection_weights(
+                                                target_proj, eye_mat, None
+                                            )
+                                        if (
+                                            hasattr(target_proj, "bias")
+                                            and target_proj.bias is not None
+                                        ):
                                             nn.init.zeros_(target_proj.bias)
                             else:
                                 # Support indexed dual projections (e.g. aegis_hybrid, svd_linear_attention: q_proj1, q_proj2)
-                                lin1 = getattr(new_attn, f"{proj_key}_proj1", getattr(new_attn, f"{proj_key}1", None))
-                                lin2 = getattr(new_attn, f"{proj_key}_proj2", getattr(new_attn, f"{proj_key}2", None))
+                                lin1 = getattr(
+                                    new_attn,
+                                    f"{proj_key}_proj1",
+                                    getattr(new_attn, f"{proj_key}1", None),
+                                )
+                                lin2 = getattr(
+                                    new_attn,
+                                    f"{proj_key}_proj2",
+                                    getattr(new_attn, f"{proj_key}2", None),
+                                )
                                 if proj_key == "o":
-                                    lin1 = lin1 or getattr(new_attn, "out_proj1", getattr(new_attn, "o_proj1", None))
-                                    lin2 = lin2 or getattr(new_attn, "out_proj2", getattr(new_attn, "o_proj2", None))
+                                    lin1 = lin1 or getattr(
+                                        new_attn,
+                                        "out_proj1",
+                                        getattr(new_attn, "o_proj1", None),
+                                    )
+                                    lin2 = lin2 or getattr(
+                                        new_attn,
+                                        "out_proj2",
+                                        getattr(new_attn, "o_proj2", None),
+                                    )
                                 if lin1 is not None and lin2 is not None:
                                     if src_weight is not None:
                                         with torch.no_grad():
                                             W_f = src_weight.detach().float()
-                                            if hasattr(lin1, "weight") and hasattr(lin2, "weight"):
-                                                if W_f.shape[1] != lin1.weight.shape[1] and W_f.shape[0] == lin1.weight.shape[1]:
+                                            if hasattr(lin1, "weight") and hasattr(
+                                                lin2, "weight"
+                                            ):
+                                                if (
+                                                    W_f.shape[1] != lin1.weight.shape[1]
+                                                    and W_f.shape[0]
+                                                    == lin1.weight.shape[1]
+                                                ):
                                                     W_f = W_f.t()
-                                                U, S, Vt = torch.linalg.svd(W_f, full_matrices=False)
-                                                r = min(lin1.weight.shape[0], lin2.weight.shape[1], U.size(1), Vt.size(0))
-                                                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-                                                U_b = (U[:, :r] * sqrt_S.unsqueeze(0)).to(device=src_weight.device, dtype=src_weight.dtype)
-                                                V_b = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(device=src_weight.device, dtype=src_weight.dtype)
-                                                min_out = min(lin2.weight.shape[0], U_b.shape[0])
-                                                min_in = min(lin1.weight.shape[1], V_b.shape[1])
-                                                lin1.weight.data[:r, :min_in].copy_(V_b[:, :min_in])
-                                                lin2.weight.data[:min_out, :r].copy_(U_b[:min_out, :])
-                                                if src_bias is not None and getattr(lin2, "bias", None) is not None:
-                                                    min_b = min(lin2.bias.shape[0], src_bias.shape[0])
-                                                    lin2.bias.data[:min_b].copy_(src_bias[:min_b].to(lin2.bias.device, lin2.bias.dtype))
+                                                U, S, Vt = torch.linalg.svd(
+                                                    W_f, full_matrices=False
+                                                )
+                                                r = min(
+                                                    lin1.weight.shape[0],
+                                                    lin2.weight.shape[1],
+                                                    U.size(1),
+                                                    Vt.size(0),
+                                                )
+                                                sqrt_S = torch.sqrt(
+                                                    torch.clamp(S[:r], min=1e-12)
+                                                )
+                                                U_b = (
+                                                    U[:, :r] * sqrt_S.unsqueeze(0)
+                                                ).to(
+                                                    device=src_weight.device,
+                                                    dtype=src_weight.dtype,
+                                                )
+                                                V_b = (
+                                                    sqrt_S.unsqueeze(1) * Vt[:r, :]
+                                                ).to(
+                                                    device=src_weight.device,
+                                                    dtype=src_weight.dtype,
+                                                )
+                                                min_out = min(
+                                                    lin2.weight.shape[0], U_b.shape[0]
+                                                )
+                                                min_in = min(
+                                                    lin1.weight.shape[1], V_b.shape[1]
+                                                )
+                                                lin1.weight.data[:r, :min_in].copy_(
+                                                    V_b[:, :min_in]
+                                                )
+                                                lin2.weight.data[:min_out, :r].copy_(
+                                                    U_b[:min_out, :]
+                                                )
+                                                if (
+                                                    src_bias is not None
+                                                    and getattr(lin2, "bias", None)
+                                                    is not None
+                                                ):
+                                                    min_b = min(
+                                                        lin2.bias.shape[0],
+                                                        src_bias.shape[0],
+                                                    )
+                                                    lin2.bias.data[:min_b].copy_(
+                                                        src_bias[:min_b].to(
+                                                            lin2.bias.device,
+                                                            lin2.bias.dtype,
+                                                        )
+                                                    )
                                     elif proj_key == "o":
                                         # Identity for dual out_proj
                                         with torch.no_grad():
-                                            if hasattr(lin1, "weight") and hasattr(lin2, "weight"):
+                                            if hasattr(lin1, "weight") and hasattr(
+                                                lin2, "weight"
+                                            ):
                                                 nn.init.zeros_(lin1.weight)
                                                 nn.init.zeros_(lin2.weight)
-                                                r = min(lin1.weight.shape[0], lin2.weight.shape[1], lin1.weight.shape[1], lin2.weight.shape[0])
-                                                lin1.weight.data[:r, :r].fill_diagonal_(1.0)
-                                                lin2.weight.data[:r, :r].fill_diagonal_(1.0)
-                                                if getattr(lin2, "bias", None) is not None:
+                                                r = min(
+                                                    lin1.weight.shape[0],
+                                                    lin2.weight.shape[1],
+                                                    lin1.weight.shape[1],
+                                                    lin2.weight.shape[0],
+                                                )
+                                                lin1.weight.data[:r, :r].fill_diagonal_(
+                                                    1.0
+                                                )
+                                                lin2.weight.data[:r, :r].fill_diagonal_(
+                                                    1.0
+                                                )
+                                                if (
+                                                    getattr(lin2, "bias", None)
+                                                    is not None
+                                                ):
                                                     nn.init.zeros_(lin2.bias)
 
         from framework.utils.replace_attention import UniversalAttentionWrapper
-        return_tuple = "self_attn" in name.lower() or "attention" in name.lower() or getattr(old_attn, "is_decoder", False) or family == "gpt" or name.endswith(".attn")
-        wrapped_attn = UniversalAttentionWrapper(new_attn, layer_name=name, return_tuple=return_tuple)
+
+        return_tuple = (
+            "self_attn" in name.lower()
+            or "attention" in name.lower()
+            or getattr(old_attn, "is_decoder", False)
+            or family == "gpt"
+            or name.endswith(".attn")
+        )
+        wrapped_attn = UniversalAttentionWrapper(
+            new_attn, layer_name=name, return_tuple=return_tuple
+        )
         replace_module(model, name, wrapped_attn)
         replaced += 1
 
-    logger.info("Successfully injected '%s' into %d transformer blocks.", attention_type, replaced)
+    logger.info(
+        "Successfully injected '%s' into %d transformer blocks.",
+        attention_type,
+        replaced,
+    )
     if not hasattr(model, "compression_stats"):
         model.compression_stats = {}
     model.compression_stats["num_compressed"] = replaced
-    model.compression_stats["total_params_after"] = sum(p.numel() for p in model.parameters())
+    model.compression_stats["total_params_after"] = sum(
+        p.numel() for p in model.parameters()
+    )
     return model
 
 

@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.hgrn2_gated_deltanet import HGRN2GatedDeltaNet, inject_hgrn2_gated_deltanet
+from framework.attentions.hgrn2_gated_deltanet import (
+    HGRN2GatedDeltaNet, inject_hgrn2_gated_deltanet)
 
 
 class MockConfig:

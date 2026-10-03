@@ -13,6 +13,7 @@ Verifies all 8 core properties:
 """
 import os
 import sys
+
 import torch
 import torch.nn as nn
 
@@ -20,10 +21,7 @@ sys.path.insert(0, os.path.abspath("Codes"))
 sys.path.insert(0, os.path.abspath("."))
 
 from framework.attentions.adaptive_span_attention import (
-    AdaptiveSpanAttention,
-    get_total_span_loss,
-    inject_adaptive_span,
-)
+    AdaptiveSpanAttention, get_total_span_loss, inject_adaptive_span)
 from framework.core.registry import ATTENTION_REGISTRY
 
 

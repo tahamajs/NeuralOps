@@ -11,6 +11,7 @@ Usage (from project root):
         --dataset_dir Codes/framework/data/glue_data/mnli \
         --out results/02_glue_sweeps/distilbert/distilbert_mnli_full_mnli_sweep/full_mnli_validation.csv
 """
+
 from __future__ import annotations
 
 import argparse
@@ -22,16 +23,19 @@ from collections import Counter
 from pathlib import Path
 
 import torch
-from datasets import load_from_disk, load_dataset
+from datasets import load_dataset, load_from_disk
 from sklearn.metrics import (
-    f1_score, precision_score, recall_score,
+    f1_score,
     precision_recall_fscore_support,
+    precision_score,
+    recall_score,
 )
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 # --------------------------------------------------------------------------- #
 #  Helpers                                                                    #
 # --------------------------------------------------------------------------- #
+
 
 def wilson_ci(n_correct: int, n_total: int, z: float = 1.96):
     """Wilson score 95% CI for a proportion."""
@@ -46,8 +50,11 @@ def wilson_ci(n_correct: int, n_total: int, z: float = 1.96):
 
 def encode_batch(tokenizer, texts, seq_len, device):
     enc = tokenizer(
-        texts, padding="max_length", truncation=True,
-        max_length=seq_len, return_tensors="pt"
+        texts,
+        padding="max_length",
+        truncation=True,
+        max_length=seq_len,
+        return_tensors="pt",
     )
     return {k: v.to(device) for k, v in enc.items()}
 
@@ -73,10 +80,12 @@ def eval_on_dataset(model, tokenizer, val_ds, seq_len: int, batch_size: int, dev
 
     with torch.no_grad():
         for i in range(0, len(texts), batch_size):
-            batch_texts = texts[i:i+batch_size]
-            batch_labels = labels[i:i+batch_size]
+            batch_texts = texts[i : i + batch_size]
+            batch_labels = labels[i : i + batch_size]
             inputs = encode_batch(tokenizer, batch_texts, seq_len, device)
-            with torch.autocast("cuda", dtype=torch.float16, enabled=device.type == "cuda"):
+            with torch.autocast(
+                "cuda", dtype=torch.float16, enabled=device.type == "cuda"
+            ):
                 outputs = model(**inputs)
             preds = outputs.logits.argmax(-1).cpu().tolist()
             all_preds.extend(preds)
@@ -89,9 +98,18 @@ def eval_on_dataset(model, tokenizer, val_ds, seq_len: int, batch_size: int, dev
     acc = round(100.0 * correct / max(n, 1), 4)
     ci_lo, ci_hi = wilson_ci(correct, n)
 
-    f1_mac = round(float(f1_score(all_targets, all_preds, average="macro", zero_division=0)), 4)
-    prec   = round(float(precision_score(all_targets, all_preds, average="macro", zero_division=0)), 4)
-    rec    = round(float(recall_score(all_targets, all_preds, average="macro", zero_division=0)), 4)
+    f1_mac = round(
+        float(f1_score(all_targets, all_preds, average="macro", zero_division=0)), 4
+    )
+    prec = round(
+        float(
+            precision_score(all_targets, all_preds, average="macro", zero_division=0)
+        ),
+        4,
+    )
+    rec = round(
+        float(recall_score(all_targets, all_preds, average="macro", zero_division=0)), 4
+    )
 
     class_labels = sorted(set(all_targets))
     per_prec, per_rec, per_f1, per_sup = precision_recall_fscore_support(
@@ -130,18 +148,30 @@ def eval_on_dataset(model, tokenizer, val_ds, seq_len: int, batch_size: int, dev
 #  Main                                                                       #
 # --------------------------------------------------------------------------- #
 
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True, help="Path to base fine-tuned model dir")
-    ap.add_argument("--sweep_csv", required=True, help="Path to summary.csv from the sweep")
-    ap.add_argument("--dataset_dir", required=True, help="Path to local MNLI dataset dir")
+    ap.add_argument(
+        "--sweep_csv", required=True, help="Path to summary.csv from the sweep"
+    )
+    ap.add_argument(
+        "--dataset_dir", required=True, help="Path to local MNLI dataset dir"
+    )
     ap.add_argument("--out", required=True, help="Output CSV path")
     ap.add_argument("--batch_size", type=int, default=32)
     ap.add_argument("--seq_len", type=int, default=128)
-    ap.add_argument("--min_acc_filter", type=float, default=50.0,
-                    help="Only evaluate modules with local accuracy >= this value (pre-filter)")
-    ap.add_argument("--full_mnli_dir", default=None,
-                    help="Optional: path to a separately stored full 9815-sample MNLI dir")
+    ap.add_argument(
+        "--min_acc_filter",
+        type=float,
+        default=50.0,
+        help="Only evaluate modules with local accuracy >= this value (pre-filter)",
+    )
+    ap.add_argument(
+        "--full_mnli_dir",
+        default=None,
+        help="Optional: path to a separately stored full 9815-sample MNLI dir",
+    )
     args = ap.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -164,7 +194,9 @@ def main():
     se = math.sqrt(majority * (1 - majority) / N)
     threshold_full = round((majority + 3 * se) * 100, 4)
     majority_pct = round(majority * 100, 4)
-    print(f"Full MNLI: majority={majority_pct:.2f}%, SE={se*100:.3f}%, 3σ threshold={threshold_full:.2f}%")
+    print(
+        f"Full MNLI: majority={majority_pct:.2f}%, SE={se*100:.3f}%, 3σ threshold={threshold_full:.2f}%"
+    )
     print(f"Label distribution: {dict(label_counts)}")
 
     # Read sweep CSV — select PASS modules with acc >= min_acc_filter
@@ -176,7 +208,9 @@ def main():
             if acc >= args.min_acc_filter and "PASS" in status:
                 sweep_rows.append(r)
     sweep_rows.sort(key=lambda r: -float(r.get("accuracy_pct", 0)))
-    print(f"Modules to re-evaluate: {len(sweep_rows)} (acc >= {args.min_acc_filter}% and PASS status)")
+    print(
+        f"Modules to re-evaluate: {len(sweep_rows)} (acc >= {args.min_acc_filter}% and PASS status)"
+    )
 
     # Load tokenizer and base model (used to load saved state_dicts)
     tokenizer = AutoTokenizer.from_pretrained(args.model)
@@ -188,24 +222,43 @@ def main():
         mod = r["module_name"]
         local_acc = float(r.get("accuracy_pct", 0))
         local_status = r.get("status", "")
-        print(f"\n[{i}/{len(sweep_rows)}] Evaluating {mod} (local acc={local_acc:.1f}%)...")
+        print(
+            f"\n[{i}/{len(sweep_rows)}] Evaluating {mod} (local acc={local_acc:.1f}%)..."
+        )
 
         # Load base model fresh for each module
         try:
-            model = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=3)
+            model = AutoModelForSequenceClassification.from_pretrained(
+                args.model, num_labels=3
+            )
         except Exception as e:
             print(f"  ERROR loading base model: {e}")
-            results.append({
-                "module": mod, "local_acc": local_acc, "local_status": local_status,
-                "full_acc": "", "ci95_lo": "", "ci95_hi": "", "f1_macro": "",
-                "precision": "", "recall": "", "collapse_flag": "",
-                "per_class_0": "", "per_class_1": "", "per_class_2": "",
-                "passes_full_threshold": "", "error": str(e),
-            })
+            results.append(
+                {
+                    "module": mod,
+                    "local_acc": local_acc,
+                    "local_status": local_status,
+                    "full_acc": "",
+                    "ci95_lo": "",
+                    "ci95_hi": "",
+                    "f1_macro": "",
+                    "precision": "",
+                    "recall": "",
+                    "collapse_flag": "",
+                    "per_class_0": "",
+                    "per_class_1": "",
+                    "per_class_2": "",
+                    "passes_full_threshold": "",
+                    "error": str(e),
+                }
+            )
             continue
 
         # Load saved module checkpoint if it exists
-        checkpoint_path = Path(args.sweep_csv).parent / f"distilbert_mnli_full_{mod}_full_metrics.json"
+        checkpoint_path = (
+            Path(args.sweep_csv).parent
+            / f"distilbert_mnli_full_{mod}_full_metrics.json"
+        )
         loaded_checkpoint = False
         if checkpoint_path.exists():
             try:
@@ -221,16 +274,30 @@ def main():
             model = model.half()
 
         try:
-            metrics = eval_on_dataset(model, tokenizer, val_full, args.seq_len, args.batch_size, device)
+            metrics = eval_on_dataset(
+                model, tokenizer, val_full, args.seq_len, args.batch_size, device
+            )
         except Exception as e:
             print(f"  ERROR during eval: {e}")
-            results.append({
-                "module": mod, "local_acc": local_acc, "local_status": local_status,
-                "full_acc": "", "ci95_lo": "", "ci95_hi": "", "f1_macro": "",
-                "precision": "", "recall": "", "collapse_flag": "",
-                "per_class_0": "", "per_class_1": "", "per_class_2": "",
-                "passes_full_threshold": "", "error": str(e),
-            })
+            results.append(
+                {
+                    "module": mod,
+                    "local_acc": local_acc,
+                    "local_status": local_status,
+                    "full_acc": "",
+                    "ci95_lo": "",
+                    "ci95_hi": "",
+                    "f1_macro": "",
+                    "precision": "",
+                    "recall": "",
+                    "collapse_flag": "",
+                    "per_class_0": "",
+                    "per_class_1": "",
+                    "per_class_2": "",
+                    "passes_full_threshold": "",
+                    "error": str(e),
+                }
+            )
             continue
 
         pc = metrics["per_class"]
@@ -241,28 +308,30 @@ def main():
             f"| PASS>={threshold_full}% → {'YES' if passes else 'NO'}"
         )
 
-        results.append({
-            "module": mod,
-            "local_acc": local_acc,
-            "local_status": local_status,
-            "full_n": metrics["n"],
-            "full_acc": metrics["accuracy_pct"],
-            "ci95_lo": metrics["ci95_lo"],
-            "ci95_hi": metrics["ci95_hi"],
-            "f1_macro": metrics["f1_macro"],
-            "precision": metrics["precision"],
-            "recall": metrics["recall"],
-            "collapse_flag": metrics["collapse_flag"],
-            "per_class_0_recall": pc.get("0", {}).get("recall", ""),
-            "per_class_1_recall": pc.get("1", {}).get("recall", ""),
-            "per_class_2_recall": pc.get("2", {}).get("recall", ""),
-            "per_class_0_prec": pc.get("0", {}).get("precision", ""),
-            "per_class_1_prec": pc.get("1", {}).get("precision", ""),
-            "per_class_2_prec": pc.get("2", {}).get("precision", ""),
-            "threshold_full": threshold_full,
-            "passes_full_threshold": passes,
-            "error": "",
-        })
+        results.append(
+            {
+                "module": mod,
+                "local_acc": local_acc,
+                "local_status": local_status,
+                "full_n": metrics["n"],
+                "full_acc": metrics["accuracy_pct"],
+                "ci95_lo": metrics["ci95_lo"],
+                "ci95_hi": metrics["ci95_hi"],
+                "f1_macro": metrics["f1_macro"],
+                "precision": metrics["precision"],
+                "recall": metrics["recall"],
+                "collapse_flag": metrics["collapse_flag"],
+                "per_class_0_recall": pc.get("0", {}).get("recall", ""),
+                "per_class_1_recall": pc.get("1", {}).get("recall", ""),
+                "per_class_2_recall": pc.get("2", {}).get("recall", ""),
+                "per_class_0_prec": pc.get("0", {}).get("precision", ""),
+                "per_class_1_prec": pc.get("1", {}).get("precision", ""),
+                "per_class_2_prec": pc.get("2", {}).get("precision", ""),
+                "threshold_full": threshold_full,
+                "passes_full_threshold": passes,
+                "error": "",
+            }
+        )
 
         del model
         torch.cuda.empty_cache()
@@ -286,7 +355,9 @@ def main():
     print(f"  FAIL: {len(fail_full)}/{len(results)}")
     print("\nModules that PASS on full set:")
     for r in sorted(pass_full, key=lambda x: -float(x.get("full_acc", 0))):
-        print(f"  {r['module']:35} {r['full_acc']:.2f}% [{r['ci95_lo']:.2f}%–{r['ci95_hi']:.2f}%]")
+        print(
+            f"  {r['module']:35} {r['full_acc']:.2f}% [{r['ci95_lo']:.2f}%–{r['ci95_hi']:.2f}%]"
+        )
 
 
 if __name__ == "__main__":

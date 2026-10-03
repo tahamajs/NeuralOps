@@ -11,8 +11,8 @@ Verifies:
 
 import pytest
 import torch
-from transformers import AutoModelForSequenceClassification, T5Config
 from framework.utils.replace_attention import replace_attention
+from transformers import AutoModelForSequenceClassification, T5Config
 
 TARGET_MODULES = [
     'cosformer', 'eat', 'gated_linear_attn', 'gated_delta_net', 'decay_linear_attn',

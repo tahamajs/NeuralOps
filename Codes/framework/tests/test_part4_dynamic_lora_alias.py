@@ -2,9 +2,13 @@
 import pytest
 import torch
 import torch.nn as nn
-from transformers import GPT2Config, GPT2ForSequenceClassification, RobertaConfig, RobertaForSequenceClassification, T5Config, T5EncoderModel
+from framework.core.adapters import (CANONICAL_PROJECTION_ALIASES,
+                                     UniversalAdapter)
 from framework.utils.lora import find_all_linear_submodule_names
-from framework.core.adapters import CANONICAL_PROJECTION_ALIASES, UniversalAdapter
+from transformers import (GPT2Config, GPT2ForSequenceClassification,
+                          RobertaConfig, RobertaForSequenceClassification,
+                          T5Config, T5EncoderModel)
+
 
 def test_dynamic_lora_targets_gpt2():
     cfg = GPT2Config(n_layer=2, n_head=2, n_embd=32, vocab_size=100)

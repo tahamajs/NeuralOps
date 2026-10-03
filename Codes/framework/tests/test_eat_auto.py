@@ -1,7 +1,8 @@
+import framework.attentions.eat
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.eat
+
 
 def test_eat_module_present():
     assert hasattr(framework.attentions, 'eat')

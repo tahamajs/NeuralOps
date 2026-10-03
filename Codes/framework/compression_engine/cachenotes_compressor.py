@@ -24,13 +24,10 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
+from framework.core.pruning_utils import recalibrate_layernorms
 from framework.core.registry import COMPRESSOR_REGISTRY
-from framework.core.pruning_utils import (
-    recalibrate_layernorms,
-)
 from framework.utils.compat import should_compress_linear
 
 try:
@@ -92,10 +89,16 @@ class CacheNotesLoRALinear(nn.Module):
 
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, in_features), dtype=target_dtype, device=target_device)
+                torch.empty(
+                    (self.lora_r, in_features), dtype=target_dtype, device=target_device
+                )
             )
             self.lora_B = nn.Parameter(
-                torch.zeros((out_features, self.lora_r), dtype=target_dtype, device=target_device)
+                torch.zeros(
+                    (out_features, self.lora_r),
+                    dtype=target_dtype,
+                    device=target_device,
+                )
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
@@ -121,7 +124,11 @@ class CacheNotesLoRALinear(nn.Module):
             out_f = raw_w.shape[0]
             in_f = raw_w.shape[1]
 
-        bias = linear.bias.detach().clone() if getattr(linear, "bias", None) is not None and linear.bias is not None else None
+        bias = (
+            linear.bias.detach().clone()
+            if getattr(linear, "bias", None) is not None and linear.bias is not None
+            else None
+        )
         return cls(
             in_features=in_f,
             out_features=out_f,
@@ -136,10 +143,16 @@ class CacheNotesLoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
-        out = F.linear(x_flat, self.weight.to(x_flat.dtype), self.bias.to(x_flat.dtype) if self.bias is not None else None)
+        out = F.linear(
+            x_flat,
+            self.weight.to(x_flat.dtype),
+            self.bias.to(x_flat.dtype) if self.bias is not None else None,
+        )
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x_flat.to(self.lora_A.dtype), self.lora_A), self.lora_B)
+            lora_out = F.linear(
+                F.linear(x_flat.to(self.lora_A.dtype), self.lora_A), self.lora_B
+            )
             out = out + (self.scaling * lora_out).to(out.dtype)
 
         return out.reshape(*orig_shape[:-1], self.out_features)
@@ -152,16 +165,54 @@ class CompressionPlanningTokens:
     """
 
     TASK_KEYWORD_MAP = {
-        "qa": ["question", "answer", "context", "passage", "who", "what", "where", "why"],
+        "qa": [
+            "question",
+            "answer",
+            "context",
+            "passage",
+            "who",
+            "what",
+            "where",
+            "why",
+        ],
         "summarize": ["summary", "abstract", "key", "main", "brief", "conclusion"],
-        "code": ["function", "class", "def", "return", "import", "self", "error", "test"],
-        "reasoning": ["therefore", "because", "if", "then", "thus", "proof", "step", "hence"],
-        "math": ["solve", "equation", "matrix", "integral", "theorem", "calculate", "equal"],
+        "code": [
+            "function",
+            "class",
+            "def",
+            "return",
+            "import",
+            "self",
+            "error",
+            "test",
+        ],
+        "reasoning": [
+            "therefore",
+            "because",
+            "if",
+            "then",
+            "thus",
+            "proof",
+            "step",
+            "hence",
+        ],
+        "math": [
+            "solve",
+            "equation",
+            "matrix",
+            "integral",
+            "theorem",
+            "calculate",
+            "equal",
+        ],
     }
 
     @classmethod
     def generate_importance(
-        cls, task_type: str, num_features: int, device: torch.device = torch.device("cpu")
+        cls,
+        task_type: str,
+        num_features: int,
+        device: torch.device = torch.device("cpu"),
     ) -> torch.Tensor:
         """Generate per-feature importance modulation vector based on static heuristics."""
         task_lower = str(task_type).lower()
@@ -188,7 +239,9 @@ class CPTGenerator(nn.Module):
     and KV cache compression across arbitrary dimension sizes d.
     """
 
-    def __init__(self, hidden_dim: int = 128, num_freqs: int = 8, vocab_size: int = 5000):
+    def __init__(
+        self, hidden_dim: int = 128, num_freqs: int = 8, vocab_size: int = 5000
+    ):
         super().__init__()
         self.hidden_dim = hidden_dim
         self.num_freqs = num_freqs
@@ -212,7 +265,15 @@ class CPTGenerator(nn.Module):
 
     def _tokenize_text(self, text: str, device: torch.device) -> torch.Tensor:
         """Deterministic hash-based tokenization without external library dependencies."""
-        words = str(text).lower().replace(",", " ").replace(".", " ").replace(":", " ").replace("-", " ").split()
+        words = (
+            str(text)
+            .lower()
+            .replace(",", " ")
+            .replace(".", " ")
+            .replace(":", " ")
+            .replace("-", " ")
+            .split()
+        )
         if not words:
             return torch.tensor([0], dtype=torch.long, device=device)
         indices = []
@@ -221,7 +282,9 @@ class CPTGenerator(nn.Module):
             indices.append(h % (self.vocab_size - 1) + 1)
         return torch.tensor(indices, dtype=torch.long, device=device)
 
-    def forward(self, task: str, d: int, device: torch.device | None = None) -> torch.Tensor:
+    def forward(
+        self, task: str, d: int, device: torch.device | None = None
+    ) -> torch.Tensor:
         """
         Generate a per-feature importance modulation vector of size d in [0.1, 2.0].
         """
@@ -234,7 +297,9 @@ class CPTGenerator(nn.Module):
         coords = torch.linspace(0.0, 1.0, d, device=target_device)
         freqs = (2.0 ** torch.arange(self.num_freqs, device=target_device)) * math.pi
         args = coords.unsqueeze(1) * freqs.unsqueeze(0)  # [d, num_freqs]
-        enc = torch.cat([torch.sin(args), torch.cos(args)], dim=-1)  # [d, 2 * num_freqs]
+        enc = torch.cat(
+            [torch.sin(args), torch.cos(args)], dim=-1
+        )  # [d, 2 * num_freqs]
 
         h_exp = h.unsqueeze(0).expand(d, -1)  # [d, hidden_dim]
         inp = torch.cat([h_exp, enc], dim=-1)  # [d, in_dim]
@@ -318,7 +383,9 @@ class CacheNotesKVCache:
 
         # Task importance weighting across tokens
         if self.cpt_generator is not None:
-            cpt_importance = self.cpt_generator(self.task_type, D, device=self.k_cache.device)
+            cpt_importance = self.cpt_generator(
+                self.task_type, D, device=self.k_cache.device
+            )
         else:
             cpt_importance = CompressionPlanningTokens.generate_importance(
                 self.task_type, D, device=self.k_cache.device
@@ -384,7 +451,9 @@ class CacheNotesCompressor(BaseCompressor):
         super().__init__(model, name="cachenotes", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
 
-        task_type = str(_cfg_get(cfg, "cachenotes_task", _cfg_get(cfg, "task_type", task_type)))
+        task_type = str(
+            _cfg_get(cfg, "cachenotes_task", _cfg_get(cfg, "task_type", task_type))
+        )
         task_description = str(
             _cfg_get(
                 cfg,
@@ -393,24 +462,60 @@ class CacheNotesCompressor(BaseCompressor):
             )
         )
         use_learned_cpt = bool(
-            _cfg_get(cfg, "cachenotes_use_learned_cpt", _cfg_get(cfg, "use_learned_cpt", use_learned_cpt))
+            _cfg_get(
+                cfg,
+                "cachenotes_use_learned_cpt",
+                _cfg_get(cfg, "use_learned_cpt", use_learned_cpt),
+            )
         )
-        keep_ratio = float(_cfg_get(cfg, "cachenotes_keep_ratio", _cfg_get(cfg, "keep_ratio", keep_ratio)))
-        max_error = float(_cfg_get(cfg, "cachenotes_max_error", _cfg_get(cfg, "max_error", max_error)))
+        keep_ratio = float(
+            _cfg_get(
+                cfg, "cachenotes_keep_ratio", _cfg_get(cfg, "keep_ratio", keep_ratio)
+            )
+        )
+        max_error = float(
+            _cfg_get(cfg, "cachenotes_max_error", _cfg_get(cfg, "max_error", max_error))
+        )
         fallback_to_original = bool(
-            _cfg_get(cfg, "cachenotes_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original))
+            _cfg_get(
+                cfg,
+                "cachenotes_fallback_to_original",
+                _cfg_get(cfg, "fallback_to_original", fallback_to_original),
+            )
         )
         protect_critical = bool(_cfg_get(cfg, "protect_critical", protect_critical))
         target_attention_only = bool(
-            _cfg_get(cfg, "cachenotes_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
+            _cfg_get(
+                cfg,
+                "cachenotes_target_attention_only",
+                _cfg_get(cfg, "target_attention_only", target_attention_only),
+            )
         )
-        lora_r = int(_cfg_get(cfg, "cachenotes_lora_r", _cfg_get(cfg, "lora_r", _cfg_get(cfg, "lora_rank", lora_r))))
-        lora_alpha = float(_cfg_get(cfg, "cachenotes_lora_alpha", _cfg_get(cfg, "lora_alpha", lora_alpha)))
+        lora_r = int(
+            _cfg_get(
+                cfg,
+                "cachenotes_lora_r",
+                _cfg_get(cfg, "lora_r", _cfg_get(cfg, "lora_rank", lora_r)),
+            )
+        )
+        lora_alpha = float(
+            _cfg_get(
+                cfg, "cachenotes_lora_alpha", _cfg_get(cfg, "lora_alpha", lora_alpha)
+            )
+        )
         skip_attention_qkv = bool(
-            _cfg_get(cfg, "cachenotes_skip_attention_qkv", _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv))
+            _cfg_get(
+                cfg,
+                "cachenotes_skip_attention_qkv",
+                _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv),
+            )
         )
         recalibrate_ln = bool(
-            _cfg_get(cfg, "cachenotes_recalibrate_ln", _cfg_get(cfg, "recalibrate_ln", recalibrate_ln))
+            _cfg_get(
+                cfg,
+                "cachenotes_recalibrate_ln",
+                _cfg_get(cfg, "recalibrate_ln", recalibrate_ln),
+            )
         )
 
         self.task_type = task_type
@@ -427,7 +532,9 @@ class CacheNotesCompressor(BaseCompressor):
         self.recalibrate_ln = recalibrate_ln
         self.target_modules = target_modules
 
-        self.tokenizer = tokenizer or kwargs.get("tokenizer", getattr(model, "tokenizer", None))
+        self.tokenizer = tokenizer or kwargs.get(
+            "tokenizer", getattr(model, "tokenizer", None)
+        )
         self.calibration_loader = calibration_loader or kwargs.get("calibration_loader")
         self.calibration_texts = calibration_texts or kwargs.get("calibration_texts")
         self.target_device = (
@@ -457,7 +564,9 @@ class CacheNotesCompressor(BaseCompressor):
             task_query = self.task_description or self.task_type
             return self.cpt_generator(task_query, d, device=device)
         logger.debug("Falling back to static CPT heuristic for task %s", self.task_type)
-        return CompressionPlanningTokens.generate_importance(self.task_type, d, device=device)
+        return CompressionPlanningTokens.generate_importance(
+            self.task_type, d, device=device
+        )
 
     def train_cpt_generator(
         self,
@@ -481,9 +590,12 @@ class CacheNotesCompressor(BaseCompressor):
 
         if sample_layers is None:
             sample_layers = [
-                (name, mod) for name, mod in self.model.named_modules()
+                (name, mod)
+                for name, mod in self.model.named_modules()
                 if self._is_target_module(name, mod)
-            ][:4]  # train on up to 4 sample layers for efficiency
+            ][
+                :4
+            ]  # train on up to 4 sample layers for efficiency
 
         if not sample_layers:
             logger.warning("No sample layers found to train CPT generator.")
@@ -501,9 +613,15 @@ class CacheNotesCompressor(BaseCompressor):
         for epoch in range(epochs):
             for task in task_descriptions:
                 for name, module in sample_layers:
-                    target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
+                    target_mod = getattr(
+                        module, "base_layer", getattr(module, "linear", module)
+                    )
                     cls_name = module.__class__.__name__.lower()
-                    is_conv1d = "conv1d" in cls_name or hasattr(module, "nf") or hasattr(target_mod, "nf")
+                    is_conv1d = (
+                        "conv1d" in cls_name
+                        or hasattr(module, "nf")
+                        or hasattr(target_mod, "nf")
+                    )
                     raw_w = target_mod.weight.data.float().to(self.target_device)
                     W = raw_w.t().contiguous() if is_conv1d else raw_w
                     out_f, in_f = W.shape
@@ -512,16 +630,25 @@ class CacheNotesCompressor(BaseCompressor):
                     importance = self.cpt_generator(task, out_f, device=W.device)
                     W_cpt = W * importance.unsqueeze(1)
 
-                    r = max(1, min(int(min(out_f, in_f) * self.keep_ratio), min(out_f, in_f)))
+                    r = max(
+                        1,
+                        min(int(min(out_f, in_f) * self.keep_ratio), min(out_f, in_f)),
+                    )
                     try:
                         U, S, Vt = torch.linalg.svd(W_cpt, full_matrices=False)
-                        W_lowrank = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vt[:r, :])
+                        W_lowrank = torch.matmul(
+                            U[:, :r] * S[:r].unsqueeze(0), Vt[:r, :]
+                        )
                         W_approx = W_lowrank / importance.unsqueeze(1)
-                        loss = torch.norm(W - W_approx, p="fro") / max(torch.norm(W, p="fro").item(), 1e-6)
+                        loss = torch.norm(W - W_approx, p="fro") / max(
+                            torch.norm(W, p="fro").item(), 1e-6
+                        )
 
                         optimizer.zero_grad()
                         loss.backward()
-                        torch.nn.utils.clip_grad_norm_(self.cpt_generator.parameters(), max_norm=1.0)
+                        torch.nn.utils.clip_grad_norm_(
+                            self.cpt_generator.parameters(), max_norm=1.0
+                        )
                         optimizer.step()
 
                         total_loss += loss.item()
@@ -535,7 +662,11 @@ class CacheNotesCompressor(BaseCompressor):
             p.requires_grad = False
 
         avg_loss = total_loss / max(1, steps)
-        logger.info("CPT generator trained successfully over %d steps with avg loss %.4f", steps, avg_loss)
+        logger.info(
+            "CPT generator trained successfully over %d steps with avg loss %.4f",
+            steps,
+            avg_loss,
+        )
         return avg_loss
 
     def save_cpt_generator(self, path: str | Path) -> None:
@@ -570,9 +701,24 @@ class CacheNotesCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
+        if (
+            num_heads is not None
+            and num_kv_heads is not None
+            and num_kv_heads < num_heads
+        ):
             name_lower = name.lower()
-            if any(p in name_lower for p in ["q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"]):
+            if any(
+                p in name_lower
+                for p in [
+                    "q_proj",
+                    "k_proj",
+                    "v_proj",
+                    "query",
+                    "key",
+                    "value",
+                    "c_attn",
+                ]
+            ):
                 return True
         return False
 
@@ -581,7 +727,10 @@ class CacheNotesCompressor(BaseCompressor):
             return False
 
         # Do not target inner submodules of LoRA or wrappers directly
-        if any(name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]):
+        if any(
+            name.endswith(sfx)
+            for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]
+        ):
             return False
 
         target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
@@ -591,7 +740,10 @@ class CacheNotesCompressor(BaseCompressor):
         is_linear_like = (
             isinstance(module, nn.Linear)
             or isinstance(target_mod, nn.Linear)
-            or (Conv1D is not None and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D)))
+            or (
+                Conv1D is not None
+                and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D))
+            )
             or "conv1d" in cls_name
             or "conv1d" in target_cls
             or hasattr(module, "nf")
@@ -602,7 +754,19 @@ class CacheNotesCompressor(BaseCompressor):
 
         name_lower = name.lower()
         # Protect classification / output heads
-        if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embed", "logits_processor", "head", "pre_classifier"]):
+        if any(
+            skip in name_lower
+            for skip in [
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embed",
+                "logits_processor",
+                "head",
+                "pre_classifier",
+            ]
+        ):
             return False
 
         if self._is_gqa_asymmetric(name, module):
@@ -611,8 +775,15 @@ class CacheNotesCompressor(BaseCompressor):
         if self.target_attention_only:
             # Skip FFN / MLP layers
             ffn_patterns = [
-                "ffn", "mlp", "lin1", "lin2", "intermediate",
-                "gate_proj", "up_proj", "down_proj", "c_fc"
+                "ffn",
+                "mlp",
+                "lin1",
+                "lin2",
+                "intermediate",
+                "gate_proj",
+                "up_proj",
+                "down_proj",
+                "c_fc",
             ]
             if any(p in name_lower for p in ffn_patterns):
                 return False
@@ -621,9 +792,23 @@ class CacheNotesCompressor(BaseCompressor):
                 return False
             # Match attention projections
             attn_patterns = [
-                "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-                "out_lin", "q_lin", "k_lin", "v_lin", "c_attn", "c_proj",
-                "query", "key", "value", "in_proj_qkv", "out_proj"
+                "attn",
+                "attention",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "out_lin",
+                "q_lin",
+                "k_lin",
+                "v_lin",
+                "c_attn",
+                "c_proj",
+                "query",
+                "key",
+                "value",
+                "in_proj_qkv",
+                "out_proj",
             ]
             if not any(p in name_lower for p in attn_patterns):
                 return False
@@ -639,7 +824,9 @@ class CacheNotesCompressor(BaseCompressor):
         """Compress linear layers using task-guided CPT-weighted low-rank SVD."""
         # Auto-train learnable CPT generator if active and untrained
         if self.use_learned_cpt and not self.cpt_generator_trained:
-            logger.info("CPT generator not yet trained. Running initial task-aware training pass...")
+            logger.info(
+                "CPT generator not yet trained. Running initial task-aware training pass..."
+            )
             self.train_cpt_generator(epochs=3, lr=1e-4)
 
         self.compressed_layers = []
@@ -653,14 +840,21 @@ class CacheNotesCompressor(BaseCompressor):
             if not self._is_target_module(name, module):
                 continue
 
-            target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
+            target_mod = getattr(
+                module, "base_layer", getattr(module, "linear", module)
+            )
             cls_name = module.__class__.__name__.lower()
             is_conv1d = (
-                (Conv1D is not None and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D)))
+                (
+                    Conv1D is not None
+                    and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D))
+                )
                 or hasattr(module, "nf")
                 or hasattr(target_mod, "nf")
             )
-            has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(module, "base_layer")
+            has_lora = (
+                hasattr(module, "lora_A") and module.lora_A is not None
+            ) or hasattr(module, "base_layer")
 
             w_id = id(target_mod.weight)
             if w_id in seen_weights:
@@ -673,7 +867,11 @@ class CacheNotesCompressor(BaseCompressor):
             dtype = raw_w.dtype
 
             # Standardize shape to [out_features, in_features] in FP32
-            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
+            W = (
+                raw_w.t().contiguous().clone().float()
+                if is_conv1d
+                else raw_w.clone().float()
+            )
             out_f, in_f = W.shape
 
             # Retrieve CPT importance modulation per output feature (learned or static)
@@ -701,7 +899,11 @@ class CacheNotesCompressor(BaseCompressor):
             err = float(torch.norm(W - W_approx, p="fro").item() / max(w_norm, 1e-12))
             self.layer_errors[name] = err
 
-            if torch.isnan(W_approx).any() or torch.isinf(W_approx).any() or err > self.max_error:
+            if (
+                torch.isnan(W_approx).any()
+                or torch.isinf(W_approx).any()
+                or err > self.max_error
+            ):
                 logger.warning(
                     "CacheNotes reconstruction error %.4f on %s exceeded threshold %.4f.",
                     err,
@@ -709,7 +911,10 @@ class CacheNotesCompressor(BaseCompressor):
                     self.max_error,
                 )
                 if self.fallback_to_original:
-                    logger.info("Skipping CacheNotes compression for %s (fallback to original).", name)
+                    logger.info(
+                        "Skipping CacheNotes compression for %s (fallback to original).",
+                        name,
+                    )
                     self.fallback_layers.append(name)
                     # Freeze fallback layers
                     for p in module.parameters():
@@ -720,15 +925,24 @@ class CacheNotesCompressor(BaseCompressor):
             if has_lora:
                 # Layer is already a LoRALinear wrapper: update base layer weights in-place
                 if is_conv1d:
-                    target_mod.weight.data.copy_(W_approx.t().contiguous().to(dtype=dtype, device=device))
+                    target_mod.weight.data.copy_(
+                        W_approx.t().contiguous().to(dtype=dtype, device=device)
+                    )
                 else:
-                    target_mod.weight.data.copy_(W_approx.contiguous().to(dtype=dtype, device=device))
+                    target_mod.weight.data.copy_(
+                        W_approx.contiguous().to(dtype=dtype, device=device)
+                    )
                 # Keep base weights frozen, but keep LoRA adapters trainable
                 target_mod.weight.requires_grad = False
-                if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None:
+                if (
+                    getattr(target_mod, "bias", None) is not None
+                    and target_mod.bias is not None
+                ):
                     target_mod.bias.requires_grad = False
                 for p_name, p in module.named_parameters():
-                    if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
+                    if any(
+                        t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")
+                    ):
                         p.requires_grad = True
             elif self.lora_r > 0:
                 # Not LoRALinear yet, and lora_r > 0: wrap in CacheNotesLoRALinear
@@ -745,14 +959,20 @@ class CacheNotesCompressor(BaseCompressor):
             else:
                 # Pure static compression (lora_r == 0)
                 if is_conv1d:
-                    target_mod.weight.data.copy_(W_approx.t().contiguous().to(dtype=dtype, device=device))
+                    target_mod.weight.data.copy_(
+                        W_approx.t().contiguous().to(dtype=dtype, device=device)
+                    )
                 else:
-                    target_mod.weight.data.copy_(W_approx.contiguous().to(dtype=dtype, device=device))
+                    target_mod.weight.data.copy_(
+                        W_approx.contiguous().to(dtype=dtype, device=device)
+                    )
 
             self.compressed_layers.append(name)
 
         # LayerNorm Recalibration
-        if self.recalibrate_ln and (self.calibration_loader is not None or self.calibration_texts is not None):
+        if self.recalibrate_ln and (
+            self.calibration_loader is not None or self.calibration_texts is not None
+        ):
             try:
                 recalibrate_layernorms(
                     self.model,
@@ -778,42 +998,48 @@ class CacheNotesCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers)
+            / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
         avg_rank = (
-            float(sum(self.actual_ranks[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers)))
+            float(
+                sum(self.actual_ranks[k] for k in self.compressed_layers)
+                / max(1, len(self.compressed_layers))
+            )
             if self.compressed_layers
             else 0.0
         )
         stats = self.get_compression_stats()
-        stats.update({
-            "compressed_layers": self.compressed_layers,
-            "fallback_layers": self.fallback_layers,
-            "skipped_layers": self.skipped_layers,
-            "num_compressed": len(self.compressed_layers),
-            "num_fallback": len(self.fallback_layers),
-            "num_skipped": len(self.skipped_layers),
-            "layer_errors": self.layer_errors,
-            "actual_ranks": self.actual_ranks,
-            "avg_rank": avg_rank,
-            "avg_reconstruction_error": avg_err,
-            "task_type": self.task_type,
-            "task_description": self.task_description,
-            "use_learned_cpt": self.use_learned_cpt,
-            "cpt_generator_trained": self.cpt_generator_trained,
-            "keep_ratio": self.keep_ratio,
-            "max_error": self.max_error,
-            "fallback_to_original": self.fallback_to_original,
-            "target_attention_only": self.target_attention_only,
-            "lora_r": self.lora_r,
-            "lora_alpha": self.lora_alpha,
-            "forward_check_success": forward_check_success,
-            "recalibrate_ln": self.recalibrate_ln,
-            "method": "cachenotes_learned_cpt_svd",
-            "kv_cache_budget_saving": f"{(1.0 - self.keep_ratio) * 100:.1f}% Footprint Reduction",
-        })
+        stats.update(
+            {
+                "compressed_layers": self.compressed_layers,
+                "fallback_layers": self.fallback_layers,
+                "skipped_layers": self.skipped_layers,
+                "num_compressed": len(self.compressed_layers),
+                "num_fallback": len(self.fallback_layers),
+                "num_skipped": len(self.skipped_layers),
+                "layer_errors": self.layer_errors,
+                "actual_ranks": self.actual_ranks,
+                "avg_rank": avg_rank,
+                "avg_reconstruction_error": avg_err,
+                "task_type": self.task_type,
+                "task_description": self.task_description,
+                "use_learned_cpt": self.use_learned_cpt,
+                "cpt_generator_trained": self.cpt_generator_trained,
+                "keep_ratio": self.keep_ratio,
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "target_attention_only": self.target_attention_only,
+                "lora_r": self.lora_r,
+                "lora_alpha": self.lora_alpha,
+                "forward_check_success": forward_check_success,
+                "recalibrate_ln": self.recalibrate_ln,
+                "method": "cachenotes_learned_cpt_svd",
+                "kv_cache_budget_saving": f"{(1.0 - self.keep_ratio) * 100:.1f}% Footprint Reduction",
+            }
+        )
         self.stats = stats
         self.model.compression_stats = stats
         return self.model, stats
@@ -826,27 +1052,49 @@ def cachenotes_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any)
     return_tuple = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     task_type = kwargs.pop(
         "task_type",
-        _cfg_get(comp_config, "cachenotes_task", _cfg_get(comp_config, "task_type", "qa")),
+        _cfg_get(
+            comp_config, "cachenotes_task", _cfg_get(comp_config, "task_type", "qa")
+        ),
     )
     task_description = kwargs.pop(
         "task_description",
-        _cfg_get(comp_config, "cachenotes_task_description", _cfg_get(comp_config, "task_description", task_type)),
+        _cfg_get(
+            comp_config,
+            "cachenotes_task_description",
+            _cfg_get(comp_config, "task_description", task_type),
+        ),
     )
     use_learned_cpt = kwargs.pop(
         "use_learned_cpt",
-        _cfg_get(comp_config, "cachenotes_use_learned_cpt", _cfg_get(comp_config, "use_learned_cpt", True)),
+        _cfg_get(
+            comp_config,
+            "cachenotes_use_learned_cpt",
+            _cfg_get(comp_config, "use_learned_cpt", True),
+        ),
     )
     keep_ratio = kwargs.pop(
         "keep_ratio",
-        _cfg_get(comp_config, "cachenotes_keep_ratio", _cfg_get(comp_config, "keep_ratio", 0.5)),
+        _cfg_get(
+            comp_config,
+            "cachenotes_keep_ratio",
+            _cfg_get(comp_config, "keep_ratio", 0.5),
+        ),
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(comp_config, "cachenotes_max_error", _cfg_get(comp_config, "max_error", 0.35)),
+        _cfg_get(
+            comp_config,
+            "cachenotes_max_error",
+            _cfg_get(comp_config, "max_error", 0.35),
+        ),
     )
     fallback = kwargs.pop(
         "fallback_to_original",
-        _cfg_get(comp_config, "cachenotes_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)),
+        _cfg_get(
+            comp_config,
+            "cachenotes_fallback_to_original",
+            _cfg_get(comp_config, "fallback_to_original", True),
+        ),
     )
     protect_critical = kwargs.pop(
         "protect_critical",
@@ -854,23 +1102,43 @@ def cachenotes_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any)
     )
     target_attention_only = kwargs.pop(
         "target_attention_only",
-        _cfg_get(comp_config, "cachenotes_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
+        _cfg_get(
+            comp_config,
+            "cachenotes_target_attention_only",
+            _cfg_get(comp_config, "target_attention_only", False),
+        ),
     )
     lora_r = kwargs.pop(
         "lora_r",
-        _cfg_get(comp_config, "cachenotes_lora_r", _cfg_get(comp_config, "lora_r", _cfg_get(comp_config, "lora_rank", 0))),
+        _cfg_get(
+            comp_config,
+            "cachenotes_lora_r",
+            _cfg_get(comp_config, "lora_r", _cfg_get(comp_config, "lora_rank", 0)),
+        ),
     )
     lora_alpha = kwargs.pop(
         "lora_alpha",
-        _cfg_get(comp_config, "cachenotes_lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0)),
+        _cfg_get(
+            comp_config,
+            "cachenotes_lora_alpha",
+            _cfg_get(comp_config, "lora_alpha", 1.0),
+        ),
     )
     skip_attention_qkv = kwargs.pop(
         "skip_attention_qkv",
-        _cfg_get(comp_config, "cachenotes_skip_attention_qkv", _cfg_get(comp_config, "skip_attention_qkv", True)),
+        _cfg_get(
+            comp_config,
+            "cachenotes_skip_attention_qkv",
+            _cfg_get(comp_config, "skip_attention_qkv", True),
+        ),
     )
     recalibrate_ln = kwargs.pop(
         "recalibrate_ln",
-        _cfg_get(comp_config, "cachenotes_recalibrate_ln", _cfg_get(comp_config, "recalibrate_ln", True)),
+        _cfg_get(
+            comp_config,
+            "cachenotes_recalibrate_ln",
+            _cfg_get(comp_config, "recalibrate_ln", True),
+        ),
     )
 
     compressor = CacheNotesCompressor(

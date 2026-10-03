@@ -1,7 +1,8 @@
+import framework.attentions.gated_linear_attention
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.gated_linear_attention
+
 
 def test_gated_linear_attention_module_present():
     assert hasattr(framework.attentions, 'gated_linear_attention')

@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from framework.core.attention_utils import _copy_projection_weights
 
+
 def test_parameter_copy_success():
     class DirectParam(nn.Module):
         def __init__(self):

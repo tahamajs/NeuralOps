@@ -26,13 +26,12 @@ from typing import Any
 
 import torch
 import torch.nn as nn
-
 from framework.compression_engine.aa_svd_compressor import SVDLinear
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
+from framework.core.pruning_utils import get_calibration_tensors
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
-from framework.core.pruning_utils import get_calibration_tensors
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +56,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
     activation subspace, and replaces dense nn.Linear / Conv1D layers with
     factorized SVDLinear modules.
     """
+
     # SW-FIX-09
     is_custom_attention: bool = False
 
@@ -77,7 +77,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         target_modules: list[str] | None = None,
         num_calibration_batches: int = 8,
         max_calibration_tokens: int = 32768,
-        use_fp64_cross_cov: bool = True,     # SW-FIX-16
+        use_fp64_cross_cov: bool = True,  # SW-FIX-16
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="swift_svd_act", **kwargs)
@@ -88,14 +88,22 @@ class SwiftSVDActivationCompressor(BaseCompressor):
             calibration_loader = _cfg_get(cfg, "calibration_loader", calibration_loader)
             calibration_texts = _cfg_get(cfg, "calibration_texts", calibration_texts)
             max_error = _cfg_get(cfg, "max_error", max_error)
-            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
-            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
+            fallback_to_original = _cfg_get(
+                cfg, "fallback_to_original", fallback_to_original
+            )
+            target_attention_only = _cfg_get(
+                cfg, "target_attention_only", target_attention_only
+            )
             lora_r = _cfg_get(cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
             skip_attention_qkv = _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
             min_rank = _cfg_get(cfg, "min_rank", min_rank)
-            num_calibration_batches = _cfg_get(cfg, "num_calibration_batches", num_calibration_batches)
-            max_calibration_tokens = _cfg_get(cfg, "max_calibration_tokens", max_calibration_tokens)
+            num_calibration_batches = _cfg_get(
+                cfg, "num_calibration_batches", num_calibration_batches
+            )
+            max_calibration_tokens = _cfg_get(
+                cfg, "max_calibration_tokens", max_calibration_tokens
+            )
             use_fp64_cross_cov = _cfg_get(cfg, "use_fp64_cross_cov", use_fp64_cross_cov)
 
         if "rank" in kwargs and kwargs["rank"] is not None:
@@ -154,17 +162,39 @@ class SwiftSVDActivationCompressor(BaseCompressor):
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
-        if any(k in name_l for k in
-               ("classifier", "score", "lm_head", "pooler", "embed", "logits_processor")):
+        if any(
+            k in name_l
+            for k in (
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embed",
+                "logits_processor",
+            )
+        ):
             return False
 
-        if isinstance(module, (nn.LayerNorm, nn.RMSNorm, nn.Embedding,
-                                nn.BatchNorm1d, nn.BatchNorm2d)):
+        if isinstance(
+            module,
+            (nn.LayerNorm, nn.RMSNorm, nn.Embedding, nn.BatchNorm1d, nn.BatchNorm2d),
+        ):
             return False
 
         if self.target_attention_only:
-            attn_keywords = ('attn', 'attention', 'q_proj', 'k_proj', 'v_proj', 'o_proj',
-                             'c_attn', 'c_proj', 'query', 'key', 'value')
+            attn_keywords = (
+                "attn",
+                "attention",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "c_attn",
+                "c_proj",
+                "query",
+                "key",
+                "value",
+            )
             if not any(k in name_l for k in attn_keywords):
                 return False
 
@@ -223,15 +253,16 @@ class SwiftSVDActivationCompressor(BaseCompressor):
             # Case A: top-level list/tuple where every element is a batch
             # (dict, tensor, or tuple-of-tensors)
             all_batches = all(
-                isinstance(x, (dict, torch.Tensor, list, tuple))
-                for x in calib_inputs
+                isinstance(x, (dict, torch.Tensor, list, tuple)) for x in calib_inputs
             )
             if all_batches:
                 # Distinguish "list of batches" from "single batch as tuple".
                 # Heuristic: single batch if the outer tuple contains only
                 # tensors (e.g., (input_ids, attention_mask)).
-                if all(isinstance(x, torch.Tensor) for x in calib_inputs) \
-                        and len(calib_inputs) <= 3:
+                if (
+                    all(isinstance(x, torch.Tensor) for x in calib_inputs)
+                    and len(calib_inputs) <= 3
+                ):
                     return [calib_inputs]
                 # Otherwise, it's a list of batches.
                 return list(calib_inputs)
@@ -259,9 +290,11 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                 x_in = inp[0].detach()
                 if isinstance(outp, torch.Tensor):
                     x_out = outp.detach()
-                elif (isinstance(outp, (tuple, list))
-                      and len(outp) > 0
-                      and isinstance(outp[0], torch.Tensor)):
+                elif (
+                    isinstance(outp, (tuple, list))
+                    and len(outp) > 0
+                    and isinstance(outp[0], torch.Tensor)
+                ):
                     x_out = outp[0].detach()
                 else:
                     return
@@ -288,7 +321,10 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                         "in_f": in_f,
                         "out_f": out_f,
                     }
-                elif accum[layer_name]["in_f"] != in_f or accum[layer_name]["out_f"] != out_f:
+                elif (
+                    accum[layer_name]["in_f"] != in_f
+                    or accum[layer_name]["out_f"] != out_f
+                ):
                     # Shape changed across batches → skip
                     return
 
@@ -298,10 +334,12 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                     ).cpu()
                 accum[layer_name]["cov"] += cov_local
                 accum[layer_name]["n"] += n
+
             return hook
 
         target_layers = [
-            (name, mod) for name, mod in self.model.named_modules()
+            (name, mod)
+            for name, mod in self.model.named_modules()
             if self._is_target_module(name, mod)
         ]
         if not target_layers:
@@ -333,14 +371,18 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                     batch = batches[i]
                     try:
                         if isinstance(batch, dict):
-                            b_dev = {k: v.to(device) if isinstance(v, torch.Tensor) else v
-                                     for k, v in batch.items()}
+                            b_dev = {
+                                k: v.to(device) if isinstance(v, torch.Tensor) else v
+                                for k, v in batch.items()
+                            }
                             self.model(**b_dev)
                         elif isinstance(batch, torch.Tensor):
                             self.model(batch.to(device))
                         elif isinstance(batch, (list, tuple)):
-                            b_dev = [v.to(device) if isinstance(v, torch.Tensor) else v
-                                     for v in batch]
+                            b_dev = [
+                                v.to(device) if isinstance(v, torch.Tensor) else v
+                                for v in batch
+                            ]
                             self.model(*b_dev)
                     except Exception as e:
                         logger.debug("Calibration batch %d forward failed: %s", i, e)
@@ -419,7 +461,11 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         cls_name = base_layer.__class__.__name__.lower()
         is_conv1d = "conv1d" in cls_name or hasattr(base_layer, "nf")
 
-        W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
+        W = (
+            raw_w.t().contiguous().clone().float()
+            if is_conv1d
+            else raw_w.clone().float()
+        )
         out_f, in_f = W.shape
 
         r = self._select_rank(in_f, out_f)
@@ -447,10 +493,15 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                         if r_act > 0:
                             sqrt_S_m = torch.sqrt(torch.clamp(S_m[:r_act], min=1e-12))
                             A = (U_act @ U_m[:, :r_act]) * sqrt_S_m.unsqueeze(0)
-                            B = sqrt_S_m.unsqueeze(1) @ (Vt_m[:r_act, :] @ V_act.t().contiguous())
+                            B = sqrt_S_m.unsqueeze(1) @ (
+                                Vt_m[:r_act, :] @ V_act.t().contiguous()
+                            )
                             r = r_act
             except Exception as e:
-                logger.debug("Activation subspace projection failed (%s). Falling back to direct SVD.", e)
+                logger.debug(
+                    "Activation subspace projection failed (%s). Falling back to direct SVD.",
+                    e,
+                )
                 A, B = None, None
 
         # ---- Direct SVD fallback ----
@@ -489,7 +540,9 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         if not math.isfinite(rel_err) or rel_err > self.max_error:
             logger.warning(
                 "SwiftSVDActivation reconstruction error %.4f exceeded threshold %.4f on %s.",
-                rel_err, self.max_error, getattr(base_layer, "_name", "?"),
+                rel_err,
+                self.max_error,
+                getattr(base_layer, "_name", "?"),
             )
             return None
 
@@ -592,11 +645,13 @@ class SwiftSVDActivationCompressor(BaseCompressor):
             if svd_layer is not None:
                 err = getattr(svd_layer, "reconstruction_error", 0.0)
                 self.layer_errors[name] = err
-                self.replaced_layers.append({
-                    "name": name,
-                    "rank": svd_layer.rank,
-                    "error": err,
-                })
+                self.replaced_layers.append(
+                    {
+                        "name": name,
+                        "rank": svd_layer.rank,
+                        "error": err,
+                    }
+                )
 
                 if hasattr(module, "base_layer"):
                     module.base_layer = svd_layer
@@ -604,7 +659,11 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                         sub = getattr(module, attr, None)
                         if sub is None:
                             continue
-                        params = sub.parameters() if hasattr(sub, "parameters") else iter([sub])
+                        params = (
+                            sub.parameters()
+                            if hasattr(sub, "parameters")
+                            else iter([sub])
+                        )
                         for p in params:
                             if hasattr(p, "requires_grad"):
                                 p.requires_grad = True
@@ -638,8 +697,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                     vocab = 100
                 dummy = torch.randint(0, min(vocab, 100), (1, 8), device=dev)
                 try:
-                    self.model(input_ids=dummy,
-                                attention_mask=torch.ones_like(dummy))
+                    self.model(input_ids=dummy, attention_mask=torch.ones_like(dummy))
                 except Exception:
                     try:
                         self.model(dummy)
@@ -658,7 +716,8 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         avg_err = (
             sum(self.layer_errors[k] for k in self.compressed_layers)
             / max(1, len(self.compressed_layers))
-            if self.compressed_layers else 0.0
+            if self.compressed_layers
+            else 0.0
         )
         try:
             stats = self.get_compression_stats()
@@ -667,39 +726,46 @@ class SwiftSVDActivationCompressor(BaseCompressor):
 
         storage_ratio = (
             self._orig_storage_bytes / self._comp_storage_bytes
-            if self._comp_storage_bytes > 0 else 1.0
+            if self._comp_storage_bytes > 0
+            else 1.0
         )
         effective_ratio = (
             self._comp_storage_bytes / self._orig_storage_bytes
-            if self._orig_storage_bytes > 0 else 1.0
+            if self._orig_storage_bytes > 0
+            else 1.0
         )
 
-        stats.update({
-            "compressed_layers": self.compressed_layers,
-            "fallback_layers": self.fallback_layers,
-            "skipped_layers": self.skipped_layers,
-            "num_compressed": len(self.compressed_layers),
-            "num_fallback": len(self.fallback_layers),
-            "num_skipped": len(self.skipped_layers),
-            "layer_errors": self.layer_errors,
-            "avg_reconstruction_error": avg_err,
-            "max_error": self.max_error,
-            "fallback_to_original": self.fallback_to_original,
-            "lora_r": self.lora_r,
-            "lora_alpha": self.lora_alpha,
-            # SW-FIX-10: honest accounting
-            "orig_storage_bytes": self._orig_storage_bytes,
-            "comp_storage_bytes": self._comp_storage_bytes,
-            "storage_compression_ratio": round(storage_ratio, 3),
-            "storage_reduction_pct": round(100.0 * (1.0 - effective_ratio), 2),
-            "effective_parameter_ratio": round(effective_ratio, 4),
-            "forward_check_success": forward_check_success,
-            "method": "swift_svd_act",
-        })
+        stats.update(
+            {
+                "compressed_layers": self.compressed_layers,
+                "fallback_layers": self.fallback_layers,
+                "skipped_layers": self.skipped_layers,
+                "num_compressed": len(self.compressed_layers),
+                "num_fallback": len(self.fallback_layers),
+                "num_skipped": len(self.skipped_layers),
+                "layer_errors": self.layer_errors,
+                "avg_reconstruction_error": avg_err,
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "lora_r": self.lora_r,
+                "lora_alpha": self.lora_alpha,
+                # SW-FIX-10: honest accounting
+                "orig_storage_bytes": self._orig_storage_bytes,
+                "comp_storage_bytes": self._comp_storage_bytes,
+                "storage_compression_ratio": round(storage_ratio, 3),
+                "storage_reduction_pct": round(100.0 * (1.0 - effective_ratio), 2),
+                "effective_parameter_ratio": round(effective_ratio, 4),
+                "forward_check_success": forward_check_success,
+                "method": "swift_svd_act",
+            }
+        )
         self.stats = stats
         logger.info(
             "Swift-SVD-ACT: %d compressed, %d fallback, avg_err=%.4f, storage_ratio=%.2fx",
-            len(self.compressed_layers), len(self.fallback_layers), avg_err, storage_ratio,
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            storage_ratio,
         )
         return self.model, stats
 
@@ -712,19 +778,25 @@ def swift_svd_act_factory(
     model: nn.Module, comp_config: Any = None, **kwargs: Any
 ) -> Any:
     """Swift-SVD activation-aware factory function."""
-    rank = kwargs.pop("rank", _cfg_get(comp_config, "swift_svd_act_rank",
-                                       _cfg_get(comp_config, "rank", 64)))
+    rank = kwargs.pop(
+        "rank",
+        _cfg_get(comp_config, "swift_svd_act_rank", _cfg_get(comp_config, "rank", 64)),
+    )
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.50))
-    fallback = kwargs.pop("fallback_to_original",
-                          _cfg_get(comp_config, "fallback_to_original", True))
+    fallback = kwargs.pop(
+        "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
+    )
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
-    target_attn = kwargs.pop("target_attention_only",
-                             _cfg_get(comp_config, "target_attention_only", False))
-    num_calib = kwargs.pop("num_calibration_batches",
-                           _cfg_get(comp_config, "num_calibration_batches", 8))
-    max_tokens = kwargs.pop("max_calibration_tokens",
-                            _cfg_get(comp_config, "max_calibration_tokens", 32768))
+    target_attn = kwargs.pop(
+        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
+    )
+    num_calib = kwargs.pop(
+        "num_calibration_batches", _cfg_get(comp_config, "num_calibration_batches", 8)
+    )
+    max_tokens = kwargs.pop(
+        "max_calibration_tokens", _cfg_get(comp_config, "max_calibration_tokens", 32768)
+    )
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = SwiftSVDActivationCompressor(

@@ -2,11 +2,8 @@ import pytest
 import torch
 import torch.nn as nn
 from framework.attentions.svd_linear_attention import (
-    SVDLinear,
-    SVDLinearAttention,
-    apply_rotary_pos_emb,
-    inject_svd_linear_attention,
-)
+    SVDLinear, SVDLinearAttention, apply_rotary_pos_emb,
+    inject_svd_linear_attention)
 
 
 class DummyConfig:

@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
+
 import torch
 from transformers import AutoConfig, AutoModelForSequenceClassification
 
@@ -44,4 +45,3 @@ def load_model(cfg: Any, num_labels: int, device: str = "auto") -> Any:
         device = "cuda" if torch.cuda.is_available() else "cpu"
     model.to(device)
     return model
-

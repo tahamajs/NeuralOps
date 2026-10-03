@@ -1,10 +1,12 @@
 """Unit Tests for ResultsSaver, Parquet Exporter & Isolated Storage."""
 
 import os
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
 import pytest
-from framework.results_saver.saver import MASTER_CSV_COLUMNS, save_result, save_trajectories_parquet
+from framework.results_saver.saver import (MASTER_CSV_COLUMNS, save_result,
+                                           save_trajectories_parquet)
 
 
 def test_master_csv_columns_integrity():

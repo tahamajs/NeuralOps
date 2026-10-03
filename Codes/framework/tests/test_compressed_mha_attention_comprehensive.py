@@ -1,7 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-from framework.attentions.compressed_mha_attention import CompressedDistilBertAttention, inject_compressed_mha
+from framework.attentions.compressed_mha_attention import (
+    CompressedDistilBertAttention, inject_compressed_mha)
 
 
 class MockConfig:

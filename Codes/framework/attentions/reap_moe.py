@@ -87,8 +87,22 @@ def _detect_decoder(
         if getattr(config, "is_decoder", False) or getattr(config, "causal", False):
             return True
         mt = str(getattr(config, "model_type", "")).lower()
-        if mt.startswith(("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                          "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")):
+        if mt.startswith(
+            (
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
+                "mpt",
+                "stablelm",
+            )
+        ):
             return True
     if old_attn is not None:
         if getattr(old_attn, "is_decoder", False):
@@ -124,15 +138,21 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -167,12 +187,28 @@ class LoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         target_dtype = x.dtype
-        w = self.weight.to(target_dtype) if self.weight.dtype != target_dtype else self.weight
-        b = self.bias.to(target_dtype) if (self.bias is not None and self.bias.dtype != target_dtype) else self.bias
+        w = (
+            self.weight.to(target_dtype)
+            if self.weight.dtype != target_dtype
+            else self.weight
+        )
+        b = (
+            self.bias.to(target_dtype)
+            if (self.bias is not None and self.bias.dtype != target_dtype)
+            else self.bias
+        )
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            a = self.lora_A.to(target_dtype) if self.lora_A.dtype != target_dtype else self.lora_A
-            bb = self.lora_B.to(target_dtype) if self.lora_B.dtype != target_dtype else self.lora_B
+            a = (
+                self.lora_A.to(target_dtype)
+                if self.lora_A.dtype != target_dtype
+                else self.lora_A
+            )
+            bb = (
+                self.lora_B.to(target_dtype)
+                if self.lora_B.dtype != target_dtype
+                else self.lora_B
+            )
             lora_out = F.linear(F.linear(x, a), bb) * self.lora_scaling
             out = out + lora_out
         return out.to(target_dtype)
@@ -199,9 +235,13 @@ class SVDLinear(nn.Module):
         self.out_features = out_features
         self.rank = rank or max(1, min(in_features, out_features) // 4)
 
-        self.U = nn.Parameter(torch.randn((out_features, self.rank), **factory_kwargs) * 0.02)
+        self.U = nn.Parameter(
+            torch.randn((out_features, self.rank), **factory_kwargs) * 0.02
+        )
         self.S = nn.Parameter(torch.ones(self.rank, **factory_kwargs))
-        self.V = nn.Parameter(torch.randn((in_features, self.rank), **factory_kwargs) * 0.02)
+        self.V = nn.Parameter(
+            torch.randn((in_features, self.rank), **factory_kwargs) * 0.02
+        )
         self.bias = nn.Parameter(torch.zeros(out_features, **factory_kwargs))
 
         if freeze:
@@ -219,7 +259,11 @@ class SVDLinear(nn.Module):
         V = self.V.to(target_dtype) if self.V.dtype != target_dtype else self.V
         S = self.S.to(target_dtype) if self.S.dtype != target_dtype else self.S
         U = self.U.to(target_dtype) if self.U.dtype != target_dtype else self.U
-        b = self.bias.to(target_dtype) if (self.bias is not None and self.bias.dtype != target_dtype) else self.bias
+        b = (
+            self.bias.to(target_dtype)
+            if (self.bias is not None and self.bias.dtype != target_dtype)
+            else self.bias
+        )
         out = (x @ V) * S @ U.t().contiguous()
         if b is not None:
             out = out + b
@@ -245,8 +289,12 @@ class REAPMoE(nn.Module):
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
         if config is not None:
-            d_model = getattr(config, "hidden_size", getattr(config, "d_model", d_model))
-            n_experts = getattr(config, "num_experts", getattr(config, "n_experts", n_experts))
+            d_model = getattr(
+                config, "hidden_size", getattr(config, "d_model", d_model)
+            )
+            n_experts = getattr(
+                config, "num_experts", getattr(config, "n_experts", n_experts)
+            )
             top_k = getattr(config, "top_k", top_k)
 
         self.d_model = d_model
@@ -261,13 +309,20 @@ class REAPMoE(nn.Module):
         nn.init.uniform_(self.router.weight, -0.01, 0.01)
 
         if use_svd:
+
             def expert_layer():
                 return nn.Sequential(
-                    SVDLinear(d_model, d_model, rank=max(1, d_model // 8), **factory_kwargs),
+                    SVDLinear(
+                        d_model, d_model, rank=max(1, d_model // 8), **factory_kwargs
+                    ),
                     nn.GELU(),
-                    SVDLinear(d_model, d_model, rank=max(1, d_model // 8), **factory_kwargs),
+                    SVDLinear(
+                        d_model, d_model, rank=max(1, d_model // 8), **factory_kwargs
+                    ),
                 )
+
         else:
+
             def expert_layer():
                 return nn.Sequential(
                     nn.Linear(d_model, d_model, **factory_kwargs),
@@ -296,9 +351,17 @@ class REAPMoE(nn.Module):
         B, L, D = x.shape
         target_dtype = x.dtype
 
-        r_dtype = self.router_ln.weight.dtype if hasattr(self.router_ln, 'weight') and self.router_ln.weight is not None else target_dtype
+        r_dtype = (
+            self.router_ln.weight.dtype
+            if hasattr(self.router_ln, "weight") and self.router_ln.weight is not None
+            else target_dtype
+        )
         normed_x = self.router_ln(x.to(r_dtype)).to(target_dtype)
-        rw_dtype = self.router.weight.dtype if hasattr(self.router, 'weight') and self.router.weight is not None else target_dtype
+        rw_dtype = (
+            self.router.weight.dtype
+            if hasattr(self.router, "weight") and self.router.weight is not None
+            else target_dtype
+        )
         logits = self.router(normed_x.to(rw_dtype)).to(target_dtype)
         if self.training and self.noise_std > 0:
             noise = torch.randn_like(logits) * self.noise_std
@@ -308,7 +371,9 @@ class REAPMoE(nn.Module):
 
         full_probs = F.softmax(scores.float(), dim=-1).to(target_dtype)
         topk_weights, topk_indices = torch.topk(full_probs, self.top_k, dim=-1)
-        topk_weights = (topk_weights / topk_weights.sum(dim=-1, keepdim=True).clamp(min=1e-9)).to(target_dtype)
+        topk_weights = (
+            topk_weights / topk_weights.sum(dim=-1, keepdim=True).clamp(min=1e-9)
+        ).to(target_dtype)
 
         router_probs = F.softmax(logits.float(), dim=-1).view(-1, self.n_experts)
         expert_mask = F.one_hot(topk_indices, num_classes=self.n_experts).float()
@@ -318,7 +383,9 @@ class REAPMoE(nn.Module):
         aux_loss = self.n_experts * torch.sum(density * prob_mean)
         self._aux_loss = aux_loss.detach()
 
-        experts_stack = torch.stack([exp(x).to(target_dtype) for exp in self.experts], dim=2)
+        experts_stack = torch.stack(
+            [exp(x).to(target_dtype) for exp in self.experts], dim=2
+        )
         topk_expanded = topk_indices.unsqueeze(-1).expand(-1, -1, -1, D)
         gathered = torch.gather(experts_stack, 2, topk_expanded)
         out = torch.sum(gathered * topk_weights.unsqueeze(-1), dim=2).to(target_dtype)
@@ -344,7 +411,7 @@ class REAPMoEAttention(BaseAttention):
         pretrained_attn: nn.Module | None = None,
         is_decoder: bool | None = None,
         pre_ln: bool | None = None,
-        comp_config: Any | None = None,   # RP-FIX-21
+        comp_config: Any | None = None,  # RP-FIX-21
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank or 64)
@@ -402,7 +469,7 @@ class REAPMoEAttention(BaseAttention):
 
         # RP-FIX-11
         self.is_decoder = _detect_decoder(config, is_decoder, pretrained_attn)
-        self.is_nested_encoder = False   # RP-FIX-22
+        self.is_nested_encoder = False  # RP-FIX-22
 
         # RP-FIX-12
         if pre_ln is None:
@@ -410,40 +477,74 @@ class REAPMoEAttention(BaseAttention):
         self.pre_ln = bool(pre_ln)
 
         self.lora_rank = (
-            getattr(config, "lora_rank",
-                    getattr(comp_config, "lora_rank",
-                            kwargs.get("lora_rank", 16)))
-            if config else 16
+            getattr(
+                config,
+                "lora_rank",
+                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)),
+            )
+            if config
+            else 16
         )
         self.lora_alpha = (
-            getattr(config, "lora_alpha",
-                    getattr(comp_config, "lora_alpha",
-                            kwargs.get("lora_alpha", 32.0)))
-            if config else 32.0
+            getattr(
+                config,
+                "lora_alpha",
+                getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
+            )
+            if config
+            else 32.0
         )
-        self.freeze_base = (self.lora_rank > 0)
+        self.freeze_base = self.lora_rank > 0
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
 
-        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
+        source_attn = (
+            pretrained_attn
+            if pretrained_attn is not None
+            else kwargs.get("source_attn")
+        )
         target_dtype = kwargs.get("dtype")
         if target_dtype is None and source_attn is not None:
             p = next(source_attn.parameters(), None)
             if p is not None:
                 target_dtype = p.dtype
 
-        self.q_lin = LoRALinear(self.dim, self.all_head_size, bias=True,
-                                lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                freeze_base=self.freeze_base, dtype=target_dtype)
-        self.k_lin = LoRALinear(self.dim, self.all_kv_head_size, bias=True,
-                                lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                freeze_base=self.freeze_base, dtype=target_dtype)
-        self.v_lin = LoRALinear(self.dim, self.all_kv_head_size, bias=True,
-                                lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                freeze_base=self.freeze_base, dtype=target_dtype)
-        self.out_lin = LoRALinear(self.all_head_size, self.dim, bias=True,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=self.freeze_base, dtype=target_dtype)
+        self.q_lin = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
+        )
+        self.k_lin = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
+        )
+        self.v_lin = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
+        )
+        self.out_lin = LoRALinear(
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
+        )
 
         # Aliases
         self.q_proj = self.q_lin
@@ -457,15 +558,22 @@ class REAPMoEAttention(BaseAttention):
         self.o_proj = self.out_lin
         self.c_proj = self.out_lin
 
-        self.moe = REAPMoE(self.dim, n_experts=n_experts, top_k=top_k,
-                           config=config, dtype=target_dtype)
+        self.moe = REAPMoE(
+            self.dim,
+            n_experts=n_experts,
+            top_k=top_k,
+            config=config,
+            dtype=target_dtype,
+        )
         self.norm1 = nn.LayerNorm(self.dim, dtype=target_dtype)
         self.norm2 = nn.LayerNorm(self.dim, dtype=target_dtype)
 
         dropout_p = (
-            getattr(config, "dropout",
-                    getattr(config, "attention_probs_dropout_prob", 0.1))
-            if config else 0.1
+            getattr(
+                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
+            )
+            if config
+            else 0.1
         )
         self.dropout = nn.Dropout(dropout_p)
 
@@ -487,24 +595,41 @@ class REAPMoEAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        has_out_lin = (
+            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        )
         is_nested = False
         if (
-            hasattr(src, "self")
-            and hasattr(src.self, "query")
-            and hasattr(src, "output")
-            and hasattr(src.output, "dense")
-        ) or (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention",
-                         "XLMRobertaSelfAttention", "ElectraSelfAttention",
-                         "DebertaSelfAttention"]
-            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin:
+            (
+                hasattr(src, "self")
+                and hasattr(src.self, "query")
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
+            )
+            or (
+                cls_name
+                in [
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                ]
+                or (
+                    cls_name.endswith("SelfAttention")
+                    and "distil" not in cls_name.lower()
+                )
+            )
+            and not has_out_lin
+        ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         # GPT-2 fused
@@ -514,19 +639,27 @@ class REAPMoEAttention(BaseAttention):
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D"
-                        or base_c.__class__.__name__ == "Conv1D"
-                        or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])):
+                if (
+                    c_attn_mod.__class__.__name__ == "Conv1D"
+                    or base_c.__class__.__name__ == "Conv1D"
+                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
+                ):
                     c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (c_w[:split_size, :],
-                                  c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size: 2 * split_size, :],
-                                  c_b[split_size: 2 * split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split_size:, :],
-                                  c_b[2 * split_size:] if c_b is not None else None)
+                extracted["q"] = (
+                    c_w[:split_size, :],
+                    c_b[:split_size] if c_b is not None else None,
+                )
+                extracted["k"] = (
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted["v"] = (
+                    c_w[2 * split_size :, :],
+                    c_b[2 * split_size :] if c_b is not None else None,
+                )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = src.c_proj
@@ -534,12 +667,17 @@ class REAPMoEAttention(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D"
-                            or base_o.__class__.__name__ == "Conv1D"
-                            or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])):
+                    if (
+                        c_proj_mod.__class__.__name__ == "Conv1D"
+                        or base_o.__class__.__name__ == "Conv1D"
+                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
+                    ):
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    extracted["o"] = (
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
+                    )
 
         # RoBERTa / BERT nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
@@ -578,11 +716,15 @@ class REAPMoEAttention(BaseAttention):
                             break
 
         # UniversalAdapter fallback
-        missing = [k for k, (w, _) in extracted.items()
-                   if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -591,15 +733,23 @@ class REAPMoEAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [k for k, (w, _) in extracted.items()
-                         if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing_after:
             raise RuntimeError(
                 f"REAPMoEAttention.copy_weights: missing mandatory projections "
                 f"{missing_after} from {src.__class__.__name__}."
             )
 
-        target_map = {"q": self.q_lin, "k": self.k_lin, "v": self.v_lin, "o": self.out_lin}
+        target_map = {
+            "q": self.q_lin,
+            "k": self.k_lin,
+            "v": self.v_lin,
+            "o": self.out_lin,
+        }
 
         with torch.no_grad():
             for proj_key, target_mod in target_map.items():
@@ -617,9 +767,11 @@ class REAPMoEAttention(BaseAttention):
                     target_mod.weight.copy_(w)
                 elif w.t().contiguous().shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w.t().contiguous())
-                elif (w.shape[0] < target_mod.weight.shape[0]
-                      and target_mod.weight.shape[0] % w.shape[0] == 0
-                      and w.shape[1] == target_mod.weight.shape[1]):
+                elif (
+                    w.shape[0] < target_mod.weight.shape[0]
+                    and target_mod.weight.shape[0] % w.shape[0] == 0
+                    and w.shape[1] == target_mod.weight.shape[1]
+                ):
                     repeats = target_mod.weight.shape[0] // w.shape[0]
                     target_mod.weight.copy_(w.repeat(repeats, 1))
                 else:
@@ -631,7 +783,10 @@ class REAPMoEAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     if b.shape == target_mod.bias.shape:
                         target_mod.bias.copy_(b)
-                    elif b.shape[0] < target_mod.bias.shape[0] and target_mod.bias.shape[0] % b.shape[0] == 0:
+                    elif (
+                        b.shape[0] < target_mod.bias.shape[0]
+                        and target_mod.bias.shape[0] % b.shape[0] == 0
+                    ):
                         repeats = target_mod.bias.shape[0] // b.shape[0]
                         target_mod.bias.copy_(b.repeat(repeats))
                     else:
@@ -645,7 +800,9 @@ class REAPMoEAttention(BaseAttention):
                 if norm < 1e-4:
                     logger.warning(
                         "REAPMoEAttention: weight for '%s' has near-zero "
-                        "Frobenius norm (%.2e).", proj_key, norm,
+                        "Frobenius norm (%.2e).",
+                        proj_key,
+                        norm,
                     )
 
         if self.freeze_base:
@@ -662,7 +819,9 @@ class REAPMoEAttention(BaseAttention):
     @staticmethod
     def _prepare_valid_mask(
         attention_mask: torch.Tensor | None,
-        B: int, N_kv: int, device: torch.device,
+        B: int,
+        N_kv: int,
+        device: torch.device,
     ) -> torch.Tensor | None:
         if attention_mask is None:
             return None
@@ -717,7 +876,9 @@ class REAPMoEAttention(BaseAttention):
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         # RP-FIX-24
         if encoder_hidden_states is not None:
-            raise NotImplementedError("REAPMoEAttention does not support cross-attention.")
+            raise NotImplementedError(
+                "REAPMoEAttention does not support cross-attention."
+            )
 
         B, L, _ = hidden_states.shape
         device = hidden_states.device
@@ -726,7 +887,11 @@ class REAPMoEAttention(BaseAttention):
 
         # Pre-LN: apply norm before attention (RP-FIX-17)
         if self.pre_ln:
-            n1_dtype = self.norm1.weight.dtype if hasattr(self.norm1, 'weight') and self.norm1.weight is not None else target_dtype
+            n1_dtype = (
+                self.norm1.weight.dtype
+                if hasattr(self.norm1, "weight") and self.norm1.weight is not None
+                else target_dtype
+            )
             h_norm = self.norm1(hidden_states.to(n1_dtype)).to(target_dtype)
             attn_input = h_norm
             residual = hidden_states
@@ -735,9 +900,21 @@ class REAPMoEAttention(BaseAttention):
             residual = hidden_states
 
         # Projections on attn_input
-        q = self.q_lin(attn_input).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        k_new = self.k_lin(attn_input).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
-        v_new = self.v_lin(attn_input).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        q = (
+            self.q_lin(attn_input)
+            .view(B, L, self.num_heads, self.head_dim)
+            .permute(0, 2, 1, 3)
+        )
+        k_new = (
+            self.k_lin(attn_input)
+            .view(B, L, self.num_kv_heads, self.head_dim)
+            .permute(0, 2, 1, 3)
+        )
+        v_new = (
+            self.v_lin(attn_input)
+            .view(B, L, self.num_kv_heads, self.head_dim)
+            .permute(0, 2, 1, 3)
+        )
 
         # RoPE with past_len
         if position_embeddings is None:
@@ -746,14 +923,17 @@ class REAPMoEAttention(BaseAttention):
             cos, sin = position_embeddings
             past_len_rope = 0
             if past_key_value is not None:
-                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
+                if (
+                    isinstance(past_key_value, (tuple, list))
+                    and len(past_key_value) >= 1
+                ):
                     past_len_rope = past_key_value[0].shape[-2]
                 elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
                     # RP-FIX-19: use layer_idx
                     idx = min(layer_idx, len(past_key_value.key_cache) - 1)
                     past_len_rope = past_key_value.key_cache[idx].shape[-2]
-            cos = cos[..., past_len_rope: past_len_rope + L, :]
-            sin = sin[..., past_len_rope: past_len_rope + L, :]
+            cos = cos[..., past_len_rope : past_len_rope + L, :]
+            sin = sin[..., past_len_rope : past_len_rope + L, :]
             q, k_new = apply_rotary_pos_emb(q, k_new, cos, sin)
 
         # KV-cache
@@ -797,32 +977,50 @@ class REAPMoEAttention(BaseAttention):
 
         if use_sdpa:
             q_sdp = q.to(torch.float16) if q.dtype == torch.float32 else q
-            k_sdp = K_full.to(torch.float16) if K_full.dtype == torch.float32 else K_full
-            v_sdp = V_full.to(torch.float16) if V_full.dtype == torch.float32 else V_full
+            k_sdp = (
+                K_full.to(torch.float16) if K_full.dtype == torch.float32 else K_full
+            )
+            v_sdp = (
+                V_full.to(torch.float16) if V_full.dtype == torch.float32 else V_full
+            )
 
             attn_bias_sdp = None
             if attention_mask is not None:
                 if attention_mask.dim() == 4:
                     attn_bias_sdp = attention_mask.to(q_sdp.dtype)
                 else:
-                    token_valid = self._prepare_valid_mask(attention_mask, B, N_kv, device)
+                    token_valid = self._prepare_valid_mask(
+                        attention_mask, B, N_kv, device
+                    )
                     if token_valid is not None:
-                        attn_bias_sdp = ((token_valid[:, None, None, :].float() - 1.0) * 1e4).to(q_sdp.dtype)
+                        attn_bias_sdp = (
+                            (token_valid[:, None, None, :].float() - 1.0) * 1e4
+                        ).to(q_sdp.dtype)
 
             is_causal_sdp = self.is_decoder and L > 1 and past_len == 0
 
             attn_out_sdp = F.scaled_dot_product_attention(
-                q_sdp, k_sdp, v_sdp,
+                q_sdp,
+                k_sdp,
+                v_sdp,
                 attn_mask=attn_bias_sdp,
                 is_causal=is_causal_sdp,
                 dropout_p=self.dropout.p if self.training else 0.0,
             )
-            attn_out = attn_out_sdp.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+            attn_out = (
+                attn_out_sdp.to(hidden_states.dtype)
+                .transpose(1, 2)
+                .contiguous()
+                .view(B, L, self.all_head_size)
+            )
             attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
             attn_ret = None
         else:
             scale = 1.0 / math.sqrt(self.head_dim)
-            scores = torch.matmul(q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale
+            scores = (
+                torch.matmul(q.float(), K_full.float().transpose(-2, -1).contiguous())
+                * scale
+            )
 
             token_valid = self._prepare_valid_mask(attention_mask, B, N_kv, device)
 
@@ -832,7 +1030,11 @@ class REAPMoEAttention(BaseAttention):
                     abs_k = torch.arange(N_kv, device=device).unsqueeze(0)
                     causal = (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)
                 else:
-                    causal = torch.tril(torch.ones(L, N_kv, device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
+                    causal = (
+                        torch.tril(torch.ones(L, N_kv, device=device, dtype=torch.bool))
+                        .unsqueeze(0)
+                        .unsqueeze(0)
+                    )
                 scores = scores.masked_fill(~causal, -1e4)
 
             if token_valid is not None:
@@ -852,7 +1054,12 @@ class REAPMoEAttention(BaseAttention):
                     head_mask = head_mask[:, :, :1].unsqueeze(-1)
                 probs = probs * head_mask.to(probs.dtype)
 
-            attn_out = torch.matmul(probs, V_full).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+            attn_out = (
+                torch.matmul(probs, V_full)
+                .permute(0, 2, 1, 3)
+                .contiguous()
+                .view(B, L, self.all_head_size)
+            )
             attn_ret = probs if output_attentions else None
 
         # RP-FIX-16: skip out_lin for nested encoder
@@ -864,7 +1071,11 @@ class REAPMoEAttention(BaseAttention):
         proj = torch.nan_to_num(proj, nan=0.0, posinf=1e4, neginf=-1e4)
 
         # Residual + MoE (RP-FIX-17)
-        n2_dtype = self.norm2.weight.dtype if hasattr(self.norm2, 'weight') and self.norm2.weight is not None else target_dtype
+        n2_dtype = (
+            self.norm2.weight.dtype
+            if hasattr(self.norm2, "weight") and self.norm2.weight is not None
+            else target_dtype
+        )
         if self.pre_ln:
             h1 = (residual + self.dropout(proj.to(target_dtype))).to(target_dtype)
             h1_norm = self.norm2(h1.to(n2_dtype)).to(target_dtype)
@@ -872,7 +1083,11 @@ class REAPMoEAttention(BaseAttention):
             out = (h1 + self.dropout(moe_out.to(target_dtype))).to(target_dtype)
         else:
             # Post-LN: norm after residual
-            n1_dtype = self.norm1.weight.dtype if hasattr(self.norm1, 'weight') and self.norm1.weight is not None else target_dtype
+            n1_dtype = (
+                self.norm1.weight.dtype
+                if hasattr(self.norm1, "weight") and self.norm1.weight is not None
+                else target_dtype
+            )
             h1 = (residual + self.dropout(proj.to(target_dtype))).to(target_dtype)
             h1 = self.norm1(h1.to(n1_dtype)).to(target_dtype)
             moe_out, _ = self.moe(h1)
@@ -925,7 +1140,11 @@ def inject_reap_moe(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -935,8 +1154,13 @@ def inject_reap_moe(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_reap_moe(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
             )
             if res is not None:
                 num_injected += 1

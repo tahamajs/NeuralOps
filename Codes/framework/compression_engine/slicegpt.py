@@ -26,15 +26,15 @@ d_out * d_in, producing real compression when keep < d_out * d_in / (d_out + d_i
 
 from __future__ import annotations
 
-from typing import Any
 import logging
+from typing import Any
+
 import torch
 import torch.nn as nn
-
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
-from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.pruning_utils import get_calibration_tensors
+from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
 # Real low-rank factorization layer (already used by AA-SVD / ERC-SVD)
@@ -90,11 +90,17 @@ class SliceGPTCompressor(BaseCompressor):
         super().__init__(model, name="slicegpt", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
-            sparsity = _cfg_get(cfg, "slicegpt_sparsity", _cfg_get(cfg, "sparsity", sparsity))
+            sparsity = _cfg_get(
+                cfg, "slicegpt_sparsity", _cfg_get(cfg, "sparsity", sparsity)
+            )
             non_uniform = _cfg_get(cfg, "non_uniform", non_uniform)
             max_error = _cfg_get(cfg, "max_error", max_error)
-            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
-            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
+            fallback_to_original = _cfg_get(
+                cfg, "fallback_to_original", fallback_to_original
+            )
+            target_attention_only = _cfg_get(
+                cfg, "target_attention_only", target_attention_only
+            )
             use_lora = _cfg_get(cfg, "use_lora", use_lora)
             lora_r = _cfg_get(cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
@@ -134,8 +140,17 @@ class SliceGPTCompressor(BaseCompressor):
         name_l = name.lower()
         if self.target_attention_only:
             attn_keywords = [
-                "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-                "c_attn", "c_proj", "query", "key", "value",
+                "attn",
+                "attention",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "c_attn",
+                "c_proj",
+                "query",
+                "key",
+                "value",
             ]
             if not any(k in name_l for k in attn_keywords):
                 return False
@@ -169,6 +184,7 @@ class SliceGPTCompressor(BaseCompressor):
                 if inputs and isinstance(inputs[0], torch.Tensor):
                     inp = inputs[0].detach()
                     activations.setdefault(name, []).append(inp.cpu())
+
             return hook
 
         for name, module in self.model.named_modules():
@@ -226,7 +242,10 @@ class SliceGPTCompressor(BaseCompressor):
                     idx = torch.argsort(eigvals, descending=True)
                     return Q[:, idx], eigvals[idx]
                 except Exception as e:
-                    logger.debug("eigh covariance failed (%s). Falling back to QR random basis.", e)
+                    logger.debug(
+                        "eigh covariance failed (%s). Falling back to QR random basis.",
+                        e,
+                    )
 
         rand_mat = torch.randn(d_in, d_in, device=device)
         Q, _ = torch.linalg.qr(rand_mat)
@@ -267,11 +286,13 @@ class SliceGPTCompressor(BaseCompressor):
                 _SVD_IMPORT_ERROR,
             )
             stats = self.get_compression_stats()
-            stats.update({
-                "is_noop": True,
-                "noop_reason": "svd_linear_import_failed",
-                "method": "slicegpt_unavailable",
-            })
+            stats.update(
+                {
+                    "is_noop": True,
+                    "noop_reason": "svd_linear_import_failed",
+                    "method": "slicegpt_unavailable",
+                }
+            )
             return self.model, stats
 
         self.layer_errors = {}
@@ -309,7 +330,9 @@ class SliceGPTCompressor(BaseCompressor):
             W_pca = torch.matmul(W, Q)
 
             # Determine number of principal coordinates to retain
-            if self.non_uniform and any(k in name for k in ("query", "key", "q_lin", "k_lin")):
+            if self.non_uniform and any(
+                k in name for k in ("query", "key", "q_lin", "k_lin")
+            ):
                 head_sparsity = max(0.0, self.sparsity * 0.75)
                 keep = max(1, int(d_in * (1.0 - head_sparsity)))
             elif self.non_uniform and any(k in name for k in ("mlp", "ffn", "dense")):
@@ -338,8 +361,11 @@ class SliceGPTCompressor(BaseCompressor):
                     rel_err,
                     name,
                     self.max_error,
-                    ". Skipping (fallback to original)." if self.fallback_to_original
-                    else ". Proceeding with sliced weight.",
+                    (
+                        ". Skipping (fallback to original)."
+                        if self.fallback_to_original
+                        else ". Proceeding with sliced weight."
+                    ),
                 )
                 if self.fallback_to_original:
                     logger.warning(
@@ -357,8 +383,12 @@ class SliceGPTCompressor(BaseCompressor):
             # Factor:
             #   U_factor  = W_pca[:, :keep]           shape (d_out, keep)
             #   Vt_factor = Q[:, :keep].T             shape (keep, d_in)
-            U_factor = W_pca[:, :effective_keep].contiguous().to(dtype=dtype, device=device)
-            Vt_factor = Q[:, :effective_keep].T.contiguous().to(dtype=dtype, device=device)
+            U_factor = (
+                W_pca[:, :effective_keep].contiguous().to(dtype=dtype, device=device)
+            )
+            Vt_factor = (
+                Q[:, :effective_keep].T.contiguous().to(dtype=dtype, device=device)
+            )
 
             # Parameter count of the SVDLinear factorization
             factorized_params = effective_keep * (d_out + d_in)
@@ -366,7 +396,10 @@ class SliceGPTCompressor(BaseCompressor):
             if factorized_params >= d_out * d_in:
                 logger.info(
                     "SliceGPT: keep=%d on %s would not reduce params (%d >= %d). Keeping dense.",
-                    effective_keep, name, factorized_params, d_out * d_in,
+                    effective_keep,
+                    name,
+                    factorized_params,
+                    d_out * d_in,
                 )
                 total_params_after += d_out * d_in
                 continue
@@ -386,7 +419,10 @@ class SliceGPTCompressor(BaseCompressor):
                 in_features=d_in,
                 out_features=d_out,
                 rank=effective_keep,
-                bias=(getattr(base_mod, "bias", None) is not None and base_mod.bias is not None),
+                bias=(
+                    getattr(base_mod, "bias", None) is not None
+                    and base_mod.bias is not None
+                ),
                 dtype=dtype,
                 device=device,
                 lora_r=used_lora_r,
@@ -450,38 +486,43 @@ class SliceGPTCompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         avg_err = (
             sum(self.layer_errors.values()) / len(self.layer_errors)
-            if self.layer_errors else 0.0
+            if self.layer_errors
+            else 0.0
         )
         compression_rate = (
             total_params_before / max(1, total_params_after)
-            if total_params_after > 0 else 1.0
+            if total_params_after > 0
+            else 1.0
         )
 
         stats = self.get_compression_stats()
-        stats.update({
-            "sliced_layers": sliced_layers_count,
-            "sparsity_target": self.sparsity,
-            "non_uniform": self.non_uniform,
-            "layer_errors": self.layer_errors,
-            "layer_ranks": self.layer_ranks,
-            "max_error": self.max_error,
-            "fallback_to_original": self.fallback_to_original,
-            "target_attention_only": self.target_attention_only,
-            "use_lora": self.use_lora,
-            "lora_r": self.lora_r,
-            "lora_alpha": self.lora_alpha,
-            "total_params_before": total_params_before,
-            "total_params_after": total_params_after,
-            "compression_rate": round(compression_rate, 4),
-            "avg_reconstruction_error": avg_err,
-            "forward_check_success": forward_check_success,
-            "is_noop": (total_params_after >= total_params_before),
-            "noop_reason": (
-                "no_factorizable_layers_or_fallback_all"
-                if total_params_after >= total_params_before else None
-            ),
-            "method": "slicegpt_real_low_rank_factorization",
-        })
+        stats.update(
+            {
+                "sliced_layers": sliced_layers_count,
+                "sparsity_target": self.sparsity,
+                "non_uniform": self.non_uniform,
+                "layer_errors": self.layer_errors,
+                "layer_ranks": self.layer_ranks,
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "target_attention_only": self.target_attention_only,
+                "use_lora": self.use_lora,
+                "lora_r": self.lora_r,
+                "lora_alpha": self.lora_alpha,
+                "total_params_before": total_params_before,
+                "total_params_after": total_params_after,
+                "compression_rate": round(compression_rate, 4),
+                "avg_reconstruction_error": avg_err,
+                "forward_check_success": forward_check_success,
+                "is_noop": (total_params_after >= total_params_before),
+                "noop_reason": (
+                    "no_factorizable_layers_or_fallback_all"
+                    if total_params_after >= total_params_before
+                    else None
+                ),
+                "method": "slicegpt_real_low_rank_factorization",
+            }
+        )
         self.stats = stats
 
         logger.info(
@@ -507,7 +548,9 @@ def slicegpt_factory(
     """Factory function for SliceGPT compressor."""
     sparsity = kwargs.pop(
         "sparsity",
-        _cfg_get(comp_config, "slicegpt_sparsity", _cfg_get(comp_config, "sparsity", 0.60)),
+        _cfg_get(
+            comp_config, "slicegpt_sparsity", _cfg_get(comp_config, "sparsity", 0.60)
+        ),
     )
     non_uniform = kwargs.pop("non_uniform", _cfg_get(comp_config, "non_uniform", False))
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.60))

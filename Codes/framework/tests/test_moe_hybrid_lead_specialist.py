@@ -26,44 +26,39 @@ Audited Mechanisms:
 
 import math
 import unittest
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from framework.core.registry import ATTENTION_REGISTRY
-from framework.attentions.bam_umoe import UnifiedMoE, BAMUMoEBlock
-from framework.attentions.expert_choice_moe import ExpertChoiceMoE, ExpertChoiceMoEAttention
-from framework.attentions.reap_moe import REAPMoE, REAPMoEAttention, SVDLinear
-from framework.attentions.samba_moe import SambaMoEBlock
-from framework.attentions.samba_m3 import SAMBAM3Block, SpectralMamba
-from framework.attentions.moe_deltakv_paged import (
-    MoEDeltaKVPagedAttention,
-    simulate_paged_delta_kv,
-    low_rank_svd_quantize,
-    ste_quantize_4bit,
-)
+from framework.attentions.bam_umoe import BAMUMoEBlock, UnifiedMoE
 from framework.attentions.block_transformer_hiba import BlockTransformerHIBA
+from framework.attentions.expert_choice_moe import (ExpertChoiceMoE,
+                                                    ExpertChoiceMoEAttention)
+from framework.attentions.hymba_transx import HeadRoPE, HymbaTransXBlock
 from framework.attentions.jamba import Jamba2Block, SVDMamba
-from framework.attentions.hymba_transx import HymbaTransXBlock, HeadRoPE
-from framework.attentions.nexus import (
-    NEXUSAttention,
-    NEXUSConfig,
-    DualStageStripeAttention,
-    SeerGating,
-    XAttentionScorer,
-    SpectraformerRectify,
-    softpick,
-)
 from framework.attentions.leka_v1 import LEKAV1Attention
 from framework.attentions.leka_v2 import LEKAv2Attention
 from framework.attentions.leka_v3 import LEKAV3Attention
-from framework.attentions.mixattention_moska import MixAttentionMoSKA
-from framework.attentions.phantom import PHANTOMAttention, FactorisedLinear_CUR
-from framework.attentions.moba_attention import MoBAAttention
-from framework.attentions.progressive_token_pruning import ProgressiveTokenPruning
-from framework.attentions.tpa_attention import TPAttention
-from framework.attentions.routing_attention import RoutingAttention
 from framework.attentions.lsh_attention import LSHAttention
+from framework.attentions.mixattention_moska import MixAttentionMoSKA
+from framework.attentions.moba_attention import MoBAAttention
+from framework.attentions.moe_deltakv_paged import (MoEDeltaKVPagedAttention,
+                                                    low_rank_svd_quantize,
+                                                    simulate_paged_delta_kv,
+                                                    ste_quantize_4bit)
+from framework.attentions.nexus import (DualStageStripeAttention,
+                                        NEXUSAttention, NEXUSConfig,
+                                        SeerGating, SpectraformerRectify,
+                                        XAttentionScorer, softpick)
+from framework.attentions.phantom import FactorisedLinear_CUR, PHANTOMAttention
+from framework.attentions.progressive_token_pruning import \
+    ProgressiveTokenPruning
+from framework.attentions.reap_moe import REAPMoE, REAPMoEAttention, SVDLinear
+from framework.attentions.routing_attention import RoutingAttention
+from framework.attentions.samba_m3 import SAMBAM3Block, SpectralMamba
+from framework.attentions.samba_moe import SambaMoEBlock
+from framework.attentions.tpa_attention import TPAttention
+from framework.core.registry import ATTENTION_REGISTRY
 
 
 class MockPretrainedAttention(nn.Module):

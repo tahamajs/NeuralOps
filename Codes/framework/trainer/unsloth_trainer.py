@@ -7,8 +7,8 @@ with a transparent, production-ready fallback to HuggingFaceTrainer on standard 
 from __future__ import annotations
 
 import logging
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
 from .base_trainer import BaseTrainer
 from .hf_trainer import HuggingFaceTrainer
@@ -49,6 +49,7 @@ class UnslothTrainer(BaseTrainer):
         """Probe for Unsloth runtime support and initialize delegated trainer."""
         try:
             import unsloth  # type: ignore # noqa: F401
+
             self._unsloth_available = True
             logger.info("Unsloth fast kernels detected and enabled.")
         except ImportError:
@@ -79,4 +80,3 @@ class UnslothTrainer(BaseTrainer):
         if self._delegate is None:
             self._init_backend()
         return self._delegate.evaluate()
-

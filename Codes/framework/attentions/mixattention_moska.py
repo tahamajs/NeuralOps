@@ -11,7 +11,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
@@ -50,10 +49,22 @@ def apply_rotary_pos_emb(q, k, cos, sin):
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
-        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
+            _rotate_half(q_rot) * sin.to(q_rot.dtype)
+        )
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
+            _rotate_half(k_rot) * sin.to(k_rot.dtype)
+        )
+        q = (
+            torch.cat([q_rot_embed, q_pass], dim=-1)
+            if q_pass.numel() > 0
+            else q_rot_embed
+        )
+        k = (
+            torch.cat([k_rot_embed, k_pass], dim=-1)
+            if k_pass.numel() > 0
+            else k_rot_embed
+        )
     else:
         cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
         q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
@@ -65,8 +76,17 @@ def apply_rotary_pos_emb(q, k, cos, sin):
 # LoRALinear
 # ===========================================================================
 class LoRALinear(nn.Module):
-    def __init__(self, in_features, out_features, bias=True, lora_rank=16,
-                 lora_alpha=32.0, freeze_base=False, device=None, dtype=None):
+    def __init__(
+        self,
+        in_features,
+        out_features,
+        bias=True,
+        lora_rank=16,
+        lora_alpha=32.0,
+        freeze_base=False,
+        device=None,
+        dtype=None,
+    ):
         super().__init__()
         fk = {"device": device, "dtype": dtype}
         self.in_features = in_features
@@ -118,11 +138,17 @@ class LoRALinear(nn.Module):
 
     def forward(self, x):
         w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
-        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
+        b = (
+            self.bias.to(x.dtype)
+            if (self.bias is not None and self.bias.dtype != x.dtype)
+            else self.bias
+        )
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            bb = (
+                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            )
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -132,7 +158,9 @@ class LoRALinear(nn.Module):
 # ===========================================================================
 @ATTENTION_REGISTRY.register("fasa", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("fasa_attention", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("mixattention_moska", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "mixattention_moska", supports_causal=True, supports_gqa=True
+)
 class MixAttentionMoSKA(BaseAttention):
     """
     MixAttention-MoSKA (FASA): frequency/variance-aware sparse attention.
@@ -145,6 +173,7 @@ class MixAttentionMoSKA(BaseAttention):
     `past_key_value` is present), we bypass pruning entirely and run exact
     dense attention via SDPA / manual softmax.
     """
+
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -162,11 +191,15 @@ class MixAttentionMoSKA(BaseAttention):
     ) -> None:
         # FASA-FIX-04: config None-safe
         if config is None:
-            class _Cfg: pass
+
+            class _Cfg:
+                pass
+
             config = _Cfg()
             config.hidden_size = kwargs.get("hidden_size", 768)
-            config.num_attention_heads = kwargs.get("num_attention_heads",
-                                                    kwargs.get("num_heads", 12))
+            config.num_attention_heads = kwargs.get(
+                "num_attention_heads", kwargs.get("num_heads", 12)
+            )
             config.head_dim = kwargs.get("head_dim", 64)
             config.model_type = kwargs.get("model_type", "")
             config.is_decoder = kwargs.get("is_decoder", False)
@@ -177,30 +210,37 @@ class MixAttentionMoSKA(BaseAttention):
         except TypeError:
             super().__init__(config)
 
-        self.dim = int(kwargs.get("hidden_size") or
-                        getattr(config, "hidden_size",
-                                getattr(config, "dim", 768)))
+        self.dim = int(
+            kwargs.get("hidden_size")
+            or getattr(config, "hidden_size", getattr(config, "dim", 768))
+        )
         self.hidden_size = self.dim
 
-        n_heads = (kwargs.get("num_heads") or kwargs.get("num_attention_heads")
-                    or getattr(config, "num_attention_heads",
-                                getattr(config, "n_heads", 0)))
+        n_heads = (
+            kwargs.get("num_heads")
+            or kwargs.get("num_attention_heads")
+            or getattr(config, "num_attention_heads", getattr(config, "n_heads", 0))
+        )
         # FASA-FIX-11
         if not n_heads or int(n_heads) <= 0:
             n_heads = max(1, self.dim // 64)
         self.num_heads = int(n_heads)
 
         cfg_head_dim = getattr(config, "head_dim", None)
-        self.head_dim = int(cfg_head_dim or kwargs.get("head_dim")
-                             or (self.dim // max(1, self.num_heads)))
+        self.head_dim = int(
+            cfg_head_dim
+            or kwargs.get("head_dim")
+            or (self.dim // max(1, self.num_heads))
+        )
         self.all_head_size = self.num_heads * self.head_dim
 
         self.fasa_keep_ratio = float(fasa_keep_ratio)
         self.protect_first_token = bool(kwargs.get("protect_first_token", True))
         self.importance_method = str(kwargs.get("importance_method", "var"))
 
-        cfg_kv = getattr(config, "num_key_value_heads",
-                          getattr(config, "num_kv_heads", None))
+        cfg_kv = getattr(
+            config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
+        )
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -216,8 +256,20 @@ class MixAttentionMoSKA(BaseAttention):
 
         # ---- decoder detection ----
         _mt = str(getattr(config, "model_type", "") or "").lower()
-        _dec_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                          "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        _dec_prefixes = (
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
+        )
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -231,26 +283,52 @@ class MixAttentionMoSKA(BaseAttention):
             if pretrained_attn is not None:
                 if hasattr(pretrained_attn, "c_attn"):
                     self.is_decoder = True
-                if hasattr(pretrained_attn, "is_decoder") and pretrained_attn.is_decoder:
+                if (
+                    hasattr(pretrained_attn, "is_decoder")
+                    and pretrained_attn.is_decoder
+                ):
                     self.is_decoder = True
 
         self.is_nested_encoder = False
 
-        self.W_q = LoRALinear(self.dim, self.all_head_size, bias=True,
-                               lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                               freeze_base=True)
-        self.W_k = LoRALinear(self.dim, self.kv_head_size, bias=True,
-                               lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                               freeze_base=True)
-        self.W_v = LoRALinear(self.dim, self.kv_head_size, bias=True,
-                               lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                               freeze_base=True)
-        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True,
-                                    lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                    freeze_base=True)
+        self.W_q = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.W_k = LoRALinear(
+            self.dim,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.W_v = LoRALinear(
+            self.dim,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
 
-        dropout_p = float(getattr(config, "dropout",
-                                   getattr(config, "attention_probs_dropout_prob", 0.1)))
+        dropout_p = float(
+            getattr(
+                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
+            )
+        )
         self.dropout = nn.Dropout(dropout_p)
 
         # FASA-FIX-09: storage accounting
@@ -262,31 +340,56 @@ class MixAttentionMoSKA(BaseAttention):
 
     # ---- aliases ----
     @property
-    def query(self): return self.W_q
+    def query(self):
+        return self.W_q
+
     @property
-    def key(self): return self.W_k
+    def key(self):
+        return self.W_k
+
     @property
-    def value(self): return self.W_v
+    def value(self):
+        return self.W_v
+
     @property
-    def q_proj(self): return self.W_q
+    def q_proj(self):
+        return self.W_q
+
     @property
-    def k_proj(self): return self.W_k
+    def k_proj(self):
+        return self.W_k
+
     @property
-    def v_proj(self): return self.W_v
+    def v_proj(self):
+        return self.W_v
+
     @property
-    def q_lin(self): return self.W_q
+    def q_lin(self):
+        return self.W_q
+
     @property
-    def k_lin(self): return self.W_k
+    def k_lin(self):
+        return self.W_k
+
     @property
-    def v_lin(self): return self.W_v
+    def v_lin(self):
+        return self.W_v
+
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
+
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
+
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
+
     @property
-    def c_proj(self): return self.out_proj
+    def c_proj(self):
+        return self.out_proj
 
     # ------------------------------------------------------------------
     # copy_weights
@@ -302,7 +405,10 @@ class MixAttentionMoSKA(BaseAttention):
             pass
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         # 1. UniversalAdapter
@@ -315,9 +421,11 @@ class MixAttentionMoSKA(BaseAttention):
                 pass
 
         # 2. GPT-2 fused c_attn
-        if hasattr(src, "c_attn") and (extracted["q"][0] is None
-                                        or extracted["k"][0] is None
-                                        or extracted["v"][0] is None):
+        if hasattr(src, "c_attn") and (
+            extracted["q"][0] is None
+            or extracted["k"][0] is None
+            or extracted["v"][0] is None
+        ):
             c_mod = src.c_attn
             base_c = getattr(c_mod, "base_layer", c_mod)
             weight = getattr(base_c, "weight", getattr(c_mod, "weight", None))
@@ -325,16 +433,28 @@ class MixAttentionMoSKA(BaseAttention):
                 weight = weight.data.clone()
                 bias = getattr(base_c, "bias", getattr(c_mod, "bias", None))
                 bias_data = bias.data.clone() if bias is not None else None
-                is_conv1d = ("Conv1D" in c_mod.__class__.__name__
-                              or "Conv1D" in base_c.__class__.__name__
-                              or hasattr(c_mod, "nf") or hasattr(base_c, "nf")
-                              or (weight.dim() == 2 and weight.shape[0] < weight.shape[1]))
+                is_conv1d = (
+                    "Conv1D" in c_mod.__class__.__name__
+                    or "Conv1D" in base_c.__class__.__name__
+                    or hasattr(c_mod, "nf")
+                    or hasattr(base_c, "nf")
+                    or (weight.dim() == 2 and weight.shape[0] < weight.shape[1])
+                )
                 if is_conv1d:
                     weight = weight.t().contiguous()
                 split = weight.shape[0] // 3
-                extracted["q"] = (weight[:split], bias_data[:split] if bias_data is not None else None)
-                extracted["k"] = (weight[split:2*split], bias_data[split:2*split] if bias_data is not None else None)
-                extracted["v"] = (weight[2*split:], bias_data[2*split:] if bias_data is not None else None)
+                extracted["q"] = (
+                    weight[:split],
+                    bias_data[:split] if bias_data is not None else None,
+                )
+                extracted["k"] = (
+                    weight[split : 2 * split],
+                    bias_data[split : 2 * split] if bias_data is not None else None,
+                )
+                extracted["v"] = (
+                    weight[2 * split :],
+                    bias_data[2 * split :] if bias_data is not None else None,
+                )
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
             p_mod = src.c_proj
@@ -342,19 +462,24 @@ class MixAttentionMoSKA(BaseAttention):
             w_o = getattr(base_o, "weight", getattr(p_mod, "weight", None))
             if w_o is not None:
                 w_o = w_o.data.clone()
-                is_conv1d = ("Conv1D" in p_mod.__class__.__name__
-                              or "Conv1D" in base_o.__class__.__name__
-                              or hasattr(p_mod, "nf") or hasattr(base_o, "nf")
-                              or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1]))
+                is_conv1d = (
+                    "Conv1D" in p_mod.__class__.__name__
+                    or "Conv1D" in base_o.__class__.__name__
+                    or hasattr(p_mod, "nf")
+                    or hasattr(base_o, "nf")
+                    or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1])
+                )
                 if is_conv1d:
                     w_o = w_o.t().contiguous()
                 b_o = getattr(base_o, "bias", getattr(p_mod, "bias", None))
                 extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
         # 3. BERT / RoBERTa nested (FASA-FIX-02: extract .data, not module)
-        if hasattr(src, "self") and (extracted["q"][0] is None
-                                      or extracted["k"][0] is None
-                                      or extracted["v"][0] is None):
+        if hasattr(src, "self") and (
+            extracted["q"][0] is None
+            or extracted["k"][0] is None
+            or extracted["v"][0] is None
+        ):
             s = src.self
             for key, sub_name in (("q", "query"), ("k", "key"), ("v", "value")):
                 if extracted[key][0] is None:
@@ -366,7 +491,11 @@ class MixAttentionMoSKA(BaseAttention):
                             bias.data if bias is not None else None,
                         )
 
-        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
+        if (
+            hasattr(src, "output")
+            and hasattr(src.output, "dense")
+            and extracted["o"][0] is None
+        ):
             d = getattr(src.output.dense, "base_layer", src.output.dense)
             if hasattr(d, "weight"):
                 bias = getattr(d, "bias", None)
@@ -397,12 +526,25 @@ class MixAttentionMoSKA(BaseAttention):
 
         # ---- nested encoder detection ----
         cls_name = getattr(src, "__class__", type(src)).__name__
-        has_out = any(hasattr(src, a) for a in
-                       ("dense", "out_proj", "out_lin", "c_proj", "o_proj"))
+        has_out = any(
+            hasattr(src, a)
+            for a in ("dense", "out_proj", "out_lin", "c_proj", "o_proj")
+        )
         is_nested = False
-        if cls_name in ("BertSelfAttention", "RobertaSelfAttention",
-                         "XLMRobertaSelfAttention", "ElectraSelfAttention",
-                         "DebertaSelfAttention") or hasattr(src, "self") and hasattr(src, "output") or hasattr(src, "query") and not has_out:
+        if (
+            cls_name
+            in (
+                "BertSelfAttention",
+                "RobertaSelfAttention",
+                "XLMRobertaSelfAttention",
+                "ElectraSelfAttention",
+                "DebertaSelfAttention",
+            )
+            or hasattr(src, "self")
+            and hasattr(src, "output")
+            or hasattr(src, "query")
+            and not has_out
+        ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -430,8 +572,12 @@ class MixAttentionMoSKA(BaseAttention):
             return w
 
         with torch.no_grad():
-            for proj_key, target in (("q", self.W_q), ("k", self.W_k),
-                                      ("v", self.W_v), ("o", self.out_proj)):
+            for proj_key, target in (
+                ("q", self.W_q),
+                ("k", self.W_k),
+                ("v", self.W_v),
+                ("o", self.out_proj),
+            ):
                 w, b = extracted[proj_key]
                 if w is not None:
                     in_dim = self.all_head_size if proj_key == "o" else self.dim
@@ -447,7 +593,9 @@ class MixAttentionMoSKA(BaseAttention):
                                 target.bias.data.copy_(b)
                         elif src_out > out_d and src_out % out_d == 0:
                             rep = src_out // out_d
-                            target_w.data.copy_(w_oriented.view(out_d, rep, -1).mean(dim=1))
+                            target_w.data.copy_(
+                                w_oriented.view(out_d, rep, -1).mean(dim=1)
+                            )
                             if b is not None and target.bias is not None:
                                 target.bias.data.copy_(b.view(out_d, rep).mean(dim=1))
                         elif src_out < out_d and out_d % src_out == 0:
@@ -456,13 +604,15 @@ class MixAttentionMoSKA(BaseAttention):
                             if b is not None and target.bias is not None:
                                 target.bias.data.copy_(b.repeat(rep))
                         else:
-                            m0 = min(out_d, src_out); m1 = min(in_d, src_in)
+                            m0 = min(out_d, src_out)
+                            m1 = min(in_d, src_in)
                             target_w.data[:m0, :m1].copy_(w_oriented[:m0, :m1])
                             if b is not None and target.bias is not None:
                                 mb = min(target.bias.shape[0], b.shape[0])
                                 target.bias.data[:mb].copy_(b[:mb])
                     else:
-                        m0 = min(out_d, src_out); m1 = min(in_d, src_in)
+                        m0 = min(out_d, src_out)
+                        m1 = min(in_d, src_in)
                         target_w.data[:m0, :m1].copy_(w_oriented[:m0, :m1])
                         if b is not None and target.bias is not None:
                             mb = min(target.bias.shape[0], b.shape[0])
@@ -505,7 +655,7 @@ class MixAttentionMoSKA(BaseAttention):
         if method == "l2":
             importance = torch.norm(k.float(), p=2, dim=-1).mean(dim=1)  # (B, L)
         else:
-            importance = k.float().var(dim=-1).mean(dim=1)               # (B, L)
+            importance = k.float().var(dim=-1).mean(dim=1)  # (B, L)
 
         if mask_2d is not None:
             importance = importance.masked_fill(~mask_2d, -1e4)
@@ -535,7 +685,9 @@ class MixAttentionMoSKA(BaseAttention):
     @staticmethod
     def _normalize_valid_mask(
         attention_mask: torch.Tensor | None,
-        B: int, L: int, device: torch.device,
+        B: int,
+        L: int,
+        device: torch.device,
     ) -> torch.Tensor | None:
         """Return a bool (B, L) mask where True = valid."""
         if attention_mask is None:
@@ -604,8 +756,16 @@ class MixAttentionMoSKA(BaseAttention):
         L_kv = kv_input.shape[1]
 
         q = self.W_q(x).view(B, L, H, self.head_dim).permute(0, 2, 1, 3)
-        k = self.W_k(kv_input).view(B, L_kv, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
-        v = self.W_v(kv_input).view(B, L_kv, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        k = (
+            self.W_k(kv_input)
+            .view(B, L_kv, self.num_kv_heads, self.head_dim)
+            .permute(0, 2, 1, 3)
+        )
+        v = (
+            self.W_v(kv_input)
+            .view(B, L_kv, self.num_kv_heads, self.head_dim)
+            .permute(0, 2, 1, 3)
+        )
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -627,10 +787,7 @@ class MixAttentionMoSKA(BaseAttention):
         #   - a KV-cache is present (incremental decoding),
         #   - hidden_states and kv_input have different lengths (mixed mode).
         use_pruning = (
-            not is_causal
-            and not is_cross
-            and past_key_value is None
-            and L_kv == L
+            not is_causal and not is_cross and past_key_value is None and L_kv == L
         )
 
         if not use_pruning:
@@ -641,24 +798,42 @@ class MixAttentionMoSKA(BaseAttention):
                     _ks = k.half() if k.dtype == torch.float32 else k
                     _vs = v.half() if v.dtype == torch.float32 else v
                     _sdpa_out = F.scaled_dot_product_attention(
-                        _qs, _ks, _vs,
+                        _qs,
+                        _ks,
+                        _vs,
                         is_causal=is_causal,
                         dropout_p=self.dropout.p if self.training else 0.0,
                     )
-                    _sdpa_out = _sdpa_out.to(dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-                    _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
+                    _sdpa_out = (
+                        _sdpa_out.to(dtype)
+                        .transpose(1, 2)
+                        .contiguous()
+                        .view(B, L, self.all_head_size)
+                    )
+                    _sdpa_out = torch.nan_to_num(
+                        _sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4
+                    )
                     if self.is_nested_encoder:
                         return _sdpa_out, None
                     return self.out_proj(_sdpa_out), None
                 except Exception:
                     pass
 
-            scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+            scores = (
+                torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous())
+                * scale
+            )
             if is_causal:
-                causal = torch.triu(
-                    torch.full((L, L_kv), float("-inf"), device=device, dtype=torch.float32),
-                    diagonal=1,
-                ).unsqueeze(0).unsqueeze(0)
+                causal = (
+                    torch.triu(
+                        torch.full(
+                            (L, L_kv), float("-inf"), device=device, dtype=torch.float32
+                        ),
+                        diagonal=1,
+                    )
+                    .unsqueeze(0)
+                    .unsqueeze(0)
+                )
                 scores = scores + causal
 
             valid = self._normalize_valid_mask(eff_mask, B, L_kv, device)
@@ -681,19 +856,29 @@ class MixAttentionMoSKA(BaseAttention):
                     hm = hm.unsqueeze(1)
                 attn_weights = attn_weights * hm
 
-            out = torch.matmul(attn_weights, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+            out = (
+                torch.matmul(attn_weights, v)
+                .transpose(1, 2)
+                .contiguous()
+                .view(B, L, self.all_head_size)
+            )
             final_attn_weights = attn_weights if output_attentions else None
         else:
             # -------- FASA pruning path --------
             valid = self._normalize_valid_mask(eff_mask, B, L_kv, device)
             k_p, v_p, p_mask, kept_idx = self._fasa_prune(k, v, valid)
 
-            attn_scores = torch.matmul(q.float(), k_p.float().transpose(-2, -1).contiguous()) * scale
+            attn_scores = (
+                torch.matmul(q.float(), k_p.float().transpose(-2, -1).contiguous())
+                * scale
+            )
 
             if p_mask is not None:
                 attn_scores = attn_scores.masked_fill(~p_mask[:, None, None, :], -1e4)
 
-            attn_scores = torch.nan_to_num(attn_scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+            attn_scores = torch.nan_to_num(
+                attn_scores, nan=-1e4, posinf=1e4, neginf=-1e4
+            )
             attn_weights = F.softmax(attn_scores, dim=-1).to(dtype)
             attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
             attn_weights = self.dropout(attn_weights)
@@ -708,7 +893,12 @@ class MixAttentionMoSKA(BaseAttention):
                     hm = hm.unsqueeze(1)
                 attn_weights = attn_weights * hm
 
-            out = torch.matmul(attn_weights, v_p).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+            out = (
+                torch.matmul(attn_weights, v_p)
+                .transpose(1, 2)
+                .contiguous()
+                .view(B, L, self.all_head_size)
+            )
 
             if output_attentions and kept_idx is not None:
                 full_weights = torch.zeros(B, H, L, L_kv, device=device, dtype=dtype)
@@ -738,8 +928,12 @@ class MixAttentionMoSKA(BaseAttention):
             return 0
 
         out = {}
-        for name, m in (("W_q", self.W_q), ("W_k", self.W_k),
-                         ("W_v", self.W_v), ("out_proj", self.out_proj)):
+        for name, m in (
+            ("W_q", self.W_q),
+            ("W_k", self.W_k),
+            ("W_v", self.W_v),
+            ("out_proj", self.out_proj),
+        ):
             out[name] = sum(_sz(p) for p in m.parameters())
         out["total"] = sum(out.values())
         return out
@@ -789,9 +983,15 @@ def inject_mixattention_moska(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+    elif hasattr(target, "layers") and isinstance(
+        target.layers, (torch.nn.ModuleList, list)
+    ):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -799,8 +999,13 @@ def inject_mixattention_moska(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_mixattention_moska(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
             )
             if res is not None:
                 num_injected += 1
@@ -820,15 +1025,25 @@ def inject_mixattention_moska(
             src_attn = target
 
         # FASA-FIX-05: idempotency guard
-        if isinstance(src_attn, MixAttentionMoSKA) or "MixAttentionMoSKA" in src_attn.__class__.__name__:
+        if (
+            isinstance(src_attn, MixAttentionMoSKA)
+            or "MixAttentionMoSKA" in src_attn.__class__.__name__
+        ):
             return None
-        if "DeltaNet" in src_attn.__class__.__name__ or "LinearAttention" in src_attn.__class__.__name__:
+        if (
+            "DeltaNet" in src_attn.__class__.__name__
+            or "LinearAttention" in src_attn.__class__.__name__
+        ):
             return None
 
         # ---- Build new attention ----
         keep_ratio = kwargs.pop(
             "fasa_keep_ratio",
-            getattr(comp_config, "fasa_keep_ratio", 0.5) if comp_config is not None else 0.5,
+            (
+                getattr(comp_config, "fasa_keep_ratio", 0.5)
+                if comp_config is not None
+                else 0.5
+            ),
         )
         kwargs.pop("rank", None)
 
@@ -864,7 +1079,9 @@ def inject_mixattention_moska(
 
         return new_attn
     except Exception as e:
-        logger.exception("inject_mixattention_moska failed at layer %d: %s", layer_idx, e)
+        logger.exception(
+            "inject_mixattention_moska failed at layer %d: %s", layer_idx, e
+        )
         return None
 
 

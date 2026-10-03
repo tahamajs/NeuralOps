@@ -1,7 +1,8 @@
+import framework.attentions.qcqa_attention
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.qcqa_attention
+
 
 def test_qcqa_attention_module_present():
     assert hasattr(framework.attentions, 'qcqa_attention')

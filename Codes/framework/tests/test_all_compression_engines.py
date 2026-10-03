@@ -3,8 +3,8 @@
 Master Test Suite for All Compression Engine Modules
 Tests initialization, compression, shape preservation, and forward pass across all 70 registered compressors.
 """
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Add project Codes directory to path
@@ -12,11 +12,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
+import framework.compression_engine
 import pytest
 import torch
 import torch.nn as nn
 from framework.core.registry import COMPRESSOR_REGISTRY
-import framework.compression_engine
 
 
 class ToyTransformerLayer(nn.Module):

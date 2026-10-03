@@ -13,7 +13,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.compression_engine.res_svd import ResSVDLinear
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
@@ -26,11 +25,12 @@ logger = logging.getLogger(__name__)
 # RoPE (dtype-safe, past_len-aware)
 # ===========================================================================
 
+
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     d = x.shape[-1]
     half = d // 2
     x1 = x[..., :half]
-    x2 = x[..., half:2 * half]
+    x2 = x[..., half : 2 * half]
     rotated = torch.cat((-x2, x1), dim=-1)
     if d % 2 == 1:
         rotated = torch.cat([rotated, x[..., -1:]], dim=-1)
@@ -74,8 +74,16 @@ def apply_rotary_pos_emb(
         sin_k = sin.to(k_rot.dtype)
         q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
         k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
-        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
+        q = (
+            torch.cat([q_rot_embed, q_pass], dim=-1)
+            if q_pass.numel() > 0
+            else q_rot_embed
+        )
+        k = (
+            torch.cat([k_rot_embed, k_pass], dim=-1)
+            if k_pass.numel() > 0
+            else k_rot_embed
+        )
     else:
         cos_cut = cos[..., :head_dim].to(q.dtype)
         sin_cut = sin[..., :head_dim].to(q.dtype)
@@ -90,6 +98,7 @@ def apply_rotary_pos_emb(
 # ===========================================================================
 # ResSVDAttention
 # ===========================================================================
+
 
 @ATTENTION_REGISTRY.register("res_svd")
 @ATTENTION_REGISTRY.register("ressvd")
@@ -121,13 +130,22 @@ class ResSVDAttention(BaseAttention):
 
         comp_config = getattr(config, "compression_config", None) if config else None
 
-        self.hidden_size: int = int(getattr(config, "hidden_size",
-                                    kwargs.get("hidden_size", 768)))
+        self.hidden_size: int = int(
+            getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
+        )
         self.dim = self.hidden_size
-        self.num_heads: int = int(getattr(config, "num_attention_heads",
-                                   kwargs.get("num_attention_heads", 12)))
-        self.num_kv_heads: int = int(getattr(config, "num_key_value_heads",
-                                      kwargs.get("num_key_value_heads", self.num_heads)))
+        self.num_heads: int = int(
+            getattr(
+                config, "num_attention_heads", kwargs.get("num_attention_heads", 12)
+            )
+        )
+        self.num_kv_heads: int = int(
+            getattr(
+                config,
+                "num_key_value_heads",
+                kwargs.get("num_key_value_heads", self.num_heads),
+            )
+        )
 
         cfg_head_dim = getattr(config, "head_dim", None)
         kw_head_dim = kwargs.get("head_dim")
@@ -145,11 +163,13 @@ class ResSVDAttention(BaseAttention):
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
 
         self.base_rank: int = int(
-            base_rank if base_rank is not None
+            base_rank
+            if base_rank is not None
             else getattr(comp_config, "base_rank", effective_rank)
         )
         self.residual_rank: int = int(
-            residual_rank if residual_rank is not None
+            residual_rank
+            if residual_rank is not None
             else getattr(comp_config, "residual_rank", max(4, effective_rank // 4))
         )
         self.scaling = float(scaling)
@@ -164,9 +184,23 @@ class ResSVDAttention(BaseAttention):
             self.is_decoder = (
                 bool(getattr(config, "is_decoder", False))
                 or bool(getattr(config, "is_causal", False))
-                or any(mt.startswith(p) for p in (
-                    "gpt", "qwen", "llama", "mistral", "gemma",
-                    "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm"))
+                or any(
+                    mt.startswith(p)
+                    for p in (
+                        "gpt",
+                        "qwen",
+                        "llama",
+                        "mistral",
+                        "gemma",
+                        "phi",
+                        "opt",
+                        "bloom",
+                        "falcon",
+                        "olmo",
+                        "mpt",
+                        "stablelm",
+                    )
+                )
                 or (pretrained_attn is not None and hasattr(pretrained_attn, "c_attn"))
                 or bool(kwargs.get("is_causal", False))
                 or bool(kwargs.get("is_decoder", False))
@@ -215,9 +249,15 @@ class ResSVDAttention(BaseAttention):
         )
 
         dropout_p = (
-            float(dropout) if dropout is not None
-            else float(getattr(config, "dropout",
-                               getattr(config, "attention_probs_dropout_prob", 0.1)))
+            float(dropout)
+            if dropout is not None
+            else float(
+                getattr(
+                    config,
+                    "dropout",
+                    getattr(config, "attention_probs_dropout_prob", 0.1),
+                )
+            )
         )
         self.dropout = nn.Dropout(dropout_p)
 
@@ -227,43 +267,68 @@ class ResSVDAttention(BaseAttention):
         logger.info(
             "ResSVDAttention: hidden=%d, heads=%d, head_dim=%d, is_decoder=%s, "
             "base_rank=%d, residual_rank=%d",
-            self.hidden_size, self.num_heads, self.head_dim,
-            self.is_decoder, self.base_rank, self.residual_rank,
+            self.hidden_size,
+            self.num_heads,
+            self.head_dim,
+            self.is_decoder,
+            self.base_rank,
+            self.residual_rank,
         )
 
     # ------------------------------------------------------------------
     @property
-    def q_proj(self): return self.query
+    def q_proj(self):
+        return self.query
+
     @property
-    def k_proj(self): return self.key
+    def k_proj(self):
+        return self.key
+
     @property
-    def v_proj(self): return self.value
+    def v_proj(self):
+        return self.value
+
     @property
-    def q_lin(self): return self.query
+    def q_lin(self):
+        return self.query
+
     @property
-    def k_lin(self): return self.key
+    def k_lin(self):
+        return self.key
+
     @property
-    def v_lin(self): return self.value
+    def v_lin(self):
+        return self.value
+
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
 
     # ------------------------------------------------------------------
     # RES-02: shape-aware weight transfer via from_linear
     # ------------------------------------------------------------------
     def _init_from_weight(
-        self, target: ResSVDLinear,
-        w: torch.Tensor, b: torch.Tensor | None,
+        self,
+        target: ResSVDLinear,
+        w: torch.Tensor,
+        b: torch.Tensor | None,
     ) -> None:
         """Build a fresh ResSVDLinear from (w, b) and copy its state into target."""
         with torch.no_grad():
-            device = target.base_U.device if hasattr(target, "base_U") else torch.device("cpu")
+            device = (
+                target.base_U.device
+                if hasattr(target, "base_U")
+                else torch.device("cpu")
+            )
             dtype = target.base_U.dtype if hasattr(target, "base_U") else torch.float32
 
             # RES-03: temp_linear on same device/dtype
             temp_linear = nn.Linear(
-                target.in_features, target.out_features,
+                target.in_features,
+                target.out_features,
                 bias=(b is not None),
-                device=device, dtype=dtype,
+                device=device,
+                dtype=dtype,
             )
             # Copy weight/bias into temp_linear
             temp_linear.weight.data.copy_(w.to(device=device, dtype=dtype))
@@ -287,20 +352,42 @@ class ResSVDAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        has_out_lin = (
+            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        )
         is_nested = False
-        if (hasattr(src, "self") and hasattr(src.self, "query")
-                and hasattr(src, "output") and hasattr(src.output, "dense")) or (cls_name in ["BertSelfAttention", "RobertaSelfAttention",
-                           "XLMRobertaSelfAttention", "ElectraSelfAttention",
-                           "DebertaSelfAttention"]
-              or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-              ) and not has_out_lin:
+        if (
+            (
+                hasattr(src, "self")
+                and hasattr(src.self, "query")
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
+            )
+            or (
+                cls_name
+                in [
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                ]
+                or (
+                    cls_name.endswith("SelfAttention")
+                    and "distil" not in cls_name.lower()
+                )
+            )
+            and not has_out_lin
+        ):
             is_nested = True
         # RES-09: set consistently
         self.is_nested_encoder = bool(is_nested)
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         # GPT-2 fused c_attn
@@ -322,9 +409,18 @@ class ResSVDAttention(BaseAttention):
                 split = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (c_w[:split, :], c_b[:split] if c_b is not None else None)
-                extracted["k"] = (c_w[split:2 * split, :], c_b[split:2 * split] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split:, :], c_b[2 * split:] if c_b is not None else None)
+                extracted["q"] = (
+                    c_w[:split, :],
+                    c_b[:split] if c_b is not None else None,
+                )
+                extracted["k"] = (
+                    c_w[split : 2 * split, :],
+                    c_b[split : 2 * split] if c_b is not None else None,
+                )
+                extracted["v"] = (
+                    c_w[2 * split :, :],
+                    c_b[2 * split :] if c_b is not None else None,
+                )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = src.c_proj
@@ -342,7 +438,10 @@ class ResSVDAttention(BaseAttention):
                     if is_conv_o:
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    extracted["o"] = (
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
+                    )
 
         # BERT / RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
@@ -380,11 +479,15 @@ class ResSVDAttention(BaseAttention):
                             )
                             break
 
-        missing = [k for k, (w, _) in extracted.items()
-                   if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -393,8 +496,11 @@ class ResSVDAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter failed: %s", e)
 
-        missing_after = [k for k, (w, _) in extracted.items()
-                         if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         # RES-04: raise instead of silently proceeding
         if missing_after:
             raise RuntimeError(
@@ -405,9 +511,12 @@ class ResSVDAttention(BaseAttention):
         # Handle output projection
         if self.is_nested_encoder and extracted["o"][0] is None:
             # Use identity
-            eye = torch.eye(self.all_head_size, self.hidden_size,
-                            device=self.out_proj.base_U.device,
-                            dtype=self.out_proj.base_U.dtype)
+            eye = torch.eye(
+                self.all_head_size,
+                self.hidden_size,
+                device=self.out_proj.base_U.device,
+                dtype=self.out_proj.base_U.dtype,
+            )
             self._init_from_weight(self.out_proj, eye, None)
         elif extracted["o"][0] is not None:
             self._init_from_weight(self.out_proj, extracted["o"][0], extracted["o"][1])
@@ -454,7 +563,9 @@ class ResSVDAttention(BaseAttention):
     @staticmethod
     def _prepare_valid_mask(
         attention_mask: torch.Tensor | None,
-        B: int, N: int, device: torch.device,
+        B: int,
+        N: int,
+        device: torch.device,
     ) -> torch.Tensor | None:
         if attention_mask is None:
             return None
@@ -512,7 +623,11 @@ class ResSVDAttention(BaseAttention):
 
         Q = self.query(hidden_states).view(B, N, H, D).permute(0, 2, 1, 3)
         K = self.key(hidden_states).view(B, N, self.num_kv_heads, D).permute(0, 2, 1, 3)
-        V = self.value(hidden_states).view(B, N, self.num_kv_heads, D).permute(0, 2, 1, 3)
+        V = (
+            self.value(hidden_states)
+            .view(B, N, self.num_kv_heads, D)
+            .permute(0, 2, 1, 3)
+        )
 
         # RES-05: RoPE with past_len offset
         if position_embeddings is None:
@@ -521,12 +636,15 @@ class ResSVDAttention(BaseAttention):
             cos, sin = position_embeddings
             past_len = 0
             if past_key_value is not None:
-                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
+                if (
+                    isinstance(past_key_value, (tuple, list))
+                    and len(past_key_value) >= 1
+                ):
                     past_len = past_key_value[0].shape[-2]
                 elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
                     past_len = past_key_value.key_cache[0].shape[-2]
-            cos = cos[..., past_len: past_len + N, :]
-            sin = sin[..., past_len: past_len + N, :]
+            cos = cos[..., past_len : past_len + N, :]
+            sin = sin[..., past_len : past_len + N, :]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 
         # GQA expansion
@@ -535,16 +653,24 @@ class ResSVDAttention(BaseAttention):
             K = repeat_kv(K, repeats)
             V = repeat_kv(V, repeats)
 
-        scale = D ** -0.5
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+        scale = D**-0.5
+        scores = (
+            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+        )
 
         # Causal masking
         is_causal = self.is_decoder and N > 1
         if is_causal:
-            causal = torch.triu(
-                torch.full((N, N), float("-inf"), device=device, dtype=torch.float32),
-                diagonal=1,
-            ).unsqueeze(0).unsqueeze(0)
+            causal = (
+                torch.triu(
+                    torch.full(
+                        (N, N), float("-inf"), device=device, dtype=torch.float32
+                    ),
+                    diagonal=1,
+                )
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
             scores = scores + causal
 
         # Padding mask
@@ -569,7 +695,9 @@ class ResSVDAttention(BaseAttention):
                 attn = attn * head_mask.to(attn.dtype)
 
         context = torch.matmul(attn, V)
-        context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+        context = (
+            context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+        )
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:
@@ -583,6 +711,7 @@ class ResSVDAttention(BaseAttention):
 # ===========================================================================
 # RES-08: injection with recursion guard
 # ===========================================================================
+
 
 @ATTENTION_REGISTRY.register("res_svd_inject")
 @ATTENTION_REGISTRY.register("inject_res_svd")
@@ -625,7 +754,11 @@ def inject_res_svd(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -635,9 +768,13 @@ def inject_res_svd(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_res_svd(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot,
-                _depth=_depth + 1, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
             )
             if res is not None:
                 num_injected += 1
@@ -657,7 +794,10 @@ def inject_res_svd(
             src = target
 
         # Double-injection guard
-        if isinstance(src, ResSVDAttention) or "ResSVDAttention" in src.__class__.__name__:
+        if (
+            isinstance(src, ResSVDAttention)
+            or "ResSVDAttention" in src.__class__.__name__
+        ):
             return None
 
         new_attn = ResSVDAttention(

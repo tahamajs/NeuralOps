@@ -1,9 +1,9 @@
 """Comprehensive plotting functions for model analysis."""
-from typing import Any
 
 import json
 import os
 from pathlib import Path
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -476,7 +476,9 @@ def plot_tradeoff(df, output_dir, metric="accuracy") -> None:
     plt.close()
 
 
-def plot_pareto_front(df, output_dir, x_metric="speedup_factor", y_metric="accuracy") -> None:
+def plot_pareto_front(
+    df, output_dir, x_metric="speedup_factor", y_metric="accuracy"
+) -> None:
     """Plot pareto front."""
     set_style()
     points = df[[x_metric, y_metric, "model", "rank"]].dropna().values

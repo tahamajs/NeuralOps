@@ -3,29 +3,18 @@
 import pytest
 import torch
 import torch.nn as nn
-from transformers import (
-    BertConfig,
-    BertForSequenceClassification,
-    RobertaConfig,
-    RobertaForSequenceClassification,
-    DistilBertConfig,
-    DistilBertForSequenceClassification,
-    GPT2Config,
-    GPT2ForSequenceClassification,
-    T5Config,
-    T5ForConditionalGeneration,
-    T5EncoderModel,
-)
-
-from framework.core.architecture import (
-    get_attention_modules,
-    get_ffn_modules,
-    get_embedding_module,
-    get_classifier_head,
-    detect_architecture,
-)
+from framework.core.architecture import (detect_architecture,
+                                         get_attention_modules,
+                                         get_classifier_head,
+                                         get_embedding_module, get_ffn_modules)
 from framework.core.attention_utils import inject_attention
 from framework.core.model_utils import replace_module
+from transformers import (BertConfig, BertForSequenceClassification,
+                          DistilBertConfig,
+                          DistilBertForSequenceClassification, GPT2Config,
+                          GPT2ForSequenceClassification, RobertaConfig,
+                          RobertaForSequenceClassification, T5Config,
+                          T5EncoderModel, T5ForConditionalGeneration)
 
 
 @pytest.fixture(autouse=True)

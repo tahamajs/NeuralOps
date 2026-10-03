@@ -16,16 +16,15 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
-
 # ============================================================================
 # RoPE
 # ============================================================================
+
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     x1 = x[..., : x.shape[-1] // 2]
@@ -61,8 +60,12 @@ def apply_rotary_pos_emb(
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
         # KDA-FIX-04: dtype-safe cast
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
+            _rotate_half(q_rot) * sin.to(q_rot.dtype)
+        )
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
+            _rotate_half(k_rot) * sin.to(k_rot.dtype)
+        )
         q = torch.cat([q_rot_embed, q_pass], dim=-1)
         k = torch.cat([k_rot_embed, k_pass], dim=-1)
     else:
@@ -75,6 +78,7 @@ def apply_rotary_pos_emb(
 # ============================================================================
 # LoRALinear
 # ============================================================================
+
 
 class LoRALinear(nn.Module):
     def __init__(
@@ -97,15 +101,21 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -145,7 +155,9 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            lora_out = (
+                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            )
             out = out + lora_out
         return out
 
@@ -153,6 +165,7 @@ class LoRALinear(nn.Module):
 # ============================================================================
 # KDAAttention
 # ============================================================================
+
 
 @ATTENTION_REGISTRY.register("kda", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("kda_attention", supports_causal=True, supports_gqa=True)
@@ -178,28 +191,54 @@ class KDAAttention(BaseAttention):
 
         # ---- hidden dim discovery ----
         if d_model is None:
-            d_model = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
+            d_model = (
+                kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
+            )
             if d_model is None:
                 if config is not None:
-                    d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
+                    d_model = getattr(
+                        config, "hidden_size", getattr(config, "dim", 768)
+                    )
                 elif source_attn is not None:
                     out_layer = getattr(
-                        source_attn, "out_lin",
-                        getattr(source_attn, "dense",
-                                getattr(source_attn, "c_proj",
-                                        getattr(source_attn, "o_proj",
-                                                getattr(source_attn, "out_proj", None)))))
+                        source_attn,
+                        "out_lin",
+                        getattr(
+                            source_attn,
+                            "dense",
+                            getattr(
+                                source_attn,
+                                "c_proj",
+                                getattr(
+                                    source_attn,
+                                    "o_proj",
+                                    getattr(source_attn, "out_proj", None),
+                                ),
+                            ),
+                        ),
+                    )
                     if out_layer is not None:
-                        d_model = getattr(out_layer, "out_features",
-                                          getattr(out_layer, "in_features", 768))
+                        d_model = getattr(
+                            out_layer,
+                            "out_features",
+                            getattr(out_layer, "in_features", 768),
+                        )
                     else:
-                        q_l = getattr(source_attn, "q_proj",
-                              getattr(source_attn, "query",
-                              getattr(source_attn, "q_lin", None)))
+                        q_l = getattr(
+                            source_attn,
+                            "q_proj",
+                            getattr(
+                                source_attn,
+                                "query",
+                                getattr(source_attn, "q_lin", None),
+                            ),
+                        )
                         d_model = (
-                            getattr(q_l, "in_features",
-                                    getattr(q_l, "out_features", 768))
-                            if q_l is not None else 768
+                            getattr(
+                                q_l, "in_features", getattr(q_l, "out_features", 768)
+                            )
+                            if q_l is not None
+                            else 768
                         )
                 else:
                     d_model = 768
@@ -211,11 +250,15 @@ class KDAAttention(BaseAttention):
             num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
             if num_heads is None:
                 if config is not None:
-                    num_heads = getattr(config, "num_attention_heads",
-                                        getattr(config, "n_heads", 12))
+                    num_heads = getattr(
+                        config, "num_attention_heads", getattr(config, "n_heads", 12)
+                    )
                 elif source_attn is not None:
-                    num_heads = getattr(source_attn, "num_attention_heads",
-                                        getattr(source_attn, "n_heads", 12))
+                    num_heads = getattr(
+                        source_attn,
+                        "num_attention_heads",
+                        getattr(source_attn, "n_heads", 12),
+                    )
                 else:
                     num_heads = 12
 
@@ -223,9 +266,13 @@ class KDAAttention(BaseAttention):
         self.hidden_size = self.dim
         self.num_heads = int(num_heads)
         self.num_kv_heads = (
-            getattr(config, "num_key_value_heads",
-                    getattr(config, "num_kv_heads", self.num_heads))
-            if config else self.num_heads
+            getattr(
+                config,
+                "num_key_value_heads",
+                getattr(config, "num_kv_heads", self.num_heads),
+            )
+            if config
+            else self.num_heads
         )
         self.head_dim = self.dim // self.num_heads if self.num_heads > 0 else 64
         self.all_head_size = self.num_heads * self.head_dim
@@ -236,16 +283,36 @@ class KDAAttention(BaseAttention):
         # ---- decoder detection ----
         model_type = getattr(config, "model_type", "").lower() if config else ""
         is_dec = (
-            getattr(config, "is_decoder",
-                    getattr(config, "is_causal", kwargs.get("is_causal", False)))
-            if config else False
+            getattr(
+                config,
+                "is_decoder",
+                getattr(config, "is_causal", kwargs.get("is_causal", False)),
+            )
+            if config
+            else False
         )
         _mt = (model_type or "").lower()
-        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                             "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
-        if any(_mt.startswith(p) for p in _decoder_prefixes) or hasattr(config, "architectures") and any(
-            "GPT" in str(a) or "CausalLM" in str(a)
-            for a in (getattr(config, "architectures", []) or [])
+        _decoder_prefixes = (
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
+        )
+        if (
+            any(_mt.startswith(p) for p in _decoder_prefixes)
+            or hasattr(config, "architectures")
+            and any(
+                "GPT" in str(a) or "CausalLM" in str(a)
+                for a in (getattr(config, "architectures", []) or [])
+            )
         ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
@@ -261,50 +328,69 @@ class KDAAttention(BaseAttention):
 
         # ---- LoRA config ----
         if config is not None:
-            self.lora_rank = getattr(config, "lora_rank",
-                            getattr(comp_config, "lora_rank",
-                                    kwargs.get("lora_rank", 16)))
+            self.lora_rank = getattr(
+                config,
+                "lora_rank",
+                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)),
+            )
         elif comp_config is not None:
-            self.lora_rank = getattr(comp_config, "lora_rank",
-                                    kwargs.get("lora_rank", 16))
+            self.lora_rank = getattr(
+                comp_config, "lora_rank", kwargs.get("lora_rank", 16)
+            )
         else:
             self.lora_rank = kwargs.get("lora_rank", 16)
 
         if config is not None:
-            self.lora_alpha = getattr(config, "lora_alpha",
-                             getattr(comp_config, "lora_alpha",
-                                     kwargs.get("lora_alpha", 32.0)))
+            self.lora_alpha = getattr(
+                config,
+                "lora_alpha",
+                getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
+            )
         elif comp_config is not None:
-            self.lora_alpha = getattr(comp_config, "lora_alpha",
-                                     kwargs.get("lora_alpha", 32.0))
+            self.lora_alpha = getattr(
+                comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)
+            )
         else:
             self.lora_alpha = kwargs.get("lora_alpha", 32.0)
 
-        self.freeze_base = (self.lora_rank > 0)
+        self.freeze_base = self.lora_rank > 0
         self.rotary_emb = (
             getattr(source_attn, "rotary_emb", None)
-            if source_attn is not None else None
+            if source_attn is not None
+            else None
         )
 
         # ---- projections ----
         self.q_proj = LoRALinear(
-            self.dim, self.all_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.k_proj = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.v_proj = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.out_proj = LoRALinear(
-            self.all_head_size, self.dim, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
 
@@ -324,17 +410,25 @@ class KDAAttention(BaseAttention):
             return
 
         cls_name = getattr(src, "__class__", type(src)).__name__
-        has_out = (hasattr(src, "dense") or hasattr(src, "out_proj")
-                   or hasattr(src, "out_lin") or hasattr(src, "c_proj")
-                   or hasattr(src, "o_proj"))
-        if cls_name in ("BertSelfAttention", "RobertaSelfAttention") \
-                or (hasattr(src, "query") and not has_out):
+        has_out = (
+            hasattr(src, "dense")
+            or hasattr(src, "out_proj")
+            or hasattr(src, "out_lin")
+            or hasattr(src, "c_proj")
+            or hasattr(src, "o_proj")
+        )
+        if cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
+            hasattr(src, "query") and not has_out
+        ):
             self.is_nested_encoder = True
         if hasattr(src, "self") and hasattr(src, "output"):
             self.is_nested_encoder = True
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         # 1. GPT-2 fused c_attn
@@ -344,20 +438,28 @@ class KDAAttention(BaseAttention):
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D"
-                        or base_c.__class__.__name__ == "Conv1D"
-                        or hasattr(c_attn_mod, "nf")
-                        or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])):
+                if (
+                    c_attn_mod.__class__.__name__ == "Conv1D"
+                    or base_c.__class__.__name__ == "Conv1D"
+                    or hasattr(c_attn_mod, "nf")
+                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
+                ):
                     c_w = c_w.t()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (c_w[:split_size, :],
-                                  c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size: 2 * split_size, :],
-                                  c_b[split_size: 2 * split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split_size:, :],
-                                  c_b[2 * split_size:] if c_b is not None else None)
+                extracted["q"] = (
+                    c_w[:split_size, :],
+                    c_b[:split_size] if c_b is not None else None,
+                )
+                extracted["k"] = (
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted["v"] = (
+                    c_w[2 * split_size :, :],
+                    c_b[2 * split_size :] if c_b is not None else None,
+                )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = src.c_proj
@@ -365,13 +467,18 @@ class KDAAttention(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D"
-                            or base_o.__class__.__name__ == "Conv1D"
-                            or hasattr(c_proj_mod, "nf")
-                            or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])):
+                    if (
+                        c_proj_mod.__class__.__name__ == "Conv1D"
+                        or base_o.__class__.__name__ == "Conv1D"
+                        or hasattr(c_proj_mod, "nf")
+                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
+                    ):
                         o_w = o_w.t()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    extracted["o"] = (
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
+                    )
 
         # 2. RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
@@ -404,10 +511,15 @@ class KDAAttention(BaseAttention):
                         mod = getattr(src, name)
                         if mod is not None and hasattr(mod, "weight"):
                             w_data = mod.weight.data.clone()
-                            if (mod.__class__.__name__ == "Conv1D"
-                                    or hasattr(mod, "nf")
-                                    or (w_data.ndim == 2 and proj_key == "o"
-                                        and w_data.shape[0] < w_data.shape[1])):
+                            if (
+                                mod.__class__.__name__ == "Conv1D"
+                                or hasattr(mod, "nf")
+                                or (
+                                    w_data.ndim == 2
+                                    and proj_key == "o"
+                                    and w_data.shape[0] < w_data.shape[1]
+                                )
+                            ):
                                 w_data = w_data.t()
                             extracted[proj_key] = (
                                 w_data,
@@ -415,11 +527,15 @@ class KDAAttention(BaseAttention):
                             )
                             break
 
-        missing = [k for k, (w, _) in extracted.items()
-                   if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -428,8 +544,11 @@ class KDAAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback: %s", e)
 
-        missing_after = [k for k, (w, _) in extracted.items()
-                         if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing_after:
             raise RuntimeError(
                 f"KDAAttention copy_weights failed: missing mandatory projections "
@@ -437,7 +556,10 @@ class KDAAttention(BaseAttention):
             )
 
         target_map = {
-            "q": self.q_proj, "k": self.k_proj, "v": self.v_proj, "o": self.out_proj,
+            "q": self.q_proj,
+            "k": self.k_proj,
+            "v": self.v_proj,
+            "o": self.out_proj,
         }
 
         with torch.no_grad():
@@ -453,21 +575,27 @@ class KDAAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if (w.shape != target_mod.weight.shape
-                        and target_mod.weight.shape == w.t().shape):
+                if (
+                    w.shape != target_mod.weight.shape
+                    and target_mod.weight.shape == w.t().shape
+                ):
                     w = w.t()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
                 target_mod.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(device=target_mod.weight.device,
-                                        dtype=target_mod.weight.dtype))
+                    w[:out_d, :in_d].to(
+                        device=target_mod.weight.device, dtype=target_mod.weight.dtype
+                    )
+                )
 
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
                     target_mod.bias.data[:min_b].copy_(
-                        b[:min_b].to(device=target_mod.bias.device,
-                                     dtype=target_mod.bias.dtype))
+                        b[:min_b].to(
+                            device=target_mod.bias.device, dtype=target_mod.bias.dtype
+                        )
+                    )
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
@@ -528,10 +656,17 @@ class KDAAttention(BaseAttention):
 
             pos = torch.arange(Lc, device=q.device, dtype=torch.float32)
             pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)
-            tril_mask = torch.tril(torch.ones(Lc, Lc, device=q.device, dtype=torch.bool))
-            D_intra = torch.exp(
-                (pos_diff.unsqueeze(0).unsqueeze(0) * log_gamma).clamp(min=-40.0, max=0.0)
-            ) * tril_mask.float()
+            tril_mask = torch.tril(
+                torch.ones(Lc, Lc, device=q.device, dtype=torch.bool)
+            )
+            D_intra = (
+                torch.exp(
+                    (pos_diff.unsqueeze(0).unsqueeze(0) * log_gamma).clamp(
+                        min=-40.0, max=0.0
+                    )
+                )
+                * tril_mask.float()
+            )
 
             attn_intra = (qc @ kc.transpose(-1, -2)) * D_intra
             if mc is not None:
@@ -542,8 +677,9 @@ class KDAAttention(BaseAttention):
             den_intra = attn_intra.sum(dim=-1, keepdim=True)
 
             decay_inter = torch.exp(
-                ((pos + 1).unsqueeze(0).unsqueeze(0).unsqueeze(-1)
-                 * log_gamma).clamp(min=-40.0, max=0.0)
+                ((pos + 1).unsqueeze(0).unsqueeze(0).unsqueeze(-1) * log_gamma).clamp(
+                    min=-40.0, max=0.0
+                )
             )
             num_inter = (qc @ S) * decay_inter
             den_inter = (qc @ Z) * decay_inter
@@ -560,8 +696,9 @@ class KDAAttention(BaseAttention):
             y_fwd_list.append(yc)
 
             decay_to_end = torch.exp(
-                ((Lc - 1 - pos).unsqueeze(0).unsqueeze(0).unsqueeze(-1)
-                 * log_gamma).clamp(min=-40.0, max=0.0)
+                (
+                    (Lc - 1 - pos).unsqueeze(0).unsqueeze(0).unsqueeze(-1) * log_gamma
+                ).clamp(min=-40.0, max=0.0)
             )
             k_decayed = kc * decay_to_end
             chunk_S = k_decayed.transpose(-1, -2) @ vc
@@ -580,7 +717,11 @@ class KDAAttention(BaseAttention):
             v_rev = v.flip(dims=[2])
             mask_rev = mask_float.flip(dims=[-1]) if mask_float is not None else None
             y_bwd_rev, _ = self._kda_scan_chunked(
-                q_rev, k_rev, v_rev, decay, mask_rev,
+                q_rev,
+                k_rev,
+                v_rev,
+                decay,
+                mask_rev,
                 chunk_size=chunk_size,
                 _allow_bidirectional=False,
             )
@@ -610,38 +751,52 @@ class KDAAttention(BaseAttention):
         pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)
 
         tril_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
-        D_causal = torch.exp(
-            (pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(min=-40.0, max=0.0)
-        ) * tril_mask.float()
+        D_causal = (
+            torch.exp(
+                (pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(
+                    min=-40.0, max=0.0
+                )
+            )
+            * tril_mask.float()
+        )
 
-        attn_scores = (q.float() @ k.float().transpose(-1, -2))
+        attn_scores = q.float() @ k.float().transpose(-1, -2)
 
         mask_2d = None
         if mask is not None:
             valid_m = get_token_valid_mask(mask, B, L, q.device)
             mask_float = valid_m.float()
-            mask_2d = mask_float.unsqueeze(1).unsqueeze(-1) * mask_float.unsqueeze(1).unsqueeze(-2)
+            mask_2d = mask_float.unsqueeze(1).unsqueeze(-1) * mask_float.unsqueeze(
+                1
+            ).unsqueeze(-2)
             D_causal = D_causal * mask_2d
 
         num_fwd = (attn_scores * D_causal) @ v.float()
         denom_fwd = (attn_scores * D_causal).sum(dim=-1, keepdim=True)
         y_fwd = torch.clamp(
             num_fwd / denom_fwd.clamp(min=1e-4),
-            min=-1e4, max=1e4,
+            min=-1e4,
+            max=1e4,
         ).to(q.dtype)
 
         if not self.is_decoder:
             triu_mask = torch.triu(torch.ones(L, L, device=q.device, dtype=torch.bool))
-            D_anti = torch.exp(
-                (-pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(min=-40.0, max=0.0)
-            ) * triu_mask.float()
+            D_anti = (
+                torch.exp(
+                    (-pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(
+                        min=-40.0, max=0.0
+                    )
+                )
+                * triu_mask.float()
+            )
             if mask_2d is not None:
                 D_anti = D_anti * mask_2d
             num_bwd = (attn_scores * D_anti) @ v.float()
             denom_bwd = (attn_scores * D_anti).sum(dim=-1, keepdim=True)
             y_bwd = torch.clamp(
                 num_bwd / denom_bwd.clamp(min=1e-4),
-                min=-1e4, max=1e4,
+                min=-1e4,
+                max=1e4,
             ).to(q.dtype)
             return y_fwd, y_bwd
 
@@ -672,12 +827,18 @@ class KDAAttention(BaseAttention):
         H, d = self.num_heads, self.head_dim
 
         q_raw = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
-        k_raw = self.k_proj(hidden_states).view(
-            B, L, self.num_kv_heads, d
-        ).transpose(1, 2).contiguous()
-        v = self.v_proj(hidden_states).view(
-            B, L, self.num_kv_heads, d
-        ).transpose(1, 2).contiguous()
+        k_raw = (
+            self.k_proj(hidden_states)
+            .view(B, L, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_proj(hidden_states)
+            .view(B, L, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # RoPE
         if position_embeddings is not None:
@@ -687,14 +848,22 @@ class KDAAttention(BaseAttention):
             rotary_module = self.rotary_emb
             pos_ids = kwargs.get("position_ids")
             if pos_ids is None:
-                pos_ids = torch.arange(L, device=hidden_states.device).unsqueeze(0).expand(B, -1)
+                pos_ids = (
+                    torch.arange(L, device=hidden_states.device)
+                    .unsqueeze(0)
+                    .expand(B, -1)
+                )
             try:
                 cos, sin = rotary_module(q_raw, pos_ids)
-                q_raw, k_raw = apply_rotary_pos_emb(q_raw, k_raw, cos, sin, position_ids=pos_ids)
+                q_raw, k_raw = apply_rotary_pos_emb(
+                    q_raw, k_raw, cos, sin, position_ids=pos_ids
+                )
             except Exception:
                 try:
                     cos, sin = rotary_module(q_raw, seq_len=L)
-                    q_raw, k_raw = apply_rotary_pos_emb(q_raw, k_raw, cos, sin, position_ids=pos_ids)
+                    q_raw, k_raw = apply_rotary_pos_emb(
+                        q_raw, k_raw, cos, sin, position_ids=pos_ids
+                    )
                 except Exception as e:
                     logger.debug("KDA rotary_emb failed: %s", e)
 
@@ -703,7 +872,7 @@ class KDAAttention(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         q = F.elu(q_raw) + 1.0
-        k = (F.elu(k_raw) + 1.0) / (d ** 0.5)
+        k = (F.elu(k_raw) + 1.0) / (d**0.5)
 
         # KDA-FIX-01 + KDA-FIX-02: decay from lora_beta (trainable, init 5.0)
         decay = torch.sigmoid(self.lora_beta).view(1, H, 1, 1)
@@ -746,6 +915,7 @@ class KDAAttention(BaseAttention):
 # Injection (KDA-FIX-05: recursion guard)
 # ============================================================================
 
+
 @ATTENTION_REGISTRY.register("kda_inject")
 @ATTENTION_REGISTRY.register("inject_kda")
 def inject_kda(
@@ -785,7 +955,11 @@ def inject_kda(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
     elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
         layer_list = target.layers
@@ -795,8 +969,13 @@ def inject_kda(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_kda(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
             )
             if res is not None:
                 num_injected += 1
@@ -827,9 +1006,11 @@ def inject_kda(
         getattr(src_attn, "hidden_size", None)
         or getattr(src_attn, "embed_dim", None)
         or getattr(src_attn, "dim", None)
-        or (src_attn.q_proj.in_features
+        or (
+            src_attn.q_proj.in_features
             if hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features")
-            else None)
+            else None
+        )
         or (getattr(target, "in_features", None) if target is not None else None)
         or getattr(cfg, "hidden_size", getattr(cfg, "dim", 768))
     )

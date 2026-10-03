@@ -1,13 +1,15 @@
+import framework.attentions.compressed_attention
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.compressed_attention
+
 
 def test_compressed_attention_module_present():
     assert hasattr(framework.attentions, 'compressed_attention')
 
 def test_compressed_attention_injection_safe():
-    from framework.attentions.compressed_attention import inject_compressed_attention
+    from framework.attentions.compressed_attention import \
+        inject_compressed_attention
     class DummyLayer(nn.Module):
         def __init__(self):
             super().__init__()

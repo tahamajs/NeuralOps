@@ -1,15 +1,13 @@
+from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
-from types import SimpleNamespace
-
-from framework.attentions.replace import (
-    replace_attention_in_model,
-    build_attention,
-    _replace_bert_attention,
-    _replace_gpt_attention,
-    _replace_distilbert_attention,
-)
+from framework.attentions.replace import (_replace_bert_attention,
+                                          _replace_distilbert_attention,
+                                          _replace_gpt_attention,
+                                          build_attention,
+                                          replace_attention_in_model)
 from framework.core.registry import ATTENTION_REGISTRY
 
 

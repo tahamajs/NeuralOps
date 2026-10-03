@@ -1,7 +1,8 @@
+import framework.attentions.chela_slay
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.chela_slay
+
 
 def test_chela_slay_module_present():
     assert hasattr(framework.attentions, 'chela_slay')

@@ -1,5 +1,6 @@
-import sys
 import math
+import sys
+
 import pytest
 import torch
 import torch.nn as nn
@@ -8,10 +9,7 @@ import torch.nn.functional as F
 sys.path.insert(0, "Codes")
 
 from framework.attentions.svd_linear_attention import (
-    SVDLinear,
-    SVDLinearAttention,
-    inject_svd_linear_attention,
-)
+    SVDLinear, SVDLinearAttention, inject_svd_linear_attention)
 from framework.core.registry import ATTENTION_REGISTRY
 
 

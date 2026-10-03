@@ -12,4 +12,6 @@ if __name__ == "__main__":
     cache_dir = proj_dir / "data_cache"
     print(f"Preparing tokenized cache in {cache_dir}...")
     ds = get_cached_tokenized_dataset("sst2", "distilbert", 128, cache_dir=cache_dir)
-    print(f"Successfully generated cache: {len(ds['train'])} train samples, {len(ds['val'])} validation samples.")
+    print(
+        f"Successfully generated cache: {len(ds['train'])} train samples, {len(ds['val'])} validation samples."
+    )

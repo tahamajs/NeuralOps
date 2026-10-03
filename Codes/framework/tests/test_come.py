@@ -1,17 +1,13 @@
 """Tests for CoMe Layer Shedding Compressor."""
 
+from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
-from types import SimpleNamespace
-
-from framework.compression_engine.come import (
-    CoMeBridge,
-    CoMeBridgedLayer,
-    CoMeCompressor,
-    CoMeLoRALinear,
-    come_factory,
-)
+from framework.compression_engine.come import (CoMeBridge, CoMeBridgedLayer,
+                                               CoMeCompressor, CoMeLoRALinear,
+                                               come_factory)
 from framework.core.registry import COMPRESSOR_REGISTRY
 
 

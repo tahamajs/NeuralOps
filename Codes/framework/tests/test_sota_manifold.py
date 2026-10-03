@@ -17,25 +17,19 @@ from typing import Dict
 import numpy as np
 import torch
 import torch.nn as nn
-
 from framework.drift.config import DriftConfig
-from framework.drift.detectors import (
-    METHOD_REGISTRY,
-    DriftDetector,
-    bures_wasserstein_distance,
-    fast_bures_wasserstein_nystrom,
-    hutchinson_trace_estimator,
-    matrix_square_root,
-    nystrom_low_rank_approximation,
-    nystrom_matrix_square_root,
-)
-from framework.trainer.optimizers import (
-    OPTIMIZER_REGISTRY,
-    RiemannianStiefelOptimizer,
-    is_stiefel_parameter,
-    project_stiefel_gradient,
-    stiefel_qr_retraction,
-)
+from framework.drift.detectors import (METHOD_REGISTRY, DriftDetector,
+                                       bures_wasserstein_distance,
+                                       fast_bures_wasserstein_nystrom,
+                                       hutchinson_trace_estimator,
+                                       matrix_square_root,
+                                       nystrom_low_rank_approximation,
+                                       nystrom_matrix_square_root)
+from framework.trainer.optimizers import (OPTIMIZER_REGISTRY,
+                                          RiemannianStiefelOptimizer,
+                                          is_stiefel_parameter,
+                                          project_stiefel_gradient,
+                                          stiefel_qr_retraction)
 
 
 class TestStiefelManifoldGeometry(unittest.TestCase):

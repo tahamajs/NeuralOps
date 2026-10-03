@@ -16,7 +16,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.adapters import UniversalAdapter
 from framework.core.attention_mask import apply_attention_mask, get_token_valid_mask
 from framework.core.base import BaseAttention
@@ -123,15 +122,21 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -167,12 +172,22 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            out = (
+                out
+                + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+            )
         return out
 
 
-@ATTENTION_REGISTRY.register("vig", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("vig_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "vig", supports_causal=True, supports_bidirectional=True, supports_gqa=True
+)
+@ATTENTION_REGISTRY.register(
+    "vig_attention",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
 class ViGAttention(BaseAttention):
     r"""Vision GNN-inspired 2D Grid Linear Attention with Learned Gated Fusion."""
 
@@ -193,7 +208,9 @@ class ViGAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        src_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn")
+        src_attn = (
+            pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn")
+        )
 
         if config is not None and not isinstance(config, int):
             self.adapter = ModelAdapter(config)
@@ -207,14 +224,22 @@ class ViGAttention(BaseAttention):
             self.is_decoder: bool = getattr(config, "is_decoder", False)
         else:
             self.adapter = None
-            self.dim = _cfg_get(config, "hidden_size", kwargs.get("hidden_size", kwargs.get("d_model", 768)))
-            self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_heads", 12))
+            self.dim = _cfg_get(
+                config,
+                "hidden_size",
+                kwargs.get("hidden_size", kwargs.get("d_model", 768)),
+            )
+            self.num_heads = _cfg_get(
+                config, "num_attention_heads", kwargs.get("num_heads", 12)
+            )
             self.num_kv_heads = _cfg_get(config, "num_key_value_heads", self.num_heads)
             self.head_dim = self.dim // max(1, self.num_heads)
             self.all_head_size = self.num_heads * self.head_dim
             self.kv_head_size = self.num_kv_heads * self.head_dim
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
-            self.is_decoder = bool(_cfg_get(config, "is_decoder", kwargs.get("is_decoder", False)))
+            self.is_decoder = bool(
+                _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
+            )
 
         # Explicit overrides
         if "hidden_size" in kwargs:
@@ -232,24 +257,44 @@ class ViGAttention(BaseAttention):
             self.is_decoder = bool(is_decoder)
 
         self.is_nested_encoder: bool = False
-        self.lora_rank = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
-        self.lora_alpha = kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
+        self.lora_rank = kwargs.get(
+            "lora_rank", _cfg_get(config, "lora_rank", lora_rank)
+        )
+        self.lora_alpha = kwargs.get(
+            "lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha)
+        )
 
         self.q_proj = LoRALinear(
-            self.dim, self.all_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
         )
         self.k_proj = LoRALinear(
-            self.dim, self.kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            self.dim,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
         )
         self.v_proj = LoRALinear(
-            self.dim, self.kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            self.dim,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
         )
         self.out_proj = LoRALinear(
-            self.all_head_size, self.dim, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
         )
 
         self.gate_net = nn.Linear(self.dim, 2 * self.num_heads)
@@ -270,33 +315,60 @@ class ViGAttention(BaseAttention):
 
     # State dict compatibility aliases via properties
     @property
-    def query(self) -> LoRALinear: return self.q_proj
+    def query(self) -> LoRALinear:
+        return self.q_proj
+
     @property
-    def key(self) -> LoRALinear: return self.k_proj
+    def key(self) -> LoRALinear:
+        return self.k_proj
+
     @property
-    def value(self) -> LoRALinear: return self.v_proj
+    def value(self) -> LoRALinear:
+        return self.v_proj
+
     @property
-    def out(self) -> LoRALinear: return self.out_proj
+    def out(self) -> LoRALinear:
+        return self.out_proj
+
     @property
-    def W_q(self) -> LoRALinear: return self.q_proj
+    def W_q(self) -> LoRALinear:
+        return self.q_proj
+
     @property
-    def W_k(self) -> LoRALinear: return self.k_proj
+    def W_k(self) -> LoRALinear:
+        return self.k_proj
+
     @property
-    def W_v(self) -> LoRALinear: return self.v_proj
+    def W_v(self) -> LoRALinear:
+        return self.v_proj
+
     @property
-    def q_lin(self) -> LoRALinear: return self.q_proj
+    def q_lin(self) -> LoRALinear:
+        return self.q_proj
+
     @property
-    def k_lin(self) -> LoRALinear: return self.k_proj
+    def k_lin(self) -> LoRALinear:
+        return self.k_proj
+
     @property
-    def v_lin(self) -> LoRALinear: return self.v_proj
+    def v_lin(self) -> LoRALinear:
+        return self.v_proj
+
     @property
-    def out_lin(self) -> LoRALinear: return self.out_proj
+    def out_lin(self) -> LoRALinear:
+        return self.out_proj
+
     @property
-    def dense(self) -> LoRALinear: return self.out_proj
+    def dense(self) -> LoRALinear:
+        return self.out_proj
+
     @property
-    def o_proj(self) -> LoRALinear: return self.out_proj
+    def o_proj(self) -> LoRALinear:
+        return self.out_proj
+
     @property
-    def c_proj(self) -> LoRALinear: return self.out_proj
+    def c_proj(self) -> LoRALinear:
+        return self.out_proj
 
     def copy_weights(self, old_attn: Any) -> None:
         """Robust weight copying from DistilBERT, RoBERTa nested, GPT-2 Conv1D, or Qwen/LLaMA."""
@@ -317,18 +389,36 @@ class ViGAttention(BaseAttention):
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
         # 2. GPT-2 Fused c_attn Conv1D handling
-        if hasattr(old_attn, "c_attn") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+        if hasattr(old_attn, "c_attn") and (
+            extracted["q"][0] is None
+            or extracted["k"][0] is None
+            or extracted["v"][0] is None
+        ):
             weight = old_attn.c_attn.weight.data
             bias = getattr(old_attn.c_attn, "bias", None)
             bias_data = bias.data if bias is not None else None
-            if ("Conv1D" in old_attn.c_attn.__class__.__name__) or hasattr(old_attn.c_attn, "nf") or (weight.dim() == 2 and (weight.shape[0] < weight.shape[1] or weight.shape[1] == 3 * self.dim)):
+            if (
+                ("Conv1D" in old_attn.c_attn.__class__.__name__)
+                or hasattr(old_attn.c_attn, "nf")
+                or (
+                    weight.dim() == 2
+                    and (
+                        weight.shape[0] < weight.shape[1]
+                        or weight.shape[1] == 3 * self.dim
+                    )
+                )
+            ):
                 weight = weight.t().contiguous()
             split_size = weight.shape[0] // 3
             q_w = weight[:split_size, :]
             k_w = weight[split_size : 2 * split_size, :]
             v_w = weight[2 * split_size :, :]
             q_b = bias_data[:split_size] if bias_data is not None else None
-            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
+            k_b = (
+                bias_data[split_size : 2 * split_size]
+                if bias_data is not None
+                else None
+            )
             v_b = bias_data[2 * split_size :] if bias_data is not None else None
             extracted["q"] = (q_w, q_b)
             extracted["k"] = (k_w, k_b)
@@ -336,13 +426,27 @@ class ViGAttention(BaseAttention):
 
         if hasattr(old_attn, "c_proj") and extracted["o"][0] is None:
             w_o = old_attn.c_proj.weight.data
-            if ("Conv1D" in old_attn.c_proj.__class__.__name__) or hasattr(old_attn.c_proj, "nf") or (w_o.dim() == 2 and (w_o.shape[0] < w_o.shape[1] or (w_o.shape[0] != self.dim and w_o.shape[1] == self.dim))):
+            if (
+                ("Conv1D" in old_attn.c_proj.__class__.__name__)
+                or hasattr(old_attn.c_proj, "nf")
+                or (
+                    w_o.dim() == 2
+                    and (
+                        w_o.shape[0] < w_o.shape[1]
+                        or (w_o.shape[0] != self.dim and w_o.shape[1] == self.dim)
+                    )
+                )
+            ):
                 w_o = w_o.t().contiguous()
             b_o = getattr(old_attn.c_proj, "bias", None)
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
         # 3. RoBERTa / BERT Nested Encoder handling
-        if hasattr(old_attn, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+        if hasattr(old_attn, "self") and (
+            extracted["q"][0] is None
+            or extracted["k"][0] is None
+            or extracted["v"][0] is None
+        ):
             s = old_attn.self
             if hasattr(s, "query"):
                 extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
@@ -351,7 +455,11 @@ class ViGAttention(BaseAttention):
             if hasattr(s, "value"):
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if hasattr(old_attn, "output") and hasattr(old_attn.output, "dense") and extracted["o"][0] is None:
+        if (
+            hasattr(old_attn, "output")
+            and hasattr(old_attn.output, "dense")
+            and extracted["o"][0] is None
+        ):
             dense = old_attn.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -369,12 +477,28 @@ class ViGAttention(BaseAttention):
                         layer = getattr(old_attn, name)
                         base = getattr(layer, "base_layer", layer)
                         if hasattr(base, "weight"):
-                            extracted[proj] = (base.weight.data, getattr(base, "bias", None))
+                            extracted[proj] = (
+                                base.weight.data,
+                                getattr(base, "bias", None),
+                            )
                             break
 
         # Detect nested encoder architecture
         cls_name = old_attn.__class__.__name__
-        has_out_proj = any(hasattr(old_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj", "out"))
+        has_out_proj = any(
+            hasattr(old_attn, attr)
+            for attr in (
+                "dense",
+                "out_proj",
+                "c_proj",
+                "out_lin",
+                "o_proj",
+                "wo",
+                "o",
+                "proj",
+                "out",
+            )
+        )
         self.is_nested_encoder = (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
@@ -384,7 +508,9 @@ class ViGAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            logger.warning("Attention module copy_weights warning. Proceeding with initialized weights.")
+            logger.warning(
+                "Attention module copy_weights warning. Proceeding with initialized weights."
+            )
 
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
@@ -392,7 +518,12 @@ class ViGAttention(BaseAttention):
             return w
 
         with torch.no_grad():
-            for proj_key, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
+            for proj_key, target in [
+                ("q", self.q_proj),
+                ("k", self.k_proj),
+                ("v", self.v_proj),
+                ("o", self.out_proj),
+            ]:
                 w, b = extracted[proj_key]
                 if w is not None:
                     in_dim = self.all_head_size if proj_key == "o" else self.dim
@@ -400,10 +531,14 @@ class ViGAttention(BaseAttention):
                     target_w = target.weight
                     out_d, in_d = target_w.shape
                     src_out, src_in = w_oriented.shape
-                    target_w.data[:min(out_d, src_out), :min(in_d, src_in)].copy_(w_oriented[:min(out_d, src_out), :min(in_d, src_in)])
+                    target_w.data[: min(out_d, src_out), : min(in_d, src_in)].copy_(
+                        w_oriented[: min(out_d, src_out), : min(in_d, src_in)]
+                    )
                     if b is not None and target.bias is not None:
                         b_val = b.data if isinstance(b, nn.Parameter) else b
-                        target.bias.data[:min(len(target.bias), len(b_val))].copy_(b_val[:min(len(target.bias), len(b_val))])
+                        target.bias.data[: min(len(target.bias), len(b_val))].copy_(
+                            b_val[: min(len(target.bias), len(b_val))]
+                        )
                 elif proj_key == "o" and self.is_nested_encoder:
                     min_d = min(target.weight.shape[0], target.weight.shape[1])
                     target.weight.data.zero_()
@@ -414,7 +549,9 @@ class ViGAttention(BaseAttention):
                 # Frobenius norm verification (>= 1e-4)
                 w_norm = float(torch.linalg.norm(target.weight.data.float()).item())
                 if w_norm < 1e-4:
-                    logger.warning(f"ViGAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+                    logger.warning(
+                        f"ViGAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})"
+                    )
 
                 target.freeze_base_weights()
 
@@ -425,25 +562,45 @@ class ViGAttention(BaseAttention):
             "v": ["v_proj", "v_lin", "value", "W_v"],
             "o": ["o_proj", "out_proj", "out_lin", "dense", "out", "c_proj"],
         }
-        for proj_key, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
+        for proj_key, target in [
+            ("q", self.q_proj),
+            ("k", self.k_proj),
+            ("v", self.v_proj),
+            ("o", self.out_proj),
+        ]:
             for name in source_submodules[proj_key]:
                 if hasattr(old_attn, name):
                     sub = getattr(old_attn, name)
-                    if hasattr(sub, "lora_A") and hasattr(sub, "lora_B") and sub.lora_A is not None and sub.lora_B is not None:
+                    if (
+                        hasattr(sub, "lora_A")
+                        and hasattr(sub, "lora_B")
+                        and sub.lora_A is not None
+                        and sub.lora_B is not None
+                    ):
                         src_lA = getattr(sub.lora_A, "weight", sub.lora_A)
                         src_lB = getattr(sub.lora_B, "weight", sub.lora_B)
                         if hasattr(src_lA, "data") and target.lora_A is not None:
-                            if src_lA.shape[0] == target.lora_A.shape[0] and src_lA.shape[1] == target.lora_A.shape[1]:
+                            if (
+                                src_lA.shape[0] == target.lora_A.shape[0]
+                                and src_lA.shape[1] == target.lora_A.shape[1]
+                            ):
                                 target.lora_A.data.copy_(src_lA.data)
                                 target.lora_A.requires_grad = True
                             else:
-                                print(f"Warning: lora_A shape mismatch for {proj_key}; keeping zero-init.")
+                                print(
+                                    f"Warning: lora_A shape mismatch for {proj_key}; keeping zero-init."
+                                )
                         if hasattr(src_lB, "data") and target.lora_B is not None:
-                            if src_lB.shape[0] == target.lora_B.shape[0] and src_lB.shape[1] == target.lora_B.shape[1]:
+                            if (
+                                src_lB.shape[0] == target.lora_B.shape[0]
+                                and src_lB.shape[1] == target.lora_B.shape[1]
+                            ):
                                 target.lora_B.data.copy_(src_lB.data)
                                 target.lora_B.requires_grad = True
                             else:
-                                print(f"Warning: lora_B shape mismatch for {proj_key}; keeping zero-init.")
+                                print(
+                                    f"Warning: lora_B shape mismatch for {proj_key}; keeping zero-init."
+                                )
                         if hasattr(sub, "lora_scaling"):
                             target.lora_scaling = sub.lora_scaling
                         break
@@ -479,15 +636,28 @@ class ViGAttention(BaseAttention):
 
         # Rotary position embeddings
         pos_emb = kwargs.get("position_embeddings")
-        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
+        if (
+            pos_emb is not None
+            and isinstance(pos_emb, (tuple, list))
+            and len(pos_emb) >= 2
+        ):
             cos, sin = pos_emb[0], pos_emb[1]
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
         elif getattr(self, "rotary_emb", None) is not None:
             try:
                 from framework.utils.compat import maybe_apply_rotary
-                q, k = maybe_apply_rotary(q, k, getattr(self, "adapter", None), self.rotary_emb, kwargs.get("position_ids"))
+
+                q, k = maybe_apply_rotary(
+                    q,
+                    k,
+                    getattr(self, "adapter", None),
+                    self.rotary_emb,
+                    kwargs.get("position_ids"),
+                )
             except Exception as e:
-                logger.warning("maybe_apply_rotary failed: %s; continuing without RoPE", e)
+                logger.warning(
+                    "maybe_apply_rotary failed: %s; continuing without RoPE", e
+                )
 
         # GQA expansion
         if self.kv_repeat > 1:
@@ -497,7 +667,8 @@ class ViGAttention(BaseAttention):
         is_decoder = (
             self.is_decoder
             or getattr(getattr(self, "config", None), "is_decoder", False)
-            or getattr(getattr(self, "config", None), "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+            or getattr(getattr(self, "config", None), "model_type", "")
+            in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
 
         # 1. Topological Graph Adjacency for 1D Token Sequences
@@ -521,10 +692,14 @@ class ViGAttention(BaseAttention):
         # Branch 1: Topological Graph Attention
         scale = 1.0 / math.sqrt(Dh)
         scores_graph = torch.matmul(q, k.transpose(-1, -2).contiguous()) * scale
-        scores_graph = scores_graph.masked_fill(~graph_adj.unsqueeze(0).unsqueeze(0), -10000.0)
+        scores_graph = scores_graph.masked_fill(
+            ~graph_adj.unsqueeze(0).unsqueeze(0), -10000.0
+        )
         if attention_mask is not None:
             scores_graph = apply_attention_mask(scores_graph, attention_mask)
-        attn_graph = torch.nan_to_num(F.softmax(scores_graph.float(), dim=-1), nan=0.0).to(dtype)
+        attn_graph = torch.nan_to_num(
+            F.softmax(scores_graph.float(), dim=-1), nan=0.0
+        ).to(dtype)
         out_graph = torch.matmul(attn_graph, v)
 
         # Branch 2: Global Linear Recurrence / Attention with denom.clamp(min=1.0)
@@ -539,18 +714,32 @@ class ViGAttention(BaseAttention):
             v_f = v.float()
 
         if is_decoder:
-            causal_tril = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
-            scores_lin = torch.matmul(q_lin, k_lin.transpose(-1, -2).contiguous()) * causal_tril
+            causal_tril = (
+                torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
+            scores_lin = (
+                torch.matmul(q_lin, k_lin.transpose(-1, -2).contiguous()) * causal_tril
+            )
             denom_lin = scores_lin.sum(dim=-1, keepdim=True)
-            out_global = (torch.matmul(scores_lin, v_f) / denom_lin.clamp(min=1.0)).to(dtype)
+            out_global = (torch.matmul(scores_lin, v_f) / denom_lin.clamp(min=1.0)).to(
+                dtype
+            )
         else:
-            kv = torch.matmul(k_lin.transpose(-1, -2).contiguous(), v_f)  # [B, H, Dh, Dh]
-            num = torch.matmul(q_lin, kv)                    # [B, H, N, Dh]
-            denom = torch.matmul(q_lin, k_lin.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous())  # [B, H, N, 1]
+            kv = torch.matmul(
+                k_lin.transpose(-1, -2).contiguous(), v_f
+            )  # [B, H, Dh, Dh]
+            num = torch.matmul(q_lin, kv)  # [B, H, N, Dh]
+            denom = torch.matmul(
+                q_lin, k_lin.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
+            )  # [B, H, N, 1]
             out_global = (num / denom.clamp(min=1.0)).to(dtype)
 
         # Gated Fusion
-        gates = torch.sigmoid(self.gate_net(hidden_states)).view(B, N, self.num_heads, 2)
+        gates = torch.sigmoid(self.gate_net(hidden_states)).view(
+            B, N, self.num_heads, 2
+        )
         gate_graph = gates[..., 0].transpose(1, 2).contiguous().unsqueeze(-1).to(dtype)
         gate_global = gates[..., 1].transpose(1, 2).contiguous().unsqueeze(-1).to(dtype)
 
@@ -612,9 +801,15 @@ def inject_vig(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+    elif hasattr(target, "layers") and isinstance(
+        target.layers, (torch.nn.ModuleList, list)
+    ):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -624,7 +819,11 @@ def inject_vig(
             res = inject_vig(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                comp_config=(
+                    comp_config
+                    if "comp_config" in locals() or "comp_config" in kwargs
+                    else None
+                ),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,
@@ -650,9 +849,21 @@ def inject_vig(
         or _cfg_get(model_config, "dim")
         or getattr(old_attn, "hidden_size", None)
         or getattr(old_attn, "embed_dim", None)
-        or (old_attn.q_proj.in_features if hasattr(old_attn, "q_proj") and hasattr(old_attn.q_proj, "in_features") else None)
-        or (old_attn.q_lin.in_features if hasattr(old_attn, "q_lin") and hasattr(old_attn.q_lin, "in_features") else None)
-        or (old_attn.query.in_features if hasattr(old_attn, "query") and hasattr(old_attn.query, "in_features") else None)
+        or (
+            old_attn.q_proj.in_features
+            if hasattr(old_attn, "q_proj") and hasattr(old_attn.q_proj, "in_features")
+            else None
+        )
+        or (
+            old_attn.q_lin.in_features
+            if hasattr(old_attn, "q_lin") and hasattr(old_attn.q_lin, "in_features")
+            else None
+        )
+        or (
+            old_attn.query.in_features
+            if hasattr(old_attn, "query") and hasattr(old_attn.query, "in_features")
+            else None
+        )
         or 768
     )
     num_heads = (
@@ -666,6 +877,7 @@ def inject_vig(
 
     if model_config is None:
         import types
+
         model_config = types.SimpleNamespace(
             hidden_size=hidden_size,
             num_attention_heads=num_heads,

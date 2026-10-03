@@ -11,16 +11,12 @@ import os
 import shutil
 import tempfile
 import unittest
-import numpy as np
 
+import numpy as np
 from framework.visualization.base import VISUALIZER_REGISTRY
 from framework.visualization.optimization_studios import (
-    CircuitTracer,
-    OutputLogitsPredictor,
-    LossLandscapeExplorer,
-    CompressionStudio,
-    FullPipelineStudio,
-)
+    CircuitTracer, CompressionStudio, FullPipelineStudio,
+    LossLandscapeExplorer, OutputLogitsPredictor)
 
 
 class TestOptimizationStudios(unittest.TestCase):

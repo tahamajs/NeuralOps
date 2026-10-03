@@ -1,16 +1,13 @@
 """Comprehensive test suite for Cosformer Attention (cosformer.py)."""
 
 import math
+from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
-from types import SimpleNamespace
-
-from framework.attentions.cosformer import (
-    CosformerAttention,
-    _rotate_half,
-    inject_cosformer,
-)
+from framework.attentions.cosformer import (CosformerAttention, _rotate_half,
+                                            inject_cosformer)
 from framework.core.registry import ATTENTION_REGISTRY
 
 

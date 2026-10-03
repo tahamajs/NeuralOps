@@ -1,12 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
 from framework.attentions.progressive_token_pruning import (
-    ProgressiveTokenPruning,
-    inject_progressive_token_pruning,
-    inject_ptp,
-)
+    ProgressiveTokenPruning, inject_progressive_token_pruning, inject_ptp)
 
 
 class MockConfig:

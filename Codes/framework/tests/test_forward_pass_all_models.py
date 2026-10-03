@@ -4,15 +4,17 @@ Runs on CPU — no GPU needed. Each test builds a tiny model (2 layers, 64 hidde
 
 Run: pytest tests/test_forward_pass_all_models.py -v
 """
+import os
+import sys
+
 import pytest
 import torch
 import torch.nn as nn
-import sys, os
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
 from framework.eval_all_models_datasets import build_model_instance
-
 
 MODEL_FAMILIES = ["bert", "roberta", "t5", "distilbert", "gpt2"]
 

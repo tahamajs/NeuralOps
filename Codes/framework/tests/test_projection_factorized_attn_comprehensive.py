@@ -1,12 +1,9 @@
 import pytest
 import torch
 import torch.nn as nn
-
 from framework.attentions.projection_factorized_attn import (
-    ProjectionFactorizedAttention,
-    inject_projection_factorized_attn,
-    inject_projection_factorized_attention,
-)
+    ProjectionFactorizedAttention, inject_projection_factorized_attention,
+    inject_projection_factorized_attn)
 
 
 class MockConfig:

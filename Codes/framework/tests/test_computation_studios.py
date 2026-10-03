@@ -7,18 +7,16 @@ import os
 import shutil
 import tempfile
 import unittest
+
 import matplotlib
+
 matplotlib.use("Agg")
 import numpy as np
 import torch
-
 from framework.visualization.base import VISUALIZER_REGISTRY
 from framework.visualization.computation_studios import (
-    FFNNeuronExplorer,
-    KVCacheMonitor,
-    WeightMatrixDecomposer,
-    LoRAAdapterStudio,
-)
+    FFNNeuronExplorer, KVCacheMonitor, LoRAAdapterStudio,
+    WeightMatrixDecomposer)
 
 
 class TestComputationStudios(unittest.TestCase):

@@ -1,14 +1,9 @@
+import pytest
 import torch
 import torch.nn as nn
-import pytest
-
-from framework.trainer.optimizers import (
-    zeropower_via_newtonschulz5,
-    Muon,
-    MuonAdamW,
-    create_muon_adamw_optimizer,
-    OPTIMIZER_REGISTRY,
-)
+from framework.trainer.optimizers import (OPTIMIZER_REGISTRY, Muon, MuonAdamW,
+                                          create_muon_adamw_optimizer,
+                                          zeropower_via_newtonschulz5)
 
 
 def test_zeropower_via_newtonschulz5():

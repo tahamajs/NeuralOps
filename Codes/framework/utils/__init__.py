@@ -13,7 +13,6 @@ from . import (
     results_saver,
     seed,
 )
-
 from .results_saver import ResultsSaver
 
 __all__ = [
@@ -32,4 +31,3 @@ __all__ = [
     "ResultsSaver",
     "seed",
 ]
-

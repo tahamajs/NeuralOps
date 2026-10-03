@@ -12,17 +12,13 @@ Verifies:
 from __future__ import annotations
 
 import unittest
+
 import torch
 import torch.nn as nn
-from transformers.pytorch_utils import Conv1D
-
 from framework.compression_engine.astro_quantizer import (
-    AstroLinear,
-    AstroQuantizer,
-    allocate_fisher_bits,
-    astro_factory,
-    quantize_dequantize_tensor,
-)
+    AstroLinear, AstroQuantizer, allocate_fisher_bits, astro_factory,
+    quantize_dequantize_tensor)
+from transformers.pytorch_utils import Conv1D
 
 
 class DummyLoRALinear(nn.Module):

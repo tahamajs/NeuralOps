@@ -2,11 +2,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.adaptive_svd_attention import (
-    AdaptiveSVDAttention,
-    inject_adaptive_svd,
-)
+from framework.attentions.adaptive_svd_attention import (AdaptiveSVDAttention,
+                                                         inject_adaptive_svd)
 from framework.core.registry import ATTENTION_REGISTRY
 
 

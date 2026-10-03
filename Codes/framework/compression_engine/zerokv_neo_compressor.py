@@ -10,6 +10,7 @@ Production-hardened with:
 - Detailed per-layer error stats logging
 
 """
+
 from __future__ import annotations
 
 import logging
@@ -91,14 +92,20 @@ class ZeroKVNeoCache:
 
         sink_k = self.k_cache[:, :, :sinks, :]
         sink_v = self.v_cache[:, :, :sinks, :]
-        win_k = self.k_cache[:, :, -window:, :] if window > 0 else self.k_cache[:, :, :0, :]
-        win_v = self.v_cache[:, :, -window:, :] if window > 0 else self.v_cache[:, :, :0, :]
+        win_k = (
+            self.k_cache[:, :, -window:, :] if window > 0 else self.k_cache[:, :, :0, :]
+        )
+        win_v = (
+            self.v_cache[:, :, -window:, :] if window > 0 else self.v_cache[:, :, :0, :]
+        )
 
         if heavy_budget > 0 and cur_len > (sinks + window):
             mid_k = self.k_cache[:, :, sinks : cur_len - window, :]
             mid_v = self.v_cache[:, :, sinks : cur_len - window, :]
             mid_norms = torch.norm(mid_k.float(), dim=-1)  # (B, H, mid_len)
-            _, top_idx = torch.topk(mid_norms, min(heavy_budget, mid_norms.size(-1)), dim=-1)
+            _, top_idx = torch.topk(
+                mid_norms, min(heavy_budget, mid_norms.size(-1)), dim=-1
+            )
             top_idx, _ = torch.sort(top_idx, dim=-1)
 
             idx_exp = top_idx.unsqueeze(-1).expand(-1, -1, -1, D)
@@ -108,8 +115,12 @@ class ZeroKVNeoCache:
             self.k_cache = torch.cat([sink_k, sel_mid_k, win_k], dim=2).contiguous()
             self.v_cache = torch.cat([sink_v, sel_mid_v, win_v], dim=2).contiguous()
         else:
-            self.k_cache = torch.cat([sink_k, win_k], dim=2).contiguous() if window > 0 else sink_k
-            self.v_cache = torch.cat([sink_v, win_v], dim=2).contiguous() if window > 0 else sink_v
+            self.k_cache = (
+                torch.cat([sink_k, win_k], dim=2).contiguous() if window > 0 else sink_k
+            )
+            self.v_cache = (
+                torch.cat([sink_v, win_v], dim=2).contiguous() if window > 0 else sink_v
+            )
 
         return self.k_cache, self.v_cache
 
@@ -155,13 +166,29 @@ class ZeroKVNeoCompressor(BaseCompressor):
         super().__init__(model, name="zerokv_neo", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
-            keep_ratio = _cfg_get(cfg, "zerokv_keep_ratio", _cfg_get(cfg, "keep_ratio", keep_ratio))
-            num_attention_sinks = _cfg_get(cfg, "zerokv_num_sinks", _cfg_get(cfg, "num_attention_sinks", num_attention_sinks))
-            heavy_hitter_ratio = _cfg_get(cfg, "zerokv_heavy_ratio", _cfg_get(cfg, "heavy_hitter_ratio", heavy_hitter_ratio))
-            max_error = _cfg_get(cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error", max_error))
+            keep_ratio = _cfg_get(
+                cfg, "zerokv_keep_ratio", _cfg_get(cfg, "keep_ratio", keep_ratio)
+            )
+            num_attention_sinks = _cfg_get(
+                cfg,
+                "zerokv_num_sinks",
+                _cfg_get(cfg, "num_attention_sinks", num_attention_sinks),
+            )
+            heavy_hitter_ratio = _cfg_get(
+                cfg,
+                "zerokv_heavy_ratio",
+                _cfg_get(cfg, "heavy_hitter_ratio", heavy_hitter_ratio),
+            )
+            max_error = _cfg_get(
+                cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error", max_error)
+            )
             max_retries = _cfg_get(cfg, "max_retries", max_retries)
-            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
-            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
+            fallback_to_original = _cfg_get(
+                cfg, "fallback_to_original", fallback_to_original
+            )
+            target_attention_only = _cfg_get(
+                cfg, "target_attention_only", target_attention_only
+            )
 
         if "keep_ratio" in kwargs and kwargs["keep_ratio"] is not None:
             keep_ratio = kwargs["keep_ratio"]
@@ -187,7 +214,10 @@ class ZeroKVNeoCompressor(BaseCompressor):
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         # Protect critical classification heads, poolers, lm_heads, and embeddings
-        if any(k in name.lower() for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
+        if any(
+            k in name.lower()
+            for k in ["classifier", "score", "lm_head", "pooler", "embedding"]
+        ):
             return False
 
         base_layer = getattr(module, "base_layer", module)
@@ -307,12 +337,24 @@ class ZeroKVNeoCompressor(BaseCompressor):
 
             # Assign pruned weights to base_layer
             if is_conv1d:
-                W_assigned = (W * best_mask.unsqueeze(1)).t().contiguous().to(dtype=orig_dtype, device=orig_device)
+                W_assigned = (
+                    (W * best_mask.unsqueeze(1))
+                    .t()
+                    .contiguous()
+                    .to(dtype=orig_dtype, device=orig_device)
+                )
             else:
-                W_assigned = (W * best_mask.unsqueeze(1)).to(dtype=orig_dtype, device=orig_device)
+                W_assigned = (W * best_mask.unsqueeze(1)).to(
+                    dtype=orig_dtype, device=orig_device
+                )
 
             if W_assigned.shape != base_layer.weight.shape:
-                logger.error("ZeroKV-Neo shape mismatch for %s: %s vs %s", name, W_assigned.shape, base_layer.weight.shape)
+                logger.error(
+                    "ZeroKV-Neo shape mismatch for %s: %s vs %s",
+                    name,
+                    W_assigned.shape,
+                    base_layer.weight.shape,
+                )
                 self.fallback_layers.append(name)
                 for p in module.parameters():
                     p.requires_grad = False
@@ -322,25 +364,48 @@ class ZeroKVNeoCompressor(BaseCompressor):
             # ZeroKV-Neo compresses in-place: base_layer already holds the pruned weight
             compressed_layer = base_layer
             # Preserve existing LoRA adapter weights if the source module has them
-            if hasattr(module, 'lora_A') and hasattr(module, 'lora_B') and \
-               module.lora_A is not None and module.lora_B is not None:
-                src_lA = getattr(module.lora_A, 'weight', module.lora_A)
-                src_lB = getattr(module.lora_B, 'weight', module.lora_B)
-                if hasattr(compressed_layer, 'lora_A') and compressed_layer.lora_A is not None:
-                    if hasattr(src_lA, 'data') and src_lA.shape == compressed_layer.lora_A.shape:
+            if (
+                hasattr(module, "lora_A")
+                and hasattr(module, "lora_B")
+                and module.lora_A is not None
+                and module.lora_B is not None
+            ):
+                src_lA = getattr(module.lora_A, "weight", module.lora_A)
+                src_lB = getattr(module.lora_B, "weight", module.lora_B)
+                if (
+                    hasattr(compressed_layer, "lora_A")
+                    and compressed_layer.lora_A is not None
+                ):
+                    if (
+                        hasattr(src_lA, "data")
+                        and src_lA.shape == compressed_layer.lora_A.shape
+                    ):
                         compressed_layer.lora_A.data.copy_(src_lA.data)
-                if hasattr(compressed_layer, 'lora_B') and compressed_layer.lora_B is not None:
-                    if hasattr(src_lB, 'data') and src_lB.shape == compressed_layer.lora_B.shape:
+                if (
+                    hasattr(compressed_layer, "lora_B")
+                    and compressed_layer.lora_B is not None
+                ):
+                    if (
+                        hasattr(src_lB, "data")
+                        and src_lB.shape == compressed_layer.lora_B.shape
+                    ):
                         compressed_layer.lora_B.data.copy_(src_lB.data)
 
-            if hasattr(module, 'base_layer'):
-                module.base_layer = compressed_layer  # put compressed layer inside wrapper
+            if hasattr(module, "base_layer"):
+                module.base_layer = (
+                    compressed_layer  # put compressed layer inside wrapper
+                )
                 # module itself (LoRALinear wrapper) remains the replacement
                 new_module = module
             else:
                 new_module = compressed_layer
-            if getattr(base_layer, "bias", None) is not None and base_layer.bias is not None:
-                b_pruned = (base_layer.bias.data.float() * best_mask).to(dtype=orig_dtype, device=orig_device)
+            if (
+                getattr(base_layer, "bias", None) is not None
+                and base_layer.bias is not None
+            ):
+                b_pruned = (base_layer.bias.data.float() * best_mask).to(
+                    dtype=orig_dtype, device=orig_device
+                )
                 base_layer.bias.data.copy_(b_pruned)
 
             self.compressed_layers.append(
@@ -432,10 +497,37 @@ class ZeroKVNeoCompressor(BaseCompressor):
 def zerokv_neo_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     """ZeroKV-Neo compressor factory function."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
-    keep_ratio = kwargs.pop("keep_ratio", _cfg_get(comp_config, "zerokv_keep_ratio", _cfg_get(comp_config, "keep_ratio", 0.3)))
-    num_sinks = kwargs.pop("num_attention_sinks", kwargs.pop("num_sinks", _cfg_get(comp_config, "zerokv_num_sinks", _cfg_get(comp_config, "num_attention_sinks", 4))))
-    heavy_ratio = kwargs.pop("heavy_hitter_ratio", kwargs.pop("heavy_ratio", _cfg_get(comp_config, "zerokv_heavy_ratio", _cfg_get(comp_config, "heavy_hitter_ratio", 0.1))))
-    target_attn = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", True))
+    keep_ratio = kwargs.pop(
+        "keep_ratio",
+        _cfg_get(
+            comp_config, "zerokv_keep_ratio", _cfg_get(comp_config, "keep_ratio", 0.3)
+        ),
+    )
+    num_sinks = kwargs.pop(
+        "num_attention_sinks",
+        kwargs.pop(
+            "num_sinks",
+            _cfg_get(
+                comp_config,
+                "zerokv_num_sinks",
+                _cfg_get(comp_config, "num_attention_sinks", 4),
+            ),
+        ),
+    )
+    heavy_ratio = kwargs.pop(
+        "heavy_hitter_ratio",
+        kwargs.pop(
+            "heavy_ratio",
+            _cfg_get(
+                comp_config,
+                "zerokv_heavy_ratio",
+                _cfg_get(comp_config, "heavy_hitter_ratio", 0.1),
+            ),
+        ),
+    )
+    target_attn = kwargs.pop(
+        "target_attention_only", _cfg_get(comp_config, "target_attention_only", True)
+    )
     compressor = ZeroKVNeoCompressor(
         model,
         keep_ratio=keep_ratio,
@@ -449,4 +541,3 @@ def zerokv_neo_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any)
     if return_stats:
         return compressed_model, stats
     return compressed_model
-

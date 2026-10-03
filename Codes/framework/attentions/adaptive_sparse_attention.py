@@ -62,10 +62,22 @@ def apply_rotary_pos_emb(
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
-        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
+            _rotate_half(q_rot) * sin.to(q_rot.dtype)
+        )
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
+            _rotate_half(k_rot) * sin.to(k_rot.dtype)
+        )
+        q = (
+            torch.cat([q_rot_embed, q_pass], dim=-1)
+            if q_pass.numel() > 0
+            else q_rot_embed
+        )
+        k = (
+            torch.cat([k_rot_embed, k_pass], dim=-1)
+            if k_pass.numel() > 0
+            else k_rot_embed
+        )
     else:
         cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
         q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
@@ -95,15 +107,21 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -151,14 +169,37 @@ class LoRALinear(nn.Module):
 
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A if self.lora_A.dtype == x.dtype else self.lora_A.to(x.dtype)
-            bb = self.lora_B if self.lora_B.dtype == x.dtype else self.lora_B.to(x.dtype)
+            bb = (
+                self.lora_B if self.lora_B.dtype == x.dtype else self.lora_B.to(x.dtype)
+            )
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
-@ATTENTION_REGISTRY.register("adaptive_sparse", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("adaptive_sparse_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("adaptive_sparse_attn", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("adaptive_sparse_attention_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+
+@ATTENTION_REGISTRY.register(
+    "adaptive_sparse",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
+    "adaptive_sparse_attention",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
+    "adaptive_sparse_attn",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
+    "adaptive_sparse_attention_attention",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
 class AdaptiveSparseAttention(BaseAttention):
     is_custom_attention: bool = True
     supports_causal = True
@@ -183,8 +224,14 @@ class AdaptiveSparseAttention(BaseAttention):
         super().__init__(config, rank)
 
         # Resolve hidden_size and num_heads safely even if config is None
-        hidden_size = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
-        num_heads = kwargs.get("num_heads") or kwargs.get("n_heads") or kwargs.get("num_attention_heads")
+        hidden_size = (
+            kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
+        )
+        num_heads = (
+            kwargs.get("num_heads")
+            or kwargs.get("n_heads")
+            or kwargs.get("num_attention_heads")
+        )
         num_kv_heads = kwargs.get("num_kv_heads") or kwargs.get("num_key_value_heads")
 
         head_dim = 0
@@ -196,15 +243,31 @@ class AdaptiveSparseAttention(BaseAttention):
             head_dim = getattr(adapter, "head_dim", 0)
 
         if not hidden_size and source_attn is not None:
-            cand = getattr(source_attn, "hidden_size", getattr(source_attn, "embed_dim", getattr(source_attn, "all_head_size", None)))
-            if cand is None and hasattr(source_attn, "q_proj") and hasattr(source_attn.q_proj, "in_features"):
+            cand = getattr(
+                source_attn,
+                "hidden_size",
+                getattr(
+                    source_attn,
+                    "embed_dim",
+                    getattr(source_attn, "all_head_size", None),
+                ),
+            )
+            if (
+                cand is None
+                and hasattr(source_attn, "q_proj")
+                and hasattr(source_attn.q_proj, "in_features")
+            ):
                 cand = source_attn.q_proj.in_features
             hidden_size = cand
 
         hidden_size = int(hidden_size or 768)
         num_heads = int(num_heads or 12)
         num_kv_heads = int(num_kv_heads or num_heads)
-        head_dim = head_dim if head_dim > 0 else (hidden_size // num_heads if num_heads > 0 else 64)
+        head_dim = (
+            head_dim
+            if head_dim > 0
+            else (hidden_size // num_heads if num_heads > 0 else 64)
+        )
 
         self.hidden_size: int = hidden_size
         self.d_model: int = hidden_size
@@ -217,10 +280,38 @@ class AdaptiveSparseAttention(BaseAttention):
 
         # Decoder & Causal detection
         model_type = getattr(config, "model_type", "").lower() if config else ""
-        is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False))) if config else False
-        _mt = (model_type or '').lower()
-        _decoder_prefixes = ('gpt', 'qwen', 'llama', 'mistral', 'gemma', 'phi', 'opt', 'bloom', 'falcon', 'olmo', 'mpt', 'stablelm')
-        if any(_mt.startswith(p) for p in _decoder_prefixes) or hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+        is_dec = (
+            getattr(
+                config,
+                "is_decoder",
+                getattr(config, "is_causal", kwargs.get("is_causal", False)),
+            )
+            if config
+            else False
+        )
+        _mt = (model_type or "").lower()
+        _decoder_prefixes = (
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
+        )
+        if (
+            any(_mt.startswith(p) for p in _decoder_prefixes)
+            or hasattr(config, "architectures")
+            and any(
+                "GPT" in str(a) or "CausalLM" in str(a)
+                for a in (getattr(config, "architectures", []) or [])
+            )
+        ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
@@ -229,12 +320,30 @@ class AdaptiveSparseAttention(BaseAttention):
 
         # Detect nested encoder architecture early
         source_cls = source_attn.__class__.__name__ if source_attn is not None else ""
-        is_nested = (
-            source_cls in ("BertSelfAttention", "RobertaSelfAttention")
-            or (source_cls.endswith(("SelfAttention", "SelfAttn")) and "distil" not in source_cls.lower())
+        is_nested = source_cls in ("BertSelfAttention", "RobertaSelfAttention") or (
+            source_cls.endswith(("SelfAttention", "SelfAttn"))
+            and "distil" not in source_cls.lower()
         )
-        has_out = any(hasattr(source_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj")) if source_attn is not None else False
-        self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", (is_nested and not has_out)))
+        has_out = (
+            any(
+                hasattr(source_attn, attr)
+                for attr in (
+                    "dense",
+                    "out_proj",
+                    "c_proj",
+                    "out_lin",
+                    "o_proj",
+                    "wo",
+                    "o",
+                    "proj",
+                )
+            )
+            if source_attn is not None
+            else False
+        )
+        self.is_nested_encoder: bool = bool(
+            kwargs.get("is_nested_encoder", (is_nested and not has_out))
+        )
 
         # Head dim fallback from source_attn if head_dim <= 0 or not resolved properly
         if source_attn is not None and getattr(source_attn, "head_dim", 0):
@@ -246,15 +355,23 @@ class AdaptiveSparseAttention(BaseAttention):
 
         # Default sparsity: lower for bidirectional encoders (0.1) than decoders (0.5)
         # Check explicit parameter, kwargs, comp_config, config
-        cfg_encoder_sparsity = getattr(comp_config, "adaptive_sparse_encoder_sparsity", kwargs.get("adaptive_sparse_encoder_sparsity"))
+        cfg_encoder_sparsity = getattr(
+            comp_config,
+            "adaptive_sparse_encoder_sparsity",
+            kwargs.get("adaptive_sparse_encoder_sparsity"),
+        )
         if cfg_encoder_sparsity is None and config is not None:
-            cfg_encoder_sparsity = getattr(config, "adaptive_sparse_encoder_sparsity", None)
+            cfg_encoder_sparsity = getattr(
+                config, "adaptive_sparse_encoder_sparsity", None
+            )
 
         if sparsity_ratio is not None:
             effective_sparsity = float(sparsity_ratio)
         elif "sparsity_ratio" in kwargs:
             effective_sparsity = float(kwargs["sparsity_ratio"])
-        elif comp_config is not None and hasattr(comp_config, "adaptive_sparsity_ratio"):
+        elif comp_config is not None and hasattr(
+            comp_config, "adaptive_sparsity_ratio"
+        ):
             effective_sparsity = float(comp_config.adaptive_sparsity_ratio)
         elif config is not None and hasattr(config, "adaptive_sparsity_ratio"):
             effective_sparsity = float(config.adaptive_sparsity_ratio)
@@ -270,21 +387,61 @@ class AdaptiveSparseAttention(BaseAttention):
 
         # LoRA rank and alpha: independent reads
         if config is not None:
-            self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank)))
-            self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
+            self.lora_rank = getattr(
+                config,
+                "lora_rank",
+                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank)),
+            )
+            self.lora_alpha = getattr(
+                config,
+                "lora_alpha",
+                getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
+            )
         elif comp_config is not None:
-            self.lora_rank = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank))
-            self.lora_alpha = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
+            self.lora_rank = getattr(
+                comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank)
+            )
+            self.lora_alpha = getattr(
+                comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)
+            )
         else:
             self.lora_rank = kwargs.get("lora_rank", lora_rank)
             self.lora_alpha = kwargs.get("lora_alpha", 32.0)
-        self.freeze_base: bool = (self.lora_rank > 0)
+        self.freeze_base: bool = self.lora_rank > 0
 
-        self.q_proj = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.k_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.q_proj = LoRALinear(
+            self.hidden_size,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.k_proj = LoRALinear(
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.v_proj = LoRALinear(
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
         out_lora_rank = 0 if self.is_nested_encoder else self.lora_rank
-        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=out_lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.hidden_size,
+            bias=True,
+            lora_rank=out_lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
         # Aliases
         self.q_lin = self.q_proj
@@ -293,28 +450,45 @@ class AdaptiveSparseAttention(BaseAttention):
         self.out_lin = self.out_proj
 
         # Per-head learnable sparsity logit initialized to target sparsity
-        init_logit = math.log(max(1e-4, min(0.9999, effective_sparsity)) / (1.0 - max(1e-4, min(0.9999, effective_sparsity))))
-        self.sparsity_logits = nn.Parameter(torch.full((self.num_heads,), fill_value=init_logit), requires_grad=True)
+        init_logit = math.log(
+            max(1e-4, min(0.9999, effective_sparsity))
+            / (1.0 - max(1e-4, min(0.9999, effective_sparsity)))
+        )
+        self.sparsity_logits = nn.Parameter(
+            torch.full((self.num_heads,), fill_value=init_logit), requires_grad=True
+        )
         self.output_scale = nn.Parameter(torch.ones(1))
 
-        dropout_p = getattr(
-            config,
-            "dropout",
+        dropout_p = (
             getattr(
                 config,
-                "hidden_dropout_prob",
-                getattr(config, "attention_probs_dropout_prob", dropout),
-            ),
-        ) if config else dropout
+                "dropout",
+                getattr(
+                    config,
+                    "hidden_dropout_prob",
+                    getattr(config, "attention_probs_dropout_prob", dropout),
+                ),
+            )
+            if config
+            else dropout
+        )
         self.dropout = nn.Dropout(dropout_p)
         self.source_attn = None
-        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
+        self.rotary_emb = (
+            getattr(source_attn, "rotary_emb", None)
+            if source_attn is not None
+            else None
+        )
 
         self.has_relative_attention_bias: bool = False
         self.relative_attention_bias: nn.Embedding | None = None
         if config is not None:
-            self.relative_attention_num_buckets: int = getattr(config, "relative_attention_num_buckets", 32)
-            self.relative_attention_max_distance: int = getattr(config, "relative_attention_max_distance", 128)
+            self.relative_attention_num_buckets: int = getattr(
+                config, "relative_attention_num_buckets", 32
+            )
+            self.relative_attention_max_distance: int = getattr(
+                config, "relative_attention_max_distance", 128
+            )
         else:
             self.relative_attention_num_buckets = 32
             self.relative_attention_max_distance = 128
@@ -349,7 +523,11 @@ class AdaptiveSparseAttention(BaseAttention):
         return self.v_proj
 
     def _relative_position_bucket(
-        self, relative_position: torch.Tensor, bidirectional: bool = True, num_buckets: int = 32, max_distance: int = 128
+        self,
+        relative_position: torch.Tensor,
+        bidirectional: bool = True,
+        num_buckets: int = 32,
+        max_distance: int = 128,
     ) -> torch.Tensor:
         relative_buckets = 0
         if bidirectional:
@@ -357,7 +535,9 @@ class AdaptiveSparseAttention(BaseAttention):
             relative_buckets += (relative_position > 0).to(torch.long) * num_buckets
             relative_position = torch.abs(relative_position)
         else:
-            relative_position = -torch.min(relative_position, torch.zeros_like(relative_position))
+            relative_position = -torch.min(
+                relative_position, torch.zeros_like(relative_position)
+            )
         max_exact = num_buckets // 2
         is_small = relative_position < max_exact
         relative_position_if_large = max_exact + (
@@ -366,15 +546,24 @@ class AdaptiveSparseAttention(BaseAttention):
             * (num_buckets - max_exact)
         ).to(torch.long)
         relative_position_if_large = torch.min(
-            relative_position_if_large, torch.full_like(relative_position_if_large, num_buckets - 1)
+            relative_position_if_large,
+            torch.full_like(relative_position_if_large, num_buckets - 1),
         )
-        relative_buckets += torch.where(is_small, relative_position, relative_position_if_large)
+        relative_buckets += torch.where(
+            is_small, relative_position, relative_position_if_large
+        )
         return relative_buckets
 
-    def compute_bias(self, query_length: int, key_length: int, device: torch.device | None = None) -> torch.Tensor:
+    def compute_bias(
+        self, query_length: int, key_length: int, device: torch.device | None = None
+    ) -> torch.Tensor:
         if self.relative_attention_bias is not None:
-            context_position = torch.arange(query_length, dtype=torch.long, device=device)[:, None]
-            memory_position = torch.arange(key_length, dtype=torch.long, device=device)[None, :]
+            context_position = torch.arange(
+                query_length, dtype=torch.long, device=device
+            )[:, None]
+            memory_position = torch.arange(key_length, dtype=torch.long, device=device)[
+                None, :
+            ]
             relative_position = memory_position - context_position
             relative_position_bucket = self._relative_position_bucket(
                 relative_position,
@@ -405,43 +594,93 @@ class AdaptiveSparseAttention(BaseAttention):
                 pass
 
         # 2. GPT-2 Fused c_attn / c_proj (handling Conv1D and LoRALinear wrapper)
-        if hasattr(src, "c_attn") and src.c_attn is not None and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+        if (
+            hasattr(src, "c_attn")
+            and src.c_attn is not None
+            and (
+                extracted["q"][0] is None
+                or extracted["k"][0] is None
+                or extracted["v"][0] is None
+            )
+        ):
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             weight = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if weight is not None:
                 weight = weight.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (weight.ndim == 2 and weight.shape[0] < weight.shape[1]):
+                if (
+                    (c_attn_mod.__class__.__name__ == "Conv1D")
+                    or (base_c.__class__.__name__ == "Conv1D")
+                    or (weight.ndim == 2 and weight.shape[0] < weight.shape[1])
+                ):
                     weight = weight.t().contiguous()
                 split_size = weight.shape[0] // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 bias_data = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (weight[:split_size, :], bias_data[:split_size] if bias_data is not None else None)
-                extracted["k"] = (weight[split_size : 2 * split_size, :], bias_data[split_size : 2 * split_size] if bias_data is not None else None)
-                extracted["v"] = (weight[2 * split_size :, :], bias_data[2 * split_size :] if bias_data is not None else None)
+                extracted["q"] = (
+                    weight[:split_size, :],
+                    bias_data[:split_size] if bias_data is not None else None,
+                )
+                extracted["k"] = (
+                    weight[split_size : 2 * split_size, :],
+                    (
+                        bias_data[split_size : 2 * split_size]
+                        if bias_data is not None
+                        else None
+                    ),
+                )
+                extracted["v"] = (
+                    weight[2 * split_size :, :],
+                    bias_data[2 * split_size :] if bias_data is not None else None,
+                )
 
-        if hasattr(src, "c_proj") and src.c_proj is not None and extracted["o"][0] is None:
+        if (
+            hasattr(src, "c_proj")
+            and src.c_proj is not None
+            and extracted["o"][0] is None
+        ):
             c_proj_mod = src.c_proj
             base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
             w_o = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
             if w_o is not None:
                 w_o = w_o.data.clone()
-                if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (w_o.ndim == 2 and w_o.shape[0] < w_o.shape[1]):
+                if (
+                    (c_proj_mod.__class__.__name__ == "Conv1D")
+                    or (base_o.__class__.__name__ == "Conv1D")
+                    or (w_o.ndim == 2 and w_o.shape[0] < w_o.shape[1])
+                ):
                     w_o = w_o.t().contiguous()
                 bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                extracted["o"] = (w_o, bias_o.data.clone() if bias_o is not None else None)
+                extracted["o"] = (
+                    w_o,
+                    bias_o.data.clone() if bias_o is not None else None,
+                )
 
         # 3. RoBERTa / BERT Nested Encoder handling
-        if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
+        if hasattr(src, "self") and (
+            extracted["q"][0] is None
+            or extracted["k"][0] is None
+            or extracted["v"][0] is None
+        ):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
-                    extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                    extracted[proj_key] = (
+                        mod.weight.data.clone(),
+                        mod.bias.data.clone() if mod.bias is not None else None,
+                    )
 
-        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
+        if (
+            hasattr(src, "output")
+            and hasattr(src.output, "dense")
+            and extracted["o"][0] is None
+        ):
             dense = src.output.dense
-            extracted["o"] = (dense.weight.data.clone(), dense.bias.data.clone() if dense.bias is not None else None)
+            extracted["o"] = (
+                dense.weight.data.clone(),
+                dense.bias.data.clone() if dense.bias is not None else None,
+            )
 
         # 4. Modern Decoders (Qwen3.5, LLaMA, Mistral) & DistilBERT
         named_map = {
@@ -456,12 +695,27 @@ class AdaptiveSparseAttention(BaseAttention):
                     if hasattr(src, name):
                         layer = getattr(src, name)
                         if hasattr(layer, "weight"):
-                            extracted[proj] = (layer.weight.data.clone(), getattr(layer, "bias", None))
+                            extracted[proj] = (
+                                layer.weight.data.clone(),
+                                getattr(layer, "bias", None),
+                            )
                             break
 
         # Detect nested encoder architecture
         cls_name = getattr(src, "__class__", type(src)).__name__
-        has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+        has_out_proj = any(
+            hasattr(src, attr)
+            for attr in (
+                "dense",
+                "out_proj",
+                "c_proj",
+                "out_lin",
+                "o_proj",
+                "wo",
+                "o",
+                "proj",
+            )
+        )
         self.is_nested_encoder = (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
@@ -474,17 +728,25 @@ class AdaptiveSparseAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            raise RuntimeError(f"AdaptiveSparseAttention missing required weights for projections: {missing}")
+            raise RuntimeError(
+                f"AdaptiveSparseAttention missing required weights for projections: {missing}"
+            )
 
         # Frobenius norm validation on slices
-        for proj_key, target_mod in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj)]:
+        for proj_key, target_mod in [
+            ("q", self.q_proj),
+            ("k", self.k_proj),
+            ("v", self.v_proj),
+        ]:
             w = extracted[proj_key][0]
             if w is not None:
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
                 norm = float(torch.norm(w[:out_d, :in_d].float()).item())
                 if norm < 1e-4:
-                    raise RuntimeError(f"AdaptiveSparseAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm:.6f})")
+                    raise RuntimeError(
+                        f"AdaptiveSparseAttention extracted weight for {proj_key} has near-zero Frobenius norm ({norm:.6f})"
+                    )
 
         if extracted["o"][0] is not None:
             w_o = extracted["o"][0]
@@ -492,20 +754,31 @@ class AdaptiveSparseAttention(BaseAttention):
             in_d = min(self.out_proj.weight.size(1), w_o.size(1))
             norm_o = float(torch.norm(w_o[:out_d, :in_d].float()).item())
             if norm_o < 1e-4:
-                raise RuntimeError(f"AdaptiveSparseAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o:.6f})")
+                raise RuntimeError(
+                    f"AdaptiveSparseAttention extracted weight for output projection has near-zero Frobenius norm ({norm_o:.6f})"
+                )
 
         # Copy into projection modules
         with torch.no_grad():
-            for proj_key, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj), ("o", self.out_proj)]:
+            for proj_key, target in [
+                ("q", self.q_proj),
+                ("k", self.k_proj),
+                ("v", self.v_proj),
+                ("o", self.out_proj),
+            ]:
                 w, b = extracted[proj_key]
                 if w is not None:
                     target_w = target.weight
                     out_d, in_d = target_w.shape
                     src_out, src_in = w.shape
-                    target_w.data[:min(out_d, src_out), :min(in_d, src_in)].copy_(w[:min(out_d, src_out), :min(in_d, src_in)])
+                    target_w.data[: min(out_d, src_out), : min(in_d, src_in)].copy_(
+                        w[: min(out_d, src_out), : min(in_d, src_in)]
+                    )
                     if b is not None and target.bias is not None:
                         b_val = b.data if isinstance(b, nn.Parameter) else b
-                        target.bias.data[:min(len(target.bias), len(b_val))].copy_(b_val[:min(len(target.bias), len(b_val))])
+                        target.bias.data[: min(len(target.bias), len(b_val))].copy_(
+                            b_val[: min(len(target.bias), len(b_val))]
+                        )
                 elif proj_key == "o" and self.is_nested_encoder:
                     min_d = min(target.weight.shape[0], target.weight.shape[1])
                     target.weight.data.zero_()
@@ -518,7 +791,10 @@ class AdaptiveSparseAttention(BaseAttention):
 
         if hasattr(src, "has_relative_attention_bias"):
             self.has_relative_attention_bias = bool(src.has_relative_attention_bias)
-        if hasattr(src, "relative_attention_bias") and src.relative_attention_bias is not None:
+        if (
+            hasattr(src, "relative_attention_bias")
+            and src.relative_attention_bias is not None
+        ):
             self.relative_attention_bias = src.relative_attention_bias
             self.has_relative_attention_bias = True
         if hasattr(src, "is_decoder"):
@@ -557,12 +833,30 @@ class AdaptiveSparseAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
-        K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        K = (
+            self.k_proj(kv_input)
+            .view(B, N_k, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        V = (
+            self.v_proj(kv_input)
+            .view(B, N_k, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # Apply RoPE (accept from position_embeddings or fallback to rotary_emb)
-        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
-        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
+        pos_emb = (
+            position_embeddings
+            if position_embeddings is not None
+            else kwargs.get("position_embeddings")
+        )
+        if (
+            pos_emb is not None
+            and isinstance(pos_emb, (tuple, list))
+            and len(pos_emb) >= 2
+        ):
             cos, sin = pos_emb[0], pos_emb[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
         elif self.rotary_emb is not None:
@@ -604,7 +898,7 @@ class AdaptiveSparseAttention(BaseAttention):
             V = repeat_kv(V, self.kv_repeat)
 
         chunk_size = 64
-        scale = d ** -0.5
+        scale = d**-0.5
 
         # Handle T5 position bias
         position_bias = kwargs.get("position_bias")
@@ -616,11 +910,14 @@ class AdaptiveSparseAttention(BaseAttention):
         is_decoder = (
             self.is_decoder
             or getattr(self.config, "is_decoder", False)
-            or getattr(self.config, "model_type", "") in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
+            or getattr(self.config, "model_type", "")
+            in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
 
         sparsity_per_head = torch.sigmoid(self.sparsity_logits).clamp(0.0, 0.95)  # [H]
-        k_per_head = torch.clamp(((1.0 - sparsity_per_head) * N_k).long(), min=1, max=N_k)  # [H]
+        k_per_head = torch.clamp(
+            ((1.0 - sparsity_per_head) * N_k).long(), min=1, max=N_k
+        )  # [H]
         k_indices_base = (k_per_head - 1).view(1, H, 1, 1)
 
         valid_m = None
@@ -637,18 +934,26 @@ class AdaptiveSparseAttention(BaseAttention):
             q_chunk = Q[:, :, q_start:q_end, :]  # [B, H, C_q, d]
             C_q = q_end - q_start
 
-            scores_chunk = torch.matmul(q_chunk, K.transpose(-2, -1).contiguous()) * scale  # [B, H, C_q, N_k]
+            scores_chunk = (
+                torch.matmul(q_chunk, K.transpose(-2, -1).contiguous()) * scale
+            )  # [B, H, C_q, N_k]
 
             if position_bias is not None:
                 pb_chunk = position_bias[:, :, q_start:q_end, :]
                 if mask is not None and mask.dim() == 4:
-                    pb_chunk = pb_chunk + mask[:, :, q_start:q_end, :].to(scores_chunk.dtype)
+                    pb_chunk = pb_chunk + mask[:, :, q_start:q_end, :].to(
+                        scores_chunk.dtype
+                    )
                 scores_chunk = scores_chunk + pb_chunk.to(scores_chunk.dtype)
             elif mask is not None:
                 if mask.dim() == 4:
-                    scores_chunk = scores_chunk + mask[:, :, q_start:q_end, :].to(scores_chunk.dtype)
+                    scores_chunk = scores_chunk + mask[:, :, q_start:q_end, :].to(
+                        scores_chunk.dtype
+                    )
                 elif valid_m is not None:
-                    scores_chunk = scores_chunk.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
+                    scores_chunk = scores_chunk.masked_fill(
+                        (~valid_m).unsqueeze(1).unsqueeze(2), -10000.0
+                    )
 
             if is_decoder:
                 q_idx = torch.arange(q_start, q_end, device=device).view(1, 1, C_q, 1)
@@ -665,7 +970,9 @@ class AdaptiveSparseAttention(BaseAttention):
                 soft_mask = torch.sigmoid((scores_chunk - topk_thresh) / temperature)
                 scores_chunk = scores_chunk + torch.log(soft_mask + 1e-8)
 
-            attn_chunk = torch.nan_to_num(F.softmax(scores_chunk.float(), dim=-1), nan=0.0).to(dtype)
+            attn_chunk = torch.nan_to_num(
+                F.softmax(scores_chunk.float(), dim=-1), nan=0.0
+            ).to(dtype)
             attn_chunk = self.dropout(attn_chunk)
 
             if head_mask is not None:
@@ -779,22 +1086,32 @@ def inject_adaptive_sparse(
         return None
 
     hidden_size = (
-        getattr(src_attn, 'hidden_size', None) or
-        getattr(src_attn, 'embed_dim', None) or
-        getattr(src_attn, 'dim', None) or
-        (src_attn.q_proj.in_features if hasattr(src_attn, 'q_proj') and hasattr(src_attn.q_proj, 'in_features') else None) or
-        (src_attn.q_lin.in_features if hasattr(src_attn, 'q_lin') and hasattr(src_attn.q_lin, 'in_features') else None) or
-        (getattr(target, 'in_features', None) if target is not None else None) or
-        getattr(cfg, 'hidden_size', getattr(cfg, 'dim', 64))
+        getattr(src_attn, "hidden_size", None)
+        or getattr(src_attn, "embed_dim", None)
+        or getattr(src_attn, "dim", None)
+        or (
+            src_attn.q_proj.in_features
+            if hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features")
+            else None
+        )
+        or (
+            src_attn.q_lin.in_features
+            if hasattr(src_attn, "q_lin") and hasattr(src_attn.q_lin, "in_features")
+            else None
+        )
+        or (getattr(target, "in_features", None) if target is not None else None)
+        or getattr(cfg, "hidden_size", getattr(cfg, "dim", 64))
     )
     num_heads = (
-        getattr(src_attn, 'num_heads', None) or
-        getattr(src_attn, 'num_attention_heads', None) or
-        getattr(src_attn, 'n_heads', None) or
-        getattr(cfg, 'num_attention_heads', getattr(cfg, 'n_heads', 4))
+        getattr(src_attn, "num_heads", None)
+        or getattr(src_attn, "num_attention_heads", None)
+        or getattr(src_attn, "n_heads", None)
+        or getattr(cfg, "num_attention_heads", getattr(cfg, "n_heads", 4))
     )
 
-    sparsity_ratio = getattr(comp_config, "adaptive_sparsity_ratio", kwargs.get("sparsity_ratio"))
+    sparsity_ratio = getattr(
+        comp_config, "adaptive_sparsity_ratio", kwargs.get("sparsity_ratio")
+    )
     dropout = getattr(comp_config, "dropout", kwargs.get("dropout", 0.1))
 
     try:
@@ -818,7 +1135,9 @@ def inject_adaptive_sparse(
             if hasattr(target.attention, "self"):
                 target.attention.self = new_block
                 # Outer dense wrapping for nested encoder
-                if hasattr(target.attention, "output") and hasattr(target.attention.output, "dense"):
+                if hasattr(target.attention, "output") and hasattr(
+                    target.attention.output, "dense"
+                ):
                     outer_dense = target.attention.output.dense
                     if not isinstance(outer_dense, LoRALinear):
                         wrapped_dense = LoRALinear(
@@ -830,7 +1149,10 @@ def inject_adaptive_sparse(
                             freeze_base=True,
                         )
                         wrapped_dense.weight.data.copy_(outer_dense.weight.data)
-                        if outer_dense.bias is not None and wrapped_dense.bias is not None:
+                        if (
+                            outer_dense.bias is not None
+                            and wrapped_dense.bias is not None
+                        ):
                             wrapped_dense.bias.data.copy_(outer_dense.bias.data)
                         target.attention.output.dense = wrapped_dense
             else:

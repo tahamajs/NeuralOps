@@ -29,7 +29,6 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
@@ -39,7 +38,9 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     if n_rep == 1:
         return hidden_states
     batch, num_kv_heads, slen, head_dim = hidden_states.shape
-    hidden_states = hidden_states[:, :, None, :, :].expand(batch, num_kv_heads, n_rep, slen, head_dim)
+    hidden_states = hidden_states[:, :, None, :, :].expand(
+        batch, num_kv_heads, n_rep, slen, head_dim
+    )
     return hidden_states.reshape(batch, num_kv_heads * n_rep, slen, head_dim)
 
 
@@ -108,15 +109,21 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -157,12 +164,28 @@ class LoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         target_dtype = x.dtype
-        w = self.weight.to(target_dtype) if self.weight.dtype != target_dtype else self.weight
-        b = self.bias.to(target_dtype) if (self.bias is not None and self.bias.dtype != target_dtype) else self.bias
+        w = (
+            self.weight.to(target_dtype)
+            if self.weight.dtype != target_dtype
+            else self.weight
+        )
+        b = (
+            self.bias.to(target_dtype)
+            if (self.bias is not None and self.bias.dtype != target_dtype)
+            else self.bias
+        )
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            a = self.lora_A.to(target_dtype) if self.lora_A.dtype != target_dtype else self.lora_A
-            bb = self.lora_B.to(target_dtype) if self.lora_B.dtype != target_dtype else self.lora_B
+            a = (
+                self.lora_A.to(target_dtype)
+                if self.lora_A.dtype != target_dtype
+                else self.lora_A
+            )
+            bb = (
+                self.lora_B.to(target_dtype)
+                if self.lora_B.dtype != target_dtype
+                else self.lora_B
+            )
             lora_out = F.linear(F.linear(x, a), bb) * self.lora_scaling
             out = out + lora_out
         return out.to(target_dtype)
@@ -194,14 +217,16 @@ class ExpertChoiceMoE(nn.Module):
         nn.init.uniform_(self.router.weight, -0.01, 0.01)
 
         expert_hidden_dim = max(32, d_model // 4)
-        self.experts = nn.ModuleList([
-            nn.Sequential(
-                nn.Linear(d_model, expert_hidden_dim),
-                nn.GELU(),
-                nn.Linear(expert_hidden_dim, d_model),
-            )
-            for _ in range(n_experts)
-        ])
+        self.experts = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Linear(d_model, expert_hidden_dim),
+                    nn.GELU(),
+                    nn.Linear(expert_hidden_dim, d_model),
+                )
+                for _ in range(n_experts)
+            ]
+        )
 
         # Active MoE expert representation
         for expert in self.experts:
@@ -219,8 +244,13 @@ class ExpertChoiceMoE(nn.Module):
             logits = self.router(self.router_ln(x_flat))
         else:
             normed = F.layer_norm(x_flat, (D,))
-            if not hasattr(self, "_dynamic_router") or self._dynamic_router.in_features != D:
-                self._dynamic_router = nn.Linear(D, self.n_experts, bias=False).to(device=x.device, dtype=x.dtype)
+            if (
+                not hasattr(self, "_dynamic_router")
+                or self._dynamic_router.in_features != D
+            ):
+                self._dynamic_router = nn.Linear(D, self.n_experts, bias=False).to(
+                    device=x.device, dtype=x.dtype
+                )
                 nn.init.uniform_(self._dynamic_router.weight, -0.01, 0.01)
             logits = self._dynamic_router(normed)
 
@@ -240,29 +270,54 @@ class ExpertChoiceMoE(nn.Module):
             if selected_x.size(-1) == self.d_model:
                 expert_out = self.experts[e](selected_x)
             else:
-                if not hasattr(self, f"_expert_in_proj_{e}") or getattr(self, f"_expert_in_proj_{e}").in_features != D:
-                    setattr(self, f"_expert_in_proj_{e}", nn.Linear(D, self.d_model).to(device=x.device, dtype=x.dtype))
-                    setattr(self, f"_expert_out_proj_{e}", nn.Linear(self.d_model, D).to(device=x.device, dtype=x.dtype))
+                if (
+                    not hasattr(self, f"_expert_in_proj_{e}")
+                    or getattr(self, f"_expert_in_proj_{e}").in_features != D
+                ):
+                    setattr(
+                        self,
+                        f"_expert_in_proj_{e}",
+                        nn.Linear(D, self.d_model).to(device=x.device, dtype=x.dtype),
+                    )
+                    setattr(
+                        self,
+                        f"_expert_out_proj_{e}",
+                        nn.Linear(self.d_model, D).to(device=x.device, dtype=x.dtype),
+                    )
                 proj_in = getattr(self, f"_expert_in_proj_{e}")
                 proj_out = getattr(self, f"_expert_out_proj_{e}")
                 expert_out = proj_out(self.experts[e](proj_in(selected_x)))
 
-            update_val = (expert_out.to(out_flat.dtype) * topk_vals.unsqueeze(-1).to(out_flat.dtype)).to(dtype=out_flat.dtype)
+            update_val = (
+                expert_out.to(out_flat.dtype)
+                * topk_vals.unsqueeze(-1).to(out_flat.dtype)
+            ).to(dtype=out_flat.dtype)
             out_flat.index_add_(0, topk_indices, update_val)
 
         # Auxiliary load balancing loss
         prob_mean = F.softmax(logits.float() / 1.0, dim=-1).mean(dim=0)
-        self.aux_loss = self.n_experts * torch.sum(prob_mean ** 2)
+        self.aux_loss = self.n_experts * torch.sum(prob_mean**2)
 
         return out_flat.view(B, L, D)
 
 
-@ATTENTION_REGISTRY.register("expert_choice_moe", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("expert_choice_moe_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "expert_choice_moe",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
+    "expert_choice_moe_attention",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
 class ExpertChoiceMoEAttention(BaseAttention):
     r"""Expert Choice MoE Multi-Head Attention Module."""
 
     is_custom_attention: bool = True
+
     def __init__(
         self,
         config: Any | None = None,
@@ -280,8 +335,14 @@ class ExpertChoiceMoEAttention(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
         cfg_obj = getattr(config, "text_config", config) if config is not None else None
-        hidden_size = getattr(cfg_obj, "hidden_size", None) if cfg_obj is not None else None
-        num_heads = getattr(cfg_obj, "num_attention_heads", None) if cfg_obj is not None else None
+        hidden_size = (
+            getattr(cfg_obj, "hidden_size", None) if cfg_obj is not None else None
+        )
+        num_heads = (
+            getattr(cfg_obj, "num_attention_heads", None)
+            if cfg_obj is not None
+            else None
+        )
 
         if hidden_size is None and source_attn is not None:
             for cand in ["q_lin", "query", "q_proj", "c_attn", "in_proj_weight", "qkv"]:
@@ -301,26 +362,72 @@ class ExpertChoiceMoEAttention(BaseAttention):
         super().__init__(config, rank)
         self.dim = int(hidden_size)
         self.num_heads = int(num_heads)
-        self.num_kv_heads = getattr(config, "num_key_value_heads", self.num_heads) if config is not None else self.num_heads
-        self.head_dim = getattr(config, "head_dim", None) or (self.dim // max(1, self.num_heads))
+        self.num_kv_heads = (
+            getattr(config, "num_key_value_heads", self.num_heads)
+            if config is not None
+            else self.num_heads
+        )
+        self.head_dim = getattr(config, "head_dim", None) or (
+            self.dim // max(1, self.num_heads)
+        )
         self.all_head_size = self.num_heads * self.head_dim
         self.kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         # Static layer index
-        resolved_layer_id = layer_id if layer_id is not None else (layer_idx if layer_idx is not None else kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
+        resolved_layer_id = (
+            layer_id
+            if layer_id is not None
+            else (
+                layer_idx
+                if layer_idx is not None
+                else kwargs.get("layer_id", kwargs.get("layer_idx", 0))
+            )
+        )
         self.layer_idx: int = int(resolved_layer_id)
 
         # LoRA adaptation configuration
-        self.lora_rank: int = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
-        self.lora_alpha: float = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
-        self.freeze_base: bool = (self.lora_rank > 0)
+        self.lora_rank: int = getattr(
+            config,
+            "lora_rank",
+            getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)),
+        )
+        self.lora_alpha: float = getattr(
+            config,
+            "lora_alpha",
+            getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
+        )
+        self.freeze_base: bool = self.lora_rank > 0
 
         # Decoder & nested encoder detection
         model_type = getattr(config, "model_type", "").lower()
-        is_dec = getattr(config, "is_decoder", getattr(config, "is_causal", kwargs.get("is_causal", False)))
-        decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
-        if any(model_type.startswith(p) for p in decoder_prefixes) or hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+        is_dec = getattr(
+            config,
+            "is_decoder",
+            getattr(config, "is_causal", kwargs.get("is_causal", False)),
+        )
+        decoder_prefixes = (
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
+        )
+        if (
+            any(model_type.startswith(p) for p in decoder_prefixes)
+            or hasattr(config, "architectures")
+            and any(
+                "GPT" in str(a) or "CausalLM" in str(a)
+                for a in (getattr(config, "architectures", []) or [])
+            )
+        ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
@@ -329,16 +436,52 @@ class ExpertChoiceMoEAttention(BaseAttention):
         self.is_nested_encoder: bool = False
 
         # Multi-head projections equipped with LoRA adapters
-        self.q_lin = LoRALinear(self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.k_lin = LoRALinear(self.dim, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.v_lin = LoRALinear(self.dim, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.out_lin = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.q_lin = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.k_lin = LoRALinear(
+            self.dim,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.v_lin = LoRALinear(
+            self.dim,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.out_lin = LoRALinear(
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
-        self.moe = ExpertChoiceMoE(self.all_head_size, n_experts=n_experts, capacity_factor=capacity_factor)
+        self.moe = ExpertChoiceMoE(
+            self.all_head_size, n_experts=n_experts, capacity_factor=capacity_factor
+        )
         # Trainable gate for MoE output contribution (initialized with negative bias for smooth ramp-up)
         self.moe_gate = nn.Parameter(torch.tensor(float(moe_init_gate)))
 
-        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
+        dropout_p = (
+            getattr(
+                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
+            )
+            if config
+            else 0.1
+        )
         self.dropout = nn.Dropout(dropout_p)
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
 
@@ -350,31 +493,56 @@ class ExpertChoiceMoEAttention(BaseAttention):
 
     # Compatibility properties
     @property
-    def query(self) -> LoRALinear: return self.q_lin
+    def query(self) -> LoRALinear:
+        return self.q_lin
+
     @property
-    def key(self) -> LoRALinear: return self.k_lin
+    def key(self) -> LoRALinear:
+        return self.k_lin
+
     @property
-    def value(self) -> LoRALinear: return self.v_lin
+    def value(self) -> LoRALinear:
+        return self.v_lin
+
     @property
-    def dense(self) -> LoRALinear: return self.out_lin
+    def dense(self) -> LoRALinear:
+        return self.out_lin
+
     @property
-    def o_proj(self) -> LoRALinear: return self.out_lin
+    def o_proj(self) -> LoRALinear:
+        return self.out_lin
+
     @property
-    def out_proj(self) -> LoRALinear: return self.out_lin
+    def out_proj(self) -> LoRALinear:
+        return self.out_lin
+
     @property
-    def q_proj(self) -> LoRALinear: return self.q_lin
+    def q_proj(self) -> LoRALinear:
+        return self.q_lin
+
     @property
-    def k_proj(self) -> LoRALinear: return self.k_lin
+    def k_proj(self) -> LoRALinear:
+        return self.k_lin
+
     @property
-    def v_proj(self) -> LoRALinear: return self.v_lin
+    def v_proj(self) -> LoRALinear:
+        return self.v_lin
+
     @property
-    def W_q(self) -> LoRALinear: return self.q_lin
+    def W_q(self) -> LoRALinear:
+        return self.q_lin
+
     @property
-    def W_k(self) -> LoRALinear: return self.k_lin
+    def W_k(self) -> LoRALinear:
+        return self.k_lin
+
     @property
-    def W_v(self) -> LoRALinear: return self.v_lin
+    def W_v(self) -> LoRALinear:
+        return self.v_lin
+
     @property
-    def c_proj(self) -> LoRALinear: return self.out_lin
+    def c_proj(self) -> LoRALinear:
+        return self.out_lin
 
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
         r"""Copy projection weights from pretrained attention module with Frobenius norm verification."""
@@ -382,17 +550,35 @@ class ExpertChoiceMoEAttention(BaseAttention):
             return
 
         cls_name = pretrained_attn.__class__.__name__
-        has_out_lin = hasattr(pretrained_attn, "out_lin") or hasattr(pretrained_attn, "c_proj") or hasattr(pretrained_attn, "o_proj")
+        has_out_lin = (
+            hasattr(pretrained_attn, "out_lin")
+            or hasattr(pretrained_attn, "c_proj")
+            or hasattr(pretrained_attn, "o_proj")
+        )
         is_nested = False
         if (
-            hasattr(pretrained_attn, "self")
-            and hasattr(pretrained_attn.self, "query")
-            and hasattr(pretrained_attn, "output")
-            and hasattr(pretrained_attn.output, "dense")
-        ) or (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
-            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
-        ) and not has_out_lin:
+            (
+                hasattr(pretrained_attn, "self")
+                and hasattr(pretrained_attn.self, "query")
+                and hasattr(pretrained_attn, "output")
+                and hasattr(pretrained_attn.output, "dense")
+            )
+            or (
+                cls_name
+                in [
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                ]
+                or (
+                    cls_name.endswith("SelfAttention")
+                    and "distil" not in cls_name.lower()
+                )
+            )
+            and not has_out_lin
+        ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -409,46 +595,81 @@ class ExpertChoiceMoEAttention(BaseAttention):
         # 1. GPT-2: Fused c_attn + c_proj
         if hasattr(pretrained_attn, "c_attn") and pretrained_attn.c_attn is not None:
             c_attn_mod = pretrained_attn.c_attn
-            if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
+            if hasattr(c_attn_mod, "merge") and not getattr(
+                c_attn_mod, "merged", False
+            ):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
-                    print(f'copy_weights failed: {e}')
+                    print(f"copy_weights failed: {e}")
                     logger.warning(f"copy_weights failed: {e}")
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if (c_attn_mod.__class__.__name__ == "Conv1D") or (base_c.__class__.__name__ == "Conv1D") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                if (
+                    (c_attn_mod.__class__.__name__ == "Conv1D")
+                    or (base_c.__class__.__name__ == "Conv1D")
+                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
+                ):
                     c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
+                extracted["q"] = (
+                    c_w[:split_size, :],
+                    c_b[:split_size] if c_b is not None else None,
+                )
+                extracted["k"] = (
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted["v"] = (
+                    c_w[2 * split_size :, :],
+                    c_b[2 * split_size :] if c_b is not None else None,
+                )
 
-            if hasattr(pretrained_attn, "c_proj") and pretrained_attn.c_proj is not None:
+            if (
+                hasattr(pretrained_attn, "c_proj")
+                and pretrained_attn.c_proj is not None
+            ):
                 c_proj_mod = pretrained_attn.c_proj
                 base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if (c_proj_mod.__class__.__name__ == "Conv1D") or (base_o.__class__.__name__ == "Conv1D") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                    if (
+                        (c_proj_mod.__class__.__name__ == "Conv1D")
+                        or (base_o.__class__.__name__ == "Conv1D")
+                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
+                    ):
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    extracted["o"] = (
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
+                    )
 
         # 2. RoBERTa / BERT nested self-attention
-        elif hasattr(pretrained_attn, "self") and hasattr(pretrained_attn.self, "query"):
+        elif hasattr(pretrained_attn, "self") and hasattr(
+            pretrained_attn.self, "query"
+        ):
             s = pretrained_attn.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
-                    extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
-            if hasattr(pretrained_attn, "output") and hasattr(pretrained_attn.output, "dense"):
+                    extracted[proj_key] = (
+                        mod.weight.data.clone(),
+                        mod.bias.data.clone() if mod.bias is not None else None,
+                    )
+            if hasattr(pretrained_attn, "output") and hasattr(
+                pretrained_attn.output, "dense"
+            ):
                 out_mod = pretrained_attn.output.dense
-                extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
+                extracted["o"] = (
+                    out_mod.weight.data.clone(),
+                    out_mod.bias.data.clone() if out_mod.bias is not None else None,
+                )
 
         # 3. Standard linear projections (DistilBERT, Qwen, LLaMA)
         else:
@@ -463,14 +684,22 @@ class ExpertChoiceMoEAttention(BaseAttention):
                     if hasattr(pretrained_attn, name):
                         mod = getattr(pretrained_attn, name)
                         if mod is not None and hasattr(mod, "weight"):
-                            extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                            extracted[proj_key] = (
+                                mod.weight.data.clone(),
+                                mod.bias.data.clone() if mod.bias is not None else None,
+                            )
                             break
 
         # Fallback via UniversalAdapter
-        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(pretrained_attn, k)
@@ -479,7 +708,11 @@ class ExpertChoiceMoEAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
-        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing_after:
             logger.warning(
                 f"ExpertChoiceMoEAttention copy_weights failed: missing mandatory projections {missing_after} "
@@ -506,23 +739,36 @@ class ExpertChoiceMoEAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                if (
+                    w.shape != target_mod.weight.shape
+                    and target_mod.weight.shape == w.t().contiguous().shape
+                ):
                     w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
-                target_mod.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype))
+                target_mod.weight.data[:out_d, :in_d].copy_(
+                    w[:out_d, :in_d].to(
+                        device=target_mod.weight.device, dtype=target_mod.weight.dtype
+                    )
+                )
 
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
-                    target_mod.bias.data[:min_b].copy_(b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype))
+                    target_mod.bias.data[:min_b].copy_(
+                        b[:min_b].to(
+                            device=target_mod.bias.device, dtype=target_mod.bias.dtype
+                        )
+                    )
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
                 # Frobenius norm verification (>= 1e-4)
                 w_norm = float(torch.norm(target_mod.weight.data).item())
                 if w_norm < 1e-4:
-                    logger.warning(f"ExpertChoiceMoEAttention weight copy verification failed for '{proj_key}': norm too small ({w_norm:.2e})")
+                    logger.warning(
+                        f"ExpertChoiceMoEAttention weight copy verification failed for '{proj_key}': norm too small ({w_norm:.2e})"
+                    )
 
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
@@ -550,9 +796,24 @@ class ExpertChoiceMoEAttention(BaseAttention):
         kv_len = kv_input.shape[1]
 
         # 1. Projections
-        q = self.q_lin(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        k = self.k_lin(kv_input).view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        v = self.v_lin(kv_input).view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        q = (
+            self.q_lin(hidden_states)
+            .view(B, L, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        k = (
+            self.k_lin(kv_input)
+            .view(B, kv_len, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_lin(kv_input)
+            .view(B, kv_len, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # 2. Rotary Position Embeddings (RoPE)
         if position_embeddings is not None and not is_cross_attention:
@@ -580,32 +841,57 @@ class ExpertChoiceMoEAttention(BaseAttention):
             _qs = q.half() if q.dtype == torch.float32 else q
             _ks = k.half() if k.dtype == torch.float32 else k
             _vs = v.half() if v.dtype == torch.float32 else v
-            _is_causal = getattr(self, 'is_decoder', False) and not is_cross_attention and L > 1
+            _is_causal = (
+                getattr(self, "is_decoder", False) and not is_cross_attention and L > 1
+            )
             _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
-                _qs, _ks, _vs,
+                _qs,
+                _ks,
+                _vs,
                 is_causal=_is_causal,
                 dropout_p=self.dropout.p if self.training else 0.0,
             )
-            attn_out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+            attn_out = (
+                _sdpa_out.to(hidden_states.dtype)
+                .transpose(1, 2)
+                .contiguous()
+                .view(B, L, self.all_head_size)
+            )
             attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
             moe_out = self.moe(attn_out)
             self.aux_loss = self.moe.aux_loss
             moe_weight = torch.sigmoid(self.moe_gate).to(attn_out.dtype)
-            enriched_attn = (attn_out + moe_weight * moe_out.to(attn_out.dtype)).to(attn_out.dtype)
+            enriched_attn = (attn_out + moe_weight * moe_out.to(attn_out.dtype)).to(
+                attn_out.dtype
+            )
             if self.is_nested_encoder and enriched_attn.shape[-1] == self.dim:
                 out = enriched_attn
             else:
                 out = self.out_lin(enriched_attn)
             if out.shape[-1] != hidden_states.shape[-1]:
-                out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1])) if out.shape[-1] < hidden_states.shape[-1] else out[..., :hidden_states.shape[-1]]
+                out = (
+                    F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1]))
+                    if out.shape[-1] < hidden_states.shape[-1]
+                    else out[..., : hidden_states.shape[-1]]
+                )
             return out, None
         except Exception:
             pass
 
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+        scores = (
+            torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+        )
 
         if self.is_decoder and not is_cross_attention:
-            causal_mask = torch.triu(torch.full((L, kv_len), float("-inf"), device=scores.device, dtype=torch.float32), diagonal=1)
+            causal_mask = torch.triu(
+                torch.full(
+                    (L, kv_len),
+                    float("-inf"),
+                    device=scores.device,
+                    dtype=torch.float32,
+                ),
+                diagonal=1,
+            )
             scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
         eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
@@ -632,13 +918,20 @@ class ExpertChoiceMoEAttention(BaseAttention):
                 head_mask = head_mask.unsqueeze(-1)
             probs = probs * head_mask
 
-        attn_out = torch.matmul(probs.to(v.dtype), v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+        attn_out = (
+            torch.matmul(probs.to(v.dtype), v)
+            .transpose(1, 2)
+            .contiguous()
+            .view(B, L, self.all_head_size)
+        )
 
         # 6. MoE feedforward enrichment with gate blending
         moe_out = self.moe(attn_out)
         self.aux_loss = self.moe.aux_loss
         moe_weight = torch.sigmoid(self.moe_gate).to(attn_out.dtype)
-        enriched_attn = (attn_out + moe_weight * moe_out.to(attn_out.dtype)).to(attn_out.dtype)
+        enriched_attn = (attn_out + moe_weight * moe_out.to(attn_out.dtype)).to(
+            attn_out.dtype
+        )
 
         # 7. Output projection with nested encoder bypass
         if self.is_nested_encoder:
@@ -650,7 +943,11 @@ class ExpertChoiceMoEAttention(BaseAttention):
             out = self.out_lin(enriched_attn)
 
         if out.shape[-1] != hidden_states.shape[-1]:
-            out = F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1])) if out.shape[-1] < hidden_states.shape[-1] else out[..., :hidden_states.shape[-1]]
+            out = (
+                F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1]))
+                if out.shape[-1] < hidden_states.shape[-1]
+                else out[..., : hidden_states.shape[-1]]
+            )
 
         return out, (probs if output_attentions else None)
 
@@ -688,9 +985,15 @@ def inject_expert_choice_moe(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+    elif hasattr(target, "layers") and isinstance(
+        target.layers, (torch.nn.ModuleList, list)
+    ):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -700,7 +1003,11 @@ def inject_expert_choice_moe(
             res = inject_expert_choice_moe(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                comp_config=(
+                    comp_config
+                    if "comp_config" in locals() or "comp_config" in kwargs
+                    else None
+                ),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,

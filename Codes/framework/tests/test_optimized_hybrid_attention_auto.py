@@ -1,7 +1,8 @@
+import framework.attentions.optimized_hybrid_attention
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.optimized_hybrid_attention
+
 
 def test_optimized_hybrid_attention_module_present():
     assert hasattr(framework.attentions, 'optimized_hybrid_attention')

@@ -9,9 +9,10 @@ Validates:
 4. Numerical stability (no NaNs, no Infs, finite gradients).
 """
 
-import sys
 import os
+import sys
 import types
+
 import torch
 import torch.nn as nn
 
@@ -20,9 +21,11 @@ FRAMEWORK_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "
 if FRAMEWORK_ROOT not in sys.path:
     sys.path.insert(0, FRAMEWORK_ROOT)
 
-from framework.attentions.adaptive_svd_attention import AdaptiveSVDLinear, AdaptiveSVDAttention
-from framework.compression_engine.adaptive_ranks import AdaptiveRanksCompressor, adaptive_ranks_factory
+from framework.attentions.adaptive_svd_attention import (AdaptiveSVDAttention,
+                                                         AdaptiveSVDLinear)
 from framework.compression_engine.aa_svd_compressor import SVDLinear
+from framework.compression_engine.adaptive_ranks import (
+    AdaptiveRanksCompressor, adaptive_ranks_factory)
 
 
 class MockMHAModule(nn.Module):

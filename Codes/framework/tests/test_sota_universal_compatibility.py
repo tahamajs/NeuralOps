@@ -19,29 +19,28 @@ from __future__ import annotations
 from types import SimpleNamespace
 from typing import Any, Dict, List
 
-import pytest
 import numpy as np
+import pytest
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from framework.attentions.fused_svd_kernel import FusedSVDLinear, fused_svd_linear
+from framework.attentions.fused_svd_kernel import (FusedSVDLinear,
+                                                   fused_svd_linear)
 from framework.attentions.svd_linear_attention import SVDLinearAttention
-from framework.compression_engine.dynamic_rank import DynamicEntropySVDCompressor, DynamicSVDLinear
-from framework.compression_engine.res_svd import ResSVDCompressor, ResSVDLinear, SpectralResidualLoRA
+from framework.compression_engine.dynamic_rank import (
+    DynamicEntropySVDCompressor, DynamicSVDLinear)
+from framework.compression_engine.res_svd import (ResSVDCompressor,
+                                                  ResSVDLinear,
+                                                  SpectralResidualLoRA)
 from framework.compression_engine.svd_linear import SVDLinearLayer
 from framework.data.synthetic_generator import (
-    SyntheticClassificationDataset,
-    SyntheticLanguageModelingDataset,
-    generate_zipfian_tokens,
-)
-from framework.drift.detectors import (
-    DriftDetector,
-    fast_wasserstein_distance_nystrom,
-    hutchinson_trace_estimator,
-)
-from framework.trainer.optimizers import RiemannianStiefelOptimizer, project_stiefel_gradient
-
+    SyntheticClassificationDataset, SyntheticLanguageModelingDataset,
+    generate_zipfian_tokens)
+from framework.drift.detectors import (DriftDetector,
+                                       fast_wasserstein_distance_nystrom,
+                                       hutchinson_trace_estimator)
+from framework.trainer.optimizers import (RiemannianStiefelOptimizer,
+                                          project_stiefel_gradient)
 
 # ── Synthetic Transformer Model for Cross-Architecture Testing ─────────
 

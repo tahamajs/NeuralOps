@@ -1,7 +1,8 @@
+import framework.attentions.res_svd
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.res_svd
+
 
 def test_res_svd_module_present():
     assert hasattr(framework.attentions, 'res_svd')

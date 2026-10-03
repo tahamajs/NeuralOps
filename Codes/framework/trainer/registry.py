@@ -1,5 +1,5 @@
-from typing import Any
 import logging
+from typing import Any
 
 from .base_trainer import BaseTrainer
 
@@ -14,6 +14,7 @@ class TrainerRegistry:
     @classmethod
     def register(cls, name: str) -> Any:
         """Register."""
+
         def decorator(klass: type[BaseTrainer]) -> type[BaseTrainer]:
             """Decorator."""
             if not issubclass(klass, BaseTrainer):

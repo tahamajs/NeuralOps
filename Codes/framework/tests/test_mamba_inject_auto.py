@@ -1,7 +1,8 @@
+import framework.attentions.mamba_inject
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.mamba_inject
+
 
 def test_mamba_inject_module_present():
     assert hasattr(framework.attentions, 'mamba_inject')

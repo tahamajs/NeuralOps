@@ -1,7 +1,8 @@
+import framework.attentions.minimal_aurora
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.minimal_aurora
+
 
 def test_minimal_aurora_module_present():
     assert hasattr(framework.attentions, 'minimal_aurora')

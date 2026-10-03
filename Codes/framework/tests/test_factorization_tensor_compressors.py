@@ -29,20 +29,30 @@ _FRAMEWORK_PARENT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."
 if _FRAMEWORK_PARENT not in sys.path:
     sys.path.insert(0, _FRAMEWORK_PARENT)
 
-from framework.compression_engine.compot_compressor import COMPOTCompressor, COMPOTLinear
+from framework.compression_engine.compot_compressor import (COMPOTCompressor,
+                                                            COMPOTLinear)
 from framework.compression_engine.cr_compressor import CRCompressor, CRLinear
 from framework.compression_engine.cur_compressor import CURCompressor
-from framework.compression_engine.cur_linear import CURLinear, compute_energy_scores, compute_leverage_scores
+from framework.compression_engine.cur_linear import (CURLinear,
+                                                     compute_energy_scores,
+                                                     compute_leverage_scores)
 from framework.compression_engine.cur_moe_compressor import CURMoECompressor
-from framework.compression_engine.frandi_compressor import FRanDICompressor, FRanDILinear
-from framework.compression_engine.grecodec_compressor import GreCoDeCCompressor, GreCoDeCLinear
+from framework.compression_engine.frandi_compressor import (FRanDICompressor,
+                                                            FRanDILinear)
+from framework.compression_engine.grecodec_compressor import (
+    GreCoDeCCompressor, GreCoDeCLinear)
 from framework.compression_engine.hashed_linear import HashedLinear
-from framework.compression_engine.hashed_net_compressor import HashedNetCompressor
-from framework.compression_engine.kronecker_compressor import KroneckerCompressor
+from framework.compression_engine.hashed_net_compressor import \
+    HashedNetCompressor
+from framework.compression_engine.kronecker_compressor import \
+    KroneckerCompressor
 from framework.compression_engine.kronecker_linear import KroneckerLinear
-from framework.compression_engine.kronecker_tt_lora import KroneckerTTLoRACompressor, KroneckerTTLoRALayer
-from framework.compression_engine.nmf_compressor import NMFCompressor, NMFLinear
-from framework.compression_engine.subspace_projection import SubspaceLinear, SubspaceProjectionCompressor
+from framework.compression_engine.kronecker_tt_lora import (
+    KroneckerTTLoRACompressor, KroneckerTTLoRALayer)
+from framework.compression_engine.nmf_compressor import (NMFCompressor,
+                                                         NMFLinear)
+from framework.compression_engine.subspace_projection import (
+    SubspaceLinear, SubspaceProjectionCompressor)
 from framework.compression_engine.tt_compressor import TTCompressor
 from framework.compression_engine.tt_linear import TTLinearLayer
 from framework.core.registry import COMPRESSOR_REGISTRY

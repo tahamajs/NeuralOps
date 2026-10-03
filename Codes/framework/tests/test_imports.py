@@ -4,9 +4,10 @@ Basic tests for the trainer module.
 Tests core trainer functionality including model initialization, training setup, and results management.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 
 class TestTrainerModule:
@@ -15,13 +16,9 @@ class TestTrainerModule:
     def test_trainer_imports(self):
         """Test that all trainer components can be imported."""
         try:
-            from framework.trainer import (
-                HuggingFaceTrainer,
-                ResultsManager,
-                get_task_metrics,
-                MemoryCallback,
-                TimeCallback,
-            )
+            from framework.trainer import (HuggingFaceTrainer, MemoryCallback,
+                                           ResultsManager, TimeCallback,
+                                           get_task_metrics)
             assert HuggingFaceTrainer is not None
             assert ResultsManager is not None
             assert get_task_metrics is not None
@@ -33,7 +30,7 @@ class TestTrainerModule:
     def test_trainer_methods_imports(self):
         """Test that trainer methods can be imported."""
         try:
-            from framework.trainer.methods import get_method, available_methods
+            from framework.trainer.methods import available_methods, get_method
             assert callable(get_method)
             assert callable(available_methods)
         except ImportError as e:
@@ -89,12 +86,8 @@ class TestDataModule:
     def test_data_imports(self):
         """Test that data loading components can be imported."""
         try:
-            from framework.data import (
-                DataConfig,
-                TaskType,
-                preprocess_function,
-                create_dataloader,
-            )
+            from framework.data import (DataConfig, TaskType,
+                                        create_dataloader, preprocess_function)
             assert DataConfig is not None
             assert TaskType is not None
             assert callable(preprocess_function)

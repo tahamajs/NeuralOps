@@ -1,7 +1,8 @@
+import framework.attentions.galerkin_attention
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.galerkin_attention
+
 
 def test_galerkin_attention_module_present():
     assert hasattr(framework.attentions, 'galerkin_attention')

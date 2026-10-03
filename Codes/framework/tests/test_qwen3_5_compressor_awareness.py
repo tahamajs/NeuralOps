@@ -5,25 +5,24 @@ recovery parameter selection, and LoRA preservation on Qwen3.5 and across model 
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
-from types import SimpleNamespace
-
-from framework.utils.compat import (
-    should_compress_linear,
-    get_dynamic_compression_rank,
-    get_recovery_params,
-    is_decoder_family,
-)
-from framework.utils.model_family import detect_family, ModelAdapter
-from framework.core.registry import COMPRESSOR_REGISTRY, is_module_declared_compatible
 from framework.compression_engine.a3_compressor import A3Compressor
 from framework.compression_engine.aa_svd_compressor import AASVDCompressor
-from framework.compression_engine.direct_svd import DirectSVDCompressor
 from framework.compression_engine.cur_moe_compressor import CURMoECompressor
-from framework.compression_engine.dynamic_rank import DynamicEntropySVDCompressor
+from framework.compression_engine.direct_svd import DirectSVDCompressor
+from framework.compression_engine.dynamic_rank import \
+    DynamicEntropySVDCompressor
+from framework.core.registry import (COMPRESSOR_REGISTRY,
+                                     is_module_declared_compatible)
+from framework.utils.compat import (get_dynamic_compression_rank,
+                                    get_recovery_params, is_decoder_family,
+                                    should_compress_linear)
 from framework.utils.lora import apply_lora
+from framework.utils.model_family import ModelAdapter, detect_family
 
 
 class DummyQwen35Block(nn.Module):

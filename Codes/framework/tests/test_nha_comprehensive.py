@@ -1,13 +1,13 @@
+from types import SimpleNamespace
+
 import pytest
 import torch
 import torch.nn as nn
-from types import SimpleNamespace
-from framework.attentions.nha_attention import (
-    NativeHybridAttention,
-    inject_nha,
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
+from framework.attentions.nha_attention import (LoRALinear,
+                                                NativeHybridAttention,
+                                                apply_rotary_pos_emb,
+                                                inject_nha)
+
 
 def test_nha_lora_config_independence():
     # 1. config=None, comp_config present

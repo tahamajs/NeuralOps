@@ -26,7 +26,11 @@ class DataValidator:
         for col, values in dataset.items():
             v = np.array(values)
             # Missing values
-            missing = np.sum(np.isnan(v)) if np.issubdtype(v.dtype, np.floating) else np.sum(v == None)
+            missing = (
+                np.sum(np.isnan(v))
+                if np.issubdtype(v.dtype, np.floating)
+                else np.sum(v == None)
+            )
             if missing > 0:
                 issues.append(
                     {"column": col, "issue": "missing_values", "count": int(missing)}

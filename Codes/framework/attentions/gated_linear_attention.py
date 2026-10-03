@@ -43,19 +43,18 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 try:
-    from framework.core.triton_kernels.gla_scan import gla_scan_triton, MAX_REGISTER_DIM
+    from framework.core.triton_kernels.gla_scan import MAX_REGISTER_DIM, gla_scan_triton
+
     HAS_TRITON_GLA = True
 except Exception as _e:
     logger.warning("GLA Triton unavailable: %s", _e)
     HAS_TRITON_GLA = False
     MAX_REGISTER_DIM = 64
-
 
 
 # ===========================================================================
@@ -88,10 +87,22 @@ def apply_rotary_pos_emb(q, k, cos, sin):
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
-        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
+            _rotate_half(q_rot) * sin.to(q_rot.dtype)
+        )
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
+            _rotate_half(k_rot) * sin.to(k_rot.dtype)
+        )
+        q = (
+            torch.cat([q_rot_embed, q_pass], dim=-1)
+            if q_pass.numel() > 0
+            else q_rot_embed
+        )
+        k = (
+            torch.cat([k_rot_embed, k_pass], dim=-1)
+            if k_pass.numel() > 0
+            else k_rot_embed
+        )
     else:
         cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
         q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
@@ -103,8 +114,17 @@ def apply_rotary_pos_emb(q, k, cos, sin):
 # LoRALinear
 # ===========================================================================
 class LoRALinear(nn.Module):
-    def __init__(self, in_features, out_features, bias=True, lora_rank=16,
-                 lora_alpha=32.0, freeze_base=False, device=None, dtype=None):
+    def __init__(
+        self,
+        in_features,
+        out_features,
+        bias=True,
+        lora_rank=16,
+        lora_alpha=32.0,
+        freeze_base=False,
+        device=None,
+        dtype=None,
+    ):
         super().__init__()
         fk = {"device": device, "dtype": dtype}
         self.in_features = int(in_features)
@@ -156,11 +176,17 @@ class LoRALinear(nn.Module):
 
     def forward(self, x):
         w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
-        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
+        b = (
+            self.bias.to(x.dtype)
+            if (self.bias is not None and self.bias.dtype != x.dtype)
+            else self.bias
+        )
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            bb = (
+                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            )
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -175,9 +201,23 @@ def _detect_decoder(config, is_decoder, src):
         if getattr(config, "is_decoder", False) or getattr(config, "is_causal", False):
             return True
         mt = str(getattr(config, "model_type", "") or "").lower()
-        if any(mt.startswith(p) for p in
-               ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt",
-                "bloom", "falcon", "olmo", "mpt", "stablelm")):
+        if any(
+            mt.startswith(p)
+            for p in (
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
+                "mpt",
+                "stablelm",
+            )
+        ):
             return True
         arch = getattr(config, "architectures", None)
         if arch and any(("GPT" in str(a) or "CausalLM" in str(a)) for a in arch):
@@ -199,14 +239,13 @@ def _resolve_dim_and_heads(config, src_attn, kwargs):
     source is reliable: kwargs > config > source attention weight shapes.
     """
     # --- d_model ---
-    d_model = (
-        kwargs.get("d_model")
-        or kwargs.get("hidden_size")
-    )
+    d_model = kwargs.get("d_model") or kwargs.get("hidden_size")
     if d_model is None and config is not None:
-        d_model = getattr(config, "hidden_size",
-                  getattr(config, "dim",
-                  getattr(config, "d_model", None)))
+        d_model = getattr(
+            config,
+            "hidden_size",
+            getattr(config, "dim", getattr(config, "d_model", None)),
+        )
     if d_model is None and src_attn is not None:
         # Look at the actual weight of the query projection
         for attr in ("q_proj", "q_lin", "query"):
@@ -224,18 +263,21 @@ def _resolve_dim_and_heads(config, src_attn, kwargs):
         d_model = 768
 
     # --- num_heads ---
-    num_heads = (
-        kwargs.get("num_heads")
-        or kwargs.get("num_attention_heads")
-    )
+    num_heads = kwargs.get("num_heads") or kwargs.get("num_attention_heads")
     if num_heads is None and config is not None:
-        num_heads = getattr(config, "num_attention_heads",
-                     getattr(config, "n_heads",
-                     getattr(config, "num_heads", None)))
+        num_heads = getattr(
+            config,
+            "num_attention_heads",
+            getattr(config, "n_heads", getattr(config, "num_heads", None)),
+        )
     if num_heads is None and src_attn is not None:
-        num_heads = getattr(src_attn, "num_heads",
-                     getattr(src_attn, "num_attention_heads",
-                     getattr(src_attn, "n_heads", None)))
+        num_heads = getattr(
+            src_attn,
+            "num_heads",
+            getattr(
+                src_attn, "num_attention_heads", getattr(src_attn, "n_heads", None)
+            ),
+        )
     if num_heads is None:
         num_heads = 12
     num_heads = int(num_heads)
@@ -245,7 +287,11 @@ def _resolve_dim_and_heads(config, src_attn, kwargs):
         kwargs.get("head_dim")
         or (getattr(config, "head_dim", None) if config is not None else None)
         or (getattr(src_attn, "head_dim", None) if src_attn is not None else None)
-        or (getattr(src_attn, "attention_head_size", None) if src_attn is not None else None)
+        or (
+            getattr(src_attn, "attention_head_size", None)
+            if src_attn is not None
+            else None
+        )
     )
     if head_dim is None and src_attn is not None:
         # Derive from q_lin's output size and num_heads
@@ -263,11 +309,13 @@ def _resolve_dim_and_heads(config, src_attn, kwargs):
     # --- num_kv_heads ---
     num_kv_heads = kwargs.get("num_kv_heads") or kwargs.get("num_key_value_heads")
     if num_kv_heads is None and config is not None:
-        num_kv_heads = getattr(config, "num_key_value_heads",
-                        getattr(config, "num_kv_heads", None))
+        num_kv_heads = getattr(
+            config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
+        )
     if num_kv_heads is None and src_attn is not None:
-        num_kv_heads = getattr(src_attn, "num_key_value_heads",
-                        getattr(src_attn, "num_kv_heads", None))
+        num_kv_heads = getattr(
+            src_attn, "num_key_value_heads", getattr(src_attn, "num_kv_heads", None)
+        )
     if num_kv_heads is None:
         num_kv_heads = num_heads
     num_kv_heads = int(num_kv_heads)
@@ -279,8 +327,12 @@ def _resolve_dim_and_heads(config, src_attn, kwargs):
 # ===========================================================================
 # Main attention
 # ===========================================================================
-@ATTENTION_REGISTRY.register("gated_linear_attention", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("gated_linear_attn", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "gated_linear_attention", supports_causal=True, supports_gqa=True
+)
+@ATTENTION_REGISTRY.register(
+    "gated_linear_attn", supports_causal=True, supports_gqa=True
+)
 class GatedLinearAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
@@ -311,7 +363,11 @@ class GatedLinearAttention(BaseAttention):
         # Merge explicit args into kwargs for resolver
         _kw = dict(kwargs)
         if d_model is not None:
-            _kw["d_model"] = d_model if isinstance(d_model, int) else getattr(d_model, "hidden_size", None)
+            _kw["d_model"] = (
+                d_model
+                if isinstance(d_model, int)
+                else getattr(d_model, "hidden_size", None)
+            )
         if num_heads is not None:
             _kw["num_heads"] = num_heads
         if head_dim is not None:
@@ -320,8 +376,9 @@ class GatedLinearAttention(BaseAttention):
             _kw["num_kv_heads"] = num_kv_heads
 
         # GLA3-FIX-02 / GLA3-FIX-04
-        resolved_dim, resolved_heads, resolved_head_dim, resolved_kv_heads = \
+        resolved_dim, resolved_heads, resolved_head_dim, resolved_kv_heads = (
             _resolve_dim_and_heads(config, src_attn, _kw)
+        )
 
         self.dim = resolved_dim
         self.hidden_size = self.dim
@@ -357,18 +414,38 @@ class GatedLinearAttention(BaseAttention):
         self.is_nested_encoder = False
 
         # ---- Projections ----
-        self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=False,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=True)
-        self.k_proj = LoRALinear(self.dim, self.kv_head_size, bias=False,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=True)
-        self.v_proj = LoRALinear(self.dim, self.kv_head_size, bias=False,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=True)
-        self.z_proj = LoRALinear(self.dim, self.all_head_size, bias=False,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=True)
+        self.q_proj = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.k_proj = LoRALinear(
+            self.dim,
+            self.kv_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.v_proj = LoRALinear(
+            self.dim,
+            self.kv_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.z_proj = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=False,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
 
         # GLA3-FIX-03: build decay_gate/log_decay from the same `num_heads`
         self.decay_gate = nn.Linear(self.dim, self.num_heads, bias=True)
@@ -381,9 +458,14 @@ class GatedLinearAttention(BaseAttention):
         self.state_norm = nn.LayerNorm(self.head_dim)
         self.output_scale = nn.Parameter(torch.ones(1))
 
-        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True,
-                                    lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                    freeze_base=True)
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
 
         # Sanity: ensure z_proj output matches all_head_size
         if self.z_proj.out_features != self.all_head_size:
@@ -401,25 +483,44 @@ class GatedLinearAttention(BaseAttention):
 
     # ---- aliases ----
     @property
-    def query(self): return self.q_proj
+    def query(self):
+        return self.q_proj
+
     @property
-    def key(self): return self.k_proj
+    def key(self):
+        return self.k_proj
+
     @property
-    def value(self): return self.v_proj
+    def value(self):
+        return self.v_proj
+
     @property
-    def q_lin(self): return self.q_proj
+    def q_lin(self):
+        return self.q_proj
+
     @property
-    def k_lin(self): return self.k_proj
+    def k_lin(self):
+        return self.k_proj
+
     @property
-    def v_lin(self): return self.v_proj
+    def v_lin(self):
+        return self.v_proj
+
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
+
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
+
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
+
     @property
-    def c_proj(self): return self.out_proj
+    def c_proj(self):
+        return self.out_proj
 
     # ------------------------------------------------------------------
     # copy_weights
@@ -436,16 +537,31 @@ class GatedLinearAttention(BaseAttention):
 
         cls_name = src.__class__.__name__
         is_nested = False
-        if (hasattr(src, "self") and hasattr(src.self, "query")
-                and hasattr(src, "output") and hasattr(src.output, "dense")) or (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
-                            "XLMRobertaSelfAttention", "ElectraSelfAttention",
-                            "DebertaSelfAttention")
-              or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())):
+        if (
+            hasattr(src, "self")
+            and hasattr(src.self, "query")
+            and hasattr(src, "output")
+            and hasattr(src.output, "dense")
+        ) or (
+            cls_name
+            in (
+                "BertSelfAttention",
+                "RobertaSelfAttention",
+                "XLMRobertaSelfAttention",
+                "ElectraSelfAttention",
+                "DebertaSelfAttention",
+            )
+            or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
+        ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        extracted = {"q": (None, None), "k": (None, None),
-                      "v": (None, None), "o": (None, None)}
+        extracted = {
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
+        }
 
         # GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
@@ -454,18 +570,27 @@ class GatedLinearAttention(BaseAttention):
             cw = getattr(base_c, "weight", getattr(c, "weight", None))
             if cw is not None:
                 cw = cw.data.clone()
-                is_conv = (c.__class__.__name__ == "Conv1D"
-                            or base_c.__class__.__name__ == "Conv1D"
-                            or hasattr(c, "nf") or hasattr(base_c, "nf")
-                            or (cw.ndim == 2 and cw.shape[0] < cw.shape[1]))
+                is_conv = (
+                    c.__class__.__name__ == "Conv1D"
+                    or base_c.__class__.__name__ == "Conv1D"
+                    or hasattr(c, "nf")
+                    or hasattr(base_c, "nf")
+                    or (cw.ndim == 2 and cw.shape[0] < cw.shape[1])
+                )
                 if is_conv:
                     cw = cw.t().contiguous()
                 split = cw.size(0) // 3
                 bmod = getattr(base_c, "bias", getattr(c, "bias", None))
                 cb = bmod.data.clone() if bmod is not None else None
                 extracted["q"] = (cw[:split], cb[:split] if cb is not None else None)
-                extracted["k"] = (cw[split:2*split], cb[split:2*split] if cb is not None else None)
-                extracted["v"] = (cw[2*split:], cb[2*split:] if cb is not None else None)
+                extracted["k"] = (
+                    cw[split : 2 * split],
+                    cb[split : 2 * split] if cb is not None else None,
+                )
+                extracted["v"] = (
+                    cw[2 * split :],
+                    cb[2 * split :] if cb is not None else None,
+                )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 o = src.c_proj
@@ -473,10 +598,13 @@ class GatedLinearAttention(BaseAttention):
                 ow = getattr(base_o, "weight", getattr(o, "weight", None))
                 if ow is not None:
                     ow = ow.data.clone()
-                    is_conv_o = (o.__class__.__name__ == "Conv1D"
-                                  or base_o.__class__.__name__ == "Conv1D"
-                                  or hasattr(o, "nf") or hasattr(base_o, "nf")
-                                  or (ow.ndim == 2 and ow.shape[0] < ow.shape[1]))
+                    is_conv_o = (
+                        o.__class__.__name__ == "Conv1D"
+                        or base_o.__class__.__name__ == "Conv1D"
+                        or hasattr(o, "nf")
+                        or hasattr(base_o, "nf")
+                        or (ow.ndim == 2 and ow.shape[0] < ow.shape[1])
+                    )
                     if is_conv_o:
                         ow = ow.t().contiguous()
                     bo = getattr(base_o, "bias", getattr(o, "bias", None))
@@ -489,13 +617,17 @@ class GatedLinearAttention(BaseAttention):
                 m = getattr(s, sub, None)
                 if m is not None and hasattr(m, "weight"):
                     b = getattr(m, "bias", None)
-                    extracted[key] = (m.weight.data.clone(),
-                                       b.data.clone() if b is not None else None)
+                    extracted[key] = (
+                        m.weight.data.clone(),
+                        b.data.clone() if b is not None else None,
+                    )
             if hasattr(src, "output") and hasattr(src.output, "dense"):
                 d = src.output.dense
                 b = getattr(d, "bias", None)
-                extracted["o"] = (d.weight.data.clone(),
-                                   b.data.clone() if b is not None else None)
+                extracted["o"] = (
+                    d.weight.data.clone(),
+                    b.data.clone() if b is not None else None,
+                )
 
         # Flat (DistilBERT, Qwen, LLaMA)
         else:
@@ -511,16 +643,22 @@ class GatedLinearAttention(BaseAttention):
                         m = getattr(src, n)
                         if m is not None and hasattr(m, "weight"):
                             b = getattr(m, "bias", None)
-                            extracted[key] = (m.weight.data.clone(),
-                                               b.data.clone() if b is not None else None)
+                            extracted[key] = (
+                                m.weight.data.clone(),
+                                b.data.clone() if b is not None else None,
+                            )
                             break
 
         # UniversalAdapter fallback
-        missing = [k for k, (w, _) in extracted.items()
-                    if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -535,8 +673,12 @@ class GatedLinearAttention(BaseAttention):
             return w
 
         with torch.no_grad():
-            for key, target in (("q", self.q_proj), ("k", self.k_proj),
-                                  ("v", self.v_proj), ("o", self.out_proj)):
+            for key, target in (
+                ("q", self.q_proj),
+                ("k", self.k_proj),
+                ("v", self.v_proj),
+                ("o", self.out_proj),
+            ):
                 w, b = extracted[key]
                 if w is None:
                     if key == "o" and self.is_nested_encoder:
@@ -545,8 +687,10 @@ class GatedLinearAttention(BaseAttention):
 
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
-                if w.shape != target.weight.shape \
-                        and w.t().contiguous().shape == target.weight.shape:
+                if (
+                    w.shape != target.weight.shape
+                    and w.t().contiguous().shape == target.weight.shape
+                ):
                     w = w.t().contiguous()
 
                 out_d = min(target.weight.size(0), w.size(0))
@@ -566,7 +710,9 @@ class GatedLinearAttention(BaseAttention):
                     else:
                         target.weight.data.zero_()
                         target.weight.data[:out_d, :in_d].copy_(
-                            w[:out_d, :in_d].to(target.weight.device, target.weight.dtype)
+                            w[:out_d, :in_d].to(
+                                target.weight.device, target.weight.dtype
+                            )
                         )
                 else:
                     target.weight.data.zero_()
@@ -604,13 +750,20 @@ class GatedLinearAttention(BaseAttention):
                 in_d = min(self.z_proj.weight.shape[1], w_q_oriented.shape[1])
                 self.z_proj.weight.data.zero_()
                 self.z_proj.weight.data[:out_d, :in_d].copy_(
-                    w_q_oriented[:out_d, :in_d].to(self.z_proj.weight.device,
-                                                     self.z_proj.weight.dtype)
+                    w_q_oriented[:out_d, :in_d].to(
+                        self.z_proj.weight.device, self.z_proj.weight.dtype
+                    )
                 )
                 self.z_proj.freeze_base_weights()
 
         try:
-            for m in (self.q_proj, self.k_proj, self.v_proj, self.z_proj, self.out_proj):
+            for m in (
+                self.q_proj,
+                self.k_proj,
+                self.v_proj,
+                self.z_proj,
+                self.out_proj,
+            ):
                 for p in m.parameters():
                     self._comp_storage_bytes += p.numel() * p.element_size()
         except Exception:
@@ -623,9 +776,17 @@ class GatedLinearAttention(BaseAttention):
         B, H, L, d = q.shape
         device = q.device
 
-        if HAS_TRITON_GLA and q.is_cuda and d <= MAX_REGISTER_DIM and mask is None and not reverse:
+        if (
+            HAS_TRITON_GLA
+            and q.is_cuda
+            and d <= MAX_REGISTER_DIM
+            and mask is None
+            and not reverse
+        ):
             try:
-                return gla_scan_triton(q.float(), k.float(), v.float(), lambdas.float()).to(q.dtype)
+                return gla_scan_triton(
+                    q.float(), k.float(), v.float(), lambdas.float()
+                ).to(q.dtype)
             except Exception as e:
                 logger.debug("GLA Triton scan failed, falling back: %s", e)
 
@@ -667,14 +828,17 @@ class GatedLinearAttention(BaseAttention):
             C = torch.cumsum(log_lam, dim=-1)
             C_i = C.unsqueeze(-1)
             C_j = C.unsqueeze(-2)
-            D = torch.exp((C_i - C_j).clamp(min=-15.0, max=0.0)) \
-                * torch.tril(torch.ones(e - s, e - s, device=device))
+            D = torch.exp((C_i - C_j).clamp(min=-15.0, max=0.0)) * torch.tril(
+                torch.ones(e - s, e - s, device=device)
+            )
 
             lam_prefix = torch.exp(C)
-            y_prev = torch.einsum("bhl,bhld->bhld", lam_prefix,
-                                    torch.einsum("bhlc,bhcd->bhld", q_c, S))
-            denom_prev = torch.einsum("bhl,bhl->bhl", lam_prefix,
-                                        torch.einsum("bhlc,bhc->bhl", q_c, Z))
+            y_prev = torch.einsum(
+                "bhl,bhld->bhld", lam_prefix, torch.einsum("bhlc,bhcd->bhld", q_c, S)
+            )
+            denom_prev = torch.einsum(
+                "bhl,bhl->bhl", lam_prefix, torch.einsum("bhlc,bhc->bhl", q_c, Z)
+            )
 
             qk = torch.matmul(q_c, k_c.transpose(-1, -2))
             y_cur = torch.matmul(qk * D, v_c)
@@ -810,24 +974,32 @@ class GatedLinearAttention(BaseAttention):
 
         # ---- Decay gate ----
         # GLA3-FIX-03 / GLA3-FIX-08: shape is guaranteed to be (B, L, num_heads)
-        decay_out = self.decay_gate(hidden_states)   # (B, L, H)
+        decay_out = self.decay_gate(hidden_states)  # (B, L, H)
         if decay_out.shape[-1] != self.num_heads:
             raise RuntimeError(
                 f"GLA: decay_gate output {decay_out.shape[-1]} != num_heads {self.num_heads}"
             )
-        decay_logits = decay_out.transpose(1, 2) + self.log_decay.to(decay_out.dtype).view(1, -1, 1)
-        lambdas = torch.sigmoid(decay_logits)        # (B, H, L)
+        decay_logits = decay_out.transpose(1, 2) + self.log_decay.to(
+            decay_out.dtype
+        ).view(1, -1, 1)
+        lambdas = torch.sigmoid(decay_logits)  # (B, H, L)
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         mask_bool = self._normalize_valid_mask(eff_mask, B, L_kv, hidden_states.device)
 
-        is_causal = bool(self.is_decoder and not is_cross and L > 1 and past_key_value is None)
+        is_causal = bool(
+            self.is_decoder and not is_cross and L > 1 and past_key_value is None
+        )
 
         if is_causal:
             y = self._gla_scan_chunked(q, k, v, lambdas, mask=mask_bool, reverse=False)
         else:
-            y_fwd = self._gla_scan_chunked(q, k, v, lambdas, mask=mask_bool, reverse=False)
-            y_bwd = self._gla_scan_chunked(q, k, v, lambdas, mask=mask_bool, reverse=True)
+            y_fwd = self._gla_scan_chunked(
+                q, k, v, lambdas, mask=mask_bool, reverse=False
+            )
+            y_bwd = self._gla_scan_chunked(
+                q, k, v, lambdas, mask=mask_bool, reverse=True
+            )
             y = 0.5 * (y_fwd + y_bwd)
 
         y = self.state_norm(y)
@@ -871,11 +1043,15 @@ class GatedLinearAttention(BaseAttention):
             return 0
 
         out = {}
-        for name, m in (("q_proj", self.q_proj), ("k_proj", self.k_proj),
-                         ("v_proj", self.v_proj), ("z_proj", self.z_proj),
-                         ("out_proj", self.out_proj),
-                         ("decay_gate", self.decay_gate),
-                         ("state_norm", self.state_norm)):
+        for name, m in (
+            ("q_proj", self.q_proj),
+            ("k_proj", self.k_proj),
+            ("v_proj", self.v_proj),
+            ("z_proj", self.z_proj),
+            ("out_proj", self.out_proj),
+            ("decay_gate", self.decay_gate),
+            ("state_norm", self.state_norm),
+        ):
             out[name] = sum(_sz(p) for p in m.parameters())
         out["output_scale"] = _sz(self.output_scale)
         out["total"] = sum(out.values())
@@ -937,8 +1113,13 @@ def inject_gated_linear(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_gated_linear(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
             )
             if res is not None:
                 n_injected += 1
@@ -958,23 +1139,32 @@ def inject_gated_linear(
 
     # GLA3-FIX-12: idempotency guard on both source and parent
     if src_attn is not None:
-        if isinstance(src_attn, GatedLinearAttention) \
-                or "GatedLinear" in src_attn.__class__.__name__:
+        if (
+            isinstance(src_attn, GatedLinearAttention)
+            or "GatedLinear" in src_attn.__class__.__name__
+        ):
             return None
-        if "DeltaNet" in src_attn.__class__.__name__ \
-                or "LinearAttention" in src_attn.__class__.__name__:
+        if (
+            "DeltaNet" in src_attn.__class__.__name__
+            or "LinearAttention" in src_attn.__class__.__name__
+        ):
             return None
 
     if src_attn is None and cfg is None:
         return None
 
     # GLA3-FIX-11: resolve dims from actual weight shapes
-    resolved_dim, resolved_heads, resolved_head_dim, resolved_kv_heads = \
+    resolved_dim, resolved_heads, resolved_head_dim, resolved_kv_heads = (
         _resolve_dim_and_heads(cfg, src_attn, kwargs)
+    )
 
     logger.info(
         "inject_gated_linear: layer %d resolved dim=%d, heads=%d, head_dim=%d, kv_heads=%d",
-        layer_idx, resolved_dim, resolved_heads, resolved_head_dim, resolved_kv_heads,
+        layer_idx,
+        resolved_dim,
+        resolved_heads,
+        resolved_head_dim,
+        resolved_kv_heads,
     )
 
     try:
@@ -1016,8 +1206,10 @@ def inject_gated_linear(
             spliced = True
 
         if not spliced:
-            logger.error("inject_gated_linear: no writable attention attribute on %s",
-                          target.__class__.__name__)
+            logger.error(
+                "inject_gated_linear: no writable attention attribute on %s",
+                target.__class__.__name__,
+            )
             return None
 
     return new_block

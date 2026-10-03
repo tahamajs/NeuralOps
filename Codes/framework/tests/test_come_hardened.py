@@ -12,17 +12,13 @@ from __future__ import annotations
 
 import unittest
 from types import SimpleNamespace
+
 import torch
 import torch.nn as nn
+from framework.compression_engine.come import (CoMeBridge, CoMeBridgedLayer,
+                                               CoMeCompressor, CoMeLoRALinear,
+                                               come_factory)
 from transformers.pytorch_utils import Conv1D
-
-from framework.compression_engine.come import (
-    CoMeBridge,
-    CoMeBridgedLayer,
-    CoMeCompressor,
-    CoMeLoRALinear,
-    come_factory,
-)
 
 
 class DummyLayer(nn.Module):

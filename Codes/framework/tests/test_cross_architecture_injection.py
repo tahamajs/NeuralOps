@@ -3,14 +3,16 @@ Exhaustive cross-architecture injection tests across DistilBERT, RoBERTa, GPT-2,
 Verifies forward pass shape, finite outputs, LoRA parameter trainability, and RoPE/Causal handling.
 """
 import unittest
+
 import torch
 import torch.nn as nn
-
-from framework.attentions.gated_delta_net import GatedDeltaNet, inject_gated_delta_net
-from framework.attentions.hgrn2_gated_deltanet import HGRN2GatedDeltaNet, inject_hgrn2_gated_deltanet
 from framework.attentions.asvd_attention import ASVDAttention
-from framework.attentions.factorised_matrix_state import FactorisedMatrixState
 from framework.attentions.cluster_attention import ClusterAttention
+from framework.attentions.factorised_matrix_state import FactorisedMatrixState
+from framework.attentions.gated_delta_net import (GatedDeltaNet,
+                                                  inject_gated_delta_net)
+from framework.attentions.hgrn2_gated_deltanet import (
+    HGRN2GatedDeltaNet, inject_hgrn2_gated_deltanet)
 
 
 class MockMHA(nn.Module):

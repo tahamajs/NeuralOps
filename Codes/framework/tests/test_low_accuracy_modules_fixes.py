@@ -7,14 +7,14 @@ Unit tests validating fixes for low-accuracy modules:
 - Cluster attention padding token filtering
 """
 import unittest
+
 import torch
 import torch.nn as nn
-
-from framework.attentions.asvd_attention import ASVDAttention
 from framework.attentions.adaptive_svd_attention import AdaptiveSVDAttention
-from framework.attentions.factorised_matrix_state import FactorisedMatrixState
+from framework.attentions.asvd_attention import ASVDAttention
 from framework.attentions.cluster_attention import ClusterAttention
 from framework.attentions.compressed_attention import CompressedAttention
+from framework.attentions.factorised_matrix_state import FactorisedMatrixState
 
 
 class FakeGPT2Attention(nn.Module):

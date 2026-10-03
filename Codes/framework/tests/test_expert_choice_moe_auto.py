@@ -1,7 +1,8 @@
+import framework.attentions.expert_choice_moe
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.expert_choice_moe
+
 
 def test_expert_choice_moe_module_present():
     assert hasattr(framework.attentions, 'expert_choice_moe')

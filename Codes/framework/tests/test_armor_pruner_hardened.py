@@ -20,14 +20,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 import pytest
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, TensorDataset
-
 from framework.compression_engine.armor_pruner import (
-    ARMORLinear,
-    ARMORPruner,
-    armor_pruner_factory,
-    compute_resilient_taylor_saliency,
-)
+    ARMORLinear, ARMORPruner, armor_pruner_factory,
+    compute_resilient_taylor_saliency)
+from torch.utils.data import DataLoader, TensorDataset
 
 
 class DummyConv1D(nn.Module):

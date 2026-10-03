@@ -1,13 +1,10 @@
+import types
+
 import pytest
 import torch
 import torch.nn as nn
-import types
-
-from framework.attentions.samba_moe import (
-    SambaMoEBlock,
-    MinimalMoEFallback,
-    inject_samba_moe,
-)
+from framework.attentions.samba_moe import (MinimalMoEFallback, SambaMoEBlock,
+                                            inject_samba_moe)
 
 
 def make_config(hidden_size=64, num_heads=4, num_kv_heads=2, is_decoder=False, model_type="bert"):

@@ -1,12 +1,11 @@
 import pytest
 import torch
 import torch.nn as nn
-from framework.attentions.gqa_attention import (
-    GroupedQueryAttention,
-    inject_gqa,
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
+from framework.attentions.gqa_attention import (GroupedQueryAttention,
+                                                LoRALinear,
+                                                apply_rotary_pos_emb,
+                                                inject_gqa)
+
 
 def test_gqa_standalone():
     block = GroupedQueryAttention(dim=64, num_heads=4, num_kv_heads=2, lora_rank=8)

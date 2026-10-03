@@ -1,7 +1,6 @@
 import pytest
 import torch
 import torch.nn as nn
-
 from framework.attentions.hgrn2_layer import HGRN2Layer, inject_hgrn2_layer
 
 

@@ -43,7 +43,7 @@ class ExperimentConfig:
         split_ratio: float = 0.1,
         synthetic_samples: int = 5000,
         glue_base_path: str | None = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         self.dataset_name = dataset_name
         self.dataset_path = dataset_path
@@ -90,14 +90,14 @@ def load_dataset(config: ExperimentConfig) -> DatasetDict:
 
 
 def _load_glue(config: ExperimentConfig) -> DatasetDict:
-    """ load glue."""
+    """load glue."""
     from .glue_loader import load_glue_local
 
     return load_glue_local(config.dataset_name, config.glue_base_path)
 
 
 def _load_synthetic(config: ExperimentConfig) -> DatasetDict:
-    """ load synthetic."""
+    """load synthetic."""
     import tempfile
 
     from datasets import Dataset
@@ -114,7 +114,7 @@ def _load_synthetic(config: ExperimentConfig) -> DatasetDict:
 
 
 def _load_custom(config: ExperimentConfig) -> DatasetDict:
-    """ load custom."""
+    """load custom."""
     from .custom_loader import load_dataset_from_file
 
     file_path = config.dataset_path or config.dataset_name
@@ -124,12 +124,12 @@ def _load_custom(config: ExperimentConfig) -> DatasetDict:
         split_ratio=config.split_ratio,
         text_column=text_col,
         label_column=config.label_column,
-        **config.kwargs
+        **config.kwargs,
     )
 
 
 def _load_multi_choice(config: ExperimentConfig) -> DatasetDict:
-    """ load multi choice."""
+    """load multi choice."""
     from .custom_loader import load_custom_dataset
 
     # Multi‑choice datasets are loaded as raw; conversion to MultiChoiceDataset is done later.
@@ -137,7 +137,7 @@ def _load_multi_choice(config: ExperimentConfig) -> DatasetDict:
 
 
 def _load_hub(config: ExperimentConfig) -> DatasetDict:
-    """ load hub."""
+    """load hub."""
     from datasets import load_dataset as hf_load
 
     dataset = hf_load(config.dataset_name, **config.kwargs)

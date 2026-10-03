@@ -1,12 +1,9 @@
 import pytest
 import torch
 import torch.nn as nn
-from framework.compression_engine.dobi_svd import (
-    DobiSVDLinearLayer,
-    DobiSVDCompressor,
-    dobi_factory,
-    inject_dobi,
-)
+from framework.compression_engine.dobi_svd import (DobiSVDCompressor,
+                                                   DobiSVDLinearLayer,
+                                                   dobi_factory, inject_dobi)
 
 
 class DummyAttentionModel(nn.Module):

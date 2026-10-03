@@ -5,6 +5,7 @@ Ensures 100% clean memory deallocation between training steps, epochs, and exper
 
 import gc
 import logging
+
 import torch
 
 logger = logging.getLogger(__name__)
@@ -30,7 +31,15 @@ def cleanup_gpu_memory(force: bool = True) -> None:
     if hasattr(torch, "mps") and hasattr(torch.mps, "empty_cache"):
         try:
             torch.mps.empty_cache()
-        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+        except (
+            AttributeError,
+            KeyError,
+            RuntimeError,
+            TypeError,
+            ValueError,
+            OSError,
+            ImportError,
+        ):
             pass
 
 
@@ -52,8 +61,18 @@ def get_gpu_memory_stats() -> dict[str, float]:
         try:
             stats["allocated_mb"] = torch.mps.current_allocated_memory() / (1024 * 1024)
             if hasattr(torch.mps, "driver_allocated_memory"):
-                stats["reserved_mb"] = torch.mps.driver_allocated_memory() / (1024 * 1024)
-        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+                stats["reserved_mb"] = torch.mps.driver_allocated_memory() / (
+                    1024 * 1024
+                )
+        except (
+            AttributeError,
+            KeyError,
+            RuntimeError,
+            TypeError,
+            ValueError,
+            OSError,
+            ImportError,
+        ):
             pass
 
     return stats

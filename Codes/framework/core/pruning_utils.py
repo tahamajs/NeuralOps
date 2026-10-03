@@ -14,9 +14,9 @@ from __future__ import annotations
 
 import math
 from typing import Any
+
 import torch
 import torch.nn as nn
-
 
 # Standard diverse default calibration text corpus covering diverse domains (H4)
 DEFAULT_CALIB_TEXTS: list[str] = [
@@ -62,7 +62,9 @@ def get_calibration_tensors(
     if calibration_loader is not None:
         for batch in calibration_loader:
             if isinstance(batch, dict):
-                return {k: v.to(device) if hasattr(v, "to") else v for k, v in batch.items()}
+                return {
+                    k: v.to(device) if hasattr(v, "to") else v for k, v in batch.items()
+                }
             elif isinstance(batch, (tuple, list)):
                 return [b.to(device) if hasattr(b, "to") else b for b in batch]
             elif isinstance(batch, torch.Tensor):
@@ -74,9 +76,23 @@ def get_calibration_tensors(
             # H4: Do not artificially repeat texts; clamp sample_size to available unique texts
             actual_samples = min(sample_size, len(texts))
             texts = texts[:actual_samples]
-            encoded = tokenizer(texts, return_tensors="pt", padding=True, truncation=True, max_length=seq_len)
+            encoded = tokenizer(
+                texts,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=seq_len,
+            )
             return {k: v.to(device) for k, v in encoded.items()}
-        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+        except (
+            AttributeError,
+            KeyError,
+            RuntimeError,
+            TypeError,
+            ValueError,
+            OSError,
+            ImportError,
+        ):
             pass
 
     # Synthetic fallback
@@ -98,12 +114,16 @@ def get_calibration_tensors(
         v_size = getattr(getattr(model, "config", None), "vocab_size", 1000)
     low_idx = min(1, max(0, v_size // 4))
     high_idx = max(low_idx + 1, v_size - 1)
-    input_ids = torch.randint(low_idx, high_idx, (sample_size, seq_len), device=device, dtype=torch.long)
+    input_ids = torch.randint(
+        low_idx, high_idx, (sample_size, seq_len), device=device, dtype=torch.long
+    )
     eos_token_id = getattr(getattr(model, "config", None), "eos_token_id", 1) or 1
     input_ids[:, -1] = eos_token_id
     return {
         "input_ids": input_ids,
-        "attention_mask": torch.ones((sample_size, seq_len), device=device, dtype=torch.long),
+        "attention_mask": torch.ones(
+            (sample_size, seq_len), device=device, dtype=torch.long
+        ),
     }
 
 
@@ -157,7 +177,15 @@ def compute_empirical_hessian(
     try:
         L = torch.linalg.cholesky(H_reg)
         H_inv = torch.cholesky_inverse(L)
-    except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+    except (
+        AttributeError,
+        KeyError,
+        RuntimeError,
+        TypeError,
+        ValueError,
+        OSError,
+        ImportError,
+    ):
         pass
 
     # 2. Standard LU inversion with progressive damping boost if needed
@@ -215,7 +243,9 @@ def compute_taylor_first_order_saliency(
         else:
             X = activations.reshape(-1, activations.shape[-1]).float()
         # Mean absolute activation per input feature
-        act_norm = torch.mean(torch.abs(X), dim=0, keepdim=True).to(W.device)  # [1, d_in]
+        act_norm = torch.mean(torch.abs(X), dim=0, keepdim=True).to(
+            W.device
+        )  # [1, d_in]
         if act_norm.shape[1] == W.shape[1]:
             return torch.abs(W) * act_norm
 
@@ -241,7 +271,7 @@ def compute_hessian_saliency(
     W = weight.float()
     diag = torch.diagonal(H_inv).unsqueeze(0).to(W.device)  # [1, d_in]
     diag = torch.clamp(diag, min=1e-8)
-    return (W ** 2) / (2.0 * diag)
+    return (W**2) / (2.0 * diag)
 
 
 def apply_24_structured_mask(
@@ -292,7 +322,9 @@ def apply_24_structured_mask(
             keep = max(0, target_keep_total - kept_in_blocks)
             if keep > 0:
                 S_rem = S[:, start:]
-                _, top_idx = torch.topk(S_rem, k=min(keep, remainder), dim=-1, largest=True)
+                _, top_idx = torch.topk(
+                    S_rem, k=min(keep, remainder), dim=-1, largest=True
+                )
                 mask_rem = torch.zeros_like(S_rem)
                 mask_rem.scatter_(-1, top_idx, 1.0)
                 mask[:, start:] = mask_rem
@@ -318,7 +350,9 @@ def apply_24_structured_mask(
             keep = max(0, target_keep_total - kept_in_blocks)
             if keep > 0:
                 S_rem = S[start:, :]
-                _, top_idx = torch.topk(S_rem, k=min(keep, remainder), dim=0, largest=True)
+                _, top_idx = torch.topk(
+                    S_rem, k=min(keep, remainder), dim=0, largest=True
+                )
                 mask_rem = torch.zeros_like(S_rem)
                 mask_rem.scatter_(0, top_idx, 1.0)
                 mask[start:, :] = mask_rem
@@ -360,8 +394,12 @@ def apply_block_mask(
         return W, torch.ones_like(W)
 
     # Reshape into blocks
-    W_blocks = W[: nb_r * br, : nb_c * bc].reshape(nb_r, br, nb_c, bc).permute(0, 2, 1, 3)
-    S_blocks = S[: nb_r * br, : nb_c * bc].reshape(nb_r, br, nb_c, bc).permute(0, 2, 1, 3)
+    W_blocks = (
+        W[: nb_r * br, : nb_c * bc].reshape(nb_r, br, nb_c, bc).permute(0, 2, 1, 3)
+    )
+    S_blocks = (
+        S[: nb_r * br, : nb_c * bc].reshape(nb_r, br, nb_c, bc).permute(0, 2, 1, 3)
+    )
 
     # Block saliency: sum of element saliency within each block
     block_scores = S_blocks.sum(dim=(2, 3))  # [nb_r, nb_c]
@@ -397,7 +435,18 @@ def recalibrate_layernorms(
     to restore representation variance.
     Excludes classification heads, embeddings, and poolers to prevent downstream drift (H22).
     """
-    PROTECTED_KEYWORDS = ["classifier", "score", "lm_head", "pooler", "head", "embed", "wte", "wpe", "shared", "logits"]
+    PROTECTED_KEYWORDS = [
+        "classifier",
+        "score",
+        "lm_head",
+        "pooler",
+        "head",
+        "embed",
+        "wte",
+        "wpe",
+        "shared",
+        "logits",
+    ]
     norm_modules = []
     for name, m in model.named_modules():
         name_l = name.lower()
@@ -426,9 +475,12 @@ def recalibrate_layernorms(
         def hook(module: nn.Module, inp: tuple[torch.Tensor, ...], out: Any):
             if inp and isinstance(inp[0], torch.Tensor):
                 x = inp[0].detach().float()
-                std = torch.sqrt(torch.var(x, dim=-1, keepdim=True) + 1e-6).mean().item()
+                std = (
+                    torch.sqrt(torch.var(x, dim=-1, keepdim=True) + 1e-6).mean().item()
+                )
                 if std > 0 and math.isfinite(std):
                     scales[mod] = std
+
         return hook
 
     for m in norm_modules:
@@ -443,7 +495,15 @@ def recalibrate_layernorms(
                 model(calibration_inputs)
             elif isinstance(calibration_inputs, (list, tuple)):
                 model(*calibration_inputs)
-        except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, ImportError):
+        except (
+            AttributeError,
+            KeyError,
+            RuntimeError,
+            TypeError,
+            ValueError,
+            OSError,
+            ImportError,
+        ):
             pass
 
     for h in hooks:
@@ -456,7 +516,9 @@ def recalibrate_layernorms(
                     if target_stds is not None and m in target_stds:
                         # B3: Exact ratio scaling when pre-compression target std is recorded
                         target_std = target_stds[m]
-                        correction_factor = max(0.5, min(2.0, float(target_std) / float(std)))
+                        correction_factor = max(
+                            0.5, min(2.0, float(target_std) / float(std))
+                        )
                         m.weight.data.mul_(correction_factor)
                     else:
                         correction_factor = 1.0 / std
@@ -471,7 +533,12 @@ def recalibrate_layernorms(
 # FIX APPLIED: Unconditional [CLS] token protection token 0 embeddings
 
 
-def adaptive_max_error(rank: int | float | None, in_features: int, out_features: int, family: str | None = None) -> float:
+def adaptive_max_error(
+    rank: int | float | None,
+    in_features: int,
+    out_features: int,
+    family: str | None = None,
+) -> float:
     """
     Higher error is acceptable when rank is a small fraction
     of matrix size, because LoRA recovery can compensate.
@@ -497,5 +564,3 @@ def adaptive_max_error(rank: int | float | None, in_features: int, out_features:
         base_err = max(base_err, 0.85)
 
     return base_err
-
-

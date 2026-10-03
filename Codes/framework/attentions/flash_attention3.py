@@ -26,16 +26,17 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 try:
     from flash_attn_interface import flash_attn_func
+
     FLASH_ATTN_AVAILABLE = True
 except ImportError:
     try:
         from flash_attn import flash_attn_func
+
         FLASH_ATTN_AVAILABLE = True
     except ImportError:
         FLASH_ATTN_AVAILABLE = False
@@ -46,7 +47,9 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     if n_rep == 1:
         return hidden_states
     batch, num_kv_heads, slen, head_dim = hidden_states.shape
-    hidden_states = hidden_states[:, :, None, :, :].expand(batch, num_kv_heads, n_rep, slen, head_dim)
+    hidden_states = hidden_states[:, :, None, :, :].expand(
+        batch, num_kv_heads, n_rep, slen, head_dim
+    )
     return hidden_states.reshape(batch, num_kv_heads * n_rep, slen, head_dim)
 
 
@@ -122,15 +125,21 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
+        self.weight = nn.Parameter(
+            torch.empty((out_features, in_features), **factory_kwargs)
+        )
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
+            self.lora_A = nn.Parameter(
+                torch.empty((lora_rank, in_features), **factory_kwargs)
+            )
+            self.lora_B = nn.Parameter(
+                torch.empty((out_features, lora_rank), **factory_kwargs)
+            )
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -171,22 +180,36 @@ class LoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
-        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
+        b = (
+            self.bias.to(x.dtype)
+            if (self.bias is not None and self.bias.dtype != x.dtype)
+            else self.bias
+        )
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            bb = (
+                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            )
             lora_out = F.linear(F.linear(x, a), bb) * self.lora_scaling
             out = out + lora_out
         return out
 
 
-@ATTENTION_REGISTRY.register("flash3", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("flash_attention3", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "flash3", supports_causal=True, supports_bidirectional=True, supports_gqa=True
+)
+@ATTENTION_REGISTRY.register(
+    "flash_attention3",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
 class FlashAttention3(BaseAttention):
     r"""FlashAttention-3 Multi-Head Exact Attention."""
 
     is_custom_attention: bool = True
+
     def __init__(
         self,
         config: Any | None = None,
@@ -202,27 +225,89 @@ class FlashAttention3(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
         if config is None:
+
             class DummyConfig:
                 pass
+
             config = DummyConfig()
             if source_attn is not None:
-                out_layer = getattr(source_attn, "out_lin", getattr(source_attn, "dense", getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None))))
-                q_layer = getattr(source_attn, "q_lin", getattr(source_attn, "query", getattr(source_attn, "c_attn", getattr(source_attn, "q_proj", None))))
+                out_layer = getattr(
+                    source_attn,
+                    "out_lin",
+                    getattr(
+                        source_attn,
+                        "dense",
+                        getattr(
+                            source_attn, "c_proj", getattr(source_attn, "o_proj", None)
+                        ),
+                    ),
+                )
+                q_layer = getattr(
+                    source_attn,
+                    "q_lin",
+                    getattr(
+                        source_attn,
+                        "query",
+                        getattr(
+                            source_attn, "c_attn", getattr(source_attn, "q_proj", None)
+                        ),
+                    ),
+                )
                 if out_layer is not None and hasattr(out_layer, "out_features"):
                     config.hidden_size = out_layer.out_features
                 elif q_layer is not None and hasattr(q_layer, "in_features"):
                     config.hidden_size = q_layer.in_features
                 else:
                     config.hidden_size = kwargs.get("hidden_size", 768)
-                config.num_attention_heads = getattr(source_attn, "n_heads", getattr(source_attn, "num_attention_heads", getattr(source_attn, "num_heads", kwargs.get("num_heads", kwargs.get("num_attention_heads", 12)))))
+                config.num_attention_heads = getattr(
+                    source_attn,
+                    "n_heads",
+                    getattr(
+                        source_attn,
+                        "num_attention_heads",
+                        getattr(
+                            source_attn,
+                            "num_heads",
+                            kwargs.get(
+                                "num_heads", kwargs.get("num_attention_heads", 12)
+                            ),
+                        ),
+                    ),
+                )
             else:
                 config.hidden_size = kwargs.get("hidden_size", 768)
-                config.num_attention_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
+                config.num_attention_heads = kwargs.get(
+                    "num_heads", kwargs.get("num_attention_heads", 12)
+                )
 
         super().__init__(config, rank)
-        self.num_heads: int = getattr(config, "num_attention_heads", getattr(config, "num_heads", kwargs.get("num_heads", kwargs.get("num_attention_heads", 12)))) if config is not None else kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
-        self.num_kv_heads: int = getattr(config, "num_key_value_heads", self.num_heads) if config is not None else self.num_heads
-        self.hidden_size: int = getattr(config, "hidden_size", getattr(config, "d_model", kwargs.get("hidden_size", 768))) if config is not None else kwargs.get("hidden_size", 768)
+        self.num_heads: int = (
+            getattr(
+                config,
+                "num_attention_heads",
+                getattr(
+                    config,
+                    "num_heads",
+                    kwargs.get("num_heads", kwargs.get("num_attention_heads", 12)),
+                ),
+            )
+            if config is not None
+            else kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
+        )
+        self.num_kv_heads: int = (
+            getattr(config, "num_key_value_heads", self.num_heads)
+            if config is not None
+            else self.num_heads
+        )
+        self.hidden_size: int = (
+            getattr(
+                config,
+                "hidden_size",
+                getattr(config, "d_model", kwargs.get("hidden_size", 768)),
+            )
+            if config is not None
+            else kwargs.get("hidden_size", 768)
+        )
 
         cfg_head_dim = getattr(config, "head_dim", None) if config is not None else None
         if cfg_head_dim is None and source_attn is not None:
@@ -231,31 +316,74 @@ class FlashAttention3(BaseAttention):
                 if mod is not None and hasattr(mod, "weight"):
                     cfg_head_dim = mod.weight.shape[0] // max(1, self.num_heads)
                     break
-        self.head_dim: int = int(cfg_head_dim) if cfg_head_dim is not None else getattr(config, "d_kv", self.hidden_size // max(1, self.num_heads))
+        self.head_dim: int = (
+            int(cfg_head_dim)
+            if cfg_head_dim is not None
+            else getattr(config, "d_kv", self.hidden_size // max(1, self.num_heads))
+        )
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.use_fp8: bool = bool(use_fp8)
 
         # Static layer index
-        resolved_layer_id = layer_id if layer_id is not None else (layer_idx if layer_idx is not None else kwargs.get("layer_id", kwargs.get("layer_idx", 0)))
+        resolved_layer_id = (
+            layer_id
+            if layer_id is not None
+            else (
+                layer_idx
+                if layer_idx is not None
+                else kwargs.get("layer_id", kwargs.get("layer_idx", 0))
+            )
+        )
         self.layer_idx: int = int(resolved_layer_id)
 
         # LoRA adaptation configuration
-        self.lora_rank: int = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
-        self.lora_alpha: float = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
-        self.freeze_base: bool = (self.lora_rank > 0)
+        self.lora_rank: int = getattr(
+            config,
+            "lora_rank",
+            getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)),
+        )
+        self.lora_alpha: float = getattr(
+            config,
+            "lora_alpha",
+            getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
+        )
+        self.freeze_base: bool = self.lora_rank > 0
 
         # Decoder & nested encoder detection
-        _mt = str(getattr(config, "model_type", "") or "").lower() if config is not None else ""
-        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                             "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+        _mt = (
+            str(getattr(config, "model_type", "") or "").lower()
+            if config is not None
+            else ""
+        )
+        _decoder_prefixes = (
+            "gpt",
+            "qwen",
+            "llama",
+            "mistral",
+            "gemma",
+            "phi",
+            "opt",
+            "bloom",
+            "falcon",
+            "olmo",
+            "mpt",
+            "stablelm",
+        )
         is_dec = (
-            getattr(config, "is_decoder", False)
-            or getattr(config, "is_causal", False)
-            or any(_mt.startswith(p) for p in _decoder_prefixes)
-        ) if config is not None else False
-        if hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+            (
+                getattr(config, "is_decoder", False)
+                or getattr(config, "is_causal", False)
+                or any(_mt.startswith(p) for p in _decoder_prefixes)
+            )
+            if config is not None
+            else False
+        )
+        if hasattr(config, "architectures") and any(
+            "GPT" in str(a) or "CausalLM" in str(a)
+            for a in (getattr(config, "architectures", []) or [])
+        ):
             is_dec = True
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
@@ -266,25 +394,77 @@ class FlashAttention3(BaseAttention):
         if is_nested is None and source_attn is not None:
             src_cls = source_attn.__class__.__name__
             if (
-                src_cls in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
-                or (src_cls.endswith("SelfAttention") and "distil" not in src_cls.lower())
+                src_cls
+                in [
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                ]
+                or (
+                    src_cls.endswith("SelfAttention")
+                    and "distil" not in src_cls.lower()
+                )
                 or (hasattr(source_attn, "self") and hasattr(source_attn, "output"))
             ):
                 is_nested = True
-            elif hasattr(source_attn, "out_lin") or hasattr(source_attn, "c_proj") or hasattr(source_attn, "o_proj"):
+            elif (
+                hasattr(source_attn, "out_lin")
+                or hasattr(source_attn, "c_proj")
+                or hasattr(source_attn, "o_proj")
+            ):
                 is_nested = False
         if is_nested is None:
             is_nested = False
         self.is_nested_encoder: bool = bool(is_nested)
-        self.gradient_checkpointing: bool = getattr(config, "gradient_checkpointing", False) if config is not None else False
+        self.gradient_checkpointing: bool = (
+            getattr(config, "gradient_checkpointing", False)
+            if config is not None
+            else False
+        )
 
         # Multi-head projections equipped with LoRA adapters
-        self.q_proj = LoRALinear(self.hidden_size, self.all_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.k_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.v_proj = LoRALinear(self.hidden_size, self.kv_head_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
-        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.q_proj = LoRALinear(
+            self.hidden_size,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.k_proj = LoRALinear(
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.v_proj = LoRALinear(
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.hidden_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
-        dropout_p = getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1
+        dropout_p = (
+            getattr(
+                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
+            )
+            if config
+            else 0.1
+        )
         self.dropout = nn.Dropout(dropout_p)
 
         self.rotary_emb = None
@@ -295,31 +475,56 @@ class FlashAttention3(BaseAttention):
 
     # Compatibility properties
     @property
-    def query(self) -> LoRALinear: return self.q_proj
+    def query(self) -> LoRALinear:
+        return self.q_proj
+
     @property
-    def key(self) -> LoRALinear: return self.k_proj
+    def key(self) -> LoRALinear:
+        return self.k_proj
+
     @property
-    def value(self) -> LoRALinear: return self.v_proj
+    def value(self) -> LoRALinear:
+        return self.v_proj
+
     @property
-    def dense(self) -> LoRALinear: return self.out_proj
+    def dense(self) -> LoRALinear:
+        return self.out_proj
+
     @property
-    def o_proj(self) -> LoRALinear: return self.out_proj
+    def o_proj(self) -> LoRALinear:
+        return self.out_proj
+
     @property
-    def q_lin(self) -> LoRALinear: return self.q_proj
+    def q_lin(self) -> LoRALinear:
+        return self.q_proj
+
     @property
-    def k_lin(self) -> LoRALinear: return self.k_proj
+    def k_lin(self) -> LoRALinear:
+        return self.k_proj
+
     @property
-    def v_lin(self) -> LoRALinear: return self.v_proj
+    def v_lin(self) -> LoRALinear:
+        return self.v_proj
+
     @property
-    def out_lin(self) -> LoRALinear: return self.out_proj
+    def out_lin(self) -> LoRALinear:
+        return self.out_proj
+
     @property
-    def W_q(self) -> LoRALinear: return self.q_proj
+    def W_q(self) -> LoRALinear:
+        return self.q_proj
+
     @property
-    def W_k(self) -> LoRALinear: return self.k_proj
+    def W_k(self) -> LoRALinear:
+        return self.k_proj
+
     @property
-    def W_v(self) -> LoRALinear: return self.v_proj
+    def W_v(self) -> LoRALinear:
+        return self.v_proj
+
     @property
-    def c_proj(self) -> LoRALinear: return self.out_proj
+    def c_proj(self) -> LoRALinear:
+        return self.out_proj
 
     def copy_weights(self, src: Any) -> None:
         r"""Copy projection weights from pretrained attention module with Frobenius norm verification."""
@@ -327,7 +532,9 @@ class FlashAttention3(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        has_out_lin = (
+            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
+        )
         is_nested = False
         if has_out_lin:
             is_nested = False
@@ -337,7 +544,14 @@ class FlashAttention3(BaseAttention):
             and hasattr(src, "output")
             and hasattr(src.output, "dense")
         ) or (
-            cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
+            cls_name
+            in [
+                "BertSelfAttention",
+                "RobertaSelfAttention",
+                "XLMRobertaSelfAttention",
+                "ElectraSelfAttention",
+                "DebertaSelfAttention",
+            ]
             or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
         ):
             is_nested = True
@@ -358,7 +572,9 @@ class FlashAttention3(BaseAttention):
         # 1. GPT-2: Fused c_attn + c_proj
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
-            if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
+            if hasattr(c_attn_mod, "merge") and not getattr(
+                c_attn_mod, "merged", False
+            ):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
@@ -369,14 +585,34 @@ class FlashAttention3(BaseAttention):
                 c_w = c_w.data.clone()
                 cls_c = getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__
                 base_cls_c = getattr(base_c, "__class__", type(base_c)).__name__
-                if (cls_c == "Conv1D") or (base_cls_c == "Conv1D") or hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1] and "Linear" not in cls_c and "Linear" not in base_cls_c):
+                if (
+                    (cls_c == "Conv1D")
+                    or (base_cls_c == "Conv1D")
+                    or hasattr(c_attn_mod, "nf")
+                    or hasattr(base_c, "nf")
+                    or (
+                        c_w.ndim == 2
+                        and c_w.shape[0] < c_w.shape[1]
+                        and "Linear" not in cls_c
+                        and "Linear" not in base_cls_c
+                    )
+                ):
                     c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
-                extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
-                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
+                extracted["q"] = (
+                    c_w[:split_size, :],
+                    c_b[:split_size] if c_b is not None else None,
+                )
+                extracted["k"] = (
+                    c_w[split_size : 2 * split_size, :],
+                    c_b[split_size : 2 * split_size] if c_b is not None else None,
+                )
+                extracted["v"] = (
+                    c_w[2 * split_size :, :],
+                    c_b[2 * split_size :] if c_b is not None else None,
+                )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = src.c_proj
@@ -386,10 +622,24 @@ class FlashAttention3(BaseAttention):
                     o_w = o_w.data.clone()
                     cls_o = getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__
                     base_cls_o = getattr(base_o, "__class__", type(base_o)).__name__
-                    if (cls_o == "Conv1D") or (base_cls_o == "Conv1D") or hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1] and "Linear" not in cls_o and "Linear" not in base_cls_o):
+                    if (
+                        (cls_o == "Conv1D")
+                        or (base_cls_o == "Conv1D")
+                        or hasattr(c_proj_mod, "nf")
+                        or hasattr(base_o, "nf")
+                        or (
+                            o_w.ndim == 2
+                            and o_w.shape[0] < o_w.shape[1]
+                            and "Linear" not in cls_o
+                            and "Linear" not in base_cls_o
+                        )
+                    ):
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
+                    extracted["o"] = (
+                        o_w,
+                        bias_o.data.clone() if bias_o is not None else None,
+                    )
 
         # 2. RoBERTa / BERT nested self-attention
         elif hasattr(src, "self") and hasattr(src.self, "query"):
@@ -397,10 +647,16 @@ class FlashAttention3(BaseAttention):
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
-                    extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                    extracted[proj_key] = (
+                        mod.weight.data.clone(),
+                        mod.bias.data.clone() if mod.bias is not None else None,
+                    )
             if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
-                extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
+                extracted["o"] = (
+                    out_mod.weight.data.clone(),
+                    out_mod.bias.data.clone() if out_mod.bias is not None else None,
+                )
 
         # 3. Standard linear projections (DistilBERT, Qwen, LLaMA)
         else:
@@ -415,14 +671,22 @@ class FlashAttention3(BaseAttention):
                     if hasattr(src, name):
                         mod = getattr(src, name)
                         if mod is not None and hasattr(mod, "weight"):
-                            extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
+                            extracted[proj_key] = (
+                                mod.weight.data.clone(),
+                                mod.bias.data.clone() if mod.bias is not None else None,
+                            )
                             break
 
         # Fallback via UniversalAdapter
-        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -431,7 +695,11 @@ class FlashAttention3(BaseAttention):
             except Exception as e:
                 logger.debug(f"UniversalAdapter fallback warning: {e}")
 
-        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing_after = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing_after:
             logger.debug(
                 f"FlashAttention3 copy_weights: missing mandatory projections {missing_after} "
@@ -458,23 +726,36 @@ class FlashAttention3(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                if (
+                    w.shape != target_mod.weight.shape
+                    and target_mod.weight.shape == w.t().contiguous().shape
+                ):
                     w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
-                target_mod.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype))
+                target_mod.weight.data[:out_d, :in_d].copy_(
+                    w[:out_d, :in_d].to(
+                        device=target_mod.weight.device, dtype=target_mod.weight.dtype
+                    )
+                )
 
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
-                    target_mod.bias.data[:min_b].copy_(b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype))
+                    target_mod.bias.data[:min_b].copy_(
+                        b[:min_b].to(
+                            device=target_mod.bias.device, dtype=target_mod.bias.dtype
+                        )
+                    )
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
                 # Frobenius norm verification (>= 1e-4)
                 w_norm = float(torch.linalg.norm(target_mod.weight.data.float()).item())
                 if w_norm < 1e-4:
-                    logger.warning(f"FlashAttention3 weight copy verification: norm too small ({w_norm:.2e}) for '{proj_key}'")
+                    logger.warning(
+                        f"FlashAttention3 weight copy verification: norm too small ({w_norm:.2e}) for '{proj_key}'"
+                    )
 
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
@@ -506,8 +787,18 @@ class FlashAttention3(BaseAttention):
 
         # 1. Projections
         q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()
-        k = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
-        v = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
+        k = (
+            self.k_proj(kv_input)
+            .view(B, kv_len, self.num_kv_heads, Dh)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_proj(kv_input)
+            .view(B, kv_len, self.num_kv_heads, Dh)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # 2. Rotary Position Embeddings (RoPE)
         if position_embeddings is not None and not is_cross_attention:
@@ -554,7 +845,9 @@ class FlashAttention3(BaseAttention):
             attn_mask = None
             if eff_mask is not None:
                 if eff_mask.dim() == 2:
-                    attn_mask = (1.0 - eff_mask.unsqueeze(1).unsqueeze(2).float()) * -1e4
+                    attn_mask = (
+                        1.0 - eff_mask.unsqueeze(1).unsqueeze(2).float()
+                    ) * -1e4
                 elif eff_mask.dim() == 3:
                     attn_mask = eff_mask.unsqueeze(1).float()
                 elif eff_mask.dim() == 4:
@@ -562,15 +855,37 @@ class FlashAttention3(BaseAttention):
 
             if causal_flag and attn_mask is None:
                 out_sdpa = F.scaled_dot_product_attention(
-                    q, k, v, attn_mask=None, is_causal=True, dropout_p=self.dropout.p if self.training else 0.0
+                    q,
+                    k,
+                    v,
+                    attn_mask=None,
+                    is_causal=True,
+                    dropout_p=self.dropout.p if self.training else 0.0,
                 )
             else:
                 if causal_flag:
-                    causal_m = torch.triu(torch.full((L, kv_len), float("-inf"), device=device, dtype=torch.float32), diagonal=1)
-                    attn_mask = (attn_mask + causal_m.unsqueeze(0).unsqueeze(0)) if attn_mask is not None else causal_m.unsqueeze(0).unsqueeze(0)
+                    causal_m = torch.triu(
+                        torch.full(
+                            (L, kv_len),
+                            float("-inf"),
+                            device=device,
+                            dtype=torch.float32,
+                        ),
+                        diagonal=1,
+                    )
+                    attn_mask = (
+                        (attn_mask + causal_m.unsqueeze(0).unsqueeze(0))
+                        if attn_mask is not None
+                        else causal_m.unsqueeze(0).unsqueeze(0)
+                    )
 
                 out_sdpa = F.scaled_dot_product_attention(
-                    q, k, v, attn_mask=attn_mask, is_causal=False, dropout_p=self.dropout.p if self.training else 0.0
+                    q,
+                    k,
+                    v,
+                    attn_mask=attn_mask,
+                    is_causal=False,
+                    dropout_p=self.dropout.p if self.training else 0.0,
                 )
 
             # Head mask handling
@@ -578,7 +893,9 @@ class FlashAttention3(BaseAttention):
                 if head_mask.dim() == 1:
                     head_mask = head_mask.view(1, -1, 1, 1)
                 elif head_mask.dim() == 2:
-                    head_mask = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
+                    head_mask = head_mask.view(
+                        head_mask.shape[0], head_mask.shape[1], 1, 1
+                    )
                 elif head_mask.dim() == 3:
                     head_mask = head_mask.unsqueeze(-1)
                 out_sdpa = out_sdpa * head_mask
@@ -628,9 +945,15 @@ def inject_flash_attention3(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+    elif hasattr(target, "layers") and isinstance(
+        target.layers, (torch.nn.ModuleList, list)
+    ):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -640,7 +963,11 @@ def inject_flash_attention3(
             res = inject_flash_attention3(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                comp_config=(
+                    comp_config
+                    if "comp_config" in locals() or "comp_config" in kwargs
+                    else None
+                ),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,

@@ -40,7 +40,9 @@ class ModelComparison:
         print(f"Plots saved to {plots_dir}")
 
 
-def quick_compare(results_dirs: list[str], output_dir: str = "./results/comparison") -> None:
+def quick_compare(
+    results_dirs: list[str], output_dir: str = "./results/comparison"
+) -> None:
     """Quick compare."""
     comparator = ModelComparison(results_dirs, output_dir)
     comparator.load_all_results()

@@ -1,7 +1,9 @@
 """Part 11 Verification: Checkpoint Resolution & CLI Override."""
 import tempfile
 from pathlib import Path
+
 import pytest
+
 
 def test_explicit_cli_checkpoint_takes_precedence():
     with tempfile.TemporaryDirectory() as tmpdir:

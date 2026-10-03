@@ -2,10 +2,11 @@
 Auto-import all attention modules and export their registered classes.
 """
 
+import importlib
 import logging
 import os
 import sys
-import importlib
+
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,9 @@ for file in os.listdir(_curr_dir):
     if file.endswith(".py") and not file.startswith(".") and not file.startswith("_"):
         module_name = file[:-3]
         try:
-            mod = __import__(f"framework.attentions.{module_name}", fromlist=[module_name])
+            mod = __import__(
+                f"framework.attentions.{module_name}", fromlist=[module_name]
+            )
             __all__.append(module_name)
             for attr in dir(mod):
                 if not attr.startswith("_"):
@@ -85,4 +88,3 @@ def __getattr__(name: str):
         sys.modules[f"{__name__}.{name}"] = mod
         return mod
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
-

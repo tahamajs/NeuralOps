@@ -18,7 +18,7 @@ class ModelProfiler:
         self._current_timings = {}
 
     def _get_layer_name(self, name: str) -> str:
-        """ get layer name."""
+        """get layer name."""
         parts = name.split(".")
         filtered = [
             p
@@ -29,6 +29,7 @@ class ModelProfiler:
 
     def start_profiling(self) -> None:
         """Start profiling."""
+
         def pre_hook_fn(module, input, name) -> None:
             """Pre hook fn."""
             if torch.cuda.is_available():

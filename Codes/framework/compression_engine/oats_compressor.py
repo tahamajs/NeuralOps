@@ -21,17 +21,17 @@ from __future__ import annotations
 import logging
 import math
 from typing import Any
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
-from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.pruning_utils import (
     apply_24_structured_mask,
     get_calibration_tensors,
 )
+from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
@@ -85,10 +85,18 @@ class OATSLoRALinear(nn.Module):
 
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=target_device)
+                torch.empty(
+                    (self.lora_r, in_features),
+                    dtype=torch.float32,
+                    device=target_device,
+                )
             )
             self.lora_B = nn.Parameter(
-                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=target_device)
+                torch.zeros(
+                    (out_features, self.lora_r),
+                    dtype=torch.float32,
+                    device=target_device,
+                )
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
@@ -109,15 +117,27 @@ class OATSLoRALinear(nn.Module):
             weight = base_layer.weight.detach()
         if "rank" in kwargs and lora_r == 0:
             lora_r = kwargs["rank"]
-        bias = base_layer.bias.detach() if hasattr(base_layer, "bias") and base_layer.bias is not None else None
-        in_features = getattr(base_layer, "in_features", getattr(base_layer, "nx", None))
-        out_features = getattr(base_layer, "out_features", getattr(base_layer, "nf", None))
+        bias = (
+            base_layer.bias.detach()
+            if hasattr(base_layer, "bias") and base_layer.bias is not None
+            else None
+        )
+        in_features = getattr(
+            base_layer, "in_features", getattr(base_layer, "nx", None)
+        )
+        out_features = getattr(
+            base_layer, "out_features", getattr(base_layer, "nf", None)
+        )
         if in_features is None and out_features is None:
             out_features, in_features = weight.shape
         elif in_features is None:
-            in_features = weight.shape[1] if weight.shape[0] == out_features else weight.shape[0]
+            in_features = (
+                weight.shape[1] if weight.shape[0] == out_features else weight.shape[0]
+            )
         elif out_features is None:
-            out_features = weight.shape[0] if weight.shape[1] == in_features else weight.shape[1]
+            out_features = (
+                weight.shape[0] if weight.shape[1] == in_features else weight.shape[1]
+            )
 
         # Strictly orient weight as (out_features, in_features) for F.linear
         if weight.shape == (in_features, out_features) and in_features != out_features:
@@ -125,7 +145,9 @@ class OATSLoRALinear(nn.Module):
 
         existing_lora_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
         eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
-        eff_lora_alpha = getattr(linear, "lora_alpha", getattr(linear, "alpha", lora_alpha))
+        eff_lora_alpha = getattr(
+            linear, "lora_alpha", getattr(linear, "alpha", lora_alpha)
+        )
 
         layer = cls(
             in_features=in_features,
@@ -139,13 +161,33 @@ class OATSLoRALinear(nn.Module):
         )
 
         # Preserve existing LoRA weights if present
-        if hasattr(linear, "lora_A") and hasattr(linear, "lora_B") and layer.lora_A is not None and layer.lora_B is not None:
+        if (
+            hasattr(linear, "lora_A")
+            and hasattr(linear, "lora_B")
+            and layer.lora_A is not None
+            and layer.lora_B is not None
+        ):
             with torch.no_grad():
-                src_A = linear.lora_A.weight.data if hasattr(linear.lora_A, "weight") else linear.lora_A.data
-                src_B = linear.lora_B.weight.data if hasattr(linear.lora_B, "weight") else linear.lora_B.data
-                if src_A.shape == layer.lora_A.shape and src_B.shape == layer.lora_B.shape:
-                    layer.lora_A.copy_(src_A.to(layer.lora_A.device, dtype=layer.lora_A.dtype))
-                    layer.lora_B.copy_(src_B.to(layer.lora_B.device, dtype=layer.lora_B.dtype))
+                src_A = (
+                    linear.lora_A.weight.data
+                    if hasattr(linear.lora_A, "weight")
+                    else linear.lora_A.data
+                )
+                src_B = (
+                    linear.lora_B.weight.data
+                    if hasattr(linear.lora_B, "weight")
+                    else linear.lora_B.data
+                )
+                if (
+                    src_A.shape == layer.lora_A.shape
+                    and src_B.shape == layer.lora_B.shape
+                ):
+                    layer.lora_A.copy_(
+                        src_A.to(layer.lora_A.device, dtype=layer.lora_A.dtype)
+                    )
+                    layer.lora_B.copy_(
+                        src_B.to(layer.lora_B.device, dtype=layer.lora_B.dtype)
+                    )
 
         if layer.lora_A is not None:
             layer.lora_A.requires_grad = True
@@ -172,8 +214,22 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 _ATTN_NAMES = {
-    "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-    "c_attn", "c_proj", "query", "key", "value", "q_lin", "k_lin", "v_lin", "out_lin", "self_attn"
+    "attn",
+    "attention",
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "c_attn",
+    "c_proj",
+    "query",
+    "key",
+    "value",
+    "q_lin",
+    "k_lin",
+    "v_lin",
+    "out_lin",
+    "self_attn",
 }
 
 
@@ -220,18 +276,32 @@ class OATSCompressor(BaseCompressor):
         super().__init__(model, name="oats", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
-            sparsity = _cfg_get(cfg, "oats_sparsity", _cfg_get(cfg, "sparsity", sparsity))
-            rank_ratio = _cfg_get(cfg, "oats_rank_ratio", _cfg_get(cfg, "rank_ratio", rank_ratio))
-            num_iters = _cfg_get(cfg, "oats_num_iters", _cfg_get(cfg, "num_iters", num_iters))
-            structured_24 = _cfg_get(cfg, "oats_structured_24", _cfg_get(cfg, "structured_24", structured_24))
-            max_error = _cfg_get(cfg, "oats_max_error", _cfg_get(cfg, "max_error", max_error))
+            sparsity = _cfg_get(
+                cfg, "oats_sparsity", _cfg_get(cfg, "sparsity", sparsity)
+            )
+            rank_ratio = _cfg_get(
+                cfg, "oats_rank_ratio", _cfg_get(cfg, "rank_ratio", rank_ratio)
+            )
+            num_iters = _cfg_get(
+                cfg, "oats_num_iters", _cfg_get(cfg, "num_iters", num_iters)
+            )
+            structured_24 = _cfg_get(
+                cfg, "oats_structured_24", _cfg_get(cfg, "structured_24", structured_24)
+            )
+            max_error = _cfg_get(
+                cfg, "oats_max_error", _cfg_get(cfg, "max_error", max_error)
+            )
             fallback_to_original = _cfg_get(
-                cfg, "oats_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+                cfg,
+                "oats_fallback_to_original",
+                _cfg_get(cfg, "fallback_to_original", fallback_to_original),
             )
             lora_r = _cfg_get(cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
             skip_attention_qkv = _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
-            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
+            target_attention_only = _cfg_get(
+                cfg, "target_attention_only", target_attention_only
+            )
             min_rank = _cfg_get(cfg, "min_rank", min_rank)
 
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
@@ -269,9 +339,24 @@ class OATSCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
+        if (
+            num_heads is not None
+            and num_kv_heads is not None
+            and num_kv_heads < num_heads
+        ):
             name_lower = name.lower()
-            if any(p in name_lower for p in ["q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"]):
+            if any(
+                p in name_lower
+                for p in [
+                    "q_proj",
+                    "k_proj",
+                    "v_proj",
+                    "query",
+                    "key",
+                    "value",
+                    "c_attn",
+                ]
+            ):
                 return True
         return False
 
@@ -310,6 +395,7 @@ class OATSCompressor(BaseCompressor):
                     if name not in activations:
                         activations[name] = []
                     activations[name].append(inp.cpu())
+
             return hook
 
         for name, module in self.model.named_modules():
@@ -378,7 +464,10 @@ class OATSCompressor(BaseCompressor):
 
         # Scale weights: W_scaled = W @ L_M
         W_scaled = torch.matmul(W, L_M)
-        rank = max(min(self.min_rank, min(d_out, d_in)), min(int(self.rank_ratio * min(d_out, d_in)), min(d_out, d_in)))
+        rank = max(
+            min(self.min_rank, min(d_out, d_in)),
+            min(int(self.rank_ratio * min(d_out, d_in)), min(d_out, d_in)),
+        )
 
         # Initialize L via truncated SVD
         try:
@@ -407,7 +496,10 @@ class OATSCompressor(BaseCompressor):
                 r = min(rank, len(S))
                 L = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :])
             except Exception as e:
-                logger.warning("OATS SVD alternating iteration failed: %s; keeping previous decomposition", e)
+                logger.warning(
+                    "OATS SVD alternating iteration failed: %s; keeping previous decomposition",
+                    e,
+                )
                 break
 
             R = W_scaled - L
@@ -428,7 +520,9 @@ class OATSCompressor(BaseCompressor):
             return W, rank
 
         if torch.isnan(W_comp).any() or torch.isinf(W_comp).any():
-            logger.warning("OATS decomposition produced NaNs or Infs; returning original weight")
+            logger.warning(
+                "OATS decomposition produced NaNs or Infs; returning original weight"
+            )
             return W, rank
         return W_comp, r
 
@@ -464,7 +558,11 @@ class OATSCompressor(BaseCompressor):
                 cls_name = base_module.__class__.__name__.lower()
                 is_conv1d = "conv1d" in cls_name or hasattr(base_module, "nf")
 
-                W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
+                W = (
+                    raw_w.t().contiguous().clone().float()
+                    if is_conv1d
+                    else raw_w.clone().float()
+                )
                 device = raw_w.device
                 dtype = raw_w.dtype
 
@@ -484,7 +582,10 @@ class OATSCompressor(BaseCompressor):
                             self.max_error,
                         )
                         if self.fallback_to_original:
-                            logger.info("Skipping OATS compression for %s (fallback to original).", name)
+                            logger.info(
+                                "Skipping OATS compression for %s (fallback to original).",
+                                name,
+                            )
                             self.fallback_layers.append(name)
                             for p in module.parameters():
                                 p.requires_grad = False
@@ -526,35 +627,38 @@ class OATSCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         avg_err = (
-            sum(self.layer_errors[k] for k in self.compressed_layers) / max(1, len(self.compressed_layers))
+            sum(self.layer_errors[k] for k in self.compressed_layers)
+            / max(1, len(self.compressed_layers))
             if self.compressed_layers
             else 0.0
         )
         stats = self.get_compression_stats()
         eff_ratio = total_comp_params / max(1, total_orig_params)
-        stats.update({
-            "decomposed_layers": len(self.compressed_layers),
-            "sparsity_target": self.sparsity,
-            "rank_ratio": self.rank_ratio,
-            "structured_24": self.structured_24,
-            "num_iters": self.num_iters,
-            "max_error": self.max_error,
-            "fallback_to_original": self.fallback_to_original,
-            "compressed_layers": self.compressed_layers,
-            "fallback_layers": self.fallback_layers,
-            "skipped_layers": self.skipped_layers,
-            "num_compressed": len(self.compressed_layers),
-            "num_fallback": len(self.fallback_layers),
-            "num_skipped": len(self.skipped_layers),
-            "layer_errors": self.layer_errors,
-            "layer_ranks": self.layer_ranks,
-            "avg_reconstruction_error": avg_err,
-            "lora_r": self.lora_r,
-            "lora_alpha": self.lora_alpha,
-            "effective_parameter_ratio": eff_ratio,
-            "forward_check_success": forward_check_success,
-            "method": "oats_outlier_decomposition",
-        })
+        stats.update(
+            {
+                "decomposed_layers": len(self.compressed_layers),
+                "sparsity_target": self.sparsity,
+                "rank_ratio": self.rank_ratio,
+                "structured_24": self.structured_24,
+                "num_iters": self.num_iters,
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "compressed_layers": self.compressed_layers,
+                "fallback_layers": self.fallback_layers,
+                "skipped_layers": self.skipped_layers,
+                "num_compressed": len(self.compressed_layers),
+                "num_fallback": len(self.fallback_layers),
+                "num_skipped": len(self.skipped_layers),
+                "layer_errors": self.layer_errors,
+                "layer_ranks": self.layer_ranks,
+                "avg_reconstruction_error": avg_err,
+                "lora_r": self.lora_r,
+                "lora_alpha": self.lora_alpha,
+                "effective_parameter_ratio": eff_ratio,
+                "forward_check_success": forward_check_success,
+                "method": "oats_outlier_decomposition",
+            }
+        )
         self.stats = stats
         return self.model, stats
 
@@ -563,16 +667,49 @@ class OATSCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("oats_compressor_factory")
 def oats_compressor_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for OATS compressor."""
-    sparsity = kwargs.pop("sparsity", _cfg_get(comp_config, "oats_sparsity", _cfg_get(comp_config, "sparsity", 0.5)))
-    rank_ratio = kwargs.pop("rank_ratio", _cfg_get(comp_config, "oats_rank_ratio", _cfg_get(comp_config, "rank_ratio", 0.2)))
-    num_iters = kwargs.pop("num_iters", _cfg_get(comp_config, "oats_num_iters", _cfg_get(comp_config, "num_iters", 4)))
-    structured_24 = kwargs.pop("structured_24", _cfg_get(comp_config, "oats_structured_24", _cfg_get(comp_config, "structured_24", True)))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "oats_max_error", _cfg_get(comp_config, "max_error", 0.85)))
-    fallback = kwargs.pop("fallback_to_original", _cfg_get(
-        comp_config, "oats_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)
-    ))
-    target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
-    tokenizer = kwargs.pop("tokenizer", getattr(model, "tokenizer", None) or _cfg_get(comp_config, "tokenizer", None))
+    sparsity = kwargs.pop(
+        "sparsity",
+        _cfg_get(comp_config, "oats_sparsity", _cfg_get(comp_config, "sparsity", 0.5)),
+    )
+    rank_ratio = kwargs.pop(
+        "rank_ratio",
+        _cfg_get(
+            comp_config, "oats_rank_ratio", _cfg_get(comp_config, "rank_ratio", 0.2)
+        ),
+    )
+    num_iters = kwargs.pop(
+        "num_iters",
+        _cfg_get(comp_config, "oats_num_iters", _cfg_get(comp_config, "num_iters", 4)),
+    )
+    structured_24 = kwargs.pop(
+        "structured_24",
+        _cfg_get(
+            comp_config,
+            "oats_structured_24",
+            _cfg_get(comp_config, "structured_24", True),
+        ),
+    )
+    max_error = kwargs.pop(
+        "max_error",
+        _cfg_get(
+            comp_config, "oats_max_error", _cfg_get(comp_config, "max_error", 0.85)
+        ),
+    )
+    fallback = kwargs.pop(
+        "fallback_to_original",
+        _cfg_get(
+            comp_config,
+            "oats_fallback_to_original",
+            _cfg_get(comp_config, "fallback_to_original", True),
+        ),
+    )
+    target_attention_only = kwargs.pop(
+        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
+    )
+    tokenizer = kwargs.pop(
+        "tokenizer",
+        getattr(model, "tokenizer", None) or _cfg_get(comp_config, "tokenizer", None),
+    )
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))

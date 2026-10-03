@@ -1,14 +1,14 @@
 """Unit tests for numerical stability, FP16/FP32 precision, and mask edge cases."""
 
+from unittest.mock import MagicMock
+
 import pytest
 import torch
 import torch.nn as nn
-from unittest.mock import MagicMock
-from transformers import PretrainedConfig
-
-from framework.core.registry import ATTENTION_REGISTRY
 from framework.attentions.performer_attention import PerformerAttention
+from framework.core.registry import ATTENTION_REGISTRY
 from framework.utils.replace_attention import UniversalAttentionWrapper
+from transformers import PretrainedConfig
 
 
 class DummyConfig(PretrainedConfig):

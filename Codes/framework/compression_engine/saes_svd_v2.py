@@ -21,7 +21,6 @@ from typing import Any
 
 import torch
 import torch.nn as nn
-
 from framework.compression_engine.aa_svd_compressor import SVDLinear
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
@@ -66,11 +65,17 @@ class SAESSVDCompressorV2(BaseCompressor):
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = _cfg_get(cfg, "saes_rank", _cfg_get(cfg, "rank", rank))
-            rank_ratio = _cfg_get(cfg, "saes_rank_ratio", _cfg_get(cfg, "rank_ratio", rank_ratio))
+            rank_ratio = _cfg_get(
+                cfg, "saes_rank_ratio", _cfg_get(cfg, "rank_ratio", rank_ratio)
+            )
             correcting_steps = _cfg_get(cfg, "correcting_steps", correcting_steps)
             max_error = _cfg_get(cfg, "max_error", max_error)
-            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
-            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
+            fallback_to_original = _cfg_get(
+                cfg, "fallback_to_original", fallback_to_original
+            )
+            target_attention_only = _cfg_get(
+                cfg, "target_attention_only", target_attention_only
+            )
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
@@ -94,14 +99,30 @@ class SAESSVDCompressorV2(BaseCompressor):
         """
         name_l = name.lower()
         if self.target_attention_only:
-            attn_keywords = ['attn', 'attention', 'q_proj', 'k_proj', 'v_proj', 'o_proj', 'c_attn', 'c_proj', 'query', 'key', 'value']
+            attn_keywords = [
+                "attn",
+                "attention",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "c_attn",
+                "c_proj",
+                "query",
+                "key",
+                "value",
+            ]
             if not any(k in name_l for k in attn_keywords):
                 return False
 
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__.lower()
         # Fix 3: Reliable Conv1D check using class name and hasattr(nf)
-        is_linear_like = isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
+        is_linear_like = (
+            isinstance(base_mod, nn.Linear)
+            or "conv1d" in cls_name
+            or hasattr(base_mod, "nf")
+        )
         if not is_linear_like:
             return False
         if isinstance(base_mod, SVDLinear):
@@ -156,8 +177,8 @@ class SAESSVDCompressorV2(BaseCompressor):
 
         # Initial symmetric square-root singular value allocation
         sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-        A = U[:, :r] * sqrt_S.unsqueeze(0)      # [out_features, r]
-        B = sqrt_S.unsqueeze(1) * Vt[:r, :]     # [r, in_features]
+        A = U[:, :r] * sqrt_S.unsqueeze(0)  # [out_features, r]
+        B = sqrt_S.unsqueeze(1) * Vt[:r, :]  # [r, in_features]
 
         # Iterative residual error suppression
         eps_eye = 1e-6 * torch.eye(r, device=W.device, dtype=torch.float32)
@@ -183,7 +204,11 @@ class SAESSVDCompressorV2(BaseCompressor):
                 rel_err,
                 name,
                 self.max_error,
-                ". Keeping original layer." if self.fallback_to_original else ". Proceeding with compressed layer.",
+                (
+                    ". Keeping original layer."
+                    if self.fallback_to_original
+                    else ". Proceeding with compressed layer."
+                ),
             )
             if self.fallback_to_original:
                 return None
@@ -207,7 +232,9 @@ class SAESSVDCompressorV2(BaseCompressor):
         )
         # Fix 5: Ensure bias is copied correctly for both Linear and Conv1D
         if has_bias and svd_layer.bias is not None:
-            svd_layer.bias.data.copy_(base_layer.bias.data.to(dtype=dtype, device=device))
+            svd_layer.bias.data.copy_(
+                base_layer.bias.data.to(dtype=dtype, device=device)
+            )
 
         if has_lora and svd_layer.use_lora:
             try:
@@ -216,7 +243,9 @@ class SAESSVDCompressorV2(BaseCompressor):
                 if hasattr(layer.lora_B, "weight"):
                     svd_layer.lora_B.weight.data.copy_(layer.lora_B.weight.data)
             except Exception as e_lora:
-                logger.warning("Could not preserve LoRA adapters in SAES-SVD: %s", e_lora)
+                logger.warning(
+                    "Could not preserve LoRA adapters in SAES-SVD: %s", e_lora
+                )
 
         # Store metadata on module
         svd_layer.reconstruction_error = rel_err
@@ -256,16 +285,18 @@ class SAESSVDCompressorV2(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         # Fix 4 & Fix 6: Detailed per-layer stats, errors, ranks, and fallback status
-        stats.update({
-            "layer_errors": self.layer_errors,
-            "layer_ranks": self.layer_ranks,
-            "replaced_layers": self.replaced_layers,
-            "compressed_layers": len(self.replaced_layers),
-            "max_error": self.max_error,
-            "fallback_to_original": self.fallback_to_original,
-            "correcting_steps": self.correcting_steps,
-            "target_attention_only": self.target_attention_only,
-        })
+        stats.update(
+            {
+                "layer_errors": self.layer_errors,
+                "layer_ranks": self.layer_ranks,
+                "replaced_layers": self.replaced_layers,
+                "compressed_layers": len(self.replaced_layers),
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "correcting_steps": self.correcting_steps,
+                "target_attention_only": self.target_attention_only,
+            }
+        )
         return self.model, stats
 
 

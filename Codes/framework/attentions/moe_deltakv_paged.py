@@ -41,7 +41,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
@@ -185,8 +184,12 @@ def apply_rotary_pos_emb(
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_e = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot_e = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q_rot_e = (q_rot * cos.to(q_rot.dtype)) + (
+            _rotate_half(q_rot) * sin.to(q_rot.dtype)
+        )
+        k_rot_e = (k_rot * cos.to(k_rot.dtype)) + (
+            _rotate_half(k_rot) * sin.to(k_rot.dtype)
+        )
         q = torch.cat([q_rot_e, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_e
         k = torch.cat([k_rot_e, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_e
     else:
@@ -266,11 +269,17 @@ class LoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
-        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
+        b = (
+            self.bias.to(x.dtype)
+            if (self.bias is not None and self.bias.dtype != x.dtype)
+            else self.bias
+        )
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            bb = (
+                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            )
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -278,9 +287,9 @@ class LoRALinear(nn.Module):
 # ===========================================================================
 # Main attention
 # ===========================================================================
-@ATTENTION_REGISTRY.register("moe_deltakv_paged",
-                              supports_causal=True,
-                              supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "moe_deltakv_paged", supports_causal=True, supports_gqa=True
+)
 class MoEDeltaKVPagedAttention(nn.Module):
     """
     MoE-DeltaKV-Paged Hybrid Attention.
@@ -310,7 +319,10 @@ class MoEDeltaKVPagedAttention(nn.Module):
         super().__init__()
 
         if config is None:
-            class _Cfg: pass
+
+            class _Cfg:
+                pass
+
             config = _Cfg()
             config.hidden_size = kwargs.get("hidden_size", 768)
             config.num_attention_heads = kwargs.get("num_attention_heads", 12)
@@ -319,18 +331,31 @@ class MoEDeltaKVPagedAttention(nn.Module):
             config.is_decoder = kwargs.get("is_decoder", False)
 
         # ---- dim inference (MDP-FIX-14) ----
-        self.hidden_size = int(getattr(config, "hidden_size",
-                                getattr(config, "d_model",
-                                kwargs.get("hidden_size", 768))))
-        self.num_heads = int(getattr(config, "num_attention_heads",
-                              getattr(config, "num_heads",
-                              kwargs.get("num_attention_heads", 12))))
-        self.head_dim = int(getattr(config, "head_dim",
-                              kwargs.get("head_dim",
-                              self.hidden_size // max(1, self.num_heads))))
+        self.hidden_size = int(
+            getattr(
+                config,
+                "hidden_size",
+                getattr(config, "d_model", kwargs.get("hidden_size", 768)),
+            )
+        )
+        self.num_heads = int(
+            getattr(
+                config,
+                "num_attention_heads",
+                getattr(config, "num_heads", kwargs.get("num_attention_heads", 12)),
+            )
+        )
+        self.head_dim = int(
+            getattr(
+                config,
+                "head_dim",
+                kwargs.get("head_dim", self.hidden_size // max(1, self.num_heads)),
+            )
+        )
 
-        cfg_kv = getattr(config, "num_key_value_heads",
-                          getattr(config, "num_kv_heads", None))
+        cfg_kv = getattr(
+            config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
+        )
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -363,8 +388,20 @@ class MoEDeltaKVPagedAttention(nn.Module):
             self.is_causal = bool(is_decoder)
         else:
             _mt = str(getattr(config, "model_type", "") or "").lower()
-            _dec_pfx = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                         "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
+            _dec_pfx = (
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
+                "mpt",
+                "stablelm",
+            )
             self.is_causal = bool(
                 getattr(config, "is_causal", False)
                 or getattr(config, "is_decoder", False)
@@ -376,18 +413,38 @@ class MoEDeltaKVPagedAttention(nn.Module):
         self.is_nested_encoder = False
 
         # ---- projections ----
-        self.query = LoRALinear(self.hidden_size, self.all_head_size, bias=True,
-                                 lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                 freeze_base=True)
-        self.key = LoRALinear(self.hidden_size, self.kv_head_size, bias=True,
-                               lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                               freeze_base=True)
-        self.value = LoRALinear(self.hidden_size, self.kv_head_size, bias=True,
-                                 lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                 freeze_base=True)
-        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, bias=True,
-                                    lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                    freeze_base=True)
+        self.query = LoRALinear(
+            self.hidden_size,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.key = LoRALinear(
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.value = LoRALinear(
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.hidden_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
 
         # ---- page router (identity init so it preserves original attention) ----
         self.W_rg = nn.Linear(self.head_dim, self.head_dim, bias=False)
@@ -401,9 +458,17 @@ class MoEDeltaKVPagedAttention(nn.Module):
         self.register_buffer("delta_kv_error_k", torch.zeros(1), persistent=False)
         self.register_buffer("delta_kv_error_v", torch.zeros(1), persistent=False)
 
-        dropout_p = float(getattr(config, "dropout",
-                            getattr(config, "hidden_dropout_prob",
-                            getattr(config, "attention_probs_dropout_prob", 0.1))))
+        dropout_p = float(
+            getattr(
+                config,
+                "dropout",
+                getattr(
+                    config,
+                    "hidden_dropout_prob",
+                    getattr(config, "attention_probs_dropout_prob", 0.1),
+                ),
+            )
+        )
         self.dropout = nn.Dropout(dropout_p)
 
         # ---- storage accounting (MDP-FIX-07) ----
@@ -417,25 +482,44 @@ class MoEDeltaKVPagedAttention(nn.Module):
 
     # ------------------------------------------------------------------
     @property
-    def q_proj(self): return self.query
+    def q_proj(self):
+        return self.query
+
     @property
-    def k_proj(self): return self.key
+    def k_proj(self):
+        return self.key
+
     @property
-    def v_proj(self): return self.value
+    def v_proj(self):
+        return self.value
+
     @property
-    def q_lin(self): return self.query
+    def q_lin(self):
+        return self.query
+
     @property
-    def k_lin(self): return self.key
+    def k_lin(self):
+        return self.key
+
     @property
-    def v_lin(self): return self.value
+    def v_lin(self):
+        return self.value
+
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
+
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
+
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
+
     @property
-    def c_proj(self): return self.out_proj
+    def c_proj(self):
+        return self.out_proj
 
     # ------------------------------------------------------------------
     def storage_bytes(self) -> dict[str, int]:
@@ -455,7 +539,10 @@ class MoEDeltaKVPagedAttention(nn.Module):
             return
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
         }
 
         # --- 1. UniversalAdapter ---
@@ -468,7 +555,9 @@ class MoEDeltaKVPagedAttention(nn.Module):
                 pass
 
         # --- 2. GPT-2 fused c_attn ---
-        if hasattr(src, "c_attn") and any(extracted[k][0] is None for k in ("q", "k", "v")):
+        if hasattr(src, "c_attn") and any(
+            extracted[k][0] is None for k in ("q", "k", "v")
+        ):
             try:
                 mod_c = src.c_attn
                 base_c = getattr(mod_c, "base_layer", mod_c)
@@ -479,14 +568,27 @@ class MoEDeltaKVPagedAttention(nn.Module):
                     bias_data = bias.data.clone() if bias is not None else None
                     cls_c = mod_c.__class__.__name__
                     base_cls = base_c.__class__.__name__
-                    if (hasattr(mod_c, "nf") or hasattr(base_c, "nf")
-                            or "Conv1D" in cls_c or "Conv1D" in base_cls
-                            or (weight.dim() == 2 and weight.shape[0] < weight.shape[1])):
+                    if (
+                        hasattr(mod_c, "nf")
+                        or hasattr(base_c, "nf")
+                        or "Conv1D" in cls_c
+                        or "Conv1D" in base_cls
+                        or (weight.dim() == 2 and weight.shape[0] < weight.shape[1])
+                    ):
                         weight = weight.t().contiguous()
                     split = weight.shape[0] // 3
-                    extracted["q"] = (weight[:split], bias_data[:split] if bias_data is not None else None)
-                    extracted["k"] = (weight[split:2 * split], bias_data[split:2 * split] if bias_data is not None else None)
-                    extracted["v"] = (weight[2 * split:], bias_data[2 * split:] if bias_data is not None else None)
+                    extracted["q"] = (
+                        weight[:split],
+                        bias_data[:split] if bias_data is not None else None,
+                    )
+                    extracted["k"] = (
+                        weight[split : 2 * split],
+                        bias_data[split : 2 * split] if bias_data is not None else None,
+                    )
+                    extracted["v"] = (
+                        weight[2 * split :],
+                        bias_data[2 * split :] if bias_data is not None else None,
+                    )
             except Exception as e:
                 logger.debug("GPT-2 c_attn extraction failed: %s", e)
 
@@ -499,37 +601,57 @@ class MoEDeltaKVPagedAttention(nn.Module):
                     w_o = w_o.data.clone()
                     cls_o = mod_o.__class__.__name__
                     base_cls_o = base_o.__class__.__name__
-                    if (hasattr(mod_o, "nf") or hasattr(base_o, "nf")
-                            or "Conv1D" in cls_o or "Conv1D" in base_cls_o
-                            or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1])):
+                    if (
+                        hasattr(mod_o, "nf")
+                        or hasattr(base_o, "nf")
+                        or "Conv1D" in cls_o
+                        or "Conv1D" in base_cls_o
+                        or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1])
+                    ):
                         w_o = w_o.t().contiguous()
                     b_o = getattr(base_o, "bias", getattr(mod_o, "bias", None))
-                    extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
+                    extracted["o"] = (
+                        w_o,
+                        b_o.data.clone() if b_o is not None else None,
+                    )
             except Exception as e:
                 logger.debug("GPT-2 c_proj extraction failed: %s", e)
 
         # --- 3. BERT / RoBERTa nested ---
-        if hasattr(src, "self") and any(extracted[k][0] is None for k in ("q", "k", "v")):
+        if hasattr(src, "self") and any(
+            extracted[k][0] is None for k in ("q", "k", "v")
+        ):
             try:
                 s = src.self
                 if hasattr(s, "query") and extracted["q"][0] is None:
-                    extracted["q"] = (s.query.weight.data.clone(),
-                                       s.query.bias.data.clone() if s.query.bias is not None else None)
+                    extracted["q"] = (
+                        s.query.weight.data.clone(),
+                        s.query.bias.data.clone() if s.query.bias is not None else None,
+                    )
                 if hasattr(s, "key") and extracted["k"][0] is None:
-                    extracted["k"] = (s.key.weight.data.clone(),
-                                       s.key.bias.data.clone() if s.key.bias is not None else None)
+                    extracted["k"] = (
+                        s.key.weight.data.clone(),
+                        s.key.bias.data.clone() if s.key.bias is not None else None,
+                    )
                 if hasattr(s, "value") and extracted["v"][0] is None:
-                    extracted["v"] = (s.value.weight.data.clone(),
-                                       s.value.bias.data.clone() if s.value.bias is not None else None)
+                    extracted["v"] = (
+                        s.value.weight.data.clone(),
+                        s.value.bias.data.clone() if s.value.bias is not None else None,
+                    )
             except Exception as e:
                 logger.debug("Nested self extraction failed: %s", e)
 
-        if (hasattr(src, "output") and hasattr(src.output, "dense")
-                and extracted["o"][0] is None):
+        if (
+            hasattr(src, "output")
+            and hasattr(src.output, "dense")
+            and extracted["o"][0] is None
+        ):
             try:
                 dense = src.output.dense
-                extracted["o"] = (dense.weight.data.clone(),
-                                   dense.bias.data.clone() if dense.bias is not None else None)
+                extracted["o"] = (
+                    dense.weight.data.clone(),
+                    dense.bias.data.clone() if dense.bias is not None else None,
+                )
             except Exception as e:
                 logger.debug("output.dense extraction failed: %s", e)
 
@@ -549,7 +671,11 @@ class MoEDeltaKVPagedAttention(nn.Module):
                             if hasattr(layer, "weight"):
                                 extracted[proj] = (
                                     layer.weight.data.clone(),
-                                    layer.bias.data.clone() if getattr(layer, "bias", None) is not None else None,
+                                    (
+                                        layer.bias.data.clone()
+                                        if getattr(layer, "bias", None) is not None
+                                        else None
+                                    ),
                                 )
                                 break
                         except Exception:
@@ -557,17 +683,41 @@ class MoEDeltaKVPagedAttention(nn.Module):
 
         # --- 5. Nested encoder detection (MDP-FIX-05) ---
         cls_name = src.__class__.__name__
-        has_out_proj = any(hasattr(src, a) for a in
-                            ("dense", "out_proj", "c_proj", "out_lin",
-                             "o_proj", "wo", "o", "proj"))
+        has_out_proj = any(
+            hasattr(src, a)
+            for a in (
+                "dense",
+                "out_proj",
+                "c_proj",
+                "out_lin",
+                "o_proj",
+                "wo",
+                "o",
+                "proj",
+            )
+        )
         is_nested = False
-        if hasattr(src, "self") and hasattr(src.self, "query") or cls_name in ("BertSelfAttention", "RobertaSelfAttention",
-                           "XLMRobertaSelfAttention", "ElectraSelfAttention"):
+        if (
+            hasattr(src, "self")
+            and hasattr(src.self, "query")
+            or cls_name
+            in (
+                "BertSelfAttention",
+                "RobertaSelfAttention",
+                "XLMRobertaSelfAttention",
+                "ElectraSelfAttention",
+            )
+        ):
             is_nested = True
         elif cls_name in ("DistilBertAttention", "DistilBertSABlock"):
             # DistilBERT nests attention inside a container but has an out_lin
             is_nested = True
-        elif cls_name.endswith("SelfAttention") and not has_out_proj or cls_name.endswith("Attention") and not has_out_proj:
+        elif (
+            cls_name.endswith("SelfAttention")
+            and not has_out_proj
+            or cls_name.endswith("Attention")
+            and not has_out_proj
+        ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -589,7 +739,11 @@ class MoEDeltaKVPagedAttention(nn.Module):
         # --- 8. Copy into projections ---
         with torch.no_grad():
             # Q, K, V
-            for proj_key, target in (("q", self.query), ("k", self.key), ("v", self.value)):
+            for proj_key, target in (
+                ("q", self.query),
+                ("k", self.key),
+                ("v", self.value),
+            ):
                 w, b = extracted[proj_key]
                 if w is None:
                     continue
@@ -635,15 +789,15 @@ class MoEDeltaKVPagedAttention(nn.Module):
                 out_rows = min(out_dim, w_o.shape[0])
                 in_cols = min(in_dim, w_o.shape[1])
                 self.out_proj.weight.data[:out_rows, :in_cols].copy_(
-                    w_o[:out_rows, :in_cols].to(self.out_proj.weight.device,
-                                                  self.out_proj.weight.dtype)
+                    w_o[:out_rows, :in_cols].to(
+                        self.out_proj.weight.device, self.out_proj.weight.dtype
+                    )
                 )
                 if b_o is not None and self.out_proj.bias is not None:
                     mb = min(self.out_proj.bias.numel(), b_o.numel())
                     self.out_proj.bias.data.zero_()
                     self.out_proj.bias.data[:mb].copy_(
-                        b_o[:mb].to(self.out_proj.bias.device,
-                                     self.out_proj.bias.dtype)
+                        b_o[:mb].to(self.out_proj.bias.device, self.out_proj.bias.dtype)
                     )
             elif self.is_nested_encoder:
                 # Nested encoder: out_proj is bypassed in forward.
@@ -706,11 +860,17 @@ class MoEDeltaKVPagedAttention(nn.Module):
         k_bar = (k_blocks * valid_blocks.unsqueeze(-1)).sum(dim=3) / valid_sum
 
         # ---- Routing ----
-        router_logits = torch.matmul(self.W_rg(q_bar), k_bar.transpose(-1, -2).contiguous()) / math.sqrt(d)
+        router_logits = torch.matmul(
+            self.W_rg(q_bar), k_bar.transpose(-1, -2).contiguous()
+        ) / math.sqrt(d)
 
         # Page validity: at least one valid token in the page
-        page_valid = valid_pad.view(B, 1, num_pages, page_size).any(dim=-1)  # (B,1,num_pages)
-        router_logits = router_logits.masked_fill(~page_valid.unsqueeze(2), float("-inf"))
+        page_valid = valid_pad.view(B, 1, num_pages, page_size).any(
+            dim=-1
+        )  # (B,1,num_pages)
+        router_logits = router_logits.masked_fill(
+            ~page_valid.unsqueeze(2), float("-inf")
+        )
 
         # Causal masking of pages
         if self.is_causal:
@@ -719,15 +879,21 @@ class MoEDeltaKVPagedAttention(nn.Module):
             )
             router_logits = router_logits.masked_fill(~causal_pages, float("-inf"))
 
-        router_logits = torch.nan_to_num(router_logits, nan=-1e4, posinf=1e4, neginf=-1e4)
+        router_logits = torch.nan_to_num(
+            router_logits, nan=-1e4, posinf=1e4, neginf=-1e4
+        )
 
         # Ensure page 0 always selected (attention sink / CLS protection)
         router_logits_for_topk = router_logits.clone()
         if self.is_causal:
             # Only bias page 0 for queries whose page index >= 0 (always true)
-            router_logits_for_topk[:, :, :, 0] = router_logits_for_topk[:, :, :, 0] + 1e4
+            router_logits_for_topk[:, :, :, 0] = (
+                router_logits_for_topk[:, :, :, 0] + 1e4
+            )
         else:
-            router_logits_for_topk[:, :, :, 0] = router_logits_for_topk[:, :, :, 0] + 1e4
+            router_logits_for_topk[:, :, :, 0] = (
+                router_logits_for_topk[:, :, :, 0] + 1e4
+            )
 
         k_experts = min(self.k_experts, num_pages)
         _, topk_indices = torch.topk(router_logits_for_topk, k_experts, dim=-1)
@@ -736,39 +902,55 @@ class MoEDeltaKVPagedAttention(nn.Module):
 
         # ---- Auxiliary loss (load balancing) ----
         router_probs = F.softmax(router_logits, dim=-1)  # (B,H,num_pages,num_pages)
-        expert_mask = F.one_hot(topk_indices, num_classes=num_pages).float()  # (B,H,num_pages,k,num_pages)
+        expert_mask = F.one_hot(
+            topk_indices, num_classes=num_pages
+        ).float()  # (B,H,num_pages,k,num_pages)
         density = expert_mask.sum(dim=-2).mean(dim=(0, 1, 2))  # (num_pages,)
         prob_mean = router_probs.mean(dim=(0, 1, 2))  # (num_pages,)
         with torch.no_grad():
             self.aux_loss.copy_(num_pages * torch.sum(density * prob_mean).detach())
 
         # ---- Gather selected pages ----
-        expanded_idx = topk_indices.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, -1, page_size, d)
+        expanded_idx = (
+            topk_indices.unsqueeze(-1)
+            .unsqueeze(-1)
+            .expand(-1, -1, -1, -1, page_size, d)
+        )
         k_blocks_exp = k_blocks.unsqueeze(2).expand(-1, -1, num_pages, -1, -1, -1)
         v_blocks_exp = v_blocks.unsqueeze(2).expand(-1, -1, num_pages, -1, -1, -1)
-        k_gathered = torch.gather(k_blocks_exp, dim=3, index=expanded_idx)  # (B,H,num_pages,k,page_size,d)
+        k_gathered = torch.gather(
+            k_blocks_exp, dim=3, index=expanded_idx
+        )  # (B,H,num_pages,k,page_size,d)
         v_gathered = torch.gather(v_blocks_exp, dim=3, index=expanded_idx)
 
         # ---- Gather validity mask ----
         valid_blocks_exp = valid_blocks.unsqueeze(2).expand(-1, -1, num_pages, -1, -1)
         exp_valid_idx = topk_indices.unsqueeze(-1).expand(-1, -1, -1, -1, page_size)
         valid_blocks_exp_h = valid_blocks_exp.expand(-1, H, -1, -1, -1)
-        k_valid = torch.gather(valid_blocks_exp_h, dim=3, index=exp_valid_idx)  # (B,H,num_pages,k,page_size)
+        k_valid = torch.gather(
+            valid_blocks_exp_h, dim=3, index=exp_valid_idx
+        )  # (B,H,num_pages,k,page_size)
 
         # ---- Per-expert attention ----
         q_exp = q_blocks.unsqueeze(3)  # (B,H,num_pages,1,page_size,d)
-        attn_scores = torch.matmul(q_exp, k_gathered.transpose(-1, -2).contiguous()) / math.sqrt(d)
+        attn_scores = torch.matmul(
+            q_exp, k_gathered.transpose(-1, -2).contiguous()
+        ) / math.sqrt(d)
         attn_scores = attn_scores.masked_fill(~k_valid.unsqueeze(-2), -1e4)
         attn_scores = torch.nan_to_num(attn_scores, nan=-1e4, posinf=1e4, neginf=-1e4)
 
         attn_probs = F.softmax(attn_scores, dim=-1)
         attn_probs = self.dropout(attn_probs)
 
-        context_per_expert = torch.matmul(attn_probs, v_gathered)  # (B,H,num_pages,k,page_size,d)
+        context_per_expert = torch.matmul(
+            attn_probs, v_gathered
+        )  # (B,H,num_pages,k,page_size,d)
 
         # ---- Mix experts with gate weights ----
         g_j_exp = g_j.unsqueeze(-1).unsqueeze(-1)  # (B,H,num_pages,k,1,1)
-        context = (context_per_expert * g_j_exp).sum(dim=3)  # (B,H,num_pages,page_size,d)
+        context = (context_per_expert * g_j_exp).sum(
+            dim=3
+        )  # (B,H,num_pages,page_size,d)
 
         # ---- Reshape to (B,H,padded_N,d) ----
         context = context.reshape(B, H, padded_N, d)
@@ -827,7 +1009,8 @@ class MoEDeltaKVPagedAttention(nn.Module):
         # ---- Delta-KV compression (MDP-FIX-02) ----
         if self.enable_deltakv and kv_len > 1:
             k_hat, v_hat, err_k, err_v = simulate_paged_delta_kv(
-                k, v,
+                k,
+                v,
                 rank=self.svd_rank,
                 bits=self.q_bits,
                 max_delta_error=self.max_delta_error,
@@ -850,10 +1033,16 @@ class MoEDeltaKVPagedAttention(nn.Module):
                     valid_mask = attention_mask > 0
             elif attention_mask.dim() == 3:
                 m = attention_mask
-                valid_mask = (m > -1e4).squeeze(1) if m.dtype.is_floating_point else m.squeeze(1)
+                valid_mask = (
+                    (m > -1e4).squeeze(1) if m.dtype.is_floating_point else m.squeeze(1)
+                )
             elif attention_mask.dim() == 4:
                 m = attention_mask
-                v_bool = m if m.dtype == torch.bool else (m > -1e4 if m.dtype.is_floating_point else m > 0)
+                v_bool = (
+                    m
+                    if m.dtype == torch.bool
+                    else (m > -1e4 if m.dtype.is_floating_point else m > 0)
+                )
                 valid_mask = v_bool.any(dim=-2).squeeze(1)
             if valid_mask is not None and valid_mask.shape[-1] != kv_len:
                 valid_mask = None
@@ -870,14 +1059,26 @@ class MoEDeltaKVPagedAttention(nn.Module):
         else:
             # ---- Dense path ----
             scale = 1.0 / math.sqrt(d)
-            scores = torch.matmul(q.float(), k_hat.float().transpose(-2, -1).contiguous()) * scale
+            scores = (
+                torch.matmul(q.float(), k_hat.float().transpose(-2, -1).contiguous())
+                * scale
+            )
 
             if self.is_causal and not is_cross and N > 1:
                 diag = 1 + max(0, kv_len - N)
-                causal = torch.triu(
-                    torch.full((N, kv_len), float("-inf"), device=device, dtype=torch.float32),
-                    diagonal=diag,
-                ).unsqueeze(0).unsqueeze(0)
+                causal = (
+                    torch.triu(
+                        torch.full(
+                            (N, kv_len),
+                            float("-inf"),
+                            device=device,
+                            dtype=torch.float32,
+                        ),
+                        diagonal=diag,
+                    )
+                    .unsqueeze(0)
+                    .unsqueeze(0)
+                )
                 scores = scores + causal
 
             scores = scores.masked_fill(~valid_mask[:, None, None, :], -1e4)
@@ -1000,27 +1201,45 @@ def inject_moe_deltakv_paged(
         return None
 
     # MDP-FIX-06: idempotency guard
-    if isinstance(src_attn, MoEDeltaKVPagedAttention) \
-            or "MoEDeltaKV" in src_attn.__class__.__name__:
+    if (
+        isinstance(src_attn, MoEDeltaKVPagedAttention)
+        or "MoEDeltaKV" in src_attn.__class__.__name__
+    ):
         return None
 
     # ---- Config resolution ----
     if cfg is None and hasattr(src_attn, "config"):
         cfg = src_attn.config
 
-    page_size = int(kwargs.pop("page_size",
-                    getattr(comp_config, "page_size", 16) if comp_config else 16))
-    k_experts = int(kwargs.pop("k_experts",
-                     getattr(comp_config, "k_experts", 4) if comp_config else 4))
-    svd_rank = int(kwargs.pop("svd_rank",
-                    getattr(comp_config, "svd_rank", 32) if comp_config else 32))
-    q_bits = int(kwargs.pop("q_bits",
-                  getattr(comp_config, "q_bits", 4) if comp_config else 4))
-    max_delta_error = float(kwargs.pop("max_delta_error",
-                            getattr(comp_config, "max_delta_error", 0.35)
-                            if comp_config else 0.35))
-    lora_rank = int(kwargs.pop("lora_rank",
-                     getattr(comp_config, "lora_rank", 16) if comp_config else 16))
+    page_size = int(
+        kwargs.pop(
+            "page_size", getattr(comp_config, "page_size", 16) if comp_config else 16
+        )
+    )
+    k_experts = int(
+        kwargs.pop(
+            "k_experts", getattr(comp_config, "k_experts", 4) if comp_config else 4
+        )
+    )
+    svd_rank = int(
+        kwargs.pop(
+            "svd_rank", getattr(comp_config, "svd_rank", 32) if comp_config else 32
+        )
+    )
+    q_bits = int(
+        kwargs.pop("q_bits", getattr(comp_config, "q_bits", 4) if comp_config else 4)
+    )
+    max_delta_error = float(
+        kwargs.pop(
+            "max_delta_error",
+            getattr(comp_config, "max_delta_error", 0.35) if comp_config else 0.35,
+        )
+    )
+    lora_rank = int(
+        kwargs.pop(
+            "lora_rank", getattr(comp_config, "lora_rank", 16) if comp_config else 16
+        )
+    )
     enable_moe = bool(kwargs.pop("enable_moe", True))
     enable_deltakv = bool(kwargs.pop("enable_deltakv", True))
 
@@ -1068,8 +1287,10 @@ def inject_moe_deltakv_paged(
         spliced = True
 
     if not spliced:
-        logger.error("inject_moe_deltakv_paged: no writable attribute on %s",
-                      type(target).__name__)
+        logger.error(
+            "inject_moe_deltakv_paged: no writable attribute on %s",
+            type(target).__name__,
+        )
         return None
 
     return new_attn

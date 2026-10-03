@@ -14,15 +14,14 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
-from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.pruning_utils import (
     apply_24_structured_mask,
     apply_block_mask,
     recalibrate_layernorms,
 )
+from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
 try:
@@ -44,6 +43,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 # ===========================================================================
 # STE Prune
 # ===========================================================================
+
 
 class ADMMSTEPrune(torch.autograd.Function):
     """
@@ -67,6 +67,7 @@ class ADMMSTEPrune(torch.autograd.Function):
 # ADMMMaskedLinear
 # ===========================================================================
 
+
 class ADMMMaskedLinear(nn.Module):
     """
     Linear layer with continuous weight + binary mask and STE gradient.
@@ -83,7 +84,9 @@ class ADMMMaskedLinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.weight = nn.Parameter(torch.empty(out_features, in_features, dtype=dtype, device=device))
+        self.weight = nn.Parameter(
+            torch.empty(out_features, in_features, dtype=dtype, device=device)
+        )
         # AD-FIX-07: non-persistent mask.
         self.register_buffer(
             "mask",
@@ -92,7 +95,9 @@ class ADMMMaskedLinear(nn.Module):
         )
 
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device))
+            self.bias = nn.Parameter(
+                torch.empty(out_features, dtype=dtype, device=device)
+            )
         else:
             self.register_parameter("bias", None)
 
@@ -100,7 +105,9 @@ class ADMMMaskedLinear(nn.Module):
     def from_linear(cls, linear: nn.Module, mask: torch.Tensor) -> ADMMMaskedLinear:
         # AD-FIX-05: handle Conv1D (nn.Module with .nf) as well as nn.Linear.
         raw_w = linear.weight.data
-        is_conv1d = "conv1d" in linear.__class__.__name__.lower() or hasattr(linear, "nf")
+        is_conv1d = "conv1d" in linear.__class__.__name__.lower() or hasattr(
+            linear, "nf"
+        )
         if is_conv1d:
             in_f, out_f = raw_w.shape[0], raw_w.shape[1]
             w_data = raw_w.t().contiguous()
@@ -130,6 +137,7 @@ class ADMMMaskedLinear(nn.Module):
 # ===========================================================================
 # ADMM Pruner
 # ===========================================================================
+
 
 @COMPRESSOR_REGISTRY.register("admm_pruner")
 @COMPRESSOR_REGISTRY.register("admm_pruner_distill")
@@ -171,61 +179,122 @@ class ADMMPruner(BaseCompressor):
         super().__init__(model, name="admm_pruner", **kwargs)
         conf = cfg or kwargs.get("comp_config")
 
-        self.sparsity = max(0.0, min(float(_cfg_get(
-            conf, "admm_pruner_sparsity",
-            _cfg_get(conf, "admm_sparsity",
-                     _cfg_get(conf, "sparsity", sparsity))
-        )), 0.95))
-        self.initial_rho = float(_cfg_get(
-            conf, "admm_pruner_rho",
-            _cfg_get(conf, "admm_rho", _cfg_get(conf, "rho", rho))
-        ))
-        self.max_iter = max(1, int(_cfg_get(
-            conf, "admm_pruner_max_iter",
-            _cfg_get(conf, "admm_max_iter", _cfg_get(conf, "max_iter", max_iter))
-        )))
-        self.structured_24 = bool(_cfg_get(
-            conf, "admm_pruner_structured_24",
-            _cfg_get(conf, "admm_structured_24",
-                     _cfg_get(conf, "structured_24", structured_24))
-        ))
+        self.sparsity = max(
+            0.0,
+            min(
+                float(
+                    _cfg_get(
+                        conf,
+                        "admm_pruner_sparsity",
+                        _cfg_get(
+                            conf, "admm_sparsity", _cfg_get(conf, "sparsity", sparsity)
+                        ),
+                    )
+                ),
+                0.95,
+            ),
+        )
+        self.initial_rho = float(
+            _cfg_get(
+                conf,
+                "admm_pruner_rho",
+                _cfg_get(conf, "admm_rho", _cfg_get(conf, "rho", rho)),
+            )
+        )
+        self.max_iter = max(
+            1,
+            int(
+                _cfg_get(
+                    conf,
+                    "admm_pruner_max_iter",
+                    _cfg_get(
+                        conf, "admm_max_iter", _cfg_get(conf, "max_iter", max_iter)
+                    ),
+                )
+            ),
+        )
+        self.structured_24 = bool(
+            _cfg_get(
+                conf,
+                "admm_pruner_structured_24",
+                _cfg_get(
+                    conf,
+                    "admm_structured_24",
+                    _cfg_get(conf, "structured_24", structured_24),
+                ),
+            )
+        )
         self.block_size = block_size
-        self.dynamic_rho = bool(_cfg_get(
-            conf, "admm_pruner_dynamic_rho", _cfg_get(conf, "dynamic_rho", dynamic_rho)
-        ))
-        self.use_ste = bool(_cfg_get(
-            conf, "admm_pruner_use_ste", _cfg_get(conf, "use_ste", use_ste)
-        ))
-        self.recalibrate_ln = bool(_cfg_get(
-            conf, "admm_pruner_recalibrate_ln", _cfg_get(conf, "recalibrate_ln", recalibrate_ln)
-        ))
-        self.max_error = float(_cfg_get(
-            conf, "admm_pruner_max_error",
-            _cfg_get(conf, "admm_max_error", _cfg_get(conf, "max_error", max_error))
-        ))
-        self.fallback_to_original = bool(_cfg_get(
-            conf, "admm_pruner_fallback_to_original",
-            _cfg_get(conf, "fallback_to_original", fallback_to_original)
-        ))
-        self.protect_critical = bool(_cfg_get(conf, "protect_critical", protect_critical))
-        self.target_attention_only = bool(_cfg_get(
-            conf, "admm_pruner_target_attention_only",
-            _cfg_get(conf, "admm_target_attention_only",
-                     _cfg_get(conf, "target_attention_only", target_attention_only))
-        ))
+        self.dynamic_rho = bool(
+            _cfg_get(
+                conf,
+                "admm_pruner_dynamic_rho",
+                _cfg_get(conf, "dynamic_rho", dynamic_rho),
+            )
+        )
+        self.use_ste = bool(
+            _cfg_get(conf, "admm_pruner_use_ste", _cfg_get(conf, "use_ste", use_ste))
+        )
+        self.recalibrate_ln = bool(
+            _cfg_get(
+                conf,
+                "admm_pruner_recalibrate_ln",
+                _cfg_get(conf, "recalibrate_ln", recalibrate_ln),
+            )
+        )
+        self.max_error = float(
+            _cfg_get(
+                conf,
+                "admm_pruner_max_error",
+                _cfg_get(
+                    conf, "admm_max_error", _cfg_get(conf, "max_error", max_error)
+                ),
+            )
+        )
+        self.fallback_to_original = bool(
+            _cfg_get(
+                conf,
+                "admm_pruner_fallback_to_original",
+                _cfg_get(conf, "fallback_to_original", fallback_to_original),
+            )
+        )
+        self.protect_critical = bool(
+            _cfg_get(conf, "protect_critical", protect_critical)
+        )
+        self.target_attention_only = bool(
+            _cfg_get(
+                conf,
+                "admm_pruner_target_attention_only",
+                _cfg_get(
+                    conf,
+                    "admm_target_attention_only",
+                    _cfg_get(conf, "target_attention_only", target_attention_only),
+                ),
+            )
+        )
         self.target_modules = target_modules
 
-        self.lambda_distill = float(_cfg_get(
-            conf, "admm_pruner_lambda_distill", _cfg_get(conf, "lambda_distill", lambda_distill)
-        ))
-        self.distill_batch_size = int(_cfg_get(
-            conf, "admm_pruner_distill_batch_size",
-            _cfg_get(conf, "distill_batch_size", distill_batch_size)
-        ))
-        self.distill_use_activation = bool(_cfg_get(
-            conf, "admm_pruner_distill_use_activation",
-            _cfg_get(conf, "distill_use_activation", distill_use_activation)
-        ))
+        self.lambda_distill = float(
+            _cfg_get(
+                conf,
+                "admm_pruner_lambda_distill",
+                _cfg_get(conf, "lambda_distill", lambda_distill),
+            )
+        )
+        self.distill_batch_size = int(
+            _cfg_get(
+                conf,
+                "admm_pruner_distill_batch_size",
+                _cfg_get(conf, "distill_batch_size", distill_batch_size),
+            )
+        )
+        self.distill_use_activation = bool(
+            _cfg_get(
+                conf,
+                "admm_pruner_distill_use_activation",
+                _cfg_get(conf, "distill_use_activation", distill_use_activation),
+            )
+        )
         self.distill_lr = float(_cfg_get(conf, "distill_lr", distill_lr))
         self.distill_steps = max(1, int(_cfg_get(conf, "distill_steps", distill_steps)))
 
@@ -234,7 +303,8 @@ class ADMMPruner(BaseCompressor):
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
         self.target_device = (
-            torch.device(device) if device is not None
+            torch.device(device)
+            if device is not None
             else next(model.parameters(), torch.tensor(0.0)).device
         )
         self.comp_config = conf
@@ -252,15 +322,21 @@ class ADMMPruner(BaseCompressor):
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, ADMMMaskedLinear):
             return False
-        if any(name.endswith(sfx) for sfx in
-               [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]):
+        if any(
+            name.endswith(sfx)
+            for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout", ".linear"]
+        ):
             return False
 
         target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
         cls_name = module.__class__.__name__.lower()
 
         weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
-        if weight_tensor is None or not hasattr(weight_tensor, "dim") or weight_tensor.dim() != 2:
+        if (
+            weight_tensor is None
+            or not hasattr(weight_tensor, "dim")
+            or weight_tensor.dim() != 2
+        ):
             return False
 
         target_cls = target_mod.__class__.__name__.lower()
@@ -269,8 +345,10 @@ class ADMMPruner(BaseCompressor):
             isinstance(module, nn.Linear)
             or isinstance(target_mod, nn.Linear)
             or is_conv1d
-            or (Conv1D is not None and (isinstance(module, Conv1D)
-                                        or isinstance(target_mod, Conv1D)))
+            or (
+                Conv1D is not None
+                and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D))
+            )
             or "loralinear" in cls_name
             or hasattr(module, "base_layer")
         )
@@ -278,23 +356,56 @@ class ADMMPruner(BaseCompressor):
             return False
 
         name_lower = name.lower()
-        if any(skip in name_lower for skip in
-               ["lm_head", "classifier", "head", "output_layer",
-                "score", "pooler", "pre_classifier"]):
+        if any(
+            skip in name_lower
+            for skip in [
+                "lm_head",
+                "classifier",
+                "head",
+                "output_layer",
+                "score",
+                "pooler",
+                "pre_classifier",
+            ]
+        ):
             return False
 
         if self.target_attention_only:
-            ffn_patterns = ["ffn", "mlp", "lin1", "lin2", "intermediate",
-                            "gate_proj", "up_proj", "down_proj", "c_fc"]
+            ffn_patterns = [
+                "ffn",
+                "mlp",
+                "lin1",
+                "lin2",
+                "intermediate",
+                "gate_proj",
+                "up_proj",
+                "down_proj",
+                "c_fc",
+            ]
             if any(p in name_lower for p in ffn_patterns):
                 return False
             if "output.dense" in name_lower and "attention" not in name_lower:
                 return False
             attn_patterns = [
-                "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-                "out_lin", "q_lin", "k_lin", "v_lin", "c_attn", "c_proj",
-                "query", "key", "value",
-                "in_proj_qkv", "in_proj_z", "in_proj_b", "out_proj",
+                "attn",
+                "attention",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "out_lin",
+                "q_lin",
+                "k_lin",
+                "v_lin",
+                "c_attn",
+                "c_proj",
+                "query",
+                "key",
+                "value",
+                "in_proj_qkv",
+                "in_proj_z",
+                "in_proj_b",
+                "out_proj",
             ]
             if not any(p in name_lower for p in attn_patterns):
                 return False
@@ -307,7 +418,9 @@ class ADMMPruner(BaseCompressor):
         return True
 
     # ------------------------------------------------------------------
-    def _collect_calibration_inputs(self, target_names: list[str]) -> dict[str, torch.Tensor]:
+    def _collect_calibration_inputs(
+        self, target_names: list[str]
+    ) -> dict[str, torch.Tensor]:
         collected: dict[str, list[torch.Tensor]] = {name: [] for name in target_names}
 
         if self.calibration_inputs:
@@ -338,6 +451,7 @@ class ADMMPruner(BaseCompressor):
                 if x.ndim >= 2:
                     x_flat = x.reshape(-1, x.shape[-1]).float().cpu()
                     collected[layer_name].append(x_flat[:rem])
+
             return hook_fn
 
         for name in target_names:
@@ -354,22 +468,32 @@ class ADMMPruner(BaseCompressor):
                 if self.calibration_loader is not None:
                     for batch in self.calibration_loader:
                         if isinstance(batch, dict):
-                            batch = {k: v.to(device) if isinstance(v, torch.Tensor) else v
-                                     for k, v in batch.items()}
+                            batch = {
+                                k: v.to(device) if isinstance(v, torch.Tensor) else v
+                                for k, v in batch.items()
+                            }
                             self.model(**batch)
                         elif isinstance(batch, (list, tuple)):
-                            batch = [v.to(device) if isinstance(v, torch.Tensor) else v
-                                     for v in batch]
+                            batch = [
+                                v.to(device) if isinstance(v, torch.Tensor) else v
+                                for v in batch
+                            ]
                             self.model(*batch)
                         elif isinstance(batch, torch.Tensor):
                             self.model(batch.to(device))
-                        if all(sum(t.shape[0] for t in collected[n]) >= self.distill_batch_size
-                               for n in target_names):
+                        if all(
+                            sum(t.shape[0] for t in collected[n])
+                            >= self.distill_batch_size
+                            for n in target_names
+                        ):
                             break
                 elif self.calibration_texts is not None and self.tokenizer is not None:
                     for text in self.calibration_texts[:4]:
                         toks = self.tokenizer(
-                            text, return_tensors="pt", truncation=True, max_length=128,
+                            text,
+                            return_tensors="pt",
+                            truncation=True,
+                            max_length=128,
                         )
                         toks = {k: v.to(device) for k, v in toks.items()}
                         self.model(**toks)
@@ -398,7 +522,9 @@ class ADMMPruner(BaseCompressor):
         """
         if self.structured_24:
             saliency = candidate.abs()
-            pruned, raw_mask = apply_24_structured_mask(candidate, saliency=saliency, dim=1)
+            pruned, raw_mask = apply_24_structured_mask(
+                candidate, saliency=saliency, dim=1
+            )
             if raw_mask is None:
                 mask = (pruned.abs() > 1e-12).float()
             elif raw_mask.dtype == torch.bool:
@@ -434,7 +560,8 @@ class ADMMPruner(BaseCompressor):
         self.layer_distill_losses = {}
 
         targets = [
-            (name, mod) for name, mod in self.model.named_modules()
+            (name, mod)
+            for name, mod in self.model.named_modules()
             if self._is_target_module(name, mod)
         ]
 
@@ -448,11 +575,14 @@ class ADMMPruner(BaseCompressor):
         target_names = [name for name, _ in targets]
         calib_inputs = (
             self._collect_calibration_inputs(target_names)
-            if self.lambda_distill > 0 else {}
+            if self.lambda_distill > 0
+            else {}
         )
 
         for name, module in targets:
-            target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
+            target_mod = getattr(
+                module, "base_layer", getattr(module, "linear", module)
+            )
             target_cls = target_mod.__class__.__name__.lower()
             is_conv1d = "conv1d" in target_cls
 
@@ -468,9 +598,11 @@ class ADMMPruner(BaseCompressor):
             X_calib = calib_inputs.get(name, None)
             if self.lambda_distill > 0:
                 if X_calib is None or X_calib.numel() == 0:
-                    torch.manual_seed(hash(name) % (2 ** 31 - 1))
+                    torch.manual_seed(hash(name) % (2**31 - 1))
                     X_calib = torch.randn(
-                        min(32, self.distill_batch_size), in_features, device=device,
+                        min(32, self.distill_batch_size),
+                        in_features,
+                        device=device,
                     ) / math.sqrt(in_features)
                 else:
                     # AD-FIX-08: cast X_calib to match W0 dtype.
@@ -478,7 +610,7 @@ class ADMMPruner(BaseCompressor):
                     if X_calib.ndim > 2:
                         X_calib = X_calib.reshape(-1, in_features)
                     if X_calib.shape[0] > self.distill_batch_size:
-                        X_calib = X_calib[:self.distill_batch_size]
+                        X_calib = X_calib[: self.distill_batch_size]
                 with torch.no_grad():
                     Y0 = X_calib @ W0.t()
             else:
@@ -489,14 +621,17 @@ class ADMMPruner(BaseCompressor):
             Z0, mask0 = self._project_sparse(W0)
             W_sparse_0 = W0 * mask0
             best_W_sparse = W_sparse_0
-            best_mask = mask0.clone()       # AD-FIX-04
-            base_w_err = float(torch.norm(W0 - W_sparse_0, p="fro").item() / max(w_norm, 1e-12))
+            best_mask = mask0.clone()  # AD-FIX-04
+            base_w_err = float(
+                torch.norm(W0 - W_sparse_0, p="fro").item() / max(w_norm, 1e-12)
+            )
             best_err = base_w_err
             best_score = base_w_err
             if self.lambda_distill > 0 and X_calib is not None and Y0 is not None:
                 y0_norm = max(torch.norm(Y0, p="fro").item(), 1e-12)
                 base_y_err = float(
-                    torch.norm((X_calib @ W_sparse_0.t()) - Y0, p="fro").item() / y0_norm
+                    torch.norm((X_calib @ W_sparse_0.t()) - Y0, p="fro").item()
+                    / y0_norm
                 )
                 best_score = base_w_err + self.lambda_distill * base_y_err
 
@@ -526,8 +661,11 @@ class ADMMPruner(BaseCompressor):
 
                         # 3. Layer-Wise Reconstruction Distillation.
                         # AD-FIX-02: scheduled, bounded distill step.
-                        if (self.lambda_distill > 0
-                                and X_calib is not None and Y0 is not None):
+                        if (
+                            self.lambda_distill > 0
+                            and X_calib is not None
+                            and Y0 is not None
+                        ):
                             for _ in range(self.distill_steps):
                                 if self.use_ste:
                                     W_eff = ADMMSTEPrune.apply(W, mask)
@@ -566,20 +704,29 @@ class ADMMPruner(BaseCompressor):
 
                         if not torch.isfinite(W).all():
                             logger.warning(
-                                "ADMMPruner: non-finite W at iter %d on %s", it, name,
+                                "ADMMPruner: non-finite W at iter %d on %s",
+                                it,
+                                name,
                             )
                             break
 
                         # Monotonic best-iterate tracking.
                         W_sparse_curr = W * mask
                         curr_w_err = float(
-                            torch.norm(W0 - W_sparse_curr, p="fro").item() / max(w_norm, 1e-12)
+                            torch.norm(W0 - W_sparse_curr, p="fro").item()
+                            / max(w_norm, 1e-12)
                         )
                         curr_score = curr_w_err
-                        if (self.lambda_distill > 0
-                                and X_calib is not None and Y0 is not None):
+                        if (
+                            self.lambda_distill > 0
+                            and X_calib is not None
+                            and Y0 is not None
+                        ):
                             curr_y_err = float(
-                                torch.norm((X_calib @ W_sparse_curr.t()) - Y0, p="fro").item() / y0_norm
+                                torch.norm(
+                                    (X_calib @ W_sparse_curr.t()) - Y0, p="fro"
+                                ).item()
+                                / y0_norm
                             )
                             curr_score = curr_w_err + self.lambda_distill * curr_y_err
 
@@ -587,11 +734,10 @@ class ADMMPruner(BaseCompressor):
                             best_score = curr_score
                             best_err = curr_w_err
                             best_W_sparse = W_sparse_curr.clone()
-                            best_mask = mask.clone()      # AD-FIX-04
+                            best_mask = mask.clone()  # AD-FIX-04
 
                 # Final distill loss on best sparse candidate.
-                if (self.lambda_distill > 0
-                        and X_calib is not None and Y0 is not None):
+                if self.lambda_distill > 0 and X_calib is not None and Y0 is not None:
                     with torch.no_grad():
                         final_distill_loss = float(
                             torch.mean(((X_calib @ best_W_sparse.t()) - Y0) ** 2).item()
@@ -608,12 +754,16 @@ class ADMMPruner(BaseCompressor):
             self.layer_sparsities[name] = 0.5 if self.structured_24 else self.sparsity
             self.layer_distill_losses[name] = final_distill_loss
 
-            if (W_final is None
-                    or not torch.isfinite(W_final).all()
-                    or final_err > self.max_error):
+            if (
+                W_final is None
+                or not torch.isfinite(W_final).all()
+                or final_err > self.max_error
+            ):
                 logger.warning(
                     "ADMMPruner reconstruction error %.4f on %s exceeded threshold %.4f.",
-                    final_err, name, self.max_error,
+                    final_err,
+                    name,
+                    self.max_error,
                 )
                 if self.fallback_to_original:
                     logger.info("ADMMPruner: fallback to original on %s.", name)
@@ -630,30 +780,33 @@ class ADMMPruner(BaseCompressor):
             if res_w.shape != orig_shape:
                 logger.warning(
                     "ADMMPruner shape mismatch on %s: %s vs %s. Skipping.",
-                    name, tuple(res_w.shape), tuple(orig_shape),
+                    name,
+                    tuple(res_w.shape),
+                    tuple(orig_shape),
                 )
                 self.fallback_layers.append(name)
                 for p in module.parameters():
                     p.requires_grad = False
                 continue
 
-            has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) \
-                       or hasattr(module, "base_layer")
+            has_lora = (
+                hasattr(module, "lora_A") and module.lora_A is not None
+            ) or hasattr(module, "base_layer")
 
             # AD-FIX-05: ADMMMaskedLinear applies whenever use_ste is on and no LoRA / no Conv1D.
-            if (self.use_ste
-                    and not has_lora
-                    and not is_conv1d
-                    and isinstance(module, nn.Linear)):
+            if (
+                self.use_ste
+                and not has_lora
+                and not is_conv1d
+                and isinstance(module, nn.Linear)
+            ):
                 admm_layer = ADMMMaskedLinear.from_linear(module, mask=best_mask)
                 replace_module(self.model, name, admm_layer)
             else:
                 with torch.no_grad():
                     target_mod.weight.data.copy_(res_w)
 
-            actual_zero_frac = float(
-                (res_w == 0).sum().item() / max(1, res_w.numel())
-            )
+            actual_zero_frac = float((res_w == 0).sum().item() / max(1, res_w.numel()))
             self.layer_actual_sparsities[name] = actual_zero_frac
 
             if has_lora:
@@ -662,7 +815,9 @@ class ADMMPruner(BaseCompressor):
                 if hasattr(target_mod, "bias") and target_mod.bias is not None:
                     target_mod.bias.requires_grad = False
                 for p_name, p in module.named_parameters():
-                    if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
+                    if any(
+                        t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")
+                    ):
                         p.requires_grad = True
 
             self.compressed_layers.append(name)
@@ -690,7 +845,8 @@ class ADMMPruner(BaseCompressor):
         avg_err = (
             sum(self.layer_errors[k] for k in self.compressed_layers)
             / max(1, len(self.compressed_layers))
-            if self.compressed_layers else 0.0
+            if self.compressed_layers
+            else 0.0
         )
         avg_actual_sparsity = (
             sum(self.layer_actual_sparsities[k] for k in self.compressed_layers)
@@ -701,39 +857,42 @@ class ADMMPruner(BaseCompressor):
         avg_distill_loss = (
             sum(self.layer_distill_losses[k] for k in self.compressed_layers)
             / max(1, len(self.compressed_layers))
-            if self.compressed_layers else 0.0
+            if self.compressed_layers
+            else 0.0
         )
 
         try:
             stats = self.get_compression_stats()
         except Exception:
             stats = {}
-        stats.update({
-            "pruned_layers": len(self.compressed_layers),
-            "compressed_layers": self.compressed_layers,
-            "fallback_layers": self.fallback_layers,
-            "num_compressed": len(self.compressed_layers),
-            "num_fallback": len(self.fallback_layers),
-            "layer_errors": self.layer_errors,
-            "layer_distill_losses": self.layer_distill_losses,
-            "avg_reconstruction_error": avg_err,
-            "avg_distill_loss": avg_distill_loss,
-            "sparsity_target": self.sparsity,
-            "actual_sparsity": avg_actual_sparsity,
-            "layer_actual_sparsities": self.layer_actual_sparsities,
-            "structured_24": self.structured_24,
-            "admm_iterations": self.max_iter,
-            "dynamic_rho": self.dynamic_rho,
-            "use_ste": self.use_ste,
-            "recalibrate_ln": self.recalibrate_ln,
-            "max_error": self.max_error,
-            "fallback_to_original": self.fallback_to_original,
-            "target_attention_only": self.target_attention_only,
-            "lambda_distill": self.lambda_distill,
-            "distill_batch_size": self.distill_batch_size,
-            "distill_use_activation": self.distill_use_activation,
-            "method": "admm_pruner_distill_ste_dynamic_rho",
-        })
+        stats.update(
+            {
+                "pruned_layers": len(self.compressed_layers),
+                "compressed_layers": self.compressed_layers,
+                "fallback_layers": self.fallback_layers,
+                "num_compressed": len(self.compressed_layers),
+                "num_fallback": len(self.fallback_layers),
+                "layer_errors": self.layer_errors,
+                "layer_distill_losses": self.layer_distill_losses,
+                "avg_reconstruction_error": avg_err,
+                "avg_distill_loss": avg_distill_loss,
+                "sparsity_target": self.sparsity,
+                "actual_sparsity": avg_actual_sparsity,
+                "layer_actual_sparsities": self.layer_actual_sparsities,
+                "structured_24": self.structured_24,
+                "admm_iterations": self.max_iter,
+                "dynamic_rho": self.dynamic_rho,
+                "use_ste": self.use_ste,
+                "recalibrate_ln": self.recalibrate_ln,
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "target_attention_only": self.target_attention_only,
+                "lambda_distill": self.lambda_distill,
+                "distill_batch_size": self.distill_batch_size,
+                "distill_use_activation": self.distill_use_activation,
+                "method": "admm_pruner_distill_ste_dynamic_rho",
+            }
+        )
         self.stats = stats
         self.model.compression_stats = stats
         return self.model, stats
@@ -743,59 +902,127 @@ class ADMMPruner(BaseCompressor):
 # Factory
 # ===========================================================================
 
+
 @COMPRESSOR_REGISTRY.register("admm_pruner_factory")
 @COMPRESSOR_REGISTRY.register("admm_pruner_distill_factory")
 def admm_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory for ADMM pruner."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
-    sparsity = kwargs.pop("sparsity",
-                _cfg_get(comp_config, "admm_pruner_sparsity",
-                _cfg_get(comp_config, "admm_sparsity",
-                _cfg_get(comp_config, "sparsity", 0.5))))
-    rho = kwargs.pop("rho",
-           _cfg_get(comp_config, "admm_pruner_rho",
-           _cfg_get(comp_config, "admm_rho",
-           _cfg_get(comp_config, "rho", 0.1))))
-    max_iter = kwargs.pop("max_iter",
-                _cfg_get(comp_config, "admm_pruner_max_iter",
-                _cfg_get(comp_config, "admm_max_iter",
-                _cfg_get(comp_config, "max_iter", 6))))
-    structured_24 = kwargs.pop("structured_24",
-                     _cfg_get(comp_config, "admm_pruner_structured_24",
-                     _cfg_get(comp_config, "admm_structured_24",
-                     _cfg_get(comp_config, "structured_24", True))))
-    dynamic_rho = kwargs.pop("dynamic_rho",
-                   _cfg_get(comp_config, "admm_pruner_dynamic_rho",
-                   _cfg_get(comp_config, "dynamic_rho", True)))
-    use_ste = kwargs.pop("use_ste",
-               _cfg_get(comp_config, "admm_pruner_use_ste",
-               _cfg_get(comp_config, "use_ste", True)))
-    recalibrate_ln = kwargs.pop("recalibrate_ln",
-                     _cfg_get(comp_config, "admm_pruner_recalibrate_ln",
-                     _cfg_get(comp_config, "recalibrate_ln", True)))
-    max_error = kwargs.pop("max_error",
-                _cfg_get(comp_config, "admm_pruner_max_error",
-                _cfg_get(comp_config, "admm_max_error",
-                _cfg_get(comp_config, "max_error", 0.45))))
-    fallback = kwargs.pop("fallback_to_original",
-                _cfg_get(comp_config, "admm_pruner_fallback_to_original",
-                _cfg_get(comp_config, "fallback_to_original", True)))
+    sparsity = kwargs.pop(
+        "sparsity",
+        _cfg_get(
+            comp_config,
+            "admm_pruner_sparsity",
+            _cfg_get(
+                comp_config, "admm_sparsity", _cfg_get(comp_config, "sparsity", 0.5)
+            ),
+        ),
+    )
+    rho = kwargs.pop(
+        "rho",
+        _cfg_get(
+            comp_config,
+            "admm_pruner_rho",
+            _cfg_get(comp_config, "admm_rho", _cfg_get(comp_config, "rho", 0.1)),
+        ),
+    )
+    max_iter = kwargs.pop(
+        "max_iter",
+        _cfg_get(
+            comp_config,
+            "admm_pruner_max_iter",
+            _cfg_get(
+                comp_config, "admm_max_iter", _cfg_get(comp_config, "max_iter", 6)
+            ),
+        ),
+    )
+    structured_24 = kwargs.pop(
+        "structured_24",
+        _cfg_get(
+            comp_config,
+            "admm_pruner_structured_24",
+            _cfg_get(
+                comp_config,
+                "admm_structured_24",
+                _cfg_get(comp_config, "structured_24", True),
+            ),
+        ),
+    )
+    dynamic_rho = kwargs.pop(
+        "dynamic_rho",
+        _cfg_get(
+            comp_config,
+            "admm_pruner_dynamic_rho",
+            _cfg_get(comp_config, "dynamic_rho", True),
+        ),
+    )
+    use_ste = kwargs.pop(
+        "use_ste",
+        _cfg_get(
+            comp_config, "admm_pruner_use_ste", _cfg_get(comp_config, "use_ste", True)
+        ),
+    )
+    recalibrate_ln = kwargs.pop(
+        "recalibrate_ln",
+        _cfg_get(
+            comp_config,
+            "admm_pruner_recalibrate_ln",
+            _cfg_get(comp_config, "recalibrate_ln", True),
+        ),
+    )
+    max_error = kwargs.pop(
+        "max_error",
+        _cfg_get(
+            comp_config,
+            "admm_pruner_max_error",
+            _cfg_get(
+                comp_config, "admm_max_error", _cfg_get(comp_config, "max_error", 0.45)
+            ),
+        ),
+    )
+    fallback = kwargs.pop(
+        "fallback_to_original",
+        _cfg_get(
+            comp_config,
+            "admm_pruner_fallback_to_original",
+            _cfg_get(comp_config, "fallback_to_original", True),
+        ),
+    )
     target_attention_only = kwargs.pop(
         "target_attention_only",
-        _cfg_get(comp_config, "admm_pruner_target_attention_only",
-                 _cfg_get(comp_config, "admm_target_attention_only",
-                          _cfg_get(comp_config, "target_attention_only", True))),
+        _cfg_get(
+            comp_config,
+            "admm_pruner_target_attention_only",
+            _cfg_get(
+                comp_config,
+                "admm_target_attention_only",
+                _cfg_get(comp_config, "target_attention_only", True),
+            ),
+        ),
     )
-    lambda_distill = kwargs.pop("lambda_distill",
-                     _cfg_get(comp_config, "admm_pruner_lambda_distill",
-                     _cfg_get(comp_config, "lambda_distill", 0.1)))
-    distill_batch_size = kwargs.pop("distill_batch_size",
-                        _cfg_get(comp_config, "admm_pruner_distill_batch_size",
-                        _cfg_get(comp_config, "distill_batch_size", 32)))
+    lambda_distill = kwargs.pop(
+        "lambda_distill",
+        _cfg_get(
+            comp_config,
+            "admm_pruner_lambda_distill",
+            _cfg_get(comp_config, "lambda_distill", 0.1),
+        ),
+    )
+    distill_batch_size = kwargs.pop(
+        "distill_batch_size",
+        _cfg_get(
+            comp_config,
+            "admm_pruner_distill_batch_size",
+            _cfg_get(comp_config, "distill_batch_size", 32),
+        ),
+    )
     distill_use_activation = kwargs.pop(
         "distill_use_activation",
-        _cfg_get(comp_config, "admm_pruner_distill_use_activation",
-                 _cfg_get(comp_config, "distill_use_activation", False)),
+        _cfg_get(
+            comp_config,
+            "admm_pruner_distill_use_activation",
+            _cfg_get(comp_config, "distill_use_activation", False),
+        ),
     )
 
     compressor = ADMMPruner(

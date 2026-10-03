@@ -1,7 +1,8 @@
+import framework.attentions.jamba_info
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.jamba_info
+
 
 def test_jamba_info_module_present():
     assert hasattr(framework.attentions, 'jamba_info')

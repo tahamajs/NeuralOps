@@ -2,10 +2,13 @@
 import pytest
 import torch
 import torch.nn as nn
-from transformers import GPT2Config, GPT2ForSequenceClassification, RobertaConfig, RobertaForSequenceClassification, T5Config, T5EncoderModel
+from framework.compression_engine.aa_svd_compressor import AASVDCompressor
 from framework.core.attention_utils import inject_attention
 from framework.core.registry import is_module_declared_compatible
-from framework.compression_engine.aa_svd_compressor import AASVDCompressor
+from transformers import (GPT2Config, GPT2ForSequenceClassification,
+                          RobertaConfig, RobertaForSequenceClassification,
+                          T5Config, T5EncoderModel)
+
 
 @pytest.fixture(autouse=True)
 def set_seed():

@@ -11,6 +11,7 @@ Evaluates GPT-2 downstream reasoning and QA capabilities across standard benchma
 
 Integrates with the framework module registry and apply_module_to_model.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -126,7 +127,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def extract_task_metrics(raw_task_results: dict[str, Any]) -> dict[str, dict[str, float]]:
+def extract_task_metrics(
+    raw_task_results: dict[str, Any],
+) -> dict[str, dict[str, float]]:
     """
     Extract key evaluation metrics (acc, acc_norm, exact_match, f1, etc.)
     from the raw lm_eval results structure.
@@ -142,7 +145,9 @@ def extract_task_metrics(raw_task_results: dict[str, Any]) -> dict[str, dict[str
             # lm_eval metric keys frequently have commas, e.g., 'acc,none'
             clean_k = raw_k.split(",")[0].strip()
             # Prioritize standard metric families
-            if any(term in clean_k for term in ["acc", "exact_match", "f1", "em", "norm"]):
+            if any(
+                term in clean_k for term in ["acc", "exact_match", "f1", "em", "norm"]
+            ):
                 metrics[clean_k] = round(float(val), 4)
 
         if not metrics:
@@ -156,7 +161,9 @@ def extract_task_metrics(raw_task_results: dict[str, Any]) -> dict[str, dict[str
     return extracted
 
 
-def print_summary_table(tasks_metrics: dict[str, dict[str, float]], module_name: str) -> None:
+def print_summary_table(
+    tasks_metrics: dict[str, dict[str, float]], module_name: str
+) -> None:
     """Print a clean Markdown-compatible summary table of results."""
     print("\n" + "=" * 65)
     print(f" LM EVALUATION HARNESS SUMMARY: {module_name}")
@@ -182,22 +189,29 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         import lm_eval
-        from lm_eval.models.huggingface import HFLM
         from lm_eval import simple_evaluate
+        from lm_eval.models.huggingface import HFLM
+
         _HAS_LM_EVAL = True
     except ImportError:
         _HAS_LM_EVAL = False
 
     if not _HAS_LM_EVAL:
-        LOG.error("lm_eval is not installed. Please install it with: pip install lm-eval")
+        LOG.error(
+            "lm_eval is not installed. Please install it with: pip install lm-eval"
+        )
         print("pip install lm-eval", file=sys.stderr)
         return 1
 
     try:
         import torch as _torch
-        from transformers import AutoModelForCausalLM as _AutoModelForCausalLM, AutoTokenizer as _AutoTokenizer
-        from framework.core.registry import ATTENTION_REGISTRY as _ATTENTION_REGISTRY, COMPRESSOR_REGISTRY as _COMPRESSOR_REGISTRY
-        from framework.eval_all_models_datasets import apply_module_to_model as _apply_module_to_model
+        from framework.core.registry import ATTENTION_REGISTRY as _ATTENTION_REGISTRY
+        from framework.core.registry import COMPRESSOR_REGISTRY as _COMPRESSOR_REGISTRY
+        from framework.eval_all_models_datasets import (
+            apply_module_to_model as _apply_module_to_model,
+        )
+        from transformers import AutoModelForCausalLM as _AutoModelForCausalLM
+        from transformers import AutoTokenizer as _AutoTokenizer
 
         torch = _torch
         AutoModelForCausalLM = _AutoModelForCausalLM
@@ -263,7 +277,11 @@ def main(argv: list[str] | None = None) -> int:
     model.eval()
 
     # Wrap model into HFLM interface
-    LOG.info("Initializing lm-eval HFLM wrapper (batch_size=%d, device=%s)...", args.batch_size, device_str)
+    LOG.info(
+        "Initializing lm-eval HFLM wrapper (batch_size=%d, device=%s)...",
+        args.batch_size,
+        device_str,
+    )
     try:
         lm = HFLM(
             pretrained=model,

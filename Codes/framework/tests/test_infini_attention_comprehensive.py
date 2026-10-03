@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.infini_attention import InfiniAttention, inject_infini_attention
+from framework.attentions.infini_attention import (InfiniAttention,
+                                                   inject_infini_attention)
 
 
 class MockConfig:

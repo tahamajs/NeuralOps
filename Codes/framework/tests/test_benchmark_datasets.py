@@ -4,11 +4,9 @@ Tests offline synthetic fallback, registered benchmarks, and data formats.
 """
 
 import pytest
-from framework.data.benchmark_datasets import (
-    BenchmarkDatasetInfo,
-    BenchmarkDatasetRegistry,
-    load_benchmark_dataset,
-)
+from framework.data.benchmark_datasets import (BenchmarkDatasetInfo,
+                                               BenchmarkDatasetRegistry,
+                                               load_benchmark_dataset)
 
 
 def test_registry_contains_standard_benchmarks():

@@ -13,12 +13,11 @@ from typing import Any
 
 import torch
 import torch.nn as nn
-
 from framework.compression_engine.aa_svd_compressor import SVDLinear
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
-from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.pruning_utils import adaptive_max_error
+from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
@@ -33,9 +32,22 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 _ATTN_NAMES = {
-    "attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj",
-    "c_attn", "c_proj", "query", "key", "value",
-    "q_lin", "k_lin", "v_lin", "out_lin", "self_attn",
+    "attn",
+    "attention",
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "c_attn",
+    "c_proj",
+    "query",
+    "key",
+    "value",
+    "q_lin",
+    "k_lin",
+    "v_lin",
+    "out_lin",
+    "self_attn",
 }
 
 
@@ -48,6 +60,7 @@ class MGIECompressor(BaseCompressor):
     """
     MGIE-SVD Compressor (Maximum Information Entropy SVD).
     """
+
     # MGIE-FIX-01
     is_custom_attention: bool = False
 
@@ -70,16 +83,20 @@ class MGIECompressor(BaseCompressor):
 
         if cfg is not None:
             rank = _cfg_get(cfg, "mgie_rank", _cfg_get(cfg, "rank", rank))
-            max_error = _cfg_get(cfg, "mgie_max_error",
-                                 _cfg_get(cfg, "max_error", max_error))
+            max_error = _cfg_get(
+                cfg, "mgie_max_error", _cfg_get(cfg, "max_error", max_error)
+            )
             fallback_to_original = _cfg_get(
-                cfg, "mgie_fallback_to_original",
+                cfg,
+                "mgie_fallback_to_original",
                 _cfg_get(cfg, "fallback_to_original", fallback_to_original),
             )
             lora_r = _cfg_get(cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
             skip_attention_qkv = _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
-            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
+            target_attention_only = _cfg_get(
+                cfg, "target_attention_only", target_attention_only
+            )
             min_rank = _cfg_get(cfg, "min_rank", min_rank)
 
         if "rank" in kwargs and kwargs["rank"] is not None:
@@ -112,11 +129,24 @@ class MGIECompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
+        if (
+            num_heads is not None
+            and num_kv_heads is not None
+            and num_kv_heads < num_heads
+        ):
             name_lower = name.lower()
-            if any(p in name_lower for p in (
-                "q_proj", "k_proj", "v_proj", "query", "key", "value", "c_attn"
-            )):
+            if any(
+                p in name_lower
+                for p in (
+                    "q_proj",
+                    "k_proj",
+                    "v_proj",
+                    "query",
+                    "key",
+                    "value",
+                    "c_attn",
+                )
+            ):
                 return True
         return False
 
@@ -125,10 +155,19 @@ class MGIECompressor(BaseCompressor):
         if isinstance(module, SVDLinear):
             return False
         name_l = name.lower()
-        if any(k in name_l for k in (
-            "classifier", "score", "lm_head", "pooler", "embedding",
-            "layernorm", "rmsnorm", "batchnorm",
-        )):
+        if any(
+            k in name_l
+            for k in (
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embedding",
+                "layernorm",
+                "rmsnorm",
+                "batchnorm",
+            )
+        ):
             return False
 
         cls_name = module.__class__.__name__.lower()
@@ -167,7 +206,7 @@ class MGIECompressor(BaseCompressor):
         if max_rank <= 1:
             return 1
 
-        energy = S ** 2
+        energy = S**2
         total_energy = energy.sum()
         if total_energy <= 1e-12:
             return max(1, min(self.min_rank, max_rank))
@@ -218,7 +257,11 @@ class MGIECompressor(BaseCompressor):
             cls_name = target_layer.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(target_layer, "nf")
 
-            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
+            W = (
+                raw_w.t().contiguous().clone().float()
+                if is_conv1d
+                else raw_w.clone().float()
+            )
             d_out, d_in = W.shape
             max_r = min(d_out, d_in)
             device = raw_w.device
@@ -241,7 +284,9 @@ class MGIECompressor(BaseCompressor):
                 if not math.isfinite(err) or err > self.max_error:
                     logger.warning(
                         "MGIE: reconstruction error %.4f on %s exceeded %.4f.",
-                        err, name, self.max_error,
+                        err,
+                        name,
+                        self.max_error,
                     )
                     if self.fallback_to_original:
                         self.fallback_layers.append(name)
@@ -252,7 +297,8 @@ class MGIECompressor(BaseCompressor):
                 existing_lora_r = getattr(module, "r", getattr(module, "lora_r", 0))
                 eff_lora_r = existing_lora_r if existing_lora_r > 0 else self.lora_r
                 eff_lora_alpha = getattr(
-                    module, "lora_alpha",
+                    module,
+                    "lora_alpha",
                     getattr(module, "alpha", self.lora_alpha),
                 )
 
@@ -287,7 +333,8 @@ class MGIECompressor(BaseCompressor):
 
                 # Preserve pre-existing LoRA adapter parameters if wrapped
                 if (
-                    hasattr(module, "lora_A") and hasattr(module, "lora_B")
+                    hasattr(module, "lora_A")
+                    and hasattr(module, "lora_B")
                     and svd_layer.lora_A is not None
                     and svd_layer.lora_B is not None
                 ):
@@ -302,15 +349,21 @@ class MGIECompressor(BaseCompressor):
                             if hasattr(module.lora_B, "weight")
                             else module.lora_B.data
                         )
-                        if (src_A.shape == svd_layer.lora_A.shape
-                                and src_B.shape == svd_layer.lora_B.shape):
+                        if (
+                            src_A.shape == svd_layer.lora_A.shape
+                            and src_B.shape == svd_layer.lora_B.shape
+                        ):
                             svd_layer.lora_A.copy_(
-                                src_A.to(svd_layer.lora_A.device,
-                                         dtype=svd_layer.lora_A.dtype)
+                                src_A.to(
+                                    svd_layer.lora_A.device,
+                                    dtype=svd_layer.lora_A.dtype,
+                                )
                             )
                             svd_layer.lora_B.copy_(
-                                src_B.to(svd_layer.lora_B.device,
-                                         dtype=svd_layer.lora_B.dtype)
+                                src_B.to(
+                                    svd_layer.lora_B.device,
+                                    dtype=svd_layer.lora_B.dtype,
+                                )
                             )
                     svd_layer.lora_A.requires_grad = True
                     svd_layer.lora_B.requires_grad = True
@@ -348,15 +401,16 @@ class MGIECompressor(BaseCompressor):
                         hidden = getattr(cfg, "hidden_size", None) if cfg else None
                         if hidden is None:
                             first_lin = next(
-                                (m for m in self.model.modules()
-                                 if isinstance(m, nn.Linear)),
+                                (
+                                    m
+                                    for m in self.model.modules()
+                                    if isinstance(m, nn.Linear)
+                                ),
                                 None,
                             )
                             hidden = getattr(first_lin, "in_features", 8)
                         dt = next(self.model.parameters()).dtype
-                        dummy_feat = torch.randn(
-                            1, 8, hidden, device=dev, dtype=dt
-                        )
+                        dummy_feat = torch.randn(1, 8, hidden, device=dev, dtype=dt)
                         self.model(dummy_feat)
         except Exception as e:
             logger.warning("MGIE forward sanity check failed: %s", e)
@@ -368,41 +422,40 @@ class MGIECompressor(BaseCompressor):
         try:
             self._compressed_params = self._count_params(self.model)
         except Exception:
-            self._compressed_params = sum(
-                p.numel() for p in self.model.parameters()
-            )
+            self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
         # MGIE-FIX-04: accurate ratio
-        eff_ratio = (
-            self._compressed_params / max(1, total_orig_params)
-        )
+        eff_ratio = self._compressed_params / max(1, total_orig_params)
 
         avg_err = (
             sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
-            if self.layer_errors else 0.0
+            if self.layer_errors
+            else 0.0
         )
 
         stats = self.get_compression_stats()
-        stats.update({
-            "compressed_layers": self.compressed_layers,
-            "fallback_layers": self.fallback_layers,
-            "skipped_layers": self.skipped_layers,
-            "num_compressed": len(self.compressed_layers),
-            "num_fallback": len(self.fallback_layers),
-            "num_skipped": len(self.skipped_layers),
-            "layer_errors": self.layer_errors,
-            "layer_ranks": self.layer_ranks,
-            "avg_reconstruction_error": avg_err,
-            "max_error": self.max_error,
-            "fallback_to_original": self.fallback_to_original,
-            "total_params_before": total_orig_params,
-            "total_params_after": self._compressed_params,
-            "effective_parameter_ratio": round(eff_ratio, 4),
-            "lora_r": self.lora_r,
-            "lora_alpha": self.lora_alpha,
-            "forward_check_success": forward_check_success,
-            "method": "mgie_svd",
-        })
+        stats.update(
+            {
+                "compressed_layers": self.compressed_layers,
+                "fallback_layers": self.fallback_layers,
+                "skipped_layers": self.skipped_layers,
+                "num_compressed": len(self.compressed_layers),
+                "num_fallback": len(self.fallback_layers),
+                "num_skipped": len(self.skipped_layers),
+                "layer_errors": self.layer_errors,
+                "layer_ranks": self.layer_ranks,
+                "avg_reconstruction_error": avg_err,
+                "max_error": self.max_error,
+                "fallback_to_original": self.fallback_to_original,
+                "total_params_before": total_orig_params,
+                "total_params_after": self._compressed_params,
+                "effective_parameter_ratio": round(eff_ratio, 4),
+                "lora_r": self.lora_r,
+                "lora_alpha": self.lora_alpha,
+                "forward_check_success": forward_check_success,
+                "method": "mgie_svd",
+            }
+        )
         self.stats = stats
         logger.info(
             "Compressor mgie finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
@@ -424,18 +477,21 @@ def mgie_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """MGIE factory function."""
     rank = kwargs.pop(
         "rank",
-        _cfg_get(comp_config, "mgie_rank",
-                 _cfg_get(comp_config, "rank", None)),
+        _cfg_get(comp_config, "mgie_rank", _cfg_get(comp_config, "rank", None)),
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(comp_config, "mgie_max_error",
-                 _cfg_get(comp_config, "max_error", 0.50)),
+        _cfg_get(
+            comp_config, "mgie_max_error", _cfg_get(comp_config, "max_error", 0.50)
+        ),
     )
     fallback = kwargs.pop(
         "fallback_to_original",
-        _cfg_get(comp_config, "mgie_fallback_to_original",
-                 _cfg_get(comp_config, "fallback_to_original", True)),
+        _cfg_get(
+            comp_config,
+            "mgie_fallback_to_original",
+            _cfg_get(comp_config, "fallback_to_original", True),
+        ),
     )
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))

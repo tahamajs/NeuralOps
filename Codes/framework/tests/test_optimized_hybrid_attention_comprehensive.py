@@ -1,8 +1,8 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.attentions.optimized_hybrid_attention import OptimizedHybridAttention, inject_optimized_hybrid_attention
+from framework.attentions.optimized_hybrid_attention import (
+    OptimizedHybridAttention, inject_optimized_hybrid_attention)
 
 
 class MockConfig:

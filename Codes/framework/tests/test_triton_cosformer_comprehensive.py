@@ -1,15 +1,13 @@
-import pytest
 import math
 import warnings
-import torch
-import torch.nn as nn
 from types import SimpleNamespace
 
-from framework.attentions.triton_cosformer import (
-    TritonCosformerAttention,
-    triton_cosformer_attention,
-    inject_triton_cosformer,
-)
+import pytest
+import torch
+import torch.nn as nn
+from framework.attentions.triton_cosformer import (TritonCosformerAttention,
+                                                   inject_triton_cosformer,
+                                                   triton_cosformer_attention)
 
 
 def test_triton_cosformer_config_handling():

@@ -1,13 +1,10 @@
+import types
+
 import pytest
 import torch
 import torch.nn as nn
-import types
-
-from framework.attentions.upi_stuffed_mamba import (
-    UPIMambaBlock,
-    LoRALinear,
-    inject_upi_mamba,
-)
+from framework.attentions.upi_stuffed_mamba import (LoRALinear, UPIMambaBlock,
+                                                    inject_upi_mamba)
 
 
 def make_config(hidden_size=64, is_decoder=False, model_type="bert"):

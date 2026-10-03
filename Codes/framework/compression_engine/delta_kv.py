@@ -12,13 +12,11 @@ Mathematical formulation:
 
 from __future__ import annotations
 
-from typing import Any
-
 import logging
+from typing import Any
 
 import torch
 import torch.nn as nn
-
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 
@@ -28,6 +26,7 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # KV cache store (optional, DKV-FIX-13)
 # ===========================================================================
+
 
 class DeltaKVStore:
     """
@@ -84,12 +83,14 @@ class DeltaKVStore:
             self.ref_v = torch.cat([self.ref_v, orig_v], dim=2)
 
         if self.ref_k.size(2) > self.max_refs:
-            self.ref_k = self.ref_k[:, :, -self.max_refs:, :].contiguous()
-            self.ref_v = self.ref_v[:, :, -self.max_refs:, :].contiguous()
+            self.ref_k = self.ref_k[:, :, -self.max_refs :, :].contiguous()
+            self.ref_v = self.ref_v[:, :, -self.max_refs :, :].contiguous()
 
     @torch.no_grad()
     def compress(
-        self, k: torch.Tensor, v: torch.Tensor,
+        self,
+        k: torch.Tensor,
+        v: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         orig_shape = k.shape
         if self.ref_k is None or self.ref_k.size(2) == 0:
@@ -119,7 +120,9 @@ class DeltaKVStore:
             self.update(k, v)
             return k, v
 
-        sim = torch.matmul(k_4d.float(), ref_k_b.float().transpose(-2, -1).contiguous()) / (D ** 0.5)
+        sim = torch.matmul(
+            k_4d.float(), ref_k_b.float().transpose(-2, -1).contiguous()
+        ) / (D**0.5)
         _, top_idx = torch.topk(sim, tk, dim=-1)
 
         top_idx_exp = top_idx.unsqueeze(-1).expand(B, H, N, tk, D)
@@ -149,6 +152,7 @@ class DeltaKVStore:
 # Helpers
 # ===========================================================================
 
+
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if cfg is None:
         return default
@@ -158,10 +162,19 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 _ATTN_NAMES = {
-    "q_proj", "k_proj", "v_proj", "o_proj",
-    "c_attn", "c_proj",
-    "query", "key", "value",
-    "q_lin", "k_lin", "v_lin", "out_lin",
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "c_attn",
+    "c_proj",
+    "query",
+    "key",
+    "value",
+    "q_lin",
+    "k_lin",
+    "v_lin",
+    "out_lin",
 }
 
 
@@ -173,6 +186,7 @@ def _is_conv1d(module: nn.Module) -> bool:
 # ===========================================================================
 # Compressor (DKV-FIX-01, DKV-FIX-02)
 # ===========================================================================
+
 
 @COMPRESSOR_REGISTRY.register("delta_kv_class")
 @COMPRESSOR_REGISTRY.register("delta_kv_compressor_class")
@@ -196,24 +210,35 @@ class DeltaKVCompressor(BaseCompressor):
         super().__init__(model, name="delta_kv", **kwargs)
         self.cfg = cfg
 
-        self.rank = int(_cfg_get(cfg, "delta_kv_rank",
-                                 _cfg_get(cfg, "rank", rank)))
-        self.sparsity = float(_cfg_get(cfg, "delta_kv_sparsity",
-                                       _cfg_get(cfg, "sparsity", sparsity)))
-        self.max_error = float(_cfg_get(cfg, "delta_kv_max_error",
-                                        _cfg_get(cfg, "max_error", max_error)))
-        self.target_attention_only = bool(_cfg_get(
-            cfg, "delta_kv_target_attention_only",
-            _cfg_get(cfg, "target_attention_only", target_attention_only),
-        ))
-        self.fallback_to_original = bool(_cfg_get(
-            cfg, "delta_kv_fallback_to_original",
-            _cfg_get(cfg, "fallback_to_original", fallback_to_original),
-        ))
+        self.rank = int(_cfg_get(cfg, "delta_kv_rank", _cfg_get(cfg, "rank", rank)))
+        self.sparsity = float(
+            _cfg_get(cfg, "delta_kv_sparsity", _cfg_get(cfg, "sparsity", sparsity))
+        )
+        self.max_error = float(
+            _cfg_get(cfg, "delta_kv_max_error", _cfg_get(cfg, "max_error", max_error))
+        )
+        self.target_attention_only = bool(
+            _cfg_get(
+                cfg,
+                "delta_kv_target_attention_only",
+                _cfg_get(cfg, "target_attention_only", target_attention_only),
+            )
+        )
+        self.fallback_to_original = bool(
+            _cfg_get(
+                cfg,
+                "delta_kv_fallback_to_original",
+                _cfg_get(cfg, "fallback_to_original", fallback_to_original),
+            )
+        )
         self.min_layer_dim = max(1, int(_cfg_get(cfg, "min_layer_dim", min_layer_dim)))
-        self.skip_should_compress_filter = bool(_cfg_get(
-            cfg, "skip_should_compress_filter", skip_should_compress_filter,
-        ))
+        self.skip_should_compress_filter = bool(
+            _cfg_get(
+                cfg,
+                "skip_should_compress_filter",
+                skip_should_compress_filter,
+            )
+        )
 
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
@@ -226,7 +251,9 @@ class DeltaKVCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     # Target check (DKV-FIX-07)
     # ------------------------------------------------------------------
-    def _is_target_module(self, name: str, module: nn.Module, _debug: bool = False) -> bool:
+    def _is_target_module(
+        self, name: str, module: nn.Module, _debug: bool = False
+    ) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
             if _debug:
@@ -235,15 +262,29 @@ class DeltaKVCompressor(BaseCompressor):
 
         # Skip already compressed (DKV-FIX-05 companion)
         cls_name = module.__class__.__name__
-        if cls_name in ("DeltaKVLinear", "LSCPrunedLoRALinear",
-                        "DynamicSVDLinear", "SVDLinear", "FactorisedLinear"):
+        if cls_name in (
+            "DeltaKVLinear",
+            "LSCPrunedLoRALinear",
+            "DynamicSVDLinear",
+            "SVDLinear",
+            "FactorisedLinear",
+        ):
             if _debug:
                 logger.info(f"  [skip] {name}: already compressed ({cls_name})")
             return False
 
-        if any(skip in name_lower for skip in
-               ["classifier", "score", "lm_head", "pooler",
-                "embedding", "router", "gate"]):
+        if any(
+            skip in name_lower
+            for skip in [
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embedding",
+                "router",
+                "gate",
+            ]
+        ):
             if _debug:
                 logger.info(f"  [skip] {name}: skip keyword")
             return False
@@ -260,6 +301,7 @@ class DeltaKVCompressor(BaseCompressor):
         if not self.skip_should_compress_filter:
             try:
                 from framework.utils.compat import should_compress_linear
+
                 if not should_compress_linear(self.model, name):
                     if _debug:
                         logger.info(f"  [skip] {name}: should_compress_linear=False")
@@ -283,7 +325,8 @@ class DeltaKVCompressor(BaseCompressor):
         if self.target_attention_only:
             last_part = name.split(".")[-1]
             is_attn = (last_part in _ATTN_NAMES) or any(
-                k in name_lower for k in ("attn", "attention"))
+                k in name_lower for k in ("attn", "attention")
+            )
             if not is_attn:
                 if _debug:
                     logger.info(f"  [skip] {name}: target_attention_only filter")
@@ -322,12 +365,16 @@ class DeltaKVCompressor(BaseCompressor):
             if self._is_target_module(name, module)
         ]
         if not target_list:
-            logger.warning("DeltaKV: no compressible layers found. Running diagnostic...")
+            logger.warning(
+                "DeltaKV: no compressible layers found. Running diagnostic..."
+            )
             n_scanned = 0
             for name, module in self.model.named_modules():
                 n_scanned += 1
                 self._is_target_module(name, module, _debug=True)
-            logger.warning("DeltaKV diagnostic: %d modules scanned, 0 targets.", n_scanned)
+            logger.warning(
+                "DeltaKV diagnostic: %d modules scanned, 0 targets.", n_scanned
+            )
             try:
                 stats = self.get_compression_stats()
             except Exception:
@@ -339,7 +386,10 @@ class DeltaKVCompressor(BaseCompressor):
         # Freeze non-target attention/linear layers when target_attention_only.
         if self.target_attention_only:
             for name, module in self.model.named_modules():
-                if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
+                if any(
+                    part in name.split(".")
+                    for part in ("lora_A", "lora_B", "base_layer")
+                ):
                     continue
                 target_mod = getattr(module, "base_layer", module)
                 if isinstance(target_mod, nn.Linear) or _is_conv1d(target_mod):
@@ -372,7 +422,9 @@ class DeltaKVCompressor(BaseCompressor):
 
                 residual = W - L
                 flat_r = residual.contiguous().abs().reshape(-1)
-                keep_n = max(1, min(int(flat_r.numel() * self.sparsity), flat_r.numel()))
+                keep_n = max(
+                    1, min(int(flat_r.numel() * self.sparsity), flat_r.numel())
+                )
                 threshold = torch.topk(flat_r, keep_n).values[-1]
                 mask = (residual.abs() >= threshold).float()
                 residual_sparse = residual * mask
@@ -387,7 +439,9 @@ class DeltaKVCompressor(BaseCompressor):
                 if err > self.max_error and self.fallback_to_original:
                     logger.warning(
                         "DeltaKV: error %.4f on %s > %.4f; keeping original.",
-                        err, name, self.max_error,
+                        err,
+                        name,
+                        self.max_error,
                     )
                     self.fallback_layers.append(name)
                     for p in module.parameters():
@@ -447,10 +501,13 @@ class DeltaKVCompressor(BaseCompressor):
         except Exception:
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
-        effective_ratio = total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
+        effective_ratio = (
+            total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
+        )
         avg_err = (
             sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
-            if self.layer_errors else 0.0
+            if self.layer_errors
+            else 0.0
         )
 
         try:
@@ -458,45 +515,52 @@ class DeltaKVCompressor(BaseCompressor):
         except Exception:
             stats = {}
 
-        stats.update({
-            "rank": self.rank,
-            "sparsity": self.sparsity,
-            "max_error": self.max_error,
-            "target_attention_only": self.target_attention_only,
-            "fallback_to_original": self.fallback_to_original,
-            "compressed_layers": self.compressed_layers,
-            "compressed_layer_count": len(self.compressed_layers),
-            "fallback_layers": self.fallback_layers,
-            "fallback_layer_count": len(self.fallback_layers),
-            "skipped_layers": self.skipped_layers,
-            "skipped_layer_count": len(self.skipped_layers),
-            "layer_errors": self.layer_errors,
-            "layer_ranks": self.layer_ranks,
-            "avg_reconstruction_error": avg_err,
-            "effective_parameter_ratio": round(effective_ratio, 4),
-            "kv_cache_storage_ratio": f"{self.sparsity * 100:.1f}% of full KV cache",
-            "forward_check_success": forward_check_success,
-            "method": "delta_kv",
-            "note": (
-                "DeltaKV rewrites dense weights in-place (low-rank + sparse residual). "
-                "The stored weight retains its full (out, in) shape; framework-level "
-                "compression_rate reads 1.0. Use effective_parameter_ratio for the "
-                "theoretical storage metric."
-            ),
-        })
+        stats.update(
+            {
+                "rank": self.rank,
+                "sparsity": self.sparsity,
+                "max_error": self.max_error,
+                "target_attention_only": self.target_attention_only,
+                "fallback_to_original": self.fallback_to_original,
+                "compressed_layers": self.compressed_layers,
+                "compressed_layer_count": len(self.compressed_layers),
+                "fallback_layers": self.fallback_layers,
+                "fallback_layer_count": len(self.fallback_layers),
+                "skipped_layers": self.skipped_layers,
+                "skipped_layer_count": len(self.skipped_layers),
+                "layer_errors": self.layer_errors,
+                "layer_ranks": self.layer_ranks,
+                "avg_reconstruction_error": avg_err,
+                "effective_parameter_ratio": round(effective_ratio, 4),
+                "kv_cache_storage_ratio": f"{self.sparsity * 100:.1f}% of full KV cache",
+                "forward_check_success": forward_check_success,
+                "method": "delta_kv",
+                "note": (
+                    "DeltaKV rewrites dense weights in-place (low-rank + sparse residual). "
+                    "The stored weight retains its full (out, in) shape; framework-level "
+                    "compression_rate reads 1.0. Use effective_parameter_ratio for the "
+                    "theoretical storage metric."
+                ),
+            }
+        )
         self.stats = stats
 
         # DKV-FIX-14: write stats on the model.
         try:
-            if not hasattr(self.model, "compression_stats") or self.model.compression_stats is None:
+            if (
+                not hasattr(self.model, "compression_stats")
+                or self.model.compression_stats is None
+            ):
                 self.model.compression_stats = {}
-            self.model.compression_stats.update({
-                "num_compressed": len(self.compressed_layers),
-                "num_fallback": len(self.fallback_layers),
-                "compression_method": "delta_kv",
-                "effective_parameter_ratio": effective_ratio,
-                "avg_reconstruction_error": avg_err,
-            })
+            self.model.compression_stats.update(
+                {
+                    "num_compressed": len(self.compressed_layers),
+                    "num_fallback": len(self.fallback_layers),
+                    "compression_method": "delta_kv",
+                    "effective_parameter_ratio": effective_ratio,
+                    "avg_reconstruction_error": avg_err,
+                }
+            )
         except Exception:
             pass
 
@@ -504,8 +568,11 @@ class DeltaKVCompressor(BaseCompressor):
         logger.info(
             "DeltaKV: %d compressed, %d fallback, %d skipped. "
             "Avg err %.4f, effective_param_ratio %.2fx.",
-            len(self.compressed_layers), len(self.fallback_layers),
-            len(self.skipped_layers), avg_err, effective_ratio,
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            len(self.skipped_layers),
+            avg_err,
+            effective_ratio,
         )
         return self.model, stats
 
@@ -514,29 +581,43 @@ class DeltaKVCompressor(BaseCompressor):
 # Factory (DKV-FIX-02)
 # ===========================================================================
 
+
 @COMPRESSOR_REGISTRY.register("delta_kv")
 @COMPRESSOR_REGISTRY.register("delta_kv_compressor")
 @COMPRESSOR_REGISTRY.register("delta_kv_factory")
 def delta_kv_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """DeltaKV compressor factory."""
-    rank = kwargs.pop("rank",
-                      _cfg_get(comp_config, "delta_kv_rank",
-                               _cfg_get(comp_config, "rank", 16)))
-    sparsity = kwargs.pop("sparsity",
-                          _cfg_get(comp_config, "delta_kv_sparsity",
-                                   _cfg_get(comp_config, "sparsity", 0.29)))
-    max_error = kwargs.pop("max_error",
-                           _cfg_get(comp_config, "delta_kv_max_error",
-                                    _cfg_get(comp_config, "max_error", 0.35)))
+    rank = kwargs.pop(
+        "rank",
+        _cfg_get(comp_config, "delta_kv_rank", _cfg_get(comp_config, "rank", 16)),
+    )
+    sparsity = kwargs.pop(
+        "sparsity",
+        _cfg_get(
+            comp_config, "delta_kv_sparsity", _cfg_get(comp_config, "sparsity", 0.29)
+        ),
+    )
+    max_error = kwargs.pop(
+        "max_error",
+        _cfg_get(
+            comp_config, "delta_kv_max_error", _cfg_get(comp_config, "max_error", 0.35)
+        ),
+    )
     target_attention_only = kwargs.pop(
         "target_attention_only",
-        _cfg_get(comp_config, "delta_kv_target_attention_only",
-                 _cfg_get(comp_config, "target_attention_only", False)),
+        _cfg_get(
+            comp_config,
+            "delta_kv_target_attention_only",
+            _cfg_get(comp_config, "target_attention_only", False),
+        ),
     )
     fallback_to_original = kwargs.pop(
         "fallback_to_original",
-        _cfg_get(comp_config, "delta_kv_fallback_to_original",
-                 _cfg_get(comp_config, "fallback_to_original", True)),
+        _cfg_get(
+            comp_config,
+            "delta_kv_fallback_to_original",
+            _cfg_get(comp_config, "fallback_to_original", True),
+        ),
     )
     skip_filter = kwargs.pop(
         "skip_should_compress_filter",

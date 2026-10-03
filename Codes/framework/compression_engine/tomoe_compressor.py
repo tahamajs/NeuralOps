@@ -15,11 +15,10 @@ from typing import Any
 import numpy as np
 import torch
 import torch.nn as nn
-from sklearn.cluster import KMeans, MiniBatchKMeans
-
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
+from sklearn.cluster import KMeans, MiniBatchKMeans
 
 logger = logging.getLogger(__name__)
 
@@ -57,29 +56,49 @@ class ToMoELinear(nn.Module):
         if original is not None:
             base_layer = getattr(original, "base_layer", original)
             cls_name = base_layer.__class__.__name__.lower()
-            is_conv1d = "conv1d" in cls_name or (hasattr(base_layer, "nx") and hasattr(base_layer, "nf"))
+            is_conv1d = "conv1d" in cls_name or (
+                hasattr(base_layer, "nx") and hasattr(base_layer, "nf")
+            )
             if is_conv1d:
                 # Conv1D stores weight as (nx, nf) where nx=in_features, nf=out_features
                 in_feat = base_layer.weight.shape[0]
                 out_feat = base_layer.weight.shape[1]
-                orig_w = base_layer.weight.data.t().contiguous().clone()  # Transpose to (out_features, in_features)
-                orig_b = base_layer.bias.data.clone() if base_layer.bias is not None else None
+                orig_w = (
+                    base_layer.weight.data.t().contiguous().clone()
+                )  # Transpose to (out_features, in_features)
+                orig_b = (
+                    base_layer.bias.data.clone()
+                    if base_layer.bias is not None
+                    else None
+                )
             elif isinstance(base_layer, nn.Linear):
                 in_feat = base_layer.in_features
                 out_feat = base_layer.out_features
                 orig_w = base_layer.weight.data.contiguous().clone()
-                orig_b = base_layer.bias.data.clone() if base_layer.bias is not None else None
+                orig_b = (
+                    base_layer.bias.data.clone()
+                    if base_layer.bias is not None
+                    else None
+                )
             elif hasattr(base_layer, "weight") and base_layer.weight.ndim == 2:
                 in_feat = getattr(base_layer, "in_features", base_layer.weight.shape[1])
-                out_feat = getattr(base_layer, "out_features", base_layer.weight.shape[0])
+                out_feat = getattr(
+                    base_layer, "out_features", base_layer.weight.shape[0]
+                )
                 orig_w = base_layer.weight.data.contiguous().clone()
-                orig_b = base_layer.bias.data.clone() if getattr(base_layer, "bias", None) is not None else None
+                orig_b = (
+                    base_layer.bias.data.clone()
+                    if getattr(base_layer, "bias", None) is not None
+                    else None
+                )
             else:
                 raise TypeError(f"Unsupported module type: {type(base_layer)}")
         else:
             base_layer = None
             if in_features is None or out_features is None or weight is None:
-                raise ValueError("Either 'original' module or ('in_features', 'out_features', 'weight') must be provided.")
+                raise ValueError(
+                    "Either 'original' module or ('in_features', 'out_features', 'weight') must be provided."
+                )
             in_feat = in_features
             out_feat = out_features
             orig_w = weight.clone()
@@ -93,7 +112,11 @@ class ToMoELinear(nn.Module):
         self.top_k = max(1, min(top_k, self.num_experts))
 
         # Check for existing LoRA in original
-        has_orig_lora = original is not None and hasattr(original, "lora_A") and hasattr(original, "lora_B")
+        has_orig_lora = (
+            original is not None
+            and hasattr(original, "lora_A")
+            and hasattr(original, "lora_B")
+        )
         if has_orig_lora and getattr(original, "r", 0) > 0:
             lora_r = getattr(original, "r", lora_r)
 
@@ -127,7 +150,9 @@ class ToMoELinear(nn.Module):
                 pred = km.fit_predict(W_fp32)
                 counts = np.bincount(pred, minlength=self.num_experts)
                 if (counts == 0).any():
-                    logger.warning("ToMoE: KMeans produced empty cluster(s). Falling back to equal division.")
+                    logger.warning(
+                        "ToMoE: KMeans produced empty cluster(s). Falling back to equal division."
+                    )
                     assignments = None
                 else:
                     # Balance KMeans clusters to equal size for fast vectorized path
@@ -151,7 +176,10 @@ class ToMoELinear(nn.Module):
                     else:
                         assignments = pred
             except Exception as e:
-                logger.warning("ToMoE: KMeans clustering failed (%s). Falling back to equal division.", e)
+                logger.warning(
+                    "ToMoE: KMeans clustering failed (%s). Falling back to equal division.",
+                    e,
+                )
                 assignments = None
 
         if assignments is None or (assignments < 0).any():
@@ -167,7 +195,9 @@ class ToMoELinear(nn.Module):
 
         # Create expert sub-layers and record neuron assignment masks
         self.experts = nn.ModuleList()
-        self.register_buffer("_masks", torch.zeros(self.num_experts, self.out_features, dtype=torch.bool))
+        self.register_buffer(
+            "_masks", torch.zeros(self.num_experts, self.out_features, dtype=torch.bool)
+        )
         expert_indices_list = []
         cluster_sizes = []
 
@@ -182,7 +212,13 @@ class ToMoELinear(nn.Module):
             n_neurons = len(indices)
             cluster_sizes.append(n_neurons)
 
-            expert = nn.Linear(self.in_features, n_neurons, bias=orig_b is not None, device=device, dtype=dtype)
+            expert = nn.Linear(
+                self.in_features,
+                n_neurons,
+                bias=orig_b is not None,
+                device=device,
+                dtype=dtype,
+            )
             expert.weight.data.copy_(orig_w[mask_bool])
             if orig_b is not None:
                 expert.bias.data.copy_(orig_b[mask_bool])
@@ -198,9 +234,11 @@ class ToMoELinear(nn.Module):
         max_size = max(len(idx) for idx in expert_indices_list)
         padded_indices = torch.zeros(self.num_experts, max_size, dtype=torch.long)
         for e, idx in enumerate(expert_indices_list):
-            padded_indices[e, :len(idx)] = idx
+            padded_indices[e, : len(idx)] = idx
         self.register_buffer("expert_indices_padded", padded_indices)
-        self.register_buffer("expert_lens", torch.tensor(cluster_sizes, dtype=torch.long))
+        self.register_buffer(
+            "expert_lens", torch.tensor(cluster_sizes, dtype=torch.long)
+        )
 
         self.equal_expert_size = len(set(cluster_sizes)) == 1
 
@@ -212,7 +250,9 @@ class ToMoELinear(nn.Module):
             self.expert_out_dim = -1
 
         # Router in FP32 for numerical stability & speed
-        self.router = nn.Linear(self.in_features, self.num_experts, device=device, dtype=torch.float32)
+        self.router = nn.Linear(
+            self.in_features, self.num_experts, device=device, dtype=torch.float32
+        )
         nn.init.normal_(self.router.weight, std=0.02)
         if self.router.bias is not None:
             nn.init.zeros_(self.router.bias)
@@ -226,15 +266,29 @@ class ToMoELinear(nn.Module):
             self.expert_lora_B = nn.ParameterList()
             for e in range(self.num_experts):
                 n_neurons = cluster_sizes[e]
-                l_A = nn.Parameter(torch.empty(self.lora_r, self.in_features, device=device, dtype=dtype))
-                l_B = nn.Parameter(torch.zeros(n_neurons, self.lora_r, device=device, dtype=dtype))
+                l_A = nn.Parameter(
+                    torch.empty(
+                        self.lora_r, self.in_features, device=device, dtype=dtype
+                    )
+                )
+                l_B = nn.Parameter(
+                    torch.zeros(n_neurons, self.lora_r, device=device, dtype=dtype)
+                )
                 nn.init.kaiming_uniform_(l_A, a=math.sqrt(5))
                 nn.init.zeros_(l_B)
                 self.expert_lora_A.append(l_A)
                 self.expert_lora_B.append(l_B)
 
-            self.lora_A_router = nn.Parameter(torch.empty(self.lora_r, self.in_features, device=device, dtype=torch.float32))
-            self.lora_B_router = nn.Parameter(torch.zeros(self.num_experts, self.lora_r, device=device, dtype=torch.float32))
+            self.lora_A_router = nn.Parameter(
+                torch.empty(
+                    self.lora_r, self.in_features, device=device, dtype=torch.float32
+                )
+            )
+            self.lora_B_router = nn.Parameter(
+                torch.zeros(
+                    self.num_experts, self.lora_r, device=device, dtype=torch.float32
+                )
+            )
             nn.init.kaiming_uniform_(self.lora_A_router, a=math.sqrt(5))
             nn.init.zeros_(self.lora_B_router)
 
@@ -274,15 +328,27 @@ class ToMoELinear(nn.Module):
 
         # Compute router logits in FP32
         router_logits = self.router(x_flat.float())
-        if self.lora_r > 0 and hasattr(self, "lora_A_router") and hasattr(self, "lora_B_router"):
-            router_lora = (x_flat.float() @ self.lora_A_router.t()) @ self.lora_B_router.t() * self.lora_scale
+        if (
+            self.lora_r > 0
+            and hasattr(self, "lora_A_router")
+            and hasattr(self, "lora_B_router")
+        ):
+            router_lora = (
+                (x_flat.float() @ self.lora_A_router.t())
+                @ self.lora_B_router.t()
+                * self.lora_scale
+            )
             router_logits = router_logits + router_lora
 
         if torch.isnan(router_logits).any() or torch.isinf(router_logits).any():
-            router_logits = torch.nan_to_num(router_logits, nan=0.0, posinf=1.0, neginf=-1.0)
+            router_logits = torch.nan_to_num(
+                router_logits, nan=0.0, posinf=1.0, neginf=-1.0
+            )
 
         # Top-k routing
-        topk_vals, topk_idx = torch.topk(router_logits, self.top_k, dim=-1)  # (N, top_k)
+        topk_vals, topk_idx = torch.topk(
+            router_logits, self.top_k, dim=-1
+        )  # (N, top_k)
         topk_weights = torch.softmax(topk_vals, dim=-1).to(x.dtype)  # (N, top_k)
 
         out = torch.zeros(N, self.out_features, device=x.device, dtype=x.dtype)
@@ -290,18 +356,31 @@ class ToMoELinear(nn.Module):
         if self.equal_expert_size:
             # Fast vectorized gather & scatter_add_ for equal-sized expert partitions
             D_exp = self.expert_out_dim
-            all_expert_outs = torch.stack([exp(x_flat) for exp in self.experts], dim=1)  # (N, E, D_exp)
+            all_expert_outs = torch.stack(
+                [exp(x_flat) for exp in self.experts], dim=1
+            )  # (N, E, D_exp)
 
             if self.lora_r > 0 and hasattr(self, "expert_lora_A"):
                 lora_outs = []
                 for e in range(self.num_experts):
-                    l_e = (x_flat.to(self.expert_lora_A[e].dtype) @ self.expert_lora_A[e].t()) @ self.expert_lora_B[e].t() * self.lora_scale
+                    l_e = (
+                        (
+                            x_flat.to(self.expert_lora_A[e].dtype)
+                            @ self.expert_lora_A[e].t()
+                        )
+                        @ self.expert_lora_B[e].t()
+                        * self.lora_scale
+                    )
                     lora_outs.append(l_e.to(x.dtype))
                 all_expert_outs = all_expert_outs + torch.stack(lora_outs, dim=1)
 
             expanded_idx = topk_idx.unsqueeze(-1).expand(N, self.top_k, D_exp)
-            selected_outs = torch.gather(all_expert_outs, dim=1, index=expanded_idx)  # (N, top_k, D_exp)
-            weighted_selected = selected_outs * topk_weights.unsqueeze(-1)  # (N, top_k, D_exp)
+            selected_outs = torch.gather(
+                all_expert_outs, dim=1, index=expanded_idx
+            )  # (N, top_k, D_exp)
+            weighted_selected = selected_outs * topk_weights.unsqueeze(
+                -1
+            )  # (N, top_k, D_exp)
 
             col_map = self.expert_col_map
             dest_cols = col_map[topk_idx]  # (N, top_k, D_exp)
@@ -314,21 +393,30 @@ class ToMoELinear(nn.Module):
         else:
             # Vectorized token dispatch per expert with scatter_add_
             for e in range(self.num_experts):
-                expert_match = (topk_idx == e)  # (N, top_k)
+                expert_match = topk_idx == e  # (N, top_k)
                 if not expert_match.any():
                     continue
                 token_idx, rank_pos = torch.where(expert_match)
                 selected_tokens = x_flat[token_idx]
                 exp_out = self.experts[e](selected_tokens)
                 if self.lora_r > 0 and hasattr(self, "expert_lora_A"):
-                    l_e = (selected_tokens.to(self.expert_lora_A[e].dtype) @ self.expert_lora_A[e].t()) @ self.expert_lora_B[e].t() * self.lora_scale
+                    l_e = (
+                        (
+                            selected_tokens.to(self.expert_lora_A[e].dtype)
+                            @ self.expert_lora_A[e].t()
+                        )
+                        @ self.expert_lora_B[e].t()
+                        * self.lora_scale
+                    )
                     exp_out = exp_out + l_e.to(x.dtype)
                 gate_w = topk_weights[token_idx, rank_pos].unsqueeze(-1)
                 weighted_exp_out = exp_out * gate_w
 
-                exp_cols = self.expert_indices_padded[e, :self.expert_lens[e]]
+                exp_cols = self.expert_indices_padded[e, : self.expert_lens[e]]
                 flat_idx = token_idx[:, None] * self.out_features + exp_cols
-                out.view(-1).scatter_add_(0, flat_idx.reshape(-1), weighted_exp_out.reshape(-1))
+                out.view(-1).scatter_add_(
+                    0, flat_idx.reshape(-1), weighted_exp_out.reshape(-1)
+                )
 
         return out.reshape(*orig_shape[:-1], self.out_features)
 
@@ -391,13 +479,19 @@ class ToMoECompressor(BaseCompressor):
         super().__init__(model, name="tomoe", **kwargs)
         cfg = kwargs.pop("comp_config", kwargs.pop("cfg", None))
         if cfg is not None:
-            num_experts = _cfg_get(cfg, "num_experts", _cfg_get(cfg, "tomoe_num_experts", num_experts))
+            num_experts = _cfg_get(
+                cfg, "num_experts", _cfg_get(cfg, "tomoe_num_experts", num_experts)
+            )
             top_k = _cfg_get(cfg, "top_k", _cfg_get(cfg, "tomoe_top_k", top_k))
-            max_error = _cfg_get(cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error", max_error))
+            max_error = _cfg_get(
+                cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error", max_error)
+            )
             lora_r = _cfg_get(cfg, "lora_r", _cfg_get(cfg, "tomoe_lora_r", lora_r))
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
             freeze_experts = _cfg_get(cfg, "freeze_experts", freeze_experts)
-            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
+            target_attention_only = _cfg_get(
+                cfg, "target_attention_only", target_attention_only
+            )
 
         num_experts = int(kwargs.pop("num_experts", num_experts))
         top_k = int(kwargs.pop("top_k", top_k))
@@ -405,7 +499,9 @@ class ToMoECompressor(BaseCompressor):
         lora_r = int(kwargs.pop("lora_r", lora_r))
         lora_alpha = float(kwargs.pop("lora_alpha", lora_alpha))
         freeze_experts = bool(kwargs.pop("freeze_experts", freeze_experts))
-        target_attention_only = bool(kwargs.pop("target_attention_only", target_attention_only))
+        target_attention_only = bool(
+            kwargs.pop("target_attention_only", target_attention_only)
+        )
 
         self.num_experts = max(1, num_experts)
         self.top_k = max(1, min(top_k, self.num_experts))
@@ -433,7 +529,18 @@ class ToMoECompressor(BaseCompressor):
             return any(t in name for t in self.target_modules)
         low = name.lower()
         if self.target_attention_only:
-            attn_keywords = ["attn", "attention", "q_proj", "k_proj", "v_proj", "o_proj", "c_proj", "query", "key", "value"]
+            attn_keywords = [
+                "attn",
+                "attention",
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "c_proj",
+                "query",
+                "key",
+                "value",
+            ]
             return any(k in low for k in attn_keywords)
         # Default: target FFN, MLP, and linear projections across all supported families
         return any(
@@ -473,7 +580,9 @@ class ToMoECompressor(BaseCompressor):
                 return None, ""
         return parent, parts[-1]
 
-    def compress(self, orig_model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
+    def compress(
+        self, orig_model: nn.Module | None = None
+    ) -> tuple[nn.Module, dict[str, Any]]:
         """
         Compress target layers into ToMoE Mixture of Experts layers with full error validation.
         """
@@ -495,18 +604,33 @@ class ToMoECompressor(BaseCompressor):
             base_mod = getattr(module, "base_layer", module)
             cls_name = base_mod.__class__.__name__.lower()
             is_linear = isinstance(base_mod, nn.Linear)
-            is_conv1d = "conv1d" in cls_name or (hasattr(base_mod, "nx") and hasattr(base_mod, "nf"))
+            is_conv1d = "conv1d" in cls_name or (
+                hasattr(base_mod, "nx") and hasattr(base_mod, "nf")
+            )
 
-            if not (is_linear or is_conv1d or (hasattr(base_mod, "weight") and base_mod.weight.ndim == 2)):
-                logger.warning("ToMoE: Skipping unsupported layer type %s for %s", type(base_mod).__name__, name)
-                skipped_layers.append((name, f"unsupported_type_{type(base_mod).__name__}"))
+            if not (
+                is_linear
+                or is_conv1d
+                or (hasattr(base_mod, "weight") and base_mod.weight.ndim == 2)
+            ):
+                logger.warning(
+                    "ToMoE: Skipping unsupported layer type %s for %s",
+                    type(base_mod).__name__,
+                    name,
+                )
+                skipped_layers.append(
+                    (name, f"unsupported_type_{type(base_mod).__name__}")
+                )
                 continue
 
             # H20: Detect and protect tied weights (e.g. wte and lm_head sharing same storage)
             if hasattr(base_mod, "weight") and base_mod.weight is not None:
                 w_ptr = base_mod.weight.data_ptr()
                 if w_ptr in seen_weight_ptrs:
-                    logger.warning("ToMoE: Skipping tied module %s with shared weight storage (H20)", name)
+                    logger.warning(
+                        "ToMoE: Skipping tied module %s with shared weight storage (H20)",
+                        name,
+                    )
                     skipped_layers.append((name, "tied_weight_shared_storage"))
                     continue
                 seen_weight_ptrs.add(w_ptr)
@@ -565,7 +689,10 @@ class ToMoECompressor(BaseCompressor):
                 calib_x = torch.randn(4, 16, in_f, device=device, dtype=dtype)
                 orig_out = module(calib_x)
                 moe_out = moe_layer(calib_x)
-                err = (torch.norm(moe_out.float() - orig_out.float()) / (torch.norm(orig_out.float()) + 1e-8)).item()
+                err = (
+                    torch.norm(moe_out.float() - orig_out.float())
+                    / (torch.norm(orig_out.float()) + 1e-8)
+                ).item()
 
             if err > self.max_error or np.isnan(err):
                 logger.warning(
@@ -585,10 +712,18 @@ class ToMoECompressor(BaseCompressor):
             if hasattr(module, "base_layer"):
                 module.base_layer = moe_layer
                 if hasattr(module, "lora_A") and module.lora_A is not None:
-                    for p in (module.lora_A.parameters() if hasattr(module.lora_A, "parameters") else [module.lora_A]):
+                    for p in (
+                        module.lora_A.parameters()
+                        if hasattr(module.lora_A, "parameters")
+                        else [module.lora_A]
+                    ):
                         p.requires_grad = True
                 if hasattr(module, "lora_B") and module.lora_B is not None:
-                    for p in (module.lora_B.parameters() if hasattr(module.lora_B, "parameters") else [module.lora_B]):
+                    for p in (
+                        module.lora_B.parameters()
+                        if hasattr(module.lora_B, "parameters")
+                        else [module.lora_B]
+                    ):
                         p.requires_grad = True
             else:
                 setattr(parent, child_name, moe_layer)
@@ -652,7 +787,9 @@ def tomoe_compressor_factory(
 ) -> Any:
     """Factory function for ToMoE compressor."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
-    target_attn = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
+    target_attn = kwargs.pop(
+        "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
+    )
     compressor = ToMoECompressor(
         model,
         num_experts=num_experts,
@@ -681,4 +818,3 @@ def inject_tomoe(model: Any = None, **kwargs: Any) -> Any:
     except Exception as e:
         logger.error("inject_tomoe failed: %s", e)
         return None
-

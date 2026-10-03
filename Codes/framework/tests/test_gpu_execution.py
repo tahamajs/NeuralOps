@@ -8,23 +8,22 @@ Run: pytest Codes/framework/tests/test_gpu_execution.py -v --timeout=300
 """
 
 import math
-import sys
 import os
+import sys
 from typing import Dict, List
+
 import pytest
 import torch
 import torch.nn as nn
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
 
-from framework.eval_all_models_datasets import (
-    build_model_instance,
-    apply_module_to_model,
-    get_dataset_batch,
-    _filter_batch,
-    _extract_logits_and_loss,
-)
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+from framework.eval_all_models_datasets import (_extract_logits_and_loss,
+                                                _filter_batch,
+                                                apply_module_to_model,
+                                                build_model_instance,
+                                                get_dataset_batch)
 
 CUDA_AVAILABLE = torch.cuda.is_available()
 MODEL_FAMILIES = ["bert", "roberta", "t5", "distilbert", "gpt2"]

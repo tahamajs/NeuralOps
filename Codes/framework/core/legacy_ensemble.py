@@ -26,6 +26,7 @@ Bug-fix map (2026 revision):
 """
 
 from __future__ import annotations
+
 import logging
 import math
 from typing import Any
@@ -45,12 +46,14 @@ _DEPRECATION_MSG = (
 def _warn_deprecated() -> None:
     """LE-06: emit deprecation warning only when the class is instantiated."""
     import warnings
+
     warnings.warn(_DEPRECATION_MSG, DeprecationWarning, stacklevel=3)
 
 
 # ===========================================================================
 # Task-aware attention
 # ===========================================================================
+
 
 class TaskAwareAttention(nn.Module):
     """
@@ -65,8 +68,9 @@ class TaskAwareAttention(nn.Module):
         if isinstance(num_tasks, int):
             self.num_tasks = max(1, int(num_tasks))
         else:
-            extracted = getattr(num_tasks, "num_labels",
-                                getattr(num_tasks, "num_tasks", 2))
+            extracted = getattr(
+                num_tasks, "num_labels", getattr(num_tasks, "num_tasks", 2)
+            )
             if not isinstance(extracted, int) or extracted <= 0:
                 extracted = 2
             self.num_tasks = max(1, extracted)
@@ -102,21 +106,23 @@ class TaskAwareAttention(nn.Module):
 
         # LE-01: explicit long dtype for Embedding
         cur_id = torch.tensor([task_id], dtype=torch.long, device=device)
-        cur_emb = self.q_proj(self.task_emb(cur_id))   # (1, H)
+        cur_emb = self.q_proj(self.task_emb(cur_id))  # (1, H)
 
-        valid_ids = [max(0, min(self.num_tasks - 1, int(tid))) for tid in model_task_ids]
+        valid_ids = [
+            max(0, min(self.num_tasks - 1, int(tid))) for tid in model_task_ids
+        ]
         all_ids = torch.tensor(valid_ids, dtype=torch.long, device=device)
-        all_embs = self.k_proj(self.task_emb(all_ids))   # (M, H)
+        all_embs = self.k_proj(self.task_emb(all_ids))  # (M, H)
 
         scale = 1.0 / math.sqrt(self.hidden_dim)
-        scores = torch.matmul(cur_emb, all_embs.t().contiguous()) * scale   # (1, M)
+        scores = torch.matmul(cur_emb, all_embs.t().contiguous()) * scale  # (1, M)
 
         # LE-02: bias via gather — cleaner than advanced indexing
         # sim_mat[t, task_id] → (M,)
-        bias = self.sim_mat.index_select(0, all_ids)[:, task_id]   # (M,)
+        bias = self.sim_mat.index_select(0, all_ids)[:, task_id]  # (M,)
         scores = scores + bias.unsqueeze(0)
 
-        weights = F.softmax(scores, dim=-1)   # (1, M)
+        weights = F.softmax(scores, dim=-1)  # (1, M)
         weighted = (weights.view(num_models, 1, 1) * all_logits).sum(dim=0)
         return weighted
 
@@ -124,6 +130,7 @@ class TaskAwareAttention(nn.Module):
 # ===========================================================================
 # Ensemble
 # ===========================================================================
+
 
 class SmartWeightedEnsemble(nn.Module):
     """
@@ -141,7 +148,7 @@ class SmartWeightedEnsemble(nn.Module):
         device: torch.device | None = None,
         trainable_dynamic: bool = False,
     ) -> None:
-        _warn_deprecated()   # LE-06
+        _warn_deprecated()  # LE-06
 
         super().__init__()
         if not models:
@@ -200,7 +207,9 @@ class SmartWeightedEnsemble(nn.Module):
                 if metric == "accuracy":
                     preds = logits.argmax(dim=-1)
                     acc = float((preds == target).float().mean().item())
-                    new_val = 0.9 * float(self.performance[i, task_id].item()) + 0.1 * acc
+                    new_val = (
+                        0.9 * float(self.performance[i, task_id].item()) + 0.1 * acc
+                    )
                     # Clamp to [0, 1] to prevent drift
                     new_val = max(0.0, min(1.0, new_val))
                     self.performance[i, task_id] = new_val
@@ -216,12 +225,18 @@ class SmartWeightedEnsemble(nn.Module):
         """LE-08: robust forward with logits fallback."""
         try:
             if attention_mask is not None:
-                out = model(input_ids=input_ids, attention_mask=attention_mask, **kwargs)
+                out = model(
+                    input_ids=input_ids, attention_mask=attention_mask, **kwargs
+                )
             else:
                 out = model(input_ids=input_ids, **kwargs)
         except TypeError:
             # Some models don't accept input_ids kwarg
-            out = model(input_ids, attention_mask=attention_mask, **kwargs) if attention_mask is not None else model(input_ids, **kwargs)
+            out = (
+                model(input_ids, attention_mask=attention_mask, **kwargs)
+                if attention_mask is not None
+                else model(input_ids, **kwargs)
+            )
 
         if hasattr(out, "logits"):
             return out.logits
@@ -251,7 +266,9 @@ class SmartWeightedEnsemble(nn.Module):
             for model in self.models:
                 logits = self._forward_single(
                     model, input_ids, attention_mask, **kwargs
-                ).to(device)   # LE-10
+                ).to(
+                    device
+                )  # LE-10
                 probs = F.softmax(logits.float(), dim=-1)
                 conf = float(probs.max(dim=-1)[0].mean().item())
                 weights.append(conf)
@@ -372,7 +389,7 @@ class SmartWeightedEnsemble(nn.Module):
             logits = self._forward_single(model, input_ids, attention_mask, **kwargs)
             all_logits.append(logits.to(device))
 
-        stacked = torch.stack(all_logits, dim=0)   # (M, B, C)
+        stacked = torch.stack(all_logits, dim=0)  # (M, B, C)
 
         return self.combine_logits(
             task_id=task_id,

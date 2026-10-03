@@ -7,8 +7,8 @@ with a native PyTorch Policy-Gradient / Reward-Weighted Optimization fallback.
 from __future__ import annotations
 
 import logging
-from typing import Any
 from collections.abc import Callable
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -50,7 +50,11 @@ class RLTrainer(BaseTrainer):
         self.device = torch.device(
             "cuda"
             if torch.cuda.is_available()
-            else ("mps" if hasattr(torch.backends, "mps") and torch.backends.mps.is_available() else "cpu")
+            else (
+                "mps"
+                if hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+                else "cpu"
+            )
         )
         self._trl_trainer = None
         self._init_backend()
@@ -59,9 +63,12 @@ class RLTrainer(BaseTrainer):
         """Initialize TRL backend if available, otherwise use native policy optimization."""
         try:
             import trl  # type: ignore # noqa: F401
+
             logger.info("TRL library detected. RLTrainer will utilize TRL backend.")
         except ImportError:
-            logger.info("TRL library not found. RLTrainer will utilize native PyTorch policy optimization fallback.")
+            logger.info(
+                "TRL library not found. RLTrainer will utilize native PyTorch policy optimization fallback."
+            )
 
     def train(self) -> dict[str, Any]:
         """Execute RL / policy fine-tuning loop."""
@@ -87,12 +94,26 @@ class RLTrainer(BaseTrainer):
                 for batch in loader:
                     optimizer.zero_grad()
                     if isinstance(batch, dict):
-                        inputs = {k: v.to(self.device) for k, v in batch.items() if isinstance(v, torch.Tensor)}
+                        inputs = {
+                            k: v.to(self.device)
+                            for k, v in batch.items()
+                            if isinstance(v, torch.Tensor)
+                        }
                         labels = inputs.get("labels")
                         outputs = self.model(**inputs)
-                        logits = outputs.logits if hasattr(outputs, "logits") else (outputs["logits"] if isinstance(outputs, dict) else outputs)
+                        logits = (
+                            outputs.logits
+                            if hasattr(outputs, "logits")
+                            else (
+                                outputs["logits"]
+                                if isinstance(outputs, dict)
+                                else outputs
+                            )
+                        )
                         if labels is not None:
-                            loss = nn.functional.cross_entropy(logits.view(-1, logits.size(-1)), labels.view(-1))
+                            loss = nn.functional.cross_entropy(
+                                logits.view(-1, logits.size(-1)), labels.view(-1)
+                            )
                         else:
                             probs = torch.softmax(logits, dim=-1)
                             log_probs = torch.log_softmax(logits, dim=-1)
@@ -103,7 +124,9 @@ class RLTrainer(BaseTrainer):
 
                     if torch.isfinite(loss):
                         loss.backward()
-                        torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+                        torch.nn.utils.clip_grad_norm_(
+                            self.model.parameters(), max_norm=1.0
+                        )
                         optimizer.step()
                         total_loss += loss.item()
                         steps += 1
@@ -137,15 +160,28 @@ class RLTrainer(BaseTrainer):
             with torch.no_grad():
                 for batch in loader:
                     if isinstance(batch, dict):
-                        inputs = {k: v.to(self.device) for k, v in batch.items() if isinstance(v, torch.Tensor)}
+                        inputs = {
+                            k: v.to(self.device)
+                            for k, v in batch.items()
+                            if isinstance(v, torch.Tensor)
+                        }
                         labels = inputs.get("labels")
                         outputs = self.model(**inputs)
-                        logits = outputs.logits if hasattr(outputs, "logits") else (outputs["logits"] if isinstance(outputs, dict) else outputs)
+                        logits = (
+                            outputs.logits
+                            if hasattr(outputs, "logits")
+                            else (
+                                outputs["logits"]
+                                if isinstance(outputs, dict)
+                                else outputs
+                            )
+                        )
                         if labels is not None:
-                            loss = nn.functional.cross_entropy(logits.view(-1, logits.size(-1)), labels.view(-1))
+                            loss = nn.functional.cross_entropy(
+                                logits.view(-1, logits.size(-1)), labels.view(-1)
+                            )
                             total_eval_loss += loss.item()
                             eval_steps += 1
 
         avg_eval_loss = total_eval_loss / max(1, eval_steps) if eval_steps > 0 else 0.0
         return {"eval_loss": avg_eval_loss}
-

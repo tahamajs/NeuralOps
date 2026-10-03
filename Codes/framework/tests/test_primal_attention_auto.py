@@ -1,7 +1,8 @@
+import framework.attentions.primal_attention
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.primal_attention
+
 
 def test_primal_attention_module_present():
     assert hasattr(framework.attentions, 'primal_attention')

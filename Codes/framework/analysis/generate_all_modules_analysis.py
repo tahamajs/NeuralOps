@@ -5,13 +5,13 @@ Extracts and validates all 25 required columns for paper/_ALL_MODULES_ANALYSIS.c
 and paper/_ALL_MODULES_ANALYSIS.md according to project guidelines.
 """
 
-import sys
 import csv
-import re
 import glob
 import json
-from pathlib import Path
+import re
+import sys
 from collections import defaultdict
+from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 PAPERS_DIR = PROJECT_ROOT / "paper" / "PerModulePaper"
@@ -21,115 +21,583 @@ MD_OUT = PROJECT_ROOT / "paper" / "_ALL_MODULES_ANALYSIS.md"
 
 # Known academic literature reference map
 KNOWN_LIT = {
-    "cosformer": ("Cosformer: Rethinking Softmax in Attention with Linear Complexity", "2202.08791", "2022", "ICLR"),
+    "cosformer": (
+        "Cosformer: Rethinking Softmax in Attention with Linear Complexity",
+        "2202.08791",
+        "2022",
+        "ICLR",
+    ),
     "performer": ("Rethinking Attention with Performers", "2009.14794", "2021", "ICLR"),
-    "performer_attention": ("Rethinking Attention with Performers", "2009.14794", "2021", "ICLR"),
-    "linformer": ("Linformer: Self-Attention with Linear Complexity", "2006.04768", "2020", "arXiv"),
-    "linformer_attention": ("Linformer: Self-Attention with Linear Complexity", "2006.04768", "2020", "arXiv"),
-    "nystrom": ("Nystromformer: A Nystrom-Based Algorithm for Approximating Self-Attention", "2102.03902", "2021", "AAAI"),
-    "nystrom_attention": ("Nystromformer: A Nystrom-Based Algorithm for Approximating Self-Attention", "2102.03902", "2021", "AAAI"),
-    "mamba": ("Mamba: Linear-Time Sequence Modeling with Selective State Spaces", "2312.00752", "2023", "arXiv"),
-    "jamba": ("Jamba: A Hybrid Transformer-Mamba Language Model", "2403.19887", "2024", "arXiv"),
-    "gqa": ("GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints", "2305.13245", "2023", "EMNLP"),
-    "sparsegpt": ("SparseGPT: Massive Language Models Can Be Accurately Pruned in One-Shot", "2301.00774", "2023", "ICML"),
-    "slicegpt": ("SliceGPT: Compress Large Language Models by Deleting Rows and Columns", "2401.15024", "2024", "ICLR"),
-    "flap": ("FLAP: Fast Language Model Compression via Post-Training Structured Pruning", "2312.11983", "2024", "arXiv"),
-    "asvd": ("ASVD: Activation-aware Singular Value Decomposition for Compressing LLMs", "2310.13382", "2024", "arXiv"),
-    "drone": ("DRONE: Data-aware Low-rank Compression for Large Language Models", "2406.14563", "2024", "NeurIPS"),
-    "fwsvd": ("Fisher-Weighted SVD for Large Language Model Compression", "2404.12345", "2024", "arXiv"),
-    "svd_llm": ("SVD-LLM: Truncation-Aware Singular Value Decomposition for Large Language Model Compression", "2403.07378", "2025", "ICLR"),
-    "flash3": ("FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision", "2407.08608", "2024", "arXiv"),
-    "flash_attention3": ("FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision", "2407.08608", "2024", "arXiv"),
-    "flash_attention3_fp8": ("FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision", "2407.08608", "2024", "arXiv"),
-    "infini": ("Leave No Context Behind: Efficient Infinite Context with Infini-attention", "2404.07143", "2024", "arXiv"),
-    "hymba": ("Hymba: A Hybrid-Head Architecture for Small Language Models", "2411.13676", "2024", "arXiv"),
-    "hymba_transx": ("Hymba: A Hybrid-Head Architecture for Small Language Models", "2411.13676", "2024", "arXiv"),
-    "griffin": ("Griffin: Mixing Gated Linear Recurrences with Local Attention for Efficient Language Models", "2402.19427", "2024", "arXiv"),
-    "griffin_ssd": ("Griffin: Mixing Gated Linear Recurrences with Local Attention for Efficient Language Models", "2402.19427", "2024", "arXiv"),
-    "hgrn2": ("HGRN2: Gated Linear RNNs with State Expansion", "2404.07904", "2024", "arXiv"),
-    "hgrn2_layer": ("HGRN2: Gated Linear RNNs with State Expansion", "2404.07904", "2024", "arXiv"),
-    "hgrn2_outer": ("HGRN2: Gated Linear RNNs with State Expansion", "2404.07904", "2024", "arXiv"),
-    "hgrn2_gated_deltanet": ("HGRN2: Gated Linear RNNs with State Expansion", "2404.07904", "2024", "arXiv"),
-    "mla": ("DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model", "2405.04434", "2024", "arXiv"),
-    "mla_attention": ("DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model", "2405.04434", "2024", "arXiv"),
-    "nsa": ("Native Sparse Attention: Hardware-Aligned and Topologically Diverse Sparse Attention", "2502.11089", "2025", "arXiv"),
-    "admm": ("Progressive Weight Pruning of Deep Neural Networks via ADMM", "1810.07324", "2018", "arXiv"),
-    "admm_pruner": ("Progressive Weight Pruning of Deep Neural Networks via ADMM", "1810.07324", "2018", "arXiv"),
-    "admm_compressor": ("Progressive Weight Pruning of Deep Neural Networks via ADMM", "1810.07324", "2018", "arXiv"),
-    "kronecker": ("KroneckerBERT: Significant Compression of BERT Using Kronecker Decomposition", "2109.06243", "2021", "EMNLP"),
-    "kronecker_compressor": ("KroneckerBERT: Significant Compression of BERT Using Kronecker Decomposition", "2109.06243", "2021", "EMNLP"),
-    "kronecker_linear": ("KroneckerBERT: Significant Compression of BERT Using Kronecker Decomposition", "2109.06243", "2021", "EMNLP"),
-    "kmeans": ("Deep Compression: Compressing Deep Neural Networks with Pruning, Trained Quantization and Huffman Coding", "1510.00149", "2016", "ICLR"),
-    "kmeans_quantize": ("Deep Compression: Compressing Deep Neural Networks with Pruning, Trained Quantization and Huffman Coding", "1510.00149", "2016", "ICLR"),
-    "huffman_coder": ("Deep Compression: Compressing Deep Neural Networks with Pruning, Trained Quantization and Huffman Coding", "1510.00149", "2016", "ICLR"),
-    "roast": ("ROAST: Randomized Compression of Neural Networks", "2206.04838", "2022", "NeurIPS"),
-    "roast_hashed_linear": ("ROAST: Randomized Compression of Neural Networks", "2206.04838", "2022", "NeurIPS"),
+    "performer_attention": (
+        "Rethinking Attention with Performers",
+        "2009.14794",
+        "2021",
+        "ICLR",
+    ),
+    "linformer": (
+        "Linformer: Self-Attention with Linear Complexity",
+        "2006.04768",
+        "2020",
+        "arXiv",
+    ),
+    "linformer_attention": (
+        "Linformer: Self-Attention with Linear Complexity",
+        "2006.04768",
+        "2020",
+        "arXiv",
+    ),
+    "nystrom": (
+        "Nystromformer: A Nystrom-Based Algorithm for Approximating Self-Attention",
+        "2102.03902",
+        "2021",
+        "AAAI",
+    ),
+    "nystrom_attention": (
+        "Nystromformer: A Nystrom-Based Algorithm for Approximating Self-Attention",
+        "2102.03902",
+        "2021",
+        "AAAI",
+    ),
+    "mamba": (
+        "Mamba: Linear-Time Sequence Modeling with Selective State Spaces",
+        "2312.00752",
+        "2023",
+        "arXiv",
+    ),
+    "jamba": (
+        "Jamba: A Hybrid Transformer-Mamba Language Model",
+        "2403.19887",
+        "2024",
+        "arXiv",
+    ),
+    "gqa": (
+        "GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints",
+        "2305.13245",
+        "2023",
+        "EMNLP",
+    ),
+    "sparsegpt": (
+        "SparseGPT: Massive Language Models Can Be Accurately Pruned in One-Shot",
+        "2301.00774",
+        "2023",
+        "ICML",
+    ),
+    "slicegpt": (
+        "SliceGPT: Compress Large Language Models by Deleting Rows and Columns",
+        "2401.15024",
+        "2024",
+        "ICLR",
+    ),
+    "flap": (
+        "FLAP: Fast Language Model Compression via Post-Training Structured Pruning",
+        "2312.11983",
+        "2024",
+        "arXiv",
+    ),
+    "asvd": (
+        "ASVD: Activation-aware Singular Value Decomposition for Compressing LLMs",
+        "2310.13382",
+        "2024",
+        "arXiv",
+    ),
+    "drone": (
+        "DRONE: Data-aware Low-rank Compression for Large Language Models",
+        "2406.14563",
+        "2024",
+        "NeurIPS",
+    ),
+    "fwsvd": (
+        "Fisher-Weighted SVD for Large Language Model Compression",
+        "2404.12345",
+        "2024",
+        "arXiv",
+    ),
+    "svd_llm": (
+        "SVD-LLM: Truncation-Aware Singular Value Decomposition for Large Language Model Compression",
+        "2403.07378",
+        "2025",
+        "ICLR",
+    ),
+    "flash3": (
+        "FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision",
+        "2407.08608",
+        "2024",
+        "arXiv",
+    ),
+    "flash_attention3": (
+        "FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision",
+        "2407.08608",
+        "2024",
+        "arXiv",
+    ),
+    "flash_attention3_fp8": (
+        "FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision",
+        "2407.08608",
+        "2024",
+        "arXiv",
+    ),
+    "infini": (
+        "Leave No Context Behind: Efficient Infinite Context with Infini-attention",
+        "2404.07143",
+        "2024",
+        "arXiv",
+    ),
+    "hymba": (
+        "Hymba: A Hybrid-Head Architecture for Small Language Models",
+        "2411.13676",
+        "2024",
+        "arXiv",
+    ),
+    "hymba_transx": (
+        "Hymba: A Hybrid-Head Architecture for Small Language Models",
+        "2411.13676",
+        "2024",
+        "arXiv",
+    ),
+    "griffin": (
+        "Griffin: Mixing Gated Linear Recurrences with Local Attention for Efficient Language Models",
+        "2402.19427",
+        "2024",
+        "arXiv",
+    ),
+    "griffin_ssd": (
+        "Griffin: Mixing Gated Linear Recurrences with Local Attention for Efficient Language Models",
+        "2402.19427",
+        "2024",
+        "arXiv",
+    ),
+    "hgrn2": (
+        "HGRN2: Gated Linear RNNs with State Expansion",
+        "2404.07904",
+        "2024",
+        "arXiv",
+    ),
+    "hgrn2_layer": (
+        "HGRN2: Gated Linear RNNs with State Expansion",
+        "2404.07904",
+        "2024",
+        "arXiv",
+    ),
+    "hgrn2_outer": (
+        "HGRN2: Gated Linear RNNs with State Expansion",
+        "2404.07904",
+        "2024",
+        "arXiv",
+    ),
+    "hgrn2_gated_deltanet": (
+        "HGRN2: Gated Linear RNNs with State Expansion",
+        "2404.07904",
+        "2024",
+        "arXiv",
+    ),
+    "mla": (
+        "DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model",
+        "2405.04434",
+        "2024",
+        "arXiv",
+    ),
+    "mla_attention": (
+        "DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model",
+        "2405.04434",
+        "2024",
+        "arXiv",
+    ),
+    "nsa": (
+        "Native Sparse Attention: Hardware-Aligned and Topologically Diverse Sparse Attention",
+        "2502.11089",
+        "2025",
+        "arXiv",
+    ),
+    "admm": (
+        "Progressive Weight Pruning of Deep Neural Networks via ADMM",
+        "1810.07324",
+        "2018",
+        "arXiv",
+    ),
+    "admm_pruner": (
+        "Progressive Weight Pruning of Deep Neural Networks via ADMM",
+        "1810.07324",
+        "2018",
+        "arXiv",
+    ),
+    "admm_compressor": (
+        "Progressive Weight Pruning of Deep Neural Networks via ADMM",
+        "1810.07324",
+        "2018",
+        "arXiv",
+    ),
+    "kronecker": (
+        "KroneckerBERT: Significant Compression of BERT Using Kronecker Decomposition",
+        "2109.06243",
+        "2021",
+        "EMNLP",
+    ),
+    "kronecker_compressor": (
+        "KroneckerBERT: Significant Compression of BERT Using Kronecker Decomposition",
+        "2109.06243",
+        "2021",
+        "EMNLP",
+    ),
+    "kronecker_linear": (
+        "KroneckerBERT: Significant Compression of BERT Using Kronecker Decomposition",
+        "2109.06243",
+        "2021",
+        "EMNLP",
+    ),
+    "kmeans": (
+        "Deep Compression: Compressing Deep Neural Networks with Pruning, Trained Quantization and Huffman Coding",
+        "1510.00149",
+        "2016",
+        "ICLR",
+    ),
+    "kmeans_quantize": (
+        "Deep Compression: Compressing Deep Neural Networks with Pruning, Trained Quantization and Huffman Coding",
+        "1510.00149",
+        "2016",
+        "ICLR",
+    ),
+    "huffman_coder": (
+        "Deep Compression: Compressing Deep Neural Networks with Pruning, Trained Quantization and Huffman Coding",
+        "1510.00149",
+        "2016",
+        "ICLR",
+    ),
+    "roast": (
+        "ROAST: Randomized Compression of Neural Networks",
+        "2206.04838",
+        "2022",
+        "NeurIPS",
+    ),
+    "roast_hashed_linear": (
+        "ROAST: Randomized Compression of Neural Networks",
+        "2206.04838",
+        "2022",
+        "NeurIPS",
+    ),
     "hashed_linear": ("Hashed Neural Networks", "1504.04788", "2015", "ICML"),
     "hashed_net_compressor": ("Hashed Neural Networks", "1504.04788", "2015", "ICML"),
-    "lsh_attention": ("Reformer: The Efficient Transformer", "2001.04451", "2020", "ICLR"),
-    "cluster": ("Cluster-Former: Clustering-based Sparse Transformer", "2009.06097", "2021", "ACL"),
-    "cur_moe": ("CUR Matrix Decomposition for Transformer Compression", "1908.06831", "2020", "arXiv"),
-    "cur_compressor": ("CUR Matrix Decomposition for Transformer Compression", "1908.06831", "2020", "arXiv"),
-    "cur_linear": ("CUR Matrix Decomposition for Transformer Compression", "1908.06831", "2020", "arXiv"),
-    "gated_linear_attention": ("Gated Linear Attention Transformers with Hardware-Efficient Training", "2312.06635", "2024", "ICML"),
-    "gated_delta_net": ("Gated Delta Networks: Improving Mamba2 with Delta Rule", "2412.06464", "2024", "arXiv"),
-    "gated_deltanet_block": ("Gated Delta Networks: Improving Mamba2 with Delta Rule", "2412.06464", "2024", "arXiv"),
-    "decay_linear_attention": ("Linear Attention with Decay", "2405.12345", "2024", "arXiv"),
-    "simple_ssm": ("Simple Hardware-Efficient State Space Models", "2303.06349", "2023", "arXiv"),
-    "samba_m3": ("Samba: Simple Hybrid State Space Models for Efficient Language Modeling", "2406.07522", "2024", "arXiv"),
-    "samba_moe": ("Samba: Simple Hybrid State Space Models for Efficient Language Modeling", "2406.07522", "2024", "arXiv"),
-    "expert_choice_moe": ("Mixture-of-Experts with Expert Choice Routing", "2202.09368", "2022", "NeurIPS"),
-    "reap_moe": ("REAP: Efficient Mixture-of-Experts Pruning", "2402.12345", "2024", "arXiv"),
-    "bam_umoe": ("BAM: Universal Mixture-of-Experts Compression", "2403.01234", "2024", "arXiv"),
-    "galerkin_attention": ("Galerkin Transformer: A Framework for Approximating Continuous Attention", "2105.14995", "2021", "NeurIPS"),
-    "Galerkin": ("Galerkin Transformer: A Framework for Approximating Continuous Attention", "2105.14995", "2021", "NeurIPS"),
-    "uniql_compressor": ("UniQL: Unified Quantization and Low-rank Decomposition", "2402.04567", "2024", "arXiv"),
-    "cachenotes_compressor": ("CacheNotes: Compressing Transformer Key-Value Caches", "2405.07890", "2024", "arXiv"),
-    "ast_pruner": ("AST: Attention-Structure-Preserving Pruning", "2203.04567", "2022", "EMNLP"),
-    "bonsai_pruner": ("Bonsai: Efficient Parameter Pruning for Transformers", "2205.01234", "2022", "arXiv"),
-    "armor_pruner": ("ARMOR: Robust Matrix Pruning for Pretrained Language Models", "2305.07890", "2023", "arXiv"),
-    "lillama_compressor": ("LiLLaMA: Lightweight LLaMA Compression via Layer Pruning and SVD", "2406.01234", "2024", "arXiv"),
-    "flat_llm": ("FlatLLM: Representation Flatness for LLM Compression", "2407.01234", "2024", "arXiv"),
-    "grecodec": ("GreCoDec: Greedy Coordinate Decomposition for Fast LLM Compression", "2408.01234", "2024", "arXiv"),
-    "kvtc": ("KVTC: Key-Value Token Compression for Long-Context LLMs", "2409.01234", "2024", "arXiv"),
-    "modegpt": ("ModeGPT: Modular Decomposition for Generative Pretrained Transformers", "2401.07890", "2024", "arXiv"),
-    "salr": ("SALR: Sensitivity-Aware Low-Rank Compression", "2309.01234", "2023", "arXiv"),
-    "salt": ("SALT: Spectral Adaptation and Low-rank Tuning", "2403.08901", "2024", "arXiv"),
-    "res_svd": ("Residual SVD: High-Fidelity Matrix Factorization for Neural Networks", "2311.04567", "2023", "arXiv"),
-    "spectra_v2": ("SpectraFormer: Spectral Domain Attention for Efficient Sequence Processing", "2308.07890", "2023", "arXiv"),
-    "spectraformer_attention": ("SpectraFormer: Spectral Domain Attention for Efficient Sequence Processing", "2308.07890", "2023", "arXiv"),
-    "fused_svd_kernel": ("Fused SVD Kernels for Hardware-Accelerated Neural Compression", "2404.09876", "2024", "arXiv"),
-    "spectron": ("Spectron: Spectral Decomposition with Orthogonal Adapters", "2405.08765", "2024", "arXiv"),
-    "aegis_hybrid": ("AEGIS: Adaptive Energy-Guided Inertial SVD for Transformer Compression", "2409.12345", "2024", "arXiv"),
-    "aegis_v1": ("AEGIS: Adaptive Energy-Guided Inertial SVD for Transformer Compression", "2409.12345", "2024", "arXiv"),
-    "aegis_v2": ("AEGIS: Adaptive Energy-Guided Inertial SVD for Transformer Compression", "2409.12345", "2024", "arXiv"),
-    "aegis_v3": ("AEGIS: Adaptive Energy-Guided Inertial SVD for Transformer Compression", "2409.12345", "2024", "arXiv"),
-    "aegis_v4": ("AEGIS: Adaptive Energy-Guided Inertial SVD for Transformer Compression", "2409.12345", "2024", "arXiv"),
-    "aegis_v5": ("AEGIS: Adaptive Energy-Guided Inertial SVD for Transformer Compression", "2409.12345", "2024", "arXiv"),
-    "aegis_v6": ("AEGIS: Adaptive Energy-Guided Inertial SVD for Transformer Compression", "2409.12345", "2024", "arXiv"),
-    "aegis_spectron_fp8": ("AEGIS-Spectron: FP8 Accelerated Energy-Guided SVD", "2410.01234", "2024", "arXiv"),
-    "aasvd": ("AASVD: Adaptive Activation SVD with Covariance Regularization", "2411.09876", "2024", "arXiv"),
-    "aa_svd_compressor": ("AASVD: Adaptive Activation SVD with Covariance Regularization", "2411.09876", "2024", "arXiv"),
-    "a3": ("A3: Approximate Adaptive Attention for Efficient Transformers", "2003.01234", "2020", "arXiv"),
-    "delta_kv": ("Delta-KV: Incremental Key-Value State Updates for LLM Inference", "2406.09876", "2024", "arXiv"),
-    "hybridkv": ("HybridKV: Merging Static and Dynamic KV Compression", "2407.09876", "2024", "arXiv"),
-    "chela_slay": ("CHELA: Channel Elimination and Layer Shedding for Accelerating Transformers", "2402.09876", "2024", "arXiv"),
+    "lsh_attention": (
+        "Reformer: The Efficient Transformer",
+        "2001.04451",
+        "2020",
+        "ICLR",
+    ),
+    "cluster": (
+        "Cluster-Former: Clustering-based Sparse Transformer",
+        "2009.06097",
+        "2021",
+        "ACL",
+    ),
+    "cur_moe": (
+        "CUR Matrix Decomposition for Transformer Compression",
+        "1908.06831",
+        "2020",
+        "arXiv",
+    ),
+    "cur_compressor": (
+        "CUR Matrix Decomposition for Transformer Compression",
+        "1908.06831",
+        "2020",
+        "arXiv",
+    ),
+    "cur_linear": (
+        "CUR Matrix Decomposition for Transformer Compression",
+        "1908.06831",
+        "2020",
+        "arXiv",
+    ),
+    "gated_linear_attention": (
+        "Gated Linear Attention Transformers with Hardware-Efficient Training",
+        "2312.06635",
+        "2024",
+        "ICML",
+    ),
+    "gated_delta_net": (
+        "Gated Delta Networks: Improving Mamba2 with Delta Rule",
+        "2412.06464",
+        "2024",
+        "arXiv",
+    ),
+    "gated_deltanet_block": (
+        "Gated Delta Networks: Improving Mamba2 with Delta Rule",
+        "2412.06464",
+        "2024",
+        "arXiv",
+    ),
+    "decay_linear_attention": (
+        "Linear Attention with Decay",
+        "2405.12345",
+        "2024",
+        "arXiv",
+    ),
+    "simple_ssm": (
+        "Simple Hardware-Efficient State Space Models",
+        "2303.06349",
+        "2023",
+        "arXiv",
+    ),
+    "samba_m3": (
+        "Samba: Simple Hybrid State Space Models for Efficient Language Modeling",
+        "2406.07522",
+        "2024",
+        "arXiv",
+    ),
+    "samba_moe": (
+        "Samba: Simple Hybrid State Space Models for Efficient Language Modeling",
+        "2406.07522",
+        "2024",
+        "arXiv",
+    ),
+    "expert_choice_moe": (
+        "Mixture-of-Experts with Expert Choice Routing",
+        "2202.09368",
+        "2022",
+        "NeurIPS",
+    ),
+    "reap_moe": (
+        "REAP: Efficient Mixture-of-Experts Pruning",
+        "2402.12345",
+        "2024",
+        "arXiv",
+    ),
+    "bam_umoe": (
+        "BAM: Universal Mixture-of-Experts Compression",
+        "2403.01234",
+        "2024",
+        "arXiv",
+    ),
+    "galerkin_attention": (
+        "Galerkin Transformer: A Framework for Approximating Continuous Attention",
+        "2105.14995",
+        "2021",
+        "NeurIPS",
+    ),
+    "Galerkin": (
+        "Galerkin Transformer: A Framework for Approximating Continuous Attention",
+        "2105.14995",
+        "2021",
+        "NeurIPS",
+    ),
+    "uniql_compressor": (
+        "UniQL: Unified Quantization and Low-rank Decomposition",
+        "2402.04567",
+        "2024",
+        "arXiv",
+    ),
+    "cachenotes_compressor": (
+        "CacheNotes: Compressing Transformer Key-Value Caches",
+        "2405.07890",
+        "2024",
+        "arXiv",
+    ),
+    "ast_pruner": (
+        "AST: Attention-Structure-Preserving Pruning",
+        "2203.04567",
+        "2022",
+        "EMNLP",
+    ),
+    "bonsai_pruner": (
+        "Bonsai: Efficient Parameter Pruning for Transformers",
+        "2205.01234",
+        "2022",
+        "arXiv",
+    ),
+    "armor_pruner": (
+        "ARMOR: Robust Matrix Pruning for Pretrained Language Models",
+        "2305.07890",
+        "2023",
+        "arXiv",
+    ),
+    "lillama_compressor": (
+        "LiLLaMA: Lightweight LLaMA Compression via Layer Pruning and SVD",
+        "2406.01234",
+        "2024",
+        "arXiv",
+    ),
+    "flat_llm": (
+        "FlatLLM: Representation Flatness for LLM Compression",
+        "2407.01234",
+        "2024",
+        "arXiv",
+    ),
+    "grecodec": (
+        "GreCoDec: Greedy Coordinate Decomposition for Fast LLM Compression",
+        "2408.01234",
+        "2024",
+        "arXiv",
+    ),
+    "kvtc": (
+        "KVTC: Key-Value Token Compression for Long-Context LLMs",
+        "2409.01234",
+        "2024",
+        "arXiv",
+    ),
+    "modegpt": (
+        "ModeGPT: Modular Decomposition for Generative Pretrained Transformers",
+        "2401.07890",
+        "2024",
+        "arXiv",
+    ),
+    "salr": (
+        "SALR: Sensitivity-Aware Low-Rank Compression",
+        "2309.01234",
+        "2023",
+        "arXiv",
+    ),
+    "salt": (
+        "SALT: Spectral Adaptation and Low-rank Tuning",
+        "2403.08901",
+        "2024",
+        "arXiv",
+    ),
+    "res_svd": (
+        "Residual SVD: High-Fidelity Matrix Factorization for Neural Networks",
+        "2311.04567",
+        "2023",
+        "arXiv",
+    ),
+    "spectra_v2": (
+        "SpectraFormer: Spectral Domain Attention for Efficient Sequence Processing",
+        "2308.07890",
+        "2023",
+        "arXiv",
+    ),
+    "spectraformer_attention": (
+        "SpectraFormer: Spectral Domain Attention for Efficient Sequence Processing",
+        "2308.07890",
+        "2023",
+        "arXiv",
+    ),
+    "fused_svd_kernel": (
+        "Fused SVD Kernels for Hardware-Accelerated Neural Compression",
+        "2404.09876",
+        "2024",
+        "arXiv",
+    ),
+    "spectron": (
+        "Spectron: Spectral Decomposition with Orthogonal Adapters",
+        "2405.08765",
+        "2024",
+        "arXiv",
+    ),
+    "aegis_hybrid": (
+        "AEGIS: Adaptive Energy-Guided Inertial SVD for Transformer Compression",
+        "2409.12345",
+        "2024",
+        "arXiv",
+    ),
+    "aegis_v1": (
+        "AEGIS: Adaptive Energy-Guided Inertial SVD for Transformer Compression",
+        "2409.12345",
+        "2024",
+        "arXiv",
+    ),
+    "aegis_v2": (
+        "AEGIS: Adaptive Energy-Guided Inertial SVD for Transformer Compression",
+        "2409.12345",
+        "2024",
+        "arXiv",
+    ),
+    "aegis_v3": (
+        "AEGIS: Adaptive Energy-Guided Inertial SVD for Transformer Compression",
+        "2409.12345",
+        "2024",
+        "arXiv",
+    ),
+    "aegis_v4": (
+        "AEGIS: Adaptive Energy-Guided Inertial SVD for Transformer Compression",
+        "2409.12345",
+        "2024",
+        "arXiv",
+    ),
+    "aegis_v5": (
+        "AEGIS: Adaptive Energy-Guided Inertial SVD for Transformer Compression",
+        "2409.12345",
+        "2024",
+        "arXiv",
+    ),
+    "aegis_v6": (
+        "AEGIS: Adaptive Energy-Guided Inertial SVD for Transformer Compression",
+        "2409.12345",
+        "2024",
+        "arXiv",
+    ),
+    "aegis_spectron_fp8": (
+        "AEGIS-Spectron: FP8 Accelerated Energy-Guided SVD",
+        "2410.01234",
+        "2024",
+        "arXiv",
+    ),
+    "aasvd": (
+        "AASVD: Adaptive Activation SVD with Covariance Regularization",
+        "2411.09876",
+        "2024",
+        "arXiv",
+    ),
+    "aa_svd_compressor": (
+        "AASVD: Adaptive Activation SVD with Covariance Regularization",
+        "2411.09876",
+        "2024",
+        "arXiv",
+    ),
+    "a3": (
+        "A3: Approximate Adaptive Attention for Efficient Transformers",
+        "2003.01234",
+        "2020",
+        "arXiv",
+    ),
+    "delta_kv": (
+        "Delta-KV: Incremental Key-Value State Updates for LLM Inference",
+        "2406.09876",
+        "2024",
+        "arXiv",
+    ),
+    "hybridkv": (
+        "HybridKV: Merging Static and Dynamic KV Compression",
+        "2407.09876",
+        "2024",
+        "arXiv",
+    ),
+    "chela_slay": (
+        "CHELA: Channel Elimination and Layer Shedding for Accelerating Transformers",
+        "2402.09876",
+        "2024",
+        "arXiv",
+    ),
 }
 
 ALIASES = {
     "AdaptiveSVD": ["adaptive_svd", "adaptive_svd_attention", "adaptive_svd_attn"],
     "AdaptiveSpanAttention": ["adaptive_span", "adaptive_span_attention"],
-    "AdaptiveSparseAttention": ["adaptive_sparse", "adaptive_sparse_attention", "adaptive_sparse_attn"],
+    "AdaptiveSparseAttention": [
+        "adaptive_sparse",
+        "adaptive_sparse_attention",
+        "adaptive_sparse_attn",
+    ],
     "HALO": ["halo", "halo_regla"],
     "OH": ["oh", "oha", "oha_attention", "optimized_hybrid_attention"],
-    "SqueezingHeadsAttentionDistillationLayer": ["squeezing_heads_distill", "squeezing_heads", "squeezing_heads_distiller"],
+    "SqueezingHeadsAttentionDistillationLayer": [
+        "squeezing_heads_distill",
+        "squeezing_heads",
+        "squeezing_heads_distiller",
+    ],
     "cr_compressor": ["cr", "cr_compressor"],
     "cur_compressor": ["cur", "cur_compressor", "cur_linear"],
     "enlighten_compressor": ["enlighten", "enlighten_compressor"],
     "fusion": ["fusion_attn", "fusion"],
     "gfws_d_compressor": ["gfws_d", "gfws", "gfws_d_compressor"],
-    "hashed_net_compressor": ["hashed_net", "hashednet", "hashednets", "hashed_net_compressor"],
-    "kronecker_compressor": ["kronecker", "kronecker_compressor", "kronecker_linear", "kronecker_tt_lora"],
+    "hashed_net_compressor": [
+        "hashed_net",
+        "hashednet",
+        "hashednets",
+        "hashed_net_compressor",
+    ],
+    "kronecker_compressor": [
+        "kronecker",
+        "kronecker_compressor",
+        "kronecker_linear",
+        "kronecker_tt_lora",
+    ],
     "mlorq_compressor": ["mlorq", "mlorq_compressor"],
     "padre_attention": ["padre", "padre_attention"],
     "qcqa_attention": ["qcqa", "qcqa_attention"],
@@ -169,11 +637,18 @@ def load_all_csv_records():
                 reader = csv.DictReader(f)
                 if not reader.fieldnames:
                     continue
-                fns = [c.strip().lower().replace(" ", "_") if c else "" for c in reader.fieldnames]
+                fns = [
+                    c.strip().lower().replace(" ", "_") if c else ""
+                    for c in reader.fieldnames
+                ]
                 if "module_name" not in fns and "module" not in fns:
                     continue
                 for r in reader:
-                    norm_r = {k.strip().lower().replace(" ", "_"): v.strip() for k, v in r.items() if k}
+                    norm_r = {
+                        k.strip().lower().replace(" ", "_"): v.strip()
+                        for k, v in r.items()
+                        if k
+                    }
                     m = norm_r.get("module_name", "") or norm_r.get("module", "")
                     if not m or m in ("full", "baseline"):
                         continue
@@ -212,7 +687,11 @@ def resolve_code_path(mod_name):
 
     # Check inside paper folder for python file
     p_files = glob.glob(str(PAPERS_DIR / mod_name / "*.py"))
-    p_files = [f for f in p_files if not Path(f).name.startswith(("build", "apply_vars", "test"))]
+    p_files = [
+        f
+        for f in p_files
+        if not Path(f).name.startswith(("build", "apply_vars", "test"))
+    ]
     if p_files:
         fname = Path(p_files[0]).name
         c1 = PROJECT_ROOT / f"Codes/framework/compression_engine/{fname}"
@@ -234,14 +713,19 @@ def get_all_module_rows(mod_name, csv_data):
     # Strip common suffixes
     for suffix in ["_compressor", "_attention", "_pruner", "_quantizer"]:
         if mod_name.lower().endswith(suffix):
-            lookup_keys.append(mod_name.lower()[:-len(suffix)])
+            lookup_keys.append(mod_name.lower()[: -len(suffix)])
 
     all_rows = []
     seen = set()
     for k in lookup_keys:
         for ds, rows in csv_data.get(k, {}).items():
             for r in rows:
-                key = (r.get("_source_csv"), r.get("timestamp"), r.get("accuracy_pct"), r.get("compression_rate"))
+                key = (
+                    r.get("_source_csv"),
+                    r.get("timestamp"),
+                    r.get("accuracy_pct"),
+                    r.get("compression_rate"),
+                )
                 if key not in seen:
                     seen.add(key)
                     all_rows.append(r)
@@ -293,9 +777,23 @@ def determine_sub_category(mod_name, mod_type, cat):
         else:
             return "Compression-Failed"
 
-    if any(k in lname for k in ["mamba", "jamba", "samba", "griffin", "hgrn2", "hymba", "simple_ssm"]):
+    if any(
+        k in lname
+        for k in ["mamba", "jamba", "samba", "griffin", "hgrn2", "hymba", "simple_ssm"]
+    ):
         return "SSM"
-    if any(k in lname for k in ["cosformer", "linformer", "performer", "nystrom", "linear_attention", "galerkin", "decay_linear"]):
+    if any(
+        k in lname
+        for k in [
+            "cosformer",
+            "linformer",
+            "performer",
+            "nystrom",
+            "linear_attention",
+            "galerkin",
+            "decay_linear",
+        ]
+    ):
         return "Linear-Attention"
     if any(k in lname for k in ["mla", "nsa", "halo", "moba", "sparse"]):
         return "Sparse-Attention"
@@ -359,7 +857,13 @@ def main():
     verif_by_name = {r["name"]: r for r in verif_data["results"]}
 
     # 4. Enumerate 217 paper directories
-    paper_dirs = sorted([d.name for d in PAPERS_DIR.iterdir() if d.is_dir() and not d.name.startswith("_") and d.name != "Template.md"])
+    paper_dirs = sorted(
+        [
+            d.name
+            for d in PAPERS_DIR.iterdir()
+            if d.is_dir() and not d.name.startswith("_") and d.name != "Template.md"
+        ]
+    )
     print(f"Total modules to analyze: {len(paper_dirs)}")
 
     analysis_rows = []
@@ -414,7 +918,11 @@ def main():
                     if m_title and "Formal Architectural" not in m_title.group(1):
                         paper_ref = m_title.group(1).strip()
                 if paper_arxiv == "None":
-                    m_arxiv = re.search(r"(?:arXiv:\s*|arxiv\.org/abs/)(\d{4}\.\d{4,5})", content, re.IGNORECASE)
+                    m_arxiv = re.search(
+                        r"(?:arXiv:\s*|arxiv\.org/abs/)(\d{4}\.\d{4,5})",
+                        content,
+                        re.IGNORECASE,
+                    )
                     if m_arxiv:
                         paper_arxiv = m_arxiv.group(1).strip()
                         if paper_year == "None":
@@ -460,7 +968,11 @@ def main():
                         valid_comps.append(c_val)
                 except Exception:
                     pass
-        compression_ratio = f"{max(valid_comps):.3f}x" if valid_comps else ("1.000x" if all_mod_rows else "N/A")
+        compression_ratio = (
+            f"{max(valid_comps):.3f}x"
+            if valid_comps
+            else ("1.000x" if all_mod_rows else "N/A")
+        )
 
         # 19. params_before & 20. params_after
         params_before, params_after = "N/A", "N/A"
@@ -536,19 +1048,50 @@ def main():
         analysis_rows.append(row_dict)
 
     # Sort: category (VALID first, then QUESTIONABLE, FALLBACK, BROKEN, NO_DATA), sub_category, module_name
-    cat_order = {"VALID": 0, "QUESTIONABLE": 1, "FALLBACK": 2, "BROKEN": 3, "NO_DATA": 4}
-    analysis_rows.sort(key=lambda r: (cat_order.get(r["category"], 9), r["sub_category"], r["module_name"]))
+    cat_order = {
+        "VALID": 0,
+        "QUESTIONABLE": 1,
+        "FALLBACK": 2,
+        "BROKEN": 3,
+        "NO_DATA": 4,
+    }
+    analysis_rows.sort(
+        key=lambda r: (
+            cat_order.get(r["category"], 9),
+            r["sub_category"],
+            r["module_name"],
+        )
+    )
 
     # Validate row count
     assert len(analysis_rows) == 217, f"Expected 217 rows, got {len(analysis_rows)}"
 
     fieldnames = [
-        "module_name", "file_path", "module_type", "source_dir", "category",
-        "sub_category", "paper_reference", "paper_arxiv", "paper_year", "paper_venue",
-        "architectures", "has_registry_entry", "registry_names", "dataset_sst2_acc",
-        "dataset_mnli_acc", "dataset_agnews_acc", "dataset_gpt2_ppl", "compression_ratio",
-        "params_before", "params_after", "paper_07_results_status", "has_fabricated_tables",
-        "csv_source", "csv_timestamp", "fix_priority"
+        "module_name",
+        "file_path",
+        "module_type",
+        "source_dir",
+        "category",
+        "sub_category",
+        "paper_reference",
+        "paper_arxiv",
+        "paper_year",
+        "paper_venue",
+        "architectures",
+        "has_registry_entry",
+        "registry_names",
+        "dataset_sst2_acc",
+        "dataset_mnli_acc",
+        "dataset_agnews_acc",
+        "dataset_gpt2_ppl",
+        "compression_ratio",
+        "params_before",
+        "params_after",
+        "paper_07_results_status",
+        "has_fabricated_tables",
+        "csv_source",
+        "csv_timestamp",
+        "fix_priority",
     ]
 
     # Write CSV
@@ -586,36 +1129,44 @@ def main():
     for cat in ["VALID", "FALLBACK", "BROKEN", "QUESTIONABLE", "NO_DATA"]:
         n = cat_counts[cat]
         pct = 100.0 * n / len(analysis_rows)
-        md_lines.append(f"| **{cat}** | {n} | {pct:.1f}% | {cat} empirical evaluation status |\n")
+        md_lines.append(
+            f"| **{cat}** | {n} | {pct:.1f}% | {cat} empirical evaluation status |\n"
+        )
 
-    md_lines.extend([
-        "\n## 2. Statistical Highlights\n\n",
-        f"- **Total Evaluated Modules**: {len(analysis_rows)}\n",
-        f"- **Modules with Academic Literature Reference**: {with_paper} ({100.0*with_paper/len(analysis_rows):.1f}%)\n",
-        f"- **Modules with arXiv ID**: {with_arxiv} ({100.0*with_arxiv/len(analysis_rows):.1f}%)\n",
-        f"- **Modules with Empirical SST-2 Benchmark**: {with_sst2} ({100.0*with_sst2/len(analysis_rows):.1f}%)\n",
-        f"- **Modules with Empirical MNLI Benchmark**: {with_mnli} ({100.0*with_mnli/len(analysis_rows):.1f}%)\n",
-        f"- **Modules with Empirical AG News Benchmark**: {with_agnews} ({100.0*with_agnews/len(analysis_rows):.1f}%)\n",
-        f"- **Modules with GPT-2 WikiText-2 PPL**: {with_gpt2} ({100.0*with_gpt2/len(analysis_rows):.1f}%)\n",
-        f"- **Modules with Quarantined Fabricated Tables**: {with_fab} ({100.0*with_fab/len(analysis_rows):.1f}%)\n\n",
-        "## 3. Actionable Priority Fix List\n\n",
-        f"- **P0 (Broken - Immediate submission blockers)**: {prio_counts['P0']} modules\n",
-        f"- **P1 (Fallback Compressors - Fixable via Cholesky whitening / LoRA unfreezing)**: {prio_counts['P1']} modules\n",
-        f"- **P2 (Fallback Attention - Inherent linear attention replacements, move to Related Work)**: {prio_counts['P2']} modules\n",
-        f"- **P3 (No Data - Needs evaluation run)**: {prio_counts['P3']} modules\n",
-        f"- **NONE (Valid - Production-hardened with genuine compression)**: {prio_counts['NONE']} modules\n\n",
-        "### P0 Action Items (Immediate Fixes)\n\n",
-    ])
+    md_lines.extend(
+        [
+            "\n## 2. Statistical Highlights\n\n",
+            f"- **Total Evaluated Modules**: {len(analysis_rows)}\n",
+            f"- **Modules with Academic Literature Reference**: {with_paper} ({100.0*with_paper/len(analysis_rows):.1f}%)\n",
+            f"- **Modules with arXiv ID**: {with_arxiv} ({100.0*with_arxiv/len(analysis_rows):.1f}%)\n",
+            f"- **Modules with Empirical SST-2 Benchmark**: {with_sst2} ({100.0*with_sst2/len(analysis_rows):.1f}%)\n",
+            f"- **Modules with Empirical MNLI Benchmark**: {with_mnli} ({100.0*with_mnli/len(analysis_rows):.1f}%)\n",
+            f"- **Modules with Empirical AG News Benchmark**: {with_agnews} ({100.0*with_agnews/len(analysis_rows):.1f}%)\n",
+            f"- **Modules with GPT-2 WikiText-2 PPL**: {with_gpt2} ({100.0*with_gpt2/len(analysis_rows):.1f}%)\n",
+            f"- **Modules with Quarantined Fabricated Tables**: {with_fab} ({100.0*with_fab/len(analysis_rows):.1f}%)\n\n",
+            "## 3. Actionable Priority Fix List\n\n",
+            f"- **P0 (Broken - Immediate submission blockers)**: {prio_counts['P0']} modules\n",
+            f"- **P1 (Fallback Compressors - Fixable via Cholesky whitening / LoRA unfreezing)**: {prio_counts['P1']} modules\n",
+            f"- **P2 (Fallback Attention - Inherent linear attention replacements, move to Related Work)**: {prio_counts['P2']} modules\n",
+            f"- **P3 (No Data - Needs evaluation run)**: {prio_counts['P3']} modules\n",
+            f"- **NONE (Valid - Production-hardened with genuine compression)**: {prio_counts['NONE']} modules\n\n",
+            "### P0 Action Items (Immediate Fixes)\n\n",
+        ]
+    )
 
     for r in analysis_rows:
         if r["fix_priority"] == "P0":
-            md_lines.append(f"- `{r['module_name']}`: {r['file_path']} (Category: {r['category']}, Sub: {r['sub_category']})\n")
+            md_lines.append(
+                f"- `{r['module_name']}`: {r['file_path']} (Category: {r['category']}, Sub: {r['sub_category']})\n"
+            )
 
-    md_lines.extend([
-        "\n## 4. Complete 217-Module Master Table\n\n",
-        "| Module Name | Type | Category | Sub-Category | SST-2 Acc | MNLI Acc | Comp Ratio | Priority | Source CSV |\n",
-        "|:---|:---|:---:|:---|:---:|:---:|:---:|:---:|:---|\n"
-    ])
+    md_lines.extend(
+        [
+            "\n## 4. Complete 217-Module Master Table\n\n",
+            "| Module Name | Type | Category | Sub-Category | SST-2 Acc | MNLI Acc | Comp Ratio | Priority | Source CSV |\n",
+            "|:---|:---|:---:|:---|:---:|:---:|:---:|:---:|:---|\n",
+        ]
+    )
 
     for r in analysis_rows:
         src = r["csv_source"]
@@ -634,6 +1185,7 @@ def main():
     print(f"CSV saved to: {CSV_OUT}")
     print(f"Markdown saved to: {MD_OUT}")
     print("=" * 70)
+
 
 if __name__ == "__main__":
     main()

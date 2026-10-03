@@ -1,15 +1,12 @@
+import types
+
 import pytest
 import torch
 import torch.nn as nn
-import types
-
-from framework.attentions.rpc_attention import (
-    RPCAttention,
-    LoRALinear,
-    _rotate_half,
-    apply_rotary_pos_emb,
-    inject_rpc,
-)
+from framework.attentions.rpc_attention import (LoRALinear, RPCAttention,
+                                                _rotate_half,
+                                                apply_rotary_pos_emb,
+                                                inject_rpc)
 
 
 def make_config(hidden_size=64, num_heads=4, num_kv_heads=2, is_decoder=False, model_type="bert"):

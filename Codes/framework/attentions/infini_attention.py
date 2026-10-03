@@ -48,7 +48,6 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
@@ -85,15 +84,21 @@ def apply_rotary_pos_emb(
         sin = sin.unsqueeze(0)
 
     if cos.shape[-2] != q.shape[-2]:
-        raise ValueError(f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}")
+        raise ValueError(
+            f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}"
+        )
 
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
     if rotary_dim < head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
+            _rotate_half(q_rot) * sin.to(q_rot.dtype)
+        )
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
+            _rotate_half(k_rot) * sin.to(k_rot.dtype)
+        )
         q = torch.cat([q_rot_embed, q_pass], dim=-1)
         k = torch.cat([k_rot_embed, k_pass], dim=-1)
     else:
@@ -109,15 +114,31 @@ def apply_rotary_pos_emb(
 # ===========================================================================
 # Decoder detection
 # ===========================================================================
-def _detect_decoder(config: Any, is_decoder: bool | None, old_attn: nn.Module | None) -> bool:
+def _detect_decoder(
+    config: Any, is_decoder: bool | None, old_attn: nn.Module | None
+) -> bool:
     if is_decoder is not None:
         return bool(is_decoder)
     if config is not None:
         if getattr(config, "is_decoder", False) or getattr(config, "causal", False):
             return True
         mt = str(getattr(config, "model_type", "")).lower()
-        if mt.startswith(("gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                          "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")):
+        if mt.startswith(
+            (
+                "gpt",
+                "qwen",
+                "llama",
+                "mistral",
+                "gemma",
+                "phi",
+                "opt",
+                "bloom",
+                "falcon",
+                "olmo",
+                "mpt",
+                "stablelm",
+            )
+        ):
             return True
         arch = getattr(config, "architectures", None)
         if arch and any(("GPT" in str(a) or "CausalLM" in str(a)) for a in arch):
@@ -145,8 +166,15 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 # ===========================================================================
 class LoRALinear(nn.Module):
     def __init__(
-        self, in_features, out_features, bias=True, lora_rank=16,
-        lora_alpha=32.0, freeze_base=False, device=None, dtype=None,
+        self,
+        in_features,
+        out_features,
+        bias=True,
+        lora_rank=16,
+        lora_alpha=32.0,
+        freeze_base=False,
+        device=None,
+        dtype=None,
     ):
         super().__init__()
         fk = {"device": device, "dtype": dtype}
@@ -199,11 +227,17 @@ class LoRALinear(nn.Module):
 
     def forward(self, x):
         w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
-        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
+        b = (
+            self.bias.to(x.dtype)
+            if (self.bias is not None and self.bias.dtype != x.dtype)
+            else self.bias
+        )
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            bb = (
+                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+            )
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -212,7 +246,9 @@ class LoRALinear(nn.Module):
 # InfiniAttention
 # ===========================================================================
 @ATTENTION_REGISTRY.register("infini", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("infini_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "infini_attention", supports_causal=True, supports_gqa=True
+)
 class InfiniAttention(BaseAttention):
     """
     Infini-Attention: sliding-window local attention + compressive memory.
@@ -259,16 +295,25 @@ class InfiniAttention(BaseAttention):
         hidden_size = int(hidden_size or 768)
 
         if num_heads is None and config is not None:
-            num_heads = getattr(config, "num_attention_heads",
-                       getattr(config, "n_heads", getattr(config, "num_heads", None)))
+            num_heads = getattr(
+                config,
+                "num_attention_heads",
+                getattr(config, "n_heads", getattr(config, "num_heads", None)),
+            )
         if num_heads is None and source_attn is not None:
-            num_heads = getattr(source_attn, "num_attention_heads",
-                       getattr(source_attn, "n_heads", None))
+            num_heads = getattr(
+                source_attn,
+                "num_attention_heads",
+                getattr(source_attn, "n_heads", None),
+            )
         num_heads = int(num_heads or 12)
 
         if num_kv_heads is None and config is not None:
-            num_kv_heads = getattr(config, "num_key_value_heads",
-                          getattr(config, "num_kv_heads", num_heads))
+            num_kv_heads = getattr(
+                config,
+                "num_key_value_heads",
+                getattr(config, "num_kv_heads", num_heads),
+            )
         if num_kv_heads is None:
             num_kv_heads = num_heads
         num_kv_heads = int(num_kv_heads)
@@ -305,31 +350,61 @@ class InfiniAttention(BaseAttention):
         self.is_nested_encoder = False
 
         # ---------- LoRA ----------
-        self.lora_rank = int(kwargs.get(
-            "lora_rank",
-            _cfg_get(comp_config, "lora_rank",
-                     getattr(config, "lora_rank", 16) if config else 16),
-        ))
-        self.lora_alpha = float(kwargs.get(
-            "lora_alpha",
-            _cfg_get(comp_config, "lora_alpha",
-                     getattr(config, "lora_alpha", 32.0) if config else 32.0),
-        ))
-        self.freeze_base = (self.lora_rank > 0)
+        self.lora_rank = int(
+            kwargs.get(
+                "lora_rank",
+                _cfg_get(
+                    comp_config,
+                    "lora_rank",
+                    getattr(config, "lora_rank", 16) if config else 16,
+                ),
+            )
+        )
+        self.lora_alpha = float(
+            kwargs.get(
+                "lora_alpha",
+                _cfg_get(
+                    comp_config,
+                    "lora_alpha",
+                    getattr(config, "lora_alpha", 32.0) if config else 32.0,
+                ),
+            )
+        )
+        self.freeze_base = self.lora_rank > 0
 
         # ---------- projections ----------
-        self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=self.freeze_base)
-        self.k_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=self.freeze_base)
-        self.v_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True,
-                                  lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                  freeze_base=self.freeze_base)
-        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True,
-                                    lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-                                    freeze_base=self.freeze_base)
+        self.q_proj = LoRALinear(
+            self.dim,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.k_proj = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.v_proj = LoRALinear(
+            self.dim,
+            self.all_kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.out_proj = LoRALinear(
+            self.all_head_size,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
 
         # ---------- fusion gate (per-head, init at sigmoid(0)=0.5) ----------
         self.beta = nn.Parameter(torch.zeros(self.num_heads))
@@ -338,12 +413,14 @@ class InfiniAttention(BaseAttention):
         self.w_mem = nn.Linear(self.dim, self.num_heads, bias=True)
         with torch.no_grad():
             nn.init.zeros_(self.w_mem.weight)
-            nn.init.constant_(self.w_mem.bias, 2.0)   # sigmoid(2) ≈ 0.88
+            nn.init.constant_(self.w_mem.bias, 2.0)  # sigmoid(2) ≈ 0.88
 
         dropout_p = float(
-            getattr(config, "dropout",
-                    getattr(config, "attention_probs_dropout_prob", 0.0))
-            if config else 0.0
+            getattr(
+                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.0)
+            )
+            if config
+            else 0.0
         )
         self.dropout = nn.Dropout(dropout_p)
 
@@ -355,25 +432,44 @@ class InfiniAttention(BaseAttention):
 
     # ---- aliases ----
     @property
-    def query(self): return self.q_proj
+    def query(self):
+        return self.q_proj
+
     @property
-    def key(self): return self.k_proj
+    def key(self):
+        return self.k_proj
+
     @property
-    def value(self): return self.v_proj
+    def value(self):
+        return self.v_proj
+
     @property
-    def q_lin(self): return self.q_proj
+    def q_lin(self):
+        return self.q_proj
+
     @property
-    def k_lin(self): return self.k_proj
+    def k_lin(self):
+        return self.k_proj
+
     @property
-    def v_lin(self): return self.v_proj
+    def v_lin(self):
+        return self.v_proj
+
     @property
-    def out_lin(self): return self.out_proj
+    def out_lin(self):
+        return self.out_proj
+
     @property
-    def dense(self): return self.out_proj
+    def dense(self):
+        return self.out_proj
+
     @property
-    def o_proj(self): return self.out_proj
+    def o_proj(self):
+        return self.out_proj
+
     @property
-    def c_proj(self): return self.out_proj
+    def c_proj(self):
+        return self.out_proj
 
     # ------------------------------------------------------------------
     # copy_weights
@@ -389,22 +485,42 @@ class InfiniAttention(BaseAttention):
             pass
 
         cls_name = src.__class__.__name__
-        has_out = any(hasattr(src, a) for a in
-                      ("dense", "out_proj", "out_lin", "c_proj", "o_proj"))
+        has_out = any(
+            hasattr(src, a)
+            for a in ("dense", "out_proj", "out_lin", "c_proj", "o_proj")
+        )
 
         is_nested = False
         if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
             is_nested = False
-        elif (hasattr(src, "self") and hasattr(src, "output")
-              and hasattr(src.self, "query")
-              and hasattr(src.output, "dense")) or cls_name in ("BertSelfAttention", "RobertaSelfAttention",
-                          "XLMRobertaSelfAttention", "ElectraSelfAttention",
-                          "DebertaSelfAttention") or cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower() and not has_out:
+        elif (
+            (
+                hasattr(src, "self")
+                and hasattr(src, "output")
+                and hasattr(src.self, "query")
+                and hasattr(src.output, "dense")
+            )
+            or cls_name
+            in (
+                "BertSelfAttention",
+                "RobertaSelfAttention",
+                "XLMRobertaSelfAttention",
+                "ElectraSelfAttention",
+                "DebertaSelfAttention",
+            )
+            or cls_name.endswith("SelfAttention")
+            and "distil" not in cls_name.lower()
+            and not has_out
+        ):
             is_nested = True
         self.is_nested_encoder = is_nested
 
-        extracted = {"q": (None, None), "k": (None, None),
-                      "v": (None, None), "o": (None, None)}
+        extracted = {
+            "q": (None, None),
+            "k": (None, None),
+            "v": (None, None),
+            "o": (None, None),
+        }
 
         # GPT-2 fused c_attn
         if hasattr(src, "c_attn") and src.c_attn is not None:
@@ -413,18 +529,27 @@ class InfiniAttention(BaseAttention):
             cw = getattr(base_c, "weight", getattr(c, "weight", None))
             if cw is not None:
                 cw = cw.data.clone()
-                is_conv = ("Conv1D" in c.__class__.__name__
-                            or "Conv1D" in base_c.__class__.__name__
-                            or hasattr(c, "nf") or hasattr(base_c, "nf")
-                            or (cw.ndim == 2 and cw.shape[1] == 3 * self.dim))
+                is_conv = (
+                    "Conv1D" in c.__class__.__name__
+                    or "Conv1D" in base_c.__class__.__name__
+                    or hasattr(c, "nf")
+                    or hasattr(base_c, "nf")
+                    or (cw.ndim == 2 and cw.shape[1] == 3 * self.dim)
+                )
                 if is_conv:
                     cw = cw.t().contiguous()
                 split = cw.size(0) // 3
                 bmod = getattr(base_c, "bias", getattr(c, "bias", None))
                 cb = bmod.data.clone() if bmod is not None else None
                 extracted["q"] = (cw[:split], cb[:split] if cb is not None else None)
-                extracted["k"] = (cw[split:2*split], cb[split:2*split] if cb is not None else None)
-                extracted["v"] = (cw[2*split:], cb[2*split:] if cb is not None else None)
+                extracted["k"] = (
+                    cw[split : 2 * split],
+                    cb[split : 2 * split] if cb is not None else None,
+                )
+                extracted["v"] = (
+                    cw[2 * split :],
+                    cb[2 * split :] if cb is not None else None,
+                )
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 o = src.c_proj
@@ -432,10 +557,17 @@ class InfiniAttention(BaseAttention):
                 ow = getattr(base_o, "weight", getattr(o, "weight", None))
                 if ow is not None:
                     ow = ow.data.clone()
-                    is_conv_o = ("Conv1D" in o.__class__.__name__
-                                  or "Conv1D" in base_o.__class__.__name__
-                                  or hasattr(o, "nf") or hasattr(base_o, "nf")
-                                  or (ow.ndim == 2 and ow.shape[0] != self.dim and ow.shape[1] == self.dim))
+                    is_conv_o = (
+                        "Conv1D" in o.__class__.__name__
+                        or "Conv1D" in base_o.__class__.__name__
+                        or hasattr(o, "nf")
+                        or hasattr(base_o, "nf")
+                        or (
+                            ow.ndim == 2
+                            and ow.shape[0] != self.dim
+                            and ow.shape[1] == self.dim
+                        )
+                    )
                     if is_conv_o:
                         ow = ow.t().contiguous()
                     bo = getattr(base_o, "bias", getattr(o, "bias", None))
@@ -448,13 +580,17 @@ class InfiniAttention(BaseAttention):
                 m = getattr(s, sub, None)
                 if m is not None and hasattr(m, "weight"):
                     b = getattr(m, "bias", None)
-                    extracted[key] = (m.weight.data.clone(),
-                                       b.data.clone() if b is not None else None)
+                    extracted[key] = (
+                        m.weight.data.clone(),
+                        b.data.clone() if b is not None else None,
+                    )
             if hasattr(src, "output") and hasattr(src.output, "dense"):
                 d = src.output.dense
                 b = getattr(d, "bias", None)
-                extracted["o"] = (d.weight.data.clone(),
-                                   b.data.clone() if b is not None else None)
+                extracted["o"] = (
+                    d.weight.data.clone(),
+                    b.data.clone() if b is not None else None,
+                )
 
         # Flat (DistilBERT, Qwen, LLaMA)
         else:
@@ -470,16 +606,22 @@ class InfiniAttention(BaseAttention):
                         m = getattr(src, n)
                         if m is not None and hasattr(m, "weight"):
                             b = getattr(m, "bias", None)
-                            extracted[key] = (m.weight.data.clone(),
-                                               b.data.clone() if b is not None else None)
+                            extracted[key] = (
+                                m.weight.data.clone(),
+                                b.data.clone() if b is not None else None,
+                            )
                             break
 
         # UniversalAdapter fallback
-        missing = [k for k, (w, _) in extracted.items()
-                    if w is None and (k != "o" or not self.is_nested_encoder)]
+        missing = [
+            k
+            for k, (w, _) in extracted.items()
+            if w is None and (k != "o" or not self.is_nested_encoder)
+        ]
         if missing:
             try:
                 from framework.core.adapters import UniversalAdapter
+
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -494,8 +636,12 @@ class InfiniAttention(BaseAttention):
             return w
 
         with torch.no_grad():
-            for key, target in (("q", self.q_proj), ("k", self.k_proj),
-                                  ("v", self.v_proj), ("o", self.out_proj)):
+            for key, target in (
+                ("q", self.q_proj),
+                ("k", self.k_proj),
+                ("v", self.v_proj),
+                ("o", self.out_proj),
+            ):
                 w, b = extracted[key]
                 if w is None:
                     if key == "o" and self.is_nested_encoder:
@@ -506,8 +652,10 @@ class InfiniAttention(BaseAttention):
 
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
-                if w.shape != target.weight.shape \
-                        and w.t().contiguous().shape == target.weight.shape:
+                if (
+                    w.shape != target.weight.shape
+                    and w.t().contiguous().shape == target.weight.shape
+                ):
                     w = w.t().contiguous()
 
                 out_d = min(target.weight.size(0), w.size(0))
@@ -536,8 +684,13 @@ class InfiniAttention(BaseAttention):
         try:
             self._comp_storage_bytes = sum(
                 p.numel() * p.element_size()
-                for m in (self.q_proj, self.k_proj, self.v_proj,
-                          self.out_proj, self.w_mem)
+                for m in (
+                    self.q_proj,
+                    self.k_proj,
+                    self.v_proj,
+                    self.out_proj,
+                    self.w_mem,
+                )
                 for p in m.parameters()
             )
         except Exception:
@@ -582,7 +735,9 @@ class InfiniAttention(BaseAttention):
         B, H, L, Dh = q.shape
         scale = 1.0 / math.sqrt(Dh)
 
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+        scores = (
+            torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+        )
 
         idx = torch.arange(L, device=q.device)
         dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
@@ -613,7 +768,9 @@ class InfiniAttention(BaseAttention):
         B, H, L, Dh = q.shape
         scale = 1.0 / math.sqrt(Dh)
 
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+        scores = (
+            torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+        )
 
         if valid_mask is not None:
             scores = scores.masked_fill(~valid_mask[:, None, None, :], -1e4)
@@ -646,19 +803,19 @@ class InfiniAttention(BaseAttention):
         dtype = q.dtype
 
         # Feature map φ(x) = ELU(x) + 1
-        phi_q = F.elu(q.float()) + 1.0                      # (B, H, L, Dh)
-        phi_k = F.elu(k.float()) + 1.0                      # (B, H, L, Dh)
-        v_f = v.float()                                     # (B, H, L, Dh)
+        phi_q = F.elu(q.float()) + 1.0  # (B, H, L, Dh)
+        phi_k = F.elu(k.float()) + 1.0  # (B, H, L, Dh)
+        v_f = v.float()  # (B, H, L, Dh)
 
         # Padding mask
         if valid_mask is not None:
-            m = valid_mask[:, None, :, None].to(phi_k.dtype)   # (B, 1, L, 1)
+            m = valid_mask[:, None, :, None].to(phi_k.dtype)  # (B, 1, L, 1)
             phi_k = phi_k * m
             v_f = v_f * m
 
         # Precompute gate-scaled keys
         # write_gate: (B, H, L, 1) → kg: (B, H, L, Dh)
-        kg = write_gate.to(phi_k.dtype) * phi_k             # (B, H, L, Dh)
+        kg = write_gate.to(phi_k.dtype) * phi_k  # (B, H, L, Dh)
 
         # Transient memory (fresh per forward)
         M = torch.zeros(B, H, Dh, Dh, device=device, dtype=torch.float32)
@@ -666,16 +823,16 @@ class InfiniAttention(BaseAttention):
 
         outputs = []
         for t in range(L):
-            k_t = kg[:, :, t]                               # (B, H, Dh)
-            v_t = v_f[:, :, t]                              # (B, H, Dh)
-            q_t = phi_q[:, :, t]                            # (B, H, Dh)
+            k_t = kg[:, :, t]  # (B, H, Dh)
+            v_t = v_f[:, :, t]  # (B, H, Dh)
+            q_t = phi_q[:, :, t]  # (B, H, Dh)
 
             # Batched outer product + accumulation
-            M = M + k_t.unsqueeze(-1) * v_t.unsqueeze(-2)   # (B, H, Dh, Dh)
-            Z = Z + k_t                                     # (B, H, Dh)
+            M = M + k_t.unsqueeze(-1) * v_t.unsqueeze(-2)  # (B, H, Dh, Dh)
+            Z = Z + k_t  # (B, H, Dh)
 
             # Read
-            o_t = torch.einsum("bhd,bhde->bhe", q_t, M)     # (B, H, Dh)
+            o_t = torch.einsum("bhd,bhde->bhe", q_t, M)  # (B, H, Dh)
             denom = torch.einsum("bhd,bhd->bh", q_t, Z).clamp(min=1e-6)
             o_t = o_t / denom.unsqueeze(-1)
             outputs.append(o_t)
@@ -709,7 +866,9 @@ class InfiniAttention(BaseAttention):
         position_embeddings = kwargs.get("position_embeddings")
 
         if encoder_hidden_states is not None:
-            raise NotImplementedError("InfiniAttention does not support cross-attention.")
+            raise NotImplementedError(
+                "InfiniAttention does not support cross-attention."
+            )
 
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
@@ -721,8 +880,18 @@ class InfiniAttention(BaseAttention):
 
         # ---- projections ----
         q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()
-        k = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
-        v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
+        k = (
+            self.k_proj(hidden_states)
+            .view(B, L, self.num_kv_heads, Dh)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.v_proj(hidden_states)
+            .view(B, L, self.num_kv_heads, Dh)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         # ---- RoPE ----
         if position_embeddings is not None:
@@ -789,9 +958,13 @@ class InfiniAttention(BaseAttention):
             return 0
 
         out = {}
-        for name, m in (("q_proj", self.q_proj), ("k_proj", self.k_proj),
-                         ("v_proj", self.v_proj), ("out_proj", self.out_proj),
-                         ("w_mem", self.w_mem)):
+        for name, m in (
+            ("q_proj", self.q_proj),
+            ("k_proj", self.k_proj),
+            ("v_proj", self.v_proj),
+            ("out_proj", self.out_proj),
+            ("w_mem", self.w_mem),
+        ):
             out[name] = sum(_sz(p) for p in m.parameters())
         out["beta"] = _sz(self.beta)
         out["total"] = sum(out.values())
@@ -853,8 +1026,13 @@ def inject_infini(
         tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_infini(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=tot, _depth=_depth + 1, **kwargs,
+                layer=lyr,
+                model_config=cfg,
+                comp_config=comp_config,
+                layer_idx=idx,
+                total_layers=tot,
+                _depth=_depth + 1,
+                **kwargs,
             )
             if res is not None:
                 n_injected += 1
@@ -873,8 +1051,10 @@ def inject_infini(
         src_attn = target
 
     # INF3-FIX-06: idempotency guard on both source and parent
-    if isinstance(src_attn, InfiniAttention) \
-            or "InfiniAttention" in src_attn.__class__.__name__:
+    if (
+        isinstance(src_attn, InfiniAttention)
+        or "InfiniAttention" in src_attn.__class__.__name__
+    ):
         return None
     for attr in ("attention", "self_attn", "attn", "self"):
         child = getattr(target, attr, None)
@@ -887,7 +1067,11 @@ def inject_infini(
     hidden_size = (
         getattr(src_attn, "hidden_size", None)
         or getattr(src_attn, "dim", None)
-        or (getattr(src_attn, "q_proj", None).in_features if hasattr(src_attn, "q_proj") else None)
+        or (
+            getattr(src_attn, "q_proj", None).in_features
+            if hasattr(src_attn, "q_proj")
+            else None
+        )
         or (getattr(target, "in_features", None) if target is not None else None)
         or getattr(cfg, "hidden_size", 64)
     )
@@ -898,14 +1082,18 @@ def inject_infini(
         or 4
     )
 
-    local_window = int(kwargs.pop(
-        "local_window",
-        _cfg_get(comp_config, "local_window", 128),
-    ))
-    lora_rank = int(kwargs.pop(
-        "lora_rank",
-        _cfg_get(comp_config, "lora_rank", 16),
-    ))
+    local_window = int(
+        kwargs.pop(
+            "local_window",
+            _cfg_get(comp_config, "local_window", 128),
+        )
+    )
+    lora_rank = int(
+        kwargs.pop(
+            "lora_rank",
+            _cfg_get(comp_config, "lora_rank", 16),
+        )
+    )
 
     try:
         new_attn = InfiniAttention(
@@ -952,8 +1140,10 @@ def inject_infini(
         spliced = True
 
     if not spliced:
-        logger.error("inject_infini: no writable attention attribute on %s",
-                      type(target).__name__)
+        logger.error(
+            "inject_infini: no writable attention attribute on %s",
+            type(target).__name__,
+        )
         return None
 
     return new_attn

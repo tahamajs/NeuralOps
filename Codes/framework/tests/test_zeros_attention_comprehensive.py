@@ -1,15 +1,12 @@
+import types
+
 import pytest
 import torch
 import torch.nn as nn
-import types
-
-from framework.attentions.zeros_attention import (
-    ZeroSAttention,
-    inject_zeros_attention,
-    _rotate_half,
-    apply_rotary_pos_emb,
-    LoRALinear,
-)
+from framework.attentions.zeros_attention import (LoRALinear, ZeroSAttention,
+                                                  _rotate_half,
+                                                  apply_rotary_pos_emb,
+                                                  inject_zeros_attention)
 
 
 def make_config(hidden_size=64, num_heads=4, is_decoder=False, model_type="bert"):

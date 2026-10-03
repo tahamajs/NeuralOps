@@ -3,13 +3,11 @@
 import pytest
 import torch
 import torch.nn as nn
-
-from framework.core.attention_utils import (
-    _slice_fused_qkv_weights,
-    _copy_projection_weights,
-    compute_reconstruction_error,
-)
-from framework.core.adapters import UniversalAdapter, CANONICAL_PROJECTION_ALIASES
+from framework.core.adapters import (CANONICAL_PROJECTION_ALIASES,
+                                     UniversalAdapter)
+from framework.core.attention_utils import (_copy_projection_weights,
+                                            _slice_fused_qkv_weights,
+                                            compute_reconstruction_error)
 from framework.utils.model_family import ModelAdapter
 
 

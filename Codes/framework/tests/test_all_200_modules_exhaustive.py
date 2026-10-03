@@ -15,26 +15,25 @@ import inspect
 from types import SimpleNamespace
 from typing import Any, Callable, Dict, List
 
+import framework.attentions
+import framework.compression_engine
+import framework.drift.detectors
 import numpy as np
 import pytest
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-
-import framework.attentions
-import framework.compression_engine
-import framework.drift.detectors
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+from framework.data.synthetic_generator import (SyntheticClassificationDataset,
+                                                SyntheticPerplexityDataset,
+                                                generate_zipfian_tokens)
 from framework.drift.detectors import METHOD_REGISTRY
-from framework.trainer.optimizers import RiemannianStiefelOptimizer, OPTIMIZER_REGISTRY
-from framework.trainer.schedulers import get_cosine_schedule_with_warmup, SCHEDULER_REGISTRY
+from framework.trainer.optimizers import (OPTIMIZER_REGISTRY,
+                                          RiemannianStiefelOptimizer)
+from framework.trainer.schedulers import (SCHEDULER_REGISTRY,
+                                          get_cosine_schedule_with_warmup)
 from framework.trainer.utils import clip_grad_norm_factorized
-from framework.data.synthetic_generator import (
-    SyntheticClassificationDataset,
-    SyntheticPerplexityDataset,
-    generate_zipfian_tokens,
-)
+from torch.utils.data import DataLoader
 
 
 class MockSimpleTransformer(nn.Module):
@@ -298,12 +297,12 @@ class TestAllVisualizationsExhaustive:
         import os
         import shutil
         import tempfile
+
         from framework.visualization.benchmark_visualizer import (
-            plot_pareto_frontier,
-            plot_attention_heatmap,
-            plot_kv_cache_scaling,
-        )
-        from framework.visualization.dashboard_generator import generate_dashboard_html
+            plot_attention_heatmap, plot_kv_cache_scaling,
+            plot_pareto_frontier)
+        from framework.visualization.dashboard_generator import \
+            generate_dashboard_html
 
         temp_dir = tempfile.mkdtemp()
         try:

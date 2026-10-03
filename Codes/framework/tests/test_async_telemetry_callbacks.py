@@ -11,13 +11,10 @@ from types import SimpleNamespace
 
 import torch
 import torch.nn as nn
-
-from framework.callbacks.analysis import (
-    ActivationStatsCallback,
-    AttentionHeatmapCallback,
-    LayerwiseAnalysisCallback,
-    SVDAttentionCallback,
-)
+from framework.callbacks.analysis import (ActivationStatsCallback,
+                                          AttentionHeatmapCallback,
+                                          LayerwiseAnalysisCallback,
+                                          SVDAttentionCallback)
 from framework.callbacks.base import AsyncTelemetryCallback
 
 

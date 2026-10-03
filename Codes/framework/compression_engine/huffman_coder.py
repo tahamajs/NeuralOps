@@ -3,6 +3,7 @@ Huffman Coder & Entropy Compression Engine for Weight and KV Cache Quantization.
 Registered as 'huffman'. Production-hardened with vectorized encode/decode,
 exact byte accounting, safe LoRA freezing, and robust tokenizer forward checks.
 """
+
 from __future__ import annotations
 
 import heapq
@@ -29,7 +30,17 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-_ATTN_NAMES = {"q_proj", "k_proj", "v_proj", "o_proj", "c_attn", "c_proj", "query", "key", "value"}
+_ATTN_NAMES = {
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "c_attn",
+    "c_proj",
+    "query",
+    "key",
+    "value",
+}
 
 
 def _freeze_base_only(module: nn.Module) -> None:
@@ -93,7 +104,9 @@ class HuffmanCoder:
         if not frequencies:
             return None
 
-        heap: list[HuffmanNode] = [HuffmanNode(sym, freq) for sym, freq in frequencies.items()]
+        heap: list[HuffmanNode] = [
+            HuffmanNode(sym, freq) for sym, freq in frequencies.items()
+        ]
         heapq.heapify(heap)
 
         if len(heap) == 1:
@@ -110,7 +123,9 @@ class HuffmanCoder:
 
     @staticmethod
     def generate_code_table(
-        root: HuffmanNode | None, current_code: str = "", code_table: dict[int, str] | None = None
+        root: HuffmanNode | None,
+        current_code: str = "",
+        code_table: dict[int, str] | None = None,
     ) -> dict[int, str]:
         """Traverse Huffman tree to generate prefix bitstring per symbol."""
         if code_table is None:
@@ -222,15 +237,27 @@ class HuffmanCoder:
 
         if metadata.get("is_raw", False):
             orig_dtype_str = metadata.get("orig_dtype", "torch.float32")
-            target_dtype = getattr(torch, orig_dtype_str.replace("torch.", ""), torch.float32)
+            target_dtype = getattr(
+                torch, orig_dtype_str.replace("torch.", ""), torch.float32
+            )
             if target_dtype == torch.bfloat16:
                 arr = np.frombuffer(packed_bytes, dtype=np.int16)
-                tensor_out = torch.from_numpy(arr.copy()).view(torch.bfloat16).reshape(metadata.get("orig_shape"))
+                tensor_out = (
+                    torch.from_numpy(arr.copy())
+                    .view(torch.bfloat16)
+                    .reshape(metadata.get("orig_shape"))
+                )
             else:
                 dtype_str = orig_dtype_str.replace("torch.", "")
-                np_dtype = getattr(np, dtype_str if hasattr(np, dtype_str) else "float32")
+                np_dtype = getattr(
+                    np, dtype_str if hasattr(np, dtype_str) else "float32"
+                )
                 arr = np.frombuffer(packed_bytes, dtype=np_dtype)
-                tensor_out = torch.from_numpy(arr.copy()).reshape(metadata.get("orig_shape")).to(dtype=target_dtype)
+                tensor_out = (
+                    torch.from_numpy(arr.copy())
+                    .reshape(metadata.get("orig_shape"))
+                    .to(dtype=target_dtype)
+                )
             return tensor_out.to(device=device)
 
         scale = metadata.get("scale", 1.0)
@@ -312,13 +339,29 @@ class HuffmanCompressor(BaseCompressor):
         cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
-        self.quantize_bits = int(_cfg_get(cfg, "huffman_quantize_bits", _cfg_get(cfg, "quantize_bits", _cfg_get(cfg, "bits", quantize_bits))))
-        self.max_error = float(_cfg_get(cfg, "huffman_max_error", _cfg_get(cfg, "max_error", max_error)))
+        self.quantize_bits = int(
+            _cfg_get(
+                cfg,
+                "huffman_quantize_bits",
+                _cfg_get(cfg, "quantize_bits", _cfg_get(cfg, "bits", quantize_bits)),
+            )
+        )
+        self.max_error = float(
+            _cfg_get(cfg, "huffman_max_error", _cfg_get(cfg, "max_error", max_error))
+        )
         self.target_attention_only = bool(
-            _cfg_get(cfg, "huffman_target_attention_only", _cfg_get(cfg, "target_attention_only", target_attention_only))
+            _cfg_get(
+                cfg,
+                "huffman_target_attention_only",
+                _cfg_get(cfg, "target_attention_only", target_attention_only),
+            )
         )
         self.fallback_to_original = bool(
-            _cfg_get(cfg, "huffman_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original))
+            _cfg_get(
+                cfg,
+                "huffman_fallback_to_original",
+                _cfg_get(cfg, "fallback_to_original", fallback_to_original),
+            )
         )
 
         self.compressed_layers: list[str] = []
@@ -331,7 +374,18 @@ class HuffmanCompressor(BaseCompressor):
         parts = name.split(".")
         if any(part in parts for part in ["lora_A", "lora_B", "base_layer"]):
             return False
-        if any(skip in name_lower for skip in ["classifier", "score", "lm_head", "pooler", "embedding", "router", "gate"]):
+        if any(
+            skip in name_lower
+            for skip in [
+                "classifier",
+                "score",
+                "lm_head",
+                "pooler",
+                "embedding",
+                "router",
+                "gate",
+            ]
+        ):
             return False
 
         if self.target_attention_only:
@@ -366,13 +420,18 @@ class HuffmanCompressor(BaseCompressor):
         # Freeze skipped non-target layers if target_attention_only is enabled
         if self.target_attention_only:
             for name, module in self.model.named_modules():
-                if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
+                if any(
+                    part in name.split(".")
+                    for part in ["lora_A", "lora_B", "base_layer"]
+                ):
                     continue
                 target_mod = getattr(module, "base_layer", module)
                 cls_name = target_mod.__class__.__name__.lower()
                 is_linear = isinstance(target_mod, nn.Linear)
                 is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-                if (is_linear or is_conv1d) and not self._is_target_module(name, module):
+                if (is_linear or is_conv1d) and not self._is_target_module(
+                    name, module
+                ):
                     _freeze_base_only(module)
                     self.skipped_layers.append(name)
 
@@ -405,8 +464,12 @@ class HuffmanCompressor(BaseCompressor):
             norm_w = torch.norm(W_orig, p="fro").item()
 
             try:
-                packed_b, code_map, meta = HuffmanCoder.encode(W_orig, quantize_bits=self.quantize_bits)
-                W_rec = HuffmanCoder.decode(packed_b, code_map, meta, device=orig_device).to(dtype=torch.float32)
+                packed_b, code_map, meta = HuffmanCoder.encode(
+                    W_orig, quantize_bits=self.quantize_bits
+                )
+                W_rec = HuffmanCoder.decode(
+                    packed_b, code_map, meta, device=orig_device
+                ).to(dtype=torch.float32)
 
                 if norm_w < 1e-12:
                     err = 0.0
@@ -417,10 +480,18 @@ class HuffmanCompressor(BaseCompressor):
 
                 d_out, d_in = W_orig.shape
                 fam = getattr(getattr(self.model, "config", None), "model_type", None)
-                eff_max_err = max(self.max_error, adaptive_max_error(None, d_in, d_out, family=fam))
+                eff_max_err = max(
+                    self.max_error, adaptive_max_error(None, d_in, d_out, family=fam)
+                )
 
                 if err > eff_max_err:
-                    logger.warning("Huffman error %.4f on %s exceeded max_error %.4f (base max_err=%.4f)", err, name, eff_max_err, self.max_error)
+                    logger.warning(
+                        "Huffman error %.4f on %s exceeded max_error %.4f (base max_err=%.4f)",
+                        err,
+                        name,
+                        eff_max_err,
+                        self.max_error,
+                    )
                     if self.fallback_to_original:
                         self.fallback_layers.append(name)
                         _freeze_base_only(module)
@@ -434,14 +505,20 @@ class HuffmanCompressor(BaseCompressor):
                 else:
                     res_w = W_rec.to(dtype=orig_dtype, device=orig_device)
 
-                assert res_w.shape == orig_shape, f"Shape mismatch on {name}: {res_w.shape} vs {orig_shape}"
+                assert (
+                    res_w.shape == orig_shape
+                ), f"Shape mismatch on {name}: {res_w.shape} vs {orig_shape}"
                 target_mod.weight.data.copy_(res_w)
 
                 # Preserve LoRA adapter trainability
                 for lora_attr in ("lora_A", "lora_B", "lora_a", "lora_b"):
                     if hasattr(module, lora_attr):
                         l_mod = getattr(module, lora_attr)
-                        if isinstance(l_mod, nn.Module) and hasattr(l_mod, "weight") and l_mod.weight is not None:
+                        if (
+                            isinstance(l_mod, nn.Module)
+                            and hasattr(l_mod, "weight")
+                            and l_mod.weight is not None
+                        ):
                             l_mod.weight.requires_grad = True
                         elif isinstance(l_mod, nn.Parameter):
                             l_mod.requires_grad = True
@@ -465,7 +542,9 @@ class HuffmanCompressor(BaseCompressor):
         try:
             with torch.no_grad():
                 dev = next(self.model.parameters(), torch.tensor(0.0)).device
-                tokenizer = getattr(self.model, "tokenizer", None) or getattr(getattr(self.model, "config", None), "tokenizer", None)
+                tokenizer = getattr(self.model, "tokenizer", None) or getattr(
+                    getattr(self.model, "config", None), "tokenizer", None
+                )
                 if tokenizer is not None:
                     tok_out = tokenizer("Hello world", return_tensors="pt")
                     tok_out = {k: v.to(dev) for k, v in tok_out.items()}
@@ -473,7 +552,13 @@ class HuffmanCompressor(BaseCompressor):
                     forward_check_success = True
                 else:
                     # Look for token embeddings
-                    has_embed = any(any(kw in n.lower() for kw in ("embed_tokens", "wte", "word_embeddings")) for n, _ in self.model.named_modules())
+                    has_embed = any(
+                        any(
+                            kw in n.lower()
+                            for kw in ("embed_tokens", "wte", "word_embeddings")
+                        )
+                        for n, _ in self.model.named_modules()
+                    )
                     if has_embed:
                         dummy_ids = torch.randint(0, 100, (1, 8), device=dev)
                         dummy_mask = torch.ones((1, 8), device=dev)
@@ -483,7 +568,14 @@ class HuffmanCompressor(BaseCompressor):
                             self.model(dummy_ids)
                         forward_check_success = True
                     else:
-                        first_linear = next((m for m in self.model.modules() if isinstance(m, nn.Linear)), None)
+                        first_linear = next(
+                            (
+                                m
+                                for m in self.model.modules()
+                                if isinstance(m, nn.Linear)
+                            ),
+                            None,
+                        )
                         if first_linear is not None:
                             in_dim = getattr(first_linear, "in_features", 8)
                             self.model(torch.randn(1, 8, in_dim, device=dev))
@@ -495,9 +587,15 @@ class HuffmanCompressor(BaseCompressor):
             forward_check_success = None
 
         stats = self.get_compression_stats()
-        avg_err = (sum(self.layer_errors.values()) / max(1, len(self.layer_errors))) if self.layer_errors else 0.0
+        avg_err = (
+            (sum(self.layer_errors.values()) / max(1, len(self.layer_errors)))
+            if self.layer_errors
+            else 0.0
+        )
         stats["quantize_bits"] = self.quantize_bits
-        stats["avg_entropy_bits"] = round(total_entropy / max(len(self.compressed_layers), 1), 2)
+        stats["avg_entropy_bits"] = round(
+            total_entropy / max(len(self.compressed_layers), 1), 2
+        )
         stats["total_compressed_bytes"] = total_comp_bytes
         stats["huffman_compression_ratio"] = round(
             total_orig_bytes / max(total_comp_bytes, 1), 2
@@ -513,24 +611,50 @@ class HuffmanCompressor(BaseCompressor):
         stats["forward_check_success"] = forward_check_success
         logger.info(
             "Compressor huffman finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
-            len(self.compressed_layers), len(self.fallback_layers), avg_err, self.max_error,
+            len(self.compressed_layers),
+            len(self.fallback_layers),
+            avg_err,
+            self.max_error,
         )
         return self.model, stats
 
 
 @COMPRESSOR_REGISTRY.register("huffman")
 @COMPRESSOR_REGISTRY.register("huffman_coder")
-def huffman_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
+def huffman_factory(
+    model: nn.Module, comp_config: Any = None, **kwargs: Any
+) -> nn.Module:
     """Huffman compressor factory function."""
-    bits = kwargs.pop("quantize_bits", kwargs.pop("bits", _cfg_get(comp_config, "huffman_bits", _cfg_get(comp_config, "quantize_bits", 8))))
-    max_error = kwargs.pop("max_error", _cfg_get(comp_config, "huffman_max_error", _cfg_get(comp_config, "max_error", 0.20)))
+    bits = kwargs.pop(
+        "quantize_bits",
+        kwargs.pop(
+            "bits",
+            _cfg_get(
+                comp_config, "huffman_bits", _cfg_get(comp_config, "quantize_bits", 8)
+            ),
+        ),
+    )
+    max_error = kwargs.pop(
+        "max_error",
+        _cfg_get(
+            comp_config, "huffman_max_error", _cfg_get(comp_config, "max_error", 0.20)
+        ),
+    )
     target_attention_only = kwargs.pop(
         "target_attention_only",
-        _cfg_get(comp_config, "huffman_target_attention_only", _cfg_get(comp_config, "target_attention_only", False)),
+        _cfg_get(
+            comp_config,
+            "huffman_target_attention_only",
+            _cfg_get(comp_config, "target_attention_only", False),
+        ),
     )
     fallback = kwargs.pop(
         "fallback_to_original",
-        _cfg_get(comp_config, "huffman_fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)),
+        _cfg_get(
+            comp_config,
+            "huffman_fallback_to_original",
+            _cfg_get(comp_config, "fallback_to_original", True),
+        ),
     )
     compressor = HuffmanCompressor(
         model,

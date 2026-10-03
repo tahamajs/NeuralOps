@@ -1,7 +1,8 @@
+import framework.attentions.linformer_attention
 import pytest
 import torch
 import torch.nn as nn
-import framework.attentions.linformer_attention
+
 
 def test_linformer_attention_module_present():
     assert hasattr(framework.attentions, 'linformer_attention')

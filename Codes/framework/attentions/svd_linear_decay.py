@@ -4,18 +4,17 @@ Maps to `framework.attentions.svd_linear_attention.SVDLinearAttention`.
 
 """
 
-from typing import Any
 import logging
+from typing import Any
 
 import torch
 import torch.nn as nn
-
-from framework.core.registry import ATTENTION_REGISTRY
 from framework.attentions.svd_linear_attention import (
     SVDLinear,
     SVDLinearAttention,
     inject_svd_linear_attention,
 )
+from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +23,7 @@ logger = logging.getLogger(__name__)
 @ATTENTION_REGISTRY.register("decay_gated_linear_attention")
 class DecayGatedLinearAttention(SVDLinearAttention):
     r"""Decay Gated SVD Linear Attention."""
+
     is_custom_attention: bool = True
 
     def __init__(self, *args, **kwargs):
@@ -63,9 +63,15 @@ def inject_svd_linear_decay(
         layer_list = target.model.layers
     elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
         layer_list = target.encoder.layer
-    elif hasattr(target, "bert") and hasattr(target.bert, "encoder") and hasattr(target.bert.encoder, "layer"):
+    elif (
+        hasattr(target, "bert")
+        and hasattr(target.bert, "encoder")
+        and hasattr(target.bert.encoder, "layer")
+    ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
+    elif hasattr(target, "layers") and isinstance(
+        target.layers, (torch.nn.ModuleList, list)
+    ):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -75,7 +81,11 @@ def inject_svd_linear_decay(
             res = inject_svd_linear_decay(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=comp_config if 'comp_config' in locals() or 'comp_config' in kwargs else None,
+                comp_config=(
+                    comp_config
+                    if "comp_config" in locals() or "comp_config" in kwargs
+                    else None
+                ),
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,
@@ -101,10 +111,14 @@ def inject_svd_linear_decay(
                 continue
 
             # FIX-4: idempotency guard
-            if isinstance(candidate, SVDLinearAttention) or "SVDLinear" in candidate.__class__.__name__:
+            if (
+                isinstance(candidate, SVDLinearAttention)
+                or "SVDLinear" in candidate.__class__.__name__
+            ):
                 logger.debug(
                     "inject_svd_linear_decay: %s.%s is already SVDLinearAttention, skipping",
-                    type(layer).__name__, attr,
+                    type(layer).__name__,
+                    attr,
                 )
                 return None
 
@@ -158,14 +172,16 @@ def inject_svd_linear_decay(
                 parent.self = result
                 logger.debug(
                     "inject_svd_linear_decay: forced replacement of %s.%s.self",
-                    type(layer).__name__, src_attr_name,
+                    type(layer).__name__,
+                    src_attr_name,
                 )
         else:
             if getattr(layer, src_attr_name, None) is src_attn:
                 setattr(layer, src_attr_name, result)
                 logger.debug(
                     "inject_svd_linear_decay: forced replacement of %s.%s",
-                    type(layer).__name__, src_attr_name,
+                    type(layer).__name__,
+                    src_attr_name,
                 )
 
     return result
