@@ -266,8 +266,8 @@ def analyze_file(file_path):
 
 
 def main():
-    attn_files = sorted(glob.glob("Codes/framework/attentions/*.py"))
-    comp_files = sorted(glob.glob("Codes/framework/compression_engine/*.py"))
+    attn_files = sorted(glob.glob("neuralops/attentions/*.py"))
+    comp_files = sorted(glob.glob("neuralops/compression_engine/*.py"))
     all_files = [f for f in (attn_files + comp_files) if not os.path.basename(f).startswith("__")]
 
     print(f"[Analyzing {len(all_files)} files in repository...]")

@@ -410,7 +410,7 @@ def launch_kd_run(
     remote_out = f"{PROJECT_DIR}/logs/kd_sched_{module}_{ts}_out.log"
     remote_err = f"{PROJECT_DIR}/logs/kd_sched_{module}_{ts}_err.log"
     arg_list = (
-        f"Codes/experiments/kd_quick_test.py "
+        f"neuralops/experiments/kd_quick_test.py "
         f"--module {module} --train_scope mamba --methods C "
         f"--recovery_steps {recovery_steps} --seq_len {seq_len} "
         f"--batch_size {batch_size} --grad_accum_steps {grad_accum_steps} "
@@ -423,7 +423,7 @@ def launch_kd_run(
         err_f = open(remote_err, "w", encoding="utf-8")
         cmd_args = [
             sys.executable,
-            "Codes/experiments/kd_quick_test.py",
+            "neuralops/experiments/kd_quick_test.py",
             "--module",
             module,
             "--train_scope",

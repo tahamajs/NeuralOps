@@ -134,8 +134,8 @@ def main():
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     os.chdir(base_dir)
 
-    attn_files = sorted(glob.glob('Codes/framework/attentions/*.py'))
-    comp_files = sorted(glob.glob('Codes/framework/compression_engine/*.py'))
+    attn_files = sorted(glob.glob('neuralops/attentions/*.py'))
+    comp_files = sorted(glob.glob('neuralops/compression_engine/*.py'))
 
     all_modules = []
     seen = set()

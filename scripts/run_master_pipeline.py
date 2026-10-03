@@ -33,7 +33,7 @@ def run_task(task: dict) -> dict:
     elif t == 'rank_sweep':
         model = f"models/base_checkpoints/{backbone}_{dataset}"
         cmd = [
-            sys.executable, "-u", "Codes/framework/run_rank_sweeper.py",
+            sys.executable, "-u", "neuralops/run_rank_sweeper.py",
             "--modules", module,
             "--ranks", "64,128,256,384",
             "--model", model,
@@ -45,7 +45,7 @@ def run_task(task: dict) -> dict:
         ]
     elif t == 'c4_ppl':
         cmd = [
-            sys.executable, "-u", "Codes/framework/run_quality_sweep.py",
+            sys.executable, "-u", "neuralops/run_quality_sweep.py",
             "--modules", module,
             "--model", "models/gpt2",
             "--model_family", "gpt2",
