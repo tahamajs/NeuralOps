@@ -7,8 +7,8 @@ Dataset: MNLI (Matched validation set)
 Target Rank: 64
 
 Outputs:
-  - results/multiseed/{seed}/{module}.json
-  - results/multiseed/final_summary.csv with columns: module, mean_acc, std_acc, mean_f1, std_f1
+  - results/05_glue_finetuning/multiseed/{seed}/{module}.json
+  - results/05_glue_finetuning/multiseed/final_summary.csv with columns: module, mean_acc, std_acc, mean_f1, std_f1
 """
 
 from __future__ import annotations
@@ -78,7 +78,7 @@ def parse_args():
     parser.add_argument(
         "--output_dir",
         type=str,
-        default="results/06_multiseed/multiseed",
+        default="results/05_glue_finetuning/multiseed/multiseed",
         help="Directory to save multi-seed results",
     )
     parser.add_argument(

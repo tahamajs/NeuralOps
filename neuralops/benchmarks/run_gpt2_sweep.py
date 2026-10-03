@@ -265,7 +265,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument(
         "--split", type=str, default="test", choices=("test", "validation", "train")
     )
-    p.add_argument("--output_dir", type=str, default="results/gpt2_sweep")
+    p.add_argument("--output_dir", type=str, default="results/06_adhoc_experiments/gpt2_sweep")
 
     # Modules
     p.add_argument("--modules", type=str, nargs="*", default=["all"])

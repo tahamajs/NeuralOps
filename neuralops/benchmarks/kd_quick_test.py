@@ -109,7 +109,7 @@ def update_registry(
     args: argparse.Namespace,
     baseline_ppl: float,
 ):
-    """Maintain a master JSON registry at results/kd_runs/registry.json."""
+    """Maintain a master JSON registry at results/06_adhoc_experiments/kd_runs/registry.json."""
     try:
         registry_path = Path("results") / "kd_runs" / "registry.json"
         registry_path.parent.mkdir(parents=True, exist_ok=True)
@@ -163,7 +163,7 @@ def update_registry(
 
 
 def update_latest_link(module_name: str, run_dir: Path):
-    """Record latest run path in results/kd_runs/<module>/latest.txt."""
+    """Record latest run path in results/06_adhoc_experiments/kd_runs/<module>/latest.txt."""
     try:
         module_dir = Path("results") / "kd_runs" / module_name
         module_dir.mkdir(parents=True, exist_ok=True)
@@ -1469,10 +1469,10 @@ def main():
     parser.add_argument("--early_stop_ppl", type=float, default=5000.0)
     parser.add_argument("--methods", nargs="+", default=["A", "B", "C", "D"])
     parser.add_argument(
-        "--output_csv", type=str, default="results/kd_comparison_mamba.csv"
+        "--output_csv", type=str, default="results/06_adhoc_experiments/kd_comparison_mamba.csv"
     )
     parser.add_argument(
-        "--output_json", type=str, default="results/kd_comparison_mamba.json"
+        "--output_json", type=str, default="results/06_adhoc_experiments/kd_comparison_mamba.json"
     )
     parser.add_argument("--log_file", type=str, default=None)
 

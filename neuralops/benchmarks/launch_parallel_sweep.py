@@ -21,7 +21,7 @@ def main():
     parser.add_argument(
         "--output_dir",
         type=str,
-        default="results/05_perplexity_seqlen/gpt2_wikitext2_sweep",
+        default="results/06_adhoc_experiments/perplexity_seqlen/gpt2_wikitext2_sweep",
         help="Path to output directory.",
     )
     args, unknown = parser.parse_known_args()

@@ -5624,7 +5624,7 @@ def main():
 
     if args.output_dir is None:
         safe_model = Path(args.model).name.replace("-", "_").lower()
-        args.output_dir = f"results/{safe_model}_{args.dataset}_sweep"
+        args.output_dir = f"results/06_adhoc_experiments/{safe_model}_{args.dataset}_sweep"
     out = Path(args.output_dir)
     out.mkdir(parents=True, exist_ok=True)
     csv_filename = (

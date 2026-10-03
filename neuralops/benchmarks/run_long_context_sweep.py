@@ -105,7 +105,7 @@ def parse_args():
     parser.add_argument(
         "--output_dir",
         type=str,
-        default="results/05_perplexity_seqlen/long_context",
+        default="results/06_adhoc_experiments/perplexity_seqlen/long_context",
         help="Directory to save sweep results and summary.csv",
     )
     parser.add_argument(
