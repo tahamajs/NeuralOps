@@ -134,7 +134,7 @@ def compute_gelora_base_ranks(model, dataloader, config) -> Any:
                     try:
                         layer_idx = int(parts[i + 1])
                         break
-                    except:
+                    except (ValueError, TypeError):
                         pass
             rank_dict[name] = layer_id.get(layer_idx, config.lora_r)
     return rank_dict

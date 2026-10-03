@@ -25,7 +25,7 @@ for ref_file in glob.glob("paper/PerModulePaper/*/13_references.tex"):
                 cites_map[k_clean] = []
             if mod not in cites_map[k_clean]:
                 cites_map[k_clean].append(mod)
-    except:
+    except Exception:
         pass
 
 # Load module topics
@@ -200,7 +200,7 @@ for idx, (key, f) in enumerate(bib_entries, 1):
                 oa_data = json.loads(oa_resp)
                 if 'cited_by_count' in oa_data:
                     cit_count = str(oa_data['cited_by_count'])
-            except:
+            except Exception:
                 pass
 
     # Compare fields

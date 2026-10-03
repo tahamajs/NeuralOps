@@ -12,9 +12,13 @@ os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
-os.environ["HF_HOME"] = r"D:\SVD_Project\.hf_cache"
-os.environ["TRANSFORMERS_CACHE"] = r"D:\SVD_Project\.hf_cache"
-os.environ["HF_DATASETS_CACHE"] = r"D:\SVD_Project\.hf_cache"
+from pathlib import Path
+_repo = Path("D:/SVD_Project") if Path("D:/SVD_Project").exists() else Path(__file__).resolve().parent.parent
+_hf_cache = _repo / ".hf_cache"
+if _hf_cache.exists():
+    os.environ["HF_HOME"] = str(_hf_cache)
+    os.environ["TRANSFORMERS_CACHE"] = str(_hf_cache)
+    os.environ["HF_DATASETS_CACHE"] = str(_hf_cache)
 
 import torch
 from transformers import AutoConfig, AutoModelForSequenceClassification

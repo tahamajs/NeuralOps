@@ -1,8 +1,11 @@
 import json
+from pathlib import Path
 
 seen = {}
 try:
-    with open('D:/SVD_Project/audit/module_test_log.jsonl', 'r', encoding='utf-8', errors='ignore') as f:
+    root = Path("D:/SVD_Project") if Path("D:/SVD_Project").exists() else Path(__file__).resolve().parent.parent
+    log_file = root / "audit" / "module_test_log.jsonl"
+    with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
         for line in f:
             line = line.strip()
             if not line:

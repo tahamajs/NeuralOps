@@ -8,9 +8,14 @@ hf_org = "Hooshaai"
 remote_models = {m.id for m in api.list_models(author=hf_org)}
 print(f"HF Server currently has {len(remote_models)} models.")
 
+from pathlib import Path
+
+root = Path("D:/SVD_Project") if Path("D:/SVD_Project").exists() else Path(__file__).resolve().parent.parent
+results_dir = root / "results"
+
 candidates = (
-    glob.glob(r"D:\SVD_Project\results\**\weights.pt", recursive=True) +
-    glob.glob(r"D:\SVD_Project\results\**\finetuned_model.pt", recursive=True)
+    glob.glob(str(results_dir / "**" / "weights.pt"), recursive=True) +
+    glob.glob(str(results_dir / "**" / "finetuned_model.pt"), recursive=True)
 )
 
 print(f"Total localized weights on GPU server: {len(candidates)}")
@@ -37,7 +42,7 @@ for w in candidates:
             files = api.list_repo_files(repo_id=repo_id, repo_type="model")
             if "weights.pt" in files or "pytorch_model.bin" in files or "model.safetensors" in files:
                 continue
-    except:
+    except Exception:
         pass
     
     try:

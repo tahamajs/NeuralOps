@@ -4,9 +4,10 @@ import torch
 
 def get_git_sha():
     try:
+        repo_root = Path("D:/SVD_Project") if Path("D:/SVD_Project").exists() else Path(__file__).resolve().parent.parent
         return subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True, text=True, cwd="D:/SVD_Project"
+            capture_output=True, text=True, cwd=str(repo_root)
         ).stdout.strip() or "unknown"
     except Exception:
         return "unknown"

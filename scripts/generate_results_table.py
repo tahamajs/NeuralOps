@@ -43,7 +43,7 @@ def generate_table(module_name, csv_path, baseline_path=None):
                 delta = acc_val - baseline
                 baseline_str = f'{baseline:.2f}\\%'
                 delta_str = f'{delta:+.2f}\\%'
-            except:
+            except Exception:
                 baseline_str = '--'
                 delta_str = '--'
         else:
@@ -56,17 +56,17 @@ def generate_table(module_name, csv_path, baseline_path=None):
         
         try:
             f1_str = f'{float(f1):.4f}' if f1 != '--' else '--'
-        except:
+        except Exception:
             f1_str = str(f1)
             
         try:
             vram_str = f'{float(vram):.1f} MB' if vram != '--' else '--'
-        except:
+        except Exception:
             vram_str = str(vram)
             
         try:
             throughput_str = f'{int(float(throughput)):,} tok/s' if throughput != '--' else '--'
-        except:
+        except Exception:
             throughput_str = str(throughput)
             
         status = row.get('status', 'PASS')
