@@ -1,0 +1,47 @@
+# ─────────────────────────────────────────────────────────────────
+# Qwen3.5-0.8B Dedicated Quality Sweep Configuration
+# ─────────────────────────────────────────────────────────────────
+
+# Model & Architecture
+model: "models/Qwen3.5-0.8B"
+family: "qwen3_5"
+dataset: "sst2"
+seq_len: 128
+
+# Execution & Optimization Parameters
+batch_size: 8
+micro_batch_size: 8
+recovery_steps: 10
+timeout: 120
+optimizer: "adamw"
+precision: "fp16"
+seed: 42
+weight_decay: 0.01
+muon_lr: 0.02
+adam_lr: 0.0002
+
+# Learning rate & finetuning
+finetune_steps: 50
+finetune_mode: "lora"
+
+# Results & Output
+output_dir: "results/qwen3_5_sst2_cleaned_sweep"
+
+# Timeouts for known computationally intensive modules (seconds)
+slow_module_timeouts:
+  grecodec: 600
+  grecodec_compressor: 600
+  mlorq: 400
+  lillama: 400
+  cr: 300
+  huffman: 300
+
+# Hard architectural skip list (mathematically / kernel incompatible with causal RoPE)
+skip_modules:
+  - adaptive_span      # algorithm inherently assumes symmetric full MHA
+  - a3                 # architecture-unaware compressor without dynamic calibration
+  - cosformer          # requires custom non-causal bidirectional kernel
+  - mamba              # requires proprietary Mamba kernel
+  - mamba_shedder      # requires proprietary Mamba kernel
+  - mamba_svd_flash    # requires proprietary Mamba kernel
+  - flash3             # incompatible rotary position embedding layout
