@@ -604,6 +604,7 @@ class AASVDCompressor(BaseCompressor):
             hooks = []
 
             def make_hook(layer_name: str):
+                nonlocal covariances, update_counts
                 def hook(module, inp, outp):
                     if not inp or inp[0] is None:
                         return

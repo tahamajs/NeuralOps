@@ -638,6 +638,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
             or bool(_cfg_get(self.config, "is_decoder", False))
             or str(_cfg_get(self.config, "model_type", "")).lower() in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
+        is_cross = bool(kwargs.get("is_cross_attention", False))
 
         mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
         if mask is None and head_mask is None and not output_attentions:

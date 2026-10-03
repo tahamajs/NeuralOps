@@ -10,8 +10,11 @@ target_attention_only: Replaces self-attention modules only, preserving all FFN/
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any, Dict, Optional, Tuple, Union
+
+logger = logging.getLogger(__name__)
 
 import torch
 import torch.nn as nn

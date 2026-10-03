@@ -89,6 +89,16 @@ def apply_rotary_pos_emb(
     return q, k
 
 
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    """Equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep)."""
+    if n_rep == 1:
+        return hidden_states
+    b, num_kv_heads, slen, head_dim = hidden_states.shape
+    hidden_states = hidden_states[:, :, None, :, :].expand(b, num_kv_heads, n_rep, slen, head_dim)
+    return hidden_states.reshape(b, num_kv_heads * n_rep, slen, head_dim)
+
+
+
 def _detect_decoder(config: Any, is_decoder: Optional[bool], src_attn: Optional[nn.Module]) -> bool:
     if is_decoder is not None:
         return bool(is_decoder)

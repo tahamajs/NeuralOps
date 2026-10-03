@@ -392,6 +392,7 @@ class NativeSparseAttention(BaseAttention):
         Q = self.q_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
         K = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3)
         V = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3)
+        is_cross = bool(kwargs.get("is_cross_attention", False))
 
         if position_embeddings is not None:
             cos, sin = position_embeddings

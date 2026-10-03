@@ -187,7 +187,7 @@ class SDRMCompressor(BaseCompressor):
         param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
         
         if self.min_rank > max_r - 1:
-            logger.warning("SDRM: min_rank=%d exceeds max_r=%d for %s; skipping", self.min_rank, max_r - 1, name)
+            logger.warning("SDRM: min_rank=%d exceeds max_r=%d for %s; skipping", self.min_rank, max_r - 1, cls_name)
             return None
             
         min_rank_effective = min(self.min_rank, max_r - 1, param_cap)
