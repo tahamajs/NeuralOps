@@ -21,22 +21,48 @@ import torch
 import triton
 import triton.language as tl
 
-
 MAX_REGISTER_DIM = 64
 
 
 @triton.jit
 def _fms_fwd_kernel(
-    q_ptr, k_ptr, v_ptr, decay_ptr,
-    y_ptr, s_workspace_ptr, z_workspace_ptr,
-    stride_qb, stride_qh, stride_ql, stride_qd,
-    stride_kb, stride_kh, stride_kl, stride_kd,
-    stride_vb, stride_vh, stride_vl, stride_vd,
+    q_ptr,
+    k_ptr,
+    v_ptr,
+    decay_ptr,
+    y_ptr,
+    s_workspace_ptr,
+    z_workspace_ptr,
+    stride_qb,
+    stride_qh,
+    stride_ql,
+    stride_qd,
+    stride_kb,
+    stride_kh,
+    stride_kl,
+    stride_kd,
+    stride_vb,
+    stride_vh,
+    stride_vl,
+    stride_vd,
     stride_dh,
-    stride_yb, stride_yh, stride_yl, stride_yd,
-    stride_swb, stride_swh, stride_swl, stride_swd, stride_swn,
-    stride_zwb, stride_zwh, stride_zwl, stride_zwd,
-    B_size, L_size, H_size, D_size,
+    stride_yb,
+    stride_yh,
+    stride_yl,
+    stride_yd,
+    stride_swb,
+    stride_swh,
+    stride_swl,
+    stride_swd,
+    stride_swn,
+    stride_zwb,
+    stride_zwh,
+    stride_zwl,
+    stride_zwd,
+    B_size,
+    L_size,
+    H_size,
+    D_size,
     STORE_WORKSPACE: tl.constexpr,
     BLOCK_D: tl.constexpr,
 ):
@@ -60,16 +86,31 @@ def _fms_fwd_kernel(
     for t in range(L_size):
         # Load raw inputs q, k, v
         q_raw = tl.load(
-            q_ptr + pid_b * stride_qb + pid_h * stride_qh + t * stride_ql + offs_d * stride_qd,
-            mask=mask_d, other=0.0
+            q_ptr
+            + pid_b * stride_qb
+            + pid_h * stride_qh
+            + t * stride_ql
+            + offs_d * stride_qd,
+            mask=mask_d,
+            other=0.0,
         ).to(tl.float32)
         k_raw = tl.load(
-            k_ptr + pid_b * stride_kb + pid_h * stride_kh + t * stride_kl + offs_d * stride_kd,
-            mask=mask_d, other=0.0
+            k_ptr
+            + pid_b * stride_kb
+            + pid_h * stride_kh
+            + t * stride_kl
+            + offs_d * stride_kd,
+            mask=mask_d,
+            other=0.0,
         ).to(tl.float32)
         v_raw = tl.load(
-            v_ptr + pid_b * stride_vb + pid_h * stride_vh + t * stride_vl + offs_d * stride_vd,
-            mask=mask_d, other=0.0
+            v_ptr
+            + pid_b * stride_vb
+            + pid_h * stride_vh
+            + t * stride_vl
+            + offs_d * stride_vd,
+            mask=mask_d,
+            other=0.0,
         ).to(tl.float32)
 
         # Feature maps: ELU + 1
@@ -102,7 +143,11 @@ def _fms_fwd_kernel(
 
         # Store y
         tl.store(
-            y_ptr + pid_b * stride_yb + pid_h * stride_yh + t * stride_yl + offs_d * stride_yd,
+            y_ptr
+            + pid_b * stride_yb
+            + pid_h * stride_yh
+            + t * stride_yl
+            + offs_d * stride_yd,
             y_t.to(y_ptr.dtype.element_ty),
             mask=mask_d,
         )
@@ -111,7 +156,9 @@ def _fms_fwd_kernel(
         if STORE_WORKSPACE:
             s_ptrs = (
                 s_workspace_ptr
-                + pid_b * stride_swb + pid_h * stride_swh + t * stride_swl
+                + pid_b * stride_swb
+                + pid_h * stride_swh
+                + t * stride_swl
                 + tl.arange(0, BLOCK_D)[:, None] * stride_swd
                 + tl.arange(0, BLOCK_D)[None, :] * stride_swn
             )
@@ -119,7 +166,9 @@ def _fms_fwd_kernel(
 
             z_ptrs = (
                 z_workspace_ptr
-                + pid_b * stride_zwb + pid_h * stride_zwh + t * stride_zwl
+                + pid_b * stride_zwb
+                + pid_h * stride_zwh
+                + t * stride_zwl
                 + offs_d * stride_zwd
             )
             tl.store(z_ptrs, Z, mask=mask_d)
@@ -127,21 +176,60 @@ def _fms_fwd_kernel(
 
 @triton.jit
 def _fms_bwd_kernel(
-    q_ptr, k_ptr, v_ptr, decay_ptr, dy_ptr,
-    s_workspace_ptr, z_workspace_ptr,
-    dq_ptr, dk_ptr, dv_ptr, ddecay_acc_ptr,
-    stride_qb, stride_qh, stride_ql, stride_qd,
-    stride_kb, stride_kh, stride_kl, stride_kd,
-    stride_vb, stride_vh, stride_vl, stride_vd,
+    q_ptr,
+    k_ptr,
+    v_ptr,
+    decay_ptr,
+    dy_ptr,
+    s_workspace_ptr,
+    z_workspace_ptr,
+    dq_ptr,
+    dk_ptr,
+    dv_ptr,
+    ddecay_acc_ptr,
+    stride_qb,
+    stride_qh,
+    stride_ql,
+    stride_qd,
+    stride_kb,
+    stride_kh,
+    stride_kl,
+    stride_kd,
+    stride_vb,
+    stride_vh,
+    stride_vl,
+    stride_vd,
     stride_dh,
-    stride_dyb, stride_dyh, stride_dyl, stride_dyd,
-    stride_swb, stride_swh, stride_swl, stride_swd, stride_swn,
-    stride_zwb, stride_zwh, stride_zwl, stride_zwd,
-    stride_dqb, stride_dqh, stride_dql, stride_dqd,
-    stride_dkb, stride_dkh, stride_dkl, stride_dkd,
-    stride_dvb, stride_dvh, stride_dvl, stride_dvd,
+    stride_dyb,
+    stride_dyh,
+    stride_dyl,
+    stride_dyd,
+    stride_swb,
+    stride_swh,
+    stride_swl,
+    stride_swd,
+    stride_swn,
+    stride_zwb,
+    stride_zwh,
+    stride_zwl,
+    stride_zwd,
+    stride_dqb,
+    stride_dqh,
+    stride_dql,
+    stride_dqd,
+    stride_dkb,
+    stride_dkh,
+    stride_dkl,
+    stride_dkd,
+    stride_dvb,
+    stride_dvh,
+    stride_dvl,
+    stride_dvd,
     stride_dah,
-    B_size, L_size, H_size, D_size,
+    B_size,
+    L_size,
+    H_size,
+    D_size,
     BLOCK_D: tl.constexpr,
 ):
     pid_b = tl.program_id(0)
@@ -168,20 +256,40 @@ def _fms_bwd_kernel(
 
         # Load inputs at step t
         q_raw = tl.load(
-            q_ptr + pid_b * stride_qb + pid_h * stride_qh + t * stride_ql + offs_d * stride_qd,
-            mask=mask_d, other=0.0
+            q_ptr
+            + pid_b * stride_qb
+            + pid_h * stride_qh
+            + t * stride_ql
+            + offs_d * stride_qd,
+            mask=mask_d,
+            other=0.0,
         ).to(tl.float32)
         k_raw = tl.load(
-            k_ptr + pid_b * stride_kb + pid_h * stride_kh + t * stride_kl + offs_d * stride_kd,
-            mask=mask_d, other=0.0
+            k_ptr
+            + pid_b * stride_kb
+            + pid_h * stride_kh
+            + t * stride_kl
+            + offs_d * stride_kd,
+            mask=mask_d,
+            other=0.0,
         ).to(tl.float32)
         v_raw = tl.load(
-            v_ptr + pid_b * stride_vb + pid_h * stride_vh + t * stride_vl + offs_d * stride_vd,
-            mask=mask_d, other=0.0
+            v_ptr
+            + pid_b * stride_vb
+            + pid_h * stride_vh
+            + t * stride_vl
+            + offs_d * stride_vd,
+            mask=mask_d,
+            other=0.0,
         ).to(tl.float32)
         dy_t = tl.load(
-            dy_ptr + pid_b * stride_dyb + pid_h * stride_dyh + t * stride_dyl + offs_d * stride_dyd,
-            mask=mask_d, other=0.0
+            dy_ptr
+            + pid_b * stride_dyb
+            + pid_h * stride_dyh
+            + t * stride_dyl
+            + offs_d * stride_dyd,
+            mask=mask_d,
+            other=0.0,
         ).to(tl.float32)
 
         # Feature activations
@@ -197,7 +305,9 @@ def _fms_bwd_kernel(
         # Load S_t and Z_t
         s_t_ptrs = (
             s_workspace_ptr
-            + pid_b * stride_swb + pid_h * stride_swh + t * stride_swl
+            + pid_b * stride_swb
+            + pid_h * stride_swh
+            + t * stride_swl
             + tl.arange(0, BLOCK_D)[:, None] * stride_swd
             + tl.arange(0, BLOCK_D)[None, :] * stride_swn
         )
@@ -205,7 +315,9 @@ def _fms_bwd_kernel(
 
         z_t_ptrs = (
             z_workspace_ptr
-            + pid_b * stride_zwb + pid_h * stride_zwh + t * stride_zwl
+            + pid_b * stride_zwb
+            + pid_h * stride_zwh
+            + t * stride_zwl
             + offs_d * stride_zwd
         )
         Z_t = tl.load(z_t_ptrs, mask=mask_d, other=0.0)
@@ -255,17 +367,29 @@ def _fms_bwd_kernel(
 
         # Store input gradients
         tl.store(
-            dq_ptr + pid_b * stride_dqb + pid_h * stride_dqh + t * stride_dql + offs_d * stride_dqd,
+            dq_ptr
+            + pid_b * stride_dqb
+            + pid_h * stride_dqh
+            + t * stride_dql
+            + offs_d * stride_dqd,
             dq_t.to(dq_ptr.dtype.element_ty),
             mask=mask_d,
         )
         tl.store(
-            dk_ptr + pid_b * stride_dkb + pid_h * stride_dkh + t * stride_dkl + offs_d * stride_dkd,
+            dk_ptr
+            + pid_b * stride_dkb
+            + pid_h * stride_dkh
+            + t * stride_dkl
+            + offs_d * stride_dkd,
             dk_t.to(dk_ptr.dtype.element_ty),
             mask=mask_d,
         )
         tl.store(
-            dv_ptr + pid_b * stride_dvb + pid_h * stride_dvh + t * stride_dvl + offs_d * stride_dvd,
+            dv_ptr
+            + pid_b * stride_dvb
+            + pid_h * stride_dvh
+            + t * stride_dvl
+            + offs_d * stride_dvd,
             dv_t.to(dv_ptr.dtype.element_ty),
             mask=mask_d,
         )
@@ -276,7 +400,9 @@ def _fms_bwd_kernel(
         if t > 0:
             s_prev_ptrs = (
                 s_workspace_ptr
-                + pid_b * stride_swb + pid_h * stride_swh + (t - 1) * stride_swl
+                + pid_b * stride_swb
+                + pid_h * stride_swh
+                + (t - 1) * stride_swl
                 + tl.arange(0, BLOCK_D)[:, None] * stride_swd
                 + tl.arange(0, BLOCK_D)[None, :] * stride_swn
             )
@@ -284,7 +410,9 @@ def _fms_bwd_kernel(
 
             z_prev_ptrs = (
                 z_workspace_ptr
-                + pid_b * stride_zwb + pid_h * stride_zwh + (t - 1) * stride_zwl
+                + pid_b * stride_zwb
+                + pid_h * stride_zwh
+                + (t - 1) * stride_zwl
                 + offs_d * stride_zwd
             )
             Z_prev = tl.load(z_prev_ptrs, mask=mask_d, other=0.0)
@@ -319,18 +447,43 @@ class _FMSScanFn(torch.autograd.Function):
         grid = (B, H)
 
         _fms_fwd_kernel[grid](
-            q_c, k_c, v_c, decay_c,
-            y, s_workspace, z_workspace,
-            q_c.stride(0), q_c.stride(1), q_c.stride(2), q_c.stride(3),
-            k_c.stride(0), k_c.stride(1), k_c.stride(2), k_c.stride(3),
-            v_c.stride(0), v_c.stride(1), v_c.stride(2), v_c.stride(3),
+            q_c,
+            k_c,
+            v_c,
+            decay_c,
+            y,
+            s_workspace,
+            z_workspace,
+            q_c.stride(0),
+            q_c.stride(1),
+            q_c.stride(2),
+            q_c.stride(3),
+            k_c.stride(0),
+            k_c.stride(1),
+            k_c.stride(2),
+            k_c.stride(3),
+            v_c.stride(0),
+            v_c.stride(1),
+            v_c.stride(2),
+            v_c.stride(3),
             decay_c.stride(0),
-            y.stride(0), y.stride(1), y.stride(2), y.stride(3),
-            s_workspace.stride(0), s_workspace.stride(1), s_workspace.stride(2),
-            s_workspace.stride(3), s_workspace.stride(4),
-            z_workspace.stride(0), z_workspace.stride(1), z_workspace.stride(2),
+            y.stride(0),
+            y.stride(1),
+            y.stride(2),
+            y.stride(3),
+            s_workspace.stride(0),
+            s_workspace.stride(1),
+            s_workspace.stride(2),
+            s_workspace.stride(3),
+            s_workspace.stride(4),
+            z_workspace.stride(0),
+            z_workspace.stride(1),
+            z_workspace.stride(2),
             z_workspace.stride(3),
-            B, L, H, D,
+            B,
+            L,
+            H,
+            D,
             STORE_WORKSPACE=True,
             BLOCK_D=BLOCK_D,
         )
@@ -353,30 +506,69 @@ class _FMSScanFn(torch.autograd.Function):
         grid = (B, H)
 
         _fms_bwd_kernel[grid](
-            q, k, v, decay, dy_c,
-            s_workspace, z_workspace,
-            dq, dk, dv, ddecay_acc,
-            q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-            k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-            v.stride(0), v.stride(1), v.stride(2), v.stride(3),
+            q,
+            k,
+            v,
+            decay,
+            dy_c,
+            s_workspace,
+            z_workspace,
+            dq,
+            dk,
+            dv,
+            ddecay_acc,
+            q.stride(0),
+            q.stride(1),
+            q.stride(2),
+            q.stride(3),
+            k.stride(0),
+            k.stride(1),
+            k.stride(2),
+            k.stride(3),
+            v.stride(0),
+            v.stride(1),
+            v.stride(2),
+            v.stride(3),
             decay.stride(0),
-            dy_c.stride(0), dy_c.stride(1), dy_c.stride(2), dy_c.stride(3),
-            s_workspace.stride(0), s_workspace.stride(1), s_workspace.stride(2),
-            s_workspace.stride(3), s_workspace.stride(4),
-            z_workspace.stride(0), z_workspace.stride(1), z_workspace.stride(2),
+            dy_c.stride(0),
+            dy_c.stride(1),
+            dy_c.stride(2),
+            dy_c.stride(3),
+            s_workspace.stride(0),
+            s_workspace.stride(1),
+            s_workspace.stride(2),
+            s_workspace.stride(3),
+            s_workspace.stride(4),
+            z_workspace.stride(0),
+            z_workspace.stride(1),
+            z_workspace.stride(2),
             z_workspace.stride(3),
-            dq.stride(0), dq.stride(1), dq.stride(2), dq.stride(3),
-            dk.stride(0), dk.stride(1), dk.stride(2), dk.stride(3),
-            dv.stride(0), dv.stride(1), dv.stride(2), dv.stride(3),
+            dq.stride(0),
+            dq.stride(1),
+            dq.stride(2),
+            dq.stride(3),
+            dk.stride(0),
+            dk.stride(1),
+            dk.stride(2),
+            dk.stride(3),
+            dv.stride(0),
+            dv.stride(1),
+            dv.stride(2),
+            dv.stride(3),
             ddecay_acc.stride(0),
-            B, L, H, D,
+            B,
+            L,
+            H,
+            D,
             BLOCK_D=BLOCK_D,
         )
 
         return dq, dk, dv, ddecay_acc.to(decay.dtype)
 
 
-def fms_scan_triton(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
+def fms_scan_triton(
+    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor
+) -> torch.Tensor:
     """Triton-accelerated FMS scan function. head_dim must be <= 64."""
     B, H, L, D = q.shape
     if D > MAX_REGISTER_DIM:

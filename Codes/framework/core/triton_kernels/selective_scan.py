@@ -16,7 +16,6 @@ from __future__ import annotations
 import torch
 import triton
 import triton.language as tl
-
 from framework.core.triton_kernels.softplus import softplus
 
 
@@ -29,15 +28,31 @@ def _selective_scan_fwd_kernel(
     C_ptr,
     D_ptr,
     out_ptr,
-    h_workspace_ptr,   # NEW: (B, D, L, N) — full h_t trajectory
-    stride_ub, stride_ul, stride_ud,
-    stride_deltab, stride_deltal, stride_deltad,
-    stride_ad, stride_an,
-    stride_bb, stride_bl, stride_bn,
-    stride_cb, stride_cl, stride_cn,
-    stride_ob, stride_ol, stride_od,
-    stride_hb, stride_hd, stride_hl, stride_hn,
-    B_size, L_size, D_dim,
+    h_workspace_ptr,  # NEW: (B, D, L, N) — full h_t trajectory
+    stride_ub,
+    stride_ul,
+    stride_ud,
+    stride_deltab,
+    stride_deltal,
+    stride_deltad,
+    stride_ad,
+    stride_an,
+    stride_bb,
+    stride_bl,
+    stride_bn,
+    stride_cb,
+    stride_cl,
+    stride_cn,
+    stride_ob,
+    stride_ol,
+    stride_od,
+    stride_hb,
+    stride_hd,
+    stride_hl,
+    stride_hn,
+    B_size,
+    L_size,
+    D_dim,
     N_STATE: tl.constexpr,
     HAS_D: tl.constexpr,
     DELTA_SOFTPLUS: tl.constexpr,
@@ -51,12 +66,11 @@ def _selective_scan_fwd_kernel(
     n_offsets = tl.arange(0, N_STATE)
 
     A_ptrs = A_ptr + pid_d * stride_ad + n_offsets * stride_an
-    a_val = tl.load(A_ptrs).to(tl.float32)   # ← cast اضافه شد
+    a_val = tl.load(A_ptrs).to(tl.float32)  # ← cast اضافه شد
 
     d_val = 0.0
     if HAS_D:
-        d_val = tl.load(D_ptr + pid_d).to(tl.float32)   # ← cast اضافه شد
-
+        d_val = tl.load(D_ptr + pid_d).to(tl.float32)  # ← cast اضافه شد
 
     h_state = tl.zeros((N_STATE,), dtype=tl.float32)
 
@@ -64,7 +78,12 @@ def _selective_scan_fwd_kernel(
         u_p = u_ptr + pid_b * stride_ub + l * stride_ul + pid_d * stride_ud
         u_val = tl.load(u_p).to(tl.float32)
 
-        delta_p = delta_ptr + pid_b * stride_deltab + l * stride_deltal + pid_d * stride_deltad
+        delta_p = (
+            delta_ptr
+            + pid_b * stride_deltab
+            + l * stride_deltal
+            + pid_d * stride_deltad
+        )
         delta_val = tl.load(delta_p).to(tl.float32)
         if DELTA_SOFTPLUS:
             delta_val = softplus(delta_val)
@@ -80,8 +99,13 @@ def _selective_scan_fwd_kernel(
         h_state = decay * h_state + input_term
 
         # === NEW: save h_t to workspace for backward ===
-        h_ptrs = (h_workspace_ptr + pid_b * stride_hb + pid_d * stride_hd
-                  + l * stride_hl + n_offsets * stride_hn)
+        h_ptrs = (
+            h_workspace_ptr
+            + pid_b * stride_hb
+            + pid_d * stride_hd
+            + l * stride_hl
+            + n_offsets * stride_hn
+        )
         tl.store(h_ptrs, h_state)
 
         y_val = tl.sum(h_state * c_val) + d_val * u_val
@@ -92,17 +116,44 @@ def _selective_scan_fwd_kernel(
 
 @triton.jit
 def _selective_scan_bwd_kernel(
-    u_ptr, delta_ptr, A_ptr, B_ptr, C_ptr, D_ptr, dy_ptr,
-    du_ptr, ddelta_ptr, dA_ptr, dB_ptr, dC_ptr, dD_ptr,
-    h_workspace_ptr,   # NEW: read h_t and h_{t-1} from here
-    stride_ub, stride_ul, stride_ud,
-    stride_deltab, stride_deltal, stride_deltad,
-    stride_ad, stride_an,
-    stride_bb, stride_bl, stride_bn,
-    stride_cb, stride_cl, stride_cn,
-    stride_ob, stride_ol, stride_od,
-    stride_hb, stride_hd, stride_hl, stride_hn,
-    B_size, L_size, D_dim,
+    u_ptr,
+    delta_ptr,
+    A_ptr,
+    B_ptr,
+    C_ptr,
+    D_ptr,
+    dy_ptr,
+    du_ptr,
+    ddelta_ptr,
+    dA_ptr,
+    dB_ptr,
+    dC_ptr,
+    dD_ptr,
+    h_workspace_ptr,  # NEW: read h_t and h_{t-1} from here
+    stride_ub,
+    stride_ul,
+    stride_ud,
+    stride_deltab,
+    stride_deltal,
+    stride_deltad,
+    stride_ad,
+    stride_an,
+    stride_bb,
+    stride_bl,
+    stride_bn,
+    stride_cb,
+    stride_cl,
+    stride_cn,
+    stride_ob,
+    stride_ol,
+    stride_od,
+    stride_hb,
+    stride_hd,
+    stride_hl,
+    stride_hn,
+    B_size,
+    L_size,
+    D_dim,
     N_STATE: tl.constexpr,
     HAS_D: tl.constexpr,
     DELTA_SOFTPLUS: tl.constexpr,
@@ -133,7 +184,12 @@ def _selective_scan_bwd_kernel(
         u_p = u_ptr + pid_b * stride_ub + l * stride_ul + pid_d * stride_ud
         u_val = tl.load(u_p).to(tl.float32)
 
-        delta_p = delta_ptr + pid_b * stride_deltab + l * stride_deltal + pid_d * stride_deltad
+        delta_p = (
+            delta_ptr
+            + pid_b * stride_deltab
+            + l * stride_deltal
+            + pid_d * stride_deltad
+        )
         raw_delta = tl.load(delta_p).to(tl.float32)
         delta_val = softplus(raw_delta) if DELTA_SOFTPLUS else raw_delta
 
@@ -144,13 +200,23 @@ def _selective_scan_bwd_kernel(
         b_val = tl.load(B_ptrs).to(tl.float32)
 
         # --- Load h_t and h_{t-1} from workspace ---
-        h_t_ptrs = (h_workspace_ptr + pid_b * stride_hb + pid_d * stride_hd
-                    + l * stride_hl + n_offsets * stride_hn)
+        h_t_ptrs = (
+            h_workspace_ptr
+            + pid_b * stride_hb
+            + pid_d * stride_hd
+            + l * stride_hl
+            + n_offsets * stride_hn
+        )
         h_t = tl.load(h_t_ptrs)
 
         if l > 0:
-            h_prev_ptrs = (h_workspace_ptr + pid_b * stride_hb + pid_d * stride_hd
-                           + (l - 1) * stride_hl + n_offsets * stride_hn)
+            h_prev_ptrs = (
+                h_workspace_ptr
+                + pid_b * stride_hb
+                + pid_d * stride_hd
+                + (l - 1) * stride_hl
+                + n_offsets * stride_hn
+            )
             h_prev = tl.load(h_prev_ptrs)
         else:
             h_prev = tl.zeros((N_STATE,), dtype=tl.float32)
@@ -178,21 +244,23 @@ def _selective_scan_bwd_kernel(
 
         # === decay and ddecay ===
         decay = tl.exp(delta_val * a_val)
-        ddecay = dh_state * h_prev   # dL/ddecay_t = adh_t * h_{t-1}
+        ddecay = dh_state * h_prev  # dL/ddecay_t = adh_t * h_{t-1}
 
         # === dA accumulation (vector N) — atomic at end ===
         acc_dA += ddecay * decay * delta_val
 
         # === ddelta = u * sum(dh*B) + sum(ddecay*decay*A) ===
-        ddelta_val = (
-            u_val * tl.sum(dh_state * b_val)
-            + tl.sum(ddecay * decay * a_val)
-        )
+        ddelta_val = u_val * tl.sum(dh_state * b_val) + tl.sum(ddecay * decay * a_val)
         if DELTA_SOFTPLUS:
             sig = tl.sigmoid(raw_delta)
             ddelta_val = ddelta_val * sig
 
-        ddelta_p = ddelta_ptr + pid_b * stride_deltab + l * stride_deltal + pid_d * stride_deltad
+        ddelta_p = (
+            ddelta_ptr
+            + pid_b * stride_deltab
+            + l * stride_deltal
+            + pid_d * stride_deltad
+        )
         tl.store(ddelta_p, ddelta_val)
 
         # === dD accumulation ===
@@ -214,11 +282,11 @@ class TritonSelectiveScanFunction(torch.autograd.Function):
     @staticmethod
     def forward(
         ctx,
-        u: torch.Tensor,        # (B, L, D)
-        delta: torch.Tensor,    # (B, L, D)
-        A: torch.Tensor,        # (D, N)
-        B: torch.Tensor,        # (B, L, N)
-        C: torch.Tensor,        # (B, L, N)
+        u: torch.Tensor,  # (B, L, D)
+        delta: torch.Tensor,  # (B, L, D)
+        A: torch.Tensor,  # (D, N)
+        B: torch.Tensor,  # (B, L, N)
+        C: torch.Tensor,  # (B, L, N)
         D: torch.Tensor | None = None,  # (D,)
         delta_softplus: bool = True,
     ) -> torch.Tensor:
@@ -237,24 +305,49 @@ class TritonSelectiveScanFunction(torch.autograd.Function):
 
         # Workspace for full h_t trajectory: (B, D, L, N), fp32
         h_workspace = torch.empty(
-            B_size, D_dim, L_size, N_state,
-            device=u.device, dtype=torch.float32,
+            B_size,
+            D_dim,
+            L_size,
+            N_state,
+            device=u.device,
+            dtype=torch.float32,
         )
 
         grid = (B_size, D_dim)
 
         _selective_scan_fwd_kernel[grid](
-            u, delta, A, B, C, D if D is not None else u, out,
+            u,
+            delta,
+            A,
+            B,
+            C,
+            D if D is not None else u,
+            out,
             h_workspace,
-            u.stride(0), u.stride(1), u.stride(2),
-            delta.stride(0), delta.stride(1), delta.stride(2),
-            A.stride(0), A.stride(1),
-            B.stride(0), B.stride(1), B.stride(2),
-            C.stride(0), C.stride(1), C.stride(2),
-            out.stride(0), out.stride(1), out.stride(2),
-            h_workspace.stride(0), h_workspace.stride(1),
-            h_workspace.stride(2), h_workspace.stride(3),
-            B_size, L_size, D_dim,
+            u.stride(0),
+            u.stride(1),
+            u.stride(2),
+            delta.stride(0),
+            delta.stride(1),
+            delta.stride(2),
+            A.stride(0),
+            A.stride(1),
+            B.stride(0),
+            B.stride(1),
+            B.stride(2),
+            C.stride(0),
+            C.stride(1),
+            C.stride(2),
+            out.stride(0),
+            out.stride(1),
+            out.stride(2),
+            h_workspace.stride(0),
+            h_workspace.stride(1),
+            h_workspace.stride(2),
+            h_workspace.stride(3),
+            B_size,
+            L_size,
+            D_dim,
             N_STATE=N_state,
             HAS_D=(D is not None),
             DELTA_SOFTPLUS=delta_softplus,
@@ -277,25 +370,51 @@ class TritonSelectiveScanFunction(torch.autograd.Function):
         # dA and dD must be fp32 because we use atomic_add (fp16 atomics not
         # universally supported). Cast back to source dtype at the end.
         dA = torch.zeros_like(A, dtype=torch.float32)
-        dB = torch.zeros_like(B)   # atomic_add نیاز به شروع از صفر داره
+        dB = torch.zeros_like(B)  # atomic_add نیاز به شروع از صفر داره
         dC = torch.zeros_like(C)
         dD = torch.zeros_like(D, dtype=torch.float32) if D is not None else None
 
         grid = (B_size, D_dim)
 
         _selective_scan_bwd_kernel[grid](
-            u, delta, A, B, C, D if D is not None else u, dout,
-            du, ddelta, dA, dB, dC, dD if dD is not None else u,
+            u,
+            delta,
+            A,
+            B,
+            C,
+            D if D is not None else u,
+            dout,
+            du,
+            ddelta,
+            dA,
+            dB,
+            dC,
+            dD if dD is not None else u,
             h_workspace,
-            u.stride(0), u.stride(1), u.stride(2),
-            delta.stride(0), delta.stride(1), delta.stride(2),
-            A.stride(0), A.stride(1),
-            B.stride(0), B.stride(1), B.stride(2),
-            C.stride(0), C.stride(1), C.stride(2),
-            dout.stride(0), dout.stride(1), dout.stride(2),
-            h_workspace.stride(0), h_workspace.stride(1),
-            h_workspace.stride(2), h_workspace.stride(3),
-            B_size, L_size, D_dim,
+            u.stride(0),
+            u.stride(1),
+            u.stride(2),
+            delta.stride(0),
+            delta.stride(1),
+            delta.stride(2),
+            A.stride(0),
+            A.stride(1),
+            B.stride(0),
+            B.stride(1),
+            B.stride(2),
+            C.stride(0),
+            C.stride(1),
+            C.stride(2),
+            dout.stride(0),
+            dout.stride(1),
+            dout.stride(2),
+            h_workspace.stride(0),
+            h_workspace.stride(1),
+            h_workspace.stride(2),
+            h_workspace.stride(3),
+            B_size,
+            L_size,
+            D_dim,
             N_STATE=N_state,
             HAS_D=(D is not None),
             DELTA_SOFTPLUS=ctx.delta_softplus,
