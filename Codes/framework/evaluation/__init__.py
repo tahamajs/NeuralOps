@@ -7,7 +7,11 @@ from .ab_testing import ABTester, ABTestResult
 from .fairness import FairnessEvaluator, FairnessReport
 from .label_quality import LabelQualityDetector, LabelQualityReport
 from .retraining import RetrainDecision, RetrainPolicy, RetrainingOrchestrator, TriggerType
-from .robustness import RobustnessReport, TextAdversarialTester
+try:
+    from .robustness import RobustnessReport, TextAdversarialTester
+except ImportError:
+    RobustnessReport = None  # type: ignore
+    TextAdversarialTester = None  # type: ignore
 
 __all__ = [
     "metrics",
