@@ -33,7 +33,7 @@ def main():
             torch.set_float32_matmul_precision("high")
         except Exception:
             pass
-    from neuralops.run_quality_sweep import parse_args, run_single_module_main
+    from neuralops.benchmarks.run_quality_sweep import parse_args, run_single_module_main
 
     parser_custom = argparse.ArgumentParser(add_help=False)
     parser_custom.add_argument("--module", required=True)
@@ -72,7 +72,7 @@ def main():
 
     try:
         # Late import so the process can be killed if imports take too long
-        from neuralops.run_quality_sweep import (
+        from neuralops.benchmarks.run_quality_sweep import (
             DEPRECATED_MODULES,
             run_single_module_main,
         )
