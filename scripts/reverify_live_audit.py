@@ -64,7 +64,7 @@ def fetch_live(url, headers, timeout=12):
         try:
             body_bytes = e.read()
             return e.code, body_bytes, str(e)
-        except:
+        except Exception:
             return e.code, b"", str(e)
     except Exception as e:
         return 0, b"", str(e)

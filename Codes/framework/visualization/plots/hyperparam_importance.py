@@ -39,7 +39,7 @@ def plot_hyperparam_importance(history, metrics, config, output_dir, opts) -> An
                     "warmup": float(cfg.get("warmup_steps", 0)),
                 }
             )
-        except:
+        except Exception:
             continue
     if len(records) < 10:
         return []

@@ -141,7 +141,7 @@ def is_multichoice_dataset(df: pd.DataFrame) -> Tuple[bool, int]:
                 choices = json.loads(sample)
                 if isinstance(choices, list) and len(choices) >= 2:
                     return True, len(choices)
-            except:
+            except Exception:
                 pass
     if "endings" in df.columns:
         return True, 4
@@ -160,12 +160,12 @@ def convert_to_multichoice_format(df: pd.DataFrame) -> pd.DataFrame:
         if "choices_json" in row:
             try:
                 choices = json.loads(str(row["choices_json"]))
-            except:
+            except Exception:
                 pass
         elif "endings" in row:
             try:
                 choices = json.loads(str(row["endings"]))
-            except:
+            except Exception:
                 pass
         else:
             choice_cols = [c for c in df.columns if c.startswith("choice_")]
@@ -175,13 +175,13 @@ def convert_to_multichoice_format(df: pd.DataFrame) -> pd.DataFrame:
             try:
                 ans = json.loads(str(row["gold_answer_json"]))
                 label = ans.get("choice_index", 0)
-            except:
+            except Exception:
                 pass
         elif "answer_json" in row:
             try:
                 ans = json.loads(str(row["answer_json"]))
                 label = ans.get("choice_index", 0)
-            except:
+            except Exception:
                 pass
         elif "label" in row:
             label = int(row["label"])

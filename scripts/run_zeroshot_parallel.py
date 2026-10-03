@@ -15,6 +15,7 @@ from pathlib import Path
 
 
 TASKS = ["piqa", "arc_easy", "arc_challenge", "hellaswag", "winogrande"]
+ROOT_DIR = Path("D:/SVD_Project") if Path("D:/SVD_Project").exists() else Path(__file__).resolve().parent.parent
 
 
 def is_complete(module_dir: Path) -> bool:
@@ -137,15 +138,15 @@ def main():
                 print(f"[AGG] Updating audit/ at {completed} modules...")
                 subprocess.run(
                     [sys.executable, "scripts/aggregate_zeroshot_details.py"],
-                    cwd="D:/SVD_Project", check=False
+                    cwd=str(ROOT_DIR), check=False
                 )
 
             # Git commit every 25 modules
             if completed % 25 == 0:
                 print(f"[GIT] Committing at {completed} modules...")
-                subprocess.run(["git", "add", "results/zeroshot_parallel/", "audit/zeroshot_*.csv", "audit/zeroshot_*.parquet", "audit/zeroshot_*.json"], cwd="D:/SVD_Project", check=False)
-                subprocess.run(["git", "commit", "-m", f"feat(zeroshot): {completed} modules evaluated [auto]"], cwd="D:/SVD_Project", check=False)
-                subprocess.run(["git", "push", "origin", "main"], cwd="D:/SVD_Project", check=False)
+                subprocess.run(["git", "add", "results/zeroshot_parallel/", "audit/zeroshot_*.csv", "audit/zeroshot_*.parquet", "audit/zeroshot_*.json"], cwd=str(ROOT_DIR), check=False)
+                subprocess.run(["git", "commit", "-m", f"feat(zeroshot): {completed} modules evaluated [auto]"], cwd=str(ROOT_DIR), check=False)
+                subprocess.run(["git", "push", "origin", "main"], cwd=str(ROOT_DIR), check=False)
 
             # Hugging Face upload every 50 modules
             if completed % 50 == 0:
@@ -153,7 +154,7 @@ def main():
                 subprocess.run([
                     "huggingface-cli", "upload",
                     "Hooshaai/svd-linear-attention-results",
-                    "D:/SVD_Project/results/zeroshot_parallel",
+                    str(ROOT_DIR / "results" / "zeroshot_parallel"),
                     "zeroshot_parallel",
                     "--repo-type", "dataset",
                 ], check=False)

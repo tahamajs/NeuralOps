@@ -3,7 +3,7 @@
 # ─────────────────────────────────────────────────────────────────
 
 # Model & Architecture
-model: "D:/SVD_Project/models/Qwen3.5-0.8B"
+model: "models/Qwen3.5-0.8B"
 family: "qwen3_5"
 dataset: "sst2"
 seq_len: 128

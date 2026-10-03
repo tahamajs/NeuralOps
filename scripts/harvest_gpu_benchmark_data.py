@@ -3,9 +3,12 @@ import glob
 import json
 import pandas as pd
 
+from pathlib import Path
+
 def harvest():
-    results_dir = "D:/SVD_Project/results"
-    summary_files = glob.glob(os.path.join(results_dir, "**", "*summary*.csv"), recursive=True)
+    root = Path("D:/SVD_Project") if Path("D:/SVD_Project").exists() else Path(__file__).resolve().parent.parent
+    results_dir = root / "results"
+    summary_files = glob.glob(os.path.join(str(results_dir), "**", "*summary*.csv"), recursive=True)
     print(f"Found {len(summary_files)} summary files.")
     
     all_records = []
@@ -20,7 +23,7 @@ def harvest():
         except Exception as e:
             print(f"Error reading {sf}: {e}")
             
-    out_file = "D:/SVD_Project/harvested_benchmark_data.json"
+    out_file = root / "harvested_benchmark_data.json"
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(all_records, f, indent=2, default=str)
     print(f"Successfully harvested {len(all_records)} records to {out_file}")
