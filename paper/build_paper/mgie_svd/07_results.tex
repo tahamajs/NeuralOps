@@ -1,0 +1,75 @@
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_mgiesvd} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Mgie Svd} & \textbf{90.48\%} & +0.00\% & PASS & 0.9077 & 0 & \textbf{1.00$\times$} & 311.2 MB & 17.4 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Mgie Svd} & \textbf{72.02\%} & -3.09\% & PASS & 0.7724 & 0 & \textbf{1.00$\times$} & 301.7 MB & 22.8 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Mgie Svd} & \textbf{60.09\%} & -0.69\% & PASS & 0.6463 & 1 & \textbf{1.00$\times$} & 637.3 MB & 23.6 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_mgiesvd} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_mgie\_svd/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_mgie\_svd/distilbert/summary.csv} & distilbert & mgie\_svd & 66955010 & 66955010 & 592130 & 1.0x \\
+\texttt{results/unified\_mgie\_svd/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_mgie\_svd/gpt2/summary.csv} & gpt2 & mgie\_svd & 124441344 & 124048129 & 198913 & 1.0032x \\
+\texttt{results/unified\_mgie\_svd/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_mgie\_svd/roberta/summary.csv} & roberta & mgie\_svd & 124647170 & 124647170 & 592130 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{mgiesvd}.}
+\label{tab:results_params_mgiesvd}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_mgiesvd} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_mgie\_svd/distilbert/summary.csv} & distilbert & full & 164069.35 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_mgie\_svd/distilbert/summary.csv} & distilbert & mgie\_svd & 182179.02 & 311.19 MB & 0.0 \\
+\texttt{results/unified\_mgie\_svd/gpt2/summary.csv} & gpt2 & full & 69670.9 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_mgie\_svd/gpt2/summary.csv} & gpt2 & mgie\_svd & 70762.65 & 637.29 MB & 0.4203306436538696 \\
+\texttt{results/unified\_mgie\_svd/roberta/summary.csv} & roberta & full & 104401.95 & 298.71 MB & 0.0000 \\
+\texttt{results/unified\_mgie\_svd/roberta/summary.csv} & roberta & mgie\_svd & 107325.79 & 301.72 MB & 0.0 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{mgiesvd}.}
+\label{tab:results_vram_mgiesvd}
+\end{table*}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/mgie_svd_distilbert_radar_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{mgie_svd}.}
+\label{fig:results_mgie_svd}
+\end{figure}

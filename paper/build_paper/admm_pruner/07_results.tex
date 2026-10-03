@@ -1,0 +1,87 @@
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_admmpruner} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Admm Pruner} & \textbf{84.29\%} & -6.19\% & PASS & 0.8603 & 36 & \textbf{1.00$\times$} & 551.2 MB & 25.3 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Admm Pruner} & \textbf{80.62\%} & -8.14\% & PASS & 0.7966 & 72 & \textbf{1.00$\times$} & 336.4 MB & 100.3 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Admm Pruner} & \textbf{80.73\%} & -0.58\% & PASS & 0.8146 & 48 & \textbf{1.00$\times$} & 414.9 MB & 83.7 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_admmpruner} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_admm/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_admm/distilbert/summary.csv} & distilbert & admm & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_admm/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_admm/gpt2/summary.csv} & gpt2 & admm & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_admm/qwen3\_5/summary.csv} & qwen3\_5 & full & 763217728 & 763217728 & 0 & 1.0x \\
+\texttt{results/unified\_admm/qwen3\_5/summary.csv} & qwen3\_5 & admm & 763217728 & 763217728 & 5776384 & 1.0x \\
+\texttt{results/unified\_admm/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_admm/roberta/summary.csv} & roberta & admm & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_admm\_pruner/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_admm\_pruner/distilbert/summary.csv} & distilbert & admm\_pruner & 66955010 & 66955010 & 4135682 & 1.0x \\
+\texttt{results/unified\_admm\_pruner/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_admm\_pruner/gpt2/summary.csv} & gpt2 & admm\_pruner & 124441344 & 124441344 & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{admmpruner}.}
+\label{tab:results_params_admmpruner}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_admmpruner} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_admm/distilbert/summary.csv} & distilbert & full & 51199.68 & 182.94 MB & 0.0000 \\
+\texttt{results/unified\_admm/distilbert/summary.csv} & distilbert & admm & 50559.49 & 183.07 MB & 0.4087498231888554 \\
+\texttt{results/unified\_admm/gpt2/summary.csv} & gpt2 & full & 23706.62 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_admm/gpt2/summary.csv} & gpt2 & admm & 19301.53 & 628.41 MB & 0.0 \\
+\texttt{results/unified\_admm/qwen3\_5/summary.csv} & qwen3\_5 & full & 1287.4 & 1810.59 MB & 0.0000 \\
+\texttt{results/unified\_admm/qwen3\_5/summary.csv} & qwen3\_5 & admm & 1099.69 & 1851.31 MB & 0.4157980064416287 \\
+\texttt{results/unified\_admm/roberta/summary.csv} & roberta & full & 23915.43 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_admm/roberta/summary.csv} & roberta & admm & 21347.69 & 520.18 MB & 0.4280215595989844 \\
+\texttt{results/unified\_admm\_pruner/distilbert/summary.csv} & distilbert & full & 50442.71 & 390.7 MB & 0.0000 \\
+\texttt{results/unified\_admm\_pruner/distilbert/summary.csv} & distilbert & admm\_pruner & 43663.37 & 551.24 MB & 0.3571000224614524 \\
+\texttt{results/unified\_admm\_pruner/gpt2/summary.csv} & gpt2 & full & 20559.85 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_admm\_pruner/gpt2/summary.csv} & gpt2 & admm\_pruner & 22893.93 & 628.41 MB & 0.3564965102455689 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{admmpruner}.}
+\label{tab:results_vram_admmpruner}
+\end{table*}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/admm_pruner_roberta_radar_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{admm_pruner}.}
+\label{fig:results_admm_pruner}
+\end{figure}

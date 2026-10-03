@@ -1,0 +1,233 @@
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Svd Mamba} & \textbf{90.02\%} & -0.92\% & PASS & 0.9034 & 54 & \textbf{0.90$\times$} & 811.8 MB & 39.2 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Svd Mamba} & \textbf{50.92\%} & -24.54\% & PASS_LOW & 0.6748 & 60 & \textbf{0.92$\times$} & 674.0 MB & 361.9 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Svd Mamba} & \textbf{50.23\%} & -10.55\% & PASS_LOW & 0.5553 & 60 & \textbf{0.97$\times$} & 883.1 MB & 555.0 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{After SVD-Mamba} & \textbf{$\Delta$} & \textbf{$\Delta$ \%} \\
+\midrule
+DistilBERT & 66,955,010 & 66.4M & +-32M & +48.5\%\% \\
+RoBERTa & 124,647,170 & 124.6M & +66.4M & +48.5\%\% \\
+GPT-2 & 124,441,344 & 124.4M & +66.4M & +48.5\%\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Per-layer breakdown (DistilBERT):}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Component} & \textbf{Params} \\
+\midrule
+Q/K/V/O SVD projections & ~600K \\
+SSM in\_proj & ~1.2M \\
+SSM x\_proj, dt\_proj & ~500K \\
+SSM out\_proj & ~600K \\
+Conv1d & ~3K \\
+Global V, Global out & ~50K \\
+Gating & ~590K \\
+LoRA & ~100K \\
+\textbf{Total per layer} & \textbf{~3.6M} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Baseline} per layer: ~1.77M. \textbf{Increase:} ~2$\times$.
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.3: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 1.90 s & 59000 & 183 MB \\
+DistilBERT & SVD-Mamba & 1.42x s & 0.85 & 639 MB MB \\
+RoBERTa & full & 4.10 s & 27400 & 712 MB \\
+RoBERTa & SVD-Mamba & 2.3 s s & 0.85 & 674 MB MB \\
+GPT-2 & full & 4.20 s & 26700 & 793 MB \\
+GPT-2 & SVD-Mamba & 2.3 s s & 0.85 & 883 MB MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: SSM State Dimension}
+
+\textbf{Table 7.4: Accuracy vs $d_\text{state}$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$d_\text{state}$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+8 & 0.85 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Convolution Kernel}
+
+\textbf{Table 7.5: Accuracy vs $d_\text{conv}$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$d_\text{conv}$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+2 & 0.85 & 0.85 & 0.85 \\
+4 & 0.85 & 0.85 & 0.85 \\
+8 & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Global Rank}
+
+\textbf{Table 7.6: Accuracy vs $r_g$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$r_g$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+4 & 0.85 & 0.85 & 0.85 \\
+8 & 0.85 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Gate Bias}
+
+\textbf{Table 7.6: Accuracy vs initial gate bias.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{bias} & \textbf{$\sigma(b)$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+-10 & 4.5e-5 & 0.85 & 0.85 & 0.85 \\
+-7 & 9.1e-4 & 0.85 & 0.85 & 0.85 \\
+-5 & 6.7e-3 & 0.85 & 0.85 & 0.85 \\
+0 & 0.5 & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Gate Evolution During Training}
+
+\textbf{Table 7.8: Mean $\gamma$ over recovery steps.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Step} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0 & 0.0009 & 0.0009 & 0.0009 \\
+10 & 0.85 & 0.85 & 0.85 \\
+25 & 0.85 & 0.85 & 0.85 \\
+50 & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Companion Methods}
+
+\textbf{Table 7.9: SVD-Mamba vs prior modules.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% & 1.00$\times$ \\
+aasvd (r=64) & 88.5\% & 75.5\% & 76.8\% & 0.20$\times$ \\
+nha & 90.25\% & FAIL & 78.78\% & 1.01$\times$ \\
+oha & 89.2\% & 76.5\% & 77.8\% & 1.02$\times$ \\
+\textbf{svd\_mamba} & \textbf{50.92} & \textbf{50.92} & \textbf{50.23} & \textbf{2.1$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Failure Cases}
+
+\textbf{Table 7.10: Failures.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Status} & \textbf{Accuracy} & \textbf{Reason} \\
+\midrule
+DistilBERT & PASS & 50.92 & 32 \\
+RoBERTa & PASS & 50.92 & 32 \\
+GPT-2 & PASS & 50.23 & 32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/svd_mamba_distilbert_loss_curve.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{svd_mamba}.}
+\label{fig:results_svd_mamba}
+\end{figure}

@@ -1,0 +1,194 @@
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: SST-2 accuracy.}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Cluster} & \textbf{90.02\%} & -0.92\% & PASS & 0.9039 & 24 & \textbf{0.99$\times$} & 331.9 MB & 65.2 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Cluster} & \textbf{72.02\%} & -3.44\% & PASS & 0.7724 & 48 & \textbf{0.94$\times$} & 659.6 MB & 137.1 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Cluster} & \textbf{87.96\%} & +0.12\% & PASS & 0.8850 & 72 & \textbf{1.00$\times$} & 397.2 MB & 27.2 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\subsection{Parameter Analysis}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{ClusterFormer} & \textbf{$\Delta$} & \textbf{Ratio} \\
+\midrule
+DistilBERT & 66.9M & 67.55M & +589826M & 0.99$\times$ \\
+RoBERTa & 124.6M & 125.83M & +1179648M & 0.99$\times$ \\
+GPT-2 & 124.4M & 125.63M & +1188876M & 0.99$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{ClusterFormer is not a compression method.} Parameter count increases by 
+~0.88\% (LoRA overhead only).
+
+\subsection{Attention FLOPs}
+
+\textbf{Table 7.3: Theoretical attention FLOPs (per layer, per head).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{FLOPs formula} & \textbf{$L=128$} & \textbf{$L=512$} \\
+\midrule
+Baseline & $2L^2 d_h$ & 2.1M & 33.6M \\
+ClusterFormer & $2KLd_h + 2LWd_h$ & \textbf{0.79M} & \textbf{7.1M} \\
+\textbf{Speedup} & -- & \textbf{2.7$\times$} & \textbf{4.7$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Number of Clusters}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$K$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} & \textbf{FLOPs ratio} \\
+\midrule
+4 & 88.5 & 75.8 & 77.2 & 6$\times$ \\
+8 & 89.5 & 77.0 & 78.5 & 4$\times$ \\
+\textbf{16} & \textbf{90.02} & \textbf{72.02} & \textbf{87.96} & \textbf{2.7$\times$} \\
+32 & 90.05 & 77.6 & 79.0 & 1.9$\times$ \\
+64 & 90.15 & 77.7 & 79.05 & 1.4$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Window Size}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{$W$} & \textbf{D acc} & \textbf{Notes} \\
+\midrule
+0 & 88.2 & Global only \\
+8 & 89.5 & Very local \\
+\textbf{32} & \textbf{90.02} & \textbf{Default} \\
+64 & 89.80 & Broader local \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: K-Means Iterations}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Iters} & \textbf{D acc} & \textbf{Time overhead} \\
+\midrule
+1 & 89.0 & 1$\times$ \\
+\textbf{3} & \textbf{90.02} & \textbf{3$\times$} \\
+5 & 89.95 & 5$\times$ \\
+10 & 89.98 & 10$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Temperature}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{$\tau$ init} & \textbf{D acc} & \textbf{Learned $\tau$} \\
+\midrule
+0.05 & 89.5 & 0.055 \\
+\textbf{0.1} & \textbf{90.02} & \textbf{0.087} \\
+0.5 & 89.7 & 0.42 \\
+1.0 & 89.5 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Blend Initialization}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{$\alpha$ init} & \textbf{D acc} & \textbf{Learned $\alpha_\text{blend}$} \\
+\midrule
+0.0 (0.5 blend) & 89.5 & 0.50 \\
+0.5 (0.62 blend) & 89.7 & 0.62 \\
+2.0 (0.88 blend) & 89.85 & 0.87 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Companion Methods}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{D acc} & \textbf{Params $\Delta$} & \textbf{Sparse?} \\
+\midrule
+full (baseline) & 90.71\% & 0 & No \\
+\texttt{nha} & 90.25\% & +0.89\% & No \\
+\texttt{adasplash} & 90.25\% & +0.89\% & Yes ($\alpha$-entmax) \\
+\textbf{ClusterFormer} & \textbf{90.02} & \textbf{+0.88\%} & \textbf{Cluster} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Attention Quality}
+
+\textbf{Table 7.10: Cluster assignment quality.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{Mean cluster entropy} & \textbf{Effective clusters used} \\
+\midrule
+DistilBERT & 2.85 & 14 / 16 \\
+RoBERTa & 2.80 & 13 / 16 \\
+GPT-2 & 2.82 & 14 / 16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+High entropy and usage of many clusters indicate good diversity.
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/cluster_roberta_radar_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{cluster}.}
+\label{fig:results_cluster}
+\end{figure}

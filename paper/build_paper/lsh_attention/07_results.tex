@@ -1,0 +1,87 @@
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_lshattention} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Lsh Attention} & \textbf{80.28\%} & -10.20\% & PASS & 0.8097 & 0 & \textbf{0.99$\times$} & 341.1 MB & 6.4 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Lsh Attention} & \textbf{49.54\%} & -25.57\% & PASS_LOW & 0.6064 & 0 & \textbf{0.94$\times$} & 390.9 MB & 12.3 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Lsh Attention} & \textbf{51.61\%} & -9.17\% & PASS_LOW & 0.6774 & 0 & \textbf{0.99$\times$} & 568.8 MB & 7.3 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_lshattention} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_lsh/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_lsh/distilbert/summary.csv} & distilbert & lsh & 66955010 & 67544858 & 589848 & 0.9913x \\
+\texttt{results/unified\_lsh/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_lsh/gpt2/summary.csv} & gpt2 & lsh & 124441344 & 125621040 & 1179696 & 0.9906x \\
+\texttt{results/unified\_lsh/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_lsh/roberta/summary.csv} & roberta & lsh & 124647170 & 132913970 & 1179696 & 0.9378x \\
+\texttt{results/unified\_lsh\_attention/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_lsh\_attention/distilbert/summary.csv} & distilbert & lsh\_attention & 66955010 & 67544858 & 589848 & 0.9913x \\
+\texttt{results/unified\_lsh\_attention/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_lsh\_attention/gpt2/summary.csv} & gpt2 & lsh\_attention & 124441344 & 125621040 & 1179696 & 0.9906x \\
+\texttt{results/unified\_lsh\_attention/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_lsh\_attention/roberta/summary.csv} & roberta & lsh\_attention & 124647170 & 132913970 & 1179696 & 0.9378x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{lshattention}.}
+\label{tab:results_params_lshattention}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_lshattention} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_lsh/distilbert/summary.csv} & distilbert & full & 58798.36 & 182.94 MB & 0.0000 \\
+\texttt{results/unified\_lsh/distilbert/summary.csv} & distilbert & lsh & 11836.03 & 211.22 MB & 0.0000 \\
+\texttt{results/unified\_lsh/gpt2/summary.csv} & gpt2 & full & 25703.49 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_lsh/gpt2/summary.csv} & gpt2 & lsh & 12244.75 & 569.05 MB & 0.0000 \\
+\texttt{results/unified\_lsh/roberta/summary.csv} & roberta & full & 26260.68 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_lsh/roberta/summary.csv} & roberta & lsh & 6004.49 & 666.82 MB & 0.0000 \\
+\texttt{results/unified\_lsh\_attention/distilbert/summary.csv} & distilbert & full & 59452.43 & 182.94 MB & 0.0000 \\
+\texttt{results/unified\_lsh\_attention/distilbert/summary.csv} & distilbert & lsh\_attention & 11865.49 & 211.22 MB & 0.0000 \\
+\texttt{results/unified\_lsh\_attention/gpt2/summary.csv} & gpt2 & full & 27310.27 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_lsh\_attention/gpt2/summary.csv} & gpt2 & lsh\_attention & 12107.01 & 569.05 MB & 0.0000 \\
+\texttt{results/unified\_lsh\_attention/roberta/summary.csv} & roberta & full & 27482.84 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_lsh\_attention/roberta/summary.csv} & roberta & lsh\_attention & 5986.65 & 666.82 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{lshattention}.}
+\label{tab:results_vram_lshattention}
+\end{table*}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/lsh_attention_dissection_profile.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{lsh_attention}.}
+\label{fig:results_lsh_attention}
+\end{figure}

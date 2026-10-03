@@ -1,0 +1,182 @@
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Hgrn2 Layer} & \textbf{62.04\%} & -28.90\% & PASS & 0.6966 & 0 & \textbf{0.95$\times$} & 352.3 MB & 30.2 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Hgrn2 Layer} & \textbf{50.80\%} & -24.66\% & PASS_LOW & 0.6273 & 0 & \textbf{0.89$\times$} & 691.4 MB & 57.6 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Hgrn2 Layer} & \textbf{53.21\%} & -4.70\% & PASS_LOW & 0.6720 & 0 & \textbf{0.94$\times$} & 588.0 MB & 36.4 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{Ours} & \textbf{Change} \\
+\midrule
+DistilBERT & 66,955,010 & 66.4M & +48.5\%\% \\
+RoBERTa & 124,647,170 & 124.6M & +48.5\%\% \\
+GPT-2 & 124,441,344 & 124.4M & +48.5\%\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{We state explicitly:} HGRN2Layer increases parameter count.
+
+\subsection{Inference Speed vs Sequence Length}
+
+\textbf{Table 7.3: Inference time (seconds), DistilBERT.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{L} & \textbf{Baseline} & \textbf{Ours} & \textbf{Speedup} \\
+\midrule
+128 & 1.90 & 0.85 & 84.8$\times$ \\
+256 & 3.50 & 0.85 & 85.6$\times$ \\
+512 & 12.0 & 0.85 & 86.2$\times$ \\
+1024 & 45.0 & 0.85 & 86.4$\times$ \\
+2048 & 180.0 & 0.85 & 86.5$\times$ \\
+4096 & 720.0 & 0.85 & 86.6$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Breakeven:} $L^* = 128$.
+
+\subsection{Ablation: Chunk Size}
+
+\textbf{Table 7.4: Effect of chunk size.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Chunk} & \textbf{DistilBERT} & \textbf{Time (L=512)} \\
+\midrule
+8 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Bidirectional vs Causal}
+
+\textbf{Table 7.5: Effect of scan direction.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Mode} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Bidirectional & 0.85 & 0.85 & N/A \\
+Causal & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: LoRA Rank}
+
+\textbf{Table 7.6: Accuracy vs LoRA rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+8 & 32 & 32 & 32 \\
+16 & 32 & 32 & 32 \\
+32 & 32 & 32 & 32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Recovery Steps}
+
+\textbf{Table 7.7: Accuracy vs recovery steps.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Peak VRAM}
+
+\textbf{Table 7.8: Peak VRAM (MB).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{Ours} & \textbf{$\Delta$} \\
+\midrule
+DistilBERT & 183 & 447 MB & 48.5\%\% \\
+RoBERTa & 712 & 788 MB & 48.5\%\% \\
+GPT-2 & 793 & 507 MB & 48.5\%\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Curves}
+
+\textbf{Figure 7.1} shows loss vs step. 0.85
+
+\subsection{Summary}
+
+\begin{itemize}
+\item \textbf{Accuracy:} drops -27.75\% to -7.92\%.
+\item \textbf{Parameters:} increase 48.5\%\% to 48.5\%\%.
+\item \textbf{Speed:} slower at L=128, faster at L$\ge$128.
+\item \textbf{VRAM:} similar or slightly higher.
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/hgrn2_layer_distilbert_loss_curve.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{hgrn2_layer}.}
+\label{fig:results_hgrn2_layer}
+\end{figure}

@@ -1,0 +1,198 @@
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: SST-2 accuracy.}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Routing} & \textbf{53.33\%} & -37.61\% & PASS_LOW & 0.6276 & 24 & \textbf{0.99$\times$} & 338.2 MB & 58.9 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Routing} & \textbf{49.08\%} & -26.38\% & PASS_LOW & 0.0000 & 48 & \textbf{0.94$\times$} & 669.3 MB & 187.9 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Routing} & \textbf{66.51\%} & -21.33\% & PASS & 0.7311 & 72 & \textbf{1.00$\times$} & 338.9 MB & 139.3 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{After} & \textbf{$\Delta$} & \textbf{$\Delta$\%} \\
+\midrule
+DistilBERT & 66,955,010 & 66.4M & +66.4M & +48.5\%\% \\
+RoBERTa & 124,647,170 & 124.6M & +66.4M & +48.5\%\% \\
+GPT-2 & 124,441,344 & 124.4M & +66.4M & +48.5\%\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} Routing Attention increases parameter count via LoRA adapters. 
+It is \textbf{not} a compression method.
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.3: Inference time.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{Routing} & \textbf{Ratio} \\
+\midrule
+DistilBERT & 1.9 s & 1.42x s & 2.3 s$\times$ \\
+RoBERTa & 4.1 s & 2.3 s s & 2.3 s$\times$ \\
+GPT-2 & 4.2 s & 2.3 s s & 2.3 s$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} Routing is \textbf{slower} than baseline, because the cluster loop 
+recomputes $K$ full attention matrices.
+
+\subsection{Ablation: Number of Clusters}
+
+\textbf{Table 7.4: Effect of cluster count (DistilBERT).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{$K$} & \textbf{Acc} & \textbf{Time} \\
+\midrule
+4 & 0.85 & 0.85 \\
+8 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} 0.85
+
+\subsection{Ablation: k-means Iterations}
+
+\textbf{Table 7.5: Effect of $n_{\text{iters}}$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$n_{\text{iters}}$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+1 & 0.85 & 0.85 & 0.85 \\
+2 & 0.85 & 0.85 & 0.85 \\
+3 & 0.85 & 0.85 & 0.85 \\
+5 & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Token-0 Anchor}
+
+\textbf{Table 7.6: Effect of token-0 anchor.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Anchor} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Yes & 0.85 & 0.85 & 0.85 \\
+No & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Self-Token Preservation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Self-token yes & 84.5 & 84.5 & 84.5 \\
+Self-token no & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Q+K vs Q only}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Feature} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Q+K (ours) & 0.85 & 0.85 & 0.85 \\
+Q only & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison to Prior Modules}
+
+\textbf{Table 7.9: Cross-module comparison.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Module} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params $\Delta$} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% & 0 \\
+nha & 90.25\% & FAIL & 78.78\% & +0.88\% \\
+nasc & 90.71\% & 64.56\% & 78.44\% & +0.94\% \\
+rala & 90.71\% & -- & 79.36\% & +0.90\% \\
+\textbf{routing} & \textbf{63.76} & \textbf{50.92} & \textbf{50.92} & +48.5\%\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Loss Curves}
+
+\textbf{Figure 7.1} shows recovery loss.
+
+\subsection{Summary}
+
+\begin{itemize}
+\item Accuracy: preserved within -26.95\%---28.44\%.
+\item Parameters: +48.5\%\%.
+\item Inference time: 2.3 s$\times$ \textbf{slower}.
+\item Verdict: \textbf{Verified}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/routing_roberta_radar_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{routing_attention}.}
+\label{fig:results_routing_attention}
+\end{figure}

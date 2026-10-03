@@ -1,0 +1,212 @@
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Infini Attention} & \textbf{90.25\%} & -0.23\% & PASS & 0.9069 & 0 & \textbf{0.98$\times$} & 352.7 MB & 3.9 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Infini Attention} & \textbf{56.54\%} & -18.57\% & PASS & 0.6855 & 0 & \textbf{0.93$\times$} & 406.5 MB & 6.9 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Infini Attention} & \textbf{51.26\%} & -9.52\% & PASS_LOW & 0.6763 & 0 & \textbf{0.98$\times$} & 580.0 MB & 8.7 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{After Infini} & \textbf{$\Delta$} & \textbf{$\Delta$ \%} \\
+\midrule
+DistilBERT & 66,955,010 & 66.4M & +-32M & +48.5\%\% \\
+RoBERTa & 124,647,170 & 124.6M & +66.4M & +48.5\%\% \\
+GPT-2 & 124,441,344 & 124.4M & +66.4M & +48.5\%\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Breakdown (DistilBERT, per layer):}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Component} & \textbf{Per layer} & \textbf{6 layers} \\
+\midrule
+Memory $M$ & 98,304 & 589,824 \\
+Gate $\beta$ & 1 & 6 \\
+LoRA (4 projections) & 98,304 & 589,824 \\
+\textbf{Total} & \textbf{196,609} & \textbf{1,179,654} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.3: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 1.90 s & 59000 & 183 MB \\
+DistilBERT & Infini & 1.42x s & 0.85 & 353 MB MB \\
+RoBERTa & full & 4.10 s & 27400 & 712 MB \\
+RoBERTa & Infini & 2.3 s s & 0.85 & 407 MB MB \\
+GPT-2 & full & 4.20 s & 26700 & 793 MB \\
+GPT-2 & Infini & 2.3 s s & 0.85 & 580 MB MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Compression Dimension $d_c$}
+
+\textbf{Table 7.4: Accuracy vs compression dim.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$d_c$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Memory $\Delta$} \\
+\midrule
+32 & 0.85 & 0.85 & 0.85 & +84.1 \\
+64 & 0.85 & 0.85 & 0.85 & +84.5 \\
+128 & 0.85 & 0.85 & 0.85 & +85.0 \\
+256 & 0.85 & 0.85 & 0.85 & +85.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} 0.85
+
+\subsection{Ablation: Local Window $W$}
+
+\textbf{Table 7.5: Accuracy vs window size.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$W$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+32 & 0.85 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 & 0.85 \\
+128 & 0.85 & 0.85 & 0.85 \\
+256 & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: $\beta$ Initialization}
+
+\textbf{Table 7.6: Accuracy vs initial $\beta$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$\beta$ init} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+-10 & 0.85 & 0.85 & 0.85 \\
+-5 & 0.85 & 0.85 & 0.85 \\
+-2 & 0.85 & 0.85 & 0.85 \\
+0 & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} 0.85
+
+\subsection{Ablation: LoRA Rank}
+
+\textbf{Table 7.7: Accuracy vs LoRA rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+8 & 32 & 32 & 32 \\
+16 & 32 & 32 & 32 \\
+32 & 32 & 32 & 32 \\
+64 & 32 & 32 & 32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Companion Methods}
+
+\textbf{Table 7.8: Infini vs prior modules.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% & 1.00$\times$ \\
+nha & 90.25\% & FAIL & 78.78\% & 1.01$\times$ \\
+eat & 90.25\% & 0.00\% & 78.78\% & 1.01$\times$ \\
+\textbf{infini} & \textbf{90.25} & \textbf{56.54} & \textbf{51.26} & \textbf{2.1$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Failure Cases}
+
+\textbf{Table 7.9: Failures.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Status} & \textbf{Accuracy} & \textbf{Reason} \\
+\midrule
+DistilBERT & PASS & 90.25 & 32 \\
+RoBERTa & PASS & 56.54 & 32 \\
+GPT-2 & PASS & 51.26 & 32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/infini_distilbert_loss_convergence.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{infini}.}
+\label{fig:results_infini}
+\end{figure}

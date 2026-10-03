@@ -1,0 +1,75 @@
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_svdattention} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Status} & \textbf{Accuracy} & \textbf{F1 Score} \\
+\midrule
+\texttt{results/unified\_svd/distilbert/summary.csv} & distilbert & full & PASS & 90.71 & 0.9099 \\
+\texttt{results/unified\_svd/distilbert/summary.csv} & distilbert & svd & PASS\_LOW & 49.31 & 0.0178 \\
+\texttt{results/unified\_svd/gpt2/summary.csv} & gpt2 & full & PASS & 79.36 & 0.7978 \\
+\texttt{results/unified\_svd/gpt2/summary.csv} & gpt2 & svd & PASS\_NO\_COMPRESSION & 49.08 & 0.0 \\
+\texttt{results/unified\_svd/roberta/summary.csv} & roberta & full & PASS & 78.56 & 0.8124 \\
+\texttt{results/unified\_svd/roberta/summary.csv} & roberta & svd & PASS\_NO\_COMPRESSION & 74.08 & 0.7675 \\
+\bottomrule
+\end{tabular}
+\caption{Empirical accuracy and classification metrics across transformer backbones for \texttt{svdattention}.}
+\label{tab:results_acc_svdattention}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_svdattention} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_svd/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_svd/distilbert/summary.csv} & distilbert & svd & 66955010 & 67544834 & 589824 & 1.0x \\
+\texttt{results/unified\_svd/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_svd/gpt2/summary.csv} & gpt2 & svd & 124441344 & 125620992 & 1179648 & 1.0x \\
+\texttt{results/unified\_svd/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_svd/roberta/summary.csv} & roberta & svd & 124647170 & 132913922 & 1179648 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{svdattention}.}
+\label{tab:results_params_svdattention}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_svdattention} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_svd/distilbert/summary.csv} & distilbert & full & 25596.23 & 388.55 MB & 0.0000 \\
+\texttt{results/unified\_svd/distilbert/summary.csv} & distilbert & svd & 8596.59 & 317.64 MB & 0.0000 \\
+\texttt{results/unified\_svd/gpt2/summary.csv} & gpt2 & full & 27624.42 & 792.54 MB & 0.0000 \\
+\texttt{results/unified\_svd/gpt2/summary.csv} & gpt2 & svd & 12404.45 & 590.39 MB & 0.0000 \\
+\texttt{results/unified\_svd/roberta/summary.csv} & roberta & full & 28095.04 & 711.69 MB & 0.0000 \\
+\texttt{results/unified\_svd/roberta/summary.csv} & roberta & svd & 12718.31 & 680.69 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{svdattention}.}
+\label{tab:results_vram_svdattention}
+\end{table*}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/svd_gpt2_radar_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{svd_attention}.}
+\label{fig:results_svd_attention}
+\end{figure}

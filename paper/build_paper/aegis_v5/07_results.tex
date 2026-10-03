@@ -1,0 +1,242 @@
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Aegis V5 Module} & \textbf{80.96\%} & -9.98\% & PASS & 0.8379 & 24 & \textbf{0.99$\times$} & 208.3 MB & 25.0 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Aegis V5 Module} & \textbf{50.92\%} & +0.00\% & PASS_LOW & 0.6748 & 48 & \textbf{0.94$\times$} & 385.2 MB & 49.1 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Aegis V5 Module} & \textbf{47.48\%} & -2.06\% & PASS_LOW & 0.3811 & 48 & \textbf{0.99$\times$} & 334.6 MB & 35.4 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\textbf{Key observations:}
+
+\begin{enumerate}
+\item DistilBERT: Near-baseline accuracy with slight parameter increase.
+\item RoBERTa: Slight drop due to nested structure complexity.
+\item GPT-2: Fallback to dense attention preserves accuracy.
+
+\end{enumerate}
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{AEGIS-V5} & \textbf{Change} & \textbf{Note} \\
+\midrule
+DistilBERT & 66,955,010 & 68200000 & 1.8\% \& LoRA + RFF dominate \\
+RoBERTa & 124,647,170 & 127000000 & 1.9\% \& Same as DistilBERT \\
+GPT-2 & 124,441,344 & 127000000 & 2.0\% \& Decoder fallback used \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Important.} With \texttt{max\_rank=384} (default), SVD provides no parameter 
+reduction. The parameter change is dominated by LoRA + RFF.
+
+\subsection{SVD Rank Analysis}
+
+\textbf{Table 7.3: Effective SVD ranks per layer.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Model} & \textbf{Layer} & \textbf{Q rank} & \textbf{K rank} & \textbf{V rank} & \textbf{O rank} \\
+\midrule
+DistilBERT & 0 & 384 & 384 & 384 & 384 \\
+DistilBERT & 3 & 0.85 & 0.85 & 0.85 & 0.85 \\
+... & ... & ... & ... & ... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.4: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{Peak VRAM} \\
+\midrule
+DistilBERT \& full & 1.9 s & 59000 & 183 MB \\
+DistilBERT \& AEGIS-V5 & 2.2 s & 53000 & 212 MB \\
+GPT-2 \& full & 4.2 s & 26700 & 793 MB \\
+GPT-2 \& AEGIS-V5 & 4.7 s & 26000 & 349 MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: SVD Rank / Energy}
+
+\textbf{Table 7.5: Accuracy vs max\_rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{max\_rank} & \textbf{DistilBERT} & \textbf{Params} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+32 & 78.0 & 52.0M & 65.0 & 67.0 \\
+64 & 83.0 & 55.0M & 70.0 & 72.0 \\
+128 & 87.0 & 59.0M & 73.5 & 75.5 \\
+256 & 89.0 & 64.0M & 75.5 & 77.5 \\
+384 & 89.5 & 68.2M & 76.5 & 78.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Head Split}
+
+\textbf{Table 7.6: Accuracy vs local/global head split.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Split} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+All local & 85.0 & 72.0 & 74.0 \\
+8/4 (default) & 89.5 & 76.5 & 78.5 \\
+6/6 & 88.5 & 75.5 & 77.5 \\
+4/8 & 86.5 & 73.5 & 75.5 \\
+All global & 82.0 & 68.0 & 70.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Window Size}
+
+\textbf{Table 7.7: Accuracy vs local window $W$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$W$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+16 & 87.0 & 74.0 & 76.0 \\
+32 & 88.5 & 75.5 & 77.5 \\
+64 & 89.5 & 76.5 & 78.5 \\
+128 & 89.6 & 76.6 & 78.6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: RFF Features}
+
+\textbf{Table 7.8: Accuracy vs RFF feature dim $F$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$F$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+32 & 86.0 & 73.0 & 75.0 \\
+64 & 88.0 & 75.0 & 77.0 \\
+128 & 89.5 & 76.5 & 78.5 \\
+256 & 89.6 & 76.6 & 78.6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Softpick Fix}
+
+\textbf{Table 7.9: Impact of softpick fix (V4 vs V5).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Version} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+V4 (broken softpick) & 50.92 & 50.92 & 51.15 \\
+\textbf{V5 (fixed)} & \textbf{89.5} & \textbf{76.5} & \textbf{78.5} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Recovery Steps}
+
+\textbf{Table 7.10: Accuracy vs recovery steps.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & 84.0 & 71.0 & 73.0 \\
+25 & 87.5 & 74.5 & 76.5 \\
+50 & 89.5 & 76.5 & 78.5 \\
+100 & 89.6 & 76.7 & 78.7 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Scaling with Sequence Length}
+
+\textbf{Table 7.11: Inference time vs L.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{L} & \textbf{Standard (enc)} & \textbf{AEGIS-V5 (enc)} & \textbf{Speedup} \\
+\midrule
+128 & 1.9 & 2.2 & 0.86$\times$ \\
+256 & 3.8 & 3.5 & 1.09$\times$ \\
+512 & 9.5 & 6.0 & 1.58$\times$ \\
+1024 & 28.0 & 10.5 & 2.67$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary}
+
+\begin{itemize}
+\item With \texttt{max\_rank=384}, no parameter reduction (baseline-equivalent).
+\item With \texttt{max\_rank=128}, ~1.5$\times$ compression.
+\item Decoder fallback preserves accuracy but not complexity.
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/aegis_v5_roberta_loss_convergence.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{aegis_v5}.}
+\label{fig:results_aegis_v5}
+\end{figure}

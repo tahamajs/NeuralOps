@@ -1,0 +1,79 @@
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_kroneckerlinear} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Kronecker Linear} & \textbf{90.94\%} & +0.00\% & PASS & 0.9125 & 0 & \textbf{1.00$\times$} & 308.3 MB & 17.4 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Kronecker Linear} & \textbf{51.38\%} & -24.08\% & PASS_LOW & 0.6768 & 0 & \textbf{1.00$\times$} & 529.4 MB & 24.5 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Kronecker Linear} & \textbf{51.26\%} & -6.65\% & PASS_LOW & 0.6758 & 0 & \textbf{1.00$\times$} & 635.3 MB & 24.5 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_kroneckerlinear} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_kronecker\_linear/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_kronecker\_linear/distilbert/summary.csv} & distilbert & kronecker\_linear & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_kronecker\_linear/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_kronecker\_linear/gpt2/summary.csv} & gpt2 & kronecker\_linear & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_kronecker\_linear/qwen3\_5/summary.csv} & qwen3\_5 & full & 763217728 & 763217728 & 0 & 1.0x \\
+\texttt{results/unified\_kronecker\_linear/qwen3\_5/summary.csv} & qwen3\_5 & kronecker\_linear & 763217728 & 763217728 & 0 & 1.0x \\
+\texttt{results/unified\_kronecker\_linear/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_kronecker\_linear/roberta/summary.csv} & roberta & kronecker\_linear & 124647170 & 124647170 & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{kroneckerlinear}.}
+\label{tab:results_params_kroneckerlinear}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_kroneckerlinear} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_kronecker\_linear/distilbert/summary.csv} & distilbert & full & 59055.95 & 182.94 MB & 0.0000 \\
+\texttt{results/unified\_kronecker\_linear/distilbert/summary.csv} & distilbert & kronecker\_linear & 55943.34 & 183.07 MB & 0.0000 \\
+\texttt{results/unified\_kronecker\_linear/gpt2/summary.csv} & gpt2 & full & 27082.51 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_kronecker\_linear/gpt2/summary.csv} & gpt2 & kronecker\_linear & 26580.07 & 628.41 MB & 0.0000 \\
+\texttt{results/unified\_kronecker\_linear/qwen3\_5/summary.csv} & qwen3\_5 & full & 1285.76 & 1796.78 MB & 0.0000 \\
+\texttt{results/unified\_kronecker\_linear/qwen3\_5/summary.csv} & qwen3\_5 & kronecker\_linear & 1285.76 & 1796.78 MB & 0.0000 \\
+\texttt{results/unified\_kronecker\_linear/roberta/summary.csv} & roberta & full & 27395.46 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_kronecker\_linear/roberta/summary.csv} & roberta & kronecker\_linear & 25928.59 & 520.18 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{kroneckerlinear}.}
+\label{tab:results_vram_kroneckerlinear}
+\end{table*}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/kronecker_linear_distilbert_radar_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{kronecker_linear}.}
+\label{fig:results_kronecker_linear}
+\end{figure}

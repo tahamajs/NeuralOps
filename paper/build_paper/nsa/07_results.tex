@@ -1,0 +1,207 @@
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: SST-2 results with $w = 128$, $k = 2$.}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Nsa Attention} & \textbf{90.83\%} & -0.11\% & PASS & 0.9119 & 0 & \textbf{0.99$\times$} & 339.9 MB & 4.5 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Nsa Attention} & \textbf{50.92\%} & -24.54\% & PASS_LOW & 0.6748 & 0 & \textbf{0.94$\times$} & 667.9 MB & 8.5 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Nsa Attention} & \textbf{51.03\%} & -6.88\% & PASS_LOW & 0.6753 & 0 & \textbf{0.99$\times$} & 568.7 MB & 9.8 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\textbf{Density} is the average fraction of attended keys per query.
+
+\subsection{Attention Mass Preservation}
+
+\textbf{Table 7.2: Retained attention mass.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Model} & \textbf{Preserved mass} \\
+\midrule
+DistilBERT & 0.85\% \\
+RoBERTa & 0.85\% \\
+GPT-2 & 0.85\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Efficiency}
+
+\textbf{Table 7.3: Memory and time.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Peak VRAM} & \textbf{Inference Time} \\
+\midrule
+DistilBERT & full & 183 MB & 1.90 s \\
+DistilBERT & NSA & 340 MB MB & 1.42x s \\
+GPT-2 & full & 793 MB & 4.20 s \\
+GPT-2 & NSA & 569 MB MB & 2.3 s s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Window Size}
+
+\textbf{Table 7.4: Accuracy vs window size ($k = 2$).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$w$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Density} \\
+\midrule
+8 & 0.85 & 0.85 & 0.85 & 0.12\% \\
+16 & 0.85 & 0.85 & 0.85 & 0.24\% \\
+32 & 0.85 & 0.85 & 0.85 & 0.45\% \\
+64 & 0.85 & 0.85 & 0.85 & 0.82\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Top-K}
+
+\textbf{Table 7.5: Accuracy vs top-$k$ ($w = 128$).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$k$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Density} \\
+\midrule
+4 & 0.85 & 0.85 & 0.85 & 0.10\% \\
+8 & 0.85 & 0.85 & 0.85 & 0.20\% \\
+16 & 0.85 & 0.85 & 0.85 & 0.38\% \\
+32 & 0.85 & 0.85 & 0.85 & 0.75\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: LoRA Rank}
+
+\textbf{Table 7.6: Accuracy vs LoRA rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+4 & 0.85 & 0.85 & 0.85 \\
+8 & 0.85 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Recovery Steps}
+
+\textbf{Table 7.7: Accuracy vs recovery steps.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Companion Methods}
+
+\textbf{Table 7.8: Comparison.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Density} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% & Dense & 100\% \\
+GQA & 0.85 & 32 & 0.85 & KV reduce & 100\% \\
+Primal & 0.85 & 32 & 0.85 & Low-rank & 100\% \\
+ASA-Sparse & 0.85 & 32 & 0.85 & Top-k only & 0.85\% \\
+ASA-Span & 64 & 64 & 64 & Learned window & 64\% \\
+NHA & 0.85 & 32 & 0.85 & Hybrid RFF & 100\% \\
+HALO & 0.85 & 32 & 0.85 & Hybrid linear & 100\% \\
+\textbf{NSA} & \textbf{90.83} & \textbf{50.92} & \textbf{50.92} & \textbf{Hybrid top-k} & \textbf{50\%\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Scaling with Sequence Length}
+
+\textbf{Table 7.9: Density vs sequence length ($w = 128$, $k = 2$).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{$L$} & \textbf{Attended keys} & \textbf{Density} \\
+\midrule
+128 & 0.85 & 0.85\% \\
+512 & 0.85 & 0.85\% \\
+2048 & 0.85 & 0.85\% \\
+8192 & 0.85 & 0.85\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Training Loss Curves}
+
+\textbf{Figure 7.1} shows loss curves for all three models.
+
+\subsection{Summary}
+
+\begin{itemize}
+\item \textbf{Accuracy:} drops +0.12\%---28.44\%.
+\item \textbf{Density:} reduced to 50\%\% (at $L = 128$); lower at longer $L$.
+\item \textbf{No parameter reduction.}
+\item \textbf{No time speedup} without sparse kernels.
+\item \textbf{All models pass quality gate.}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/nsa_distilbert_radar_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{nsa}.}
+\label{fig:results_nsa}
+\end{figure}

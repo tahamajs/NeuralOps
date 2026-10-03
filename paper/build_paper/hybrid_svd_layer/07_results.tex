@@ -1,0 +1,79 @@
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_hybridsvdlayer} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Hybrid Svd Layer} & \textbf{77.18\%} & -13.76\% & PASS & 0.7715 & 36 & \textbf{1.91$\times$} & 258.7 MB & 16.3 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Hybrid Svd Layer} & \textbf{50.92\%} & -24.54\% & PASS_LOW & 0.6748 & 72 & \textbf{2.05$\times$} & 630.1 MB & 22.2 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Hybrid Svd Layer} & \textbf{51.15\%} & -6.76\% & PASS_LOW & 0.6748 & 48 & \textbf{2.13$\times$} & 619.2 MB & 22.8 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_hybridsvdlayer} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_hybrid\_svd\_layer/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_hybrid\_svd\_layer/distilbert/summary.csv} & distilbert & hybrid\_svd\_layer & 66955010 & 35104550 & 43814 & 1.9073x \\
+\texttt{results/unified\_hybrid\_svd\_layer/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_hybrid\_svd\_layer/gpt2/summary.csv} & gpt2 & hybrid\_svd\_layer & 124441344 & 58381104 & 84528 & 2.1315x \\
+\texttt{results/unified\_hybrid\_svd\_layer/qwen3\_5/summary.csv} & qwen3\_5 & full & 763217728 & 763217728 & 0 & 1.0x \\
+\texttt{results/unified\_hybrid\_svd\_layer/qwen3\_5/summary.csv} & qwen3\_5 & hybrid\_svd\_layer & 763217728 & 763217728 & 0 & 1.0x \\
+\texttt{results/unified\_hybrid\_svd\_layer/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_hybrid\_svd\_layer/roberta/summary.csv} & roberta & hybrid\_svd\_layer & 124647170 & 60946250 & 85322 & 2.0452x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{hybridsvdlayer}.}
+\label{tab:results_params_hybridsvdlayer}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_hybridsvdlayer} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_hybrid\_svd\_layer/distilbert/summary.csv} & distilbert & full & 181098.85 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_hybrid\_svd\_layer/distilbert/summary.csv} & distilbert & hybrid\_svd\_layer & 155604.92 & 258.7 MB & 0.6618792232539918 \\
+\texttt{results/unified\_hybrid\_svd\_layer/gpt2/summary.csv} & gpt2 & full & 71741.09 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_hybrid\_svd\_layer/gpt2/summary.csv} & gpt2 & hybrid\_svd\_layer & 67161.52 & 619.22 MB & 0.70402240815262 \\
+\texttt{results/unified\_hybrid\_svd\_layer/qwen3\_5/summary.csv} & qwen3\_5 & full & 1292.52 & 1796.78 MB & 0.0000 \\
+\texttt{results/unified\_hybrid\_svd\_layer/qwen3\_5/summary.csv} & qwen3\_5 & hybrid\_svd\_layer & 1292.52 & 1796.78 MB & 0.0000 \\
+\texttt{results/unified\_hybrid\_svd\_layer/roberta/summary.csv} & roberta & full & 94421.41 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_hybrid\_svd\_layer/roberta/summary.csv} & roberta & hybrid\_svd\_layer & 81996.21 & 630.13 MB & 0.6672518915600247 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{hybridsvdlayer}.}
+\label{tab:results_vram_hybridsvdlayer}
+\end{table*}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/hybrid_svd_layer_roberta_radar_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{hybrid_svd_layer}.}
+\label{fig:results_hybrid_svd_layer}
+\end{figure}

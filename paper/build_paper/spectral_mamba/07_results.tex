@@ -1,0 +1,75 @@
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_spectralmamba} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Spectral Mamba} & \textbf{90.71\%} & -0.23\% & PASS & 0.9111 & 0 & \textbf{0.86$\times$} & 378.1 MB & 20.1 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Spectral Mamba} & \textbf{50.92\%} & -24.54\% & PASS_LOW & 0.6748 & 0 & \textbf{0.81$\times$} & 749.8 MB & 27.7 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Spectral Mamba} & \textbf{51.03\%} & -6.88\% & PASS_LOW & 0.6753 & 0 & \textbf{0.85$\times$} & 650.5 MB & 29.1 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_spectralmamba} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_spectral\_mamba/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_spectral\_mamba/distilbert/summary.csv} & distilbert & spectral\_mamba & 66955010 & 78184748 & 1186604 & 0.8564x \\
+\texttt{results/unified\_spectral\_mamba/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_spectral\_mamba/gpt2/summary.csv} & gpt2 & spectral\_mamba & 124441344 & 146900820 & 1190484 & 0.8471x \\
+\texttt{results/unified\_spectral\_mamba/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_spectral\_mamba/roberta/summary.csv} & roberta & spectral\_mamba & 124647170 & 154193750 & 1781078 & 0.8084x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{spectralmamba}.}
+\label{tab:results_params_spectralmamba}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_spectralmamba} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_spectral\_mamba/distilbert/summary.csv} & distilbert & full & 143380.76 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_spectral\_mamba/distilbert/summary.csv} & distilbert & spectral\_mamba & 66788.52 & 378.15 MB & 0.0000 \\
+\texttt{results/unified\_spectral\_mamba/gpt2/summary.csv} & gpt2 & full & 65013.44 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_spectral\_mamba/gpt2/summary.csv} & gpt2 & spectral\_mamba & 30894.94 & 650.47 MB & 0.0000 \\
+\texttt{results/unified\_spectral\_mamba/roberta/summary.csv} & roberta & full & 81138.79 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_spectral\_mamba/roberta/summary.csv} & roberta & spectral\_mamba & 32098.62 & 749.82 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{spectralmamba}.}
+\label{tab:results_vram_spectralmamba}
+\end{table*}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/spectral_mamba_dissection_profile.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{spectral_mamba}.}
+\label{fig:results_spectral_mamba}
+\end{figure}

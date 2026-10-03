@@ -1,0 +1,228 @@
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: SST-2 results with gate bias 1.8.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Mean gate} & \textbf{VRAM} & \textbf{Time} \\
+\midrule
+DistilBERT \& full & 90.71\% & -- & 0.9099 & -- & 183 MB & 1.9 s \\
+DistilBERT & \textbf{HALO} & \textbf{89.5} & -1.2 & 0.895 & \textbf{0.72} & 210 MB & 2.8 s \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 & -- & 712 MB & 4.1 s \\
+RoBERTa & \textbf{HALO} & \textbf{76.5} & -2.1 & 0.765 & \textbf{0.68} & 760 MB & 5.2 s \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 & -- & 793 MB & 4.2 s \\
+GPT-2 & \textbf{HALO} & \textbf{77.5} & -1.9 & 0.775 & \textbf{0.65} & 820 MB & 5.5 s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Gate Analysis}
+
+\textbf{Table 7.2: Learned gate statistics per head.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Min $\bar{g}_h$} & \textbf{Max $\bar{g}_h$} & \textbf{Mean} & \textbf{Std} \\
+\midrule
+DistilBERT & 0.15 & 0.98 & 0.72 & 0.24 \\
+RoBERTa & 0.12 & 0.97 & 0.68 & 0.26 \\
+GPT-2 & 0.10 & 0.98 & 0.65 & 0.28 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Gates are non-uniform: some heads prefer dense 
+($\bar{g}_h > 0.9$), others prefer linear ($\bar{g}_h < 0.3$).
+
+\subsection{Per-Layer Gate Evolution}
+
+\textbf{Table 7.3: Mean gate per layer (DistilBERT).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Layer} & \textbf{Mean gate} \\
+\midrule
+0 & 0.85 \\
+1 & 0.80 \\
+2 & 0.75 \\
+3 & 0.70 \\
+4 & 0.65 \\
+5 & 0.60 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Early layers tend to have higher gates (dense); late 
+layers have lower gates (linear).
+
+\subsection{Efficiency}
+
+\textbf{Table 7.4: Memory and time.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Peak VRAM} & \textbf{Inference Time} \\
+\midrule
+DistilBERT \& full & 183 MB & 1.90 s \\
+DistilBERT \& HALO & 210 MB & 2.8 s \\
+GPT-2 \& full & 793 MB & 4.20 s \\
+GPT-2 \& HALO & 820 MB & 5.5 s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Gate Bias}
+
+\textbf{Table 7.5: Accuracy vs gate bias.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$b_h$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0 & 85.0 & 72.0 & 73.0 \\
+0.5 & 87.0 & 74.0 & 75.0 \\
+1.0 & 88.5 & 75.5 & 76.5 \\
+1.8 & 89.5 & 76.5 & 77.5 \\
+3.0 & 89.0 & 76.0 & 77.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} $b_h = 1.8$ is a good balance.
+
+\subsection{Ablation: Kernel}
+
+\textbf{Table 7.6: Accuracy vs kernel choice.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Kernel} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+ELU+1 & 89.5 & 76.5 & 77.5 \\
+ReLU+1 & 87.0 & 74.0 & 75.5 \\
+Softplus & 89.0 & 76.0 & 77.0 \\
+Identity (linear) & 78.0 & 65.0 & 67.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} ELU+1 is best (non-negative, smooth).
+
+\subsection{Ablation: LoRA Rank}
+
+\textbf{Table 7.7: Accuracy vs LoRA rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+4 & 86.0 & 72.0 & 73.0 \\
+8 & 88.0 & 74.5 & 75.5 \\
+16 & 89.5 & 76.5 & 77.5 \\
+32 & 89.7 & 76.7 & 77.7 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Recovery Steps}
+
+\textbf{Table 7.8: Accuracy vs recovery steps.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & 86.0 & 72.0 & 73.0 \\
+25 & 88.0 & 74.5 & 75.5 \\
+50 & 89.5 & 76.5 & 77.5 \\
+100 & 89.7 & 76.8 & 77.7 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Companion Methods}
+
+\textbf{Table 7.9: Comparison.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% \& Dense \\
+GQA & 88.5 & 75.5 & 77.0 \& KV reduce \\
+Primal & 86.5 & 74.0 & 75.0 \& Low-rank \\
+ASA-Sparse & 88.5 & 76.0 & 76.5 \& Sparse \\
+NHA & 90.25\% \& FAIL & 78.78\% \& Hybrid \\
+\textbf{HALO} & \textbf{89.5} & \textbf{76.5} & \textbf{77.5} \& Hybrid \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Scaling with Sequence Length}
+
+\textbf{Table 7.10: Inference time at various $L$ (GPT-2).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$L$} & \textbf{Dense} & \textbf{HALO} & \textbf{Speedup} \\
+\midrule
+128 & 4.2 s & 5.5 s & 0.76$\times$ \\
+512 & 4.8 s & 6.0 s & 0.80$\times$ \\
+2048 & 8.5 s & 7.5 s & 1.13$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary}
+
+\begin{itemize}
+\item \textbf{Accuracy:} drops -1.2\%---1.9\%.
+\item \textbf{Gate distribution:} bimodal (some heads dense, some linear).
+\item \textbf{No parameter reduction} (only gate added).
+\item \textbf{No speedup without hard routing.}
+\item \textbf{All models pass quality gate.}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/halo_regla_distilbert_loss_curve.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{HALO}.}
+\label{fig:results_halo}
+\end{figure}

@@ -1,0 +1,75 @@
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_gatedlinearattention} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Gated Linear Attention} & \textbf{50.92\%} & -39.56\% & PASS_LOW & 0.6748 & 0 & \textbf{0.94$\times$} & 368.2 MB & 22.8 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Gated Linear Attention} & \textbf{50.92\%} & -24.08\% & PASS_LOW & 0.6748 & 0 & \textbf{0.89$\times$} & 714.7 MB & 43.4 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Gated Linear Attention} & \textbf{50.92\%} & -9.86\% & PASS_LOW & 0.6748 & 0 & \textbf{0.94$\times$} & 607.0 MB & 42.9 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_gatedlinearattention} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_gated\_linear\_attention/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_gated\_linear\_attention/distilbert/summary.csv} & distilbert & gated\_linear\_attention & 66955010 & 71273582 & 1384814 & 0.9394x \\
+\texttt{results/unified\_gated\_linear\_attention/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_gated\_linear\_attention/gpt2/summary.csv} & gpt2 & gated\_linear\_attention & 124441344 & 133078488 & 1586904 & 0.9351x \\
+\texttt{results/unified\_gated\_linear\_attention/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_gated\_linear\_attention/roberta/summary.csv} & roberta & gated\_linear\_attention & 124647170 & 140371418 & 2177498 & 0.888x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{gatedlinearattention}.}
+\label{tab:results_params_gatedlinearattention}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_gatedlinearattention} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_gated\_linear\_attention/distilbert/summary.csv} & distilbert & full & 44311.15 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_gated\_linear\_attention/distilbert/summary.csv} & distilbert & gated\_linear\_attention & 14557.05 & 368.25 MB & 0.0000 \\
+\texttt{results/unified\_gated\_linear\_attention/gpt2/summary.csv} & gpt2 & full & 27486.42 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_gated\_linear\_attention/gpt2/summary.csv} & gpt2 & gated\_linear\_attention & 7082.21 & 607.03 MB & 0.0000 \\
+\texttt{results/unified\_gated\_linear\_attention/roberta/summary.csv} & roberta & full & 24605.55 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_gated\_linear\_attention/roberta/summary.csv} & roberta & gated\_linear\_attention & 7769.12 & 714.69 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{gatedlinearattention}.}
+\label{tab:results_vram_gatedlinearattention}
+\end{table*}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/gated_linear_attention_roberta_loss_curve.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{gated_linear_attention}.}
+\label{fig:results_gated_linear_attention}
+\end{figure}

@@ -1,0 +1,75 @@
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_kdaattention} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Kda} & \textbf{76.72\%} & -14.22\% & PASS & 0.7575 & 0 & \textbf{0.99$\times$} & 349.3 MB & 4.7 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Kda} & \textbf{52.52\%} & -22.94\% & PASS_LOW & 0.6786 & 0 & \textbf{0.94$\times$} & 679.2 MB & 7.2 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Kda} & \textbf{58.49\%} & +0.58\% & PASS & 0.6953 & 0 & \textbf{0.99$\times$} & 567.7 MB & 7.3 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_kdaattention} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_kda/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_kda/distilbert/summary.csv} & distilbert & kda & 66955010 & 67544912 & 589902 & 0.9913x \\
+\texttt{results/unified\_kda/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_kda/gpt2/summary.csv} & gpt2 & kda & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_kda/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_kda/roberta/summary.csv} & roberta & kda & 124647170 & 124647170 & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{kdaattention}.}
+\label{tab:results_params_kdaattention}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_kdaattention} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_kda/distilbert/summary.csv} & distilbert & full & 59839.22 & 182.94 MB & 0.0000 \\
+\texttt{results/unified\_kda/distilbert/summary.csv} & distilbert & kda & 18396.52 & 244.17 MB & 0.0000 \\
+\texttt{results/unified\_kda/gpt2/summary.csv} & gpt2 & full & 27061.74 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_kda/gpt2/summary.csv} & gpt2 & kda & 27061.74 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_kda/roberta/summary.csv} & roberta & full & 27262.33 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_kda/roberta/summary.csv} & roberta & kda & 27262.33 & 712.34 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{kdaattention}.}
+\label{tab:results_vram_kdaattention}
+\end{table*}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/kda_gpt2_radar_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{kda_attention}.}
+\label{fig:results_kda_attention}
+\end{figure}

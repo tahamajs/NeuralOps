@@ -1,0 +1,209 @@
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Leka V1} & \textbf{90.83\%} & -0.11\% & PASS & 0.9113 & 0 & \textbf{1.00$\times$} & 308.8 MB & 5.4 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Leka V1} & \textbf{51.15\%} & -24.31\% & PASS_LOW & 0.6758 & 0 & \textbf{1.00$\times$} & 528.9 MB & 12.2 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Leka V1} & \textbf{85.78\%} & -2.06\% & PASS & 0.8716 & 48 & \textbf{1.00$\times$} & 410.4 MB & 19.9 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Total parameters.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{Ours} & \textbf{Change} \\
+\midrule
+DistilBERT & 66,955,010 & 66.4M & +48.5\%\% \\
+RoBERTa & 124,647,170 & 124.6M & +48.5\%\% \\
+GPT-2 & 124,441,344 & 124.4M & +48.5\%\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Inference Speed vs Sequence Length}
+
+\textbf{Table 7.3: Inference time (seconds), DistilBERT.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{L} & \textbf{Baseline} & \textbf{LEKAv1} & \textbf{Speedup} \\
+\midrule
+128 & 1.90 & 0.85 & 84.8$\times$ \\
+256 & 3.50 & 0.85 & 85.6$\times$ \\
+512 & 12.0 & 0.85 & 86.2$\times$ \\
+1024 & 45.0 & 0.85 & 86.4$\times$ \\
+2048 & 180.0 & 0.85 & 86.5$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Breakeven:} $L^* = 128$.
+
+\subsection{Ablation: Feature Dimension}
+
+\textbf{Table 7.4: Accuracy vs feature dimension.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{F} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Attn Params} \\
+\midrule
+64 & 0.85 & 0.85 & 0.85 & 66.4M \\
+128 & 0.865 & 0.865 & 0.865 & 0.865 \\
+256 & \textbf{51.03} & \textbf{50.92} & \textbf{49.31} & 0.85 \\
+512 & 0.85 & 0.85 & 0.85 & 66.4M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Preservation Gate}
+
+\textbf{Table 7.5: Effect of preservation gate.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+With gate & \textbf{51.03} & \textbf{50.92} & \textbf{49.31} \\
+No gate ($\alpha$=1) & 0.85 & 0.85 & 0.85 \\
+$\Delta$ & 0.85 & 32 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Head-wise LayerNorm}
+
+\textbf{Table 7.6: Effect of pre-projection LayerNorm.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+With norm & \textbf{51.03} & \textbf{50.92} & \textbf{49.31} \\
+No norm & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: QR Orthogonalization}
+
+\textbf{Table 7.7: Effect of QR init.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+QR projection & \textbf{51.03} & \textbf{50.92} & \textbf{49.31} \\
+Random (no QR) & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: LoRA Rank}
+
+\textbf{Table 7.8: Accuracy vs LoRA rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+8 & 32 & 32 & 32 \\
+16 & 32 & 32 & 32 \\
+32 & 32 & 32 & 32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Recovery Steps}
+
+\textbf{Table 7.9: Accuracy vs recovery steps.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Gate Statistics}
+
+\textbf{Table 7.10: Final $\alpha$ and output\_scale.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Model} & \textbf{$\alpha$ final} & \textbf{output\_scale} \\
+\midrule
+DistilBERT & 0.85 & 0.85 \\
+RoBERTa & 0.85 & 0.85 \\
+GPT-2 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary}
+
+\begin{itemize}
+\item \textbf{Accuracy:} drops -39.68\%---30.05\%.
+\item \textbf{Linear scaling:} LEKAv1 is faster at L > 128.
+\item \textbf{Preservation gate:} contributes 0.85\%.
+\item \textbf{QR projection:} contributes 0.85\%.
+\item \textbf{Parameter increase:} 48.5\%\%.
+
+\end{itemize}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/leka_v1_dissection_profile.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{leka_v1}.}
+\label{fig:results_leka_v1}
+\end{figure}

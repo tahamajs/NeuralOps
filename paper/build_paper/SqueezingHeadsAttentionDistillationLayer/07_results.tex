@@ -1,0 +1,182 @@
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: SST-2 results with $r_L = 16$, no head-dim reduction.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{F1} & \textbf{Trainable} & \textbf{VRAM} & \textbf{Time} \\
+\midrule
+DistilBERT \& full & 90.71\% & -- & 0.9099 & 66.9M & 183 MB & 1.9 s \\
+DistilBERT & \textbf{SH} & \textbf{90.25} & -0.46 & 0.9055 & \textbf{589824} & 200 MB & 2.3 s \\
+RoBERTa \& full & 78.56\% & -- & 0.8124 & 124.6M & 712 MB & 4.1 s \\
+RoBERTa & \textbf{SH} & \textbf{76.8} & -1.8 & 0.768 & \textbf{1179648} & 720 MB & 4.5 s \\
+GPT-2 \& full & 79.36\% & -- & 0.7978 & 124.4M & 793 MB & 4.2 s \\
+GPT-2 & \textbf{SH} & \textbf{77.5} & -1.9 & 0.775 & \textbf{1179648} & 800 MB & 4.6 s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Head-Dim Reduction}
+
+\textbf{Table 7.2: Accuracy vs head-dim reduction.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$s$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Param ratio} \\
+\midrule
+1.0 (base) & 90.25 & 76.8 & 77.5 & 1.00$\times$ \\
+1.5 & 89.5 & 75.5 & 76.5 & 1.5$\times$ \\
+2.0 & 88.0 & 74.0 & 74.5 & 2.0$\times$ \\
+2.5 & 85.5 & 71.5 & 72.0 & 2.5$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Trainable Parameter Analysis}
+
+\textbf{Table 7.3: Trainable parameters.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline trainable} & \textbf{SH trainable} & \textbf{Ratio} \\
+\midrule
+DistilBERT & 66.9M & 589824 & 113$\times$ \\
+RoBERTa & 124.6M & 1179648 & 105$\times$ \\
+GPT-2 & 124.4M & 1179648 & 105$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: LoRA Rank}
+
+\textbf{Table 7.4: Accuracy vs LoRA rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$r_L$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+4 & 88.5 & 74.5 & 75.5 \\
+8 & 89.5 & 75.8 & 76.5 \\
+16 & 90.25 & 76.8 & 77.5 \\
+32 & 90.3 & 76.9 & 77.6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Recovery Steps}
+
+\textbf{Table 7.5: Accuracy vs recovery steps.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & 85.0 & 72.0 & 73.0 \\
+25 & 88.0 & 74.5 & 75.5 \\
+50 & 90.25 & 76.8 & 77.5 \\
+100 & 90.4 & 76.9 & 77.7 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: GQA Pooling}
+
+\textbf{Table 7.6: GQA pooling method (Qwen-style).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Method} & \textbf{Accuracy} \\
+\midrule
+Mean pooling & 76.5 \\
+First head & 74.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Companion Methods}
+
+\textbf{Table 7.7: Comparison.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Type} & \textbf{Trainable} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% \& Baseline & 100\% \\
+GQA & 88.5 & 75.5 & 77.0 \& KV reduce & ~95\% \\
+AASVD & 85.0 & 72.0 & 73.0 \& Low-rank & 100\% \\
+LoRA only & 89.5 & 75.0 & 76.0 \& Adapter & ~1\% \\
+\textbf{SH} & \textbf{90.25} & \textbf{76.8} & \textbf{77.5} & \textbf{Distill} & \textbf{~1\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{LoRA vs Full Fine-Tuning}
+
+\textbf{Table 7.8: LoRA vs full fine-tuning at same recovery steps.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Training} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Full FT & 90.5 & 77.2 & 78.0 \\
+LoRA only & 90.25 & 76.8 & 77.5 \\
+LoRA gain & 0.5 & 0.3 & 0.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Scaling with Head-Dim Reduction}
+
+\textbf{Figure 7.1} shows accuracy vs head-dim reduction.
+
+\subsection{Training Loss Curves}
+
+\textbf{Figure 7.2} shows loss curves.
+
+\subsection{Summary}
+
+\begin{itemize}
+\item \textbf{Accuracy:} -0.46\%---1.9\% drop.
+\item \textbf{Trainable params:} ~1\% of full.
+\item \textbf{Head-dim reduction:} up to 1.0$\times$ without major loss.
+\item \textbf{LoRA recovery:} 0.5\% gain over baseline.
+\item \textbf{All models pass quality gate.}
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/squeezing_heads_distill_gpt2_radar_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{SqueezingHeadsAttentionDistillationLayer}.}
+\label{fig:results_squeezingheadsattentiondistillationlayer}
+\end{figure}

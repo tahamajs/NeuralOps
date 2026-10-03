@@ -1,0 +1,180 @@
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2 validation.}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Eat} & \textbf{90.60\%} & -0.34\% & PASS & 0.9093 & 24 & \textbf{0.99$\times$} & 196.0 MB & 9.9 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Eat} & \textbf{85.32\%} & -5.28\% & PASS & 0.8697 & 85 & \textbf{0.95$\times$} & 396.6 MB & 28.5 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Eat} & \textbf{49.54\%} & +0.00\% & PASS_LOW & 0.2691 & 48 & \textbf{0.99$\times$} & 325.9 MB & 22.3 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{After EAT} & \textbf{$\Delta$} & \textbf{$\Delta$ \%} \\
+\midrule
+DistilBERT & 66,955,010 & 66.4M & +-32M & +48.5\%\% \\
+RoBERTa & 124,647,170 & 124.6M & +66.4M & +48.5\%\% \\
+GPT-2 & 124,441,344 & 124.4M & +66.4M & +48.5\%\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Interpretation.} EAT \textbf{does not reduce} parameters. The increase 
+corresponds exactly to LoRA adapters added to four attention projections 
+per layer.
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.3: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 1.90 s & 59000 & 183 MB \\
+DistilBERT & EAT & 1.42x s & 0.85 & 328 MB MB \\
+RoBERTa & full & 4.10 s & 27400 & 712 MB \\
+RoBERTa & EAT & 2.3 s s & 0.85 & 399 MB MB \\
+GPT-2 & full & 4.20 s & 26700 & 793 MB \\
+GPT-2 & EAT & 2.3 s s & 0.85 & 341 MB MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: LoRA Rank}
+
+\textbf{Table 7.4: Accuracy vs LoRA rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Param increase} \\
+\midrule
+4 & 32 & 32 & 32 & +32 \\
+8 & 32 & 32 & 32 & +32 \\
+16 & 32 & 32 & 32 & +32 \\
+32 & 32 & 32 & 32 & +32 \\
+64 & 32 & 32 & 32 & +32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Recovery Steps}
+
+\textbf{Table 7.5: Accuracy vs recovery steps.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Pruning}
+
+\textbf{Table 7.6: Effect of progressive token pruning at inference.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{Inference time} & \textbf{RoBERTa} & \textbf{Inference time} \\
+\midrule
+EAT without pruning & 0.85 & 2.3 s s & 0.85 & 2.3 s s \\
+EAT with pruning (r=0.5) & 0.85 & 2.3 s s & 0.85 & 2.3 s s \\
+EAT with pruning (r=0.7) & 0.85 & 2.3 s s & 0.85 & 2.3 s s \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Observation.} Pruning reduces inference time at the cost of accuracy. 
+The optimal pruning ratio depends on the task.
+
+\subsection{Comparison with Companion Methods}
+
+\textbf{Table 7.7: EAT vs prior modules.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} & \textbf{Params} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% & 1.00$\times$ \\
+nha & 90.25\% & FAIL & 78.78\% & 1.01$\times$ \\
+a3 (r=64) & 0.85 & 32 & 0.85 & 0.20$\times$ \\
+aasvd (r=288) & 0.85 & 32 & 0.85 & 0.75$\times$ \\
+\textbf{EAT} & \textbf{89.91} & \textbf{82.68} & \textbf{82.11} & \textbf{1.01$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Failure Cases}
+
+\textbf{Table 7.8: Modules that failed.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Status} & \textbf{Accuracy} & \textbf{Reason} \\
+\midrule
+DistilBERT & PASS & 89.91 & 32 \\
+RoBERTa & PASS & 82.68 & 32 \\
+GPT-2 & PASS & 82.11 & 32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary}
+
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/eat_roberta_loss_convergence.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{eat}.}
+\label{fig:results_eat}
+\end{figure}

@@ -1,0 +1,79 @@
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_curlinear} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Cur Linear} & \textbf{88.76\%} & -1.72\% & PASS & 0.8884 & 0 & \textbf{1.00$\times$} & 339.2 MB & 20.0 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Cur Linear} & \textbf{78.44\%} & +3.33\% & PASS & 0.8203 & 0 & \textbf{1.00$\times$} & 359.0 MB & 30.6 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Cur Linear} & \textbf{58.94\%} & -1.84\% & PASS & 0.6792 & 0 & \textbf{1.00$\times$} & 636.3 MB & 26.1 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_curlinear} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_cur\_linear/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_cur\_linear/distilbert/summary.csv} & distilbert & cur\_linear & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_cur\_linear/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_cur\_linear/gpt2/summary.csv} & gpt2 & cur\_linear & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_cur\_linear/qwen3\_5/summary.csv} & qwen3\_5 & full & 763217728 & 763217728 & 0 & 1.0x \\
+\texttt{results/unified\_cur\_linear/qwen3\_5/summary.csv} & qwen3\_5 & cur\_linear & 763217728 & 763217728 & 0 & 1.0x \\
+\texttt{results/unified\_cur\_linear/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_cur\_linear/roberta/summary.csv} & roberta & cur\_linear & 124647170 & 124647170 & 0 & 1.0x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{curlinear}.}
+\label{tab:results_params_curlinear}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_curlinear} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_cur\_linear/distilbert/summary.csv} & distilbert & full & 52183.96 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_cur\_linear/distilbert/summary.csv} & distilbert & cur\_linear & 53900.26 & 300.68 MB & 0.0000 \\
+\texttt{results/unified\_cur\_linear/gpt2/summary.csv} & gpt2 & full & 26661.55 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_cur\_linear/gpt2/summary.csv} & gpt2 & cur\_linear & 26605.88 & 627.28 MB & 0.0000 \\
+\texttt{results/unified\_cur\_linear/qwen3\_5/summary.csv} & qwen3\_5 & full & 1173.06 & 1796.78 MB & 0.0000 \\
+\texttt{results/unified\_cur\_linear/qwen3\_5/summary.csv} & qwen3\_5 & cur\_linear & 1173.06 & 1796.78 MB & 0.0000 \\
+\texttt{results/unified\_cur\_linear/roberta/summary.csv} & roberta & full & 27034.84 & 712.34 MB & 0.0000 \\
+\texttt{results/unified\_cur\_linear/roberta/summary.csv} & roberta & cur\_linear & 28011.5 & 520.18 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{curlinear}.}
+\label{tab:results_vram_curlinear}
+\end{table*}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/cur_linear_roberta_radar_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{cur_linear}.}
+\label{fig:results_cur_linear}
+\end{figure}

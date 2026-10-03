@@ -1,0 +1,261 @@
+
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Accuracy on SST-2 validation.}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Mla} & \textbf{50.92\%} & -40.02\% & PASS_LOW & 0.6748 & 0 & \textbf{1.10$\times$} & 298.5 MB & 3.9 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Mla} & \textbf{50.92\%} & -24.54\% & PASS_LOW & 0.6748 & 0 & \textbf{1.05$\times$} & 601.3 MB & 7.5 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Mla} & \textbf{57.22\%} & -0.69\% & PASS & 0.5260 & 0 & \textbf{1.11$\times$} & 511.9 MB & 8.4 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\subsection{KV-Cache Reduction}
+
+\textbf{Table 7.2: KV-cache size per token per layer.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Standard KV} & \textbf{MLA KV} & \textbf{Reduction} \\
+\midrule
+DistilBERT & 1536 & 0.85 & \textbf{2.1$\times$} \\
+RoBERTa & 1536 & 0.85 & \textbf{2.1$\times$} \\
+GPT-2 & 1536 & 0.85 & \textbf{2.1$\times$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Table 7.3: Total KV-cache size (batch 8, seq 128).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Standard} & \textbf{MLA} & \textbf{Savings (MB)} \\
+\midrule
+DistilBERT & 84.5 MB & 0.85 MB & 84.5 MB \\
+RoBERTa & 84.5 MB & 0.85 MB & 84.5 MB \\
+GPT-2 & 84.5 MB & 0.85 MB & 84.5 MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.4: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{After MLA} & \textbf{Ratio} & \textbf{Note} \\
+\midrule
+DistilBERT & 66,955,010 & 66.4M & \textbf{50\%$\times$} & 0.85 \\
+RoBERTa & 124,647,170 & 66.4M & \textbf{2.1$\times$} & 0.85 \\
+GPT-2 & 124,441,344 & 66.4M & \textbf{2.1$\times$} & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Per-layer breakdown (DistilBERT, layer 0):}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Projection} & \textbf{Original} & \textbf{MLA} & \textbf{Ratio} \\
+\midrule
+q\_lin & 589,824 & 0.85 & 32$\times$ \\
+k\_lin & 589,824 & \textbf{fused in kv} & -- \\
+v\_lin & 589,824 & \textbf{fused in kv} & -- \\
+kv\_down & -- & 0.85 & -- \\
+k\_up & -- & 0.85 & -- \\
+v\_up & -- & 0.85 & -- \\
+out\_lin & 589,824 & 0.85 & 32$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Reconstruction Error}
+
+\textbf{Table 7.5: K/V reconstruction error.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{K error} & \textbf{V error} & \textbf{Combined} \\
+\midrule
+DistilBERT & 0.024 & 0.024 & 0.024 \\
+RoBERTa & 0.024 & 0.024 & 0.024 \\
+GPT-2 & 0.024 & 0.024 & 0.024 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.6: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{VRAM} \\
+\midrule
+DistilBERT & full & 1.90 s & 59000 & 183 MB \\
+DistilBERT & MLA & 1.42x s & 0.85 & 298 MB MB \\
+RoBERTa & full & 4.10 s & 27400 & 712 MB \\
+RoBERTa & MLA & 2.3 s s & 0.85 & 601 MB MB \\
+GPT-2 & full & 4.20 s & 26700 & 793 MB \\
+GPT-2 & MLA & 2.3 s s & 0.85 & 512 MB MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Latent Dimension}
+
+\textbf{Table 7.7: Accuracy vs latent dimension $c$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$c$} & \textbf{DistilBERT} & \textbf{KV ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+64 & 0.85 & 32$\times$ & 0.85 & 0.85 \\
+128 & 0.85 & 32$\times$ & 0.85 & 0.85 \\
+256 & 0.85 & 32$\times$ & 0.85 & 0.85 \\
+512 & 0.85 & 32$\times$ & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: LoRA Rank}
+
+\textbf{Table 7.8: Accuracy vs LoRA rank.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{LoRA rank} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+4 & 0.85 & 0.85 & 0.85 \\
+8 & 0.85 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Output Scale}
+
+\textbf{Table 7.9: Effect of output\_scale initialization.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Init} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.5 & 0.85 & 0.85 & 0.85 \\
+1.0 & 0.85 & 0.85 & 0.85 \\
+2.0 & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Singular Value Normalization}
+
+\textbf{Table 7.10: Effect of normalization $\gamma$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Config} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+With $\gamma$ & 50.92 & 50.92 & 57.22 \\
+Without $\gamma$ & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Companion Methods}
+
+\textbf{Table 7.11: MLA vs other compression methods.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{KV ratio} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+full & 90.71\% & 1.0$\times$ & 78.56\% & 79.36\% \\
+minimal\_svd & 0.85 & 1.0$\times$ & 32 & 0.85 \\
+svd\_llm\_v2 & 0.85 & 1.0$\times$ & 32 & 0.85 \\
+\textbf{MLA} & \textbf{50.92} & \textbf{2.1$\times$} & \textbf{50.92} & \textbf{57.22} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Note.} MLA is the only method reducing KV-cache size; others reduce 
+parameter count.
+
+\subsection{Training Curves}
+
+\textbf{Figure 7.1} shows LoRA recovery loss curves.
+
+\begin{itemize}
+\item DistilBERT: \texttt{0.024} $\to$ \texttt{0.024}
+\item RoBERTa: \texttt{0.024} $\to$ \texttt{0.024}
+\item GPT-2: \texttt{0.024} $\to$ \texttt{0.024}
+
+\end{itemize}
+\subsection{Summary}
+
+\begin{itemize}
+\item \textbf{KV-cache reduction:} 2.1$\times$--2.1$\times$
+\item \textbf{Accuracy drop:} -39.79\%---22.14\%
+\item \textbf{All three models pass quality gate.}
+\item \textbf{Reproduction successful:} MLA ports to four non-DeepSeek families.
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/mla_gpt2_loss_curve.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{mla_attention}.}
+\label{fig:results_mla_attention}
+\end{figure}

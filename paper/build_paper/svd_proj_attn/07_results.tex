@@ -1,0 +1,75 @@
+\section{Empirical Results and Benchmark Evaluations}
+
+\subsection{Downstream Task Performance}
+Table~\ref{tab:results_acc_svdprojattn} details empirical evaluation metrics across target backbones.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Svd Proj Attn} & \textbf{76.15\%} & -14.33\% & PASS & 0.7873 & 0 & \textbf{1.23$\times$} & 283.8 MB & 7.7 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Svd Proj Attn} & \textbf{50.92\%} & -24.19\% & PASS_LOW & 0.6748 & 0 & \textbf{1.17$\times$} & 328.4 MB & 12.6 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Svd Proj Attn} & \textbf{50.92\%} & -9.86\% & PASS_LOW & 0.6748 & 0 & \textbf{1.25$\times$} & 468.7 MB & 15.8 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\subsection{Parameter Reduction and Compression Efficiency}
+Table~\ref{tab:results_params_svdprojattn} documents parameter compression factors and adapter overhead.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Params Before} & \textbf{Params After} & \textbf{Trainable} & \textbf{Ratio} \\
+\midrule
+\texttt{results/unified\_svd\_proj\_attn/distilbert/summary.csv} & distilbert & full & 66955010 & 66955010 & 0 & 1.0x \\
+\texttt{results/unified\_svd\_proj\_attn/distilbert/summary.csv} & distilbert & svd\_proj\_attn & 66955010 & 54568730 & 1181978 & 1.227x \\
+\texttt{results/unified\_svd\_proj\_attn/gpt2/summary.csv} & gpt2 & full & 124441344 & 124441344 & 0 & 1.0x \\
+\texttt{results/unified\_svd\_proj\_attn/gpt2/summary.csv} & gpt2 & svd\_proj\_attn & 124441344 & 99668784 & 1181232 & 1.2485x \\
+\texttt{results/unified\_svd\_proj\_attn/roberta/summary.csv} & roberta & full & 124647170 & 124647170 & 0 & 1.0x \\
+\texttt{results/unified\_svd\_proj\_attn/roberta/summary.csv} & roberta & svd\_proj\_attn & 124647170 & 106961714 & 1771826 & 1.1653x \\
+\bottomrule
+\end{tabular}
+\caption{Parameter scaling and recovery parameter counts for \texttt{svdprojattn}.}
+\label{tab:results_params_svdprojattn}
+\end{table*}
+
+\subsection{Hardware Throughput and Memory Ceilings}
+Table~\ref{tab:results_vram_svdprojattn} presents memory profiling and execution throughput.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Source File} & \textbf{Backbone} & \textbf{Variant} & \textbf{Throughput (tok/s)} & \textbf{Peak VRAM} & \textbf{Reconstruction Error} \\
+\midrule
+\texttt{results/unified\_svd\_proj\_attn/distilbert/summary.csv} & distilbert & full & 141839.0 & 389.51 MB & 0.0000 \\
+\texttt{results/unified\_svd\_proj\_attn/distilbert/summary.csv} & distilbert & svd\_proj\_attn & 69162.08 & 283.77 MB & 0.0000 \\
+\texttt{results/unified\_svd\_proj\_attn/gpt2/summary.csv} & gpt2 & full & 62971.65 & 793.19 MB & 0.0000 \\
+\texttt{results/unified\_svd\_proj\_attn/gpt2/summary.csv} & gpt2 & svd\_proj\_attn & 31070.56 & 468.71 MB & 0.0000 \\
+\texttt{results/unified\_svd\_proj\_attn/roberta/summary.csv} & roberta & full & 96632.08 & 298.71 MB & 0.0000 \\
+\texttt{results/unified\_svd\_proj\_attn/roberta/summary.csv} & roberta & svd\_proj\_attn & 42386.76 & 328.38 MB & 0.0000 \\
+\bottomrule
+\end{tabular}
+\caption{Inference throughput and VRAM footprint for \texttt{svdprojattn}.}
+\label{tab:results_vram_svdprojattn}
+\end{table*}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/svd_proj_attn_roberta_radar_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{svd_proj_attn}.}
+\label{fig:results_svd_proj_attn}
+\end{figure}

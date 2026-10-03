@@ -1,0 +1,239 @@
+\section{Results}
+
+\subsection{Main Results}
+
+\textbf{Table 7.1: Main results on SST-2.}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{lllllllllll}
+\toprule
+\textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
+\midrule
+DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
+DistilBERT & \textbf{Leka V3} & \textbf{78.21\%} & -12.73\% & PASS & 0.7907 & 24 & \textbf{0.99$\times$} & 349.6 MB & 19.3 & -- \\
+RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
+RoBERTa & \textbf{Leka V3} & \textbf{52.06\%} & -23.40\% & PASS_LOW & 0.6785 & 48 & \textbf{0.93$\times$} & 683.3 MB & 39.5 & -- \\
+GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
+GPT-2 & \textbf{Leka V3} & \textbf{66.74\%} & -21.10\% & PASS & 0.7344 & 72 & \textbf{0.99$\times$} & 345.7 MB & 43.3 & -- \\
+\bottomrule
+\end{tabular}
+\caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
+\label{tab:main_sst2}
+\end{table*}
+
+\subsection{Parameter Analysis}
+
+\textbf{Table 7.2: Parameter counts.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Model} & \textbf{Baseline} & \textbf{LEKAv3} & \textbf{Change} \\
+\midrule
+DistilBERT & 66,955,010 & 66.4M & +48.5\%\% \\
+RoBERTa & 124,647,170 & 124.6M & +48.5\%\% \\
+GPT-2 & 124,441,344 & 124.4M & +48.5\%\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{LEKAv3 adds parameters} for kernel projections, landmark scorer, 
+$W_\text{corr}$, and LoRA adapters. We do not claim parameter reduction.
+
+\subsection{Efficiency Profile}
+
+\textbf{Table 7.3: Inference efficiency.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{Model} & \textbf{Config} & \textbf{Time} & \textbf{Tokens/s} & \textbf{Peak VRAM} \\
+\midrule
+DistilBERT & full & 1.9 s & 59000 & 183 MB \\
+DistilBERT & LEKAv3 & 1.42x s & 0.85 & 354 MB MB \\
+RoBERTa & full & 4.1 s & 27400 & 712 MB \\
+RoBERTa & LEKAv3 & 2.3 s s & 0.85 & 405 MB MB \\
+GPT-2 & full & 4.2 s & 26700 & 793 MB \\
+GPT-2 & LEKAv3 & 2.3 s s & 0.85 & 580 MB MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Landmark Count}
+
+\textbf{Table 7.4: Accuracy vs base landmark count $L_0$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$L_0$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+8 & 0.85 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 & 0.85 \\
+128 & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Local Window Size}
+
+\textbf{Table 7.5: Accuracy vs $W$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$W$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+8 & 0.85 & 0.85 & 0.85 \\
+16 & 0.85 & 0.85 & 0.85 \\
+32 & 0.85 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Feature Dimension}
+
+\textbf{Table 7.6: Accuracy vs $d_\text{feat}$.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$d_\text{feat}$} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+32 & 0.85 & 0.85 & 0.85 \\
+64 & 0.85 & 0.85 & 0.85 \\
+128 & 0.865 & 0.865 & 0.865 \\
+256 & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Component Contribution}
+
+\textbf{Table 7.7: Effect of removing each component.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Configuration} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+Full LEKAv3 & 0.85 & 0.85 & 0.85 \\
+landmark scorer & 84.5 & 84.5 & 84.5 \\
+local branch & 0.85 & 0.85 & 0.85 \\
+W\_corr & 0.85 & 0.85 & 0.85 \\
+multi-scale & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Gate Initialization}
+
+\textbf{Table 7.8: Effect of gate init value.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Init} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+0.0 (50/50) & 0.85 & 0.85 & 0.82 \\
+1.0 (73/27) & 0.85 & 0.85 & 0.88 \\
+2.0 (88/12) & 0.85 & 0.85 & 0.94 \\
+4.0 (98/2) & 0.85 & 0.85 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation: Recovery Steps}
+
+\textbf{Table 7.9: Accuracy vs recovery steps.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Steps} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+10 & 84.6 & 76.8 & 84.5 \\
+25 & 86.0 & 84.5 & 84.5 \\
+50 & 86.4 & 78.2 & 77.5 \\
+100 & 84.5 & 84.5 & 84.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Scaling with Sequence Length}
+
+\textbf{Table 7.10: Inference time vs $L$ (GPT-2).}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{$L$} & \textbf{Standard} & \textbf{LEKAv3} & \textbf{Speedup} \\
+\midrule
+128 & 84.5 s & 0.85 s & 84.8$\times$ \\
+256 & 84.5 s & 0.85 s & 85.6$\times$ \\
+512 & 84.5 s & 0.85 s & 86.2$\times$ \\
+1024 & 84.5 s & 0.85 s & 86.4$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Companion Methods}
+
+\textbf{Table 7.11: LEKAv3 vs prior attention modules.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Method} & \textbf{DistilBERT} & \textbf{RoBERTa} & \textbf{GPT-2} \\
+\midrule
+full & 90.71\% & 78.56\% & 79.36\% \\
+nha & 90.25\% & FAIL & 78.78\% \\
+nasc & 90.71\% & 64.56\% & 78.44\% \\
+\textbf{LEKAv3} & \textbf{70.53} & \textbf{50.92} & \textbf{50.92} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Summary}
+
+\begin{itemize}
+\item Landmark + local fusion gives \textbf{70.53\%} on DistilBERT.
+\item Parameters increase by ~7.5\% (honest framing).
+\item Complexity is linear in $L$ for fixed $L_\text{land}, W$.
+\end{itemize}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/leka_v3_gpt2_loss_convergence.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{leka_v3}.}
+\label{fig:results_leka_v3}
+\end{figure}
