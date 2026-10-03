@@ -28,8 +28,16 @@ from framework.core.triton_kernels import (
     sparse_attn,
     state_update,
 )
-from framework.core.triton_kernels.softplus import softplus
-from framework.core.triton_kernels.selective_scan import selective_scan_fn
+try:
+    from framework.core.triton_kernels.softplus import softplus
+except Exception:
+    import torch.nn.functional as F
+    softplus = F.softplus
+
+try:
+    from framework.core.triton_kernels.selective_scan import selective_scan_fn
+except Exception:
+    selective_scan_fn = None
 
 __all__ = [
     "HAS_TRITON",
