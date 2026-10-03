@@ -28,7 +28,7 @@ def run_task(task: dict) -> dict:
             "--tasks", "piqa,arc_easy,arc_challenge,hellaswag,winogrande",
             "--num_samples", "500",
             "--batch_size", "16",
-            "--output_dir", f"results/zeroshot_parallel/{module}",
+            "--output_dir", f"results/03_zeroshot_evals/zeroshot_parallel/{module}",
         ]
     elif t == 'rank_sweep':
         model = f"models/base_checkpoints/{backbone}_{dataset}"
@@ -39,7 +39,7 @@ def run_task(task: dict) -> dict:
             "--model", model,
             "--model_family", "bert",
             "--dataset", dataset,
-            "--output_base", f"results/rank_sweep_{dataset}",
+            "--output_base", f"results/02_rank_sweeps/rank_sweep_{dataset}",
             "--parallel_ranks", "1",
             "--batch_size", "16",
         ]
@@ -52,7 +52,7 @@ def run_task(task: dict) -> dict:
             "--dataset", "c4",
             "--rank", "384",
             "--batch_size", "8",
-            "--output_dir", f"results/c4_baselines/{module}",
+            "--output_dir", f"results/04_baselines/c4_baselines/{module}",
         ]
     else:
         return {"task": t, "module": module, "status": "UNKNOWN_TASK"}
