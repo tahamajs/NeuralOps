@@ -2760,8 +2760,8 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
                     else:
                         rec_lr = args.learning_rate if args.learning_rate else 2e-4
                 else:
-                    rec_steps = 150 if (family == "qwen3_5" and args.recovery_steps == 100) else args.recovery_steps
-                    rec_lr = args.learning_rate if args.learning_rate else (5e-5 if (family == "qwen3_5" or adapter.hidden_size > 512) else 1e-4)
+                    hidden_size = getattr(getattr(model, "config", None), "hidden_size", 768)
+                    rec_lr = args.learning_rate if args.learning_rate else (5e-5 if (family == "qwen3_5" or hidden_size > 512) else 1e-4)
                 LOG.info("Running %d recovery fine-tuning steps for %s (lr=%.1e)", rec_steps, name, rec_lr)
                 if typ == "attention":
                     for m in model.modules():

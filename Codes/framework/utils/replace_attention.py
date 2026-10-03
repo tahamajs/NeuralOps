@@ -256,7 +256,7 @@ class UniversalAttentionWrapper(nn.Module):
 
 
 
-def _try_instantiate(attn_fn: Any, config: Any, layer_idx: int, total_layers: int, old_attn: Any) -> nn.Module:
+def _try_instantiate(attn_fn: Any, config: Any, layer_idx: int, total_layers: int, old_attn: Any, **kwargs: Any) -> nn.Module:
     """
     Instantiate a registered attention function / class using multiple
     call-signature strategies, from most-specific to most-permissive.

@@ -663,8 +663,8 @@ class FamilyModuleWrapper(nn.Module):
 def wrap_for_family(module: nn.Module, model_family: Optional[str] = None) -> nn.Module:
     family = model_family or detect_family(module)
     install_projection_aliases(module)
-    # Fix CP-00: normalize raw family to canonical before the wrapper decision.
-    canonical = FAMILY_ALIASES.get(family, family) if "FAMILY_ALIASES" in globals() else family
+    family_aliases = globals().get("FAMILY_ALIASES", {})
+    canonical = family_aliases.get(family, family) if isinstance(family_aliases, dict) else family
     return module if canonical in {"bert", "roberta", "unknown"} else FamilyModuleWrapper(module, family)
 
 

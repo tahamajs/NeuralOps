@@ -758,6 +758,9 @@ def inject_asvd(
         return target if num_injected > 0 else None
 
     layer = target
+    rank = kwargs.get("rank", 64)
+    copy_weights = kwargs.get("copy_weights", True)
+    config = cfg
 
     """Universal injection factory for ASVDAttention with pre-flight extraction validation."""
     target_model = model or kwargs.get("model", None)
