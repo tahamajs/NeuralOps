@@ -4,7 +4,7 @@
 **Class Name**: `SVDSingleHead`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `hybrid_svd_layer_factory, hybrid_svd_layer, direct_svd_encoder_factory, hybrid_svd_factory, hybrid_svd_compressor_factory, direct_svd_encoder, hybrid_svd`  
-**Implementation Source**: `Codes/framework/compression_engine/hybrid_svd_layer.py` (483 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/hybrid_svd_layer.py` (483 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

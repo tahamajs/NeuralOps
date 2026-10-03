@@ -4,7 +4,7 @@
 **Class Name**: `KVTCQuantizedLoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `kvtc`  
-**Implementation Source**: `Codes/framework/compression_engine/kvtc_compressor.py` (549 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/kvtc_compressor.py` (549 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

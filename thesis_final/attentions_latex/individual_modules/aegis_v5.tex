@@ -23,7 +23,7 @@ Y = g \odot Y_{\text{\lr{local}}} + (1 - g) \odot Y_{\text{\lr{global}}}
 پیچیدگی کل فرآیند از مرتبه $\mathcal{O}(N \cdot w \cdot d + N \cdot r \cdot D)$ است که برای پنجره محلی کوچک $w$ و رتبه $r \ll D$، رفتاری کاملاً خطی با طول دنباله را عرضه می‌دارد.
 
 \subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
-کلاس اصلی \lr{AEGISV5Attention} در فایل \lr{Codes/framework/attentions/aegis\_v5.py} پیاده‌سازی شده است:
+کلاس اصلی \lr{AEGISV5Attention} در فایل \lr{neuralops/attentions/aegis\_v5.py} پیاده‌سازی شده است:
 \begin{itemize}
     \item تفکیک مسیرها در متد \lr{forward} با استفاده از استریم‌های موازی صورت می‌گیرد.
     \item شاخه محلی از بافرهای حلقوی درون حافظه بهره می‌برد تا از ایجاد تانسورهای میانی پرهیز شود.

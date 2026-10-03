@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `cr_compressor` module is implemented in `Codes/framework/compression_engine/cr_compressor.py` (459 lines of code).
+The `cr_compressor` module is implemented in `neuralops/compression_engine/cr_compressor.py` (459 lines of code).
 - Registered Class: `CRLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, rank: int = 64, bias: bool = True, dtype: Optional[torch.dtype] = None, device: Optional[torch.device] = None, ) -> None: super().\_\_init\_\_() self.in\_features = in\_features self.out\_features = out\_features self.nf = out\_features # Conv1D compatibility self.r`

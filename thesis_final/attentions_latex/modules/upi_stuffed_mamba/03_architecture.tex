@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی ماژول در فایل \lr{Codes/framework/attentions/upi\_stuffed\_mamba.py} دارای خصوصیات زیر است:
+پیاده‌سازی ماژول در فایل \lr{neuralops/attentions/upi\_stuffed\_mamba.py} دارای خصوصیات زیر است:
 \begin{itemize}
     \item \textbf{اسکن پایتونی با مهار ماسک:} تابع \lr{\_selective\_scan} به روزرسانی حالت‌های $\mathbf{h}_t$ را با اعمال ماسک معتبر توکن‌ها جهت ممانعت از آلودگی حافظه با توکن‌های پدینگ اجرا می‌کند.
     \item \textbf{استنتاج گام‌به‌گام (\lr{step\_recurrent}):} تعبیه بافر با اندازه ثابت جهت پردازش تک‌توکنی در زمان تولید متن با پیچیدگی زمانی و حافظه‌ای $\mathcal{O}(1)$.

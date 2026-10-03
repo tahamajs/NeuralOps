@@ -4,7 +4,7 @@
 **Class Name**: `ReplacementBlock`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `replaceme_compressor, replaceme_compressor_factory, replaceme_factory, replaceme`  
-**Implementation Source**: `Codes/framework/compression_engine/replaceme_compressor.py` (305 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/replaceme_compressor.py` (305 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract
@@ -35,7 +35,7 @@ $$\mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}$$
 In batch-1 autoregressive decoding, arithmetic intensity drops significantly ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading billions of parameters across high-bandwidth memory (HBM) buses creates a strict throughput ceiling. By zeroing out unessential parameters or factorizing projections into lower-dimensional subspaces, our framework reduces total bytes transferred per token step, directly unlocking tangible wall-clock acceleration.
 
 ## 1.3 Architectural Positioning within the Unified Framework
-Within our production-hardened framework, `replaceme_compressor` resides as a first-class component under `Codes/framework/compression_engine/`. Unlike ad-hoc research prototypes, `replaceme_compressor` adheres to standardized contracts:
+Within our production-hardened framework, `replaceme_compressor` resides as a first-class component under `neuralops/compression_engine/`. Unlike ad-hoc research prototypes, `replaceme_compressor` adheres to standardized contracts:
 - **Plug-and-Play Model Replacement**: Capable of dynamically replacing baseline projection layers or full attention blocks without requiring global architecture refactoring.
 - **Heterogeneous Model Support**: Implements explicit structural handling for bidirectional encoders (DistilBERT, RoBERTa/BERT), autoregressive Conv1D decoders (GPT-2), and modern grouped-query architectures (LLaMA/Qwen).
 - **Graceful Degradation and Guardrail Fallbacks**: Encapsulates automated reconstruction norm validation, condition number checks, and adaptive residual fine-tuning (LoRA) to guarantee execution stability under extreme compression ratios.
@@ -528,7 +528,7 @@ To reproduce the empirical benchmark evaluations for `replaceme_compressor` acro
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor replaceme_compressor \
     --dataset sst2 \
@@ -616,7 +616,7 @@ $$\|X_L\|_F \le \|X_0\|_F \exp\left( \sum_{l=1}^L \|W^{(l)}_{V, r} W^{(l)}_{O, r
 
 # Appendix B. Implementation Details and Code Mapping
 
-The `replaceme_compressor` module is implemented in `Codes/framework/compression_engine/replaceme_compressor.py` (305 lines of code).
+The `replaceme_compressor` module is implemented in `neuralops/compression_engine/replaceme_compressor.py` (305 lines of code).
 - Registered Class: `ReplacementBlock`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, hidden\_size: int, lora\_r: int = 0, lora\_alpha: float = 1.0, return\_tuple: bool = True, device: Optional[torch.device] = None, dtype: Optional[torch.dtype] = None, ) -> None: super().\_\_init\_\_() self.hidden\_size = hidden\_size self.lora\_r = int(lora\_r) self.lora\_alpha = float(lora\_alpha) self.ret`

@@ -4,7 +4,7 @@
 **Class Name**: `LiLLaMACompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `lillama_compressor, lillama`  
-**Implementation Source**: `Codes/framework/compression_engine/lillama_compressor.py` (352 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/lillama_compressor.py` (352 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

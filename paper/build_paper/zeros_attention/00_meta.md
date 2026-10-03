@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `zeros, zeros_inject, zeros_attention_inject, zeros_attention`  
-**Implementation Source**: `Codes/framework/attentions/zeros_attention.py` (660 lines of code)  
+**Implementation Source**: `neuralops/attentions/zeros_attention.py` (660 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

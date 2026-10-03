@@ -4,7 +4,7 @@
 **Class Name**: `SVDProjectionLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `inject_svd_projection, inject_svd_proj_attn, svd_projection, svd_projection_attention, svd_projection_attention_inject, svd_proj_attn_inject, svd_proj, inject_svd_projection_attention, svd_proj_attn`  
-**Implementation Source**: `Codes/framework/attentions/svd_projection_attention.py` (713 lines of code)  
+**Implementation Source**: `neuralops/attentions/svd_projection_attention.py` (713 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

@@ -4,7 +4,7 @@
 **Class Name**: `ERCCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `erc, erc_svd`  
-**Implementation Source**: `Codes/framework/compression_engine/erc_svd.py` (389 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/erc_svd.py` (389 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

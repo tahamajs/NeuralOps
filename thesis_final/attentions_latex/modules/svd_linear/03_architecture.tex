@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی این الگوریتم در مسیر \lr{Codes/framework/compression\_engine/svd\_linear.py} مستقر بوده و تحت شناسه‌های \lr{svd\_linear} و \lr{svd\_linear\_compressor} در \lr{COMPRESSOR\_REGISTRY} ثبت شده است. اجزای اصلی معماری عبارتند از:
+پیاده‌سازی این الگوریتم در مسیر \lr{neuralops/compression\_engine/svd\_linear.py} مستقر بوده و تحت شناسه‌های \lr{svd\_linear} و \lr{svd\_linear\_compressor} در \lr{COMPRESSOR\_REGISTRY} ثبت شده است. اجزای اصلی معماری عبارتند از:
 \begin{itemize}
     \item \textbf{کلاس \lr{SVDLinearLayer}:} جایگزین ساختاری لایه‌های \lr{nn.Linear} و \lr{Conv1D} (سازگار با معماری‌های خاص نظیر \lr{GPT-2}) که پارامترهای $\mathbf{U}_r$ و $\mathbf{V}_r$ را مدیریت می‌کند.
     \item \textbf{شتاب‌دهی کرنل ادغام‌شده (\lr{Fused SVD Kernel}):} امکان ارسال محاسبات به کرنل سفارشی \lr{fused\_svd\_linear} که ضرب ماتریسی دو مرحله‌ای را درون حافظه اشتراکی \lr{SRAM} ادغام کرده و از جابه‌جایی اضافی تانسور میانی $\mathbf{z}$ در حافظه سراسری ممانعت می‌ورزد.

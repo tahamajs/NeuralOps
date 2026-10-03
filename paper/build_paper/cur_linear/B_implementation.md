@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `cur_linear` module is implemented in `Codes/framework/compression_engine/cur_linear.py` (249 lines of code).
+The `cur_linear` module is implemented in `neuralops/compression_engine/cur_linear.py` (249 lines of code).
 - Registered Class: `CURLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `Standard configuration arguments`

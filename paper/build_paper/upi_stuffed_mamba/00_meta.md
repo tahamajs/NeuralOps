@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `upi_mamba, upi_stuffed_mamba, inject_upi_stuffed_mamba, upi_mamba_inject, inject_upi_mamba, upi_stuffed_mamba_inject`  
-**Implementation Source**: `Codes/framework/attentions/upi_stuffed_mamba.py` (676 lines of code)  
+**Implementation Source**: `neuralops/attentions/upi_stuffed_mamba.py` (676 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

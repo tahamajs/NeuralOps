@@ -4,7 +4,7 @@
 **Class Name**: `ZeroKVNeoCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `zerokv_neo`  
-**Implementation Source**: `Codes/framework/compression_engine/zerokv_neo_compressor.py` (446 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/zerokv_neo_compressor.py` (446 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

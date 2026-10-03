@@ -4,7 +4,7 @@
 **Class Name**: `NLISoftmax`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `inject_nli_softmax, nli_softmax_factory, nli_softmax, nli_softmax_attention, nli_softmax_compressor, nli_softmax_inject`  
-**Implementation Source**: `Codes/framework/compression_engine/nli_softmax.py` (724 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/nli_softmax.py` (724 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

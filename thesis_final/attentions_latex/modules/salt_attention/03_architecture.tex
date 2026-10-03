@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-کلاس پایتونی \lr{SALTAttention} در سورس‌کد \lr{Codes/framework/attentions/salt\_attention.py} پیاده‌سازی شده و از کلاس \lr{BaseAttention} ارث‌بری می‌کند. مؤلفه‌های کلیدی پیاده‌سازی عبارتند از:
+کلاس پایتونی \lr{SALTAttention} در سورس‌کد \lr{neuralops/attentions/salt\_attention.py} پیاده‌سازی شده و از کلاس \lr{BaseAttention} ارث‌بری می‌کند. مؤلفه‌های کلیدی پیاده‌سازی عبارتند از:
 \begin{itemize}
     \item \textbf{لایه خطی فاکتورگیری‌شده \lr{SALTLinear}:} پیاده‌سازی مستقیم فرمول طیفی با دو مسیر محاسباتی موازی؛ مسیر طیفی منجمد مقیاس‌پذیر با پارامتر $\boldsymbol{\gamma}$ و مسیر کم‌مرتبه تصحیح‌کننده خطای فاکتورسازی.
     \item \textbf{پشتیبانی از تجزیه با وزن‌دهی فیشر (\lr{Fisher-weighted SVD}):} امکان مقداردهی وزن‌ها با اولویت‌دهی به پارامترهای با گرادیان و حساسیت بالا در مدل پایه.

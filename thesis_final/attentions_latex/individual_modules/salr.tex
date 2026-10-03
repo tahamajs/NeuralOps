@@ -34,7 +34,7 @@ m_k = \begin{cases}
 که در آن $\mathbf{A}_{\text{LoRA}} \in \mathbb{R}^{r_{\text{lora}} \times d_{\text{in}}}$ و $\mathbf{B}_{\text{LoRA}} \in \mathbb{R}^{d_{\text{out}} \times r_{\text{lora}}}$ ماتریس‌های انطباق کمکی بوده و $\gamma = \frac{\alpha_{\text{lora}}}{r_{\text{lora}}}$ ضریب مقیاس‌گذاری تنظیم‌پذیر است.
 
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی ماژول \lr{SALR} در فایل \lr{Codes/framework/compression\_engine/salr.py} واقع شده و با نام‌های \lr{salr}، \lr{salr\_factory} و \lr{salr\_compressor\_factory} ثبت گردیده است. ساختار معماری شامل اجزای زیر است:
+پیاده‌سازی ماژول \lr{SALR} در فایل \lr{neuralops/compression\_engine/salr.py} واقع شده و با نام‌های \lr{salr}، \lr{salr\_factory} و \lr{salr\_compressor\_factory} ثبت گردیده است. ساختار معماری شامل اجزای زیر است:
 \begin{itemize}
     \item \textbf{لایه سفارشی \lr{SALRLayer}:} تعریف لایه ماژولار که نگاشت دوگانه کم‌رتبه، ماسک بافر تنک، بایاس خطی و شاخه موازی \lr{LoRA} را در قالب یک واحد محاسباتی مستقل مدیریت می‌نماید.
     \item \textbf{پشتیبانی از لایه‌های کانوولوشن ۱ بعدی (\lr{Conv1D}):} تشخیص مطمئن لایه‌های خطی و نگاشت ماتریس‌های وزن انتقالی بدون فرضیات هندسی نادرست.

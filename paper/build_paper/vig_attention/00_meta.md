@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `vig, vig_attention_inject, vig_inject, vig_attention, inject_vig`  
-**Implementation Source**: `Codes/framework/attentions/vig_attention.py` (699 lines of code)  
+**Implementation Source**: `neuralops/attentions/vig_attention.py` (699 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

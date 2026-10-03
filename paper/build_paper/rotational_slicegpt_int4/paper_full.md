@@ -4,7 +4,7 @@
 **Class Name**: `RotationalSliceGPTINT4Linear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `rotational_slicegpt, rotational_slicegpt_int4, rotational_slicegpt_factory, rotational_slicegpt_int4_factory`  
-**Implementation Source**: `Codes/framework/compression_engine/rotational_slicegpt_int4.py` (526 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/rotational_slicegpt_int4.py` (526 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract
@@ -35,7 +35,7 @@ $$\mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}$$
 In batch-1 autoregressive decoding, arithmetic intensity drops significantly ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading billions of parameters across high-bandwidth memory (HBM) buses creates a strict throughput ceiling. By zeroing out unessential parameters or factorizing projections into lower-dimensional subspaces, our framework reduces total bytes transferred per token step, directly unlocking tangible wall-clock acceleration.
 
 ## 1.3 Architectural Positioning within the Unified Framework
-Within our production-hardened framework, `rotational_slicegpt_int4` resides as a first-class component under `Codes/framework/compression_engine/`. Unlike ad-hoc research prototypes, `rotational_slicegpt_int4` adheres to standardized contracts:
+Within our production-hardened framework, `rotational_slicegpt_int4` resides as a first-class component under `neuralops/compression_engine/`. Unlike ad-hoc research prototypes, `rotational_slicegpt_int4` adheres to standardized contracts:
 - **Plug-and-Play Model Replacement**: Capable of dynamically replacing baseline projection layers or full attention blocks without requiring global architecture refactoring.
 - **Heterogeneous Model Support**: Implements explicit structural handling for bidirectional encoders (DistilBERT, RoBERTa/BERT), autoregressive Conv1D decoders (GPT-2), and modern grouped-query architectures (LLaMA/Qwen).
 - **Graceful Degradation and Guardrail Fallbacks**: Encapsulates automated reconstruction norm validation, condition number checks, and adaptive residual fine-tuning (LoRA) to guarantee execution stability under extreme compression ratios.
@@ -528,7 +528,7 @@ To reproduce the empirical benchmark evaluations for `rotational_slicegpt_int4` 
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor rotational_slicegpt_int4 \
     --dataset sst2 \
@@ -616,7 +616,7 @@ $$\|X_L\|_F \le \|X_0\|_F \exp\left( \sum_{l=1}^L \|W^{(l)}_{V, r} W^{(l)}_{O, r
 
 # Appendix B. Implementation Details and Code Mapping
 
-The `rotational_slicegpt_int4` module is implemented in `Codes/framework/compression_engine/rotational_slicegpt_int4.py` (526 lines of code).
+The `rotational_slicegpt_int4` module is implemented in `neuralops/compression_engine/rotational_slicegpt_int4.py` (526 lines of code).
 - Registered Class: `RotationalSliceGPTINT4Linear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, bits: int = 4) -> None: self.bits = bits if bits in (2, 4, 8) else 4 num\_centroids = 2 ** self.bits k = torch.arange(num\_centroids, dtype=torch.float32) mid = (num\_centroids - 1.0) / 2.0 # Centroids scaled to Gaussian distribution self.centroids\_base = torch.sign(k - mid) * torch.pow(torch.abs`

@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `full_attention, full_attention_inject, full`  
-**Implementation Source**: `Codes/framework/attentions/full_attention.py` (511 lines of code)  
+**Implementation Source**: `neuralops/attentions/full_attention.py` (511 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

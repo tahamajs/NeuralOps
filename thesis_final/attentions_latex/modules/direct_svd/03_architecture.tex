@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-کلاس \lr{DirectSVDCompressor} در مسیر \lr{Codes/framework/compression\_engine/direct\_svd.py} پیاده‌سازی شده و تحت نام‌های \lr{direct\_svd} و \lr{direct\_svd\_compressor} در سامانه ثبت شده است. از ویژگی‌های معماری آن می‌توان به موارد زیر اشاره نمود:
+کلاس \lr{DirectSVDCompressor} در مسیر \lr{neuralops/compression\_engine/direct\_svd.py} پیاده‌سازی شده و تحت نام‌های \lr{direct\_svd} و \lr{direct\_svd\_compressor} در سامانه ثبت شده است. از ویژگی‌های معماری آن می‌توان به موارد زیر اشاره نمود:
 \begin{itemize}
     \item \textbf{جایگزینی فیزیکی ماژول با \lr{SVDLinear}:} وزن‌های اصلی پس از فاکتورگیری به طور کامل از گراف حافظه حذف و به پارامترهای مجزای $\mathbf{U}_{\text{factor}}$ و $\mathbf{V}_{\text{factor}}$ تبدیل می‌شوند.
     \item \textbf{پشتیبانی کامل از لایه‌های ترنسپوز \lr{Conv1D}:} در مدل‌هایی نظیر \lr{GPT-2} که از نگاشت‌های یک‌بعدی استفاده می‌کنند، وزن‌ها با ترنسپوز مناسب و سازگار با فرمت خطی استاندارد فاکتورگیری می‌شوند.

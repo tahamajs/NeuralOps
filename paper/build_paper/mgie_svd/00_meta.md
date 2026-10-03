@@ -4,7 +4,7 @@
 **Class Name**: `MGIECompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `mgie_svd_factory, mgie_factory, mgie_svd, mgie_svd_compressor_factory, mgie`  
-**Implementation Source**: `Codes/framework/compression_engine/mgie_svd.py` (346 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/mgie_svd.py` (346 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

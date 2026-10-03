@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `delta_kv` module is implemented in `Codes/framework/compression_engine/delta_kv.py` (420 lines of code).
+The `delta_kv` module is implemented in `neuralops/compression_engine/delta_kv.py` (420 lines of code).
 - Registered Class: `DeltaKVCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, max\_refs: int = 128, topk: int = 4, compression\_ratio: float = 0.29, residual\_threshold: float = 1e-3, ) -> None: self.max\_refs = int(max\_refs) self.topk = int(topk) self.compression\_ratio = float(compression\_ratio) self.residual\_threshold = float(residual\_threshold) self.ref\_k: Optional[torch`

@@ -4,7 +4,7 @@
 **Class Name**: `SliceGPTCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `slicegpt_factory, slicegpt_compressor, slicegpt`  
-**Implementation Source**: `Codes/framework/compression_engine/slicegpt.py` (345 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/slicegpt.py` (345 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

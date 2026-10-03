@@ -4,7 +4,7 @@
 **Class Name**: `NMFLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `nmf, nmf_compressor`  
-**Implementation Source**: `Codes/framework/compression_engine/nmf_compressor.py` (453 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/nmf_compressor.py` (453 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

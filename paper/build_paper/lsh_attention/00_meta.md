@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `inject_lsh, lsh_attention, lsh, inject_lsh_attention, lsh_inject, lsh_attention_inject`  
-**Implementation Source**: `Codes/framework/attentions/lsh_attention.py` (562 lines of code)  
+**Implementation Source**: `neuralops/attentions/lsh_attention.py` (562 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

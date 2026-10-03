@@ -35,7 +35,7 @@
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-کلاس موتور فشرده‌سازی \lr{A3Compressor} و لایه خطی فاکتورگیری‌شده \lr{A3FactorizedLinear} در فایل \lr{Codes/framework/compression\_engine/a3\_compressor.py} قرار داشته و با شناسه‌های \lr{a3} و \lr{a3\_compressor} در رجیستری فشرده‌سازی سیستم به ثبت رسیده‌اند. ویژگی‌های برجسته پیاده‌سازی عبارتند از:
+کلاس موتور فشرده‌سازی \lr{A3Compressor} و لایه خطی فاکتورگیری‌شده \lr{A3FactorizedLinear} در فایل \lr{neuralops/compression\_engine/a3\_compressor.py} قرار داشته و با شناسه‌های \lr{a3} و \lr{a3\_compressor} در رجیستری فشرده‌سازی سیستم به ثبت رسیده‌اند. ویژگی‌های برجسته پیاده‌سازی عبارتند از:
 \begin{itemize}
     \item \textbf{جایگزینی فیزیکی ماژول‌ها (\lr{True Module Replacement}):} لایه‌های \lr{nn.Linear} و \lr{Conv1D} با ماژول اختصاصی \lr{A3FactorizedLinear} جایگزین می‌شوند که در آن خروجی به شکل $y = (x \mathbf{V}_r^\top)\mathbf{U}_r^\top + b$ محاسبه شده و حجم پارامترها از $d_{\text{in}} \cdot d_{\text{out}}$ به $r \cdot (d_{\text{in}} + d_{\text{out}})$ کاهش می‌یابد.
     \item \textbf{جستجوی تطبیقی رتبه (\lr{STRS Rank Search}):} الگوریتم رتبه‌های نامزد را بررسی کرده و کمترین رتبه‌ای که در آن خطای نسبی فروبنیوس از آستانه مجاز (\lr{max\_error}) کمتر باشد را انتخاب می‌نماید.

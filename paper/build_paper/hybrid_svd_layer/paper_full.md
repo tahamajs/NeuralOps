@@ -4,7 +4,7 @@
 **Class Name**: `SVDSingleHead`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `hybrid_svd_layer_factory, hybrid_svd_layer, direct_svd_encoder_factory, hybrid_svd_factory, hybrid_svd_compressor_factory, direct_svd_encoder, hybrid_svd`  
-**Implementation Source**: `Codes/framework/compression_engine/hybrid_svd_layer.py` (483 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/hybrid_svd_layer.py` (483 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract
@@ -35,7 +35,7 @@ $$\mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}$$
 In batch-1 autoregressive decoding, arithmetic intensity drops significantly ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading billions of parameters across high-bandwidth memory (HBM) buses creates a strict throughput ceiling. By zeroing out unessential parameters or factorizing projections into lower-dimensional subspaces, our framework reduces total bytes transferred per token step, directly unlocking tangible wall-clock acceleration.
 
 ## 1.3 Architectural Positioning within the Unified Framework
-Within our production-hardened framework, `hybrid_svd_layer` resides as a first-class component under `Codes/framework/compression_engine/`. Unlike ad-hoc research prototypes, `hybrid_svd_layer` adheres to standardized contracts:
+Within our production-hardened framework, `hybrid_svd_layer` resides as a first-class component under `neuralops/compression_engine/`. Unlike ad-hoc research prototypes, `hybrid_svd_layer` adheres to standardized contracts:
 - **Plug-and-Play Model Replacement**: Capable of dynamically replacing baseline projection layers or full attention blocks without requiring global architecture refactoring.
 - **Heterogeneous Model Support**: Implements explicit structural handling for bidirectional encoders (DistilBERT, RoBERTa/BERT), autoregressive Conv1D decoders (GPT-2), and modern grouped-query architectures (LLaMA/Qwen).
 - **Graceful Degradation and Guardrail Fallbacks**: Encapsulates automated reconstruction norm validation, condition number checks, and adaptive residual fine-tuning (LoRA) to guarantee execution stability under extreme compression ratios.
@@ -531,7 +531,7 @@ To reproduce the empirical benchmark evaluations for `hybrid_svd_layer` across G
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor hybrid_svd_layer \
     --dataset sst2 \
@@ -619,7 +619,7 @@ $$\|X_L\|_F \le \|X_0\|_F \exp\left( \sum_{l=1}^L \|W^{(l)}_{V, r} W^{(l)}_{O, r
 
 # Appendix B. Implementation Details and Code Mapping
 
-The `hybrid_svd_layer` module is implemented in `Codes/framework/compression_engine/hybrid_svd_layer.py` (483 lines of code).
+The `hybrid_svd_layer` module is implemented in `neuralops/compression_engine/hybrid_svd_layer.py` (483 lines of code).
 - Registered Class: `SVDSingleHead`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, hidden\_size: int, svd\_rank: int = 20) -> None: super().\_\_init\_\_() self.hidden\_size = hidden\_size self.svd\_rank = svd\_rank self.register\_buffer("pos\_encoding", None, persistent=False) def forward(self, hidden\_states: torch.Tensor) -> torch.Tensor: """Forward pass with SVD spectral projection.""`

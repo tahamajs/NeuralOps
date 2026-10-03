@@ -14,7 +14,7 @@ To reproduce the empirical benchmark evaluations for `griffin_ssd` across GLUE c
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor griffin_ssd \
     --dataset sst2 \

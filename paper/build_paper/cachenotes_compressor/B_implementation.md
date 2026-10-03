@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `cachenotes_compressor` module is implemented in `Codes/framework/compression_engine/cachenotes_compressor.py` (900 lines of code).
+The `cachenotes_compressor` module is implemented in `neuralops/compression_engine/cachenotes_compressor.py` (900 lines of code).
 - Registered Class: `CacheNotesLoRALinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, weight: torch.Tensor, bias: Optional[torch.Tensor] = None, lora\_r: int = 0, lora\_alpha: float = 1.0, device: Optional[torch.device] = None, dtype: Optional[torch.dtype] = None, ) -> None: super().\_\_init\_\_() self.in\_features = in\_features self.out\_features =`

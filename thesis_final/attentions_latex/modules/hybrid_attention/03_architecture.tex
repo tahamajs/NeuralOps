@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-کلاس \lr{HybridAttention} در ماژول \lr{Codes/framework/attentions/hybrid\_attention.py} مستقر شده و از \lr{BaseAttention} ارث‌بری می‌کند. این معماری ویژگی‌های کلیدی زیر را داراست:
+کلاس \lr{HybridAttention} در ماژول \lr{neuralops/attentions/hybrid\_attention.py} مستقر شده و از \lr{BaseAttention} ارث‌بری می‌کند. این معماری ویژگی‌های کلیدی زیر را داراست:
 \begin{itemize}
     \item \textbf{عدم افزایش چشمگیر پارامترها:} تنها پارامتر افزوده‌شده ماتریس نگاشت گیت با ابعاد $D \times H$ به همراه بایاس آن است ($768 \times 12 + 12 = 9228$ پارامتر اضافی معادل تنها $+0.014\%$ در مدل \lr{DistilBERT}).
     \item \textbf{پشتیبانی کامل از سازوکارهای مدرن:} دربرگیرنده سازوکار چرخش موقعیتی (\lr{RoPE}) با تنظیم متناسب جابه‌جایی در کش (\lr{past\_len offset})، سازگاری با \lr{KV-Cache} پویا و پیاده‌سازی مسیر سریع \lr{PyTorch SDPA} برای کاهش مصرف حافظه.

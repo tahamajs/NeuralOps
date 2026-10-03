@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `roast_hashed_linear` module is implemented in `Codes/framework/compression_engine/roast_hashed_linear.py` (450 lines of code).
+The `roast_hashed_linear` module is implemented in `neuralops/compression_engine/roast_hashed_linear.py` (450 lines of code).
 - Registered Class: `ROASTLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, n\_buckets: int = 1024, tile\_size: int = 32, bias: bool = True, lora\_r: int = 0, lora\_alpha: float = 1.0, device: Optional[torch.device] = None, dtype: Optional[torch.dtype] = None, ) -> None: super().\_\_init\_\_() self.in\_features = in\_features self.out\_featur`

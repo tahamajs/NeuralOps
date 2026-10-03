@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `saes_svd` module is implemented in `Codes/framework/compression_engine/saes_svd_v2.py` (307 lines of code).
+The `saes_svd` module is implemented in `neuralops/compression_engine/saes_svd_v2.py` (307 lines of code).
 - Registered Class: `SAESSVDCompressorV2`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `Standard configuration arguments`

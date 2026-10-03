@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `grecodec` module is implemented in `Codes/framework/compression_engine/grecodec_compressor.py` (482 lines of code).
+The `grecodec` module is implemented in `neuralops/compression_engine/grecodec_compressor.py` (482 lines of code).
 - Registered Class: `GreCoDeCLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `Standard configuration arguments`

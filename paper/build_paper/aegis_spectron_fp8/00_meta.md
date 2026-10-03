@@ -4,7 +4,7 @@
 **Class Name**: `FactorizedLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `aegis_spectron_fp8, aegis_spectron_fp8_attn, inject_aegis_spectron_fp8, aegis_spectron_fp8_inject`  
-**Implementation Source**: `Codes/framework/attentions/aegis_spectron_fp8.py` (1022 lines of code)  
+**Implementation Source**: `neuralops/attentions/aegis_spectron_fp8.py` (1022 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

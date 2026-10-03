@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `aegis_v1` module is implemented in `Codes/framework/attentions/aegis_v1.py` (814 lines of code).
+The `aegis_v1` module is implemented in `neuralops/attentions/aegis_v1.py` (814 lines of code).
 - Registered Class: `FactorisedLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features\_or\_weight: Union[int, torch.Tensor], out\_features\_or\_bias: Optional[Union[int, torch.Tensor]] = None, energy: float = 0.95, min\_rank: int = 4, max\_rank: int = 384, rank: Optional[int] = None, bias: bool = True, lora\_rank: int = 16, lora\_alpha: float = 32.0, **kwargs: Any, ) -> None`

@@ -42,7 +42,7 @@ y = \left( \left( (x \cdot R^\top) \cdot U^\top \right) \cdot C^\top \right) + b
 این فرمول‌بندی پیچیدگی زمانی و مکانی را به شدت کاهش داده و نیاز به دسترسی به حافظه سراسری را به حداقل می‌رساند.
 
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی ماژول در فایل \lr{Codes/framework/compression\_engine/cur\_compressor.py} مستقر بوده و شامل توابع و کلاس‌های زیر است:
+پیاده‌سازی ماژول در فایل \lr{neuralops/compression\_engine/cur\_compressor.py} مستقر بوده و شامل توابع و کلاس‌های زیر است:
 \begin{itemize}
     \item \textbf{توابع گزینش هسته:} توابع \lr{compute\_leverage\_scores}، \lr{compute\_energy\_scores} و \lr{select\_indices} برای گزینش قطعی یا تصادفی سطوح اهرمی.
     \item \textbf{تابع \lr{tikhonov\_pinv}:} محاسبه شبه‌وارون مقاوم در برابر خطای اعشاری با استفاده از تجزیه طیفی و مهار مقادیر ویژه زیر آستانه $10^{-6}$.

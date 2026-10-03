@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `inject_squeezing_heads_distill, squeezing_heads_distiller, squeezing_heads, squeezing_heads_distiller_inject, squeezing_heads_distill, inject_squeezing_heads_distiller, squeezing_heads_distill_inject, inject_squeezing_heads, squeezing_heads_inject`  
-**Implementation Source**: `Codes/framework/attentions/squeezing_heads_distill.py` (724 lines of code)  
+**Implementation Source**: `neuralops/attentions/squeezing_heads_distill.py` (724 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

@@ -4,7 +4,7 @@
 **Class Name**: `KroneckerCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `kronecker_compressor_class, kronecker, kronecker_compressor, kronecker_linear, kronecker_factory, kronecker_linear_class`  
-**Implementation Source**: `Codes/framework/compression_engine/kronecker_compressor.py` (349 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/kronecker_compressor.py` (349 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

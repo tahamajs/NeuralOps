@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی این رویکرد در فایل \lr{Codes/framework/compression\_engine/slicegpt\_pca.py} با کلاس‌های اصلی زیر تعریف گردیده است:
+پیاده‌سازی این رویکرد در فایل \lr{neuralops/compression\_engine/slicegpt\_pca.py} با کلاس‌های اصلی زیر تعریف گردیده است:
 \begin{itemize}
     \item \textbf{کلاس \lr{SliceGPTPCALoRALinear}:} به عنوان زیرکلاسی از \lr{nn.Module}، نگه‌دارنده وزن‌های منجمدشده برش‌یافته با \lr{requires\_grad=False} و پارامترهای آموزش‌پذیر $\mathbf{A} \in \mathbb{R}^{r \times d_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r}$ است. مقداردهی اولیه آداپتور $\mathbf{B}$ با صفر انجام می‌پذیرد تا در بدو امر رفتار لایه دقیقاً منطبق بر ماتریس تصویر باشد.
     \item \textbf{کلاس فشرده‌ساز \lr{SliceGPTPCACompressor}:} مدیریت هوک‌های کالیبراسیون، استخراج ماتریس‌های فعال‌سازی لایه‌ای، حل معادلات ویژه‌مقدار با \lr{torch.linalg.eigh}، محافظت از لایه‌های حساس مانند طبقه‌بند و توکن‌بندی، و اعمال جایگزینی ماژول‌ها از طریق \lr{replace\_module} را بر عهده دارد.

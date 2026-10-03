@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `astro_quantizer` module is implemented in `Codes/framework/compression_engine/astro_quantizer.py` (757 lines of code).
+The `astro_quantizer` module is implemented in `neuralops/compression_engine/astro_quantizer.py` (757 lines of code).
 - Registered Class: `AstroLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, bias: bool = True, bits: int = 8, symmetric: bool = True, per\_channel: bool = False, per\_channel\_bits: Optional[torch.Tensor] = None,`

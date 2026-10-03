@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی ماژول در فایل \lr{Codes/framework/compression\_engine/coopq\_quantizer.py} شامل مؤلفه‌های زیر است:
+پیاده‌سازی ماژول در فایل \lr{neuralops/compression\_engine/coopq\_quantizer.py} شامل مؤلفه‌های زیر است:
 \begin{itemize}
     \item \textbf{تابع سفارشی \lr{CoopQSTEFakeQuantize}:} زیرکلاس \lr{torch.autograd.Function} که در گذر رو به جلو عملگر گرد کردن و تقطیع کانالی را اعمال کرده و در گذر معکوس گرادیان خطا را مستقیماً به تانسور وزن بازمی‌گرداند.
     \item \textbf{کلاس \lr{CoopQLinear}:} لایه کوانتایزه‌شده آگاه از وزن که مقادیر مقیاس و نقطه صفر کالیبره‌شده را در بافرهای پایتورچ ذخیره کرده و مجهز به مکانیزم \lr{from\_linear} برای تطبیق خودکار با لایه‌های \lr{Linear} و \lr{Conv1D} است.

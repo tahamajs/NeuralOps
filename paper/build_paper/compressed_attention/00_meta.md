@@ -4,7 +4,7 @@
 **Class Name**: `CompressedAttentionLayer`  
 **Base Architecture**: `BaseAttention`  
 **Registry Keys**: `compressed_attention, compressed_attention_inject, compressed_attention_layer_energy, compressed_attention_layer_fn, compressed_attention_layer, compressed_attention_fn, compressed_attention_layer_inject`  
-**Implementation Source**: `Codes/framework/attentions/compressed_attention.py` (569 lines of code)  
+**Implementation Source**: `neuralops/attentions/compressed_attention.py` (569 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

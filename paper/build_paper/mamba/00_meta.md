@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `mamba, inject_mamba, mamba_inject`  
-**Implementation Source**: `Codes/framework/attentions/mamba.py` (658 lines of code)  
+**Implementation Source**: `neuralops/attentions/mamba.py` (658 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

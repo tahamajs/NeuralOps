@@ -31,7 +31,7 @@
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی کلاس \lr{ERCCompressor} در فایل \lr{Codes/framework/compression\_engine/erc\_svd.py} انجام شده و شامل ویژگی‌های مهندسی زیر است:
+پیاده‌سازی کلاس \lr{ERCCompressor} در فایل \lr{neuralops/compression\_engine/erc\_svd.py} انجام شده و شامل ویژگی‌های مهندسی زیر است:
 \begin{itemize}
     \item \textbf{آزمون انباشت انرژی تجمعی (\lr{Cumulative Energy Search}):} استفاده از \lr{torch.cumsum} بر روی توان دوم مقادیر منفرد برای تعیین سریع و برداری شاخص $r^*$ بدون جستجوی ترتیبی پرهزینه.
     \item \textbf{سازگاری کامل با \lr{PEFT} و آداپتورهای \lr{LoRA}:} شناسایی رتبه \lr{LoRA} از طریق بعد تانسور \lr{lora\_A.weight} و انتقال ضریب مقیاس‌گذاری (\lr{lora\_alpha}) به لایه فشرده جدید.

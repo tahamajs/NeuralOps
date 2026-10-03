@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `compressed_attention` module is implemented in `Codes/framework/attentions/compressed_attention.py` (569 lines of code).
+The `compressed_attention` module is implemented in `neuralops/attentions/compressed_attention.py` (569 lines of code).
 - Registered Class: `CompressedAttentionLayer`
 - Base Architecture: `BaseAttention`
 - Constructor Signatures: `self, config: Optional[Any] = None, rank: Optional[int] = None, rank\_qkv: int = 384, rank\_out: int = 384, lora\_rank: int = 16, original\_layer: Any = None, pretrained\_attn: Optional[nn.Module] = None, **kwargs: Any, ) -> None: cfg = config if config is not None else original\_layer super().\_\_init\_\_(cf`

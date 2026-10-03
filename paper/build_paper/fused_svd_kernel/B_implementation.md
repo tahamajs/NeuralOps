@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `fused_svd_kernel` module is implemented in `Codes/framework/attentions/fused_svd_kernel.py` (1036 lines of code).
+The `fused_svd_kernel` module is implemented in `neuralops/attentions/fused_svd_kernel.py` (1036 lines of code).
 - Registered Class: `FusedSVDLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, rank: int = 32, bias: bool = True, use\_rms\_norm: bool = False, eps: float = 1e-6, dtype: torch.dtype = torch.float32, device: Optional[torch.device] = None, ) -> None: super().\_\_init\_\_() self.in\_features = in\_features self.out\_features = out\_features self.r`

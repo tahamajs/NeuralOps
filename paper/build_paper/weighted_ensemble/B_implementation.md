@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `weighted_ensemble` module is implemented in `Codes/framework/attentions/weighted_ensemble.py` (917 lines of code).
+The `weighted_ensemble` module is implemented in `neuralops/attentions/weighted_ensemble.py` (917 lines of code).
 - Registered Class: `TaskAwareAttention`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, num\_tasks: Union[int, Any] = 1, hidden\_dim: int = 64`

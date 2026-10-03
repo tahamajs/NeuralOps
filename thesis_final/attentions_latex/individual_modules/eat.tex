@@ -28,7 +28,7 @@ s_i = \frac{1}{H} \sum_{h=1}^H \sum_{j=1}^N \mathbf{A}_{attn}^{(h)}[j, i]
 این کاهش تعداد توکن‌ها پیچیدگی لایه‌های بعد را از $\mathcal{O}(N^2)$ به $\mathcal{O}(K_{keep}^2)$ تقلیل می‌دهد.
 
 \subsection{معماری و پیاده‌سازی}
-کلاس محوری این ماژول \lr{EATBlock} در فایل \lr{Codes/framework/attentions/eat.py} مستقر بوده و به صورت مستقیم از \lr{BaseAttention} ارث‌بری می‌کند. ویژگی‌های پیاده‌سازی این ماژول عبارتند از:
+کلاس محوری این ماژول \lr{EATBlock} در فایل \lr{neuralops/attentions/eat.py} مستقر بوده و به صورت مستقیم از \lr{BaseAttention} ارث‌بری می‌کند. ویژگی‌های پیاده‌سازی این ماژول عبارتند از:
 \begin{itemize}
     \item کلاس لایه کمکی \lr{LoRALinear} برای مدیریت انجماد وزن‌های اصلی و انتساب گرادیان به آداپتورهای با رتبه پایین.
     \item آرگومان‌های سازنده شامل \lr{config}، \lr{rank} (با پیش‌فرض ۶۴)، \lr{d\_model} (بعد مدل، پیش‌فرض ۷۶۸)، \lr{n\_heads} (تعداد سرها، پیش‌فرض ۱۲)، و اتصال مستقیم به شیء \lr{prune\_layer} از جنس \lr{ProgressiveTokenPruning}.

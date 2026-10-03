@@ -45,11 +45,11 @@ python run_all_4_a3.py \
 ### Individual Model
 
 ```bash
-python Codes/framework/run_quality_sweep.py \
+python neuralops/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --model_family bert \
     --dataset sst2 \
-    --dataset_dir Codes/framework/data/glue_data/sst2 \
+    --dataset_dir neuralops/data/glue_data/sst2 \
     --output_dir results/unified_a3/distilbert \
     --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
     --modules full,a3 \

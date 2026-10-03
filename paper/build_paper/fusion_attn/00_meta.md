@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `fusion_attn_inject, fusion_attn`  
-**Implementation Source**: `Codes/framework/attentions/fusion_attn.py` (684 lines of code)  
+**Implementation Source**: `neuralops/attentions/fusion_attn.py` (684 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

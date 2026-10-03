@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `cur_moe` module is implemented in `Codes/framework/compression_engine/cur_moe_compressor.py` (378 lines of code).
+The `cur_moe` module is implemented in `neuralops/compression_engine/cur_moe_compressor.py` (378 lines of code).
 - Registered Class: `CURMoECompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `Standard configuration arguments`

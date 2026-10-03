@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `samba_moe` module is implemented in `Codes/framework/attentions/samba_moe.py` (353 lines of code).
+The `samba_moe` module is implemented in `neuralops/attentions/samba_moe.py` (353 lines of code).
 - Registered Class: `MinimalMoEFallback`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, d\_model: int = 768, n\_experts: int = 4`

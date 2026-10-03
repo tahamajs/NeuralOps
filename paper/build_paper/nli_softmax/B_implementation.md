@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `nli_softmax` module is implemented in `Codes/framework/compression_engine/nli_softmax.py` (724 lines of code).
+The `nli_softmax` module is implemented in `neuralops/compression_engine/nli_softmax.py` (724 lines of code).
 - Registered Class: `NLISoftmax`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, dim: int = -1) -> None: super().\_\_init\_\_() self.dim = dim def forward(self, x: torch.Tensor) -> torch.Tensor: return nli\_softmax(x, dim=self.dim) def \_cfg\_get(cfg: Any, key: str, default: Any = None) -> Any: if cfg is None: return default if isinstance(cfg, dict`

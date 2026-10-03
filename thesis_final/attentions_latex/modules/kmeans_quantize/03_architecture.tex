@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-این ماژول در فایل \lr{Codes/framework/compression\_engine/kmeans\_quantize.py} پیاده‌سازی شده و کلاس‌های اصلی آن عبارتند از:
+این ماژول در فایل \lr{neuralops/compression\_engine/kmeans\_quantize.py} پیاده‌سازی شده و کلاس‌های اصلی آن عبارتند از:
 \begin{itemize}
     \item \textbf{کلاس \lr{KMeansSTEFunction}:} یک تابع خودکار از نوع \lr{torch.autograd.Function} که در گذر پیشرو عملگر وزن را با $\mathbf{\hat{W}} = \mathbf{c}[\mathbf{I}]$ ترکیب نموده و در گذر پس‌انتشار، گرادیان خروجی را مستقیماً به مراکز خوشه پاشش می‌دهد.
     \item \textbf{تابع \lr{fast\_kmeans\_1d}:} پیاده‌سازی الگوریتم بهینه‌سازی‌شده لوید یک‌بعدی با استفاده از \lr{torch.sort} و \lr{torch.searchsorted} برای همگرایی سریع در حداکثر ۲۰ تکرار بر روی حافظه \lr{GPU}.

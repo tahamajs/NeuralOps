@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `hybridkv` module is implemented in `Codes/framework/compression_engine/hybridkv_compressor.py` (340 lines of code).
+The `hybridkv` module is implemented in `neuralops/compression_engine/hybridkv_compressor.py` (340 lines of code).
 - Registered Class: `HybridKVCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `Standard configuration arguments`

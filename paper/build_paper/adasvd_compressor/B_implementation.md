@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `adasvd_compressor` module is implemented in `Codes/framework/compression_engine/adasvd_compressor.py` (488 lines of code).
+The `adasvd_compressor` module is implemented in `neuralops/compression_engine/adasvd_compressor.py` (488 lines of code).
 - Registered Class: `AdaSVDCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: nn.Module, rank: Optional[int] = None, target\_param\_ratio: float = 0.7, num\_iters: int = 5, max\_error: float = 0.40, fallback\_to\_original: bool = True, target\_attention\_only: bool = True, min\_rank: int = 16, target\_modules: Optional[List[str]] = None, comp\_config: Any = None, **kwargs: `

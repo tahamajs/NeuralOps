@@ -4,7 +4,7 @@
 **Class Name**: `CRLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `cr_factory, cr_compressor, cr_compressor_factory, cr`  
-**Implementation Source**: `Codes/framework/compression_engine/cr_compressor.py` (459 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/cr_compressor.py` (459 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

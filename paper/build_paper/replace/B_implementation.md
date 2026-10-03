@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `replace` module is implemented in `Codes/framework/attentions/replace.py` (577 lines of code).
+The `replace` module is implemented in `neuralops/attentions/replace.py` (577 lines of code).
 - Registered Class: `ReplaceAttention`
 - Base Architecture: `BaseAttention`
 - Constructor Signatures: `self, config: Optional[Any] = None, old\_attn: Optional[nn.Module] = None, rank: Optional[int] = None, hidden\_size: Optional[int] = None, num\_heads: Optional[int] = None, num\_attention\_heads: Optional[int] = None, dropout: float = 0.1, is\_decoder: Optional[bool] = None, **kwargs: Any, ) -> None: supe`

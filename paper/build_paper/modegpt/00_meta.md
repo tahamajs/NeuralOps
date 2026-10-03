@@ -4,7 +4,7 @@
 **Class Name**: `MoDeGPTLoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `modegpt`  
-**Implementation Source**: `Codes/framework/compression_engine/modegpt_compressor.py` (556 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/modegpt_compressor.py` (556 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

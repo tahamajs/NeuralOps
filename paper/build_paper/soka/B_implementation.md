@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `soka` module is implemented in `Codes/framework/compression_engine/soka_compressor.py` (321 lines of code).
+The `soka` module is implemented in `neuralops/compression_engine/soka_compressor.py` (321 lines of code).
 - Registered Class: `LowRankLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `Standard configuration arguments`

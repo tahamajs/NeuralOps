@@ -34,7 +34,7 @@
 که در پیاده‌سازی مرجع مقدار ضریب مقیاس به صورت پیش‌فرض $\alpha = 0.8$ تنظیم گردیده است.
 
 \subsection{معماری و پیاده‌سازی}
-ماژول در فایل \lr{Codes/framework/compression\_engine/liftr.py} پیاده‌سازی شده و ساختار نرم‌افزاری آن به قرار زیر است:
+ماژول در فایل \lr{neuralops/compression\_engine/liftr.py} پیاده‌سازی شده و ساختار نرم‌افزاری آن به قرار زیر است:
 \begin{itemize}
     \item \textbf{کلاس \lr{\_LinearizedGELU}:} جایگزین سبک لایه‌های فعال‌سازی \lr{nn.GELU} و \lr{nn.SiLU} که عملگر غیرخطی را با ضرب اسکالر ساده $\alpha \cdot x$ تعویض می‌کند.
     \item \textbf{کلاس \lr{\_LinearizedAttentionWrapper}:} لایه پوشاننده ساختاری توجه که با پشتیبانی هوشمند از انواع معماری‌ها، خروجی ارزش‌ها را استخراج و میانگین‌گیری می‌کند:

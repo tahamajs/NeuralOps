@@ -4,7 +4,7 @@
 **Class Name**: `SliceGPTPCALoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `slicegpt_pca, slicegpt_pca_factory`  
-**Implementation Source**: `Codes/framework/compression_engine/slicegpt_pca.py` (556 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/slicegpt_pca.py` (556 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

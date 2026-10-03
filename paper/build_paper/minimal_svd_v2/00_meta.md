@@ -4,7 +4,7 @@
 **Class Name**: `FactorisedLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `minimal_svd_v2, minimal_svd_v2_inject, inject_minimal_svd_v2`  
-**Implementation Source**: `Codes/framework/attentions/minimal_svd_v2.py` (595 lines of code)  
+**Implementation Source**: `neuralops/attentions/minimal_svd_v2.py` (595 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

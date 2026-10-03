@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `sdrm` module is implemented in `Codes/framework/compression_engine/sdrm_compressor.py` (423 lines of code).
+The `sdrm` module is implemented in `neuralops/compression_engine/sdrm_compressor.py` (423 lines of code).
 - Registered Class: `SDRMCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `Standard configuration arguments`

@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `decay_linear_attn, inject_decay_linear_attention, decay_linear_attention, decay_linear_attention_inject`  
-**Implementation Source**: `Codes/framework/attentions/decay_linear_attention.py` (782 lines of code)  
+**Implementation Source**: `neuralops/attentions/decay_linear_attention.py` (782 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `flap` module is implemented in `Codes/framework/compression_engine/flap.py` (416 lines of code).
+The `flap` module is implemented in `neuralops/compression_engine/flap.py` (416 lines of code).
 - Registered Class: `FLAPCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: nn.Module, tokenizer: Optional[Any] = None, sparsity: float = 0.2, metric\_type: str = "WIFV", max\_error: float = 0.35, target\_attention\_only: bool = False, fallback\_to\_original: bool = True, calibration\_loader: Optional[Any] = None, calibration\_texts: Optional[List[str]] = None, device:`

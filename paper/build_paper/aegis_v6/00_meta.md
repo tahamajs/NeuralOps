@@ -4,7 +4,7 @@
 **Class Name**: `FactorisedLowRankProjection`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `inject_aegis_v6, aegis_v6, aegis_v6_inject, aegis_v6_attn`  
-**Implementation Source**: `Codes/framework/attentions/aegis_v6.py` (891 lines of code)  
+**Implementation Source**: `neuralops/attentions/aegis_v6.py` (891 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

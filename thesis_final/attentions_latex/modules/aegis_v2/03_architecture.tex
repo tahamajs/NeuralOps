@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-ماژول در قالب کلاس \lr{AegisAttentionV2} در فایل \lr{Codes/framework/attentions/aegis\_v2.py} پیاده‌سازی شده و از کلاس \lr{BaseAttention} مشتق می‌گردد. مشخصات کلیدی این پیاده‌سازی عبارتند از:
+ماژول در قالب کلاس \lr{AegisAttentionV2} در فایل \lr{neuralops/attentions/aegis\_v2.py} پیاده‌سازی شده و از کلاس \lr{BaseAttention} مشتق می‌گردد. مشخصات کلیدی این پیاده‌سازی عبارتند از:
 \begin{itemize}
     \item \textbf{پیکربندی \lr{AegisAttentionConfigV2}:} پشتیبانی از تنظیمات رتبه فاکتورسازی $r=128$، رتبه آداپتور $r_{\text{lora}}=32$، عرض پنجره $W=128$، و ضریب مقیاس‌بندی کِرنل.
     \item \textbf{بهبودهای ثبات عددی (\lr{V2-FIX}):} پیاده‌سازی پخش صحیح ماسک سرها در ابعاد $[B, H, 1, 1]$، مهار خطاهای نامعین با تابع \lr{torch.nan\_to\_num}، و لحاظ دقیق آفست توکن‌های گذشته در دیکودینگ علّی \lr{KV-cache}.

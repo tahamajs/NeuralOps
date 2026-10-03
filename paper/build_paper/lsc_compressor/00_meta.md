@@ -4,7 +4,7 @@
 **Class Name**: `LSCPrunedLoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `lsc_factory, lsc_compressor, lsc`  
-**Implementation Source**: `Codes/framework/compression_engine/lsc_compressor.py` (444 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/lsc_compressor.py` (444 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

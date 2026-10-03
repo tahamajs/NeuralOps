@@ -35,7 +35,7 @@
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی ماژول در \lr{Codes/framework/compression\_engine/enlighten\_compressor.py} مستقر شده و شامل خصوصیات فنی زیر است:
+پیاده‌سازی ماژول در \lr{neuralops/compression\_engine/enlighten\_compressor.py} مستقر شده و شامل خصوصیات فنی زیر است:
 \begin{itemize}
     \item \textbf{هرس برداری ۲:۴ بدون حلقه پایتونی (\lr{Vectorized 2:4 Pruner}):} تابع \lr{vectorized\_24\_prune} با پدینگ خودکار به مضرب ۴ و بهره‌گیری از عملیات موازی \lr{torch.topk} و \lr{scatter\_}، محاسبات ماسک را با سرعت بالا روی کارت گرافیک انجام می‌دهد.
     \item \textbf{تشدید پویای رتبه (\lr{Dynamic Rank Escalation}):} در صورت فراتر رفتن خطای بازسازی از آستانه مجاز (\lr{max\_error=0.45})، ماژول در چند گام متوالی (\lr{max\_retries=2}) اقدام به ارتقای رتبه می‌نماید.

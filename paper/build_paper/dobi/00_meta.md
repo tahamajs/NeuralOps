@@ -4,7 +4,7 @@
 **Class Name**: `DobiSVDLinearLayer`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `dobi`  
-**Implementation Source**: `Codes/framework/compression_engine/dobi_svd.py` (575 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/dobi_svd.py` (575 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

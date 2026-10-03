@@ -33,7 +33,7 @@
 \end{enumerate}
 
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی این رویکرد در فایل \lr{Codes/framework/compression\_engine/subspace\_projection.py} سازمان‌دهی شده و دربرگیرنده مؤلفه‌های زیر است:
+پیاده‌سازی این رویکرد در فایل \lr{neuralops/compression\_engine/subspace\_projection.py} سازمان‌دهی شده و دربرگیرنده مؤلفه‌های زیر است:
 \begin{itemize}
     \item \textbf{کلاس \lr{SubspaceLinear}:} یک ماژول جایگزین کامل برای لایه‌های متراکم و \lr{Conv1D} که پارامترهای $\mathbf{A}$ و $\mathbf{B}$ را به همراه پارامترهای اختیاری \lr{lora\_A} و \lr{lora\_B} مدیریت می‌کند. این لایه مجهز به متد کارخانه‌ای \lr{from\_linear} برای تبدیل بی‌درنگ لایه‌های موجود با روش‌های تجزیه SVD یا مقداردهی تصادفی متعامد است.
     \item \textbf{کلاس \lr{SubspaceProjectionCompressor}:} مدیریت زنجیره فشرده‌سازی مدل، فیلتر کردن لایه‌های حساس با \lr{should\_compress\_linear}، اعمال آستانه بیشینه خطای بازسازی مجاز (\lr{max\_error})، و بازگردانی لایه‌های آسیب‌پذیر از طریق قابلیت بازگشت امنیتی (\lr{fallback}).

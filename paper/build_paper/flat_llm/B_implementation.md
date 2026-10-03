@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `flat_llm` module is implemented in `Codes/framework/compression_engine/flat_llm.py` (394 lines of code).
+The `flat_llm` module is implemented in `neuralops/compression_engine/flat_llm.py` (394 lines of code).
 - Registered Class: `FLATLLMCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: nn.Module, tokenizer: Optional[Any] = None, keep\_ratio: float = 0.7, damping: float = 1e-4, max\_error: float = 0.35, target\_attention\_only: bool = False, fallback\_to\_original: bool = True, calibration\_loader: Optional[Any] = None, calibration\_texts: Optional[List[str]] = None, device: O`

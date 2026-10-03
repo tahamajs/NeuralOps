@@ -22,7 +22,7 @@ A_{\text{\lr{spectral}}} = (Q U_r) \Sigma_r (K V_r)^\top
 محاسبات به صورت زنجیره‌ای از ضرب‌های تانسوری ماتریس-بردار اجرا شده و حافظه مورد نیاز به طور خطی مقیاس‌بندی می‌شود.
 
 \subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
-پیاده‌سازی در \lr{Codes/framework/attentions/spectra\_v2.py} شامل کلاس \lr{SpectraV2Attention} است:
+پیاده‌سازی در \lr{neuralops/attentions/spectra\_v2.py} شامل کلاس \lr{SpectraV2Attention} است:
 \begin{itemize}
     \item ورودی با ابعاد \lr{$[B, N, D]$} وارد لایه پیش‌فیلتر فرکانسی می‌شود.
     \item لایه‌های تصویر با آداپتورهای \lr{LoRA} تلفیق شده‌اند تا بازآموزی در رتبه کم‌مرتبه بدون تخریب وزن‌های پایه انجام پذیرد.

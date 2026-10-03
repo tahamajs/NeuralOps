@@ -4,7 +4,7 @@
 **Class Name**: `Mamba2`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `inject_granite_hybrid, granite_hybrid, granite_hybrid_block, granite_hybrid_inject`  
-**Implementation Source**: `Codes/framework/attentions/granite_hybrid.py` (626 lines of code)  
+**Implementation Source**: `neuralops/attentions/granite_hybrid.py` (626 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract
@@ -35,7 +35,7 @@ $$\mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}$$
 In batch-1 autoregressive decoding, arithmetic intensity drops significantly ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading billions of parameters across high-bandwidth memory (HBM) buses creates a strict throughput ceiling. By zeroing out unessential parameters or factorizing projections into lower-dimensional subspaces, our framework reduces total bytes transferred per token step, directly unlocking tangible wall-clock acceleration.
 
 ## 1.3 Architectural Positioning within the Unified Framework
-Within our production-hardened framework, `granite_hybrid` resides as a first-class component under `Codes/framework/attentions/`. Unlike ad-hoc research prototypes, `granite_hybrid` adheres to standardized contracts:
+Within our production-hardened framework, `granite_hybrid` resides as a first-class component under `neuralops/attentions/`. Unlike ad-hoc research prototypes, `granite_hybrid` adheres to standardized contracts:
 - **Plug-and-Play Model Replacement**: Capable of dynamically replacing baseline projection layers or full attention blocks without requiring global architecture refactoring.
 - **Heterogeneous Model Support**: Implements explicit structural handling for bidirectional encoders (DistilBERT, RoBERTa/BERT), autoregressive Conv1D decoders (GPT-2), and modern grouped-query architectures (LLaMA/Qwen).
 - **Graceful Degradation and Guardrail Fallbacks**: Encapsulates automated reconstruction norm validation, condition number checks, and adaptive residual fine-tuning (LoRA) to guarantee execution stability under extreme compression ratios.
@@ -525,7 +525,7 @@ To reproduce the empirical benchmark evaluations for `granite_hybrid` across GLU
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor granite_hybrid \
     --dataset sst2 \
@@ -613,7 +613,7 @@ $$\|X_L\|_F \le \|X_0\|_F \exp\left( \sum_{l=1}^L \|W^{(l)}_{V, r} W^{(l)}_{O, r
 
 # Appendix B. Implementation Details and Code Mapping
 
-The `granite_hybrid` module is implemented in `Codes/framework/attentions/granite_hybrid.py` (626 lines of code).
+The `granite_hybrid` module is implemented in `neuralops/attentions/granite_hybrid.py` (626 lines of code).
 - Registered Class: `Mamba2`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, d\_model: int, d\_state: int = 16, d\_conv: int = 4, expand: int = 2, **kwargs: Any, ) -> None: super().\_\_init\_\_() self.d\_model: int = d\_model self.d\_state: int = d\_state self.expand: int = expand inner\_dim: int = d\_model * expand self.in\_proj: nn.Linear = nn.Linear(d\_model, inner\_dim * 2) self.c`

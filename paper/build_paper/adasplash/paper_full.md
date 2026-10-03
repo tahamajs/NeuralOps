@@ -582,11 +582,11 @@ $$
 p_i = \max(0, (\alpha - 1) s_i - \tau)^{1/(\alpha - 1)}
 \tag{4.1}
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 $$
 
 with $\tau$ chosen so that $\sum_i p_i = 1$.
@@ -673,11 +673,11 @@ $$
 \end{cases}
 \tag{4.2}
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 $$
 
 Keys outside the splash mask are set to $-10000$ before entmax.
@@ -725,11 +725,11 @@ $$
 \Delta W_P = B_P A_P, \quad A_P \in \mathbb{R}^{r_L \times d_\text{in}}, \quad B_P \in \mathbb{R}^{d_\text{out} \times r_L}
 \tag{4.3}
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 $$
 
 with initialization:
@@ -738,11 +738,11 @@ $$
 A_P \sim \mathcal{N}(0, \sigma^2), \quad B_P = 0
 \tag{4.4}
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 $$
 
 At initialization, $\Delta W_P = 0$, so the forward pass matches the 
@@ -754,22 +754,22 @@ $$
 \text{Proj}_P(x) = x W_P^\top + x (B_P A_P)^\top + b_P
 \tag{4.5}
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 $$
 
 $$
 \text{Proj}_P(x) = x W_P^\top + (x A_P^\top) B_P^\top + b_P
 \tag{4.6}
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 $$
 
 ### 4.4.5 Parameter Count
@@ -809,11 +809,11 @@ $$
 \|W_P\|_F > 10^{-4} \quad \forall P \in \{Q, K, V\}
 \tag{4.7}
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 
-<!-- source: Codes/framework/attentions/adasplash_attention.py line 195 -->
+<!-- source: neuralops/attentions/adasplash_attention.py line 195 -->
 $$
 
 If a projection has near-zero norm, we raise an error and skip injection.

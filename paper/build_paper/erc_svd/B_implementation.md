@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `erc_svd` module is implemented in `Codes/framework/compression_engine/erc_svd.py` (389 lines of code).
+The `erc_svd` module is implemented in `neuralops/compression_engine/erc_svd.py` (389 lines of code).
 - Registered Class: `ERCCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: nn.Module, allowed\_error: float = 0.20, max\_error: Optional[float] = None, fallback\_to\_original: bool = True, target\_attention\_only: bool = False, rank: Optional[int] = None, max\_retries: int = 2, target\_modules: Optional[List[str]] = None, cfg: Optional[Any] = None, **kwargs: Any, ) ->`

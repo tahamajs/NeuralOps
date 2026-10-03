@@ -4,7 +4,7 @@
 **Class Name**: `FactorizedLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `soa_attn, soa_inject, inject_soa_attn, soa_fused_module, soa_module_inject, inject_soa_module, soa_module, soa_fused_attn, soafusedattention, inject_soa, soa_attn_inject`  
-**Implementation Source**: `Codes/framework/attentions/soa_attn.py` (826 lines of code)  
+**Implementation Source**: `neuralops/attentions/soa_attn.py` (826 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

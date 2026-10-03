@@ -26,7 +26,7 @@
 این ساختار پیچیدگی زمانی را به $\mathcal{O}(N \cdot d_{\phi} \cdot d)$ و حافظه موقت را به $\mathcal{O}(d_{\phi} \cdot d)$ محدود می‌سازد.
 
 \subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
-پیاده‌سازی ماژول در فایل \lr{Codes/framework/compression\_engine/padre\_attention.py} در کلاس \lr{PADReAttention} قرار دارد:
+پیاده‌سازی ماژول در فایل \lr{neuralops/compression\_engine/padre\_attention.py} در کلاس \lr{PADReAttention} قرار دارد:
 \begin{itemize}
     \item تانسور ورودی \lr{$[B, N, D]$} به فضاهای تصویر خطی با آداپتورهای \lr{LoRALinear} نگاشت می‌گردد.
     \item نگاشت ویژگی چندجمله‌ای توسط توابع هسته بدون نیاز به تخصیص ماتریس $N \times N$ پیاده‌سازی شده است.

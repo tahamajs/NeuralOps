@@ -4,7 +4,7 @@
 **Class Name**: `FLATLLMCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `flat_llm_compressor, flat_llm_factory, flat_llm`  
-**Implementation Source**: `Codes/framework/compression_engine/flat_llm.py` (394 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/flat_llm.py` (394 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

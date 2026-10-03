@@ -4,7 +4,7 @@
 **Class Name**: `_LinearizedGELU`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `liftr, liftr_compressor`  
-**Implementation Source**: `Codes/framework/compression_engine/liftr.py` (348 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/liftr.py` (348 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

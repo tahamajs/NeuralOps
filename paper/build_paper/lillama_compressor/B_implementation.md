@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `lillama_compressor` module is implemented in `Codes/framework/compression_engine/lillama_compressor.py` (352 lines of code).
+The `lillama_compressor` module is implemented in `neuralops/compression_engine/lillama_compressor.py` (352 lines of code).
 - Registered Class: `LiLLaMACompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: nn.Module, tokenizer: Optional[Any] = None, rank: int = 32, calibration\_texts: Optional[List[str]] = None, calibration\_loader: Optional[Any] = None, device: Optional[Union[str, torch.device]] = None, max\_error: float = 0.20, fallback\_to\_original: bool = True, skip\_attention: bool = Fals`

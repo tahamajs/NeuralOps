@@ -4,7 +4,7 @@
 **Class Name**: `FusedSVDLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `fused_svd_kernel_inject, inject_fused_svd_kernel, fused_svd_kernel_attention, fused_svd_kernel`  
-**Implementation Source**: `Codes/framework/attentions/fused_svd_kernel.py` (1036 lines of code)  
+**Implementation Source**: `neuralops/attentions/fused_svd_kernel.py` (1036 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

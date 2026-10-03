@@ -4,7 +4,7 @@
 **Class Name**: `SwiftSVDActivationCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `swift_svd_act_factory, swift_svd_act`  
-**Implementation Source**: `Codes/framework/compression_engine/swift_svd_act.py` (442 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/swift_svd_act.py` (442 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

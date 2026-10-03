@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `mamba_shedder` module is implemented in `Codes/framework/compression_engine/mamba_shedder.py` (463 lines of code).
+The `mamba_shedder` module is implemented in `neuralops/compression_engine/mamba_shedder.py` (463 lines of code).
 - Registered Class: `MambaShedderCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: nn.Module, tokenizer: Optional[Any] = None, sparsity: float = 0.2, shed\_layers: int = 0, max\_error: float = 0.20, fallback\_to\_original: bool = True, validate\_after\_shed: bool = True, calibration\_loader: Optional[Any] = None, calibration\_texts: Optional[List[str]] = None, device: Optiona`

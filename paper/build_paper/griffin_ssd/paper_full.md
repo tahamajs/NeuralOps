@@ -4,7 +4,7 @@
 **Class Name**: `GriffinSSDBlock`  
 **Base Architecture**: `BaseAttention`  
 **Registry Keys**: `griffin_ssd_inject, griffin_ssd, griffin_ssd_block`  
-**Implementation Source**: `Codes/framework/attentions/griffin_ssd.py` (622 lines of code)  
+**Implementation Source**: `neuralops/attentions/griffin_ssd.py` (622 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract
@@ -35,7 +35,7 @@ $$\mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}$$
 In batch-1 autoregressive decoding, arithmetic intensity drops significantly ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading billions of parameters across high-bandwidth memory (HBM) buses creates a strict throughput ceiling. By zeroing out unessential parameters or factorizing projections into lower-dimensional subspaces, our framework reduces total bytes transferred per token step, directly unlocking tangible wall-clock acceleration.
 
 ## 1.3 Architectural Positioning within the Unified Framework
-Within our production-hardened framework, `griffin_ssd` resides as a first-class component under `Codes/framework/attentions/`. Unlike ad-hoc research prototypes, `griffin_ssd` adheres to standardized contracts:
+Within our production-hardened framework, `griffin_ssd` resides as a first-class component under `neuralops/attentions/`. Unlike ad-hoc research prototypes, `griffin_ssd` adheres to standardized contracts:
 - **Plug-and-Play Model Replacement**: Capable of dynamically replacing baseline projection layers or full attention blocks without requiring global architecture refactoring.
 - **Heterogeneous Model Support**: Implements explicit structural handling for bidirectional encoders (DistilBERT, RoBERTa/BERT), autoregressive Conv1D decoders (GPT-2), and modern grouped-query architectures (LLaMA/Qwen).
 - **Graceful Degradation and Guardrail Fallbacks**: Encapsulates automated reconstruction norm validation, condition number checks, and adaptive residual fine-tuning (LoRA) to guarantee execution stability under extreme compression ratios.
@@ -525,7 +525,7 @@ To reproduce the empirical benchmark evaluations for `griffin_ssd` across GLUE c
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor griffin_ssd \
     --dataset sst2 \
@@ -613,7 +613,7 @@ $$\|X_L\|_F \le \|X_0\|_F \exp\left( \sum_{l=1}^L \|W^{(l)}_{V, r} W^{(l)}_{O, r
 
 # Appendix B. Implementation Details and Code Mapping
 
-The `griffin_ssd` module is implemented in `Codes/framework/attentions/griffin_ssd.py` (622 lines of code).
+The `griffin_ssd` module is implemented in `neuralops/attentions/griffin_ssd.py` (622 lines of code).
 - Registered Class: `GriffinSSDBlock`
 - Base Architecture: `BaseAttention`
 - Constructor Signatures: `self, config: Optional[Any] = None, rank: Optional[int] = 64, window\_size: int = 64, d\_model: Optional[Union[int, Any]] = None, num\_heads: Optional[int] = None, old\_attn: Optional[nn.Module] = None, comp\_config: Optional[Any] = None, lora\_rank: int = 16, lora\_alpha: float = 32.0, **kwargs: Any, ) ->`

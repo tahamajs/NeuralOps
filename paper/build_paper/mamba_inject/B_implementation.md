@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `mamba_inject` module is implemented in `Codes/framework/attentions/mamba_inject.py` (132 lines of code).
+The `mamba_inject` module is implemented in `neuralops/attentions/mamba_inject.py` (132 lines of code).
 - Registered Class: `mamba_inject`
 - Base Architecture: `None`
 - Constructor Signatures: `Standard configuration arguments`

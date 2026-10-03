@@ -38,7 +38,7 @@ r_l = \max\left(r_{\text{min}}, \min\left(r_{\text{max}}^{(l)}, \lfloor \alpha_l
 و با ساختار خطی دوسطحی \lr{SVDLinear} جایگزین می‌شود.
 
 \subsection{معماری و پیاده‌سازی}
-کلاس \lr{MGIESVDBudgetCompressor} در فایل \lr{Codes/framework/compression\_engine/mgie\_svd\_compressor.py} مستقر است و با نام‌های \lr{mgie\_budget}، \lr{mgie\_budget\_factory} و \lr{mgie\_svd\_budget\_factory} در رجیستری فشرده‌سازی ثبت شده است. قابلیت‌های کلیدی معماری عبارتند از:
+کلاس \lr{MGIESVDBudgetCompressor} در فایل \lr{neuralops/compression\_engine/mgie\_svd\_compressor.py} مستقر است و با نام‌های \lr{mgie\_budget}، \lr{mgie\_budget\_factory} و \lr{mgie\_svd\_budget\_factory} در رجیستری فشرده‌سازی ثبت شده است. قابلیت‌های کلیدی معماری عبارتند از:
 \begin{itemize}
     \item \textbf{رویکرد دوفازی پردازش سراسری (\lr{Two-Phase Global Allocation}):} فشرده‌سازی در دو فاز مجزا اجرا می‌شود؛ در فاز اول تمامی لایه‌ها ارزیابی شده و تانسورهای مقادیر منفرد و آنتروپی آن‌ها استخراج و کش می‌گردد. در فاز دوم تخصیص بودجه و جایگزینی با ماژول‌های \lr{SVDLinear} بدون نیاز به محاسبه مجدد مقادیر منفرد صورت می‌پذیرد.
     \item \textbf{انطباق پویا با لایه‌های \lr{Conv1D} و شبکه‌های علّی:} پشتیبانی بومی از مدل‌های دیکودر نظیر \lr{GPT-2} از طریق ترانهاده‌سازی ابعاد لایه \lr{Conv1D} و تقسیم بهینه‌شده ماتریس فرافکنی توجه.

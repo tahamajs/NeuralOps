@@ -12,7 +12,7 @@
 \vspace*{0.3cm}
 
 \subsubsection*{بخش ۱: شناسنامه و معرفی \lr{(Introduction)}}
-ماژول \lr{eat\_attention} پیاده‌سازی رسمی مکانیزم «ترنسفورمر با توجه کارا و هرس پیش‌رونده توکن‌ها» \lr{(Efficient Attention Transformer with Progressive Token Pruning - EAT)} در بستر پژوهشی این رساله است. این ماژول در فایل \path{Codes/framework/attentions/eat.py} توسعه یافته و تحت کلاس ارشد \lr{EATBlock} به همراه ماژول کمکی \lr{ProgressiveTokenPruning} در رجیستری مرکزی ثبت شده است.
+ماژول \lr{eat\_attention} پیاده‌سازی رسمی مکانیزم «ترنسفورمر با توجه کارا و هرس پیش‌رونده توکن‌ها» \lr{(Efficient Attention Transformer with Progressive Token Pruning - EAT)} در بستر پژوهشی این رساله است. این ماژول در فایل \path{neuralops/attentions/eat.py} توسعه یافته و تحت کلاس ارشد \lr{EATBlock} به همراه ماژول کمکی \lr{ProgressiveTokenPruning} در رجیستری مرکزی ثبت شده است.
 هدف راهبردی این ماژول، مهار هزینه محاسباتی از طریق فشرده‌سازی خودکار طول دنباله در طول عبور از لایه‌های متوالی شبکه است. با ارزیابی اهمیت اطلاعاتی توکن‌ها بر پایه الگوهای فعال‌سازی لایه توجه، توکن‌های حاوی اطلاعات حاشیه‌ای و با همبستگی بالا به صورت پیش‌رونده هرس شده و طول موثر دنباله به شکل پویا کاهش می‌یابد.
 
 \subsubsection*{بخش ۲: انگیزه و چرایی معماری \lr{(Rationale)}}
@@ -58,7 +58,7 @@ s_i = \frac{1}{H \cdot N} \sum_{h=1}^H \sum_{j=1}^N \mathbf{A}_{h, j, i}
 \end{equation}
 
 \subsubsection*{بخش ۵: معماری و پیاده‌سازی \lr{(Architecture \& Implementation)}}
-فایل پایتونی \path{Codes/framework/attentions/eat.py} ساختار کلاسی \lr{EATBlock} را در خود جای داده است. این بلوک با وراثت از \lr{BaseAttention}، هماهنگی ابعادی تانسورها را در سناریوهای تغییر طول دنباله مدیریت می‌کند.
+فایل پایتونی \path{neuralops/attentions/eat.py} ساختار کلاسی \lr{EATBlock} را در خود جای داده است. این بلوک با وراثت از \lr{BaseAttention}، هماهنگی ابعادی تانسورها را در سناریوهای تغییر طول دنباله مدیریت می‌کند.
 
 ماژول کمکی \lr{ProgressiveTokenPruning} به طور مستقل منطق تعیین آستانه و گزینش اندیس‌های برتر را اجرا می‌نماید. همچنین تعبیه موقعیت دورانی \lr{(RoPE)} با توابع \lr{\_rotate\_half} و \lr{apply\_rotary\_pos\_emb} پشتیبانی شده و گسترش ابعاد سرهای کلید/مقدار در معماری‌های \lr{GQA} از طریق فراخوانی \lr{repeat\_kv} انجام می‌گیرد.
 

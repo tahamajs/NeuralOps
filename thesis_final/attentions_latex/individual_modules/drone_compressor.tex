@@ -39,7 +39,7 @@ r = \min\left(r_{\text{target}}, d_{\text{in}}, d_{\text{out}}, \left\lfloor 0.7
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-کلاس \lr{DRONECompressor} در فایل \lr{Codes/framework/compression\_engine/drone\_compressor.py} مستقر بوده و تحت شناسه‌های \lr{drone} و \lr{drone\_compressor} در رجیستری فشرده‌سازی ثبت گردیده است. محورهای شاخص پیاده‌سازی عبارتند از:
+کلاس \lr{DRONECompressor} در فایل \lr{neuralops/compression\_engine/drone\_compressor.py} مستقر بوده و تحت شناسه‌های \lr{drone} و \lr{drone\_compressor} در رجیستری فشرده‌سازی ثبت گردیده است. محورهای شاخص پیاده‌سازی عبارتند از:
 \begin{itemize}
     \item \textbf{هدف‌گیری اختصاصی پروجکشن‌های توجه (\lr{Target Attention Only}):} به صورت پیش‌فرض، پارامتر \lr{target\_attention\_only} فعال بوده و ماتریس‌های وزن پروجکشن توجه (\lr{q\_proj}، \lr{k\_proj}، \lr{v\_proj}، \lr{o\_proj}، \lr{c\_attn}، \lr{c\_proj}) را هدف قرار داده و از لایه‌های پیش‌خور متوالی صرف‌نظر می‌کند.
     \item \textbf{بهره‌گیری از هسته ماژولار \lr{SVDLinear}:} استفاده مشترک از همان کلاس \lr{SVDLinear} مورد استفاده در \lr{AASVD} برای تضمین برابری شرایط اجرای سخت‌افزاری، تاخیر و مصرف حافظه.

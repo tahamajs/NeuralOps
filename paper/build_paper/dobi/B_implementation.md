@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `dobi` module is implemented in `Codes/framework/compression_engine/dobi_svd.py` (575 lines of code).
+The `dobi` module is implemented in `neuralops/compression_engine/dobi_svd.py` (575 lines of code).
 - Registered Class: `DobiSVDLinearLayer`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `Standard configuration arguments`

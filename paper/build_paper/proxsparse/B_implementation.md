@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `proxsparse` module is implemented in `Codes/framework/compression_engine/proxsparse.py` (485 lines of code).
+The `proxsparse` module is implemented in `neuralops/compression_engine/proxsparse.py` (485 lines of code).
 - Registered Class: `ProxSparsePrunedLoRALinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, pruned\_weight: torch.Tensor, mask: torch.Tensor, bias: Optional[torch.Tensor] = None, lora\_r: int = 0, lora\_alpha: float = 1.0, device: Optional[torch.device] = None, dtype: Optional[torch.dtype] = None, ) -> None: super().\_\_init\_\_() self.in\_features = in\_f`

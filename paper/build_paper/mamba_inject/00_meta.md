@@ -4,7 +4,7 @@
 **Class Name**: `mamba_inject`  
 **Base Architecture**: `None`  
 **Registry Keys**: `mamba_module_inject, inject_mamba, mamba_inject`  
-**Implementation Source**: `Codes/framework/attentions/mamba_inject.py` (132 lines of code)  
+**Implementation Source**: `neuralops/attentions/mamba_inject.py` (132 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

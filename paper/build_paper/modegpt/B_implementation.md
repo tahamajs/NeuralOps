@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `modegpt` module is implemented in `Codes/framework/compression_engine/modegpt_compressor.py` (556 lines of code).
+The `modegpt` module is implemented in `neuralops/compression_engine/modegpt_compressor.py` (556 lines of code).
 - Registered Class: `MoDeGPTLoRALinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `Standard configuration arguments`

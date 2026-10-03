@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `huffman_coder` module is implemented in `Codes/framework/compression_engine/huffman_coder.py` (540 lines of code).
+The `huffman_coder` module is implemented in `neuralops/compression_engine/huffman_coder.py` (540 lines of code).
 - Registered Class: `HuffmanCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, symbol: Optional[int] = None, freq: int = 0, left: Optional[HuffmanNode] = None, right: Optional[HuffmanNode] = None, ) -> None: self.symbol = symbol self.freq = freq self.left = left self.right = right def \_\_lt\_\_(self, other: HuffmanNode) -> bool: return self.freq < other.freq class HuffmanCo`

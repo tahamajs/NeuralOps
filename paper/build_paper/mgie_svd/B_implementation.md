@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `mgie_svd` module is implemented in `Codes/framework/compression_engine/mgie_svd.py` (346 lines of code).
+The `mgie_svd` module is implemented in `neuralops/compression_engine/mgie_svd.py` (346 lines of code).
 - Registered Class: `MGIECompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: nn.Module, rank: Optional[int] = None, max\_error: float = 0.50, fallback\_to\_original: bool = True, lora\_r: int = 0, lora\_alpha: float = 1.0, skip\_attention\_qkv: bool = False, target\_attention\_only: bool = False, min\_rank: int = 4, target\_modules: Optional[List[str]] = None, **kwargs: An`

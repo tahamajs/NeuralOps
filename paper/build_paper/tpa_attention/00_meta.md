@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `tpa_inject, tpa_attention, tpa, inject_tpa, tp_attention, tp_attention_inject`  
-**Implementation Source**: `Codes/framework/attentions/tpa_attention.py` (881 lines of code)  
+**Implementation Source**: `neuralops/attentions/tpa_attention.py` (881 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

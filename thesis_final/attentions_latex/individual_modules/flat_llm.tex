@@ -44,7 +44,7 @@ k = \max(1, \lfloor \gamma \cdot d_{\text{out}} \rfloor)
 اگر $\mathcal{E} > \tau_{\text{max}}$ باشد، لایه به وزن‌های اولیه بازمی‌گردد.
 
 \subsection{معماری و پیاده‌سازی}
-کلاس \lr{FLATLLMCompressor} در مسیر \lr{Codes/framework/compression\_engine/flat\_llm.py} قرار داشته و با شناسه‌های \lr{flat\_llm} و \lr{flat\_llm\_compressor} در سیستم مدیریت ماژول‌ها رجیستر شده است. جنبه‌های فنی پیاده‌سازی شامل موارد زیر است:
+کلاس \lr{FLATLLMCompressor} در مسیر \lr{neuralops/compression\_engine/flat\_llm.py} قرار داشته و با شناسه‌های \lr{flat\_llm} و \lr{flat\_llm\_compressor} در سیستم مدیریت ماژول‌ها رجیستر شده است. جنبه‌های فنی پیاده‌سازی شامل موارد زیر است:
 \begin{itemize}
     \item \textbf{انعطاف‌پذیری نسبت به فرمت لایه‌ها:} ماژول به صورت خودکار لایه‌های \lr{Linear} و \lr{Conv1D} را تشخیص داده و ابعاد کانال‌های ورودی و خروجی را با دقت تفکیک و ترانهاده می‌کند.
     \item \textbf{مدیریت بایاس سازگار (\lr{Gated Bias Adjustment}):} در صورت صفر شدن یک ردیف کامل از وزن‌ها، بایاس متناظر با آن کانال نیز بر اساس ماسک کانالی گیت‌گذاری می‌شود تا مانع از انتشار نویز حاصل از بایاس فعال‌سازی‌های حذف‌شده به لایه‌های بعدی گردد.

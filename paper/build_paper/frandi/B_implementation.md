@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `frandi` module is implemented in `Codes/framework/compression_engine/frandi_compressor.py` (547 lines of code).
+The `frandi` module is implemented in `neuralops/compression_engine/frandi_compressor.py` (547 lines of code).
 - Registered Class: `FRanDILinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `Standard configuration arguments`

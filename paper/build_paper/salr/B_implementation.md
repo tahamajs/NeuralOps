@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `salr` module is implemented in `Codes/framework/compression_engine/salr.py` (479 lines of code).
+The `salr` module is implemented in `neuralops/compression_engine/salr.py` (479 lines of code).
 - Registered Class: `SALRLayer`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, rank: int, sparsity: float = 0.5, bias: bool = True, dtype: torch.dtype = torch.float32, device: Optional[torch.device] = None, lora\_r: int = 0, lora\_alpha: float = 1.0, ) -> None: super().\_\_init\_\_() self.in\_features = in\_features self.out\_features = out\_fe`

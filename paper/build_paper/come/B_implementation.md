@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `come` module is implemented in `Codes/framework/compression_engine/come.py` (716 lines of code).
+The `come` module is implemented in `neuralops/compression_engine/come.py` (716 lines of code).
 - Registered Class: `CoMeBridge`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, hidden\_size: int, alpha\_init: float = 0.1) -> None: super().\_\_init\_\_() self.hidden\_size = hidden\_size self.linear = nn.Linear(hidden\_size, hidden\_size, bias=False) with torch.no\_grad(`

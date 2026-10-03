@@ -38,7 +38,7 @@ p_i = \frac{\sigma_i^2}{\sum_{j=1}^d \sigma_j^2}, \quad r_{\text{eff}} = \exp\le
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی کلاس \lr{AdaSVDCompressor} در فایل \lr{Codes/framework/compression\_engine/adasvd\_compressor.py} مستقر گردیده و ویژگی‌های کلیدی زیر را محقق ساخته است:
+پیاده‌سازی کلاس \lr{AdaSVDCompressor} در فایل \lr{neuralops/compression\_engine/adasvd\_compressor.py} مستقر گردیده و ویژگی‌های کلیدی زیر را محقق ساخته است:
 \begin{itemize}
 \item \textbf{جایگزینی ماژولار با SVDLinear:} لایه‌های متراکم مبنا با لایه فشرده \lr{SVDLinear} تعویض می‌شوند که به صورت درونی ماتریس‌های پروجکشن دوگانه را با کارایی بهینه به حافظه متصل می‌کند.
 \item \textbf{پیکره کالیبراسیون چنددامنه‌ای:} استفاده از مجموعه نمونه‌های متنی متنوع \lr{(DEFAULT\_CALIBRATION\_CORPUS)} شامل کدهای برنامه‌نویسی، متون علمی و ریاضی جهت برآورد باثبات ماتریس‌های کوواریانس و شیفت میانگین.

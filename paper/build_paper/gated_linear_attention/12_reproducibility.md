@@ -14,7 +14,7 @@ To reproduce the empirical benchmark evaluations for `gated_linear_attention` ac
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor gated_linear_attention \
     --dataset sst2 \

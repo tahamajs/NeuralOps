@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `hybrid_svd_layer` module is implemented in `Codes/framework/compression_engine/hybrid_svd_layer.py` (483 lines of code).
+The `hybrid_svd_layer` module is implemented in `neuralops/compression_engine/hybrid_svd_layer.py` (483 lines of code).
 - Registered Class: `SVDSingleHead`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, hidden\_size: int, svd\_rank: int = 20) -> None: super().\_\_init\_\_() self.hidden\_size = hidden\_size self.svd\_rank = svd\_rank self.register\_buffer("pos\_encoding", None, persistent=False) def forward(self, hidden\_states: torch.Tensor) -> torch.Tensor: """Forward pass with SVD spectral projection.""`

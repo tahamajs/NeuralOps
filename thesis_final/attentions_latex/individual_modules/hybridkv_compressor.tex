@@ -36,7 +36,7 @@ L_{\text{max}} = \max\left(L_{\text{min}}, \lfloor T_{\text{cache}} \cdot \beta 
 که در آن $\mathcal{I}_{\text{retained}} = \mathcal{I}_{\text{sink}} \cup \mathcal{I}_{\text{recent}} \cup \mathcal{I}_{\text{heavy}}$ است.
 
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی این موتور در فایل \lr{Codes/framework/compression\_engine/hybridkv\_compressor.py} مستقر بوده و تحت نام \lr{hybridkv} در رجیستری فشرده‌سازی ثبت شده است. از ویژگی‌های شاخص معماری می‌توان به موارد زیر اشاره کرد:
+پیاده‌سازی این موتور در فایل \lr{neuralops/compression\_engine/hybridkv\_compressor.py} مستقر بوده و تحت نام \lr{hybridkv} در رجیستری فشرده‌سازی ثبت شده است. از ویژگی‌های شاخص معماری می‌توان به موارد زیر اشاره کرد:
 \begin{itemize}
     \item \textbf{مدیر پویا حافظه نهان (\lr{HybridKVCache}):} کلاس مدیریت حافظه نهان که عملیات به‌روزرسانی و فشرده‌سازی برخط (\lr{update\_and\_compress}) را بدون تخصیص مکرر حافظه و با حداقل سربار اجرا می‌کند.
     \item \textbf{حفظ کامل وزن‌های ایستا (\lr{Stationary Weights Preservation}):} این موتور هیچ تغییری در وزن‌های لایه‌های شبکه ایجاد نکرده و منحصراً بر روی تانسورهای پویای حافظه نهان \lr{KV} در طول پیش‌پرکردن (\lr{Prefill}) و تولید توکن‌به‌توکن تمرکز دارد.

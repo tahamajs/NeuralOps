@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `spectral_mamba` module is implemented in `Codes/framework/attentions/spectral_mamba.py` (700 lines of code).
+The `spectral_mamba` module is implemented in `neuralops/attentions/spectral_mamba.py` (700 lines of code).
 - Registered Class: `Mamba`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, d\_model: int = 768, **kwargs: Any) -> None: super().\_\_init\_\_() self.in\_proj = nn.Linear(d\_model, 2 * d\_model) self.out\_proj = nn.Linear(d\_model, d\_model) nn.init.zeros\_(self.out\_proj.weight) if self.out\_proj.bias is not None: nn.init.zeros\_(self.out\_proj.bias) def forward(self, x: torch.Tensor`

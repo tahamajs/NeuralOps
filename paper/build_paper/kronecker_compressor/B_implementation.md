@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `kronecker_compressor` module is implemented in `Codes/framework/compression_engine/kronecker_compressor.py` (349 lines of code).
+The `kronecker_compressor` module is implemented in `neuralops/compression_engine/kronecker_compressor.py` (349 lines of code).
 - Registered Class: `KroneckerCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: Optional[nn.Module] = None, rank: Optional[int] = None, max\_error: float = 0.80, fallback\_to\_original: bool = True, lora\_r: int = 0, lora\_alpha: float = 1.0, target\_attention\_only: bool = False, skip\_attention\_qkv: bool = False, cfg: Optional[Any] = None, target\_layers: Optional[List[st`

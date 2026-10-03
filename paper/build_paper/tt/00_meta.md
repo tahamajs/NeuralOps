@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `tt`  
-**Implementation Source**: `Codes/framework/attentions/token_compressed_attention.py` (783 lines of code)  
+**Implementation Source**: `neuralops/attentions/token_compressed_attention.py` (783 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

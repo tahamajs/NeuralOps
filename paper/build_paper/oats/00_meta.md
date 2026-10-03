@@ -4,7 +4,7 @@
 **Class Name**: `OATSLoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `oats`  
-**Implementation Source**: `Codes/framework/compression_engine/oats_compressor.py` (597 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/oats_compressor.py` (597 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

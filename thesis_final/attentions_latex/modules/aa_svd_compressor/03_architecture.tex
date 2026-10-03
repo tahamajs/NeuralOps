@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-کلاس‌های \lr{AASVDCompressor} و \lr{SVDLinear} در فایل \lr{Codes/framework/compression\_engine/aa\_svd\_compressor.py} قرار دارند و با شناسه‌های \lr{aasvd}، \lr{aa\_svd} و \lr{aa\_svd\_compressor} در رجیستری ماژول‌های فشرده‌سازی ثبت شده‌اند. نقاط کلیدی در پیاده‌سازی عبارتند از:
+کلاس‌های \lr{AASVDCompressor} و \lr{SVDLinear} در فایل \lr{neuralops/compression\_engine/aa\_svd\_compressor.py} قرار دارند و با شناسه‌های \lr{aasvd}، \lr{aa\_svd} و \lr{aa\_svd\_compressor} در رجیستری ماژول‌های فشرده‌سازی ثبت شده‌اند. نقاط کلیدی در پیاده‌سازی عبارتند از:
 \begin{itemize}
     \item \textbf{جایگزینی ماژولار ساختاری (\lr{SVDLinear Module}):} لایه‌های چگال استاندارد و همچنین لایه‌های \lr{Conv1D} (در مدل \lr{GPT-2}) مستقیماً با ماژول اختصاصی \lr{SVDLinear} جایگزین می‌شوند. این لایه علاوه بر فاکتورهای کم‌مرتبه $\mathbf{U}$ و $\mathbf{V}$، مجهز به آداپتورهای باقیمانده \lr{LoRA} برای فاز بازیابی دقت پس از فشرده‌سازی است.
     \item \textbf{پشتیبانی از هسته همجوش‌یافته سریع (\lr{Fused SVD Kernel}):} کلاس \lr{SVDLinear} امکان فراخوانی هسته‌های بهینه‌سازی‌شده برای ادغام دو ضرب خطی و اعمال بایاس در یک گذر حافظه \lr{SRAM} را داراست.

@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `minimal_svd_v2` module is implemented in `Codes/framework/attentions/minimal_svd_v2.py` (595 lines of code).
+The `minimal_svd_v2` module is implemented in `neuralops/attentions/minimal_svd_v2.py` (595 lines of code).
 - Registered Class: `FactorisedLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, rank: int = 64, bias: bool = True, energy: float = 0.95, lora\_rank: int = 16, lora\_alpha: float = 32.0, ) -> None: super().\_\_init\_\_() self.in\_features = in\_features self.out\_features = out\_features self.rank = min(rank, in\_features, out\_features) self.energ`

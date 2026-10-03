@@ -4,7 +4,7 @@
 **Class Name**: `SAESSVDCompressorV2`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `saes_svd`  
-**Implementation Source**: `Codes/framework/compression_engine/saes_svd_v2.py` (307 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/saes_svd_v2.py` (307 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract
@@ -35,7 +35,7 @@ $$\mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}$$
 In batch-1 autoregressive decoding, arithmetic intensity drops significantly ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading billions of parameters across high-bandwidth memory (HBM) buses creates a strict throughput ceiling. By zeroing out unessential parameters or factorizing projections into lower-dimensional subspaces, our framework reduces total bytes transferred per token step, directly unlocking tangible wall-clock acceleration.
 
 ## 1.3 Architectural Positioning within the Unified Framework
-Within our production-hardened framework, `saes_svd` resides as a first-class component under `Codes/framework/compression_engine/`. Unlike ad-hoc research prototypes, `saes_svd` adheres to standardized contracts:
+Within our production-hardened framework, `saes_svd` resides as a first-class component under `neuralops/compression_engine/`. Unlike ad-hoc research prototypes, `saes_svd` adheres to standardized contracts:
 - **Plug-and-Play Model Replacement**: Capable of dynamically replacing baseline projection layers or full attention blocks without requiring global architecture refactoring.
 - **Heterogeneous Model Support**: Implements explicit structural handling for bidirectional encoders (DistilBERT, RoBERTa/BERT), autoregressive Conv1D decoders (GPT-2), and modern grouped-query architectures (LLaMA/Qwen).
 - **Graceful Degradation and Guardrail Fallbacks**: Encapsulates automated reconstruction norm validation, condition number checks, and adaptive residual fine-tuning (LoRA) to guarantee execution stability under extreme compression ratios.
@@ -381,9 +381,9 @@ Table 7.1 reports empirical downstream task accuracy and F1 scores across target
 ### Table 7.1: Downstream Task Accuracy and Performance Across Backbones
 | Source File | Backbone | Variant | Status | Accuracy (%) | F1 Score |
 |---|---|---|---|---|---|
-| Codes/framework/compression_engine/pruning_utils.py | DistilBERT | saes_svd | PASS | 89.42% <!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 --> | 0.8950 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 --> |
-| Codes/framework/compression_engine/pruning_utils.py | RoBERTa | saes_svd | PASS | 76.80% <!-- source: Codes/framework/compression_engine/pruning_utils.py line 26 --> | 0.7812 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 26 --> |
-| Codes/framework/compression_engine/pruning_utils.py | GPT-2 | saes_svd | PASS | 77.15% <!-- source: Codes/framework/compression_engine/pruning_utils.py line 27 --> | 0.7740 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 27 --> |
+| neuralops/compression_engine/pruning_utils.py | DistilBERT | saes_svd | PASS | 89.42% <!-- source: neuralops/compression_engine/pruning_utils.py line 25 --> | 0.8950 <!-- source: neuralops/compression_engine/pruning_utils.py line 25 --> |
+| neuralops/compression_engine/pruning_utils.py | RoBERTa | saes_svd | PASS | 76.80% <!-- source: neuralops/compression_engine/pruning_utils.py line 26 --> | 0.7812 <!-- source: neuralops/compression_engine/pruning_utils.py line 26 --> |
+| neuralops/compression_engine/pruning_utils.py | GPT-2 | saes_svd | PASS | 77.15% <!-- source: neuralops/compression_engine/pruning_utils.py line 27 --> | 0.7740 <!-- source: neuralops/compression_engine/pruning_utils.py line 27 --> |
 
 ## 7.2 Parameter Reduction and Model Efficiency
 Table 7.2 details parameter compression ratios, base parameter counts, and trainable recovery adapter parameters.
@@ -391,9 +391,9 @@ Table 7.2 details parameter compression ratios, base parameter counts, and train
 ### Table 7.2: Parameter Counts and Compression Metrics
 | Source File | Backbone | Variant | Parameters Before | Parameters After | Trainable Recovery Params | Compression Ratio |
 |---|---|---|---|---|---|---|
-| Codes/framework/compression_engine/pruning_utils.py | DistilBERT | saes_svd | 66955010 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 --> | 33477505 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 --> | 294912 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 --> | 2.0x <!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 --> |
-| Codes/framework/compression_engine/pruning_utils.py | RoBERTa | saes_svd | 124647170 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 26 --> | 62323585 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 26 --> | 589824 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 26 --> | 2.0x <!-- source: Codes/framework/compression_engine/pruning_utils.py line 26 --> |
-| Codes/framework/compression_engine/pruning_utils.py | GPT-2 | saes_svd | 124441344 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 27 --> | 62220672 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 27 --> | 589824 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 27 --> | 2.0x <!-- source: Codes/framework/compression_engine/pruning_utils.py line 27 --> |
+| neuralops/compression_engine/pruning_utils.py | DistilBERT | saes_svd | 66955010 <!-- source: neuralops/compression_engine/pruning_utils.py line 25 --> | 33477505 <!-- source: neuralops/compression_engine/pruning_utils.py line 25 --> | 294912 <!-- source: neuralops/compression_engine/pruning_utils.py line 25 --> | 2.0x <!-- source: neuralops/compression_engine/pruning_utils.py line 25 --> |
+| neuralops/compression_engine/pruning_utils.py | RoBERTa | saes_svd | 124647170 <!-- source: neuralops/compression_engine/pruning_utils.py line 26 --> | 62323585 <!-- source: neuralops/compression_engine/pruning_utils.py line 26 --> | 589824 <!-- source: neuralops/compression_engine/pruning_utils.py line 26 --> | 2.0x <!-- source: neuralops/compression_engine/pruning_utils.py line 26 --> |
+| neuralops/compression_engine/pruning_utils.py | GPT-2 | saes_svd | 124441344 <!-- source: neuralops/compression_engine/pruning_utils.py line 27 --> | 62220672 <!-- source: neuralops/compression_engine/pruning_utils.py line 27 --> | 589824 <!-- source: neuralops/compression_engine/pruning_utils.py line 27 --> | 2.0x <!-- source: neuralops/compression_engine/pruning_utils.py line 27 --> |
 
 ## 7.3 Latency, Throughput, and VRAM Utilization
 Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstruction errors.
@@ -401,9 +401,9 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 ### Table 7.3: Hardware Throughput and Memory Profiling
 | Source File | Backbone | Variant | Throughput (Tokens/s) | Peak VRAM | Reconstruction Error |
 |---|---|---|---|---|---|
-| Codes/framework/compression_engine/pruning_utils.py | DistilBERT | saes_svd | 148920.1 tok/s <!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 --> | 342.10 MB <!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 --> | 0.0412 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 --> |
-| Codes/framework/compression_engine/pruning_utils.py | RoBERTa | saes_svd | 112450.6 tok/s <!-- source: Codes/framework/compression_engine/pruning_utils.py line 26 --> | 684.50 MB <!-- source: Codes/framework/compression_engine/pruning_utils.py line 26 --> | 0.0583 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 26 --> |
-| Codes/framework/compression_engine/pruning_utils.py | GPT-2 | saes_svd | 108340.2 tok/s <!-- source: Codes/framework/compression_engine/pruning_utils.py line 27 --> | 710.20 MB <!-- source: Codes/framework/compression_engine/pruning_utils.py line 27 --> | 0.0610 <!-- source: Codes/framework/compression_engine/pruning_utils.py line 27 --> |
+| neuralops/compression_engine/pruning_utils.py | DistilBERT | saes_svd | 148920.1 tok/s <!-- source: neuralops/compression_engine/pruning_utils.py line 25 --> | 342.10 MB <!-- source: neuralops/compression_engine/pruning_utils.py line 25 --> | 0.0412 <!-- source: neuralops/compression_engine/pruning_utils.py line 25 --> |
+| neuralops/compression_engine/pruning_utils.py | RoBERTa | saes_svd | 112450.6 tok/s <!-- source: neuralops/compression_engine/pruning_utils.py line 26 --> | 684.50 MB <!-- source: neuralops/compression_engine/pruning_utils.py line 26 --> | 0.0583 <!-- source: neuralops/compression_engine/pruning_utils.py line 26 --> |
+| neuralops/compression_engine/pruning_utils.py | GPT-2 | saes_svd | 108340.2 tok/s <!-- source: neuralops/compression_engine/pruning_utils.py line 27 --> | 710.20 MB <!-- source: neuralops/compression_engine/pruning_utils.py line 27 --> | 0.0610 <!-- source: neuralops/compression_engine/pruning_utils.py line 27 --> |
 
 ---
 
@@ -516,7 +516,7 @@ To reproduce the empirical benchmark evaluations for `saes_svd` across GLUE clas
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor saes_svd \
     --dataset sst2 \
@@ -604,7 +604,7 @@ $$\|X_L\|_F \le \|X_0\|_F \exp\left( \sum_{l=1}^L \|W^{(l)}_{V, r} W^{(l)}_{O, r
 
 # Appendix B. Implementation Details and Code Mapping
 
-The `saes_svd` module is implemented in `Codes/framework/compression_engine/saes_svd_v2.py` (307 lines of code).
+The `saes_svd` module is implemented in `neuralops/compression_engine/saes_svd_v2.py` (307 lines of code).
 - Registered Class: `SAESSVDCompressorV2`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `Standard configuration arguments`

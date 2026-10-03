@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `armor_pruner` module is implemented in `Codes/framework/compression_engine/armor_pruner.py` (698 lines of code).
+The `armor_pruner` module is implemented in `neuralops/compression_engine/armor_pruner.py` (698 lines of code).
 - Registered Class: `ARMORLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, rank: int, bias: bool = True, lora\_alpha: float = 1.0, dtype: torch.dtype = torch.float32, device: Optional[torch.device] = None, ) -> None: super().\_\_init\_\_() self.in\_features = in\_features self.out\_features = out\_features self.nf = out\_features # Conv1D c`

@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `oha, oha_inject, optimized_hybrid_attention`  
-**Implementation Source**: `Codes/framework/attentions/optimized_hybrid_attention.py` (592 lines of code)  
+**Implementation Source**: `neuralops/attentions/optimized_hybrid_attention.py` (592 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

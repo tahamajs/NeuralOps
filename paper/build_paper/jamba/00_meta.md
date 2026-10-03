@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `inject_jamba2, jamba2, jamba2_inject, jamba_inject, jamba, inject_jamba`  
-**Implementation Source**: `Codes/framework/attentions/jamba.py` (653 lines of code)  
+**Implementation Source**: `neuralops/attentions/jamba.py` (653 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

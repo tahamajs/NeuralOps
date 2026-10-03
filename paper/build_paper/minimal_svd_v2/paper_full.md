@@ -4,7 +4,7 @@
 **Class Name**: `FactorisedLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `minimal_svd_v2, minimal_svd_v2_inject, inject_minimal_svd_v2`  
-**Implementation Source**: `Codes/framework/attentions/minimal_svd_v2.py` (595 lines of code)  
+**Implementation Source**: `neuralops/attentions/minimal_svd_v2.py` (595 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract
@@ -35,7 +35,7 @@ $$\mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}$$
 In batch-1 autoregressive decoding, arithmetic intensity drops significantly ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading billions of parameters across high-bandwidth memory (HBM) buses creates a strict throughput ceiling. By zeroing out unessential parameters or factorizing projections into lower-dimensional subspaces, our framework reduces total bytes transferred per token step, directly unlocking tangible wall-clock acceleration.
 
 ## 1.3 Architectural Positioning within the Unified Framework
-Within our production-hardened framework, `minimal_svd_v2` resides as a first-class component under `Codes/framework/attentions/`. Unlike ad-hoc research prototypes, `minimal_svd_v2` adheres to standardized contracts:
+Within our production-hardened framework, `minimal_svd_v2` resides as a first-class component under `neuralops/attentions/`. Unlike ad-hoc research prototypes, `minimal_svd_v2` adheres to standardized contracts:
 - **Plug-and-Play Model Replacement**: Capable of dynamically replacing baseline projection layers or full attention blocks without requiring global architecture refactoring.
 - **Heterogeneous Model Support**: Implements explicit structural handling for bidirectional encoders (DistilBERT, RoBERTa/BERT), autoregressive Conv1D decoders (GPT-2), and modern grouped-query architectures (LLaMA/Qwen).
 - **Graceful Degradation and Guardrail Fallbacks**: Encapsulates automated reconstruction norm validation, condition number checks, and adaptive residual fine-tuning (LoRA) to guarantee execution stability under extreme compression ratios.
@@ -525,7 +525,7 @@ To reproduce the empirical benchmark evaluations for `minimal_svd_v2` across GLU
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor minimal_svd_v2 \
     --dataset sst2 \
@@ -613,7 +613,7 @@ $$\|X_L\|_F \le \|X_0\|_F \exp\left( \sum_{l=1}^L \|W^{(l)}_{V, r} W^{(l)}_{O, r
 
 # Appendix B. Implementation Details and Code Mapping
 
-The `minimal_svd_v2` module is implemented in `Codes/framework/attentions/minimal_svd_v2.py` (595 lines of code).
+The `minimal_svd_v2` module is implemented in `neuralops/attentions/minimal_svd_v2.py` (595 lines of code).
 - Registered Class: `FactorisedLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, rank: int = 64, bias: bool = True, energy: float = 0.95, lora\_rank: int = 16, lora\_alpha: float = 32.0, ) -> None: super().\_\_init\_\_() self.in\_features = in\_features self.out\_features = out\_features self.rank = min(rank, in\_features, out\_features) self.energ`

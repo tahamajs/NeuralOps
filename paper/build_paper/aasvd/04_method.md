@@ -50,13 +50,13 @@ $$
 C_X^{(\ell)} = \mathbb{E}_{x^{(\ell)} \sim \mathcal{D}}\!\left[x^{(\ell)} (x^{(\ell)})^\top\right]
 \tag{4.1}
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 where $x^{(\ell)}$ is the layer input during calibration.
@@ -70,13 +70,13 @@ $$
 C_\text{batch} = \frac{1}{N_\text{valid}} \sum_{i=1}^{N_\text{valid}} x_i x_i^\top
 \tag{4.2}
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 where $N_\text{valid} \leq B_\text{calib}$ counts non-padding tokens. We 
@@ -86,13 +86,13 @@ $$
 \hat{C}_X \leftarrow \beta \hat{C}_X + (1 - \beta) C_\text{batch}
 \tag{4.3}
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 with $\beta = 0.9$ by default. The running estimate starts as the first 
@@ -106,13 +106,13 @@ $$
 \text{valid}(x_i) = \begin{cases} 1 & \text{if } \|x_i\|_1 > 10^{-5} \\ 0 & \text{otherwise} \end{cases}
 \tag{4.4}
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 Only valid tokens contribute to $C_\text{batch}$. This is critical for 
@@ -161,13 +161,13 @@ $$
 \mathcal{L}_\text{weighted}(W_r) = \mathbb{E}_{x}\!\left[\|W x - W_r x\|_2^2\right]
 \tag{4.5}
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 $$
 
 Under the second-moment assumption $\mathbb{E}[x x^\top] = C_X$:
@@ -176,13 +176,13 @@ $$
 \mathcal{L}_\text{weighted}(W_r) = \mathrm{Tr}\!\left[(W - W_r) C_X (W - W_r)^\top\right] = \|(W - W_r) C_X^{1/2}\|_F^2
 \tag{4.6}
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 $$
 
 which is exactly an unweighted problem on the transformed matrix:
@@ -191,13 +191,13 @@ $$
 W_\text{weighted} = W C_X^{1/2}
 \tag{4.7}
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 $$
 
 ### 4.3.2 The Algorithm
@@ -208,26 +208,26 @@ $$
    W_\text{weighted} \approx U_r \Sigma_r V_r^\top
    \tag{4.8}
    
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 $$
 3. Unweight the right factor:
    $$
    V_r^\text{unweighted} = V_r^\top C_X^{-1/2}
    \tag{4.9}
    
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 $$
 4. Distribute the singular values symmetrically:
    $$
@@ -235,26 +235,26 @@ $$
    V = \Sigma_r^{1/2} V_r^\text{unweighted}
    \tag{4.10}
    
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 527 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 527 -->
 $$
 5. The factorized layer computes:
    $$
    y = (x V^\top) U^\top + b
    \tag{4.11}
    
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 ### 4.3.3 Eigendecomposition with Regularization
@@ -267,13 +267,13 @@ C_X^{1/2} = Q \Lambda^{1/2} Q^\top, \quad
 C_X^{-1/2} = Q \Lambda^{-1/2} Q^\top
 \tag{4.12}
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 Eigenvalues are regularized:
@@ -283,13 +283,13 @@ $$
 \epsilon_\text{reg} = 10^{-6} \cdot \max_j \lambda_j + 10^{-8}
 \tag{4.13}
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 This ensures $C_X^{-1/2}$ is finite for near-zero eigenvalues.
@@ -303,13 +303,13 @@ $$
 r_\text{eff} = \min\!\left(r, \left\lfloor 0.75 \cdot \frac{d_\text{in} d_\text{out}}{d_\text{in} + d_\text{out}} \right\rfloor \right)
 \tag{4.14}
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 The $0.75$ factor enforces that the factorized layer uses at most 75% of the 
@@ -326,13 +326,13 @@ $$
 \text{err}(W, U, V) = \frac{\|W - UV\|_F}{\|W\|_F + 10^{-12}}
 \tag{4.15}
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 **Two possible outcomes:**
@@ -355,13 +355,13 @@ $$
 y = (x V^\top) U^\top + b + \text{LoRA}(x) \cdot s
 \tag{4.16}
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 where:
@@ -488,13 +488,13 @@ $$
 \|W - U_r V_r\|_F \leq \frac{\sqrt{\sum_{i > r} \sigma_i^2}}{\sqrt{\lambda_\text{min}(C_X)}}
 \tag{4.17}
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 530 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 530 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 530 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 530 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 530 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 530 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 530 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 530 -->
 $$
 
 where $\sigma_i$ are the singular values of $W C_X^{1/2}$ and $\lambda_\text{min}$ 
@@ -508,13 +508,13 @@ $$
 \leq \sqrt{\sum_{i > r} \sigma_i^2}
 \tag{4.18}
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 530 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 530 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 530 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 530 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 530 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 530 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 530 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 530 -->
 $$
 
 Dividing gives (4.17). $\square$
@@ -531,13 +531,13 @@ $$
 \hat{C}^{(k)} = \beta^{k-1} C_1 + (1 - \beta) \sum_{j=2}^{k} \beta^{k-j} C_j
 \tag{4.19}
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 Taking expectations (assuming $\mathbb{E}[C_k] = \bar{C}$):
@@ -546,13 +546,13 @@ $$
 \mathbb{E}[\hat{C}^{(k)}] = \bar{C} + \beta^{k-1} (C_1 - \bar{C})
 \tag{4.20}
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 
-<!-- source: Codes/framework/compression_engine/aa_svd_compressor.py line 183 -->
+<!-- source: neuralops/compression_engine/aa_svd_compressor.py line 183 -->
 $$
 
 so the bias decays as $\beta^{k-1}$. $\square$

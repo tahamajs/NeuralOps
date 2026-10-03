@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `adaptive_ranks` module is implemented in `Codes/framework/compression_engine/adaptive_ranks.py` (640 lines of code).
+The `adaptive_ranks` module is implemented in `neuralops/compression_engine/adaptive_ranks.py` (640 lines of code).
 - Registered Class: `AdaptiveRanksCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: nn.Module, energy\_threshold: float = 0.92, min\_rank: int = 16, max\_error: float = 0.20, fallback\_to\_original: bool = True, protect\_critical: bool = True, target\_attention\_only: bool = False, target\_modules: Optional[List[str]] = None, tokenizer: Optional[Any] = None, calibration\_loader:`

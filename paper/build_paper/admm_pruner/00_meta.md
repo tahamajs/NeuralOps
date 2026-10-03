@@ -4,7 +4,7 @@
 **Class Name**: `ADMMMaskedLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `admm_pruner, admm_pruner_factory, admm_pruner_distill`  
-**Implementation Source**: `Codes/framework/compression_engine/admm_pruner.py` (767 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/admm_pruner.py` (767 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

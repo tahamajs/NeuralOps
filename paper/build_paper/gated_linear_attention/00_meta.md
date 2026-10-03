@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `gated_linear_attn, gated_linear_attention, gated_linear_attention_inject, inject_gated_linear`  
-**Implementation Source**: `Codes/framework/attentions/gated_linear_attention.py` (674 lines of code)  
+**Implementation Source**: `neuralops/attentions/gated_linear_attention.py` (674 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

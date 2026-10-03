@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی این ماژول در \lr{Codes/framework/compression\_engine/entropy\_budget\_allocation.py} تعبیه شده و خصوصیات کلیدی زیر را شامل می‌شود:
+پیاده‌سازی این ماژول در \lr{neuralops/compression\_engine/entropy\_budget\_allocation.py} تعبیه شده و خصوصیات کلیدی زیر را شامل می‌شود:
 \begin{itemize}
     \item \textbf{جمع‌آوری هوک‌های کوواریانس با دقت مضاعف (\lr{Double-Precision Hooks}):} ذخیره‌سازی ممان‌های درجه دوم فعال‌سازی‌ها در فاز کالیبراسیون و محاسبه تجزیه هرمیتی \lr{torch.linalg.eigh} با کف مقادیر ویژه مثبت معین.
     \item \textbf{تخصیص بودجه سراسری بر مبنای صف اولویت:} توزیع دقیق رتبه‌ها در سراسر لایه‌ها متناسب با بودجه کلی $\alpha_{\text{budget}} \in (0, 1]$.

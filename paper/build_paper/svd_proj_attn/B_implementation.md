@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `svd_proj_attn` module is implemented in `Codes/framework/attentions/svd_projection_attention.py` (713 lines of code).
+The `svd_proj_attn` module is implemented in `neuralops/attentions/svd_projection_attention.py` (713 lines of code).
 - Registered Class: `SVDProjectionLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `Standard configuration arguments`

@@ -4,7 +4,7 @@
 **Class Name**: `EntropyBudgetCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `entropy_budget, entropy_budget_allocation`  
-**Implementation Source**: `Codes/framework/compression_engine/entropy_budget_allocation.py` (467 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/entropy_budget_allocation.py` (467 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

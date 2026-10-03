@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `enlighten_compressor` module is implemented in `Codes/framework/compression_engine/enlighten_compressor.py` (378 lines of code).
+The `enlighten_compressor` module is implemented in `neuralops/compression_engine/enlighten_compressor.py` (378 lines of code).
 - Registered Class: `ENLightenCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: nn.Module, rank: int = 64, sparsity: float = 0.5, structured\_24: bool = True, max\_error: float = 0.35, target\_attention\_only: bool = False, fallback\_to\_original: bool = True, max\_retries: int = 2, target\_modules: Optional[List[str]] = None, cfg: Optional[Any] = None, **kwargs: Any, ) ->`

@@ -43,7 +43,7 @@
 \end{enumerate}
 
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی ماژول در فایل \lr{Codes/framework/compression\_engine/sdrm\_compressor.py} مستقر بوده و تحت نام‌های \lr{sdrm\_class} و \lr{sdrm\_compressor\_class} در رجیستری فریم‌ورک ثبت گردیده است. مشخصات فنی این پیاده‌سازی عبارتند از:
+پیاده‌سازی ماژول در فایل \lr{neuralops/compression\_engine/sdrm\_compressor.py} مستقر بوده و تحت نام‌های \lr{sdrm\_class} و \lr{sdrm\_compressor\_class} در رجیستری فریم‌ورک ثبت گردیده است. مشخصات فنی این پیاده‌سازی عبارتند از:
 \begin{itemize}
     \item \textbf{مدیریت یکپارچه لایه‌های متوالی و ماژول‌های اشتراکی:} الگوریتم با بهره‌گیری از مجموعه \lr{visited\_modules} از پردازش تکراری لایه‌های با وزن مشترک (\lr{Tied Weights}) جلوگیری می‌کند.
     \item \textbf{کاهش فیزیکی واقعی در ابعاد لایه‌ها:} بر خلاف روش‌های تنک‌سازی که نیازمند پشتیبانی نرم‌افزاری خاص هستند، ساختار \lr{SVDLinear} در \lr{SDRM} ابعاد تانسورهای ذخیره‌شده را به طور فیزیکی کاهش می‌دهد.

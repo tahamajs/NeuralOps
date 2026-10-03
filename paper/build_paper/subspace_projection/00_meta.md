@@ -4,7 +4,7 @@
 **Class Name**: `SubspaceLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `subspace_projection_compressor, subspace_projection`  
-**Implementation Source**: `Codes/framework/compression_engine/subspace_projection.py` (351 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/subspace_projection.py` (351 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

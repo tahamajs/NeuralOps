@@ -4,7 +4,7 @@
 **Class Name**: `CoopQLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `coopq, coopq_quantizer`  
-**Implementation Source**: `Codes/framework/compression_engine/coopq_quantizer.py` (609 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/coopq_quantizer.py` (609 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

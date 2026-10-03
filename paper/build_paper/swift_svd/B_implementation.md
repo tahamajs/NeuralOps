@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `swift_svd` module is implemented in `Codes/framework/compression_engine/swift_svd.py` (431 lines of code).
+The `swift_svd` module is implemented in `neuralops/compression_engine/swift_svd.py` (431 lines of code).
 - Registered Class: `SwiftSVDCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: nn.Module, rank: Optional[int] = None, rank\_ratio: float = 0.5, target\_modules: Optional[List[str]] = None, max\_error: float = 0.60, max\_retries: int = 3, fallback\_to\_original: bool = True, validation\_calibration: bool = False, calibration\_threshold: float = 0.10, target\_attention\_only:`

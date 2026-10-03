@@ -31,7 +31,7 @@
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-موتور فشرده‌سازی \lr{MoDeGPT} در فایل \lr{Codes/framework/compression\_engine/modegpt\_compressor.py} تعبیه شده و شامل مؤلفه‌های زیر است:
+موتور فشرده‌سازی \lr{MoDeGPT} در فایل \lr{neuralops/compression\_engine/modegpt\_compressor.py} تعبیه شده و شامل مؤلفه‌های زیر است:
 \begin{itemize}
     \item \textbf{لایه خطی \lr{MoDeGPTLoRALinear}:} لایه جایگزین که وزن‌های پایه فاکتورگیری‌شده را در فرمت استاندارد نگهداری کرده و با لایه‌های \lr{Conv1D} در مدل‌های سبکی همچون \lr{GPT-2} سازگاری کامل دارد. همچنین در صورت نیاز به فاین‌تیونینگ، قابلیت اضافه کردن ادپترهای \lr{LoRA} فعال می‌گردد.
     \item \textbf{کلاس \lr{MoDeGPTCompressor}:} مدیریت خوشه‌بندی لایه‌ها به جفت‌های مکمل (\lr{Joint Pairs})، بررسی سازگاری ابعاد لایه‌ها، مدیریت لایه‌های منفرد که جفت مناسبی ندارند توسط \lr{\_decompose\_single}، محافظت از پروجکشن‌های حساس در معماری‌های با مکانیزم توجه نامتقارن (\lr{GQA-aware skipping}) و امکان بازگشت امن به وزن اصلی در صورت نقض آستانه خطا.

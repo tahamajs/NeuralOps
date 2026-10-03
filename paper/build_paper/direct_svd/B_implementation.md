@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `direct_svd` module is implemented in `Codes/framework/compression_engine/direct_svd.py` (462 lines of code).
+The `direct_svd` module is implemented in `neuralops/compression_engine/direct_svd.py` (462 lines of code).
 - Registered Class: `DirectSVDCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: nn.Module, rank: Optional[int] = 32, min\_rank: int = 16, rank\_ratio: Optional[float] = None, max\_error: float = 0.35, fallback\_to\_original: bool = True, protect\_critical: bool = True, lora\_r: int = 0, lora\_alpha: float = 1.0, skip\_attention\_qkv: bool = True, target\_attention\_only: bool `

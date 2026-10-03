@@ -4,7 +4,7 @@
 **Class Name**: `ToMoELinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `tomoe`  
-**Implementation Source**: `Codes/framework/compression_engine/tomoe_compressor.py` (685 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/tomoe_compressor.py` (685 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

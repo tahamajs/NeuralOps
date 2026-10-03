@@ -4,7 +4,7 @@
 **Class Name**: `AdaSVDCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `adasvd`  
-**Implementation Source**: `Codes/framework/compression_engine/adasvd_compressor.py` (488 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/adasvd_compressor.py` (488 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

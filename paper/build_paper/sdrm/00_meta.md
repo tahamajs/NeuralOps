@@ -4,7 +4,7 @@
 **Class Name**: `SDRMCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `sdrm`  
-**Implementation Source**: `Codes/framework/compression_engine/sdrm_compressor.py` (423 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/sdrm_compressor.py` (423 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

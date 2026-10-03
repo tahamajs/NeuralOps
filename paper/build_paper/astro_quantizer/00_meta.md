@@ -4,7 +4,7 @@
 **Class Name**: `AstroLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `astro, astro_quantizer, astro_quantizer_factory, astro_factory`  
-**Implementation Source**: `Codes/framework/compression_engine/astro_quantizer.py` (757 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/astro_quantizer.py` (757 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

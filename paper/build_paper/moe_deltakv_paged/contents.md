@@ -1689,7 +1689,7 @@ python run_all_4_moe_deltakv_paged.py \
 ## 12.3 Individual Model
 
 ```bash
-python Codes/framework/run_quality_sweep.py \
+python neuralops/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,moe_deltakv_paged \
     --page_size 64 \

@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `projection_factorized_attn` module is implemented in `Codes/framework/attentions/projection_factorized_attn.py` (87 lines of code).
+The `projection_factorized_attn` module is implemented in `neuralops/attentions/projection_factorized_attn.py` (87 lines of code).
 - Registered Class: `ProjectionFactorizedAttention`
 - Base Architecture: `SVDLinearAttention`
 - Constructor Signatures: `Standard configuration arguments`

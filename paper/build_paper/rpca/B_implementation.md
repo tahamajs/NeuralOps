@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `rpca` module is implemented in `Codes/framework/compression_engine/rpca_compressor.py` (413 lines of code).
+The `rpca` module is implemented in `neuralops/compression_engine/rpca_compressor.py` (413 lines of code).
 - Registered Class: `RPCACompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `Standard configuration arguments`

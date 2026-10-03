@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `rotational_slicegpt_int4` module is implemented in `Codes/framework/compression_engine/rotational_slicegpt_int4.py` (526 lines of code).
+The `rotational_slicegpt_int4` module is implemented in `neuralops/compression_engine/rotational_slicegpt_int4.py` (526 lines of code).
 - Registered Class: `RotationalSliceGPTINT4Linear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, bits: int = 4) -> None: self.bits = bits if bits in (2, 4, 8) else 4 num\_centroids = 2 ** self.bits k = torch.arange(num\_centroids, dtype=torch.float32) mid = (num\_centroids - 1.0) / 2.0 # Centroids scaled to Gaussian distribution self.centroids\_base = torch.sign(k - mid) * torch.pow(torch.abs`

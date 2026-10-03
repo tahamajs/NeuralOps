@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `squeezing_heads` module is implemented in `Codes/framework/attentions/squeezing_heads_distill.py` (724 lines of code).
+The `squeezing_heads` module is implemented in `neuralops/attentions/squeezing_heads_distill.py` (724 lines of code).
 - Registered Class: `LoRALinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `Standard configuration arguments`

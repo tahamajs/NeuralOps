@@ -41,7 +41,7 @@
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی ماژول در فایل \lr{Codes/framework/attentions/tlinformer\_attention.py} دارای ویژگی‌های زیر است:
+پیاده‌سازی ماژول در فایل \lr{neuralops/attentions/tlinformer\_attention.py} دارای ویژگی‌های زیر است:
 \begin{itemize}
     \item \textbf{انتقال چندمعماری وزن‌ها (\lr{copy\_weights}):} قابلیت انتقال پارامترها از انواع معماری‌های \lr{DistilBERT, RoBERTa, GPT-2} و \lr{Qwen} با اعتبارسنجی نُرم فروبنیوس ($\ge 10^{-4}$).
     \item \textbf{انقباض ایمن دنباله:} پیاده‌سازی ضرب انقباضی $\mathbf{K}_{\text{proj}} = \mathbf{P} \mathbf{K}$ با رعایت ترتیب ابعاد تانسوری و حفظ پایداری گرادیان.

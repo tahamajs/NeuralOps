@@ -14,7 +14,7 @@ To reproduce the empirical benchmark evaluations for `span_expanded_attention` a
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor span_expanded_attention \
     --dataset sst2 \

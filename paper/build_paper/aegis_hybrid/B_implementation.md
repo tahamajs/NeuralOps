@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `aegis_hybrid` module is implemented in `Codes/framework/attentions/aegis_hybrid.py` (1041 lines of code).
+The `aegis_hybrid` module is implemented in `neuralops/attentions/aegis_hybrid.py` (1041 lines of code).
 - Registered Class: `FactorizedLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features\_or\_lin1: Union[int, nn.Linear], out\_features\_or\_lin2: Optional[Union[int, nn.Linear]] = None, rank: int = 128, lora\_rank: int = 32, bias: bool = True, device: Optional[torch.device] = None, dtype: Optional[torch.dtype] = None, ) -> None: super().\_\_init\_\_() if isinstance(in\_features`

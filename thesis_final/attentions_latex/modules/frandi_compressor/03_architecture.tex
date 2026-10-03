@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-کلاس‌های \lr{FRanDICompressor} و لایه اختصاصی \lr{FRanDILinear} در فایل \lr{Codes/framework/compression\_engine/frandi\_compressor.py} مستقر بوده و تحت شناسه‌های \lr{frandi}، \lr{frandi\_compressor} و کارخانه‌های مربوطه ثبت شده‌اند. برجسته‌ترین نقاط پیاده‌سازی عبارتند از:
+کلاس‌های \lr{FRanDICompressor} و لایه اختصاصی \lr{FRanDILinear} در فایل \lr{neuralops/compression\_engine/frandi\_compressor.py} مستقر بوده و تحت شناسه‌های \lr{frandi}، \lr{frandi\_compressor} و کارخانه‌های مربوطه ثبت شده‌اند. برجسته‌ترین نقاط پیاده‌سازی عبارتند از:
 \begin{itemize}
     \item \textbf{ماژول خطی اختصاصی \lr{FRanDILinear}:} این ماژول جایگزین لایه‌های متراکم و \lr{Conv1D} شده و علاوه بر نگهداری پارامترهای منجمد فاکتورهای $\mathbf{A}$ و $\mathbf{B}$، آداپتورهای باقیمانده \lr{LoRA} را با همان نوع داده (\lr{dtype}) در خود جای می‌دهد.
     \item \textbf{مقداردهی اولیه پایدار در دقت \lr{FP32}:} مقداردهی اولیه ماتریس پایه $\mathbf{A}$ به صورت متعامد (\lr{Orthogonal}) در فضای اعشاری ۳۲بیتی صورت گرفته و سپس به نوع داده هدف مدل قالب‌بندی می‌شود تا از بروز مقادیر تعریف‌نشده در \lr{BF16} جلوگیری گردد.

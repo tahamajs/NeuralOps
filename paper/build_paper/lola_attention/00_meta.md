@@ -4,7 +4,7 @@
 **Class Name**: `LowRankCache`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `lola_attention_inject, inject_lola, lola_inject, inject_lola_attention, lola, lola_attn, lola_attention`  
-**Implementation Source**: `Codes/framework/attentions/lola_attention.py` (733 lines of code)  
+**Implementation Source**: `neuralops/attentions/lola_attention.py` (733 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

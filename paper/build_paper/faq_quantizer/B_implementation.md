@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `faq_quantizer` module is implemented in `Codes/framework/compression_engine/faq_quantizer.py` (595 lines of code).
+The `faq_quantizer` module is implemented in `neuralops/compression_engine/faq_quantizer.py` (595 lines of code).
 - Registered Class: `FAQLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, bias: bool = True, bits: int = 8, symmetric: bool = True, lora\_r: int = 0, lora\_alpha: float = 1.0, device: Optional[torch.device] = None, dtype: Optional[torch.dtype] = None,`

@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `inject_galerkin, galerkin_attention_inject, galerkin_attention, inject_galerkin_attention, galerkin_inject, galerkin`  
-**Implementation Source**: `Codes/framework/attentions/galerkin_attention.py` (736 lines of code)  
+**Implementation Source**: `neuralops/attentions/galerkin_attention.py` (736 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

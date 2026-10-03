@@ -4,7 +4,7 @@
 **Class Name**: `ASTPrunedLoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `ast_pruner, ast_factory, ast, ast_pruner_factory`  
-**Implementation Source**: `Codes/framework/compression_engine/ast_pruner.py` (552 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/ast_pruner.py` (552 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

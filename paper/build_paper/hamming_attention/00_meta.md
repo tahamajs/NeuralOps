@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `hamming_inject, hamming_attention_inject, hamming_attention, inject_hamming_attention, inject_hamming, hamming`  
-**Implementation Source**: `Codes/framework/attentions/hamming_attention.py` (600 lines of code)  
+**Implementation Source**: `neuralops/attentions/hamming_attention.py` (600 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

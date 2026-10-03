@@ -4,7 +4,7 @@
 **Class Name**: `SALRLayer`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `salr_factory, salr_compressor_factory, salr`  
-**Implementation Source**: `Codes/framework/compression_engine/salr.py` (479 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/salr.py` (479 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-کد منبع این ماژول در مسیر \lr{Codes/framework/compression\_engine/bonsai\_pruner.py} پیاده‌سازی شده و در رجیستری با شناسه‌های \lr{bonsai} و \lr{bonsai\_pruner} به ثبت رسیده است. ویژگی‌های برجسته معماری آن عبارتند از:
+کد منبع این ماژول در مسیر \lr{neuralops/compression\_engine/bonsai\_pruner.py} پیاده‌سازی شده و در رجیستری با شناسه‌های \lr{bonsai} و \lr{bonsai\_pruner} به ثبت رسیده است. ویژگی‌های برجسته معماری آن عبارتند از:
 \begin{itemize}
     \item \textbf{کلاس \lr{BonsaiPrunedLoRALinear}:} لایه خطی اختصاصی که وزن هرس‌شده را فریز نموده و بافر ماسک را به صورت \lr{non-persistent} ذخیره می‌نماید تا حجم دیسک را کاهش دهد. این کلاس امکان تعبیه آداپتورهای سبک \lr{LoRA} را نیز فراهم می‌آورد.
     \item \textbf{کلاس \lr{BonsaiPruner}:} هدایت‌کننده حلقه اصلی هرس که با اعمال سقف مجاز بر گام‌های بازیابی (\lr{max\_recovery\_steps}) و کنترل اندازه گام‌ها (\lr{max\_step\_size})، از ناپایداری‌های عددی و واگرایی گرادیانی ممانعت به عمل می‌آورد.

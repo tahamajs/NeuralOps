@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `tlinformer, inject_tlinformer, tlinformer_inject, tlinformer_attention`  
-**Implementation Source**: `Codes/framework/compression_engine/tlinformer_attention.py` (751 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/tlinformer_attention.py` (751 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

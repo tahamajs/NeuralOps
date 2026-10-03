@@ -4,7 +4,7 @@
 **Class Name**: `FusedSVDLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `fused_svd_kernel_inject, inject_fused_svd_kernel, fused_svd_kernel_attention, fused_svd_kernel`  
-**Implementation Source**: `Codes/framework/attentions/fused_svd_kernel.py` (1036 lines of code)  
+**Implementation Source**: `neuralops/attentions/fused_svd_kernel.py` (1036 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract
@@ -35,7 +35,7 @@ $$\mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}$$
 In batch-1 autoregressive decoding, arithmetic intensity drops significantly ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading billions of parameters across high-bandwidth memory (HBM) buses creates a strict throughput ceiling. By zeroing out unessential parameters or factorizing projections into lower-dimensional subspaces, our framework reduces total bytes transferred per token step, directly unlocking tangible wall-clock acceleration.
 
 ## 1.3 Architectural Positioning within the Unified Framework
-Within our production-hardened framework, `fused_svd_kernel` resides as a first-class component under `Codes/framework/attentions/`. Unlike ad-hoc research prototypes, `fused_svd_kernel` adheres to standardized contracts:
+Within our production-hardened framework, `fused_svd_kernel` resides as a first-class component under `neuralops/attentions/`. Unlike ad-hoc research prototypes, `fused_svd_kernel` adheres to standardized contracts:
 - **Plug-and-Play Model Replacement**: Capable of dynamically replacing baseline projection layers or full attention blocks without requiring global architecture refactoring.
 - **Heterogeneous Model Support**: Implements explicit structural handling for bidirectional encoders (DistilBERT, RoBERTa/BERT), autoregressive Conv1D decoders (GPT-2), and modern grouped-query architectures (LLaMA/Qwen).
 - **Graceful Degradation and Guardrail Fallbacks**: Encapsulates automated reconstruction norm validation, condition number checks, and adaptive residual fine-tuning (LoRA) to guarantee execution stability under extreme compression ratios.
@@ -525,7 +525,7 @@ To reproduce the empirical benchmark evaluations for `fused_svd_kernel` across G
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor fused_svd_kernel \
     --dataset sst2 \
@@ -613,7 +613,7 @@ $$\|X_L\|_F \le \|X_0\|_F \exp\left( \sum_{l=1}^L \|W^{(l)}_{V, r} W^{(l)}_{O, r
 
 # Appendix B. Implementation Details and Code Mapping
 
-The `fused_svd_kernel` module is implemented in `Codes/framework/attentions/fused_svd_kernel.py` (1036 lines of code).
+The `fused_svd_kernel` module is implemented in `neuralops/attentions/fused_svd_kernel.py` (1036 lines of code).
 - Registered Class: `FusedSVDLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, rank: int = 32, bias: bool = True, use\_rms\_norm: bool = False, eps: float = 1e-6, dtype: torch.dtype = torch.float32, device: Optional[torch.device] = None, ) -> None: super().\_\_init\_\_() self.in\_features = in\_features self.out\_features = out\_features self.r`

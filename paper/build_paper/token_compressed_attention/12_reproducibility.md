@@ -31,7 +31,7 @@ python run_all_4_token_compressed.py \
 ## 12.4 Individual Model
 
 ```bash
-python Codes/framework/run_quality_sweep.py \
+python neuralops/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,token_compressed \
     --compression_ratio 50\% \

@@ -14,7 +14,7 @@ To reproduce the empirical benchmark evaluations for `lsh_attention` across GLUE
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor lsh_attention \
     --dataset sst2 \

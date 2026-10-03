@@ -4,7 +4,7 @@
 **Class Name**: `SLiMCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `slim, slim_factory, slim_compressor`  
-**Implementation Source**: `Codes/framework/compression_engine/slim_compressor.py` (285 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/slim_compressor.py` (285 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

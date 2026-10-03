@@ -4,7 +4,7 @@
 **Class Name**: `SparseGPTCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `sparsegpt`  
-**Implementation Source**: `Codes/framework/compression_engine/sparsegpt.py` (374 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/sparsegpt.py` (374 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

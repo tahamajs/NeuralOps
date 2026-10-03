@@ -32,7 +32,7 @@
 \end{enumerate}
 
 \subsection{معماری و پیاده‌سازی}
-کلاس \lr{MambaShedderCompressor} در ماژول \lr{Codes/framework/compression\_engine/mamba\_shedder.py} پیاده‌سازی شده و با شناسه‌های \lr{mamba\_shedder}، \lr{mamba\_shedder\_compressor} و \lr{mamba\_shedder\_factory} در رجیستری مرکزی قابل دسترس است. ویژگی‌های طراحی عبارتند از:
+کلاس \lr{MambaShedderCompressor} در ماژول \lr{neuralops/compression\_engine/mamba\_shedder.py} پیاده‌سازی شده و با شناسه‌های \lr{mamba\_shedder}، \lr{mamba\_shedder\_compressor} و \lr{mamba\_shedder\_factory} در رجیستری مرکزی قابل دسترس است. ویژگی‌های طراحی عبارتند از:
 \begin{itemize}
     \item \textbf{مکانیزم حذف ایمن لایه‌ها با اعتبارسنجی خودکار (\lr{Layer Shedding with Revert}):} پس از حذف لایه‌های منتخب از مدل، یک گذر پیشرو آزمایشی اجرا می‌شود. در صورت بروز هرگونه ناهماهنگی در ابعاد پنهان یا عدم تطابق تانسورهای خروجی، ساختار اولیه لایه‌ها بازگردانی شده و از شکست مدل جلوگیری می‌شود.
     \item \textbf{پشتیبانی از ساختارهای گوناگون انکودر و دیکودر:} ماژول کانتینرهای مختلف لایه‌ها در مدل‌های استاندارد نظیر \lr{transformer.layer}، \lr{transformer.h}، \lr{model.layers}، \lr{encoder.layer} و \lr{backbone.layers} را به صورت خودکار شناسایی و ردیابی می‌کند.

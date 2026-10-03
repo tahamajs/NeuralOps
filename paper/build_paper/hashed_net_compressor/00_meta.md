@@ -4,7 +4,7 @@
 **Class Name**: `HashedNetCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `hashed_net_compressor, hashed_net_class, hashed_linear, hashednets_class, hashed_net_factory, hashed_linear_factory, hashednets_compressor, hashednets_factory, hashed_net, hashednets`  
-**Implementation Source**: `Codes/framework/compression_engine/hashed_net_compressor.py` (450 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/hashed_net_compressor.py` (450 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

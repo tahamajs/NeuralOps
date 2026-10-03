@@ -36,7 +36,7 @@
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-کلاس‌های \lr{LSCCompressor} و \lr{LSCPrunedLoRALinear} در فایل \lr{Codes/framework/compression\_engine/lsc\_compressor.py} مستقر بوده و تحت نام‌های \lr{lsc}، \lr{lsc\_compressor}، \lr{lsc\_class} و \lr{lsc\_factory} در رجیستری سیستم ثبت شده‌اند. جنبه‌های برجسته پیاده‌سازی عبارتند از:
+کلاس‌های \lr{LSCCompressor} و \lr{LSCPrunedLoRALinear} در فایل \lr{neuralops/compression\_engine/lsc\_compressor.py} مستقر بوده و تحت نام‌های \lr{lsc}، \lr{lsc\_compressor}، \lr{lsc\_class} و \lr{lsc\_factory} در رجیستری سیستم ثبت شده‌اند. جنبه‌های برجسته پیاده‌سازی عبارتند از:
 \begin{itemize}
     \item \textbf{پیاده‌سازی بهینه محاسبات فوریه با \lr{torch.fft.fft2}:} تمامی عملیات نگاشت فرکانسی و فیلترینگ دو‌بعدی بر روی شتاب‌دهنده گرافیکی با پایداری ممیز شناور \lr{FP32} و به کارگیری روال‌های مقیاس‌پذیر کتابخانه \lr{PyTorch FFT} پیاده‌سازی شده است.
     \item \textbf{پشتیبانی از آداپتورهای \lr{LoRA} متصل به لایه (\lr{Integrated LoRA Adapters}):} لایه \lr{LSCPrunedLoRALinear} در صورت تعیین رتبه $r_{\text{lora}} > 0$ به صورت خودکار پارامترهای آداپتور را با مقداردهی تصادفی یکنواخت کایمینگ (\lr{Kaiming Uniform}) ایجاد و هم‌تراز با نوع داده لایه مبنا مقداردهی می‌کند.

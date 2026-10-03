@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی این ماژول در فایل \lr{Codes/framework/compression\_engine/optimal\_subspace\_projection.py} انجام یافته و در \lr{COMPRESSOR\_REGISTRY} با نام \lr{optimal\_subspace\_projection} ثبت گردیده است. معماری دارای مشخصه‌های کلیدی زیر است:
+پیاده‌سازی این ماژول در فایل \lr{neuralops/compression\_engine/optimal\_subspace\_projection.py} انجام یافته و در \lr{COMPRESSOR\_REGISTRY} با نام \lr{optimal\_subspace\_projection} ثبت گردیده است. معماری دارای مشخصه‌های کلیدی زیر است:
 \begin{itemize}
     \item \textbf{کلاس لایه اختصاصی \lr{OptimalSubspaceLoRALinear}:} این لایه وزن‌های بازسازی‌شده منجمد $\mathbf{W}_{\text{osp}}$ را ذخیره کرده و به صورت اختیاری از آداپتورهای آموزش‌پذیر \lr{LoRA} ($\mathbf{A} \in \mathbb{R}^{r_{\text{lora}} \times d_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r_{\text{lora}}}$) با فاکتور مقیاس‌بندی $\alpha / r_{\text{lora}}$ پشتیبانی می‌کند.
     \item \textbf{مکانیزم ایمنی بازگشت (\lr{Fallback Mechanism}):} در صورت فراتر رفتن خطای نسبی فروبنیوس $\|\mathbf{W} - \mathbf{W}_{\text{osp}}\|_F / \|\mathbf{W}\|_F$ از آستانه مجاز (\lr{max\_error} پیش‌فرض $0.20$) یا ناپایداری عددی در فاکتورگیری چولسکی، ماژول به صورت خودکار لایه را به حالت وزن اصلی بازمی‌گرداند.

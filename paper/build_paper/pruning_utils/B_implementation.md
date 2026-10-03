@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `pruning_utils` module is implemented in `Codes/framework/compression_engine/pruning_utils.py` (437 lines of code).
+The `pruning_utils` module is implemented in `neuralops/compression_engine/pruning_utils.py` (437 lines of code).
 - Registered Class: `pruning_utils`
 - Base Architecture: `None`
 - Constructor Signatures: `Standard configuration arguments`

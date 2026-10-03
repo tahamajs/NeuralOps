@@ -4,7 +4,7 @@
 **Class Name**: `pruning_utils`  
 **Base Architecture**: `None`  
 **Registry Keys**: `pruning_utils`  
-**Implementation Source**: `Codes/framework/compression_engine/pruning_utils.py` (437 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/pruning_utils.py` (437 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

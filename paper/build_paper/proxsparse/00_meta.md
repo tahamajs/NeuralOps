@@ -4,7 +4,7 @@
 **Class Name**: `ProxSparsePrunedLoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `proxsparse_pruner, proxsparse, proxsparse_compressor, proxsparse_compressor_factory, proxsparse_pruner_factory, proxsparse_factory`  
-**Implementation Source**: `Codes/framework/compression_engine/proxsparse.py` (485 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/proxsparse.py` (485 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

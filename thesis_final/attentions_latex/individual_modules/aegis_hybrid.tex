@@ -37,7 +37,7 @@
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-کلاس اصلی ماژول تحت عنوان \lr{AegisHybridAttention} در فایل \lr{Codes/framework/attentions/aegis\_hybrid.py} پیاده‌سازی شده و از کلاس پایه \lr{BaseAttention} ارث‌بری می‌کند. پیکربندی فراپارامترها توسط کلاس \lr{AegisHybridConfig} هدایت می‌شود. مهم‌ترین ویژگی‌های پیاده‌سازی به شرح زیر است:
+کلاس اصلی ماژول تحت عنوان \lr{AegisHybridAttention} در فایل \lr{neuralops/attentions/aegis\_hybrid.py} پیاده‌سازی شده و از کلاس پایه \lr{BaseAttention} ارث‌بری می‌کند. پیکربندی فراپارامترها توسط کلاس \lr{AegisHybridConfig} هدایت می‌شود. مهم‌ترین ویژگی‌های پیاده‌سازی به شرح زیر است:
 \begin{itemize}
     \item \textbf{توجه محلی تکه‌ای (\lr{Chunked Local Window}):} برای ممانعت از ایجاد تانسورهای حافظه‌بر $N \times N$، محاسبات پنجره متحرک با اندازه $W=128$ به صورت تکه‌ای (\lr{Chunk}) با پیچیدگی فضایی $\mathcal{O}(N \cdot W)$ انجام می‌شود.
     \item \textbf{سازگاری کامل با \lr{GQA} و \lr{RoPE}:} پشتیبانی بومی از سرهای نامتقارن کلید/مقدار با تابع \lr{repeat\_kv} و اعمال انحراف مکانی چرخشی با لحاظ آفست \lr{past\_len} جهت پشتیبانی پایدار از دیکودینگ خودبازگشتی تعبیه شده است.

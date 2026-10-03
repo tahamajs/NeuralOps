@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `granite_hybrid` module is implemented in `Codes/framework/attentions/granite_hybrid.py` (626 lines of code).
+The `granite_hybrid` module is implemented in `neuralops/attentions/granite_hybrid.py` (626 lines of code).
 - Registered Class: `Mamba2`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, d\_model: int, d\_state: int = 16, d\_conv: int = 4, expand: int = 2, **kwargs: Any, ) -> None: super().\_\_init\_\_() self.d\_model: int = d\_model self.d\_state: int = d\_state self.expand: int = expand inner\_dim: int = d\_model * expand self.in\_proj: nn.Linear = nn.Linear(d\_model, inner\_dim * 2) self.c`

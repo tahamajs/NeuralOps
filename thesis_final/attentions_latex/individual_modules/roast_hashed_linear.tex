@@ -37,7 +37,7 @@ h_3 &= (h_2 \oplus (h_2 \gg 15)) \ \& \ \mathtt{0x7FFFFFFF} \\
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی این الگوریتم در فایل \lr{Codes/framework/compression\_engine/roast\_hashed\_linear.py} قرار گرفته و با شناسه‌های \lr{roast} و \lr{roast\_hashed\_linear} در رجیستری فشرده‌سازی سیستم موجود است. نقاط تمایز پیاده‌سازی عبارتند از:
+پیاده‌سازی این الگوریتم در فایل \lr{neuralops/compression\_engine/roast\_hashed\_linear.py} قرار گرفته و با شناسه‌های \lr{roast} و \lr{roast\_hashed\_linear} در رجیستری فشرده‌سازی سیستم موجود است. نقاط تمایز پیاده‌سازی عبارتند از:
 \begin{itemize}
     \item \textbf{لایه برداری‌شده \lr{ROASTLinear}:} محاسبه ماتریس بازسازی‌شده با استفاده از عملگرهای سریع \lr{torch.repeat\_interleave} بدون هیچ‌گونه حلقه تکرار پایتونی پیاده‌سازی شده است.
     \item \textbf{حافظه نهان وزن بازسازی‌شده (\lr{Weight Caching}):} به منظور تسریع چشمگیر در زمان ارزیابی و استنتاج (\lr{eval mode})، وزن موثر بازسازی‌شده یک‌بار محاسبه و ذخیره موقت می‌شود تا از تکرار عملیات درهم‌سازی پرهیز گردد.

@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `adaptive_sparse_attention_inject, adaptive_sparse, adaptive_sparse_inject, adaptive_sparse_attn, adaptive_sparse_attention_attention, inject_adaptive_sparse_attention, adaptive_sparse_attn_inject, inject_adaptive_sparse, adaptive_sparse_attention`  
-**Implementation Source**: `Codes/framework/attentions/adaptive_sparse_attention.py` (836 lines of code)  
+**Implementation Source**: `neuralops/attentions/adaptive_sparse_attention.py` (836 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract
@@ -35,7 +35,7 @@ $$\mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}$$
 In batch-1 autoregressive decoding, arithmetic intensity drops significantly ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading billions of parameters across high-bandwidth memory (HBM) buses creates a strict throughput ceiling. By zeroing out unessential parameters or factorizing projections into lower-dimensional subspaces, our framework reduces total bytes transferred per token step, directly unlocking tangible wall-clock acceleration.
 
 ## 1.3 Architectural Positioning within the Unified Framework
-Within our production-hardened framework, `adaptive_sparse_attention` resides as a first-class component under `Codes/framework/attentions/`. Unlike ad-hoc research prototypes, `adaptive_sparse_attention` adheres to standardized contracts:
+Within our production-hardened framework, `adaptive_sparse_attention` resides as a first-class component under `neuralops/attentions/`. Unlike ad-hoc research prototypes, `adaptive_sparse_attention` adheres to standardized contracts:
 - **Plug-and-Play Model Replacement**: Capable of dynamically replacing baseline projection layers or full attention blocks without requiring global architecture refactoring.
 - **Heterogeneous Model Support**: Implements explicit structural handling for bidirectional encoders (DistilBERT, RoBERTa/BERT), autoregressive Conv1D decoders (GPT-2), and modern grouped-query architectures (LLaMA/Qwen).
 - **Graceful Degradation and Guardrail Fallbacks**: Encapsulates automated reconstruction norm validation, condition number checks, and adaptive residual fine-tuning (LoRA) to guarantee execution stability under extreme compression ratios.
@@ -531,7 +531,7 @@ To reproduce the empirical benchmark evaluations for `adaptive_sparse_attention`
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor adaptive_sparse_attention \
     --dataset sst2 \
@@ -619,7 +619,7 @@ $$\|X_L\|_F \le \|X_0\|_F \exp\left( \sum_{l=1}^L \|W^{(l)}_{V, r} W^{(l)}_{O, r
 
 # Appendix B. Implementation Details and Code Mapping
 
-The `adaptive_sparse_attention` module is implemented in `Codes/framework/attentions/adaptive_sparse_attention.py` (836 lines of code).
+The `adaptive_sparse_attention` module is implemented in `neuralops/attentions/adaptive_sparse_attention.py` (836 lines of code).
 - Registered Class: `LoRALinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, bias: bool = True, lora\_rank: int = 16, lora\_alpha: float = 32.0, freeze\_base: bool = False, device: Optional[torch.device] = None, dtype: Optional[torch.dtype] = None, ) -> None: super().\_\_init\_\_() factory\_kwargs = {"device": device, "dtype": dtype} self.i`

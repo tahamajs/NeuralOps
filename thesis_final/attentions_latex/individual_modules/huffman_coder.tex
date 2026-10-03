@@ -23,7 +23,7 @@ H(\mathcal{S}) = -\sum_{k=1}^K p(s_k) \log_2 p(s_k) \quad \text{(bits/symbol)}
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی این سیستم در فایل \lr{Codes/framework/compression\_engine/huffman\_coder.py} انجام یافته و در رجیستری فشرده‌سازی با نام‌های \lr{huffman} و \lr{huffman\_coder} به ثبت رسیده است. ویژگی‌های معماری موتور شامل موارد زیر است:
+پیاده‌سازی این سیستم در فایل \lr{neuralops/compression\_engine/huffman\_coder.py} انجام یافته و در رجیستری فشرده‌سازی با نام‌های \lr{huffman} و \lr{huffman\_coder} به ثبت رسیده است. ویژگی‌های معماری موتور شامل موارد زیر است:
 \begin{itemize}
     \item \textbf{گره و درخت هافمن (\lr{HuffmanNode} و \lr{HuffmanCoder}):} ماژول تخصصی جهت محاسبه برداری فراوانی نمادها، ساخت سریع درخت پیشوندی در حافظه و بسته‌بندی بیت‌ها در آرایه‌های فشرده \lr{numpy.uint8}.
     \item \textbf{کوانتایش پیوسته وزن‌ها (\lr{Uniform Weight Quantization}):} نگاشت متقارن مقادیر ممیز شناور به کدهای صحیح با تعداد بیت‌های قابل تنظیم ($b \in \{4, 8\}$).

@@ -4,7 +4,7 @@
 **Class Name**: `TaskAwareAttention`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `weighted_ensemble, weighted_ensemble_inject, inject_smart_weighted_ensemble, smart_weighted_ensemble, inject_weighted_ensemble, smart_weighted_ensemble_inject`  
-**Implementation Source**: `Codes/framework/attentions/weighted_ensemble.py` (917 lines of code)  
+**Implementation Source**: `neuralops/attentions/weighted_ensemble.py` (917 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

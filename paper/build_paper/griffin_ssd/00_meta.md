@@ -4,7 +4,7 @@
 **Class Name**: `GriffinSSDBlock`  
 **Base Architecture**: `BaseAttention`  
 **Registry Keys**: `griffin_ssd_inject, griffin_ssd, griffin_ssd_block`  
-**Implementation Source**: `Codes/framework/attentions/griffin_ssd.py` (622 lines of code)  
+**Implementation Source**: `neuralops/attentions/griffin_ssd.py` (622 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

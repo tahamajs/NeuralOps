@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `entropy_budget_allocation` module is implemented in `Codes/framework/compression_engine/entropy_budget_allocation.py` (467 lines of code).
+The `entropy_budget_allocation` module is implemented in `neuralops/compression_engine/entropy_budget_allocation.py` (467 lines of code).
 - Registered Class: `EntropyBudgetCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: nn.Module, calibration\_loader: Optional[Any] = None, total\_budget\_ratio: float = 0.7, rank: Optional[int] = None, eps: float = 1e-6, max\_error: float = 0.35, target\_attention\_only: bool = False, fallback\_to\_original: bool = True, target\_modules: Optional[List[str]] = None, cfg: Optional`

@@ -491,9 +491,9 @@ $$
 M_{ij}^\text{local} = \begin{cases} 0 & j \leq i \text{ and } i - j \leq W \\ -\infty & \text{otherwise} \end{cases}
 \tag{4.1}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 For bidirectional: symmetric.
@@ -504,9 +504,9 @@ $$
 \text{LocalAttn}_i = \text{softmax}\!\left(\frac{Q_i K^\top}{\sqrt{d_h}} + M^\text{local}\right) V
 \tag{4.2}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 447 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 447 -->
 $$
 
 **Complexity:** $\mathcal{O}(L W d)$.
@@ -522,9 +522,9 @@ W_k^\text{comp} \in \mathbb{R}^{d \times d_c}, \qquad
 W_v^\text{comp} \in \mathbb{R}^{d \times d_c}
 \tag{4.3}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 These produce compression weights:
@@ -533,18 +533,18 @@ $$
 P_K = \text{softmax}\!\left(X W_k^\text{comp}, \text{dim}=L\right) \in \mathbb{R}^{B \times L \times d_c}
 \tag{4.4}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 447 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 447 -->
 $$
 
 $$
 P_V = \text{softmax}\!\left(X W_v^\text{comp}, \text{dim}=L\right) \in \mathbb{R}^{B \times L \times d_c}
 \tag{4.5}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 447 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 447 -->
 $$
 
 The softmax is over the sequence dimension, so each of the $d_c$ slots has 
@@ -559,9 +559,9 @@ C_K = K^\top P_K \in \mathbb{R}^{B \times d_c \times d_h H}, \qquad
 C_V = V^\top P_V \in \mathbb{R}^{B \times d_c \times d_h H}
 \tag{4.6}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 **Interpretation.** Each of the $d_c$ summary slots is a weighted average of 
@@ -573,9 +573,9 @@ $$
 \text{GlobalAttn}_i = \text{softmax}\!\left(\frac{Q_i C_K^\top}{\sqrt{d_h}}\right) C_V
 \tag{4.7}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 447 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 447 -->
 $$
 
 The softmax is over $d_c$ slots. This is the same shape as full attention 
@@ -591,9 +591,9 @@ $$
 C_{K, j} = \frac{\sum_{i \leq \text{pos}(j)} \exp(\cdots) K_i}{\sum_{i \leq \text{pos}(j)} \exp(\cdots)}
 \tag{4.8}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 where $\text{pos}(j)$ is a monotonic mapping from slot index to position.
@@ -613,9 +613,9 @@ $$
 \gamma = \sigma(W_g X) \in \mathbb{R}^{B \times L \times H}
 \tag{4.9}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 with $W_g \in \mathbb{R}^{d \times H}$.
@@ -626,9 +626,9 @@ $$
 \text{output}_h = \gamma_h \odot \text{LocalAttn}_h + (1 - \gamma_h) \odot \text{GlobalAttn}_h
 \tag{4.10}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 ### 4.4.3 Initialization
@@ -639,9 +639,9 @@ $$
 \sigma(2.0) \approx 0.88
 \tag{4.11}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 So the model starts by favoring the local branch. As training progresses, 
@@ -713,9 +713,9 @@ For $W = 64$, $d_c = 32$, $L = 4096$:
 $$
 \frac{\text{OHA}}{\text{baseline}} = \frac{96}{4096} \approx 0.023
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 **~43× faster** in attention.
@@ -1041,7 +1041,7 @@ python run_all_4_oha.py \
 
 ### Table 7.1: Main results on SST-2.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Model | Module | Acc | Δ | F1 | Params Δ % | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 0 | 183 MB | 1.9 s |
@@ -1055,7 +1055,7 @@ python run_all_4_oha.py \
 
 ### Table 7.2: Parameter counts.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Model | Baseline | After OHA | Δ | Δ % |
 |---|---|---|---|---|
 | DistilBERT | 66,955,010 | 67895114 | +940104 | +1.40% |
@@ -1064,7 +1064,7 @@ python run_all_4_oha.py \
 
 **Breakdown (DistilBERT, per layer):**
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Component | Per layer | 6 layers |
 |---|---|---|
 | $W_k^\text{comp}$ | 24,576 | 147,456 |
@@ -1077,7 +1077,7 @@ python run_all_4_oha.py \
 
 ### Table 7.3: Inference efficiency.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
@@ -1091,7 +1091,7 @@ python run_all_4_oha.py \
 
 ### Table 7.4: Accuracy vs compression rank.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | $d_c$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 8 | 87.5 | 74.5 | 75.8 |
@@ -1103,7 +1103,7 @@ python run_all_4_oha.py \
 
 ### Table 7.5: Accuracy vs window size.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | $W$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 16 | 87.0 | 74.0 | 75.5 |
@@ -1115,7 +1115,7 @@ python run_all_4_oha.py \
 
 ### Table 7.6: Accuracy vs gate bias init.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | bias | σ(bias) | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|---|
 | 0.0 | 0.500 | 85.0 | 70.0 | 71.0 |
@@ -1127,7 +1127,7 @@ python run_all_4_oha.py \
 
 ### Table 7.7: Accuracy vs LoRA rank.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 8 | 88.5 | 74.5 | 75.5 |
@@ -1139,7 +1139,7 @@ python run_all_4_oha.py \
 
 ### Table 7.8: OHA vs prior modules.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Method | DistilBERT | RoBERTa | GPT-2 | Params |
 |---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | 1.00× |
@@ -1151,7 +1151,7 @@ python run_all_4_oha.py \
 
 ### Table 7.9: Failures.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Model | Status | Accuracy | Reason |
 |---|---|---|---|
 | DistilBERT | PASS | 89.2 | — |
@@ -1160,7 +1160,7 @@ python run_all_4_oha.py \
 
 ## 7.10 Summary
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Metric | Value |
 |---|---|
 | Accuracy drop (best) | -1.5% |
@@ -1634,7 +1634,7 @@ python run_all_4_oha.py \
 ## 12.4 Individual Model
 
 ```bash
-python Codes/framework/run_quality_sweep.py \
+python neuralops/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,oha \
     --recovery_steps 50

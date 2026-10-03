@@ -4,7 +4,7 @@
 **Class Name**: `MambaShedderCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `mamba_shedder_compressor, mamba_shedder_factory, mamba_shedder`  
-**Implementation Source**: `Codes/framework/compression_engine/mamba_shedder.py` (463 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/mamba_shedder.py` (463 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

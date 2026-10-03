@@ -4,7 +4,7 @@
 **Class Name**: `FAQLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `faq_quantizer_factory, faq_quantizer, faq_factory, faq`  
-**Implementation Source**: `Codes/framework/compression_engine/faq_quantizer.py` (595 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/faq_quantizer.py` (595 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

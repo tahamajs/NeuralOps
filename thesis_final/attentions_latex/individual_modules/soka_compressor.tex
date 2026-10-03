@@ -35,7 +35,7 @@
 \end{enumerate}
 
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی این ماژول در فایل \lr{Codes/framework/compression\_engine/soka\_compressor.py} مستقر است و مؤلفه‌های کلیدی آن عبارتند از:
+پیاده‌سازی این ماژول در فایل \lr{neuralops/compression\_engine/soka\_compressor.py} مستقر است و مؤلفه‌های کلیدی آن عبارتند از:
 \begin{itemize}
     \item \textbf{کلاس \lr{LowRankLinear}:} جایگزین ساختاری \lr{nn.Linear} که پارامترهای $\mathbf{V}$ (با ابعاد $[d_{\text{in}}, r]$) و $\mathbf{U}$ (با ابعاد $[d_{\text{out}}, r]$) را به عنوان تانسورهای مجزا نگهداری می‌کند و ضرب توالی‌وار پیشرو را پیاده‌سازی می‌نماید. ویژگی \lr{weight} نیز برای بازسازی برخط وزن در صورت نیاز به سازگاری با سایر بخش‌های سیستم تعبیه شده است.
     \item \textbf{کلاس فشرده‌ساز \lr{LowRankCompressor}:} مدیریت شناسایی لایه‌های هدف، بررسی آستانه خطای بازسازی نسبی (\lr{max\_error})، مدیریت سیستم بازگشت امنیتی (\lr{fallback})، و مانیتورینگ پارامترهای مدل قبل و بعد از فشرده‌سازی.

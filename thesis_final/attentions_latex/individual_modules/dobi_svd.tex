@@ -37,7 +37,7 @@
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-ماژول \lr{Dobi-SVD} در فایل \lr{Codes/framework/compression\_engine/dobi\_svd.py} پیاده‌سازی شده و تحت شناسه‌های \lr{dobi} و \lr{dobi\_svd} در رجیستری فشرده‌سازی ثبت گردیده است. ارکان ساختاری آن شامل موارد زیر است:
+ماژول \lr{Dobi-SVD} در فایل \lr{neuralops/compression\_engine/dobi\_svd.py} پیاده‌سازی شده و تحت شناسه‌های \lr{dobi} و \lr{dobi\_svd} در رجیستری فشرده‌سازی ثبت گردیده است. ارکان ساختاری آن شامل موارد زیر است:
 \begin{itemize}
     \item \textbf{ماژول خطی \lr{DobiSVDLinearLayer}:} پیاده‌سازی کاملاً ماژولار و مبتنی بر \lr{nn.Module} که جایگزین مستقیم لایه‌های \lr{nn.Linear} و لایه‌های \lr{Conv1D} در مدل‌های زبانی می‌شود.
     \item \textbf{انطباق پویا با طول ابعاد پنهان (\lr{Dimension Padding}):} لایه مجهز به منطق پدینگ پویا است تا در صورت عدم تطابق طول بردار ورودی، داده‌ها با صفر گسترش یافته و از خطای ابعادی جلوگیری شود.

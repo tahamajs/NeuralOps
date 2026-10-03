@@ -4,7 +4,7 @@
 **Class Name**: `CoMeBridge`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `come, come_factory, come_compressor_factory, come_compressor`  
-**Implementation Source**: `Codes/framework/compression_engine/come.py` (716 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/come.py` (716 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

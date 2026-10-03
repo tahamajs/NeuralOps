@@ -4,7 +4,7 @@
 **Class Name**: `KroneckerTTLoRALayer`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `kronecker_tt_lora_factory, kronecker_tt_lora`  
-**Implementation Source**: `Codes/framework/compression_engine/kronecker_tt_lora.py` (624 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/kronecker_tt_lora.py` (624 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

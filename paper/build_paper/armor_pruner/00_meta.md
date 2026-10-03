@@ -4,7 +4,7 @@
 **Class Name**: `ARMORLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `armor_compressor, armor_factory, armor_pruner_factory, armor_compressor_factory, armor, armor_pruner`  
-**Implementation Source**: `Codes/framework/compression_engine/armor_pruner.py` (698 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/armor_pruner.py` (698 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

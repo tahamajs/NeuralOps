@@ -4,7 +4,7 @@
 **Class Name**: `ENLightenCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `enlighten`  
-**Implementation Source**: `Codes/framework/compression_engine/enlighten_compressor.py` (378 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/enlighten_compressor.py` (378 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

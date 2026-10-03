@@ -35,7 +35,7 @@
 در مرحله نهایی، به منظور هماهنگ‌سازی انحراف معیار خروجی لایه‌ها پس از هرس، لایه‌های نرمال‌سازی با ضریب نسبت واریانس کالیبره می‌گردند (\lr{LayerNorm Recalibration}).
 
 \subsection{معماری و پیاده‌سازی}
-این ماژول در فایل \lr{Codes/framework/compression\_engine/armor\_pruner.py} تحت دو کلاس اصلی طراحی و در رجیستری فشرده‌سازی با نام‌های \lr{armor\_pruner}، \lr{armor} و \lr{armor\_compressor} ثبت شده است:
+این ماژول در فایل \lr{neuralops/compression\_engine/armor\_pruner.py} تحت دو کلاس اصلی طراحی و در رجیستری فشرده‌سازی با نام‌های \lr{armor\_pruner}، \lr{armor} و \lr{armor\_compressor} ثبت شده است:
 \begin{itemize}
     \item \textbf{کلاس \lr{ARMORLinear}:} جایگزین لایه‌های خطی استاندارد (\lr{nn.Linear} و \lr{Conv1D}) می‌شود. در فرآیند گذر پیشرو (\lr{Forward Pass})، محاسبات به صورت دو شاخه موازی انجام می‌پذیرد:
     \begin{equation}

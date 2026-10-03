@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `tt` module is implemented in `Codes/framework/attentions/token_compressed_attention.py` (783 lines of code).
+The `tt` module is implemented in `neuralops/attentions/token_compressed_attention.py` (783 lines of code).
 - Registered Class: `LoRALinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `Standard configuration arguments`

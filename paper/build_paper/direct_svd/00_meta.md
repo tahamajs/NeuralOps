@@ -4,7 +4,7 @@
 **Class Name**: `DirectSVDCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `direct_svd, direct_svd_factory, direct_svd_compressor_factory, direct_svd_compressor`  
-**Implementation Source**: `Codes/framework/compression_engine/direct_svd.py` (462 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/direct_svd.py` (462 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

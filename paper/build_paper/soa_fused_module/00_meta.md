@@ -4,7 +4,7 @@
 **Class Name**: `FactorizedLoRAUp`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `soa_fused_module`  
-**Implementation Source**: `Codes/framework/attentions/SOAFusedAttention.py` (739 lines of code)  
+**Implementation Source**: `neuralops/attentions/SOAFusedAttention.py` (739 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

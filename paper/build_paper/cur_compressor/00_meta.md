@@ -4,7 +4,7 @@
 **Class Name**: `CURCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `cure_factory, cur_factory, cure, cur_compressor, cur, cur_compressor_factory, cur_linear, cur_linear_factory`  
-**Implementation Source**: `Codes/framework/compression_engine/cur_compressor.py` (405 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/cur_compressor.py` (405 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

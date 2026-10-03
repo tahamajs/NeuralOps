@@ -4,7 +4,7 @@
 **Class Name**: `DynamicSVDLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `dynamic_entropy_svd, dynamic_entropy, dynamic_entropy_compressor, dynamic_entropy_class, dynamic_entropy_inject, dynamic_rank, entropy_rank_allocator, dynamic_rank_class, dynamic_entropy_svd_factory, dynamic_entropy_svd_compressor, entropy_rank_allocator_class, dynamic_entropy_factory, inject_dynamic_rank, dynamic_rank_compressor, inject_dynamic_entropy, dynamic_entropy_svd_class, dynamic_rank_inject, dynamic_rank_factory`  
-**Implementation Source**: `Codes/framework/compression_engine/dynamic_rank.py` (933 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/dynamic_rank.py` (933 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

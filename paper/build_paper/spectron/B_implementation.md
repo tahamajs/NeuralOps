@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `spectron` module is implemented in `Codes/framework/attentions/spectron.py` (1105 lines of code).
+The `spectron` module is implemented in `neuralops/attentions/spectron.py` (1105 lines of code).
 - Registered Class: `LowRankSparseLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, down: nn.Linear, up: nn.Linear, sparse\_weight: torch.Tensor, bias: Optional[torch.Tensor] = None, **kwargs) -> None: super().\_\_init\_\_() self.down: nn.Linear = down self.up: nn.Linear = up self.sparse\_weight: nn.Parameter = nn.Parameter(sparse\_weight) self.bias: Optional[torch.Tensor] = bias se`

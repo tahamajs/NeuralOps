@@ -14,7 +14,7 @@ To reproduce the empirical benchmark evaluations for `kronecker_linear` across G
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor kronecker_linear \
     --dataset sst2 \

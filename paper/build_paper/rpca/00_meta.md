@@ -4,7 +4,7 @@
 **Class Name**: `RPCACompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `rpca`  
-**Implementation Source**: `Codes/framework/compression_engine/rpca_compressor.py` (413 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/rpca_compressor.py` (413 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

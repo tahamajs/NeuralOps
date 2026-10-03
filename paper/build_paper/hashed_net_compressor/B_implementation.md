@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `hashed_net_compressor` module is implemented in `Codes/framework/compression_engine/hashed_net_compressor.py` (450 lines of code).
+The `hashed_net_compressor` module is implemented in `neuralops/compression_engine/hashed_net_compressor.py` (450 lines of code).
 - Registered Class: `HashedNetCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: Optional[nn.Module] = None, n\_buckets: Optional[int] = None, compression\_ratio: Optional[float] = None, rank: Optional[Union[int, float]] = None, max\_error: float = 0.35, target\_attention\_only: bool = False, fallback\_to\_original: bool = True, max\_retries: int = 2, use\_sign: bool = True,`

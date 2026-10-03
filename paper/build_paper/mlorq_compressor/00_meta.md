@@ -4,7 +4,7 @@
 **Class Name**: `MLoRQLoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `mlorq_compressor, mlorq_factory, mlorq`  
-**Implementation Source**: `Codes/framework/compression_engine/mlorq_compressor.py` (474 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/mlorq_compressor.py` (474 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

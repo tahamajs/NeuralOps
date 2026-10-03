@@ -511,9 +511,9 @@ S_{ij} \leftarrow S_{ij} + \text{mask}_{ij}, \quad
 O^\text{dense}_i = \sum_j \text{softmax}(S_i)_j V_j
 \tag{4.1}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 447 -->
+<!-- source: neuralops/attentions/halo_regla.py line 447 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 447 -->
+<!-- source: neuralops/attentions/halo_regla.py line 447 -->
 $$
 
 **Complexity.** $\mathcal{O}(L^2 d_h)$ time, $\mathcal{O}(L^2)$ memory.
@@ -532,9 +532,9 @@ $$
 \phi(x) = \mathrm{elu}(x) + 1 \in \mathbb{R}^{d_h}
 \tag{4.2}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 Since $\mathrm{elu}(x) > -1$ for all $x$, we have $\phi(x) > 0$.
@@ -547,27 +547,27 @@ $$
 \text{cum}^{(i)} = \sum_{j \le i} \phi(K_j) V_j^\top \in \mathbb{R}^{d_h \times d_h}
 \tag{4.3}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 $$
 \text{den}^{(i)} = \sum_{j \le i} \phi(K_j) \in \mathbb{R}^{d_h}
 \tag{4.4}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 $$
 O^\text{lin}_i = \frac{\phi(Q_i) \cdot \text{cum}^{(i)}}{\phi(Q_i) \cdot \text{den}^{(i)} + \epsilon}
 \tag{4.5}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 where $\epsilon = 10^{-5}$ prevents division by zero.
@@ -580,9 +580,9 @@ $$
 O^\text{lin}_i = \frac{\phi(Q_i) \cdot \sum_j \phi(K_j) V_j^\top}{\phi(Q_i) \cdot \sum_j \phi(K_j) + \epsilon}
 \tag{4.6}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 ### 4.3.4 Padding Handling
@@ -594,9 +594,9 @@ $$
 V_j \leftarrow V_j \cdot \text{valid}_j
 \tag{4.7}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 This ensures padding contributes nothing to numerator or denominator.
@@ -609,9 +609,9 @@ $$
 \text{cum}^{(i)} = \text{cumsum}(\phi(K) V^\top).\text{float}()
 \tag{4.8}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 We cast back to the model dtype after cumsum.
@@ -626,9 +626,9 @@ $$
 \text{logit}_{h,i} = w_h^\top x_i + b_h
 \tag{4.9}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 where $x_i \in \mathbb{R}^d$ is the input hidden state at position $i$. The 
@@ -638,9 +638,9 @@ $$
 g_{h,i} = \sigma(\text{logit}_{h,i}) \in (0, 1)
 \tag{4.10}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 ### 4.4.2 Output
@@ -649,9 +649,9 @@ $$
 O_{h,i} = g_{h,i} \cdot O^\text{dense}_{h,i} + (1 - g_{h,i}) \cdot O^\text{lin}_{h,i}
 \tag{4.11}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 ### 4.4.3 Initialization
@@ -773,9 +773,9 @@ $$
 \frac{\partial \mathcal{L}}{\partial g_h} = 0 \Rightarrow O^\text{dense}_h = O^\text{lin}_h
 \tag{4.12}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 or the gate is at a boundary ($g_h \to 0$ or $g_h \to 1$).
@@ -1060,7 +1060,7 @@ python run_all_4_halo_regla.py \
 
 ### Table 7.1: SST-2 results with gate bias 1.8.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Model | Module | Acc | Δ | F1 | Mean gate | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | — | 183 MB | 1.9 s |
@@ -1074,7 +1074,7 @@ python run_all_4_halo_regla.py \
 
 ### Table 7.2: Learned gate statistics per head.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Model | Min $\bar{g}_h$ | Max $\bar{g}_h$ | Mean | Std |
 |---|---|---|---|---|
 | DistilBERT | 0.15 | 0.98 | 0.72 | 0.24 |
@@ -1088,7 +1088,7 @@ python run_all_4_halo_regla.py \
 
 ### Table 7.3: Mean gate per layer (DistilBERT).
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Layer | Mean gate |
 |---|---|
 | 0 | 0.85 |
@@ -1105,7 +1105,7 @@ layers have lower gates (linear).
 
 ### Table 7.4: Memory and time.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Model | Config | Peak VRAM | Inference Time |
 |---|---|---|---|
 | DistilBERT | full | 183 MB | 1.90 s |
@@ -1117,7 +1117,7 @@ layers have lower gates (linear).
 
 ### Table 7.5: Accuracy vs gate bias.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | $b_h$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 0 | 85.0 | 72.0 | 73.0 |
@@ -1132,7 +1132,7 @@ layers have lower gates (linear).
 
 ### Table 7.6: Accuracy vs kernel choice.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Kernel | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | ELU+1 | 89.5 | 76.5 | 77.5 |
@@ -1146,7 +1146,7 @@ layers have lower gates (linear).
 
 ### Table 7.7: Accuracy vs LoRA rank.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 4 | 86.0 | 72.0 | 73.0 |
@@ -1158,7 +1158,7 @@ layers have lower gates (linear).
 
 ### Table 7.8: Accuracy vs recovery steps.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 86.0 | 72.0 | 73.0 |
@@ -1170,7 +1170,7 @@ layers have lower gates (linear).
 
 ### Table 7.9: Comparison.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Method | DistilBERT | RoBERTa | GPT-2 | Type |
 |---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | Dense |
@@ -1184,7 +1184,7 @@ layers have lower gates (linear).
 
 ### Table 7.10: Inference time at various $L$ (GPT-2).
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | $L$ | Dense | HALO | Speedup |
 |---|---|---|---|
 | 128 | 4.2 s | 5.5 s | 0.76× |

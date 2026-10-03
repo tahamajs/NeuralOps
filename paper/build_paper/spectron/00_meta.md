@@ -4,7 +4,7 @@
 **Class Name**: `LowRankSparseLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `inject_spectron_attention, inject_spectron, spectron_attn, spectron, spectron_inject, spectron_attention_inject, spectron_attention`  
-**Implementation Source**: `Codes/framework/attentions/spectron.py` (1105 lines of code)  
+**Implementation Source**: `neuralops/attentions/spectron.py` (1105 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

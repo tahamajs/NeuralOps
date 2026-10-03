@@ -4,7 +4,7 @@
 **Class Name**: `GriffinAttention`  
 **Base Architecture**: `BaseAttention`  
 **Registry Keys**: `svd_sequence_attention`  
-**Implementation Source**: `Codes/framework/core/registry.py` (244 lines of code)  
+**Implementation Source**: `neuralops/core/registry.py` (244 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

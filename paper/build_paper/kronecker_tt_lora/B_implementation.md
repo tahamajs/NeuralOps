@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `kronecker_tt_lora` module is implemented in `Codes/framework/compression_engine/kronecker_tt_lora.py` (624 lines of code).
+The `kronecker_tt_lora` module is implemented in `neuralops/compression_engine/kronecker_tt_lora.py` (624 lines of code).
 - Registered Class: `KroneckerTTLoRALayer`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, base\_layer: nn.Linear, m1: int, n1: int, m2: int, n2: int, tt\_shapes: Tuple[int, int, int], tt\_ranks: Tuple[int, int, int, int] = (1, 4, 4, 1), gamma: float = 1.0, lora\_r: int = 4, lora\_alpha: float = 8.0, r\_min: int = 2, r\_max: int = 32, entropy\_threshold: float = 0.75, ) -> None: super().\_\_i`

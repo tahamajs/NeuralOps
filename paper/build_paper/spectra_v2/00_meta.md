@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `inject_spectra_v2, spectra_v2_inject, spectra_v2`  
-**Implementation Source**: `Codes/framework/attentions/spectra_v2.py` (656 lines of code)  
+**Implementation Source**: `neuralops/attentions/spectra_v2.py` (656 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

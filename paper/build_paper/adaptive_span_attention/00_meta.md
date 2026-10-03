@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `adaptive_span, adaptive_span_inject, adaptive_span_attention`  
-**Implementation Source**: `Codes/framework/attentions/adaptive_span_attention.py` (821 lines of code)  
+**Implementation Source**: `neuralops/attentions/adaptive_span_attention.py` (821 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

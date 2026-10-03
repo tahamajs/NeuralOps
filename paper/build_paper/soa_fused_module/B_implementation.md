@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `soa_fused_module` module is implemented in `Codes/framework/attentions/SOAFusedAttention.py` (739 lines of code).
+The `soa_fused_module` module is implemented in `neuralops/attentions/SOAFusedAttention.py` (739 lines of code).
 - Registered Class: `FactorizedLoRAUp`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `Standard configuration arguments`

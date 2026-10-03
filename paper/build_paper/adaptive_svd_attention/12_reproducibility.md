@@ -44,7 +44,7 @@ python run_all_4_adaptive_svd.py \
 ### Individual Model
 
 ```bash
-python Codes/framework/run_quality_sweep.py \
+python neuralops/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --model_family bert \
     --dataset sst2 \

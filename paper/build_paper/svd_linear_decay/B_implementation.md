@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `svd_linear_decay` module is implemented in `Codes/framework/attentions/svd_linear_decay.py` (97 lines of code).
+The `svd_linear_decay` module is implemented in `neuralops/attentions/svd_linear_decay.py` (97 lines of code).
 - Registered Class: `DecayGatedLinearAttention`
 - Base Architecture: `SVDLinearAttention`
 - Constructor Signatures: `self, *args, **kwargs`

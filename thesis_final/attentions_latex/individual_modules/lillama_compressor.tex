@@ -37,7 +37,7 @@ E(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{j=1}^{\min(d_{\text{in}}, d_{\text{o
 چنانچه $\mathcal{E}_{\text{rel}} > \text{max\_error}$ باشد (با مقدار پیش‌فرض $0.20$)، ماژول به صورت خودکار به وزن اصلی لایه رجوع کرده (\lr{Fallback to Original}) تا از تخریب ساختاری مدل جلوگیری به عمل آید.
 
 \subsection{معماری و پیاده‌سازی}
-کلاس \lr{LiLLaMACompressor} در مسیر \lr{Codes/framework/compression\_engine/lillama\_compressor.py} واقع شده و تحت شناسه‌های \lr{lillama}، \lr{lillama\_compressor}، \lr{lillama\_class} و \lr{lillama\_factory} در رجیستری فشرده‌سازی ثبت شده است. مؤلفه‌ها و مکانیزم‌های کلیدی پیاده‌سازی عبارتند از:
+کلاس \lr{LiLLaMACompressor} در مسیر \lr{neuralops/compression\_engine/lillama\_compressor.py} واقع شده و تحت شناسه‌های \lr{lillama}، \lr{lillama\_compressor}، \lr{lillama\_class} و \lr{lillama\_factory} در رجیستری فشرده‌سازی ثبت شده است. مؤلفه‌ها و مکانیزم‌های کلیدی پیاده‌سازی عبارتند از:
 \begin{itemize}
     \item \textbf{مکانیزم قلاب‌های رهگیری پویا (\lr{Forward Activation Hooks}):} ماژول قلاب‌های موقتی را بر روی تمامی لایه‌های خطی هدف نصب نموده و در یک گذر پیشرو بر روی $N_{\text{batch}}$ دسته داده متنی، تانسورهای فعال‌سازی ورودی و خروجی را جمع‌آوری و برای مدیریت حافظه به پردازنده میزبان انتقال می‌دهد.
     \item \textbf{سازگاری کامل با لایه‌های \lr{Conv1D} و شبکه‌های دیکودر:} لایه‌های پیچشی ۱بعدی (نظیر ساختار \lr{c\_attn} در \lr{GPT-2}) از طریق ترانهاده‌سازی خودکار و بازآرایی ابعاد پشتیبانی می‌شوند.

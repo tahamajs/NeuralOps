@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `oats` module is implemented in `Codes/framework/compression_engine/oats_compressor.py` (597 lines of code).
+The `oats` module is implemented in `neuralops/compression_engine/oats_compressor.py` (597 lines of code).
 - Registered Class: `OATSLoRALinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `Standard configuration arguments`

@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `ptp, progressive_token_pruning`  
-**Implementation Source**: `Codes/framework/attentions/progressive_token_pruning.py` (579 lines of code)  
+**Implementation Source**: `neuralops/attentions/progressive_token_pruning.py` (579 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

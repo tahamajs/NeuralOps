@@ -4,7 +4,7 @@
 **Class Name**: `FLAPCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `flap_compressor, flap`  
-**Implementation Source**: `Codes/framework/compression_engine/flap.py` (416 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/flap.py` (416 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

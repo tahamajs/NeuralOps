@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `svd_sequence_attention` module is implemented in `Codes/framework/core/registry.py` (244 lines of code).
+The `svd_sequence_attention` module is implemented in `neuralops/core/registry.py` (244 lines of code).
 - Registered Class: `GriffinAttention`
 - Base Architecture: `BaseAttention`
 - Constructor Signatures: `Standard configuration arguments`

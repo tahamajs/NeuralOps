@@ -22,7 +22,7 @@ python run_all_4_nexus.py \
 ## 12.3 Individual Model
 
 ```bash
-python Codes/framework/run_quality_sweep.py \
+python neuralops/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,nexus \
     --recovery_steps 50

@@ -4,7 +4,7 @@
 **Class Name**: `KMeansLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `kmeans_quantize_factory, kmeans_factory, kmeans_compressor, kmeans_quantize, kmeans`  
-**Implementation Source**: `Codes/framework/compression_engine/kmeans_quantize.py` (495 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/kmeans_quantize.py` (495 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

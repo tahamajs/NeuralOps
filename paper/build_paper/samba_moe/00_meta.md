@@ -4,7 +4,7 @@
 **Class Name**: `MinimalMoEFallback`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `samba_moe, inject_samba_moe, samba_moe_inject`  
-**Implementation Source**: `Codes/framework/attentions/samba_moe.py` (353 lines of code)  
+**Implementation Source**: `neuralops/attentions/samba_moe.py` (353 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `inject_mamba_svd_flash, mamba_svd_flash, mamba_svd_flash_inject`  
-**Implementation Source**: `Codes/framework/attentions/mamba_svd_flash.py` (822 lines of code)  
+**Implementation Source**: `neuralops/attentions/mamba_svd_flash.py` (822 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

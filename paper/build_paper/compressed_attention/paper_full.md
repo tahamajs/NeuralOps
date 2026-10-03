@@ -4,7 +4,7 @@
 **Class Name**: `CompressedAttentionLayer`  
 **Base Architecture**: `BaseAttention`  
 **Registry Keys**: `compressed_attention, compressed_attention_inject, compressed_attention_layer_energy, compressed_attention_layer_fn, compressed_attention_layer, compressed_attention_fn, compressed_attention_layer_inject`  
-**Implementation Source**: `Codes/framework/attentions/compressed_attention.py` (569 lines of code)  
+**Implementation Source**: `neuralops/attentions/compressed_attention.py` (569 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract
@@ -35,7 +35,7 @@ $$\mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}$$
 In batch-1 autoregressive decoding, arithmetic intensity drops significantly ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading billions of parameters across high-bandwidth memory (HBM) buses creates a strict throughput ceiling. By zeroing out unessential parameters or factorizing projections into lower-dimensional subspaces, our framework reduces total bytes transferred per token step, directly unlocking tangible wall-clock acceleration.
 
 ## 1.3 Architectural Positioning within the Unified Framework
-Within our production-hardened framework, `compressed_attention` resides as a first-class component under `Codes/framework/attentions/`. Unlike ad-hoc research prototypes, `compressed_attention` adheres to standardized contracts:
+Within our production-hardened framework, `compressed_attention` resides as a first-class component under `neuralops/attentions/`. Unlike ad-hoc research prototypes, `compressed_attention` adheres to standardized contracts:
 - **Plug-and-Play Model Replacement**: Capable of dynamically replacing baseline projection layers or full attention blocks without requiring global architecture refactoring.
 - **Heterogeneous Model Support**: Implements explicit structural handling for bidirectional encoders (DistilBERT, RoBERTa/BERT), autoregressive Conv1D decoders (GPT-2), and modern grouped-query architectures (LLaMA/Qwen).
 - **Graceful Degradation and Guardrail Fallbacks**: Encapsulates automated reconstruction norm validation, condition number checks, and adaptive residual fine-tuning (LoRA) to guarantee execution stability under extreme compression ratios.
@@ -525,7 +525,7 @@ To reproduce the empirical benchmark evaluations for `compressed_attention` acro
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor compressed_attention \
     --dataset sst2 \
@@ -613,7 +613,7 @@ $$\|X_L\|_F \le \|X_0\|_F \exp\left( \sum_{l=1}^L \|W^{(l)}_{V, r} W^{(l)}_{O, r
 
 # Appendix B. Implementation Details and Code Mapping
 
-The `compressed_attention` module is implemented in `Codes/framework/attentions/compressed_attention.py` (569 lines of code).
+The `compressed_attention` module is implemented in `neuralops/attentions/compressed_attention.py` (569 lines of code).
 - Registered Class: `CompressedAttentionLayer`
 - Base Architecture: `BaseAttention`
 - Constructor Signatures: `self, config: Optional[Any] = None, rank: Optional[int] = None, rank\_qkv: int = 384, rank\_out: int = 384, lora\_rank: int = 16, original\_layer: Any = None, pretrained\_attn: Optional[nn.Module] = None, **kwargs: Any, ) -> None: cfg = config if config is not None else original\_layer super().\_\_init\_\_(cf`

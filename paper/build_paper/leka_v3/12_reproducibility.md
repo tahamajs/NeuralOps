@@ -32,7 +32,7 @@ python run_all_4_leka_v3.py \
 ## 12.4 Individual Model
 
 ```bash
-python Codes/framework/run_quality_sweep.py \
+python neuralops/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,leka_v3 \
     --num_landmarks 0.0 \

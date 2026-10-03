@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `upi_mamba` module is implemented in `Codes/framework/attentions/upi_stuffed_mamba.py` (676 lines of code).
+The `upi_mamba` module is implemented in `neuralops/attentions/upi_stuffed_mamba.py` (676 lines of code).
 - Registered Class: `LoRALinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `Standard configuration arguments`

@@ -11,7 +11,7 @@
 
 ### Table 7.1: SST-2 results with gate bias 1.8.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Model | Module | Acc | Δ | F1 | Mean gate | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | — | 183 MB | 1.9 s |
@@ -25,7 +25,7 @@
 
 ### Table 7.2: Learned gate statistics per head.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Model | Min $\bar{g}_h$ | Max $\bar{g}_h$ | Mean | Std |
 |---|---|---|---|---|
 | DistilBERT | 0.15 | 0.98 | 0.72 | 0.24 |
@@ -39,7 +39,7 @@
 
 ### Table 7.3: Mean gate per layer (DistilBERT).
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Layer | Mean gate |
 |---|---|
 | 0 | 0.85 |
@@ -56,7 +56,7 @@ layers have lower gates (linear).
 
 ### Table 7.4: Memory and time.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Model | Config | Peak VRAM | Inference Time |
 |---|---|---|---|
 | DistilBERT | full | 183 MB | 1.90 s |
@@ -68,7 +68,7 @@ layers have lower gates (linear).
 
 ### Table 7.5: Accuracy vs gate bias.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | $b_h$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 0 | 85.0 | 72.0 | 73.0 |
@@ -83,7 +83,7 @@ layers have lower gates (linear).
 
 ### Table 7.6: Accuracy vs kernel choice.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Kernel | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | ELU+1 | 89.5 | 76.5 | 77.5 |
@@ -97,7 +97,7 @@ layers have lower gates (linear).
 
 ### Table 7.7: Accuracy vs LoRA rank.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 4 | 86.0 | 72.0 | 73.0 |
@@ -109,7 +109,7 @@ layers have lower gates (linear).
 
 ### Table 7.8: Accuracy vs recovery steps.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 86.0 | 72.0 | 73.0 |
@@ -121,7 +121,7 @@ layers have lower gates (linear).
 
 ### Table 7.9: Comparison.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Method | DistilBERT | RoBERTa | GPT-2 | Type |
 |---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | Dense |
@@ -135,7 +135,7 @@ layers have lower gates (linear).
 
 ### Table 7.10: Inference time at various $L$ (GPT-2).
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | $L$ | Dense | HALO | Speedup |
 |---|---|---|---|
 | 128 | 4.2 s | 5.5 s | 0.76× |

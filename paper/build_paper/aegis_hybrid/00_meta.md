@@ -4,7 +4,7 @@
 **Class Name**: `FactorizedLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `aegis_hybrid_attention, aegis_hybrid_attn, aegis_hybrid, inject_aegis_hybrid, aegis_hybrid_inject`  
-**Implementation Source**: `Codes/framework/attentions/aegis_hybrid.py` (1041 lines of code)  
+**Implementation Source**: `neuralops/attentions/aegis_hybrid.py` (1041 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

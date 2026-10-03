@@ -40,7 +40,7 @@ r = \max\left(r_{\text{min}}, \min\left(r_{\text{max}}, \lfloor \bar{H} \cdot r_
 و لایه متراکم با ماژول دو‌مرحله‌ای \lr{SVDLinear} جایگزین می‌گردد.
 
 \subsection{معماری و پیاده‌سازی}
-کلاس \lr{MGIECompressor} در فایل \lr{Codes/framework/compression\_engine/mgie\_svd.py} پیاده‌سازی شده و تحت شناسه‌های \lr{mgie}، \lr{mgie\_svd}، \lr{mgie\_factory} و \lr{mgie\_svd\_factory} در رجیستری فریم‌ورک ثبت شده است. نکات محوری پیاده‌سازی عبارتند از:
+کلاس \lr{MGIECompressor} در فایل \lr{neuralops/compression\_engine/mgie\_svd.py} پیاده‌سازی شده و تحت شناسه‌های \lr{mgie}، \lr{mgie\_svd}، \lr{mgie\_factory} و \lr{mgie\_svd\_factory} در رجیستری فریم‌ورک ثبت شده است. نکات محوری پیاده‌سازی عبارتند از:
 \begin{itemize}
     \item \textbf{محاسبه محلی و مستقل آنتروپی (\lr{Per-Layer Entropy Computation}):} بر خلاف روش‌های سرتاسری، در این ماژول هر لایه بر اساس توزیع مقادیر منفرد درونی خود رتبه‌بندی می‌شود که این امر فرآیند فشرده‌سازی را بدون نیاز به حل مسایل بهینه‌سازی سراسری و با حداقل مصرف حافظه انجام می‌دهد.
     \item \textbf{جایگزینی مستقیم با لایه فاکتورگیری‌شده فیزیکی \lr{SVDLinear}:} لایه‌های خطی و لایه‌های \lr{Conv1D} جای خود را به ساختار ماژولار \lr{SVDLinear} می‌دهند که کاهش واقعی پارامترها و تسریع در ضرب ماتریسی را به دنبال دارد.

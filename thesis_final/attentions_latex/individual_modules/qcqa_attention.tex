@@ -37,7 +37,7 @@
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-کلاس پایتونی اصلی این ماژول تحت عنوان \lr{QCQAAttention} در فایل \lr{Codes/framework/attentions/qcqa\_attention.py} پیاده‌سازی شده و از کلاس پایه \lr{BaseAttention} ارث‌بری می‌نماید. اهم ویژگی‌های ساختاری و مهندسی این کد عبارتند از:
+کلاس پایتونی اصلی این ماژول تحت عنوان \lr{QCQAAttention} در فایل \lr{neuralops/attentions/qcqa\_attention.py} پیاده‌سازی شده و از کلاس پایه \lr{BaseAttention} ارث‌بری می‌نماید. اهم ویژگی‌های ساختاری و مهندسی این کد عبارتند از:
 \begin{itemize}
     \item \textbf{شبکه مسیریاب پویا (\lr{Continuous Soft Router}):} شبکه سبک‌وزن \lr{self.router} وظیفه نگاشت بردار بعد سر به تعداد سرهای کلید/مقدار فشرده را بر عهده دارد و دمای \lr{router\_temp} امکان تنظیم غلظت یا نرمی توزیع وزن‌ها را فراهم می‌سازد.
     \item \textbf{پشتیبانی کامل از کش بافر کلید/مقدار (\lr{KV-Cache}):} سازگار با هر دو ساختار چندتایی و \lr{DynamicCache} پلتفرم \lr{Hugging Face} به همراه اعمال صحیح انحراف زمانی \lr{past\_len} در محاسبات مکانی \lr{RoPE}.

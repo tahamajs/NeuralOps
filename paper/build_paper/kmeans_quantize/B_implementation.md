@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `kmeans_quantize` module is implemented in `Codes/framework/compression_engine/kmeans_quantize.py` (495 lines of code).
+The `kmeans_quantize` module is implemented in `neuralops/compression_engine/kmeans_quantize.py` (495 lines of code).
 - Registered Class: `KMeansLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, linear: nn.Module, n\_clusters: int = 256, lora\_r: int = 0, lora\_alpha: float = 1.0, ) -> None: super().\_\_init\_\_() target\_mod = getattr(linear, "base\_layer", linear) cls\_name = target\_mod.\_\_class\_\_.\_\_name\_\_.lower() is\_conv1d = "conv1d" in cls\_name or hasattr(target\_mod, "nf") raw\_w = target\_mod`

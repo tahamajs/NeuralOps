@@ -117,7 +117,7 @@ S_{h, ij} = \frac{\mathbf{q}_{h, i} \mathbf{k}_{h, j}^\top}{\sqrt{d}}
 \end{figure}
 
 \subsection*{بخش ۳: کالبدشکافی سورسکد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
-کالبدشکافی ساختاری پیاده‌سازی پایتونی ماژول در فایل منبع \nolinkurl{Codes/framework/attentions/adaptive_span_attention.py} نشان‌دهنده طراحی شیءگرای ماژولار و هماهنگ با استانداردهای فریم‌ورک تحقیقاتی رساله است.
+کالبدشکافی ساختاری پیاده‌سازی پایتونی ماژول در فایل منبع \nolinkurl{neuralops/attentions/adaptive_span_attention.py} نشان‌دهنده طراحی شیءگرای ماژولار و هماهنگ با استانداردهای فریم‌ورک تحقیقاتی رساله است.
 
 \paragraph{۱. سلسله‌مراتب کلاسی و رجیستری:}
 کلاس \lr{AdaptiveSpanAttention} از کلاس پایه \lr{BaseAttention} ارث‌بری نموده و توسط دکوراتور \lr{@ATTENTION\_REGISTRY.register} با دو شناسه \lr{"adaptive\_span"} و \lr{"adaptive\_span\_attention"} ثبت گردیده است. قابلیت‌های اعلام‌شده شامل پشتیبانی از حالت علّی \lr{(supports\_causal=True)}، توجه دسته‌ای اشتراکی \lr{(supports\_gqa=True)} و جاسازی مکانی چرخشی \lr{(supports\_rope=True)} است.

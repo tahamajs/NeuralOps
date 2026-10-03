@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-کلاس اصلی ماژول \lr{CompressedAttentionLayer} در فایل \lr{Codes/framework/attentions/compressed\_attention.py} قرار دارد و از کلاس \lr{BaseAttention} ارث‌بری می‌کند. از نکات برجسته معماری نرم‌افزاری آن می‌توان به موارد زیر اشاره نمود:
+کلاس اصلی ماژول \lr{CompressedAttentionLayer} در فایل \lr{neuralops/attentions/compressed\_attention.py} قرار دارد و از کلاس \lr{BaseAttention} ارث‌بری می‌کند. از نکات برجسته معماری نرم‌افزاری آن می‌توان به موارد زیر اشاره نمود:
 \begin{itemize}
     \item \textbf{انتقال مستقیم وزن‌های از پیش‌آموزش‌دیده (\lr{Pretrained Weight Transfer}):} استخراج خودکار ماتریس‌های \lr{QKV} و پروجکشن خروجی از لایه‌های مدل والد و تجزیه SVD برخط حین مقداردهی اولیه لایه.
     \item \textbf{انطباق چندمعماری با \lr{ModelAdapter}:} شناسایی خودکار ابعاد پنهان، تعداد سرها و نوع مدل (انکودر دوطرفه یا دیکودر خودبازگشتی) جهت پیکربندی صحیح تانسورها.

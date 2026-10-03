@@ -4,7 +4,7 @@
 **Class Name**: `SAESSVDCompressorV2`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `saes_svd`  
-**Implementation Source**: `Codes/framework/compression_engine/saes_svd_v2.py` (307 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/saes_svd_v2.py` (307 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `wgqa_attention_inject, wgqa, wgqa_inject, inject_wgqa, wgqa_attention`  
-**Implementation Source**: `Codes/framework/attentions/wgqa_attention.py` (816 lines of code)  
+**Implementation Source**: `neuralops/attentions/wgqa_attention.py` (816 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

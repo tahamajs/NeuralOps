@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `lola_attention` module is implemented in `Codes/framework/attentions/lola_attention.py` (733 lines of code).
+The `lola_attention` module is implemented in `neuralops/attentions/lola_attention.py` (733 lines of code).
 - Registered Class: `LowRankCache`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, max\_len: int = 128, low\_rank\_k: int = 16) -> None: super().\_\_init\_\_() self.max\_len: int = max\_len self.low\_rank\_k: int = low\_rank\_k self.register\_buffer("recent\_k", torch.zeros(0), persistent=False) self.recent\_k: torch.Tensor self.register\_buffer("recent\_v", torch.zeros(0), persistent=False) `

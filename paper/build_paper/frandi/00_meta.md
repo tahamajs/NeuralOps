@@ -4,7 +4,7 @@
 **Class Name**: `FRanDILinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `frandi`  
-**Implementation Source**: `Codes/framework/compression_engine/frandi_compressor.py` (547 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/frandi_compressor.py` (547 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

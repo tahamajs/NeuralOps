@@ -43,7 +43,7 @@
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-کلاس‌های اصلی این ماژول در مسیر \lr{Codes/framework/compression\_engine/delta\_kv.py} قرار داشته و شامل دو بخش اصلی \lr{DeltaKVCompressor} (به عنوان فشرده‌ساز مدل) و \lr{DeltaKVStore} (به عنوان کش فرّار زمان اجرا) می‌باشند. ویژگی‌های برجسته پیاده‌سازی عبارتند از:
+کلاس‌های اصلی این ماژول در مسیر \lr{neuralops/compression\_engine/delta\_kv.py} قرار داشته و شامل دو بخش اصلی \lr{DeltaKVCompressor} (به عنوان فشرده‌ساز مدل) و \lr{DeltaKVStore} (به عنوان کش فرّار زمان اجرا) می‌باشند. ویژگی‌های برجسته پیاده‌سازی عبارتند از:
 \begin{itemize}
     \item \textbf{رجیستری چندگانه:} ثبت رسمی در رجیستری با شناسه‌های \lr{delta\_kv}، \lr{delta\_kv\_class}، \lr{delta\_kv\_compressor} و \lr{delta\_kv\_factory}.
     \item \textbf{فیلتر هدف‌گذاری هوشمند لایه‌ها:} توانایی تفکیک پروجکشن‌های توجه (\lr{q\_proj}، \lr{k\_proj}، \lr{v\_proj}، \lr{o\_proj} و \lr{c\_attn}) از لایه‌های پیش‌خور در صورت تنظیم پارامتر \lr{target\_attention\_only}.

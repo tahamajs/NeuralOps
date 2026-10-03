@@ -4,7 +4,7 @@
 **Class Name**: `GreCoDeCLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `grecodec`  
-**Implementation Source**: `Codes/framework/compression_engine/grecodec_compressor.py` (482 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/grecodec_compressor.py` (482 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

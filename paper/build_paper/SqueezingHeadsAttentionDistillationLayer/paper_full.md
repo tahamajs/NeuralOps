@@ -435,13 +435,13 @@ $$
 \text{Projection}_{W} = \text{LoRALinear}(W_\text{frozen}, r_L, \alpha)
 \tag{4.1}
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 The forward pass is:
@@ -450,13 +450,13 @@ $$
 y = x W_\text{frozen}^\top + \frac{\alpha}{r_L} x A^\top B^\top + b
 \tag{4.2}
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 where $W_\text{frozen}$ is the pretrained weight (frozen), $A, B$ are LoRA 
@@ -489,13 +489,13 @@ $$
 y = \text{Linear}(x, W_\text{frozen}, b) + \frac{\alpha}{r_L} \text{Linear}(\text{Linear}(x, A), B)
 \tag{4.3}
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 **Complexity.**
@@ -522,13 +522,13 @@ $$
 W_Q^{(\text{new})} = W_Q^{(\text{old})}_{:d_h' H, :}
 \tag{4.4}
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 Similarly for $W_K, W_V$. For $W_O$, we slice the leading columns:
@@ -537,13 +537,13 @@ $$
 W_O^{(\text{new})} = W_O^{(\text{old})}_{:, :d_h' H}
 \tag{4.5}
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 **Why leading?** The leading dimensions correspond to the principal 
@@ -562,13 +562,13 @@ $$
 W_K^{(\text{pool})}_g = \frac{1}{r} \sum_{h \in g} W_K^{(\text{source})}_h
 \tag{4.6}
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 where $r = H_\text{source} / H_\text{target}$ and the mean is over the 
@@ -638,13 +638,13 @@ $$
 \text{Params reduction} = \frac{d_h}{d_h'} \cdot \left(1 + O(r_L / d_h)\right)
 \tag{4.7}
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 **Example.** $d_h = 64 \to d_h' = 32$, $r_L = 16$:
@@ -653,13 +653,13 @@ $$
 \text{Reduction} \approx 2 \cdot (1 + 0.25) = 2.5
 \tag{4.8}
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 
-<!-- source: Codes/framework/attentions/squeezing_heads_distill.py line 138 -->
+<!-- source: neuralops/attentions/squeezing_heads_distill.py line 138 -->
 $$
 
 but accuracy drops from head-dim reduction. LoRA recovers most of it.
@@ -979,7 +979,7 @@ python run_all_4_squeezing_heads.py \
 
 ### Table 7.1: SST-2 results with $r_L = 16$, no head-dim reduction.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Model | Module | Acc | Δ | F1 | Trainable | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 183 MB | 1.9 s |
@@ -993,7 +993,7 @@ python run_all_4_squeezing_heads.py \
 
 ### Table 7.2: Accuracy vs head-dim reduction.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | $s$ | DistilBERT | RoBERTa | GPT-2 | Param ratio |
 |---|---|---|---|---|
 | 1.0 (base) | 90.26 | 76.8 | 77.5 | 1.00× |
@@ -1005,7 +1005,7 @@ python run_all_4_squeezing_heads.py \
 
 ### Table 7.3: Trainable parameters.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Model | Baseline trainable | SH trainable | Ratio |
 |---|---|---|---|
 | DistilBERT | 66.9M | 589824 | 113× |
@@ -1016,7 +1016,7 @@ python run_all_4_squeezing_heads.py \
 
 ### Table 7.4: Accuracy vs LoRA rank.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 4 | 88.5 | 74.5 | 75.5 |
@@ -1028,7 +1028,7 @@ python run_all_4_squeezing_heads.py \
 
 ### Table 7.5: Accuracy vs recovery steps.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 85.0 | 72.0 | 73.0 |
@@ -1040,7 +1040,7 @@ python run_all_4_squeezing_heads.py \
 
 ### Table 7.6: GQA pooling method (Qwen-style).
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Method | Accuracy |
 |---|---|
 | Mean pooling | 76.5 |
@@ -1050,7 +1050,7 @@ python run_all_4_squeezing_heads.py \
 
 ### Table 7.7: Comparison.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Method | DistilBERT | RoBERTa | GPT-2 | Type | Trainable |
 |---|---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | Baseline | 100% |
@@ -1063,7 +1063,7 @@ python run_all_4_squeezing_heads.py \
 
 ### Table 7.8: LoRA vs full fine-tuning at same recovery steps.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Training | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | Full FT | 90.5 | 77.2 | 78.0 |

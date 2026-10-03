@@ -50,9 +50,9 @@ S_{ij} \leftarrow S_{ij} + \text{mask}_{ij}, \quad
 O^\text{dense}_i = \sum_j \text{softmax}(S_i)_j V_j
 \tag{4.1}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 447 -->
+<!-- source: neuralops/attentions/halo_regla.py line 447 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 447 -->
+<!-- source: neuralops/attentions/halo_regla.py line 447 -->
 $$
 
 **Complexity.** $\mathcal{O}(L^2 d_h)$ time, $\mathcal{O}(L^2)$ memory.
@@ -71,9 +71,9 @@ $$
 \phi(x) = \mathrm{elu}(x) + 1 \in \mathbb{R}^{d_h}
 \tag{4.2}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 Since $\mathrm{elu}(x) > -1$ for all $x$, we have $\phi(x) > 0$.
@@ -86,27 +86,27 @@ $$
 \text{cum}^{(i)} = \sum_{j \le i} \phi(K_j) V_j^\top \in \mathbb{R}^{d_h \times d_h}
 \tag{4.3}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 $$
 \text{den}^{(i)} = \sum_{j \le i} \phi(K_j) \in \mathbb{R}^{d_h}
 \tag{4.4}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 $$
 O^\text{lin}_i = \frac{\phi(Q_i) \cdot \text{cum}^{(i)}}{\phi(Q_i) \cdot \text{den}^{(i)} + \epsilon}
 \tag{4.5}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 where $\epsilon = 10^{-5}$ prevents division by zero.
@@ -119,9 +119,9 @@ $$
 O^\text{lin}_i = \frac{\phi(Q_i) \cdot \sum_j \phi(K_j) V_j^\top}{\phi(Q_i) \cdot \sum_j \phi(K_j) + \epsilon}
 \tag{4.6}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 ### 4.3.4 Padding Handling
@@ -133,9 +133,9 @@ $$
 V_j \leftarrow V_j \cdot \text{valid}_j
 \tag{4.7}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 This ensures padding contributes nothing to numerator or denominator.
@@ -148,9 +148,9 @@ $$
 \text{cum}^{(i)} = \text{cumsum}(\phi(K) V^\top).\text{float}()
 \tag{4.8}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 We cast back to the model dtype after cumsum.
@@ -165,9 +165,9 @@ $$
 \text{logit}_{h,i} = w_h^\top x_i + b_h
 \tag{4.9}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 where $x_i \in \mathbb{R}^d$ is the input hidden state at position $i$. The 
@@ -177,9 +177,9 @@ $$
 g_{h,i} = \sigma(\text{logit}_{h,i}) \in (0, 1)
 \tag{4.10}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 ### 4.4.2 Output
@@ -188,9 +188,9 @@ $$
 O_{h,i} = g_{h,i} \cdot O^\text{dense}_{h,i} + (1 - g_{h,i}) \cdot O^\text{lin}_{h,i}
 \tag{4.11}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 ### 4.4.3 Initialization
@@ -312,9 +312,9 @@ $$
 \frac{\partial \mathcal{L}}{\partial g_h} = 0 \Rightarrow O^\text{dense}_h = O^\text{lin}_h
 \tag{4.12}
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 
-<!-- source: Codes/framework/attentions/halo_regla.py line 173 -->
+<!-- source: neuralops/attentions/halo_regla.py line 173 -->
 $$
 
 or the gate is at a boundary ($g_h \to 0$ or $g_h \to 1$).

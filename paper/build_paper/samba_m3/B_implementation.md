@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `samba_m3` module is implemented in `Codes/framework/attentions/samba_m3.py` (670 lines of code).
+The `samba_m3` module is implemented in `neuralops/attentions/samba_m3.py` (670 lines of code).
 - Registered Class: `LoRALinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, bias: bool = True, lora\_rank: int = 16, lora\_alpha: float = 32.0, freeze\_base: bool = True, ) -> None: super().\_\_init\_\_() self.in\_features = in\_features self.out\_features = out\_features self.lora\_rank = lora\_rank self.lora\_alpha = lora\_alpha self.scaling = `

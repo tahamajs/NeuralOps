@@ -31,7 +31,7 @@ s_j = \sqrt{\mathbb{E}[x_j^2] + \epsilon}, \quad \bar{s} = \frac{1}{d_{\text{in}
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی این ماژول در فایل \lr{Codes/framework/compression\_engine/faq\_quantizer.py} تعبیه شده و شامل ویژگی‌های مهندسی زیر است:
+پیاده‌سازی این ماژول در فایل \lr{neuralops/compression\_engine/faq\_quantizer.py} تعبیه شده و شامل ویژگی‌های مهندسی زیر است:
 \begin{itemize}
     \item \textbf{ماژول سفارشی \lr{FAQLinear}:} ذخیره مقیاس‌های کانال در بافر غیرماندگار (\lr{non-persistent buffer})، پشتیبانی همزمان از بایاس کوانتایزه‌شده و ادغام مستقیم آداپتورهای \lr{LoRA} با مقیاس‌بندی استاندارد $\frac{\alpha}{r}$.
     \item \textbf{کالیبراسیون تجربی مقاوم با \lr{DataLoader}:} استخراج ممان‌های ورودی با استفاده از هوک‌های پیش‌رو و امکان کالیبراسیون بر روی چندین دسته ورودی بدون اشغال حافظه گرافیکی.

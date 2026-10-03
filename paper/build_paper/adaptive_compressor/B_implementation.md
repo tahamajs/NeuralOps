@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `adaptive_compressor` module is implemented in `Codes/framework/compression_engine/adaptive_compressor.py` (58 lines of code).
+The `adaptive_compressor` module is implemented in `neuralops/compression_engine/adaptive_compressor.py` (58 lines of code).
 - Registered Class: `AdaptiveTransformerCompressor`
 - Base Architecture: `AdaptiveRanksCompressor`
 - Constructor Signatures: `Standard configuration arguments`

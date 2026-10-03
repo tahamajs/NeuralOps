@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `liftr` module is implemented in `Codes/framework/compression_engine/liftr.py` (348 lines of code).
+The `liftr` module is implemented in `neuralops/compression_engine/liftr.py` (348 lines of code).
 - Registered Class: `_LinearizedGELU`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, alpha: float = 0.8) -> None: super().\_\_init\_\_() self.alpha = float(alpha) def forward(self, x: torch.Tensor) -> torch.Tensor: return self.alpha * x class \_LinearizedAttentionWrapper(nn.Module`

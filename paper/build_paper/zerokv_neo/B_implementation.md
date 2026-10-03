@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `zerokv_neo` module is implemented in `Codes/framework/compression_engine/zerokv_neo_compressor.py` (446 lines of code).
+The `zerokv_neo` module is implemented in `neuralops/compression_engine/zerokv_neo_compressor.py` (446 lines of code).
 - Registered Class: `ZeroKVNeoCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `Standard configuration arguments`

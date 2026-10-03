@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `samba_m3, inject_samba_m3, samba_m3_inject`  
-**Implementation Source**: `Codes/framework/attentions/samba_m3.py` (670 lines of code)  
+**Implementation Source**: `neuralops/attentions/samba_m3.py` (670 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract
@@ -35,7 +35,7 @@ $$\mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}$$
 In batch-1 autoregressive decoding, arithmetic intensity drops significantly ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading billions of parameters across high-bandwidth memory (HBM) buses creates a strict throughput ceiling. By zeroing out unessential parameters or factorizing projections into lower-dimensional subspaces, our framework reduces total bytes transferred per token step, directly unlocking tangible wall-clock acceleration.
 
 ## 1.3 Architectural Positioning within the Unified Framework
-Within our production-hardened framework, `samba_m3` resides as a first-class component under `Codes/framework/attentions/`. Unlike ad-hoc research prototypes, `samba_m3` adheres to standardized contracts:
+Within our production-hardened framework, `samba_m3` resides as a first-class component under `neuralops/attentions/`. Unlike ad-hoc research prototypes, `samba_m3` adheres to standardized contracts:
 - **Plug-and-Play Model Replacement**: Capable of dynamically replacing baseline projection layers or full attention blocks without requiring global architecture refactoring.
 - **Heterogeneous Model Support**: Implements explicit structural handling for bidirectional encoders (DistilBERT, RoBERTa/BERT), autoregressive Conv1D decoders (GPT-2), and modern grouped-query architectures (LLaMA/Qwen).
 - **Graceful Degradation and Guardrail Fallbacks**: Encapsulates automated reconstruction norm validation, condition number checks, and adaptive residual fine-tuning (LoRA) to guarantee execution stability under extreme compression ratios.
@@ -525,7 +525,7 @@ To reproduce the empirical benchmark evaluations for `samba_m3` across GLUE clas
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor samba_m3 \
     --dataset sst2 \
@@ -613,7 +613,7 @@ $$\|X_L\|_F \le \|X_0\|_F \exp\left( \sum_{l=1}^L \|W^{(l)}_{V, r} W^{(l)}_{O, r
 
 # Appendix B. Implementation Details and Code Mapping
 
-The `samba_m3` module is implemented in `Codes/framework/attentions/samba_m3.py` (670 lines of code).
+The `samba_m3` module is implemented in `neuralops/attentions/samba_m3.py` (670 lines of code).
 - Registered Class: `LoRALinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, bias: bool = True, lora\_rank: int = 16, lora\_alpha: float = 32.0, freeze\_base: bool = True, ) -> None: super().\_\_init\_\_() self.in\_features = in\_features self.out\_features = out\_features self.lora\_rank = lora\_rank self.lora\_alpha = lora\_alpha self.scaling = `

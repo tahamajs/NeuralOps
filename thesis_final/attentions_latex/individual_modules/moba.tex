@@ -22,7 +22,7 @@ S_{i, j} = \frac{\mathbf{c}_i^Q \cdot (\mathbf{c}_j^K)^\top}{\sqrt{d}}, \quad \m
 بدین ترتیب پیچیدگی زمانی از $\mathcal{O}(N^2 d)$ به $\mathcal{O}(N \cdot (B_{\text{\lr{block}}} + k B_{\text{\lr{block}}}) \cdot d) = \mathcal{O}(N \cdot d)$ تنزل می‌یابد.
 
 \subsection*{بخش ۳: کالبدشکافی سورس‌کد و ردگیری تانسورها \lr{(Source Code \& Tensor Trace)}}
-کلاس اصلی \lr{MoBAAttention} در فایل \lr{Codes/framework/attentions/moba\_attention.py} پیاده‌سازی گردیده است:
+کلاس اصلی \lr{MoBAAttention} در فایل \lr{neuralops/attentions/moba\_attention.py} پیاده‌سازی گردیده است:
 \begin{itemize}
     \item \textbf{ابعاد تانسورها:} ورودی با ابعاد \lr{$[B, N, D]$} به وسیله لایه‌های \lr{LoRALinear} نگاشت شده و به \lr{$[B, H, N, d]$} تبدیل می‌شود.
     \item \textbf{قطعه‌بندی بلوکی:} در امتداد بعد توالی، تانسورها با تغییر دید پیوسته به ابعاد \lr{$[B, H, M, B\_{\text{\lr{block}}}, d]$} نگاشت می‌شوند.

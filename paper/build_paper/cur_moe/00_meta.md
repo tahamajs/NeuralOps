@@ -4,7 +4,7 @@
 **Class Name**: `CURMoECompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `cur_moe`  
-**Implementation Source**: `Codes/framework/compression_engine/cur_moe_compressor.py` (378 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/cur_moe_compressor.py` (378 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

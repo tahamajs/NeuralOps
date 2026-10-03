@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `soa_attn` module is implemented in `Codes/framework/attentions/soa_attn.py` (826 lines of code).
+The `soa_attn` module is implemented in `neuralops/attentions/soa_attn.py` (826 lines of code).
 - Registered Class: `FactorizedLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, down: nn.Linear, up: nn.Linear) -> None: super().\_\_init\_\_() self.down = down self.up = up @property def weight(self) -> torch.Tensor: return torch.matmul(self.up.weight, self.down.weight) @property def bias(self) -> Optional[torch.Tensor]: return getattr(self.up, "bias", None) @property def in`

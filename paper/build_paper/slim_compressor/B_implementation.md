@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `slim_compressor` module is implemented in `Codes/framework/compression_engine/slim_compressor.py` (285 lines of code).
+The `slim_compressor` module is implemented in `neuralops/compression_engine/slim_compressor.py` (285 lines of code).
 - Registered Class: `SLiMCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: nn.Module, bits: int = 4, sparsity: float = 0.5, rank: int = 8, structured\_24: bool = True, target\_attention\_only: bool = False, max\_error: float = 0.5, fallback\_to\_original: bool = True, # Fix 1: Default changed to True target\_modules: Optional[List[str]] = None, **kwargs: Any, ) -> No`

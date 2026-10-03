@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `simple_ssm_inject, simple_ssm, inject_simple_ssm`  
-**Implementation Source**: `Codes/framework/attentions/simple_ssm.py` (611 lines of code)  
+**Implementation Source**: `neuralops/attentions/simple_ssm.py` (611 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

@@ -4,7 +4,7 @@
 **Class Name**: `ProjectionFactorizedAttention`  
 **Base Architecture**: `SVDLinearAttention`  
 **Registry Keys**: `projection_factorized_attn`  
-**Implementation Source**: `Codes/framework/attentions/projection_factorized_attn.py` (87 lines of code)  
+**Implementation Source**: `neuralops/attentions/projection_factorized_attn.py` (87 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

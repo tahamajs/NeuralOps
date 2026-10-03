@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `soa_module` module is implemented in `Codes/framework/attentions/soa_attn.py` (826 lines of code).
+The `soa_module` module is implemented in `neuralops/attentions/soa_attn.py` (826 lines of code).
 - Registered Class: `FactorizedLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `Standard configuration arguments`

@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی \lr{MLoRQ} در فایل \lr{Codes/framework/compression\_engine/mlorq\_compressor.py} در قالب دو کلاس اصلی زیر سازمان‌یافته است:
+پیاده‌سازی \lr{MLoRQ} در فایل \lr{neuralops/compression\_engine/mlorq\_compressor.py} در قالب دو کلاس اصلی زیر سازمان‌یافته است:
 \begin{itemize}
     \item \textbf{کلاس \lr{MLoRQLoRALinear}:} لایه خطی اختصاصی که وزن پایه فاکتورگیری و کوانتیزه‌شده را به شکل منجمد (\lr{frozen}) نگه داشته و امکان اتصال ادپترهای آموزش‌پذیر \lr{LoRA} ($\mathbf{A} \in \mathbb{R}^{r_{\text{lora}} \times d_{\text{in}}}$ و $\mathbf{B} \in \mathbb{R}^{d_{\text{out}} \times r_{\text{lora}}}$) را برای بازیابی دقت یا تنظیم دقیق سریع فراهم می‌کند:
     \begin{equation}

@@ -4,7 +4,7 @@
 **Class Name**: `TaskAwareAttention`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `weighted_ensemble, weighted_ensemble_inject, inject_smart_weighted_ensemble, smart_weighted_ensemble, inject_weighted_ensemble, smart_weighted_ensemble_inject`  
-**Implementation Source**: `Codes/framework/attentions/weighted_ensemble.py` (917 lines of code)  
+**Implementation Source**: `neuralops/attentions/weighted_ensemble.py` (917 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract
@@ -35,7 +35,7 @@ $$\mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}$$
 In batch-1 autoregressive decoding, arithmetic intensity drops significantly ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading billions of parameters across high-bandwidth memory (HBM) buses creates a strict throughput ceiling. By zeroing out unessential parameters or factorizing projections into lower-dimensional subspaces, our framework reduces total bytes transferred per token step, directly unlocking tangible wall-clock acceleration.
 
 ## 1.3 Architectural Positioning within the Unified Framework
-Within our production-hardened framework, `weighted_ensemble` resides as a first-class component under `Codes/framework/attentions/`. Unlike ad-hoc research prototypes, `weighted_ensemble` adheres to standardized contracts:
+Within our production-hardened framework, `weighted_ensemble` resides as a first-class component under `neuralops/attentions/`. Unlike ad-hoc research prototypes, `weighted_ensemble` adheres to standardized contracts:
 - **Plug-and-Play Model Replacement**: Capable of dynamically replacing baseline projection layers or full attention blocks without requiring global architecture refactoring.
 - **Heterogeneous Model Support**: Implements explicit structural handling for bidirectional encoders (DistilBERT, RoBERTa/BERT), autoregressive Conv1D decoders (GPT-2), and modern grouped-query architectures (LLaMA/Qwen).
 - **Graceful Degradation and Guardrail Fallbacks**: Encapsulates automated reconstruction norm validation, condition number checks, and adaptive residual fine-tuning (LoRA) to guarantee execution stability under extreme compression ratios.
@@ -525,7 +525,7 @@ To reproduce the empirical benchmark evaluations for `weighted_ensemble` across 
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor weighted_ensemble \
     --dataset sst2 \
@@ -613,7 +613,7 @@ $$\|X_L\|_F \le \|X_0\|_F \exp\left( \sum_{l=1}^L \|W^{(l)}_{V, r} W^{(l)}_{O, r
 
 # Appendix B. Implementation Details and Code Mapping
 
-The `weighted_ensemble` module is implemented in `Codes/framework/attentions/weighted_ensemble.py` (917 lines of code).
+The `weighted_ensemble` module is implemented in `neuralops/attentions/weighted_ensemble.py` (917 lines of code).
 - Registered Class: `TaskAwareAttention`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, num\_tasks: Union[int, Any] = 1, hidden\_dim: int = 64`

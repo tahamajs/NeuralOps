@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `uniql_compressor` module is implemented in `Codes/framework/compression_engine/uniql_compressor.py` (335 lines of code).
+The `uniql_compressor` module is implemented in `neuralops/compression_engine/uniql_compressor.py` (335 lines of code).
 - Registered Class: `UniQLCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: nn.Module, rank: int = 64, bits: int = 8, max\_error: float = 0.20, max\_retries: int = 3, fallback\_to\_original: bool = True, target\_attention\_only: bool = False, **kwargs: Any, ) -> None: super().\_\_init\_\_(model, name="uniql", **kwargs) cfg = kwargs.get("comp\_config", kwargs.get("cfg", No`

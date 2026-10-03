@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `lsc_compressor` module is implemented in `Codes/framework/compression_engine/lsc_compressor.py` (444 lines of code).
+The `lsc_compressor` module is implemented in `neuralops/compression_engine/lsc_compressor.py` (444 lines of code).
 - Registered Class: `LSCPrunedLoRALinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, weight: torch.Tensor, bias: Optional[torch.Tensor] = None, lora\_r: int = 0, lora\_alpha: float = 1.0, device: Optional[torch.device] = None, dtype: Optional[torch.dtype] = None, ) -> None: super().\_\_init\_\_() self.in\_features = in\_features self.out\_features =`

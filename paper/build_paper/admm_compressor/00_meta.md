@@ -4,7 +4,7 @@
 **Class Name**: `ADMMCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `admm_compressor, admm`  
-**Implementation Source**: `Codes/framework/compression_engine/admm_compressor.py` (422 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/admm_compressor.py` (422 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

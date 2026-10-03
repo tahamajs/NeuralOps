@@ -41,7 +41,7 @@ A_{b,h,i,j} = \frac{A_{\text{poly},b,h,i,j}}{\sum_{k=1}^N A_{\text{poly},b,h,i,k
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-کلاس اصلی این مکانیزم تحت نام \lr{PADReAttention} در فایل \lr{Codes/framework/attentions/padre\_attention.py} توسعه یافته است. این کلاس مستقیماً از \lr{BaseAttention} ارث‌بری کرده و ویژگی‌های برجسته فنی آن عبارتند از:
+کلاس اصلی این مکانیزم تحت نام \lr{PADReAttention} در فایل \lr{neuralops/attentions/padre\_attention.py} توسعه یافته است. این کلاس مستقیماً از \lr{BaseAttention} ارث‌بری کرده و ویژگی‌های برجسته فنی آن عبارتند از:
 \begin{itemize}
     \item \textbf{هسته چندجمله‌ای پایدار با مرتبه انعطاف‌پذیر:} پارامتر \lr{order} درجه چندجمله‌ای را مشخص می‌کند و عملگر \lr{clamp} مانع از ظهور پایه‌های منفی یا سرریز در اثر توان‌های بالا می‌گردد.
     \item \textbf{ادغام تطبیقی \lr{LoRALinear}:} لایه‌های پروجکشن به صورت هیبریدی از وزن پایه منجمد و مسیر کم‌مرتبه موازی آموزش‌پذیر با پارامترهای \lr{lora\_rank=16} و \lr{lora\_alpha=32} پیاده‌سازی شده‌اند.

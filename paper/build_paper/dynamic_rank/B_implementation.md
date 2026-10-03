@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `dynamic_rank` module is implemented in `Codes/framework/compression_engine/dynamic_rank.py` (933 lines of code).
+The `dynamic_rank` module is implemented in `neuralops/compression_engine/dynamic_rank.py` (933 lines of code).
 - Registered Class: `DynamicSVDLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, rank: int, bias: bool = True, dtype: torch.dtype = torch.float32, device: Optional[torch.device] = None, ) -> None: super().\_\_init\_\_() self.in\_features = in\_features self.out\_features = out\_features self.rank = max(1, min(rank, in\_features, out\_features)) #`

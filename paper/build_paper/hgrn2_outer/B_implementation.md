@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `hgrn2_outer` module is implemented in `Codes/framework/attentions/hgrn2_outer.py` (692 lines of code).
+The `hgrn2_outer` module is implemented in `neuralops/attentions/hgrn2_outer.py` (692 lines of code).
 - Registered Class: `LoRALinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, bias: bool = True, lora\_rank: int = 0, lora\_alpha: float = 1.0, freeze\_base: bool = True,`

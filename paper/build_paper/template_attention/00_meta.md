@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `low_rank_modulated_attention_inject, your_custom_attention, custom_attn, low_rank_modulated_attention, inject_custom_attn, custom_attn_inject, your_attention_name, template_attention, inject_template_attention, template_attention_inject`  
-**Implementation Source**: `Codes/framework/attentions/template_attention.py` (630 lines of code)  
+**Implementation Source**: `neuralops/attentions/template_attention.py` (630 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

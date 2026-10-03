@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `tomoe` module is implemented in `Codes/framework/compression_engine/tomoe_compressor.py` (685 lines of code).
+The `tomoe` module is implemented in `neuralops/compression_engine/tomoe_compressor.py` (685 lines of code).
 - Registered Class: `ToMoELinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `Standard configuration arguments`

@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `hgrn2_outer_inject, hgrn2_outer, inject_hgrn2_outer`  
-**Implementation Source**: `Codes/framework/attentions/hgrn2_outer.py` (692 lines of code)  
+**Implementation Source**: `neuralops/attentions/hgrn2_outer.py` (692 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

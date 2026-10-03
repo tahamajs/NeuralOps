@@ -11,7 +11,7 @@
 
 ### Table 7.1: Main results on SST-2.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Model | Module | Accuracy | Delta | Status | F1 | Compressed Layers | Ratio | VRAM | Time |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | DistilBERT | full | 90.71% | -- | -- | 0.9099 | 0 | 1.00x | 183 MB | 1.90s |
@@ -25,7 +25,7 @@
 
 ### Table 7.2: Parameter counts.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Model | Baseline | After OHA | Δ | Δ % |
 |---|---|---|---|---|
 | DistilBERT | 66,955,010 | 67895114 | +940104 | +1.40% |
@@ -34,7 +34,7 @@
 
 **Breakdown (DistilBERT, per layer):**
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Component | Per layer | 6 layers |
 |---|---|---|
 | $W_k^\text{comp}$ | 24,576 | 147,456 |
@@ -47,7 +47,7 @@
 
 ### Table 7.3: Inference efficiency.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Model | Config | Time | Tokens/s | VRAM |
 |---|---|---|---|---|
 | DistilBERT | full | 1.90 s | 59000 | 183 MB |
@@ -61,7 +61,7 @@
 
 ### Table 7.4: Accuracy vs compression rank.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | $d_c$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 8 | 87.5 | 74.5 | 75.8 |
@@ -73,7 +73,7 @@
 
 ### Table 7.5: Accuracy vs window size.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | $W$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 16 | 87.0 | 74.0 | 75.5 |
@@ -85,7 +85,7 @@
 
 ### Table 7.6: Accuracy vs gate bias init.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | bias | σ(bias) | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|---|
 | 0.0 | 0.500 | 85.0 | 70.0 | 71.0 |
@@ -97,7 +97,7 @@
 
 ### Table 7.7: Accuracy vs LoRA rank.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Rank | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 8 | 88.5 | 74.5 | 75.5 |
@@ -109,7 +109,7 @@
 
 ### Table 7.8: OHA vs prior modules.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Method | DistilBERT | RoBERTa | GPT-2 | Params |
 |---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | 1.00× |
@@ -121,7 +121,7 @@
 
 ### Table 7.9: Failures.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Model | Status | Accuracy | Reason |
 |---|---|---|---|
 | DistilBERT | PASS | 89.2 | — |
@@ -130,7 +130,7 @@
 
 ## 7.10 Summary
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Metric | Value |
 |---|---|
 | Accuracy drop (best) | -1.5% |

@@ -42,7 +42,7 @@
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-کلاس اصلی ماژول \lr{ViGAttention} در فایل \lr{Codes/framework/attentions/vig\_attention.py} پیاده‌سازی شده و در رجیستری سامانه تحت نام‌های \lr{vig} و \lr{vig\_attention} به ثبت رسیده است. ویژگی‌های معماری و فنی پیاده‌سازی شامل موارد زیر است:
+کلاس اصلی ماژول \lr{ViGAttention} در فایل \lr{neuralops/attentions/vig\_attention.py} پیاده‌سازی شده و در رجیستری سامانه تحت نام‌های \lr{vig} و \lr{vig\_attention} به ثبت رسیده است. ویژگی‌های معماری و فنی پیاده‌سازی شامل موارد زیر است:
 \begin{itemize}
     \item \textbf{لایه‌های پروجکشن مجهز به \lr{LoRALinear}:} تمام ماتریس‌های پروجکشن شامل $\mathbf{W}_q$، $\mathbf{W}_k$، $\mathbf{W}_v$ و $\mathbf{W}_o$ بر پایه ساختار \lr{LoRALinear} با امکان انجماد وزن‌های مبنا (\lr{freeze\_base}) و تزریق آداپتورهای باقیمانده کم‌مرتبه با رتبه $r=16$ و مقیاس‌دهی $\alpha=32.0$ تعبیه شده‌اند.
     \item \textbf{انتقال امن وزن‌ها (\lr{UniversalAdapter}):} متد \lr{copy\_weights} از استخراج خودکار وزن‌ها از انواع سرخوان‌های \lr{DistilBERT}، لایه‌های تودرتوی \lr{RoBERTa SelfAttention}، ساختار فشرده \lr{c\_attn} در \lr{GPT-2 Conv1D} و نگاشت‌های \lr{Qwen/LLaMA} پشتیبانی می‌کند.

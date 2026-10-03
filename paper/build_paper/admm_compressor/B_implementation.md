@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `admm_compressor` module is implemented in `Codes/framework/compression_engine/admm_compressor.py` (422 lines of code).
+The `admm_compressor` module is implemented in `neuralops/compression_engine/admm_compressor.py` (422 lines of code).
 - Registered Class: `ADMMCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: nn.Module, sparsity: float = 0.5, quant\_bits: int = 4, rho1: float = 0.1, rho2: float = 0.1, max\_iter: int = 8, structured\_24: bool = True, block\_size: Tuple[int, int] = (4, 4), max\_error: float = 0.45, fallback\_to\_original: bool = True, target\_attention\_only: bool = False, target\_modul`

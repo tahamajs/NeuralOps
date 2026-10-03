@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `hashed_linear` module is implemented in `Codes/framework/compression_engine/hashed_linear.py` (295 lines of code).
+The `hashed_linear` module is implemented in `neuralops/compression_engine/hashed_linear.py` (295 lines of code).
 - Registered Class: `HashedLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, n\_buckets: int = 65536, bias: bool = True, use\_sign: bool = True, lora\_rank: Optional[int] = None, lora\_alpha: float = 1.0, dtype: Optional[torch.dtype] = None, device: Optional[torch.device] = None, ) -> None: super().\_\_init\_\_() self.in\_features = in\_featu`

@@ -4,7 +4,7 @@
 **Class Name**: `ReplacementBlock`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `replaceme_compressor, replaceme_compressor_factory, replaceme_factory, replaceme`  
-**Implementation Source**: `Codes/framework/compression_engine/replaceme_compressor.py` (305 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/replaceme_compressor.py` (305 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

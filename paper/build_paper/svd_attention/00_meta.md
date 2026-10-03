@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `inject_svd_sequence_attention, inject_svd_linear_attention, svd_sequence_attention, svd_sequence_attention_inject, svd_sequence, svd, svd_sequence_inject`  
-**Implementation Source**: `Codes/framework/attentions/svd_attention.py` (762 lines of code)  
+**Implementation Source**: `neuralops/attentions/svd_attention.py` (762 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

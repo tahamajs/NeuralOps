@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `factorised_matrix_state, fms_inject, fms, factorised_matrix_state_inject, fms_fn, factorised_matrix_state_fn`  
-**Implementation Source**: `Codes/framework/attentions/factorised_matrix_state.py` (681 lines of code)  
+**Implementation Source**: `neuralops/attentions/factorised_matrix_state.py` (681 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

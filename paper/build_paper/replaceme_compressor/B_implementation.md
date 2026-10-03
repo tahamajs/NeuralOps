@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `replaceme_compressor` module is implemented in `Codes/framework/compression_engine/replaceme_compressor.py` (305 lines of code).
+The `replaceme_compressor` module is implemented in `neuralops/compression_engine/replaceme_compressor.py` (305 lines of code).
 - Registered Class: `ReplacementBlock`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, hidden\_size: int, lora\_r: int = 0, lora\_alpha: float = 1.0, return\_tuple: bool = True, device: Optional[torch.device] = None, dtype: Optional[torch.dtype] = None, ) -> None: super().\_\_init\_\_() self.hidden\_size = hidden\_size self.lora\_r = int(lora\_r) self.lora\_alpha = float(lora\_alpha) self.ret`

@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `kronecker_linear` module is implemented in `Codes/framework/compression_engine/kronecker_linear.py` (350 lines of code).
+The `kronecker_linear` module is implemented in `neuralops/compression_engine/kronecker_linear.py` (350 lines of code).
 - Registered Class: `KroneckerLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, bias: bool = True, rank: Optional[int] = None, m1: Optional[int] = None, n1: Optional[int] = None, m2: Optional[int] = None, n2: Optional[int] = None, dtype: Optional[torch.dtype] = None, device: Optional[torch.device] = None, lora\_r: int = 0, lora\_alpha: f`

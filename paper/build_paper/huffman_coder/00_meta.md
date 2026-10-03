@@ -4,7 +4,7 @@
 **Class Name**: `HuffmanCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `huffman, huffman_coder`  
-**Implementation Source**: `Codes/framework/compression_engine/huffman_coder.py` (540 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/huffman_coder.py` (540 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

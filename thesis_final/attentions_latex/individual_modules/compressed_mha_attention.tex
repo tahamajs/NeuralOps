@@ -31,7 +31,7 @@
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-کلاس اصلی این ماژول تحت عنوان \lr{CompressedDistilBertAttention} در فایل \lr{Codes/framework/attentions/compressed\_mha\_attention.py} پیاده‌سازی شده و از کلاس پایه \lr{BaseAttention} ارث‌بری می‌کند. از جمله ویژگی‌های برجسته این پیاده‌سازی عبارتند از:
+کلاس اصلی این ماژول تحت عنوان \lr{CompressedDistilBertAttention} در فایل \lr{neuralops/attentions/compressed\_mha\_attention.py} پیاده‌سازی شده و از کلاس پایه \lr{BaseAttention} ارث‌بری می‌کند. از جمله ویژگی‌های برجسته این پیاده‌سازی عبارتند از:
 \begin{itemize}
     \item آرگومان‌های کنترلی کلیدی شامل \lr{rank\_qkv} (رتبه پروجکشن تجمیعی)، \lr{rank\_out} (رتبه پروجکشن خروجی)، \lr{lora\_rank} (رتبه جبران‌ساز لورا، با مقدار پیش‌فرض ۱۶)، و \lr{dropout} با نرخ ۰.۱.
     \item نگاشت چندمعماری با بهره‌گیری از \lr{ModelAdapter} برای استخراج دقیق وزن‌های پیش‌آموزش‌دیده از ساختارهای ناهمگون (\lr{q\_lin} در DistilBERT، پروجکشن‌های مجزای RoBERTa، لایه‌های \lr{c\_attn} ترکیبی GPT-2 و بلوک‌های مدرن Qwen).

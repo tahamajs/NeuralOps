@@ -1932,11 +1932,11 @@ python run_all_4_{{module}}.py \
 ### 12.2.2 Individual Model
 
 ```bash
-python Codes/framework/run_quality_sweep.py \
+python neuralops/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --model_family bert \
     --dataset sst2 \
-    --dataset_dir Codes/framework/data/glue_data/sst2 \
+    --dataset_dir neuralops/data/glue_data/sst2 \
     --output_dir results/unified_{{module}}/distilbert \
     --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
     --modules full,{{module}} \
@@ -2938,7 +2938,7 @@ benchmark_logs/{{module}}/
 python run_all_4_{{module}}.py --models distilbert,roberta,gpt2
 
 # Individual runs
-python Codes/framework/run_quality_sweep.py \
+python neuralops/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,{{module}} \
     --recovery_steps 50 \

@@ -4,7 +4,7 @@
 **Class Name**: `CRLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `cr_factory, cr_compressor, cr_compressor_factory, cr`  
-**Implementation Source**: `Codes/framework/compression_engine/cr_compressor.py` (459 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/cr_compressor.py` (459 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract
@@ -35,7 +35,7 @@ $$\mathcal{I} = \frac{\text{FLOPs}}{\text{Bytes Transferred}}$$
 In batch-1 autoregressive decoding, arithmetic intensity drops significantly ($\mathcal{I} \ll 1$), shifting execution from compute-bound to memory-bound regimes. Loading billions of parameters across high-bandwidth memory (HBM) buses creates a strict throughput ceiling. By zeroing out unessential parameters or factorizing projections into lower-dimensional subspaces, our framework reduces total bytes transferred per token step, directly unlocking tangible wall-clock acceleration.
 
 ## 1.3 Architectural Positioning within the Unified Framework
-Within our production-hardened framework, `cr_compressor` resides as a first-class component under `Codes/framework/compression_engine/`. Unlike ad-hoc research prototypes, `cr_compressor` adheres to standardized contracts:
+Within our production-hardened framework, `cr_compressor` resides as a first-class component under `neuralops/compression_engine/`. Unlike ad-hoc research prototypes, `cr_compressor` adheres to standardized contracts:
 - **Plug-and-Play Model Replacement**: Capable of dynamically replacing baseline projection layers or full attention blocks without requiring global architecture refactoring.
 - **Heterogeneous Model Support**: Implements explicit structural handling for bidirectional encoders (DistilBERT, RoBERTa/BERT), autoregressive Conv1D decoders (GPT-2), and modern grouped-query architectures (LLaMA/Qwen).
 - **Graceful Degradation and Guardrail Fallbacks**: Encapsulates automated reconstruction norm validation, condition number checks, and adaptive residual fine-tuning (LoRA) to guarantee execution stability under extreme compression ratios.
@@ -510,7 +510,7 @@ To reproduce the empirical benchmark evaluations for `cr_compressor` across GLUE
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor cr_compressor \
     --dataset sst2 \
@@ -598,7 +598,7 @@ $$\|X_L\|_F \le \|X_0\|_F \exp\left( \sum_{l=1}^L \|W^{(l)}_{V, r} W^{(l)}_{O, r
 
 # Appendix B. Implementation Details and Code Mapping
 
-The `cr_compressor` module is implemented in `Codes/framework/compression_engine/cr_compressor.py` (459 lines of code).
+The `cr_compressor` module is implemented in `neuralops/compression_engine/cr_compressor.py` (459 lines of code).
 - Registered Class: `CRLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, rank: int = 64, bias: bool = True, dtype: Optional[torch.dtype] = None, device: Optional[torch.device] = None, ) -> None: super().\_\_init\_\_() self.in\_features = in\_features self.out\_features = out\_features self.nf = out\_features # Conv1D compatibility self.r`

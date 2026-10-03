@@ -4,7 +4,7 @@
 **Class Name**: `GFWSLoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `gfws, gfws_d, gfws_d_factory, gfws_factory`  
-**Implementation Source**: `Codes/framework/compression_engine/gfws_d_compressor.py` (519 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/gfws_d_compressor.py` (519 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

@@ -14,7 +14,7 @@ To reproduce the empirical benchmark evaluations for `progressive_token_pruning`
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor progressive_token_pruning \
     --dataset sst2 \

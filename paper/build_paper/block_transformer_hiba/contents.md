@@ -563,7 +563,7 @@ All experiments were conducted using the following environment:
 ## 12.3 Execution Command
 To reproduce the Table 7.1 main results, execute the unified sweep script:
 ```bash
-python Codes/framework/run_quality_sweep.py \
+python neuralops/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,block_transformer_hiba \
     --recovery_steps 50 \

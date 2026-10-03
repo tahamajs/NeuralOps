@@ -4,7 +4,7 @@
 **Class Name**: `DecayGatedLinearAttention`  
 **Base Architecture**: `SVDLinearAttention`  
 **Registry Keys**: `decay_gated_linear_attention, svd_linear_decay`  
-**Implementation Source**: `Codes/framework/attentions/svd_linear_decay.py` (97 lines of code)  
+**Implementation Source**: `neuralops/attentions/svd_linear_decay.py` (97 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

@@ -4,7 +4,7 @@
 **Class Name**: `OptimalSubspaceLoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `optimal_subspace_projection_factory, inject_optimal_subspace_projection, optimal_subspace_projection, optimal_subspace_projection_inject`  
-**Implementation Source**: `Codes/framework/compression_engine/optimal_subspace_projection.py` (543 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/optimal_subspace_projection.py` (543 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

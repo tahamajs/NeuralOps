@@ -4,7 +4,7 @@
 **Class Name**: `COMPOTLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `compot_factory, compot_compressor, compot, compot_compressor_class, compot_compressor_factory`  
-**Implementation Source**: `Codes/framework/compression_engine/compot_compressor.py` (453 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/compot_compressor.py` (453 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

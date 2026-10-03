@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `adaptive_sparse_attention_inject, adaptive_sparse, adaptive_sparse_inject, adaptive_sparse_attn, adaptive_sparse_attention_attention, inject_adaptive_sparse_attention, adaptive_sparse_attn_inject, inject_adaptive_sparse, adaptive_sparse_attention`  
-**Implementation Source**: `Codes/framework/attentions/adaptive_sparse_attention.py` (836 lines of code)  
+**Implementation Source**: `neuralops/attentions/adaptive_sparse_attention.py` (836 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

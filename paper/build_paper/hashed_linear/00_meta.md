@@ -4,7 +4,7 @@
 **Class Name**: `HashedLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `hashed_linear`  
-**Implementation Source**: `Codes/framework/compression_engine/hashed_linear.py` (295 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/hashed_linear.py` (295 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

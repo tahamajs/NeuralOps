@@ -4,7 +4,7 @@
 **Class Name**: `CURLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `cur_linear`  
-**Implementation Source**: `Codes/framework/compression_engine/cur_linear.py` (249 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/cur_linear.py` (249 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

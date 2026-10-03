@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی این ماژول در فایل \lr{Codes/framework/compression\_engine/proxsparse.py} قرار داشته و با شناسه‌های \lr{proxsparse} و \lr{proxsparse\_pruner} در رجیستری فشرده‌سازی ثبت گردیده است. ساختار معماری شامل موارد زیر است:
+پیاده‌سازی این ماژول در فایل \lr{neuralops/compression\_engine/proxsparse.py} قرار داشته و با شناسه‌های \lr{proxsparse} و \lr{proxsparse\_pruner} در رجیستری فشرده‌سازی ثبت گردیده است. ساختار معماری شامل موارد زیر است:
 \begin{itemize}
     \item \textbf{کلاس ماژول \lr{ProxSparsePrunedLoRALinear}:} لایه هرس‌شده به عنوان جایگزین لایه‌های \lr{nn.Linear} و \lr{Conv1D} مستقر می‌شود و شامل وزن‌های منجمد، ماسک ماندگار (\lr{persistent buffer}) و شاخه‌های تنظیم‌پذیر ریزتنظیم \lr{LoRA} است.
     \item \textbf{پشتیبانی از ساختارهای سخت‌افزاری متنوع:} قابلیت پیکربندی برای هرس $2:4$ نیمه‌ساختاریافته سازگار با هسته‌های تنک پردازنده‌های امپر و هاپر (\lr{Ampere/Hopper Sparse Tensor Cores}) و هرس بلوکی با ابعاد سفارشی مانند $(4, 4)$.

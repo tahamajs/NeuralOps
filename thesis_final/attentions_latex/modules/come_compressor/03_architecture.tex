@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی ماژول در فایل \lr{Codes/framework/compression\_engine/come\_compressor.py} مستقر بوده و شامل اجزای مهندسی زیر است:
+پیاده‌سازی ماژول در فایل \lr{neuralops/compression\_engine/come\_compressor.py} مستقر بوده و شامل اجزای مهندسی زیر است:
 \begin{itemize}
     \item \textbf{کلاس \lr{CoMeBridge}:} پل پروجکشن خطی که به صورت چندریختی انواع خروجی‌های پایتورچ شامل \lr{Tensor}، \lr{Tuple}، \lr{Dict} و \lr{BaseModelOutput} را مدیریت کرده و عملگر درون‌یابی را منحصراً روی تانسور حالت‌های پنهان اعمال می‌نماید.
     \item \textbf{کلاس \lr{CoMeBridgedLayer}:} پوسته‌ای ساختاری که لایه ترنسفورمر نگه داشته شده را دربرگرفته و بلافاصله پس از اجرای گذر رو به جلو، پل درون‌یابی را فراخوانی می‌کند.

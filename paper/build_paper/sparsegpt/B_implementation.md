@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `sparsegpt` module is implemented in `Codes/framework/compression_engine/sparsegpt.py` (374 lines of code).
+The `sparsegpt` module is implemented in `neuralops/compression_engine/sparsegpt.py` (374 lines of code).
 - Registered Class: `SparseGPTCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: nn.Module, tokenizer: Optional[Any] = None, sparsity: float = 0.5, prunen: int = 2, prunem: int = 4, block\_size: int = 128, percdamp: float = 0.01, calibration\_loader: Optional[Any] = None, calibration\_texts: Optional[List[str]] = None, target\_attention\_only: bool = False, device: Optio`

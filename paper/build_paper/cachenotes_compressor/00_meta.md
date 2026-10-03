@@ -4,7 +4,7 @@
 **Class Name**: `CacheNotesLoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `cachenotes, cachenotes_compressor_factory, cachenotes_factory, cachenotes_compressor`  
-**Implementation Source**: `Codes/framework/compression_engine/cachenotes_compressor.py` (900 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/cachenotes_compressor.py` (900 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

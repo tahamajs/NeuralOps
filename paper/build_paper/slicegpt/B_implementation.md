@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `slicegpt` module is implemented in `Codes/framework/compression_engine/slicegpt.py` (345 lines of code).
+The `slicegpt` module is implemented in `neuralops/compression_engine/slicegpt.py` (345 lines of code).
 - Registered Class: `SliceGPTCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: nn.Module, tokenizer: Optional[Any] = None, sparsity: float = 0.25, non\_uniform: bool = False, calibration\_loader: Optional[Any] = None, calibration\_texts: Optional[List[str]] = None, target\_attention\_only: bool = False, device: Optional[Union[str, torch.device]] = None, max\_error: floa`

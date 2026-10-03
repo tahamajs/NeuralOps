@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `svd_projection_attention` module is implemented in `Codes/framework/attentions/svd_projection_attention.py` (713 lines of code).
+The `svd_projection_attention` module is implemented in `neuralops/attentions/svd_projection_attention.py` (713 lines of code).
 - Registered Class: `SVDProjectionLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, rank: int, bias: bool = True, lora\_rank: int = 16, lora\_alpha: float = 32.0, freeze\_base: bool = True, ) -> None: super().\_\_init\_\_() self.in\_features: int = in\_features self.out\_features: int = out\_features self.rank: int = rank self.lora\_rank: int = lora\_r`

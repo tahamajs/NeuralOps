@@ -34,7 +34,7 @@ M_i = \begin{cases} 1 & \text{if } i \in \mathcal{I}_{\text{sinks}} \cup \mathca
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی ماژول در فایل \lr{Codes/framework/compression\_engine/zerokv\_neo\_compressor.py} مستقر بوده و کلاس‌های \lr{ZeroKVNeoCache} و \lr{ZeroKVNeoCompressor} با نام‌های \lr{zerokv}، \lr{zerokv\_neo} و \lr{zerokv\_neo\_compressor} در رجیستری فشرده‌سازی ثبت شده‌اند. شاخص‌ترین مزایای فنی پیاده‌سازی عبارتند از:
+پیاده‌سازی ماژول در فایل \lr{neuralops/compression\_engine/zerokv\_neo\_compressor.py} مستقر بوده و کلاس‌های \lr{ZeroKVNeoCache} و \lr{ZeroKVNeoCompressor} با نام‌های \lr{zerokv}، \lr{zerokv\_neo} و \lr{zerokv\_neo\_compressor} در رجیستری فشرده‌سازی ثبت شده‌اند. شاخص‌ترین مزایای فنی پیاده‌سازی عبارتند از:
 \begin{itemize}
     \item \textbf{مدیریت حافظه نهان کراندار (\lr{Bounded $O(1)$ KV Cache}):} کلاس \lr{ZeroKVNeoCache} با مدیریت دقیق ابعاد چهاربعدی تانسورهای توجه $(B, H, N, D)$ مانع از سرریز حافظه در توالی‌های بسیار طولانی می‌گردد.
     \item \textbf{تنظیم نرخ نگه‌داری با تلاش مجدد خودکار:} در صورتی که خطای نسبی فروبنیوس هرس وزن از آستانه مجاز (\lr{max\_error=0.85}) بیشتر شود، الگوریتم در یک حلقه تکرار شونده تا ۳ گام نرخ نگه‌داری را افزایش داده تا خطای بازسازی مهار شود.

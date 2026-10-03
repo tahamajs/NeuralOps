@@ -4,7 +4,7 @@
 **Class Name**: `GriffinAttention`  
 **Base Architecture**: `BaseAttention`  
 **Registry Keys**: `cure_compressor, cure`  
-**Implementation Source**: `Codes/framework/core/registry.py` (244 lines of code)  
+**Implementation Source**: `neuralops/core/registry.py` (244 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

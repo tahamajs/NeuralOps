@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `template_attention` module is implemented in `Codes/framework/attentions/template_attention.py` (630 lines of code).
+The `template_attention` module is implemented in `neuralops/attentions/template_attention.py` (630 lines of code).
 - Registered Class: `LoRALinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, bias: bool = True, lora\_rank: int = 0, lora\_alpha: float = 1.0, freeze\_base: bool = True,`

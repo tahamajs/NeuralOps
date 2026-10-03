@@ -4,7 +4,7 @@
 **Class Name**: `UniQLCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `uniql_compressor, uniql, uniql_factory`  
-**Implementation Source**: `Codes/framework/compression_engine/uniql_compressor.py` (335 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/uniql_compressor.py` (335 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

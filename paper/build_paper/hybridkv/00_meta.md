@@ -4,7 +4,7 @@
 **Class Name**: `HybridKVCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `hybridkv`  
-**Implementation Source**: `Codes/framework/compression_engine/hybridkv_compressor.py` (340 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/hybridkv_compressor.py` (340 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

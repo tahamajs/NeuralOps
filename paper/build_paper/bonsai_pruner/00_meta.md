@@ -4,7 +4,7 @@
 **Class Name**: `BonsaiPrunedLoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `bonsai_factory, bonsai_pruner, bonsai_pruner_factory, bonsai`  
-**Implementation Source**: `Codes/framework/compression_engine/bonsai_pruner.py` (618 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/bonsai_pruner.py` (618 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

@@ -4,7 +4,7 @@
 **Class Name**: `AdaptiveRanksCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `adaptive_svd, adaptive_ranks, adaptive_svd_factory, adaptive, adaptive_factory, adaptive_ranks_factory, adaptive_compressor_factory, adaptive_compressor`  
-**Implementation Source**: `Codes/framework/compression_engine/adaptive_ranks.py` (640 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/adaptive_ranks.py` (640 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

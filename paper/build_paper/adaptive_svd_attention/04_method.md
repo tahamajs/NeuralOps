@@ -50,17 +50,17 @@ $$
 W_P = U_P \Sigma_P V_P^\top
 \tag{4.1}
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 We compute this in **FP32** regardless of the model dtype. FP16 SVD can 
@@ -79,17 +79,17 @@ $$
 s_i = \sigma_i^2, \quad \mathcal{E}(r) = \frac{\sum_{i=1}^{r} s_i}{\sum_{j=1}^{\min(d_\text{in}, d_\text{out})} s_j}
 \tag{4.2}
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 The rank is:
@@ -98,17 +98,17 @@ $$
 r_P = \min\{r : \mathcal{E}(r) \geq \tau\}
 \tag{4.3}
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 ### 4.3.2 Implementation
@@ -152,17 +152,17 @@ U_{P, r} = U_{P, :, :r_P} \Sigma_{P, :r_P, :r_P}^{1/2}, \quad
 V_{P, r} = \Sigma_{P, :r_P, :r_P}^{1/2} V_{P, :r_P, :}^\top
 \tag{4.4}
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 Then $U_{P, r} V_{P, r} = W_{P, r_P}$ (the truncated SVD).
@@ -188,17 +188,17 @@ $$
 \text{Proj}_P(x) = (x V_{P, r}^\top) U_{P, r}^\top + b_P
 \tag{4.5}
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 **Parameter count:**
@@ -220,17 +220,17 @@ $$
 \Delta W_P = W_P - U_{P, r} V_{P, r}
 \tag{4.6}
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 Its Frobenius norm is $\sqrt{(1 - \mathcal{E}(r_P))} \cdot \|W_P\|_F \leq \sqrt{1 - \tau} \|W_P\|_F$. 
@@ -246,17 +246,17 @@ A_P \in \mathbb{R}^{r_L \times d_\text{in}}, \quad
 B_P \in \mathbb{R}^{d_\text{out} \times r_L}
 \tag{4.7}
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 ### 4.5.3 Initialization
@@ -265,17 +265,17 @@ $$
 B_P = 0, \quad A_P \sim \mathcal{N}(0, 1/\sqrt{r_L})
 \tag{4.8}
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 The zero initialization of $B_P$ ensures $\Delta W_P = B_P A_P = 0$ at step 0.
@@ -286,17 +286,17 @@ $$
 \text{Proj}_P(x) = (x V_{P, r}^\top) U_{P, r}^\top + (x A_P^\top) B_P^\top + b_P
 \tag{4.9}
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 **Parameter overhead:** $r_L (d_\text{in} + d_\text{out})$ per projection.
@@ -380,17 +380,17 @@ $$
 \frac{d^2}{2 d (r_P + r_L)} = \frac{d}{2(r_P + r_L)}
 \tag{4.10}
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 **Example.** $d = 768$, $r_P = 128$, $r_L = 16$:
@@ -411,17 +411,17 @@ $$
 \frac{\|W_P - U_{P, r} V_{P, r}\|_F}{\|W_P\|_F} = \sqrt{1 - \mathcal{E}(r_P)} \leq \sqrt{1 - \tau}
 \tag{4.11}
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 **Proof.** $\|W - W_r\|_F^2 = \sum_{i > r} \sigma_i^2 = (1 - \mathcal{E}(r)) \|W\|_F^2$ by 
@@ -444,17 +444,17 @@ $$
 \text{Proj}_P(x) = (x V_{P, r}^\top) U_{P, r}^\top + b_P = W_{P, r_P} x + b_P
 \tag{4.12}
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 **Proof.** Substitute $B_P = 0$ into (4.9), and note $U_{P, r} V_{P, r} = W_{P, r_P}$. 
@@ -471,17 +471,17 @@ $$
 \rho_P = \frac{2 r_P d}{d^2} = \frac{2 r_P}{d} \quad \text{(for square } d \times d\text{)}
 \tag{4.13}
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 
-<!-- source: Codes/framework/attentions/adaptive_svd_attention.py line 137 -->
+<!-- source: neuralops/attentions/adaptive_svd_attention.py line 137 -->
 $$
 
 At $r_P = d/2$, $\rho_P = 1$ (no reduction). At $r_P = d/4$, $\rho_P = 0.5$ (2× reduction).

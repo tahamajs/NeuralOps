@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `nmf_compressor` module is implemented in `Codes/framework/compression_engine/nmf_compressor.py` (453 lines of code).
+The `nmf_compressor` module is implemented in `neuralops/compression_engine/nmf_compressor.py` (453 lines of code).
 - Registered Class: `NMFLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, rank: int = 64, shift: float = 0.0, bias: bool = True, dtype: Optional[torch.dtype] = None, device: Optional[torch.device] = None, lora\_r: int = 0, lora\_alpha: float = 1.0, ) -> None: super().\_\_init\_\_() self.in\_features = in\_features self.out\_features = out`

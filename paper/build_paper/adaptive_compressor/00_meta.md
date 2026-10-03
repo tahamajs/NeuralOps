@@ -4,7 +4,7 @@
 **Class Name**: `AdaptiveTransformerCompressor`  
 **Base Architecture**: `AdaptiveRanksCompressor`  
 **Registry Keys**: `adaptive_compressor`  
-**Implementation Source**: `Codes/framework/compression_engine/adaptive_compressor.py` (58 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/adaptive_compressor.py` (58 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

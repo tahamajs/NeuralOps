@@ -4,7 +4,7 @@
 **Class Name**: `RotationalSliceGPTINT4Linear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `rotational_slicegpt, rotational_slicegpt_int4, rotational_slicegpt_factory, rotational_slicegpt_int4_factory`  
-**Implementation Source**: `Codes/framework/compression_engine/rotational_slicegpt_int4.py` (526 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/rotational_slicegpt_int4.py` (526 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

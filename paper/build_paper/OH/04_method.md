@@ -65,9 +65,9 @@ $$
 M_{ij}^\text{local} = \begin{cases} 0 & j \leq i \text{ and } i - j \leq W \\ -\infty & \text{otherwise} \end{cases}
 \tag{4.1}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 For bidirectional: symmetric.
@@ -78,9 +78,9 @@ $$
 \text{LocalAttn}_i = \text{softmax}\!\left(\frac{Q_i K^\top}{\sqrt{d_h}} + M^\text{local}\right) V
 \tag{4.2}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 447 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 447 -->
 $$
 
 **Complexity:** $\mathcal{O}(L W d)$.
@@ -96,9 +96,9 @@ W_k^\text{comp} \in \mathbb{R}^{d \times d_c}, \qquad
 W_v^\text{comp} \in \mathbb{R}^{d \times d_c}
 \tag{4.3}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 These produce compression weights:
@@ -107,18 +107,18 @@ $$
 P_K = \text{softmax}\!\left(X W_k^\text{comp}, \text{dim}=L\right) \in \mathbb{R}^{B \times L \times d_c}
 \tag{4.4}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 447 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 447 -->
 $$
 
 $$
 P_V = \text{softmax}\!\left(X W_v^\text{comp}, \text{dim}=L\right) \in \mathbb{R}^{B \times L \times d_c}
 \tag{4.5}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 447 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 447 -->
 $$
 
 The softmax is over the sequence dimension, so each of the $d_c$ slots has 
@@ -133,9 +133,9 @@ C_K = K^\top P_K \in \mathbb{R}^{B \times d_c \times d_h H}, \qquad
 C_V = V^\top P_V \in \mathbb{R}^{B \times d_c \times d_h H}
 \tag{4.6}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 **Interpretation.** Each of the $d_c$ summary slots is a weighted average of 
@@ -147,9 +147,9 @@ $$
 \text{GlobalAttn}_i = \text{softmax}\!\left(\frac{Q_i C_K^\top}{\sqrt{d_h}}\right) C_V
 \tag{4.7}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 447 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 447 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 447 -->
 $$
 
 The softmax is over $d_c$ slots. This is the same shape as full attention 
@@ -165,9 +165,9 @@ $$
 C_{K, j} = \frac{\sum_{i \leq \text{pos}(j)} \exp(\cdots) K_i}{\sum_{i \leq \text{pos}(j)} \exp(\cdots)}
 \tag{4.8}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 where $\text{pos}(j)$ is a monotonic mapping from slot index to position.
@@ -187,9 +187,9 @@ $$
 \gamma = \sigma(W_g X) \in \mathbb{R}^{B \times L \times H}
 \tag{4.9}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 with $W_g \in \mathbb{R}^{d \times H}$.
@@ -200,9 +200,9 @@ $$
 \text{output}_h = \gamma_h \odot \text{LocalAttn}_h + (1 - \gamma_h) \odot \text{GlobalAttn}_h
 \tag{4.10}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 ### 4.4.3 Initialization
@@ -213,9 +213,9 @@ $$
 \sigma(2.0) \approx 0.88
 \tag{4.11}
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 So the model starts by favoring the local branch. As training progresses, 
@@ -287,9 +287,9 @@ For $W = 64$, $d_c = 32$, $L = 4096$:
 $$
 \frac{\text{OHA}}{\text{baseline}} = \frac{96}{4096} \approx 0.023
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 
-<!-- source: Codes/framework/attentions/optimized_hybrid_attention.py line 142 -->
+<!-- source: neuralops/attentions/optimized_hybrid_attention.py line 142 -->
 $$
 
 **~43× faster** in attention.

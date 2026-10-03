@@ -4,7 +4,7 @@
 **Class Name**: `Mamba2`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `inject_granite_hybrid, granite_hybrid, granite_hybrid_block, granite_hybrid_inject`  
-**Implementation Source**: `Codes/framework/attentions/granite_hybrid.py` (626 lines of code)  
+**Implementation Source**: `neuralops/attentions/granite_hybrid.py` (626 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

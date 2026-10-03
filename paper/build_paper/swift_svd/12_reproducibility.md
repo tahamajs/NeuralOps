@@ -14,7 +14,7 @@ To reproduce the empirical benchmark evaluations for `swift_svd` across GLUE cla
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor swift_svd \
     --dataset sst2 \

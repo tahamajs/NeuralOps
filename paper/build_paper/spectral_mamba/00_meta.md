@@ -4,7 +4,7 @@
 **Class Name**: `Mamba`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `spectral_mamba, spectraformer_inject, spectral_mamba_inject, inject_spectral_mamba`  
-**Implementation Source**: `Codes/framework/attentions/spectral_mamba.py` (700 lines of code)  
+**Implementation Source**: `neuralops/attentions/spectral_mamba.py` (700 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

@@ -1460,7 +1460,7 @@ Runtime: ~PyTorch 2.0 min.
 ## 12.3 Individual Model
 
 ```bash
-python Codes/framework/run_quality_sweep.py \
+python neuralops/run_quality_sweep.py \
     --model models/distilbert_sst2 \
     --modules full,reap_moe \
     --n_experts 8 \

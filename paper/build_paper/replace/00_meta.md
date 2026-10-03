@@ -4,7 +4,7 @@
 **Class Name**: `ReplaceAttention`  
 **Base Architecture**: `BaseAttention`  
 **Registry Keys**: `replace_inject, inject_replace, replace_attention, replace, inject_replace_attention, replace_attention_inject`  
-**Implementation Source**: `Codes/framework/attentions/replace.py` (577 lines of code)  
+**Implementation Source**: `neuralops/attentions/replace.py` (577 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

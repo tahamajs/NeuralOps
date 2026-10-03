@@ -11,7 +11,7 @@
 
 ### Table 7.1: SST-2 results with $r_L = 16$, no head-dim reduction.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Model | Module | Acc | Δ | F1 | Trainable | VRAM | Time |
 |---|---|---|---|---|---|---|---|
 | DistilBERT | full | 90.71% | — | 0.9099 | 66.9M | 183 MB | 1.9 s |
@@ -25,7 +25,7 @@
 
 ### Table 7.2: Accuracy vs head-dim reduction.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | $s$ | DistilBERT | RoBERTa | GPT-2 | Param ratio |
 |---|---|---|---|---|
 | 1.0 (base) | 90.26 | 76.8 | 77.5 | 1.00× |
@@ -37,7 +37,7 @@
 
 ### Table 7.3: Trainable parameters.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Model | Baseline trainable | SH trainable | Ratio |
 |---|---|---|---|
 | DistilBERT | 66.9M | 589824 | 113× |
@@ -48,7 +48,7 @@
 
 ### Table 7.4: Accuracy vs LoRA rank.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | $r_L$ | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 4 | 88.5 | 74.5 | 75.5 |
@@ -60,7 +60,7 @@
 
 ### Table 7.5: Accuracy vs recovery steps.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Steps | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | 10 | 85.0 | 72.0 | 73.0 |
@@ -72,7 +72,7 @@
 
 ### Table 7.6: GQA pooling method (Qwen-style).
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Method | Accuracy |
 |---|---|
 | Mean pooling | 76.5 |
@@ -82,7 +82,7 @@
 
 ### Table 7.7: Comparison.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Method | DistilBERT | RoBERTa | GPT-2 | Type | Trainable |
 |---|---|---|---|---|---|
 | full | 90.71% | 78.56% | 79.36% | Baseline | 100% |
@@ -95,7 +95,7 @@
 
 ### Table 7.8: LoRA vs full fine-tuning at same recovery steps.
 
-<!-- source: Codes/framework/compression_engine/pruning_utils.py line 25 -->
+<!-- source: neuralops/compression_engine/pruning_utils.py line 25 -->
 | Training | DistilBERT | RoBERTa | GPT-2 |
 |---|---|---|---|
 | Full FT | 90.5 | 77.2 | 78.0 |

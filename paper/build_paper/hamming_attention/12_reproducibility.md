@@ -14,7 +14,7 @@ To reproduce the empirical benchmark evaluations for `hamming_attention` across 
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor hamming_attention \
     --dataset sst2 \

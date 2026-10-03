@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `kda_inject, kda_attention, inject_kda, kda`  
-**Implementation Source**: `Codes/framework/attentions/kda_attention.py` (720 lines of code)  
+**Implementation Source**: `neuralops/attentions/kda_attention.py` (720 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

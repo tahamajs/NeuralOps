@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `svd_compressed` module is implemented in `Codes/framework/attentions/svd_compressed.py` (1165 lines of code).
+The `svd_compressed` module is implemented in `neuralops/attentions/svd_compressed.py` (1165 lines of code).
 - Registered Class: `SVDCompressedAttention`
 - Base Architecture: `BaseAttention`
 - Constructor Signatures: `self, config: Optional[Any] = None, old\_attn: Optional[Any] = None, dropout: float = 0.1, layer\_idx: int = 0, ranks: Optional[Dict[str, int]] = None, lora\_rank: int = 16, lora\_alpha: float = 32.0, is\_decoder: Optional[bool] = None, add\_sparse: bool = False, sparsity\_level: float = 0.7, **kwargs: Any`

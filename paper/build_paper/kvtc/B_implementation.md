@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `kvtc` module is implemented in `Codes/framework/compression_engine/kvtc_compressor.py` (549 lines of code).
+The `kvtc` module is implemented in `neuralops/compression_engine/kvtc_compressor.py` (549 lines of code).
 - Registered Class: `KVTCQuantizedLoRALinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `Standard configuration arguments`

@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی \lr{OATS} در فایل \lr{Codes/framework/compression\_engine/oats\_compressor.py} مستقر بوده و شامل مؤلفه‌های زیر است:
+پیاده‌سازی \lr{OATS} در فایل \lr{neuralops/compression\_engine/oats\_compressor.py} مستقر بوده و شامل مؤلفه‌های زیر است:
 \begin{itemize}
     \item \textbf{لایه \lr{OATSLoRALinear}:} لایه ترکیبی که ماتریس کم‌مرتبه و ماسک تنک ذخیره‌شده را نگهداری کرده و با لایه‌های \lr{Linear} و \lr{Conv1D} سازگاری کامل دارد. این لایه همچنین از ادپترهای \lr{LoRA} برای تنظیم مجدد پس از فشرده‌سازی بهره می‌گیرد.
     \item \textbf{کلاس \lr{OATSCompressor}:} مدیریت استخراج تانسورهای کالیبراسیون فعال‌سازی، تضمین پایداری تجزیه چولسکی با تنظیم پارامتر نظم‌دهی $\epsilon$، اجرای تناوب میان تجزیه مقادیر منفرد و تنک‌سازی برجستگی (\lr{Saliency-based Sparsification})، و اعمال آستانه اعتبارسنجی خطای فروبنیوس.

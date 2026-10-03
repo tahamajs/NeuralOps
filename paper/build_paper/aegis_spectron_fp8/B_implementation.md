@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `aegis_spectron_fp8` module is implemented in `Codes/framework/attentions/aegis_spectron_fp8.py` (1022 lines of code).
+The `aegis_spectron_fp8` module is implemented in `neuralops/attentions/aegis_spectron_fp8.py` (1022 lines of code).
 - Registered Class: `FactorizedLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, **kwargs`

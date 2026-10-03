@@ -4,7 +4,7 @@
 **Class Name**: `DeltaKVCompressor`  
 **Base Architecture**: `BaseCompressor`  
 **Registry Keys**: `delta_kv, delta_kv_compressor`  
-**Implementation Source**: `Codes/framework/compression_engine/delta_kv.py` (420 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/delta_kv.py` (420 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

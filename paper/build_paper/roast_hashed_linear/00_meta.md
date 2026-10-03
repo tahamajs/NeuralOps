@@ -4,7 +4,7 @@
 **Class Name**: `ROASTLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `roast, roast_hashed_linear, roast_factory, roast_compressor_factory, roast_compressor, roast_hashed_linear_factory`  
-**Implementation Source**: `Codes/framework/compression_engine/roast_hashed_linear.py` (450 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/roast_hashed_linear.py` (450 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

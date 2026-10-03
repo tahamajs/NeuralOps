@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `samba_m3, inject_samba_m3, samba_m3_inject`  
-**Implementation Source**: `Codes/framework/attentions/samba_m3.py` (670 lines of code)  
+**Implementation Source**: `neuralops/attentions/samba_m3.py` (670 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

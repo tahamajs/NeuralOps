@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `griffin_ssd` module is implemented in `Codes/framework/attentions/griffin_ssd.py` (622 lines of code).
+The `griffin_ssd` module is implemented in `neuralops/attentions/griffin_ssd.py` (622 lines of code).
 - Registered Class: `GriffinSSDBlock`
 - Base Architecture: `BaseAttention`
 - Constructor Signatures: `self, config: Optional[Any] = None, rank: Optional[int] = 64, window\_size: int = 64, d\_model: Optional[Union[int, Any]] = None, num\_heads: Optional[int] = None, old\_attn: Optional[nn.Module] = None, comp\_config: Optional[Any] = None, lora\_rank: int = 16, lora\_alpha: float = 32.0, **kwargs: Any, ) ->`

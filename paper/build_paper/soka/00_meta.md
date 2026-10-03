@@ -4,7 +4,7 @@
 **Class Name**: `LowRankLinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `soka`  
-**Implementation Source**: `Codes/framework/compression_engine/soka_compressor.py` (321 lines of code)  
+**Implementation Source**: `neuralops/compression_engine/soka_compressor.py` (321 lines of code)  
 **Primary Domain**: Neural Weight Compression  
 
 ## Abstract

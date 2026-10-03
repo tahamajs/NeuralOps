@@ -39,7 +39,7 @@ B = U_D[:, :r] \cdot \Sigma_D[:r], \quad A = V_D[:r, :] \cdot (R_X^\top)^\dagger
 که در آن $(R_X^\top)^\dagger$ شبه‌وارون ماتریس بالامثلثی است. در حالت فاقد فعال‌سازی، ماتریس $A$ به صورت متعامد یکانی (\lr{nn.init.orthogonal\_}) و $B$ با استفاده از روش زاویر یکنواخت (\lr{nn.init.xavier\_uniform\_}) مقداردهی می‌گردد.
 
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی ماژول در فایل \lr{Codes/framework/compression\_engine/compot\_compressor.py} مستقر بوده و شامل ارکان زیر است:
+پیاده‌سازی ماژول در فایل \lr{neuralops/compression\_engine/compot\_compressor.py} مستقر بوده و شامل ارکان زیر است:
 \begin{itemize}
     \item \textbf{کلاس \lr{COMPOTLinear}:} لایه فاکتورسازی‌شده جایگزین \lr{nn.Linear} و \lr{Conv1D} که عملگر گذر رو به جلو را در دو مرحله زیر-مربعی اجرا می‌کند:
     \begin{equation}

@@ -14,7 +14,7 @@ To reproduce the empirical benchmark evaluations for `aegis_v4` across GLUE clas
 
 ```bash
 # 1. Run unified compression / attention sweep on DistilBERT
-python -u Codes/framework/run_compressor.py \
+python -u neuralops/run_compressor.py \
     --model distilbert-base-uncased \
     --compressor aegis_v4 \
     --dataset sst2 \

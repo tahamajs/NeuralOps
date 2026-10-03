@@ -30,7 +30,7 @@ r_{\text{max}} < \frac{d_{\text{out}} \cdot d_{\text{in}}}{\sum_{k=1}^d p_k \cdo
 در حین گذر پیش‌رو، حاصل‌ضرب تانسور ورودی $\mathbf{X}$ با هسته‌های تانسوری با انقباض متوالی تانسورها (\lr{Tensor Contraction}) با استفاده از دستورات \lr{torch.einsum} یا تبدیل ضرب‌های ماتریسی پی‌درپی محاسبه می‌گردد.
 
 \subsection{معماری و پیاده‌سازی}
-پیاده‌سازی ماژول در فایل \lr{Codes/framework/compression\_engine/tt\_compressor.py} سازمان‌یافته و شامل کلاس‌های \lr{TTLinearLayer} و \lr{TTCompressor} است که با شناسه \lr{tt} در رجیستری ذخیره شده‌اند:
+پیاده‌سازی ماژول در فایل \lr{neuralops/compression\_engine/tt\_compressor.py} سازمان‌یافته و شامل کلاس‌های \lr{TTLinearLayer} و \lr{TTCompressor} است که با شناسه \lr{tt} در رجیستری ذخیره شده‌اند:
 \begin{itemize}
     \item \textbf{عامل‌بندی خودکار ابعاد (\lr{Dimension Factorization}):} تابع \lr{factorize\_dimension\_pair} ابعاد دلخواه ماتریس را به زوج‌فاکتورهای بهینه با فاصله کمینه از ریشه دوم تجزیه می‌کند تا هسته‌ها متعادل باشند.
     \item \textbf{انطباق با \lr{Conv1D} و شبکه‌های مدرن:} پشتیبانی کامل از ویژگی‌های اختصاصی لایه‌های کانولوشن یک‌بعدی \lr{GPT-2} از طریق نگاشت ویژگی‌های \lr{nf} و \lr{nx}.

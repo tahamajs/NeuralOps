@@ -4,7 +4,7 @@
 **Class Name**: `SVDCompressedAttention`  
 **Base Architecture**: `BaseAttention`  
 **Registry Keys**: `svd_compressed, svd_compressed_module, inject_svd_compressed, svd_compressed_attention, inject_svd_compressed_attention, svd_compressed_attention_inject, svd_compressed_inject`  
-**Implementation Source**: `Codes/framework/attentions/svd_compressed.py` (1165 lines of code)  
+**Implementation Source**: `neuralops/attentions/svd_compressed.py` (1165 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

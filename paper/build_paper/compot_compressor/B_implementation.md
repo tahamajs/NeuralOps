@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `compot_compressor` module is implemented in `Codes/framework/compression_engine/compot_compressor.py` (453 lines of code).
+The `compot_compressor` module is implemented in `neuralops/compression_engine/compot_compressor.py` (453 lines of code).
 - Registered Class: `COMPOTLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, in\_features: int, out\_features: int, rank: int = 64, bias: bool = True, dtype: Optional[torch.dtype] = None, device: Optional[torch.device] = None, ) -> None: super().\_\_init\_\_() self.in\_features = in\_features self.out\_features = out\_features self.rank = max(1, min(rank, in\_features, out\_featur`

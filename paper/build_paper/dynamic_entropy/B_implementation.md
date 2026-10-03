@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `dynamic_entropy` module is implemented in `Codes/framework/compression_engine/dynamic_rank.py` (933 lines of code).
+The `dynamic_entropy` module is implemented in `neuralops/compression_engine/dynamic_rank.py` (933 lines of code).
 - Registered Class: `DynamicSVDLinear`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `Standard configuration arguments`

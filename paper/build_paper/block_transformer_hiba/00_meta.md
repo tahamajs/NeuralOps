@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `block_transformer_hiba_inject, block_transformer_hiba_fn, block_transformer_hiba`  
-**Implementation Source**: `Codes/framework/attentions/block_transformer_hiba.py` (792 lines of code)  
+**Implementation Source**: `neuralops/attentions/block_transformer_hiba.py` (792 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

@@ -1,5 +1,5 @@
 \subsection{معماری و پیاده‌سازی}
-کلاس محوری این ماژول \lr{EATBlock} در فایل \lr{Codes/framework/attentions/eat.py} مستقر بوده و به صورت مستقیم از \lr{BaseAttention} ارث‌بری می‌کند. ویژگی‌های پیاده‌سازی این ماژول عبارتند از:
+کلاس محوری این ماژول \lr{EATBlock} در فایل \lr{neuralops/attentions/eat.py} مستقر بوده و به صورت مستقیم از \lr{BaseAttention} ارث‌بری می‌کند. ویژگی‌های پیاده‌سازی این ماژول عبارتند از:
 \begin{itemize}
     \item کلاس لایه کمکی \lr{LoRALinear} برای مدیریت انجماد وزن‌های اصلی و انتساب گرادیان به آداپتورهای با رتبه پایین.
     \item آرگومان‌های سازنده شامل \lr{config}، \lr{rank} (با پیش‌فرض ۶۴)، \lr{d\_model} (بعد مدل، پیش‌فرض ۷۶۸)، \lr{n\_heads} (تعداد سرها، پیش‌فرض ۱۲)، و اتصال مستقیم به شیء \lr{prune\_layer} از جنس \lr{ProgressiveTokenPruning}.

@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `aegis_v6` module is implemented in `Codes/framework/attentions/aegis_v6.py` (891 lines of code).
+The `aegis_v6` module is implemented in `neuralops/attentions/aegis_v6.py` (891 lines of code).
 - Registered Class: `FactorisedLowRankProjection`
 - Base Architecture: `nn.Module`
 - Constructor Signatures: `self, **kwargs`

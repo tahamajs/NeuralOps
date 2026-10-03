@@ -4,7 +4,7 @@
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  
 **Registry Keys**: `x_inject, inject_xattention, xattention, x_attention, xattention_inject`  
-**Implementation Source**: `Codes/framework/attentions/xattention.py` (838 lines of code)  
+**Implementation Source**: `neuralops/attentions/xattention.py` (838 lines of code)  
 **Primary Domain**: Attention Acceleration  
 
 ## Abstract

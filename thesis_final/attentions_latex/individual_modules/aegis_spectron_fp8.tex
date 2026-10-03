@@ -39,7 +39,7 @@ p_i = \frac{x_i^2}{\sum_{j=1}^D x_j^2 + \epsilon}, \quad H(\mathbf{x}) = -\sum_{
 \end{equation}
 
 \subsection{معماری و پیاده‌سازی}
-کلاس اصلی ماژول \lr{AegisSpectronFP8Attention} در سورس \lr{Codes/framework/attentions/aegis\_spectron\_fp8.py} قرار داشته و شامل مؤلفه‌های زیر است:
+کلاس اصلی ماژول \lr{AegisSpectronFP8Attention} در سورس \lr{neuralops/attentions/aegis\_spectron\_fp8.py} قرار داشته و شامل مؤلفه‌های زیر است:
 \begin{itemize}
     \item \textbf{کلاس پیکربندی \lr{AegisSpectronFP8Config}:} تنظیم‌کننده پارامترهای رتبه فاکتورسازی $r=64$، عرض پنجره محلی $W=128$، فرمت کوانتیزاسیون \lr{FP8}، و ضرایب دمایی مسیریاب.
     \item \textbf{مسیریاب طیفی \lr{SpectronSpectralEntropyRouter}:} مجهز به وزن‌های مقداردهی صفر و بایاس اولیه برای تضمین تعادل یادگیری در آغاز فاز آموزش بدون فروپاشی زودهنگام به یک شاخه خاص.

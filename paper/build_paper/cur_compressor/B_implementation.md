@@ -1,6 +1,6 @@
 # Appendix B. Implementation Details and Code Mapping
 
-The `cur_compressor` module is implemented in `Codes/framework/compression_engine/cur_compressor.py` (405 lines of code).
+The `cur_compressor` module is implemented in `neuralops/compression_engine/cur_compressor.py` (405 lines of code).
 - Registered Class: `CURCompressor`
 - Base Architecture: `BaseCompressor`
 - Constructor Signatures: `self, model: Optional[nn.Module] = None, rank: int = 64, min\_rank: int = 8, method: str = "leverage", deterministic: bool = True, max\_error: float = 0.20, fallback\_to\_original: bool = True, max\_retries: int = 2, lora\_r: int = 0, lora\_alpha: float = 1.0, freeze\_skeletons: bool = False, target\_attenti`
