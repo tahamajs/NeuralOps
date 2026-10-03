@@ -6,19 +6,25 @@ Supervises continuous multi-worker execution across all models and modules:
 - When Category 5B finishes, immediately seamlessly launches the full 48-Hour Pipeline.
 - Performs automated 20-minute audits and updates MASTER_PROJECT_RESULTS.md.
 """
+
+import csv
+import glob
 import os
+import subprocess
 import sys
 import time
-import glob
-import csv
-import subprocess
-from pathlib import Path
 from datetime import datetime, timezone
+from pathlib import Path
 
-BASE_DIR = Path("D:/SVD_Project") if Path("D:/SVD_Project").exists() else Path(__file__).resolve().parent.parent
+BASE_DIR = (
+    Path("D:/SVD_Project")
+    if Path("D:/SVD_Project").exists()
+    else Path(__file__).resolve().parent.parent
+)
 LOGS_DIR = BASE_DIR / "logs"
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 ORCHESTRATOR_LOG = LOGS_DIR / "orchestrator_48h.log"
+
 
 def log(msg: str):
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -30,13 +36,14 @@ def log(msg: str):
     except Exception:
         pass
 
+
 def is_process_running(proc_substring):
     try:
         out = subprocess.check_output(
             ["wmic", "process", "get", "commandline"],
             text=True,
             timeout=10,
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL,
         )
         for line in out.splitlines():
             if proc_substring in line and "wmic" not in line.lower():
@@ -44,6 +51,7 @@ def is_process_running(proc_substring):
         return False
     except Exception:
         return False
+
 
 def collect_latest_results():
     results = []
@@ -53,19 +61,22 @@ def collect_latest_results():
                 reader = csv.DictReader(f)
                 for row in reader:
                     model = "DistilBERT" if "batch3_distilbert" in str(csv_file) else "RoBERTa"
-                    results.append({
-                        "module": row.get("module_name", csv_file.parent.name),
-                        "model": model,
-                        "status": row.get("status", "N/A"),
-                        "acc": row.get("accuracy_pct", "N/A"),
-                        "f1": row.get("f1_score", "N/A"),
-                        "recon": row.get("avg_reconstruction_error", "N/A"),
-                        "vram": row.get("peak_vram_mb", "N/A"),
-                        "speed": row.get("tokens_per_sec", "N/A"),
-                    })
+                    results.append(
+                        {
+                            "module": row.get("module_name", csv_file.parent.name),
+                            "model": model,
+                            "status": row.get("status", "N/A"),
+                            "acc": row.get("accuracy_pct", "N/A"),
+                            "f1": row.get("f1_score", "N/A"),
+                            "recon": row.get("avg_reconstruction_error", "N/A"),
+                            "vram": row.get("peak_vram_mb", "N/A"),
+                            "speed": row.get("tokens_per_sec", "N/A"),
+                        }
+                    )
         except Exception:
             pass
     return results
+
 
 def main():
     log("============================================================")
@@ -78,13 +89,19 @@ def main():
         log("[INFO] Detected active Category 5B runner. Supervising until completion...")
         while is_process_running("run_batch3_gpu_sweep.py"):
             time.sleep(30)
-        log("[INFO] Category 5B runner completed! Immediately transitioning to 48-hour master pipeline...")
+        log(
+            "[INFO] Category 5B runner completed! Immediately transitioning to 48-hour master pipeline..."
+        )
 
     # Launch full 48-hour pipeline
     log("[LAUNCH] Starting run_autonomous_48h_pipeline.py...")
     cmd = [sys.executable, "-u", "scripts/run_autonomous_48h_pipeline.py"]
     env = os.environ.copy()
-    env["PYTHONPATH"] = f"neuralops;{env.get('PYTHONPATH', '')}" if os.name == "nt" else f"neuralops:{env.get('PYTHONPATH', '')}"
+    env["PYTHONPATH"] = (
+        f"neuralops;{env.get('PYTHONPATH', '')}"
+        if os.name == "nt"
+        else f"neuralops:{env.get('PYTHONPATH', '')}"
+    )
 
     proc = subprocess.Popen(
         cmd,
@@ -113,14 +130,26 @@ def main():
             res = collect_latest_results()
             log(f"[20-MIN AUDIT] Total completed tasks collected so far: {len(res)}")
             try:
-                subprocess.run(["git", "add", "results", "MASTER_PROJECT_RESULTS.md"], cwd=str(BASE_DIR), check=False)
+                subprocess.run(
+                    ["git", "add", "results", "MASTER_PROJECT_RESULTS.md"],
+                    cwd=str(BASE_DIR),
+                    check=False,
+                )
                 c_res = subprocess.run(
-                    ["git", "commit", "-m", f"auto: periodic 20-min results sync ({len(res)} tasks)"],
+                    [
+                        "git",
+                        "commit",
+                        "-m",
+                        f"auto: periodic 20-min results sync ({len(res)} tasks)",
+                    ],
                     cwd=str(BASE_DIR),
                     capture_output=True,
-                    text=True
+                    text=True,
                 )
-                if "nothing to commit" not in c_res.stdout.lower() and "clean" not in c_res.stdout.lower():
+                if (
+                    "nothing to commit" not in c_res.stdout.lower()
+                    and "clean" not in c_res.stdout.lower()
+                ):
                     log(f"[AUTO-COMMIT] Committed periodic results sync ({len(res)} tasks)")
                     subprocess.run(["git", "push", "origin", "main"], cwd=str(BASE_DIR), timeout=60)
                     log("[AUTO-PUSH] Synced results with origin/main")
@@ -128,7 +157,10 @@ def main():
                 log(f"[AUTO-COMMIT WARNING] {ce}")
 
     proc.wait()
-    log(f"[COMPLETED] Autonomous pipeline exited with code {proc.returncode} in {(time.time() - t0)/3600:.2f} hours.")
+    log(
+        f"[COMPLETED] Autonomous pipeline exited with code {proc.returncode} in {(time.time() - t0) / 3600:.2f} hours."
+    )
+
 
 if __name__ == "__main__":
     main()

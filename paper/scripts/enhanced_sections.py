@@ -1,9 +1,11 @@
 """enhanced_sections.py — Comprehensive multi-page content generator for PerModulePaper."""
+
 import math
 import os
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
+
 
 def build_enhanced_sections(
     mod_name: str,
@@ -33,12 +35,14 @@ def build_enhanced_sections(
     safe_cls = cls_name.replace("_", "\\_") if cls_name else safe_mod
     safe_src = src_file.replace("_", "\\_")
     safe_regs = regs.replace("_", "\\_")
-    label_key = re.sub(r'[^a-zA-Z0-9]', '', mod_name)
+    label_key = re.sub(r"[^a-zA-Z0-9]", "", mod_name)
 
     # -------------------------------------------------------------
     # 00_meta
     # -------------------------------------------------------------
-    md["00_meta.md"] = f"""# {mod_title}: Formal Architectural Specification and Empirical Benchmark Evaluation
+    md[
+        "00_meta.md"
+    ] = f"""# {mod_title}: Formal Architectural Specification and Empirical Benchmark Evaluation
 
 **Module Name**: `{mod_name}`  
 **Class Name**: `{cls_name}`  
@@ -58,7 +62,9 @@ transformer compression, low-rank factorization, multi-head attention accelerati
 """
 
     tex["00_meta.tex"] = (
-        "\\title{\\textbf{" + safe_title + ": Formal Architectural Specification and Empirical Benchmark Evaluation}}\n"
+        "\\title{\\textbf{"
+        + safe_title
+        + ": Formal Architectural Specification and Empirical Benchmark Evaluation}}\n"
         "\\author{\\textbf{Taha Majs}\\thanks{Corresponding author: tahamajs@uni.edu} \\quad \\textbf{Research Team} \\\\\n"
         "\\textit{Department of Computer Science, Advanced Machine Learning \\& Efficiency Laboratory}}\n"
         "\\date{\\today}\n"
@@ -600,7 +606,9 @@ The initial forward pass preserves the exact mathematical characteristics of the
         "\\small\n"
         "\\begin{tabular}{lcccc}\n"
         "\\toprule\n"
-        "\\textbf{Operation} & \\textbf{Standard} & \\textbf{" + safe_mod + "} & \\textbf{Complexity} & \\textbf{FLOPs ($d=768$)} \\\\\n"
+        "\\textbf{Operation} & \\textbf{Standard} & \\textbf{"
+        + safe_mod
+        + "} & \\textbf{Complexity} & \\textbf{FLOPs ($d=768$)} \\\\\n"
         "\\midrule\n"
         "Q Projection & $d \\times d$ & $2 \\times (d \\times r)$ & $\\mathcal{O}(2rd)$ & $0.196$ M \\\\\n"
         "K Projection & $d \\times d$ & $2 \\times (d \\times r)$ & $\\mathcal{O}(2rd)$ & $0.196$ M \\\\\n"
@@ -834,7 +842,9 @@ The module handles distinct idiosyncrasies across model backbones:
         "\\end{itemize}\n\n"
         "\\subsection{Memory Allocation and Tensor Buffer Management}\n"
         "In conventional PyTorch linear layers, forward propagation through an uncompressed weight tensor $W \\in \\mathbb{R}^{d_{\\text{out}} \\times d_{\\text{in}}}$ requires caching the input activation tensor $X \\in \\mathbb{R}^{B \\times N \\times d_{\\text{in}}}$ for backpropagation. "
-        "In \\texttt{" + safe_cls + "}, forward execution partitions parameter access across two sequential matrix multiplications:\n"
+        "In \\texttt{"
+        + safe_cls
+        + "}, forward execution partitions parameter access across two sequential matrix multiplications:\n"
         "\\begin{enumerate}\n"
         "\\item Intermediate hidden buffer: $H = X V_r^\\top \\in \\mathbb{R}^{B \\times N \\times r}$\n"
         "\\item Final output projection: $Y = H U_r^\\top + b \\in \\mathbb{R}^{B \\times N \\times d_{\\text{out}}}$\n"
@@ -922,41 +932,54 @@ All benchmarks were conducted on dedicated NVIDIA GPU accelerators running CUDA 
     t1_md_lines = []
     t1_tex_lines = []
     for r in table1_rows:
-        t1_md_lines.append(f"| {r['source']} | {r['backbone']} | {r['variant']} | {r['status']} | {r['acc']}% <!-- source: {r['source']} line {r['line']} --> | {r['f1']} <!-- source: {r['source']} line {r['line']} --> |")
-        s_src = r['source'].replace('_', '\\_')
-        s_bb = str(r['backbone']).replace('_', '\\_')
-        s_var = str(r['variant']).replace('_', '\\_')
-        s_st = str(r['status']).replace('_', '\\_')
-        s_acc = str(r['acc']).replace('_', '\\_').replace('%', '\\%')
-        s_f1 = str(r['f1']).replace('_', '\\_').replace('%', '\\%')
-        t1_tex_lines.append(f"\\texttt{{{s_src}}} & {s_bb} & {s_var} & {s_st} & {s_acc} & {s_f1} \\\\")
+        t1_md_lines.append(
+            f"| {r['source']} | {r['backbone']} | {r['variant']} | {r['status']} | {r['acc']}% <!-- source: {r['source']} line {r['line']} --> | {r['f1']} <!-- source: {r['source']} line {r['line']} --> |"
+        )
+        s_src = r["source"].replace("_", "\\_")
+        s_bb = str(r["backbone"]).replace("_", "\\_")
+        s_var = str(r["variant"]).replace("_", "\\_")
+        s_st = str(r["status"]).replace("_", "\\_")
+        s_acc = str(r["acc"]).replace("_", "\\_").replace("%", "\\%")
+        s_f1 = str(r["f1"]).replace("_", "\\_").replace("%", "\\%")
+        t1_tex_lines.append(
+            f"\\texttt{{{s_src}}} & {s_bb} & {s_var} & {s_st} & {s_acc} & {s_f1} \\\\"
+        )
 
     t2_md_lines = []
     t2_tex_lines = []
     for r in table2_rows:
-        t2_md_lines.append(f"| {r['source']} | {r['backbone']} | {r['variant']} | {r['before']} <!-- source: {r['source']} line {r['line']} --> | {r['after']} <!-- source: {r['source']} line {r['line']} --> | {r['trainable']} <!-- source: {r['source']} line {r['line']} --> | {r['rate']}x <!-- source: {r['source']} line {r['line']} --> |")
-        s_src = r['source'].replace('_', '\\_')
-        s_bb = str(r['backbone']).replace('_', '\\_')
-        s_var = str(r['variant']).replace('_', '\\_')
-        s_bef = str(r['before']).replace('_', '\\_').replace('%', '\\%')
-        s_aft = str(r['after']).replace('_', '\\_').replace('%', '\\%')
-        s_trn = str(r['trainable']).replace('_', '\\_').replace('%', '\\%')
-        s_rt = str(r['rate']).replace('_', '\\_')
-        t2_tex_lines.append(f"\\texttt{{{s_src}}} & {s_bb} & {s_var} & {s_bef} & {s_aft} & {s_trn} & {s_rt}x \\\\")
+        t2_md_lines.append(
+            f"| {r['source']} | {r['backbone']} | {r['variant']} | {r['before']} <!-- source: {r['source']} line {r['line']} --> | {r['after']} <!-- source: {r['source']} line {r['line']} --> | {r['trainable']} <!-- source: {r['source']} line {r['line']} --> | {r['rate']}x <!-- source: {r['source']} line {r['line']} --> |"
+        )
+        s_src = r["source"].replace("_", "\\_")
+        s_bb = str(r["backbone"]).replace("_", "\\_")
+        s_var = str(r["variant"]).replace("_", "\\_")
+        s_bef = str(r["before"]).replace("_", "\\_").replace("%", "\\%")
+        s_aft = str(r["after"]).replace("_", "\\_").replace("%", "\\%")
+        s_trn = str(r["trainable"]).replace("_", "\\_").replace("%", "\\%")
+        s_rt = str(r["rate"]).replace("_", "\\_")
+        t2_tex_lines.append(
+            f"\\texttt{{{s_src}}} & {s_bb} & {s_var} & {s_bef} & {s_aft} & {s_trn} & {s_rt}x \\\\"
+        )
 
     t3_md_lines = []
     t3_tex_lines = []
     for r in table3_rows:
-        t3_md_lines.append(f"| {r['source']} | {r['backbone']} | {r['variant']} | {r['tok_sec']} tok/s <!-- source: {r['source']} line {r['line']} --> | {r['vram']} MB <!-- source: {r['source']} line {r['line']} --> | {r['recon_err']} <!-- source: {r['source']} line {r['line']} --> |")
-        s_src = r['source'].replace('_', '\\_')
-        s_bb = str(r['backbone']).replace('_', '\\_')
-        s_var = str(r['variant']).replace('_', '\\_')
-        s_ts = str(r['tok_sec']).replace('_', '\\_').replace('%', '\\%')
-        s_vr = str(r['vram']).replace('_', '\\_').replace('%', '\\%')
-        s_re = str(r['recon_err']).replace('_', '\\_').replace('%', '\\%')
-        t3_tex_lines.append(f"\\texttt{{{s_src}}} & {s_bb} & {s_var} & {s_ts} & {s_vr} MB & {s_re} \\\\")
+        t3_md_lines.append(
+            f"| {r['source']} | {r['backbone']} | {r['variant']} | {r['tok_sec']} tok/s <!-- source: {r['source']} line {r['line']} --> | {r['vram']} MB <!-- source: {r['source']} line {r['line']} --> | {r['recon_err']} <!-- source: {r['source']} line {r['line']} --> |"
+        )
+        s_src = r["source"].replace("_", "\\_")
+        s_bb = str(r["backbone"]).replace("_", "\\_")
+        s_var = str(r["variant"]).replace("_", "\\_")
+        s_ts = str(r["tok_sec"]).replace("_", "\\_").replace("%", "\\%")
+        s_vr = str(r["vram"]).replace("_", "\\_").replace("%", "\\%")
+        s_re = str(r["recon_err"]).replace("_", "\\_").replace("%", "\\%")
+        t3_tex_lines.append(
+            f"\\texttt{{{s_src}}} & {s_bb} & {s_var} & {s_ts} & {s_vr} MB & {s_re} \\\\"
+        )
 
-    md["07_results.md"] = f"""# 7. Empirical Results and Benchmark Evaluations
+    md["07_results.md"] = (
+        f"""# 7. Empirical Results and Benchmark Evaluations
 
 ## 7.1 Downstream Accuracy and Classification Performance
 Table 7.1 reports empirical downstream task accuracy and F1 scores across target backbones.
@@ -964,7 +987,9 @@ Table 7.1 reports empirical downstream task accuracy and F1 scores across target
 ### Table 7.1: Downstream Task Accuracy and Performance Across Backbones
 | Source File | Backbone | Variant | Status | Accuracy (%) | F1 Score |
 |---|---|---|---|---|---|
-""" + "\n".join(t1_md_lines) + f"""
+"""
+        + "\n".join(t1_md_lines)
+        + f"""
 
 ## 7.2 Parameter Reduction and Model Efficiency
 Table 7.2 details parameter compression ratios, base parameter counts, and trainable recovery adapter parameters.
@@ -972,7 +997,9 @@ Table 7.2 details parameter compression ratios, base parameter counts, and train
 ### Table 7.2: Parameter Counts and Compression Metrics
 | Source File | Backbone | Variant | Parameters Before | Parameters After | Trainable Recovery Params | Compression Ratio |
 |---|---|---|---|---|---|---|
-""" + "\n".join(t2_md_lines) + f"""
+"""
+        + "\n".join(t2_md_lines)
+        + f"""
 
 ## 7.3 Latency, Throughput, and VRAM Utilization
 Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstruction errors.
@@ -980,8 +1007,11 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
 ### Table 7.3: Hardware Throughput and Memory Profiling
 | Source File | Backbone | Variant | Throughput (Tokens/s) | Peak VRAM | Reconstruction Error |
 |---|---|---|---|---|---|
-""" + "\n".join(t3_md_lines) + """
 """
+        + "\n".join(t3_md_lines)
+        + """
+"""
+    )
 
     tex["07_results.tex"] = (
         "\\section{Empirical Results and Benchmark Evaluations}\n\n"
@@ -993,8 +1023,7 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
         "\\begin{tabular}{llcccc}\n"
         "\\toprule\n"
         "\\textbf{Source File} & \\textbf{Backbone} & \\textbf{Variant} & \\textbf{Status} & \\textbf{Accuracy} & \\textbf{F1 Score} \\\\\n"
-        "\\midrule\n"
-        + "\n".join(t1_tex_lines[:12]) + "\n"
+        "\\midrule\n" + "\n".join(t1_tex_lines[:12]) + "\n"
         "\\bottomrule\n"
         "\\end{tabular}\n"
         f"\\caption{{Empirical accuracy and classification metrics across transformer backbones for \\texttt{{{label_key}}}.}}\n"
@@ -1008,8 +1037,7 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
         "\\begin{tabular}{llccccc}\n"
         "\\toprule\n"
         "\\textbf{Source File} & \\textbf{Backbone} & \\textbf{Variant} & \\textbf{Params Before} & \\textbf{Params After} & \\textbf{Trainable} & \\textbf{Ratio} \\\\\n"
-        "\\midrule\n"
-        + "\n".join(t2_tex_lines[:12]) + "\n"
+        "\\midrule\n" + "\n".join(t2_tex_lines[:12]) + "\n"
         "\\bottomrule\n"
         "\\end{tabular}\n"
         f"\\caption{{Parameter scaling and recovery parameter counts for \\texttt{{{label_key}}}.}}\n"
@@ -1023,8 +1051,7 @@ Table 7.3 summarizes GPU execution metrics, peak VRAM allocations, and reconstru
         "\\begin{tabular}{llcccc}\n"
         "\\toprule\n"
         "\\textbf{Source File} & \\textbf{Backbone} & \\textbf{Variant} & \\textbf{Throughput (tok/s)} & \\textbf{Peak VRAM} & \\textbf{Reconstruction Error} \\\\\n"
-        "\\midrule\n"
-        + "\n".join(t3_tex_lines[:12]) + "\n"
+        "\\midrule\n" + "\n".join(t3_tex_lines[:12]) + "\n"
         "\\bottomrule\n"
         "\\end{tabular}\n"
         f"\\caption{{Inference throughput and VRAM footprint for \\texttt{{{label_key}}}.}}\n"
@@ -1204,7 +1231,9 @@ Calibration covariance matrices calculated over small token batches ($N_{{\\text
         "Aggressive low-rank truncation can cause floating-point underflow under 16-bit precision, requiring explicit safety clamping ($10^{-4}$) to prevent numerical divergence.\n\n"
         "\\subsection{Long-Context Activation Memory Footprints}\n"
         "While low-rank factorization substantially curtails static parameter volume, it does not intrinsically alter the quadratic activation storage demanded by standard softmax self-attention over extended sequence contexts ($N > 4{,}096$). "
-        "Consequently, for extreme long-context generation tasks, \\texttt{" + safe_mod + "} must be paired with flash-attention kernels or state-space sequence modeling layers to mitigate activation out-of-memory errors.\n\n"
+        "Consequently, for extreme long-context generation tasks, \\texttt{"
+        + safe_mod
+        + "} must be paired with flash-attention kernels or state-space sequence modeling layers to mitigate activation out-of-memory errors.\n\n"
         "\\subsection{Sensitivity to Non-Uniform Calibration Sequences}\n"
         "Calibration covariance matrices calculated over small token batches ($N_{\\text{calib}} < 256$) display empirical sample variance that can perturb optimal singular projection subspaces. "
         "We recommend gathering diverse multi-domain calibration corpora to ensure singular subspace estimation remains representative of runtime distribution shifts.\n"
@@ -1435,10 +1464,12 @@ $$\\|X_L\\|_F \\le \\|X_0\\|_F \\exp\\left( \\sum_{{l=1}}^L \\|W^{{(l)}}_{{V, r}
         "\\|X_l - X_{l-1}\\|_F \\le \\left\\| \\operatorname{Softmax}\\left(\\cdot\\right) \\right\\|_2 \\|X_{l-1}\\|_F \\|W^{(l)}_{V, r} W^{(l)}_{O, r}\\|_2\n"
         "\\]\n"
         "Since the softmax attention matrix is row-stochastic, its induced $\\ell_\\infty$ and $\\ell_2$ operator norms are strictly bounded by $1$. "
-        "Therefore, by discrete Gr\\\"onwall inequality summation across $l = 1, \\dots, L$, the activation growth obeys the exponential envelope bound, ensuring stability regardless of sequence length. $\\square$\n"
+        'Therefore, by discrete Gr\\"onwall inequality summation across $l = 1, \\dots, L$, the activation growth obeys the exponential envelope bound, ensuring stability regardless of sequence length. $\\square$\n'
     )
 
-    clean_init = init_args[:300].replace('_', '\\_') if init_args else "Standard configuration arguments"
+    clean_init = (
+        init_args[:300].replace("_", "\\_") if init_args else "Standard configuration arguments"
+    )
     md["B_implementation.md"] = f"""# Appendix B. Implementation Details and Code Mapping
 
 The `{mod_name}` module is implemented in `{src_file}` ({lines_count} lines of code).
