@@ -108,7 +108,7 @@ export function updateTokens(mainMesh, trailMesh, tokenDataArray, isCompressedSi
                     const dx = Math.abs(mesh.position.x - curPos.x);
                     const dy = Math.abs(mesh.position.y - t.y);
                     if (dx < (mesh.geometry.parameters?.width || 1.0) / 2 && dy < 0.25) {
-                        triggerNodePulse(mesh);
+                        triggerNodePulse(mesh, 400, isCompressedSide ? 'svd_collapse' : 'standard');
                         break;
                     }
                 }
