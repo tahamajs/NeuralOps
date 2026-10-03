@@ -287,9 +287,9 @@ class HGRN2Layer(BaseAttention):
                 extracted = adapter.extract_qkv_out()
                 if extracted:
                     w_q = extracted.get("q_weight")
-                    b_q = extracted.get("q_bias")
+                    extracted.get("q_bias")
                     w_k = extracted.get("k_weight")
-                    b_k = extracted.get("k_bias")
+                    extracted.get("k_bias")
                     w_v = extracted.get("v_weight")
                     b_v = extracted.get("v_bias")
                     if w_o is None:

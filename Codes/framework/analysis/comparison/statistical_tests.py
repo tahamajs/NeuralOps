@@ -666,7 +666,7 @@ def bayesian_signed_rank_test(
     # Signed rank sum (Wilcoxon style)
     abs_diffs = np.abs(nonzero)
     ranks = stats.rankdata(abs_diffs)
-    signed = np.sum(ranks[nonzero > 0])
+    np.sum(ranks[nonzero > 0])
 
     # Dirichlet posterior for the probability that a positive difference occurs
     # Using the method from Benavoli et al.

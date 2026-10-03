@@ -49,7 +49,13 @@ def main():
         cmd = [
             sys.executable,
             "-u",
-            str(project_root / "Codes" / "framework" / "benchmarks" / "run_gpt2_sweep.py"),
+            str(
+                project_root
+                / "Codes"
+                / "framework"
+                / "benchmarks"
+                / "run_gpt2_sweep.py"
+            ),
             "--output_dir",
             args.output_dir,
             "--total_workers",

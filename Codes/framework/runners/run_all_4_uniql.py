@@ -6,4 +6,4 @@ Wrapper for orchestrating uniql.
 from .unified_orchestrator import run_orchestrator
 
 if __name__ == "__main__":
-    run_orchestrator("uniql", ['--rank', '128'])
+    run_orchestrator("uniql", ["--rank", "128"])

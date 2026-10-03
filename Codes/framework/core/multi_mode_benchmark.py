@@ -327,7 +327,7 @@ class ModeTransformEngine:
                     # Create SVD factorized sequence
                     U, S, V = torch.svd(module.weight.data.float())
                     r = min(rank, module.in_features, module.out_features)
-                    w_a = (
+                    (
                         U[:, :r] * torch.sqrt(S[:r])
                     ).t()  # (r, out_features) -> wait: W = U S V^T
                     # W approx = U_r * (diag(S_r) * V_r^T)

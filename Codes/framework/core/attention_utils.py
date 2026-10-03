@@ -167,7 +167,7 @@ def _slice_fused_qkv_weights(
         fused_weight = fused_weight.t()
 
     total_out_dim = fused_weight.size(0)
-    in_dim = fused_weight.size(1)
+    fused_weight.size(1)
 
     if num_kv_heads is None or num_kv_heads == num_heads:
         # Standard MHA: 3 equal partitions

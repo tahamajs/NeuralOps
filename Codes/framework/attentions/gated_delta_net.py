@@ -947,7 +947,6 @@ class GatedDeltaNet(BaseAttention):
 
         B, L, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
-        dtype_in = hidden_states.dtype
 
         is_cross = encoder_hidden_states is not None
         kv_input = encoder_hidden_states if is_cross else hidden_states
@@ -1010,9 +1009,7 @@ class GatedDeltaNet(BaseAttention):
         )
 
         # ---- is_causal (GDN-FIX-08) ----
-        is_causal = bool(
-            self.is_decoder and not is_cross and L > 1 and past_key_value is None
-        )
+        bool(self.is_decoder and not is_cross and L > 1 and past_key_value is None)
 
         # ---- Delta scan ----
         y_fwd = chunked_delta_rule_scan(

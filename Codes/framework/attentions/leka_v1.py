@@ -826,7 +826,6 @@ class LEKAV1Attention(BaseAttention):
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, N, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
-        device = hidden_states.device
         dtype = hidden_states.dtype
 
         q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()

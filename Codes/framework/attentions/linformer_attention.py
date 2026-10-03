@@ -958,9 +958,7 @@ class LinformerAttention(BaseAttention):
                 V_proj = v
             else:
                 # Approximate causal on projected K/V: mask each projected key by its mean position
-                causal_approx = torch.tril(
-                    torch.ones(L, k_eff, device=device, dtype=torch.bool)
-                )
+                torch.tril(torch.ones(L, k_eff, device=device, dtype=torch.bool))
                 # For each query position i, allow projected keys whose support range includes <= i
                 # Simplified: allow key j if j <= i (proportional to support)
                 idx_q = torch.arange(L, device=device).unsqueeze(1)  # (L, 1)

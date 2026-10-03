@@ -418,26 +418,6 @@ def set_train_scope(model, train_scope="all"):
         named_mods = dict(model.named_modules())
 
         # Keywords indicating low-rank / SSM / adapter parameters to keep trainable
-        trainable_keywords = (
-            "W_u",
-            "W_v",
-            "weight_u",
-            "weight_v",
-            "lora_A",
-            "lora_B",
-            "adapter",
-            "A_log",
-            "A",
-            "D",  # Mamba/SSM state matrices
-            "dt_proj",
-            "dt_bias",  # SSM delta-time projections
-            "conv1d",
-            "conv",  # Mamba conv layers
-            "in_proj",
-            "x_proj",  # Mamba input projections
-            "fusion_gate",  # aegis gate
-            "prune_gate",  # aegis pruning gate
-        )
 
         for name, p in model.named_parameters():
             # Must be inside a transformer block's attention submodule
@@ -1909,7 +1889,7 @@ def main():
             methods_plotted = []
             ppls_plotted = []
             for method, r in json_payload["results"].items():
-                pre = r.get("pre_ppl", float("nan"))
+                r.get("pre_ppl", float("nan"))
                 post = r.get("post_ppl", float("nan"))
                 if np.isfinite(post):
                     methods_plotted.append(method)

@@ -998,9 +998,8 @@ class AegisAttentionV3(BaseAttention):
             and not is_cross
         ):
             past_key_value.update(K_new, V_new, layer_idx)
-            cache_to_return = past_key_value
         else:
-            cache_to_return = (K_cat, V_cat)
+            pass
 
         N_kv = K_cat.shape[2]
         K_full = repeat_kv(K_cat, self.kv_repeat) if self.kv_repeat > 1 else K_cat

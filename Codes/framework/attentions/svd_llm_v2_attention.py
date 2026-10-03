@@ -973,7 +973,7 @@ def inject_svd_llm_v2(
         )
         if test_src is not None:
             try:
-                test_module = SVDLLMV2Attention(
+                SVDLLMV2Attention(
                     config=cfg,
                     old_attn=test_src,
                     lora_rank=lora_rank,

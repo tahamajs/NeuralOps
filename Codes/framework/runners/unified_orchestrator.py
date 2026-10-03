@@ -3,13 +3,13 @@
 Unified Orchestrator Backend.
 """
 
+import csv
+import json
 import logging
+import shutil
 import subprocess
 import sys
 import time
-import csv
-import json
-import shutil
 from pathlib import Path
 
 # Paths
@@ -100,7 +100,7 @@ def run_orchestrator(module_key: str, extra_args: list):
         row = r["row_data"]
         comp = row.get("compression_rate", "N/A")
         svdl = row.get("num_compressed_layers", "N/A")
-        print(f"{r["name":<14]} | {r["status":<10]} | {r["accuracy_pct":>6.2f]}%   | {r["elapsed_s":>5.1f]}s  | {str(comp):<10} | {str(svdl):<6}", flush=True)
+        print(f"{r['name":<14]} | {r['status":<10]} | {r['accuracy_pct":>6.2f]}%   | {r['elapsed_s":>5.1f]}s  | {str(comp):<10} | {str(svdl):<6}", flush=True)
     print("=" * W, flush=True)
 
     RESULTS_BASE.mkdir(parents=True, exist_ok=True)
@@ -108,8 +108,8 @@ def run_orchestrator(module_key: str, extra_args: list):
     for r in results:
         row = dict(r["row_data"])
         row.update({
-            "model_name": r["name"], "model_slug": r["slug"], "status": r["status"],
-            "accuracy_pct": r["accuracy_pct"], "elapsed_s": r["elapsed_s"],
+            "model_name": r['name"], "model_slug": r["slug"], "status": r['status"],
+            "accuracy_pct": r['accuracy_pct"], "elapsed_s": r['elapsed_s"],
         })
         rows.append(row)
     csv_path = RESULTS_BASE / "4models_summary.csv"
@@ -125,13 +125,15 @@ def run_orchestrator(module_key: str, extra_args: list):
     logger.info("Consolidated results saved → %s", RESULTS_BASE)
 
     try:
-        from Codes.framework.utils.hf_git_exporter import (find_documentation_file, update_documentation_table, upload_to_huggingface)
+        from Codes.framework.utils.hf_git_exporter import (
+            find_documentation_file, update_documentation_table,
+            upload_to_huggingface)
         hf_org = "Hooshaai"
         doc_path = find_documentation_file(module_key)
         pass_count = 0
         hf_urls = []
         for r in results:
-            if r["status"] != "PASS" or r["accuracy_pct"] < PASS_THRESHOLD:
+            if r['status"] != "PASS" or r['accuracy_pct"] < PASS_THRESHOLD:
                 weights_dir = r["out_dir"] / "checkpoints" / module_key
                 if weights_dir.exists(): shutil.rmtree(weights_dir, ignore_errors=True)
                 continue
@@ -141,12 +143,12 @@ def run_orchestrator(module_key: str, extra_args: list):
             hf_dir = out_dir / "checkpoints" / module_key / "hf_export"
             if not hf_dir.exists(): continue
             for big in hf_dir.glob("pytorch_model.bin"): big.unlink(missing_ok=True)
-            perf = {"accuracy_pct": r["accuracy_pct"], "f1_score": row.get("f1_score", "N/A"), "val_loss": row.get("val_loss", "N/A"), "peak_vram_mb": row.get("peak_vram_mb", "N/A"), "tokens_per_sec": row.get("tokens_per_sec", "N/A"), "status": r["status"]}
+            perf = {"accuracy_pct": r['accuracy_pct"], "f1_score": row.get("f1_score", "N/A"), "val_loss": row.get("val_loss", "N/A"), "peak_vram_mb": row.get("peak_vram_mb", "N/A"), "tokens_per_sec": row.get("tokens_per_sec", "N/A"), "status": r['status"]}
             comp = {"compression_rate": row.get("compression_rate", "1.0"), "compression_ratio_pct": row.get("compression_ratio_pct", "0.0"), "num_compressed_layers": row.get("num_compressed_layers", "N/A")}
             url = upload_to_huggingface(export_dir=hf_dir, repo_id=repo_id, model_name=slug, module_name=module_key, dataset_name="sst2", perf_metrics=perf, comp_metrics=comp)
             if url: hf_urls.append(url)
             if doc_path and doc_path.exists():
-                update_documentation_table(doc_path=doc_path, model_name=slug, module_name=module_key, dataset_name="sst2", status=r["status"], baseline_acc=None, acc=r["accuracy_pct"], f1=row.get("f1_score", "N/A"), comp_rate=row.get("compression_rate", "1.00"), num_compressed=row.get("num_compressed_layers", "N/A"), hf_repo_url=url or f"https://huggingface.co/{repo_id}")
+                update_documentation_table(doc_path=doc_path, model_name=slug, module_name=module_key, dataset_name="sst2", status=r['status"], baseline_acc=None, acc=r['accuracy_pct"], f1=row.get("f1_score", "N/A"), comp_rate=row.get("compression_rate", "1.00"), num_compressed=row.get("num_compressed_layers", "N/A"), hf_repo_url=url or f"https://huggingface.co/{repo_id}")
     except ImportError:
         pass
     print("\nAll tasks completed.", flush=True)

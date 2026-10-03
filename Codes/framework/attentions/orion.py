@@ -979,7 +979,6 @@ class ORIONAttention(BaseAttention):
         Hk = self.num_kernel_heads
         Hf = self.num_full_heads
         device = hidden_states.device
-        dtype = hidden_states.dtype
 
         is_cross = encoder_hidden_states is not None
         kv_input = encoder_hidden_states if is_cross else hidden_states

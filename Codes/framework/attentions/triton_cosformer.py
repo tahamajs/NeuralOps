@@ -698,7 +698,7 @@ class TritonCosformerAttention(BaseAttention):
         if src is None:
             return
 
-        cls_name = getattr(src, "__class__", type(src)).__name__
+        getattr(src, "__class__", type(src)).__name__
 
         # 1. GPT-2: Fused c_attn (Conv1D) + c_proj
         if hasattr(src, "c_attn") and src.c_attn is not None:

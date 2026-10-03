@@ -123,7 +123,7 @@ class NMFLinear(nn.Module):
 
         # NMF-FIX-06: dtype-safe
         x_v = F.linear(x_flat, self.V.to(dtype=x_flat.dtype))
-        out_mag = F.linear(x_v, self.H.to(dtype=x_v.dtype))
+        F.linear(x_v, self.H.to(dtype=x_v.dtype))
         # Sign-aware reconstruction: y = x @ W^T where W = H@V * W_sign.
         # (H@V * W_sign) @ x = (H@V) @ (W_sign * x) element-wise? No —
         # we must build the effective weight for F.linear.
@@ -478,7 +478,6 @@ class NMFCompressor(BaseCompressor):
             seen_weights.add(w_id)
 
             raw_w = w.data
-            orig_dtype = raw_w.dtype
             orig_device = raw_w.device
             orig_bytes = raw_w.numel() * raw_w.element_size()
             if getattr(base_module, "bias", None) is not None:

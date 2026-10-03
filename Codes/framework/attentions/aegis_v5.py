@@ -1055,9 +1055,8 @@ class AegisAttention(BaseAttention):
         ):
             idx = getattr(self, "layer_idx", 0)
             past_key_value.update(K_new, V_new, idx)
-            cache_to_return = past_key_value
         else:
-            cache_to_return = (K_cat, V_cat)
+            pass
 
         N_kv = K_cat.shape[2]
         past_len = N_kv - N if (self.is_decoder and not is_cross) else 0
@@ -1108,7 +1107,7 @@ class AegisAttention(BaseAttention):
             # ------------------------------------------------------------------
             # Split-head path
             # ------------------------------------------------------------------
-            Hl, Hg = self.num_local_heads, self.num_global_heads
+            Hl, _Hg = self.num_local_heads, self.num_global_heads
             Q_local, Q_global = Q[:, :Hl], Q[:, Hl:]
             K_local, K_global = K_full[:, :Hl], K_full[:, Hl:]
             V_local, V_global = V_full[:, :Hl], V_full[:, Hl:]
