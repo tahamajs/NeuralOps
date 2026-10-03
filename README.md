@@ -4,8 +4,8 @@
 [![Python 3.12 / 3.13](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch 2.5.0+](https://img.shields.io/badge/pytorch-2.5.0%2B-ee4c2c.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Attention Mechanisms](https://img.shields.io/badge/Attentions-116%20Implemented-6366f1.svg)](./Codes/framework/attentions/)
-[![Compression Engines](https://img.shields.io/badge/Compressors-77%20Implemented-ec4899.svg)](./Codes/framework/compression_engine/)
+[![Attention Mechanisms](https://img.shields.io/badge/Attentions-115%20Implemented-6366f1.svg)](./Codes/framework/attentions/)
+[![Compression Engines](https://img.shields.io/badge/Compressors-76%20Implemented-ec4899.svg)](./Codes/framework/compression_engine/)
 [![Verified Tracks](https://img.shields.io/badge/Tracks-5%20Verified%20(100%25)-10b981.svg)](./Codes/framework/)
 [![CI Status](https://github.com/tahamajs/SVD_linear_Attention/actions/workflows/ci.yml/badge.svg)](https://github.com/tahamajs/SVD_linear_Attention/actions)
 
@@ -46,10 +46,10 @@ All modules implemented in `Codes/framework/attentions/` and `Codes/framework/co
 
 ```
 Codes/framework/
-├── attentions/               # 116 subquadratic, linear, and hybrid attention modules
+├── attentions/               # 115 subquadratic, linear, and hybrid attention modules
 │   ├── adaptive_span_attention.py, cosformer.py, flash_attention3.py,
 │   ├── galerkin_attention.py, performer_attention.py, linformer_attention.py ...
-└── compression_engine/       # 77 SVD factorizers, quantizers, and structural pruners
+└── compression_engine/       # 76 SVD factorizers, quantizers, and structural pruners
     ├── armor_pruner.py, ast_pruner.py, astro_quantizer.py, dobi_svd.py,
     ├── delta_kv.py, enlighten_compressor.py, faq_quantizer.py, mlorq_compressor.py ...
 ```
@@ -131,7 +131,7 @@ python scripts/aggregate_zeroshot_details.py
 Profiles accuracy retention across low-rank bottlenecks ($r \in \{64, 128, 256, 384\}$):
 
 ```bash
-python Codes/framework/run_rank_sweeper.py \
+python Codes/framework/benchmarks/run_rank_sweeper.py \
   --modules armor_pruner,cluster_attention,dobi_svd,dynamic_rank \
   --ranks 64,128,256,384 \
   --model models/base_checkpoints/distilbert_mnli \
@@ -145,7 +145,7 @@ python Codes/framework/run_rank_sweeper.py \
 Computes causal autoregressive token cross-entropy loss and perplexity on long-form web text:
 
 ```bash
-python Codes/framework/run_quality_sweep.py \
+python Codes/framework/benchmarks/run_quality_sweep.py \
   --modules full,asvd_attention,cosformer,performer_attention \
   --model models/gpt2 \
   --model_family gpt2 \
@@ -159,7 +159,7 @@ python Codes/framework/run_quality_sweep.py \
 Runs statistical multi-seed fine-tuning recovery across classification benchmarks:
 
 ```bash
-python Codes/framework/run_multiseed.py \
+python Codes/framework/benchmarks/run_multiseed.py \
   --modules svd_linear_attention,armor_pruner,cluster_attention \
   --models distilbert \
   --dataset sst2 \
