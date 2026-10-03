@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#00ff9d" />
+    <meta
+      name="description"
+      content="NeuralOps – AI research platform for experiment tracking, GPU marketplace, and collaborative research."
+    />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="NeuralOps" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preconnect" href="http://localhost:8000" />
+    <title>NeuralOps — AI Research Suite</title>
+    <script>
+      // Polyfill: crypto.randomUUID is only available in HTTPS secure contexts.
+      // This shim works on plain HTTP (LAN, local dev over IP) as well.
+      if (typeof crypto !== 'undefined' && typeof crypto.randomUUID !== 'function') {
+        crypto.randomUUID = function() {
+          return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+          });
+        };
+      }
+      // Shim process for CJS packages (react-rnd, react-draggable)
+      if (typeof process === 'undefined') {
+        window.process = { env: { NODE_ENV: 'development' } };
+      }
+    </script>
+    <script type="module" crossorigin src="/assets/index-B1pw7wW5.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-BpEXjKn7.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-CMc_cDo_.css">
+  </head>
+  <body>
+    <div id="root">
+      <style>
+        body, html {
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          height: 100%;
+          background-color: #07080d;
+          font-family: system-ui, -apple-system, sans-serif;
+        }
+        .global-loader-container {
+          position: fixed;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background: #07080d;
+          z-index: 99999;
+          overflow: hidden;
+        }
+        .global-loader-bg-glow {
+          position: absolute;
+          width: 400px;
+          height: 400px;
+          background: radial-gradient(circle, rgba(34,211,238,0.15) 0%, rgba(147,51,234,0.1) 50%, rgba(7,8,13,0) 70%);
+          filter: blur(40px);
+          animation: pulseGlow 3s ease-in-out infinite alternate;
+        }
+        @keyframes pulseGlow {
+          0% { transform: scale(0.8); opacity: 0.5; }
+          100% { transform: scale(1.2); opacity: 1; }
+        }
+        .global-loader-spinner {
+          position: relative;
+          width: 80px;
+          height: 80px;
+          z-index: 10;
+        }
+        .spinner-ring {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          border: 3px solid transparent;
+        }
+        .spinner-ring:nth-child(1) {
+          border-top-color: #00ff9d;
+          animation: spin 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+        }
+        .spinner-ring:nth-child(2) {
+          border-right-color: #38bdf8;
+          animation: spin 2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite reverse;
+        }
+        .spinner-ring:nth-child(3) {
+          border-bottom-color: #a855f7;
+          animation: spin 2.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .global-loader-logo {
+          position: absolute;
+          width: 50px;
+          height: 50px;
+          z-index: 20;
+          border-radius: 12px;
+          animation: pulseLogo 2s infinite alternate;
+        }
+        @keyframes pulseLogo {
+          0% { transform: scale(0.95); opacity: 0.8; box-shadow: 0 0 10px rgba(34,211,238,0.2); }
+          100% { transform: scale(1.05); opacity: 1; box-shadow: 0 0 30px rgba(147,51,234,0.6); }
+        }
+        .global-loader-text {
+          margin-top: 30px;
+          font-size: 14px;
+          font-weight: 800;
+          letter-spacing: 0.3em;
+          text-transform: uppercase;
+          color: rgba(255,255,255,0.7);
+          z-index: 10;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: shimmer 2s linear infinite;
+        }
+        @keyframes shimmer {
+          0% { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+      </style>
+      <div class="global-loader-container">
+        <div class="global-loader-bg-glow"></div>
+        <img src="/logo.jpg" alt="NeuralOps Logo" class="global-loader-logo" />
+        <div class="global-loader-spinner">
+          <div class="spinner-ring"></div>
+          <div class="spinner-ring"></div>
+          <div class="spinner-ring"></div>
+        </div>
+        <div class="global-loader-text">Loading Workspace</div>
+      </div>
+    </div>
+  </body>
+</html>
