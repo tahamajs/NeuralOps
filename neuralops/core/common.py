@@ -13,6 +13,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+try:
+    from neuralops.core.triton_kernels import triton_dispatch
+
+    HAS_TRITON_COMMON = True
+except Exception:
+    triton_dispatch = None
+    HAS_TRITON_COMMON = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -289,10 +297,27 @@ class LoRALinear(nn.Module):
             and self.lora_A is not None
             and self.lora_B is not None
         ):
-            lora_out = (
-                F.linear(F.linear(self.lora_dropout(x), self.lora_A), self.lora_B)
-                * self.lora_scaling
-            )
+            drop_x = self.lora_dropout(x)
+            if (
+                HAS_TRITON_COMMON
+                and triton_dispatch is not None
+                and drop_x.is_cuda
+            ):
+                try:
+                    lora_out = (
+                        triton_dispatch("low_rank", drop_x, self.lora_B, self.lora_A, bias=None)
+                        * self.lora_scaling
+                    )
+                except Exception:
+                    lora_out = (
+                        F.linear(F.linear(drop_x, self.lora_A), self.lora_B)
+                        * self.lora_scaling
+                    )
+            else:
+                lora_out = (
+                    F.linear(F.linear(drop_x, self.lora_A), self.lora_B)
+                    * self.lora_scaling
+                )
             res = res + lora_out
         return res
 
@@ -380,9 +405,35 @@ class FactorizedLinear(nn.Module):
         return self.lin2.bias
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = self.lin2(self.lin1(x))
+        if (
+            HAS_TRITON_COMMON
+            and triton_dispatch is not None
+            and x.is_cuda
+        ):
+            try:
+                out = triton_dispatch(
+                    "low_rank", x, self.lin2.weight, self.lin1.weight, bias=self.lin2.bias
+                )
+            except Exception:
+                out = self.lin2(self.lin1(x))
+        else:
+            out = self.lin2(self.lin1(x))
+
         if self.lora_A is not None:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
+            if (
+                HAS_TRITON_COMMON
+                and triton_dispatch is not None
+                and x.is_cuda
+            ):
+                try:
+                    lora_out = triton_dispatch(
+                        "low_rank", x, self.lora_B, self.lora_A, bias=None
+                    )
+                    out = out + lora_out
+                except Exception:
+                    out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
+            else:
+                out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
         return out
 
 
