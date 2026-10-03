@@ -41,7 +41,7 @@ This repository hosts a validated factorized/compressed checkpoint of **distilbe
 ```json
 {
   "model": "models/distilbert_sst2",
-  "dataset_dir": "Codes/framework/data/glue_data/sst2",
+  "dataset_dir": "neuralops/data/glue_data/sst2",
   "dataset": "sst2",
   "output_dir": "results\\02_glue_sweeps\\distilbert\\sst2_4parallel",
   "parallel": 1,

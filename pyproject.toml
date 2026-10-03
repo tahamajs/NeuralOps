@@ -58,10 +58,10 @@ visualization = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["Codes"]
+where = ["."]
 
 [tool.pytest.ini_options]
-testpaths = ["Codes/framework/tests"]
+testpaths = ["neuralops/tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]

@@ -30,7 +30,7 @@ Code inspection of `hamming_attention.py` reveals that it accepts the `rank` arg
 
 ## Recommended Fixes
 
-1. **Fix the Reporting Bug:** Update `Codes/framework/core/attention_utils.py` to attach the stats before returning:
+1. **Fix the Reporting Bug:** Update `neuralops/core/attention_utils.py` to attach the stats before returning:
    ```python
    # Inside inject_attention()
    logger.info("Successfully injected '%s' into %d transformer blocks.", attention_type, replaced)

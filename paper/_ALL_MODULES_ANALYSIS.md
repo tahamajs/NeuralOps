@@ -32,8 +32,8 @@ This document provides the exhaustive audit and empirical validation across all 
 
 ### P0 Action Items (Immediate Fixes)
 
-- `adasvd_compressor`: /Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/adasvd_compressor.py (Category: BROKEN, Sub: Compression-Failed)
-- `compot_compressor`: /Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/compot_compressor.py (Category: BROKEN, Sub: Compression-Failed)
+- `adasvd_compressor`: /Users/tahamajs/Documents/uni/Project/neuralops/compression_engine/adasvd_compressor.py (Category: BROKEN, Sub: Compression-Failed)
+- `compot_compressor`: /Users/tahamajs/Documents/uni/Project/neuralops/compression_engine/compot_compressor.py (Category: BROKEN, Sub: Compression-Failed)
 - `cur_linear`: N/A (Category: BROKEN, Sub: Unknown)
 - `cure`: N/A (Category: BROKEN, Sub: Unknown)
 
