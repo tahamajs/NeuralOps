@@ -27,7 +27,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
-
 # ============================================================================
 # Constants
 # ============================================================================
@@ -35,11 +34,20 @@ DEFAULT_RANKS = [16, 32, 64, 128, 256, 384]
 
 # Statuses that indicate a final evaluation is done -> don't re-run
 SKIP_IF_STATUS_IN = {
-    "PASS", "PASS_LOW", "PASS_LOW_PPL", "PASS_NO_COMPRESSION",
-    "FAIL", "FAIL_BELOW_CHANCE", "FAIL_PPL_NAN", "FAIL_PPL_DIVERGED",
-    "EVAL_FAILED", "INVALID",
-    "EXTREME_EXPANSION", "MODERATE_EXPANSION",
-    "SKIP_BLOCKED", "SKIP_DEPRECATED",
+    "PASS",
+    "PASS_LOW",
+    "PASS_LOW_PPL",
+    "PASS_NO_COMPRESSION",
+    "FAIL",
+    "FAIL_BELOW_CHANCE",
+    "FAIL_PPL_NAN",
+    "FAIL_PPL_DIVERGED",
+    "EVAL_FAILED",
+    "INVALID",
+    "EXTREME_EXPANSION",
+    "MODERATE_EXPANSION",
+    "SKIP_BLOCKED",
+    "SKIP_DEPRECATED",
     "SKIP_BERT_ARCHITECTURAL",
 }
 
@@ -60,40 +68,63 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         description="Run rank sweep for compressor modules.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    p.add_argument("--modules", required=True,
-                   help="Comma-separated list of modules to sweep")
-    p.add_argument("--ranks", default=",".join(str(r) for r in DEFAULT_RANKS),
-                   help="Comma-separated ranks")
-    p.add_argument("--model", default="models/distilbert_sst2",
-                   help="Model path")
-    p.add_argument("--model_family", default="bert",
-                   help="Model family (bert/roberta/gpt2/qwen)")
-    p.add_argument("--dataset", default="sst2",
-                   help="Dataset name")
-    p.add_argument("--recovery_steps", type=int, default=50,
-                   help="Recovery fine-tuning steps")
-    p.add_argument("--learning_rate", type=float, default=2e-4,
-                   help="Learning rate for recovery")
-    p.add_argument("--seed", type=int, default=42,
-                   help="Random seed")
-    p.add_argument("--batch_size", type=int, default=None,
-                   help="Batch size (None = auto)")
-    p.add_argument("--parallel_ranks", type=int, default=1,
-                   help="Number of ranks to run in parallel")
-    p.add_argument("--max_vram_fraction", type=float, default=None,
-                   help="Max VRAM fraction per process (default: auto)")
-    p.add_argument("--timeout", type=int, default=3600,
-                   help="Timeout per rank in seconds")
-    p.add_argument("--output_base", default="results/04_rank_sweeps/mixed/rank_sweep",
-                   help="Base output directory")
-    p.add_argument("--parent_checkpoint", default=None,
-                   help="Path to baseline checkpoint (auto-detect if None)")
-    p.add_argument("--cached_batches_dir", default=None,
-                   help="Batch cache dir (auto-detect if None)")
-    p.add_argument("--fresh", action="store_true",
-                   help="Force re-run all ranks")
-    p.add_argument("--dry_run", action="store_true",
-                   help="Print commands without running")
+    p.add_argument(
+        "--modules", required=True, help="Comma-separated list of modules to sweep"
+    )
+    p.add_argument(
+        "--ranks",
+        default=",".join(str(r) for r in DEFAULT_RANKS),
+        help="Comma-separated ranks",
+    )
+    p.add_argument("--model", default="models/distilbert_sst2", help="Model path")
+    p.add_argument(
+        "--model_family", default="bert", help="Model family (bert/roberta/gpt2/qwen)"
+    )
+    p.add_argument("--dataset", default="sst2", help="Dataset name")
+    p.add_argument(
+        "--recovery_steps", type=int, default=50, help="Recovery fine-tuning steps"
+    )
+    p.add_argument(
+        "--learning_rate", type=float, default=2e-4, help="Learning rate for recovery"
+    )
+    p.add_argument("--seed", type=int, default=42, help="Random seed")
+    p.add_argument(
+        "--batch_size", type=int, default=None, help="Batch size (None = auto)"
+    )
+    p.add_argument(
+        "--parallel_ranks",
+        type=int,
+        default=1,
+        help="Number of ranks to run in parallel",
+    )
+    p.add_argument(
+        "--max_vram_fraction",
+        type=float,
+        default=None,
+        help="Max VRAM fraction per process (default: auto)",
+    )
+    p.add_argument(
+        "--timeout", type=int, default=3600, help="Timeout per rank in seconds"
+    )
+    p.add_argument(
+        "--output_base",
+        default="results/04_rank_sweeps/mixed/rank_sweep",
+        help="Base output directory",
+    )
+    p.add_argument(
+        "--parent_checkpoint",
+        default=None,
+        help="Path to baseline checkpoint (auto-detect if None)",
+    )
+    p.add_argument(
+        "--cached_batches_dir",
+        default=None,
+        help="Batch cache dir (auto-detect if None)",
+    )
+    p.add_argument("--fresh", action="store_true", help="Force re-run all ranks")
+    p.add_argument(
+        "--dry_run", action="store_true", help="Print commands without running"
+    )
     return p.parse_args(argv)
 
 
@@ -117,7 +148,9 @@ def auto_detect_parent_checkpoint(model: str, dataset: str) -> str | None:
     safe_model = Path(model).name.replace("-", "_").lower()
     candidates = [
         Path("results") / f"{safe_model}_{dataset}_baseline" / "finetuned_model.pt",
-        Path("results") / f"{safe_model}_{dataset}_lora_baseline" / "finetuned_model.pt",
+        Path("results")
+        / f"{safe_model}_{dataset}_lora_baseline"
+        / "finetuned_model.pt",
         Path("results") / f"{safe_model}_{dataset}_full_sweep" / "finetuned_model.pt",
         Path(model) / "finetuned_model.pt",
     ]
@@ -131,8 +164,12 @@ def auto_detect_cached_batches(model: str, dataset: str) -> str | None:
     safe_model = Path(model).name.replace("-", "_").lower()
     candidates = [
         Path("results") / f"{safe_model}_{dataset}_baseline" / f"batch_cache_{dataset}",
-        Path("results") / f"{safe_model}_{dataset}_lora_baseline" / f"batch_cache_{dataset}",
-        Path("results") / f"{safe_model}_{dataset}_full_sweep" / f"batch_cache_{dataset}",
+        Path("results")
+        / f"{safe_model}_{dataset}_lora_baseline"
+        / f"batch_cache_{dataset}",
+        Path("results")
+        / f"{safe_model}_{dataset}_full_sweep"
+        / f"batch_cache_{dataset}",
     ]
     for c in candidates:
         if c.exists() and (c / "meta.json").exists():
@@ -140,23 +177,40 @@ def auto_detect_cached_batches(model: str, dataset: str) -> str | None:
     return None
 
 
-def build_cmd(module: str, rank: int, args: argparse.Namespace,
-              rank_dir: Path, vram_fraction: float | None) -> list[str]:
+def build_cmd(
+    module: str,
+    rank: int,
+    args: argparse.Namespace,
+    rank_dir: Path,
+    vram_fraction: float | None,
+) -> list[str]:
     rank_dir.mkdir(parents=True, exist_ok=True)
     cmd = [
-        sys.executable, "-u",
-        "Codes/framework/run_quality_sweep.py",
-        "--modules", module,
-        "--model", args.model,
-        "--model_family", args.model_family,
-        "--dataset", args.dataset,
-        "--rank", str(rank),
-        "--recovery_steps", str(args.recovery_steps),
-        "--learning_rate", str(args.learning_rate),
-        "--seed", str(args.seed),
-        "--output_dir", str(rank_dir) + os.sep,
-        "--parallel", "1",          # internal parallelism is 1; we parallelize at rank level
-        "--timeout", str(args.timeout),
+        sys.executable,
+        "-u",
+        "Codes/framework/benchmarks/run_quality_sweep.py",
+        "--modules",
+        module,
+        "--model",
+        args.model,
+        "--model_family",
+        args.model_family,
+        "--dataset",
+        args.dataset,
+        "--rank",
+        str(rank),
+        "--recovery_steps",
+        str(args.recovery_steps),
+        "--learning_rate",
+        str(args.learning_rate),
+        "--seed",
+        str(args.seed),
+        "--output_dir",
+        str(rank_dir) + os.sep,
+        "--parallel",
+        "1",  # internal parallelism is 1; we parallelize at rank level
+        "--timeout",
+        str(args.timeout),
     ]
     if args.fresh:
         cmd.append("--fresh")
@@ -171,8 +225,9 @@ def build_cmd(module: str, rank: int, args: argparse.Namespace,
     return cmd
 
 
-def run_single_rank(module: str, rank: int, args: argparse.Namespace,
-                    vram_fraction: float | None) -> dict[str, Any]:
+def run_single_rank(
+    module: str, rank: int, args: argparse.Namespace, vram_fraction: float | None
+) -> dict[str, Any]:
     """Run one (module, rank) evaluation. Returns a result row dict."""
     rank_dir = Path(args.output_base) / module / f"rank_{rank}"
     summary_csv = rank_dir / "summary.csv"
@@ -181,8 +236,10 @@ def run_single_rank(module: str, rank: int, args: argparse.Namespace,
     if not args.fresh and summary_csv.exists():
         row = read_summary_row(summary_csv)
         if row and row.get("status") in SKIP_IF_STATUS_IN:
-            log(f"[{module} | r{rank}] SKIP — existing "
-                f"status={row.get('status')} acc={row.get('accuracy_pct', '?')}%")
+            log(
+                f"[{module} | r{rank}] SKIP — existing "
+                f"status={row.get('status')} acc={row.get('accuracy_pct', '?')}%"
+            )
             out = dict(row)
             out["rank"] = rank
             return out
@@ -192,8 +249,13 @@ def run_single_rank(module: str, rank: int, args: argparse.Namespace,
 
     if args.dry_run:
         log(f"    (dry-run) {' '.join(cmd)}")
-        return {"module_name": module, "rank": rank, "status": "DRY_RUN",
-                "accuracy_pct": 0.0, "elapsed_s": 0.0}
+        return {
+            "module_name": module,
+            "rank": rank,
+            "status": "DRY_RUN",
+            "accuracy_pct": 0.0,
+            "elapsed_s": 0.0,
+        }
 
     log_file = rank_dir / "run.log"
     t0 = time.time()
@@ -225,8 +287,10 @@ def run_single_rank(module: str, rank: int, args: argparse.Namespace,
         out = dict(row)
         out["rank"] = rank
         out["elapsed_s"] = round(elapsed, 1)
-        log(f"[{module} | r{rank}] DONE in {elapsed:.1f}s — "
-            f"status={out.get('status', '?')} acc={out.get('accuracy_pct', '?')}%")
+        log(
+            f"[{module} | r{rank}] DONE in {elapsed:.1f}s — "
+            f"status={out.get('status', '?')} acc={out.get('accuracy_pct', '?')}%"
+        )
         return out
 
     log(f"[{module} | r{rank}] NO summary.csv produced (rc={rc}, {elapsed:.1f}s)")
@@ -235,10 +299,16 @@ def run_single_rank(module: str, rank: int, args: argparse.Namespace,
 
 def _error_row(module: str, rank: int, status: str, elapsed: float) -> dict[str, Any]:
     return {
-        "module_name": module, "rank": rank, "status": status,
-        "accuracy_pct": 0.0, "f1_score": 0.0, "val_loss": 99.0,
-        "peak_vram_mb": 0.0, "compression_rate": 1.0,
-        "num_compressed_layers": 0, "num_fallback_layers": 0,
+        "module_name": module,
+        "rank": rank,
+        "status": status,
+        "accuracy_pct": 0.0,
+        "f1_score": 0.0,
+        "val_loss": 99.0,
+        "peak_vram_mb": 0.0,
+        "compression_rate": 1.0,
+        "num_compressed_layers": 0,
+        "num_fallback_layers": 0,
         "elapsed_s": round(elapsed, 1),
     }
 
@@ -247,10 +317,20 @@ def _error_row(module: str, rank: int, status: str, elapsed: float) -> dict[str,
 # Output helpers
 # ============================================================================
 CURVE_FIELDS = [
-    "rank", "module_name", "status", "accuracy_pct", "f1_score", "val_loss",
-    "peak_vram_mb", "compression_rate", "compression_ratio_pct",
-    "num_compressed_layers", "num_fallback_layers", "elapsed_s",
-    "total_params_before", "total_params_after",
+    "rank",
+    "module_name",
+    "status",
+    "accuracy_pct",
+    "f1_score",
+    "val_loss",
+    "peak_vram_mb",
+    "compression_rate",
+    "compression_ratio_pct",
+    "num_compressed_layers",
+    "num_fallback_layers",
+    "elapsed_s",
+    "total_params_before",
+    "total_params_after",
 ]
 
 
@@ -304,8 +384,26 @@ def write_combined_curve(all_rows: list[dict[str, Any]], output_base: str) -> Pa
             w.writerow(r)
     log(f"[ALL] Wrote combined {out_path}")
     try:
-        subprocess.run(["git", "add", str(out_path)], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
-        subprocess.run(["git", "commit", "-m", f"benchmarks: update all_rank_curves.csv [{Path(output_base).name}]", "--no-verify"], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
+        subprocess.run(
+            ["git", "add", str(out_path)],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=15,
+        )
+        subprocess.run(
+            [
+                "git",
+                "commit",
+                "-m",
+                f"benchmarks: update all_rank_curves.csv [{Path(output_base).name}]",
+                "--no-verify",
+            ],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=15,
+        )
     except Exception:
         pass
     return out_path
@@ -314,7 +412,9 @@ def write_combined_curve(all_rows: list[dict[str, Any]], output_base: str) -> Pa
 def print_rank_table(module: str, rows: list[dict[str, Any]]) -> None:
     rows_sorted = sorted(rows, key=lambda r: int(r.get("rank", 0)))
     print(f"\n### Rank Sweep Results: `{module}`")
-    print("| Rank | Status | Acc (%) | F1 | Val Loss | VRAM (MB) | Comp Rate | Layers (C/F) | Time (s) |")
+    print(
+        "| Rank | Status | Acc (%) | F1 | Val Loss | VRAM (MB) | Comp Rate | Layers (C/F) | Time (s) |"
+    )
     print("|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|")
 
     def _f(d, k, default=0.0):
@@ -339,6 +439,7 @@ def print_summary(all_rows: list[dict[str, Any]]) -> None:
     if not all_rows:
         return
     from collections import defaultdict
+
     by_mod: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for r in all_rows:
         by_mod[r.get("module_name", "?")].append(r)
@@ -346,13 +447,20 @@ def print_summary(all_rows: list[dict[str, Any]]) -> None:
     print("FINAL SUMMARY")
     print("=" * 72)
     for mod, rows in sorted(by_mod.items()):
-        passed = [r for r in rows if r.get("status") in ("PASS", "PASS_LOW", "PASS_LOW_PPL", "PASS_NO_COMPRESSION")]
+        passed = [
+            r
+            for r in rows
+            if r.get("status")
+            in ("PASS", "PASS_LOW", "PASS_LOW_PPL", "PASS_NO_COMPRESSION")
+        ]
         total = len(rows)
         if passed:
             best = max(passed, key=lambda r: float(r.get("accuracy_pct") or 0.0))
-            print(f"  {mod:<32} {len(passed)}/{total} PASS  | "
-                  f"best: rank={best.get('rank')} acc={best.get('accuracy_pct')}% "
-                  f"comp={best.get('compression_rate', 1.0)}x")
+            print(
+                f"  {mod:<32} {len(passed)}/{total} PASS  | "
+                f"best: rank={best.get('rank')} acc={best.get('accuracy_pct')}% "
+                f"comp={best.get('compression_rate', 1.0)}x"
+            )
         else:
             print(f"  {mod:<32} {len(passed)}/{total} PASS")
 
@@ -367,6 +475,7 @@ def _install_sigint_handler() -> None:
             os._exit(130)
         _interrupted.set()
         log("\n[WARN] Ctrl+C — waiting for currently-running ranks to finish...")
+
     try:
         signal.signal(signal.SIGINT, handler)
         if hasattr(signal, "SIGTERM"):
@@ -380,9 +489,11 @@ def _install_sigint_handler() -> None:
 # ============================================================================
 def main(argv: list[str] | None = None) -> int:
     # Ensure we're running from project root
-    if not Path("Codes/framework/run_quality_sweep.py").exists():
-        print("[FATAL] Must run from the project root directory. "
-              "Could not find Codes/framework/run_quality_sweep.py")
+    if not Path("Codes/framework/benchmarks/run_quality_sweep.py").exists():
+        print(
+            "[FATAL] Must run from the project root directory. "
+            "Could not find Codes/framework/benchmarks/run_quality_sweep.py"
+        )
         return 2
 
     args = parse_args(argv)
@@ -400,8 +511,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.parent_checkpoint:
             log(f"[AUTO] parent_checkpoint = {args.parent_checkpoint}")
         else:
-            log("[WARN] Could not auto-detect parent_checkpoint — "
-                "each rank will train its baseline from scratch (slower).")
+            log(
+                "[WARN] Could not auto-detect parent_checkpoint — "
+                "each rank will train its baseline from scratch (slower)."
+            )
 
     if args.cached_batches_dir is None:
         args.cached_batches_dir = auto_detect_cached_batches(args.model, args.dataset)
@@ -468,11 +581,14 @@ def main(argv: list[str] | None = None) -> int:
                     except Exception as e:
                         log(f"[{mod} | r{rank}] future exception: {e}")
                         module_rows.append(
-                            _error_row(mod, rank, f"FUTURE_EXC:{e}", 0.0))
+                            _error_row(mod, rank, f"FUTURE_EXC:{e}", 0.0)
+                        )
 
         mod_elapsed = time.time() - mod_t0
-        log(f"[{mod}] Module complete in {mod_elapsed:.1f}s "
-            f"({len(module_rows)}/{len(ranks)} ranks)")
+        log(
+            f"[{mod}] Module complete in {mod_elapsed:.1f}s "
+            f"({len(module_rows)}/{len(ranks)} ranks)"
+        )
 
         write_rank_curve(mod, module_rows, args.output_base)
         print_rank_table(mod, module_rows)
@@ -483,8 +599,7 @@ def main(argv: list[str] | None = None) -> int:
         print_summary(all_rows)
 
     total_elapsed = time.time() - total_t0
-    log(f"\n[DONE] Total time: {total_elapsed:.1f}s "
-        f"({total_elapsed/60:.1f} min)")
+    log(f"\n[DONE] Total time: {total_elapsed:.1f}s " f"({total_elapsed/60:.1f} min)")
     return 0
 
 

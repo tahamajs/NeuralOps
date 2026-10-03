@@ -16,6 +16,7 @@ CSV Schema:
   winogrande_acc, gsm8k_em, niah_512, niah_1024, niah_2048, niah_4096,
   status, error, timestamp
 """
+
 from __future__ import annotations
 
 import argparse
@@ -68,13 +69,19 @@ AGGREGATE_FIELDS: list[str] = [
 def discover_modules(category: str = "all") -> list[str]:
     """Discover all compatible attention and compressor modules."""
     try:
-        from framework.run_gpt2_sweep import get_all_decoder_modules
+        from framework.benchmarks.run_gpt2_sweep import get_all_decoder_modules
+
         return get_all_decoder_modules(category)
     except Exception:
         pass
 
     try:
-        from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, is_helper_module
+        from framework.core.registry import (
+            ATTENTION_REGISTRY,
+            COMPRESSOR_REGISTRY,
+            is_helper_module,
+        )
+
         items: list[str] = ["full"]
         for name in list(ATTENTION_REGISTRY.keys()) + list(COMPRESSOR_REGISTRY.keys()):
             if name != "full" and not is_helper_module(name) and name not in items:
@@ -174,7 +181,9 @@ def run_command(cmd: list[str], desc: str) -> tuple[int, str, str]:
     LOG.info("Executing: %s", " ".join(cmd))
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0:
-        LOG.warning("%s failed (code %d):\n%s", desc, proc.returncode, proc.stderr[-500:])
+        LOG.warning(
+            "%s failed (code %d):\n%s", desc, proc.returncode, proc.stderr[-500:]
+        )
     return proc.returncode, proc.stdout, proc.stderr
 
 
@@ -261,12 +270,17 @@ def main(argv: list[str] | None = None) -> int:
             if need_ppl:
                 ppl_cmd = [
                     sys.executable,
-                    str(CODES / "framework" / "run_gpt2_sweep.py"),
-                    "--modules", mod,
-                    "--model_path", args.model_path,
-                    "--rank", str(args.rank),
-                    "--device", args.device,
-                    "--output_dir", str(ppl_dir),
+                    str(CODES / "framework" / "benchmarks" / "run_gpt2_sweep.py"),
+                    "--modules",
+                    mod,
+                    "--model_path",
+                    args.model_path,
+                    "--rank",
+                    str(args.rank),
+                    "--device",
+                    args.device,
+                    "--output_dir",
+                    str(ppl_dir),
                 ]
                 if args.smoke_test:
                     ppl_cmd.extend(["--max_eval_tokens", "2000"])
@@ -291,12 +305,17 @@ def main(argv: list[str] | None = None) -> int:
             if need_lmeval:
                 lmeval_cmd = [
                     sys.executable,
-                    str(CODES / "framework" / "run_lm_eval_harness.py"),
-                    "--module", mod,
-                    "--model_path", args.model_path,
-                    "--rank", str(args.rank),
-                    "--device", args.device,
-                    "--output_dir", str(lmeval_dir),
+                    str(CODES / "framework" / "evaluation" / "run_lm_eval_harness.py"),
+                    "--module",
+                    mod,
+                    "--model_path",
+                    args.model_path,
+                    "--rank",
+                    str(args.rank),
+                    "--device",
+                    args.device,
+                    "--output_dir",
+                    str(lmeval_dir),
                 ]
                 if args.smoke_test:
                     lmeval_cmd.append("--smoke_test")
@@ -332,12 +351,17 @@ def main(argv: list[str] | None = None) -> int:
             if need_ruler:
                 ruler_cmd = [
                     sys.executable,
-                    str(CODES / "framework" / "run_ruler_benchmark.py"),
-                    "--module", mod,
-                    "--model_path", args.model_path,
-                    "--rank", str(args.rank),
-                    "--device", args.device,
-                    "--output_dir", str(ruler_dir),
+                    str(CODES / "framework" / "benchmarks" / "run_ruler_benchmark.py"),
+                    "--module",
+                    mod,
+                    "--model_path",
+                    args.model_path,
+                    "--rank",
+                    str(args.rank),
+                    "--device",
+                    args.device,
+                    "--output_dir",
+                    str(ruler_dir),
                 ]
                 if args.smoke_test:
                     ruler_cmd.append("--smoke_test")

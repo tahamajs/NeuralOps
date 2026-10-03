@@ -14,11 +14,11 @@ Outputs:
   - results/SEQLEN_SCALING_MASTER.csv
 """
 
-import os
-import sys
 import argparse
 import csv
 import logging
+import os
+import sys
 from typing import Any
 
 import numpy as np
@@ -151,7 +151,12 @@ def run_benchmark_for_module(
     Restores baseline state before adapting.
     """
     logger.info("=" * 70)
-    logger.info("Evaluating module '%s' (Group: %s) across seq_lens: %s", module_name, group_name, seq_lens)
+    logger.info(
+        "Evaluating module '%s' (Group: %s) across seq_lens: %s",
+        module_name,
+        group_name,
+        seq_lens,
+    )
     logger.info("=" * 70)
 
     # 1. Restore clean base model
@@ -179,19 +184,26 @@ def run_benchmark_for_module(
             logger.error("Failed to inject module '%s': %s", module_name, e)
             results = []
             for sl in seq_lens:
-                results.append({
-                    "seq_len": sl,
-                    "throughput_tok_sec": 0.0,
-                    "latency_ms_per_token": 0.0,
-                    "peak_vram_mb": 0.0,
-                    "status": f"INJECT_FAIL: {type(e).__name__}",
-                })
+                results.append(
+                    {
+                        "seq_len": sl,
+                        "throughput_tok_sec": 0.0,
+                        "latency_ms_per_token": 0.0,
+                        "peak_vram_mb": 0.0,
+                        "status": f"INJECT_FAIL: {type(e).__name__}",
+                    }
+                )
             save_results(module_name, group_name, results, output_dir, master_csv)
             return results
 
     results = []
     for sl in seq_lens:
-        logger.info("--- Testing '%s' at seq_len=%d, batch_size=%d (3 trials) ---", module_name, sl, batch_size)
+        logger.info(
+            "--- Testing '%s' at seq_len=%d, batch_size=%d (3 trials) ---",
+            module_name,
+            sl,
+            batch_size,
+        )
         try:
             metrics = measure_single_length(
                 model=adapted_model,
@@ -213,14 +225,28 @@ def run_benchmark_for_module(
                 "peak_vram_mb": metrics["peak_vram_mb"],
                 "status": metrics["status"],
             }
-            logger.info("Result: seq_len=%d -> Forward: %.2f ± %.2f ms (med: %.2f ms), Throughput: %.1f ± %.1f tok/s, Latency: %.4f ms/tok, Peak VRAM: %.2f MB [%s]",
-                        sl, row["forward_time_mean_ms"], row["forward_time_std_ms"], row["forward_time_ms"],
-                        row["throughput_tok_sec"], row["throughput_std"], row["latency_ms_per_token"], row["peak_vram_mb"], row["status"])
+            logger.info(
+                "Result: seq_len=%d -> Forward: %.2f ± %.2f ms (med: %.2f ms), Throughput: %.1f ± %.1f tok/s, Latency: %.4f ms/tok, Peak VRAM: %.2f MB [%s]",
+                sl,
+                row["forward_time_mean_ms"],
+                row["forward_time_std_ms"],
+                row["forward_time_ms"],
+                row["throughput_tok_sec"],
+                row["throughput_std"],
+                row["latency_ms_per_token"],
+                row["peak_vram_mb"],
+                row["status"],
+            )
             results.append(row)
         except (torch.cuda.OutOfMemoryError, RuntimeError) as e:
             err_msg = str(e).lower()
             if isinstance(e, torch.cuda.OutOfMemoryError) or "out of memory" in err_msg:
-                logger.warning("CUDA Out of Memory for module '%s' at seq_len=%d: %s", module_name, sl, e)
+                logger.warning(
+                    "CUDA Out of Memory for module '%s' at seq_len=%d: %s",
+                    module_name,
+                    sl,
+                    e,
+                )
                 torch.cuda.empty_cache()
                 row = {
                     "seq_len": sl,
@@ -232,7 +258,12 @@ def run_benchmark_for_module(
                 }
                 results.append(row)
             else:
-                logger.error("Runtime error for module '%s' at seq_len=%d: %s", module_name, sl, e)
+                logger.error(
+                    "Runtime error for module '%s' at seq_len=%d: %s",
+                    module_name,
+                    sl,
+                    e,
+                )
                 row = {
                     "seq_len": sl,
                     "throughput_tok_sec": 0.0,
@@ -264,9 +295,33 @@ def save_results(
     # 1. Write module summary
     with open(summary_path, mode="w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["seq_len", "forward_time_ms", "forward_time_mean_ms", "forward_time_std_ms", "throughput_tok_sec", "throughput_std", "latency_ms_per_token", "peak_vram_mb", "status"])
+        writer.writerow(
+            [
+                "seq_len",
+                "forward_time_ms",
+                "forward_time_mean_ms",
+                "forward_time_std_ms",
+                "throughput_tok_sec",
+                "throughput_std",
+                "latency_ms_per_token",
+                "peak_vram_mb",
+                "status",
+            ]
+        )
         for r in results:
-            writer.writerow([r["seq_len"], r.get("forward_time_ms", 0.0), r.get("forward_time_mean_ms", 0.0), r.get("forward_time_std_ms", 0.0), r["throughput_tok_sec"], r.get("throughput_std", 0.0), r["latency_ms_per_token"], r["peak_vram_mb"], r["status"]])
+            writer.writerow(
+                [
+                    r["seq_len"],
+                    r.get("forward_time_ms", 0.0),
+                    r.get("forward_time_mean_ms", 0.0),
+                    r.get("forward_time_std_ms", 0.0),
+                    r["throughput_tok_sec"],
+                    r.get("throughput_std", 0.0),
+                    r["latency_ms_per_token"],
+                    r["peak_vram_mb"],
+                    r["status"],
+                ]
+            )
     logger.info("Saved module summary to: %s", summary_path)
 
     # 2. Update master CSV (replace old rows for module if present)
@@ -283,26 +338,98 @@ def save_results(
 
     with open(master_csv, mode="w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["module", "group", "seq_len", "forward_time_ms", "forward_time_mean_ms", "forward_time_std_ms", "throughput_tok_sec", "throughput_std", "latency_ms_per_token", "peak_vram_mb", "status"])
+        writer.writerow(
+            [
+                "module",
+                "group",
+                "seq_len",
+                "forward_time_ms",
+                "forward_time_mean_ms",
+                "forward_time_std_ms",
+                "throughput_tok_sec",
+                "throughput_std",
+                "latency_ms_per_token",
+                "peak_vram_mb",
+                "status",
+            ]
+        )
         for r in existing_rows:
             writer.writerow(r)
         for r in results:
-            writer.writerow([module_name, group_name, r["seq_len"], r.get("forward_time_ms", 0.0), r.get("forward_time_mean_ms", 0.0), r.get("forward_time_std_ms", 0.0), r["throughput_tok_sec"], r.get("throughput_std", 0.0), r["latency_ms_per_token"], r["peak_vram_mb"], r["status"]])
+            writer.writerow(
+                [
+                    module_name,
+                    group_name,
+                    r["seq_len"],
+                    r.get("forward_time_ms", 0.0),
+                    r.get("forward_time_mean_ms", 0.0),
+                    r.get("forward_time_std_ms", 0.0),
+                    r["throughput_tok_sec"],
+                    r.get("throughput_std", 0.0),
+                    r["latency_ms_per_token"],
+                    r["peak_vram_mb"],
+                    r["status"],
+                ]
+            )
     logger.info("Updated master CSV with %d rows: %s", len(results), master_csv)
 
 
 def main():
     parser = argparse.ArgumentParser(description="Sequence Length Scaling Benchmark")
-    parser.add_argument("--modules", type=str, required=True, help="Comma-separated module names to test")
-    parser.add_argument("--group", type=str, default="auto", help="Module group (e.g. Group A, Group B, Group C)")
-    parser.add_argument("--model", type=str, default="models/gpt2", help="Path or HF ID of base model")
-    parser.add_argument("--seq_lens", type=str, default="128,256,512,1024", help="Comma-separated sequence lengths")
-    parser.add_argument("--batch_size", type=int, default=1, help="Batch size (strict 1 for fair comparison)")
-    parser.add_argument("--num_trials", type=int, default=3, help="Number of trials for median computation")
-    parser.add_argument("--num_iters", type=int, default=25, help="Number of timed forward passes per trial")
-    parser.add_argument("--warmup_iters", type=int, default=5, help="Number of warmup forward passes")
-    parser.add_argument("--output_dir", type=str, default="results/05_perplexity_seqlen/seqlen_scaling", help="Output directory")
-    parser.add_argument("--master_csv", type=str, default="results/SEQLEN_SCALING_MASTER.csv", help="Master CSV path")
+    parser.add_argument(
+        "--modules",
+        type=str,
+        required=True,
+        help="Comma-separated module names to test",
+    )
+    parser.add_argument(
+        "--group",
+        type=str,
+        default="auto",
+        help="Module group (e.g. Group A, Group B, Group C)",
+    )
+    parser.add_argument(
+        "--model", type=str, default="models/gpt2", help="Path or HF ID of base model"
+    )
+    parser.add_argument(
+        "--seq_lens",
+        type=str,
+        default="128,256,512,1024",
+        help="Comma-separated sequence lengths",
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=1,
+        help="Batch size (strict 1 for fair comparison)",
+    )
+    parser.add_argument(
+        "--num_trials",
+        type=int,
+        default=3,
+        help="Number of trials for median computation",
+    )
+    parser.add_argument(
+        "--num_iters",
+        type=int,
+        default=25,
+        help="Number of timed forward passes per trial",
+    )
+    parser.add_argument(
+        "--warmup_iters", type=int, default=5, help="Number of warmup forward passes"
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default="results/05_perplexity_seqlen/seqlen_scaling",
+        help="Output directory",
+    )
+    parser.add_argument(
+        "--master_csv",
+        type=str,
+        default="results/SEQLEN_SCALING_MASTER.csv",
+        help="Master CSV path",
+    )
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -314,7 +441,11 @@ def main():
             torch.set_float32_matmul_precision("high")
         except Exception:
             pass
-    logger.info("Using device: %s (%s)", device, torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU")
+    logger.info(
+        "Using device: %s (%s)",
+        device,
+        torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU",
+    )
 
     seq_lens = [int(s.strip()) for s in args.seq_lens.split(",") if s.strip()]
     module_list = [m.strip() for m in args.modules.split(",") if m.strip()]

@@ -14,6 +14,7 @@ Usage:
     python run_seqlen_scaling.py --dry_run
     python run_seqlen_scaling.py --batch_size 2
 """
+
 from __future__ import annotations
 
 import argparse
@@ -36,7 +37,9 @@ from framework.core.registry import ATTENTION_REGISTRY
 from framework.eval_all_models_datasets import apply_module_to_model
 
 LOG = logging.getLogger("SeqlenScaling")
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
 
 SEQLENS = [128, 512, 1024, 2048, 4096]
 MODULES = ["dense", "a3", "kmeans", "svd-mamba", "primal"]
@@ -58,29 +61,68 @@ def parse_args():
         description="Run sequence length computational complexity scaling evaluation",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--model_path", type=str, default="models/distilbert_sst2",
-                        help="Base model path")
-    parser.add_argument("--output_dir", type=str, default="results/05_perplexity_seqlen/seqlen_scaling",
-                        help="Directory to save scaling outputs")
-    parser.add_argument("--seq_lens", type=int, nargs="*", default=SEQLENS,
-                        help="Sequence lengths to evaluate")
-    parser.add_argument("--modules", type=str, nargs="*", default=MODULES,
-                        help="Modules to evaluate across sequence lengths")
-    parser.add_argument("--batch_size", type=int, default=2,
-                        help="Batch size (small batch prevents early OOM)")
-    parser.add_argument("--warmup_steps", type=int, default=3,
-                        help="Warmup forward passes before timing")
-    parser.add_argument("--eval_steps", type=int, default=10,
-                        help="Timed forward passes for benchmark averaging")
-    parser.add_argument("--rank", type=int, default=64,
-                        help="Compression rank")
-    parser.add_argument("--dry_run", action="store_true", default=False,
-                        help="Print scaling matrix without running")
+    parser.add_argument(
+        "--model_path",
+        type=str,
+        default="models/distilbert_sst2",
+        help="Base model path",
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default="results/05_perplexity_seqlen/seqlen_scaling",
+        help="Directory to save scaling outputs",
+    )
+    parser.add_argument(
+        "--seq_lens",
+        type=int,
+        nargs="*",
+        default=SEQLENS,
+        help="Sequence lengths to evaluate",
+    )
+    parser.add_argument(
+        "--modules",
+        type=str,
+        nargs="*",
+        default=MODULES,
+        help="Modules to evaluate across sequence lengths",
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=2,
+        help="Batch size (small batch prevents early OOM)",
+    )
+    parser.add_argument(
+        "--warmup_steps",
+        type=int,
+        default=3,
+        help="Warmup forward passes before timing",
+    )
+    parser.add_argument(
+        "--eval_steps",
+        type=int,
+        default=10,
+        help="Timed forward passes for benchmark averaging",
+    )
+    parser.add_argument("--rank", type=int, default=64, help="Compression rank")
+    parser.add_argument(
+        "--dry_run",
+        action="store_true",
+        default=False,
+        help="Print scaling matrix without running",
+    )
     return parser.parse_args()
 
 
-def benchmark_forward_scaling(model, batch_size: int, seq_len: int, warmup: int = 3,
-                              steps: int = 10, device: str = "cuda"):
+def benchmark_forward_scaling(
+    model,
+    batch_size: int,
+    seq_len: int,
+    warmup: int = 3,
+    steps: int = 10,
+    device: str = "cuda",
+):
     """
     Executes warmup and timed forward passes with synthetic sequence inputs.
     Returns peak VRAM (MB), latency (ms), and throughput (tok/s).
@@ -115,7 +157,7 @@ def benchmark_forward_scaling(model, batch_size: int, seq_len: int, warmup: int 
     throughput = total_tokens / elapsed
 
     if device == "cuda" and torch.cuda.is_available():
-        peak_vram_mb = torch.cuda.max_memory_allocated() / (1024 ** 2)
+        peak_vram_mb = torch.cuda.max_memory_allocated() / (1024**2)
     else:
         peak_vram_mb = 0.0
 
@@ -151,7 +193,9 @@ def main():
         print("\n[DRY RUN] Planned sequence length scaling matrix:")
         for mod in args.modules:
             for L in args.seq_lens:
-                print(f"  Module: {mod:<15} | SeqLen: {L:4d} | Out: {args.output_dir}/{mod}/L{L}.json")
+                print(
+                    f"  Module: {mod:<15} | SeqLen: {L:4d} | Out: {args.output_dir}/{mod}/L{L}.json"
+                )
         print("\n[DRY RUN COMPLETE] No hardware runs executed.")
         return
 
@@ -170,18 +214,26 @@ def main():
             LOG.info("  SeqLen: %d ...", L)
 
             try:
-                model = AutoModelForSequenceClassification.from_pretrained(args.model_path)
+                model = AutoModelForSequenceClassification.from_pretrained(
+                    args.model_path
+                )
                 if device == "cuda":
                     model.half()
                 model.to(device)
 
                 if mod != "dense":
                     typ = "attention" if mod in ATTENTION_REGISTRY else "compressor"
-                    model, _ = apply_module_to_model(model, mod, typ, rank=args.rank, device=device)
+                    model, _ = apply_module_to_model(
+                        model, mod, typ, rank=args.rank, device=device
+                    )
 
                 metrics = benchmark_forward_scaling(
-                    model, batch_size=args.batch_size, seq_len=L,
-                    warmup=args.warmup_steps, steps=args.eval_steps, device=device
+                    model,
+                    batch_size=args.batch_size,
+                    seq_len=L,
+                    warmup=args.warmup_steps,
+                    steps=args.eval_steps,
+                    device=device,
                 )
 
                 del model
@@ -229,7 +281,9 @@ def main():
                 for r in all_rows:
                     writer.writerow(r)
 
-    print(f"\n[DONE] Sequence length scaling benchmark completed. Results: {summary_csv}")
+    print(
+        f"\n[DONE] Sequence length scaling benchmark completed. Results: {summary_csv}"
+    )
 
 
 if __name__ == "__main__":
