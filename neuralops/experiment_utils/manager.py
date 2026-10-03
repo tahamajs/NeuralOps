@@ -36,7 +36,7 @@ from transformers import (
     TrainingArguments,
 )
 
-from Codes.framework.callbacks.django import DjangoCallback
+from neuralops.experiment_utils.runner import DjangoCallback
 
 logger = logging.getLogger(__name__)
 
