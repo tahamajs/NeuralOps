@@ -32,20 +32,21 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install pdoc (PyPI — separate from PyTorch index)
+      - name: Install pdoc (Explicitly from PyPI)
         run: |
-          python -m pip install --upgrade pip
-          pip install pdoc
+          python -m pip install --upgrade pip --index-url https://pypi.org/simple
+          pip install pdoc --index-url https://pypi.org/simple
 
       - name: Install CPU-only PyTorch
         run: |
           pip install torch --index-url https://download.pytorch.org/whl/cpu
 
-      - name: Install remaining dependencies
+      - name: Install remaining dependencies (Explicitly from PyPI)
         run: |
           pip install \
             transformers datasets scikit-learn scipy pandas numpy \
-            tqdm matplotlib PyYAML accelerate
+            tqdm matplotlib PyYAML accelerate \
+            --index-url https://pypi.org/simple
 
       - name: Generate HTML API Docs
         env:
