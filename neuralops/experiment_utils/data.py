@@ -12,20 +12,17 @@ from transformers import AutoTokenizer
 
 def load_and_preprocess_data(config) -> Any:
     """Load and preprocess data from disk or config."""
+    from neuralops.utils.paths import get_glue_dir
+    glue_path = str(get_glue_dir())
     try:
         from django.conf import settings
+        if settings.configured and hasattr(settings, "GLUE_DATA_PATH"):
+            glue_path = settings.GLUE_DATA_PATH
+    except Exception:
+        pass
 
-        glue_path = settings.GLUE_DATA_PATH
-    except ImportError:
-        glue_path = "/default/fallback/path"
     raw_datasets = load_glue_local(config.task, glue_path)
-
-    """Load dataset, tokenizer, and preprocess."""
     tokenizer = AutoTokenizer.from_pretrained(config.model_name, use_fast=True)
-    from neuralops.utils.paths import get_glue_dir
-
-    glue_path = getattr(settings, "GLUE_DATA_PATH", str(get_glue_dir()))
-    raw_datasets = load_glue_local(config.task, glue_path)
     num_labels, is_regression = get_num_labels_and_is_regression(config.task)
     sent1_key, sent2_key = GLUE_TASK_KEYS[config.task]
 
