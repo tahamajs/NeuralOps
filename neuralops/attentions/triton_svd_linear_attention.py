@@ -39,6 +39,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -89,9 +90,7 @@ def apply_rotary_pos_emb(
     k_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
 
     if q_pass.shape[-1] > 0:
-        return torch.cat([q_embed, q_pass], dim=-1), torch.cat(
-            [k_embed, k_pass], dim=-1
-        )
+        return torch.cat([q_embed, q_pass], dim=-1), torch.cat([k_embed, k_pass], dim=-1)
     return q_embed, k_embed
 
 
@@ -156,15 +155,9 @@ if HAS_TRITON:
             mask_n = cur_offs_n < N
 
             # 1. Load tile of Q, K, V
-            q_ptrs = q_base + (
-                cur_offs_n[:, None] * stride_qn + offs_dk[None, :] * stride_qd
-            )
-            k_ptrs = k_base + (
-                cur_offs_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd
-            )
-            v_ptrs = v_base + (
-                cur_offs_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd
-            )
+            q_ptrs = q_base + (cur_offs_n[:, None] * stride_qn + offs_dk[None, :] * stride_qd)
+            k_ptrs = k_base + (cur_offs_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd)
+            v_ptrs = v_base + (cur_offs_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd)
 
             q_tile = tl.load(q_ptrs, mask=mask_n[:, None], other=0.0)
             k_tile = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0)
@@ -205,12 +198,8 @@ if HAS_TRITON:
             denom_total = denom_inter + denom_intra + EPS
             out_tile = num_total / denom_total[:, None]
 
-            out_ptrs = out_base + (
-                cur_offs_n[:, None] * stride_on + offs_dv[None, :] * stride_od
-            )
-            tl.store(
-                out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_n[:, None]
-            )
+            out_ptrs = out_base + (cur_offs_n[:, None] * stride_on + offs_dv[None, :] * stride_od)
+            tl.store(out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_n[:, None])
 
             # 6. Update Running Recurrent State
             state_S += tl.dot(tl.trans(phi_k.to(tl.float32)), v_tile.to(tl.float32))
@@ -267,12 +256,8 @@ if HAS_TRITON:
             cur_n = n_start + offs_n
             mask_n = cur_n < N
 
-            k_ptrs = k_base + (
-                cur_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd
-            )
-            v_ptrs = v_base + (
-                cur_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd
-            )
+            k_ptrs = k_base + (cur_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd)
+            v_ptrs = v_base + (cur_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd)
 
             k_tile = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0)
             v_tile = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0)
@@ -296,9 +281,7 @@ if HAS_TRITON:
             cur_m = m_start + offs_m
             mask_m = cur_m < N
 
-            q_ptrs = q_base + (
-                cur_m[:, None] * stride_qn + offs_dk[None, :] * stride_qd
-            )
+            q_ptrs = q_base + (cur_m[:, None] * stride_qn + offs_dk[None, :] * stride_qd)
             q_tile = tl.load(q_ptrs, mask=mask_m[:, None], other=0.0)
 
             if ACTIVATION_MODE == 0:
@@ -313,12 +296,8 @@ if HAS_TRITON:
             denom = tl.sum(phi_q * acc_Z[None, :], axis=1) + EPS
 
             out_tile = num / denom[:, None]
-            out_ptrs = out_base + (
-                cur_m[:, None] * stride_on + offs_dv[None, :] * stride_od
-            )
-            tl.store(
-                out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_m[:, None]
-            )
+            out_ptrs = out_base + (cur_m[:, None] * stride_on + offs_dv[None, :] * stride_od)
+            tl.store(out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_m[:, None])
 
     @triton.jit
     def _triton_linear_attn_bwd_kernel(
@@ -493,13 +472,9 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
         B, H, N, D_k = q.shape
         D_v = v.shape[-1]
 
-        act_id = (
-            0 if activation_mode == "elu" else (1 if activation_mode == "relu" else 2)
-        )
+        act_id = 0 if activation_mode == "elu" else (1 if activation_mode == "relu" else 2)
 
-        use_triton = (
-            HAS_TRITON and q.is_cuda and D_k in (32, 64, 128) and D_v in (32, 64, 128)
-        )
+        use_triton = HAS_TRITON and q.is_cuda and D_k in (32, 64, 128) and D_v in (32, 64, 128)
 
         if use_triton:
             out = torch.empty((B, H, N, D_v), device=q.device, dtype=q.dtype)
@@ -783,9 +758,7 @@ def triton_linear_attention(
     eps: float = 1e-6,
 ) -> torch.Tensor:
     """Convenience functional wrapper for Triton Linear Attention."""
-    return _TritonLinearAttentionAutogradFunction.apply(
-        q, k, v, is_causal, activation_mode, eps
-    )
+    return _TritonLinearAttentionAutogradFunction.apply(q, k, v, is_causal, activation_mode, eps)
 
 
 # ============================================================================
@@ -849,9 +822,7 @@ class SVDLinearProjection(nn.Module):
         return triton_dispatch(self.triton_kernel, x, u, v, bias=b)
 
     @classmethod
-    def from_pretrained_linear(
-        cls, linear: nn.Linear, rank: int = 64
-    ) -> SVDLinearProjection:
+    def from_pretrained_linear(cls, linear: nn.Linear, rank: int = 64) -> SVDLinearProjection:
         r"""
         Initializes low-rank factors directly from pretrained weights via Truncated SVD:
         W = U_full @ diag(S) @ V_full^T
@@ -926,9 +897,7 @@ class TritonSVDLinearAttention(BaseAttention):
 
         # Dimensionality extraction
         self.embed_dim = (
-            embed_dim
-            or kwargs.get("hidden_size")
-            or getattr(config, "hidden_size", 768)
+            embed_dim or kwargs.get("hidden_size") or getattr(config, "hidden_size", 768)
         )
         self.num_heads = (
             num_heads
@@ -992,14 +961,14 @@ class TritonSVDLinearAttention(BaseAttention):
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
 
-                q_w, q_b = c_w[:split_size, :], (
-                    c_b[:split_size] if c_b is not None else None
+                q_w, q_b = c_w[:split_size, :], (c_b[:split_size] if c_b is not None else None)
+                k_w, k_b = (
+                    c_w[split_size : 2 * split_size, :],
+                    (c_b[split_size : 2 * split_size] if c_b is not None else None),
                 )
-                k_w, k_b = c_w[split_size : 2 * split_size, :], (
-                    c_b[split_size : 2 * split_size] if c_b is not None else None
-                )
-                v_w, v_b = c_w[2 * split_size :, :], (
-                    c_b[2 * split_size :] if c_b is not None else None
+                v_w, v_b = (
+                    c_w[2 * split_size :, :],
+                    (c_b[2 * split_size :] if c_b is not None else None),
                 )
 
                 self._copy_single_proj(self.q_proj, q_w, q_b)
@@ -1168,11 +1137,7 @@ class TritonSVDLinearAttention(BaseAttention):
                 v = v * mask
             elif attention_mask.dim() == 4:
                 if attention_mask.shape[-2] == 1:
-                    mask = (
-                        attention_mask.squeeze(1)
-                        .squeeze(1)[:, None, :, None]
-                        .to(q.dtype)
-                    )
+                    mask = attention_mask.squeeze(1).squeeze(1)[:, None, :, None].to(q.dtype)
                 else:
                     mask = attention_mask[:, 0, -1, :][:, None, :, None].to(q.dtype)
                 if (mask < 0).any():

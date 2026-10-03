@@ -43,6 +43,7 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -87,22 +88,10 @@ def apply_rotary_pos_emb(q, k, cos, sin):
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q_rot.dtype)
-        )
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k_rot.dtype)
-        )
-        q = (
-            torch.cat([q_rot_embed, q_pass], dim=-1)
-            if q_pass.numel() > 0
-            else q_rot_embed
-        )
-        k = (
-            torch.cat([k_rot_embed, k_pass], dim=-1)
-            if k_pass.numel() > 0
-            else k_rot_embed
-        )
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     else:
         cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
         q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
@@ -184,9 +173,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = (
-                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            )
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -274,9 +261,7 @@ def _resolve_dim_and_heads(config, src_attn, kwargs):
         num_heads = getattr(
             src_attn,
             "num_heads",
-            getattr(
-                src_attn, "num_attention_heads", getattr(src_attn, "n_heads", None)
-            ),
+            getattr(src_attn, "num_attention_heads", getattr(src_attn, "n_heads", None)),
         )
     if num_heads is None:
         num_heads = 12
@@ -287,11 +272,7 @@ def _resolve_dim_and_heads(config, src_attn, kwargs):
         kwargs.get("head_dim")
         or (getattr(config, "head_dim", None) if config is not None else None)
         or (getattr(src_attn, "head_dim", None) if src_attn is not None else None)
-        or (
-            getattr(src_attn, "attention_head_size", None)
-            if src_attn is not None
-            else None
-        )
+        or (getattr(src_attn, "attention_head_size", None) if src_attn is not None else None)
     )
     if head_dim is None and src_attn is not None:
         # Derive from q_lin's output size and num_heads
@@ -309,9 +290,7 @@ def _resolve_dim_and_heads(config, src_attn, kwargs):
     # --- num_kv_heads ---
     num_kv_heads = kwargs.get("num_kv_heads") or kwargs.get("num_key_value_heads")
     if num_kv_heads is None and config is not None:
-        num_kv_heads = getattr(
-            config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
-        )
+        num_kv_heads = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
     if num_kv_heads is None and src_attn is not None:
         num_kv_heads = getattr(
             src_attn, "num_key_value_heads", getattr(src_attn, "num_kv_heads", None)
@@ -327,12 +306,8 @@ def _resolve_dim_and_heads(config, src_attn, kwargs):
 # ===========================================================================
 # Main attention
 # ===========================================================================
-@ATTENTION_REGISTRY.register(
-    "gated_linear_attention", supports_causal=True, supports_gqa=True
-)
-@ATTENTION_REGISTRY.register(
-    "gated_linear_attn", supports_causal=True, supports_gqa=True
-)
+@ATTENTION_REGISTRY.register("gated_linear_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("gated_linear_attn", supports_causal=True, supports_gqa=True)
 class GatedLinearAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
@@ -364,9 +339,7 @@ class GatedLinearAttention(BaseAttention):
         _kw = dict(kwargs)
         if d_model is not None:
             _kw["d_model"] = (
-                d_model
-                if isinstance(d_model, int)
-                else getattr(d_model, "hidden_size", None)
+                d_model if isinstance(d_model, int) else getattr(d_model, "hidden_size", None)
             )
         if num_heads is not None:
             _kw["num_heads"] = num_heads
@@ -376,8 +349,8 @@ class GatedLinearAttention(BaseAttention):
             _kw["num_kv_heads"] = num_kv_heads
 
         # GLA3-FIX-02 / GLA3-FIX-04
-        resolved_dim, resolved_heads, resolved_head_dim, resolved_kv_heads = (
-            _resolve_dim_and_heads(config, src_attn, _kw)
+        resolved_dim, resolved_heads, resolved_head_dim, resolved_kv_heads = _resolve_dim_and_heads(
+            config, src_attn, _kw
         )
 
         self.dim = resolved_dim
@@ -710,9 +683,7 @@ class GatedLinearAttention(BaseAttention):
                     else:
                         target.weight.data.zero_()
                         target.weight.data[:out_d, :in_d].copy_(
-                            w[:out_d, :in_d].to(
-                                target.weight.device, target.weight.dtype
-                            )
+                            w[:out_d, :in_d].to(target.weight.device, target.weight.dtype)
                         )
                 else:
                     target.weight.data.zero_()
@@ -732,9 +703,7 @@ class GatedLinearAttention(BaseAttention):
 
                 if b is not None and target.bias is not None:
                     mb = min(target.bias.numel(), b.numel())
-                    target.bias.data[:mb].copy_(
-                        b[:mb].to(target.bias.device, target.bias.dtype)
-                    )
+                    target.bias.data[:mb].copy_(b[:mb].to(target.bias.device, target.bias.dtype))
 
                 n = torch.linalg.norm(target.weight.data.float()).item()
                 if n < 1e-4:
@@ -776,17 +745,9 @@ class GatedLinearAttention(BaseAttention):
         B, H, L, d = q.shape
         device = q.device
 
-        if (
-            HAS_TRITON_GLA
-            and q.is_cuda
-            and d <= MAX_REGISTER_DIM
-            and mask is None
-            and not reverse
-        ):
+        if HAS_TRITON_GLA and q.is_cuda and d <= MAX_REGISTER_DIM and mask is None and not reverse:
             try:
-                return gla_scan_triton(
-                    q.float(), k.float(), v.float(), lambdas.float()
-                ).to(q.dtype)
+                return gla_scan_triton(q.float(), k.float(), v.float(), lambdas.float()).to(q.dtype)
             except Exception as e:
                 logger.debug("GLA Triton scan failed, falling back: %s", e)
 
@@ -944,13 +905,9 @@ class GatedLinearAttention(BaseAttention):
         expected_q = (B, L, self.all_head_size)
         expected_kv = (B, L_kv, self.kv_head_size)
         if tuple(q_raw.shape) != expected_q:
-            raise RuntimeError(
-                f"GLA: q_proj output {tuple(q_raw.shape)} != expected {expected_q}"
-            )
+            raise RuntimeError(f"GLA: q_proj output {tuple(q_raw.shape)} != expected {expected_q}")
         if tuple(k_raw.shape) != expected_kv:
-            raise RuntimeError(
-                f"GLA: k_proj output {tuple(k_raw.shape)} != expected {expected_kv}"
-            )
+            raise RuntimeError(f"GLA: k_proj output {tuple(k_raw.shape)} != expected {expected_kv}")
 
         q = q_raw.view(B, L, H, d).transpose(1, 2).contiguous()
         k = k_raw.view(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
@@ -978,27 +935,19 @@ class GatedLinearAttention(BaseAttention):
             raise RuntimeError(
                 f"GLA: decay_gate output {decay_out.shape[-1]} != num_heads {self.num_heads}"
             )
-        decay_logits = decay_out.transpose(1, 2) + self.log_decay.to(
-            decay_out.dtype
-        ).view(1, -1, 1)
+        decay_logits = decay_out.transpose(1, 2) + self.log_decay.to(decay_out.dtype).view(1, -1, 1)
         lambdas = torch.sigmoid(decay_logits)  # (B, H, L)
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         mask_bool = self._normalize_valid_mask(eff_mask, B, L_kv, hidden_states.device)
 
-        is_causal = bool(
-            self.is_decoder and not is_cross and L > 1 and past_key_value is None
-        )
+        is_causal = bool(self.is_decoder and not is_cross and L > 1 and past_key_value is None)
 
         if is_causal:
             y = self._gla_scan_chunked(q, k, v, lambdas, mask=mask_bool, reverse=False)
         else:
-            y_fwd = self._gla_scan_chunked(
-                q, k, v, lambdas, mask=mask_bool, reverse=False
-            )
-            y_bwd = self._gla_scan_chunked(
-                q, k, v, lambdas, mask=mask_bool, reverse=True
-            )
+            y_fwd = self._gla_scan_chunked(q, k, v, lambdas, mask=mask_bool, reverse=False)
+            y_bwd = self._gla_scan_chunked(q, k, v, lambdas, mask=mask_bool, reverse=True)
             y = 0.5 * (y_fwd + y_bwd)
 
         y = self.state_norm(y)
@@ -1014,9 +963,7 @@ class GatedLinearAttention(BaseAttention):
                 hm = hm.unsqueeze(1)
             # 4D passes through
             if hm.shape[1] != H:
-                raise RuntimeError(
-                    f"GLA: head_mask has {hm.shape[1]} heads, expected {H}"
-                )
+                raise RuntimeError(f"GLA: head_mask has {hm.shape[1]} heads, expected {H}")
             y = y * hm
 
         y = y.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
@@ -1153,8 +1100,8 @@ def inject_gated_linear(
         return None
 
     # GLA3-FIX-11: resolve dims from actual weight shapes
-    resolved_dim, resolved_heads, resolved_head_dim, resolved_kv_heads = (
-        _resolve_dim_and_heads(cfg, src_attn, kwargs)
+    resolved_dim, resolved_heads, resolved_head_dim, resolved_kv_heads = _resolve_dim_and_heads(
+        cfg, src_attn, kwargs
     )
 
     logger.info(

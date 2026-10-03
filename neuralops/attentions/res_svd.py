@@ -13,6 +13,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.compression_engine.res_svd import ResSVDLinear
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -58,9 +59,7 @@ def apply_rotary_pos_emb(
         sin = sin.unsqueeze(0)
 
     if cos.shape[-2] != q.shape[-2]:
-        raise ValueError(
-            f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}"
-        )
+        raise ValueError(f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}")
 
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
@@ -74,16 +73,8 @@ def apply_rotary_pos_emb(
         sin_k = sin.to(k_rot.dtype)
         q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
         k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
-        q = (
-            torch.cat([q_rot_embed, q_pass], dim=-1)
-            if q_pass.numel() > 0
-            else q_rot_embed
-        )
-        k = (
-            torch.cat([k_rot_embed, k_pass], dim=-1)
-            if k_pass.numel() > 0
-            else k_rot_embed
-        )
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     else:
         cos_cut = cos[..., :head_dim].to(q.dtype)
         sin_cut = sin[..., :head_dim].to(q.dtype)
@@ -130,14 +121,10 @@ class ResSVDAttention(BaseAttention):
 
         comp_config = getattr(config, "compression_config", None) if config else None
 
-        self.hidden_size: int = int(
-            getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
-        )
+        self.hidden_size: int = int(getattr(config, "hidden_size", kwargs.get("hidden_size", 768)))
         self.dim = self.hidden_size
         self.num_heads: int = int(
-            getattr(
-                config, "num_attention_heads", kwargs.get("num_attention_heads", 12)
-            )
+            getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
         )
         self.num_kv_heads: int = int(
             getattr(
@@ -315,11 +302,7 @@ class ResSVDAttention(BaseAttention):
     ) -> None:
         """Build a fresh ResSVDLinear from (w, b) and copy its state into target."""
         with torch.no_grad():
-            device = (
-                target.base_U.device
-                if hasattr(target, "base_U")
-                else torch.device("cpu")
-            )
+            device = target.base_U.device if hasattr(target, "base_U") else torch.device("cpu")
             dtype = target.base_U.dtype if hasattr(target, "base_U") else torch.float32
 
             # RES-03: temp_linear on same device/dtype
@@ -352,9 +335,7 @@ class ResSVDAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
             (
@@ -372,10 +353,7 @@ class ResSVDAttention(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -623,11 +601,7 @@ class ResSVDAttention(BaseAttention):
 
         Q = self.query(hidden_states).view(B, N, H, D).permute(0, 2, 1, 3)
         K = self.key(hidden_states).view(B, N, self.num_kv_heads, D).permute(0, 2, 1, 3)
-        V = (
-            self.value(hidden_states)
-            .view(B, N, self.num_kv_heads, D)
-            .permute(0, 2, 1, 3)
-        )
+        V = self.value(hidden_states).view(B, N, self.num_kv_heads, D).permute(0, 2, 1, 3)
 
         # RES-05: RoPE with past_len offset
         if position_embeddings is None:
@@ -636,10 +610,7 @@ class ResSVDAttention(BaseAttention):
             cos, sin = position_embeddings
             past_len = 0
             if past_key_value is not None:
-                if (
-                    isinstance(past_key_value, (tuple, list))
-                    and len(past_key_value) >= 1
-                ):
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
                     past_len = past_key_value[0].shape[-2]
                 elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
                     past_len = past_key_value.key_cache[0].shape[-2]
@@ -654,18 +625,14 @@ class ResSVDAttention(BaseAttention):
             V = repeat_kv(V, repeats)
 
         scale = D**-0.5
-        scores = (
-            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         # Causal masking
         is_causal = self.is_decoder and N > 1
         if is_causal:
             causal = (
                 torch.triu(
-                    torch.full(
-                        (N, N), float("-inf"), device=device, dtype=torch.float32
-                    ),
+                    torch.full((N, N), float("-inf"), device=device, dtype=torch.float32),
                     diagonal=1,
                 )
                 .unsqueeze(0)
@@ -695,9 +662,7 @@ class ResSVDAttention(BaseAttention):
                 attn = attn * head_mask.to(attn.dtype)
 
         context = torch.matmul(attn, V)
-        context = (
-            context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
-        )
+        context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:
@@ -794,10 +759,7 @@ def inject_res_svd(
             src = target
 
         # Double-injection guard
-        if (
-            isinstance(src, ResSVDAttention)
-            or "ResSVDAttention" in src.__class__.__name__
-        ):
+        if isinstance(src, ResSVDAttention) or "ResSVDAttention" in src.__class__.__name__:
             return None
 
         new_attn = ResSVDAttention(

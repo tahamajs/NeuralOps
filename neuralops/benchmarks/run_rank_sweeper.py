@@ -68,29 +68,19 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         description="Run rank sweep for compressor modules.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    p.add_argument(
-        "--modules", required=True, help="Comma-separated list of modules to sweep"
-    )
+    p.add_argument("--modules", required=True, help="Comma-separated list of modules to sweep")
     p.add_argument(
         "--ranks",
         default=",".join(str(r) for r in DEFAULT_RANKS),
         help="Comma-separated ranks",
     )
     p.add_argument("--model", default="models/distilbert_sst2", help="Model path")
-    p.add_argument(
-        "--model_family", default="bert", help="Model family (bert/roberta/gpt2/qwen)"
-    )
+    p.add_argument("--model_family", default="bert", help="Model family (bert/roberta/gpt2/qwen)")
     p.add_argument("--dataset", default="sst2", help="Dataset name")
-    p.add_argument(
-        "--recovery_steps", type=int, default=50, help="Recovery fine-tuning steps"
-    )
-    p.add_argument(
-        "--learning_rate", type=float, default=2e-4, help="Learning rate for recovery"
-    )
+    p.add_argument("--recovery_steps", type=int, default=50, help="Recovery fine-tuning steps")
+    p.add_argument("--learning_rate", type=float, default=2e-4, help="Learning rate for recovery")
     p.add_argument("--seed", type=int, default=42, help="Random seed")
-    p.add_argument(
-        "--batch_size", type=int, default=None, help="Batch size (None = auto)"
-    )
+    p.add_argument("--batch_size", type=int, default=None, help="Batch size (None = auto)")
     p.add_argument(
         "--parallel_ranks",
         type=int,
@@ -103,9 +93,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=None,
         help="Max VRAM fraction per process (default: auto)",
     )
-    p.add_argument(
-        "--timeout", type=int, default=3600, help="Timeout per rank in seconds"
-    )
+    p.add_argument("--timeout", type=int, default=3600, help="Timeout per rank in seconds")
     p.add_argument(
         "--output_base",
         default="results/02_rank_sweeps/mixed/rank_sweep",
@@ -122,9 +110,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Batch cache dir (auto-detect if None)",
     )
     p.add_argument("--fresh", action="store_true", help="Force re-run all ranks")
-    p.add_argument(
-        "--dry_run", action="store_true", help="Print commands without running"
-    )
+    p.add_argument("--dry_run", action="store_true", help="Print commands without running")
     return p.parse_args(argv)
 
 
@@ -148,9 +134,7 @@ def auto_detect_parent_checkpoint(model: str, dataset: str) -> str | None:
     safe_model = Path(model).name.replace("-", "_").lower()
     candidates = [
         Path("results") / f"{safe_model}_{dataset}_baseline" / "finetuned_model.pt",
-        Path("results")
-        / f"{safe_model}_{dataset}_lora_baseline"
-        / "finetuned_model.pt",
+        Path("results") / f"{safe_model}_{dataset}_lora_baseline" / "finetuned_model.pt",
         Path("results") / f"{safe_model}_{dataset}_full_sweep" / "finetuned_model.pt",
         Path(model) / "finetuned_model.pt",
     ]
@@ -164,12 +148,8 @@ def auto_detect_cached_batches(model: str, dataset: str) -> str | None:
     safe_model = Path(model).name.replace("-", "_").lower()
     candidates = [
         Path("results") / f"{safe_model}_{dataset}_baseline" / f"batch_cache_{dataset}",
-        Path("results")
-        / f"{safe_model}_{dataset}_lora_baseline"
-        / f"batch_cache_{dataset}",
-        Path("results")
-        / f"{safe_model}_{dataset}_full_sweep"
-        / f"batch_cache_{dataset}",
+        Path("results") / f"{safe_model}_{dataset}_lora_baseline" / f"batch_cache_{dataset}",
+        Path("results") / f"{safe_model}_{dataset}_full_sweep" / f"batch_cache_{dataset}",
     ]
     for c in candidates:
         if c.exists() and (c / "meta.json").exists():
@@ -450,8 +430,7 @@ def print_summary(all_rows: list[dict[str, Any]]) -> None:
         passed = [
             r
             for r in rows
-            if r.get("status")
-            in ("PASS", "PASS_LOW", "PASS_LOW_PPL", "PASS_NO_COMPRESSION")
+            if r.get("status") in ("PASS", "PASS_LOW", "PASS_LOW_PPL", "PASS_NO_COMPRESSION")
         ]
         total = len(rows)
         if passed:
@@ -580,14 +559,11 @@ def main(argv: list[str] | None = None) -> int:
                         module_rows.append(fut.result())
                     except Exception as e:
                         log(f"[{mod} | r{rank}] future exception: {e}")
-                        module_rows.append(
-                            _error_row(mod, rank, f"FUTURE_EXC:{e}", 0.0)
-                        )
+                        module_rows.append(_error_row(mod, rank, f"FUTURE_EXC:{e}", 0.0))
 
         mod_elapsed = time.time() - mod_t0
         log(
-            f"[{mod}] Module complete in {mod_elapsed:.1f}s "
-            f"({len(module_rows)}/{len(ranks)} ranks)"
+            f"[{mod}] Module complete in {mod_elapsed:.1f}s ({len(module_rows)}/{len(ranks)} ranks)"
         )
 
         write_rank_curve(mod, module_rows, args.output_base)
@@ -599,7 +575,7 @@ def main(argv: list[str] | None = None) -> int:
         print_summary(all_rows)
 
     total_elapsed = time.time() - total_t0
-    log(f"\n[DONE] Total time: {total_elapsed:.1f}s " f"({total_elapsed/60:.1f} min)")
+    log(f"\n[DONE] Total time: {total_elapsed:.1f}s ({total_elapsed / 60:.1f} min)")
     return 0
 
 

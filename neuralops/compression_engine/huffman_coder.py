@@ -13,6 +13,7 @@ from typing import Any
 import numpy as np
 import torch
 import torch.nn as nn
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.pruning_utils import adaptive_max_error
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -104,9 +105,7 @@ class HuffmanCoder:
         if not frequencies:
             return None
 
-        heap: list[HuffmanNode] = [
-            HuffmanNode(sym, freq) for sym, freq in frequencies.items()
-        ]
+        heap: list[HuffmanNode] = [HuffmanNode(sym, freq) for sym, freq in frequencies.items()]
         heapq.heapify(heap)
 
         if len(heap) == 1:
@@ -183,9 +182,7 @@ class HuffmanCoder:
         num_levels = 2 ** int(quantize_bits)
         scale = (max_val - min_val) / max(num_levels - 1, 1)
         scale = max(scale, 1e-12)
-        quantized = torch.clamp(
-            torch.round((flat - min_val) / scale), 0, num_levels - 1
-        ).long()
+        quantized = torch.clamp(torch.round((flat - min_val) / scale), 0, num_levels - 1).long()
 
         q_np = quantized.cpu().numpy()
         symbols, counts = np.unique(q_np, return_counts=True)
@@ -237,9 +234,7 @@ class HuffmanCoder:
 
         if metadata.get("is_raw", False):
             orig_dtype_str = metadata.get("orig_dtype", "torch.float32")
-            target_dtype = getattr(
-                torch, orig_dtype_str.replace("torch.", ""), torch.float32
-            )
+            target_dtype = getattr(torch, orig_dtype_str.replace("torch.", ""), torch.float32)
             if target_dtype == torch.bfloat16:
                 arr = np.frombuffer(packed_bytes, dtype=np.int16)
                 tensor_out = (
@@ -249,9 +244,7 @@ class HuffmanCoder:
                 )
             else:
                 dtype_str = orig_dtype_str.replace("torch.", "")
-                np_dtype = getattr(
-                    np, dtype_str if hasattr(np, dtype_str) else "float32"
-                )
+                np_dtype = getattr(np, dtype_str if hasattr(np, dtype_str) else "float32")
                 arr = np.frombuffer(packed_bytes, dtype=np_dtype)
                 tensor_out = (
                     torch.from_numpy(arr.copy())
@@ -420,18 +413,13 @@ class HuffmanCompressor(BaseCompressor):
         # Freeze skipped non-target layers if target_attention_only is enabled
         if self.target_attention_only:
             for name, module in self.model.named_modules():
-                if any(
-                    part in name.split(".")
-                    for part in ["lora_A", "lora_B", "base_layer"]
-                ):
+                if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
                     continue
                 target_mod = getattr(module, "base_layer", module)
                 cls_name = target_mod.__class__.__name__.lower()
                 is_linear = isinstance(target_mod, nn.Linear)
                 is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-                if (is_linear or is_conv1d) and not self._is_target_module(
-                    name, module
-                ):
+                if (is_linear or is_conv1d) and not self._is_target_module(name, module):
                     _freeze_base_only(module)
                     self.skipped_layers.append(name)
 
@@ -467,9 +455,9 @@ class HuffmanCompressor(BaseCompressor):
                 packed_b, code_map, meta = HuffmanCoder.encode(
                     W_orig, quantize_bits=self.quantize_bits
                 )
-                W_rec = HuffmanCoder.decode(
-                    packed_b, code_map, meta, device=orig_device
-                ).to(dtype=torch.float32)
+                W_rec = HuffmanCoder.decode(packed_b, code_map, meta, device=orig_device).to(
+                    dtype=torch.float32
+                )
 
                 if norm_w < 1e-12:
                     err = 0.0
@@ -480,9 +468,7 @@ class HuffmanCompressor(BaseCompressor):
 
                 d_out, d_in = W_orig.shape
                 fam = getattr(getattr(self.model, "config", None), "model_type", None)
-                eff_max_err = max(
-                    self.max_error, adaptive_max_error(None, d_in, d_out, family=fam)
-                )
+                eff_max_err = max(self.max_error, adaptive_max_error(None, d_in, d_out, family=fam))
 
                 if err > eff_max_err:
                     logger.warning(
@@ -505,9 +491,9 @@ class HuffmanCompressor(BaseCompressor):
                 else:
                     res_w = W_rec.to(dtype=orig_dtype, device=orig_device)
 
-                assert (
-                    res_w.shape == orig_shape
-                ), f"Shape mismatch on {name}: {res_w.shape} vs {orig_shape}"
+                assert res_w.shape == orig_shape, (
+                    f"Shape mismatch on {name}: {res_w.shape} vs {orig_shape}"
+                )
                 target_mod.weight.data.copy_(res_w)
 
                 # Preserve LoRA adapter trainability
@@ -553,10 +539,7 @@ class HuffmanCompressor(BaseCompressor):
                 else:
                     # Look for token embeddings
                     has_embed = any(
-                        any(
-                            kw in n.lower()
-                            for kw in ("embed_tokens", "wte", "word_embeddings")
-                        )
+                        any(kw in n.lower() for kw in ("embed_tokens", "wte", "word_embeddings"))
                         for n, _ in self.model.named_modules()
                     )
                     if has_embed:
@@ -569,11 +552,7 @@ class HuffmanCompressor(BaseCompressor):
                         forward_check_success = True
                     else:
                         first_linear = next(
-                            (
-                                m
-                                for m in self.model.modules()
-                                if isinstance(m, nn.Linear)
-                            ),
+                            (m for m in self.model.modules() if isinstance(m, nn.Linear)),
                             None,
                         )
                         if first_linear is not None:
@@ -593,13 +572,9 @@ class HuffmanCompressor(BaseCompressor):
             else 0.0
         )
         stats["quantize_bits"] = self.quantize_bits
-        stats["avg_entropy_bits"] = round(
-            total_entropy / max(len(self.compressed_layers), 1), 2
-        )
+        stats["avg_entropy_bits"] = round(total_entropy / max(len(self.compressed_layers), 1), 2)
         stats["total_compressed_bytes"] = total_comp_bytes
-        stats["huffman_compression_ratio"] = round(
-            total_orig_bytes / max(total_comp_bytes, 1), 2
-        )
+        stats["huffman_compression_ratio"] = round(total_orig_bytes / max(total_comp_bytes, 1), 2)
         stats["theoretical_compression_ratio"] = stats["huffman_compression_ratio"]
         stats["num_compressed"] = len(self.compressed_layers)
         stats["num_fallback"] = len(self.fallback_layers)
@@ -621,24 +596,18 @@ class HuffmanCompressor(BaseCompressor):
 
 @COMPRESSOR_REGISTRY.register("huffman")
 @COMPRESSOR_REGISTRY.register("huffman_coder")
-def huffman_factory(
-    model: nn.Module, comp_config: Any = None, **kwargs: Any
-) -> nn.Module:
+def huffman_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Huffman compressor factory function."""
     bits = kwargs.pop(
         "quantize_bits",
         kwargs.pop(
             "bits",
-            _cfg_get(
-                comp_config, "huffman_bits", _cfg_get(comp_config, "quantize_bits", 8)
-            ),
+            _cfg_get(comp_config, "huffman_bits", _cfg_get(comp_config, "quantize_bits", 8)),
         ),
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(
-            comp_config, "huffman_max_error", _cfg_get(comp_config, "max_error", 0.20)
-        ),
+        _cfg_get(comp_config, "huffman_max_error", _cfg_get(comp_config, "max_error", 0.20)),
     )
     target_attention_only = kwargs.pop(
         "target_attention_only",

@@ -13,6 +13,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.attentions.svd_linear_attention import (
     SVDLinear,
     SVDLinearAttention,
@@ -177,9 +178,7 @@ def inject_projection_factorized_attn(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -213,8 +212,7 @@ def inject_projection_factorized_attn(
         src_attr_name, src_attn, src_is_nested = src_info
     else:
         logger.warning(
-            "inject_projection_factorized_attn: no source attention found on %s "
-            "(checked: %s)",
+            "inject_projection_factorized_attn: no source attention found on %s (checked: %s)",
             type(layer).__name__,
             ", ".join(_CANDIDATE_ATTRS),
         )

@@ -83,9 +83,7 @@ except ImportError:
     COMPRESSOR_REGISTRY = None
 
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s - %(message)s")
 logger = logging.getLogger("MultiModeBenchmark")
 
 
@@ -166,16 +164,12 @@ class ModeBenchmarkResult:
 class SyntheticTextDataset(torch.utils.data.Dataset):
     """Synthetic dataset for benchmarking token throughput and perplexity."""
 
-    def __init__(
-        self, vocab_size: int = 30522, seq_len: int = 128, num_samples: int = 128
-    ):
+    def __init__(self, vocab_size: int = 30522, seq_len: int = 128, num_samples: int = 128):
         self.vocab_size = vocab_size
         self.seq_len = seq_len
         self.num_samples = num_samples
         torch.manual_seed(42)
-        self.data = torch.randint(
-            100, vocab_size - 100, (num_samples, seq_len), dtype=torch.long
-        )
+        self.data = torch.randint(100, vocab_size - 100, (num_samples, seq_len), dtype=torch.long)
         self.attention_mask = torch.ones((num_samples, seq_len), dtype=torch.long)
         self.labels = self.data.clone()
 
@@ -223,14 +217,10 @@ class ModeTransformEngine:
             return ModeTransformEngine._apply_svd_lowrank(model, rank=rank)
 
         elif mode == "rotational_slicegpt":
-            return ModeTransformEngine._apply_rotational_slicegpt(
-                model, slice_ratio=sparsity_ratio
-            )
+            return ModeTransformEngine._apply_rotational_slicegpt(model, slice_ratio=sparsity_ratio)
 
         elif mode == "sparsegpt_int4":
-            return ModeTransformEngine._apply_sparsegpt_int4(
-                model, sparsity=sparsity_ratio
-            )
+            return ModeTransformEngine._apply_sparsegpt_int4(model, sparsity=sparsity_ratio)
 
         elif mode == "paged_deltakv":
             return ModeTransformEngine._apply_paged_deltakv(model)
@@ -254,9 +244,7 @@ class ModeTransformEngine:
             return ModeTransformEngine._apply_nystrom_kernel(model)
 
         else:
-            logger.warning(
-                f"Unknown mode '{mode}'. Falling back to standard fp16 model."
-            )
+            logger.warning(f"Unknown mode '{mode}'. Falling back to standard fp16 model.")
             return model.to(device=device, dtype=dtype)
 
     @staticmethod
@@ -320,31 +308,21 @@ class ModeTransformEngine:
                     and module.in_features >= rank * 2
                     and module.out_features >= rank * 2
                 ):
-                    parent_name, child_name = (
-                        name.rsplit(".", 1) if "." in name else ("", name)
-                    )
+                    parent_name, child_name = name.rsplit(".", 1) if "." in name else ("", name)
                     parent = model.get_submodule(parent_name) if parent_name else model
                     # Create SVD factorized sequence
                     U, S, V = torch.svd(module.weight.data.float())
                     r = min(rank, module.in_features, module.out_features)
-                    (
-                        U[:, :r] * torch.sqrt(S[:r])
-                    ).t()  # (r, out_features) -> wait: W = U S V^T
+                    (U[:, :r] * torch.sqrt(S[:r])).t()  # (r, out_features) -> wait: W = U S V^T
                     # W approx = U_r * (diag(S_r) * V_r^T)
                     linear_a = nn.Linear(module.in_features, r, bias=False)
-                    linear_b = nn.Linear(
-                        r, module.out_features, bias=module.bias is not None
-                    )
+                    linear_b = nn.Linear(r, module.out_features, bias=module.bias is not None)
                     with torch.no_grad():
                         linear_a.weight.copy_(
-                            (torch.sqrt(S[:r]).unsqueeze(1) * V[:, :r].t()).to(
-                                module.weight.dtype
-                            )
+                            (torch.sqrt(S[:r]).unsqueeze(1) * V[:, :r].t()).to(module.weight.dtype)
                         )
                         linear_b.weight.copy_(
-                            (U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)).to(
-                                module.weight.dtype
-                            )
+                            (U[:, :r] * torch.sqrt(S[:r]).unsqueeze(0)).to(module.weight.dtype)
                         )
                         if module.bias is not None:
                             linear_b.bias.copy_(module.bias.data)
@@ -353,9 +331,7 @@ class ModeTransformEngine:
         return model
 
     @staticmethod
-    def _apply_rotational_slicegpt(
-        model: nn.Module, slice_ratio: float = 0.5
-    ) -> nn.Module:
+    def _apply_rotational_slicegpt(model: nn.Module, slice_ratio: float = 0.5) -> nn.Module:
         """Apply rotational invariance orthogonal transform and slice channels."""
         if ATTENTION_REGISTRY is not None and "slicegpt" in ATTENTION_REGISTRY:
             try:
@@ -650,9 +626,7 @@ class MultiModeBenchmarkRunner:
                         self.model_name_or_path, use_fast=True
                     )
                 except Exception:
-                    logger.warning(
-                        f"Could not load tokenizer for {self.model_name_or_path}."
-                    )
+                    logger.warning(f"Could not load tokenizer for {self.model_name_or_path}.")
 
             if tokenizer is not None and tokenizer.pad_token is None:
                 tokenizer.pad_token = tokenizer.eos_token
@@ -725,9 +699,7 @@ class MultiModeBenchmarkRunner:
                     super().__init__()
                     self.config = config
                     self.embed = nn.Embedding(30522, d_model)
-                    self.attn = nn.MultiheadAttention(
-                        d_model, n_heads, batch_first=True
-                    )
+                    self.attn = nn.MultiheadAttention(d_model, n_heads, batch_first=True)
                     self.fc = nn.Linear(d_model, 2)
 
                 def forward(self, input_ids, attention_mask=None, labels=None):
@@ -743,9 +715,7 @@ class MultiModeBenchmarkRunner:
 
         return model, tokenizer
 
-    def _get_dataset(
-        self, dataset_name: str, tokenizer: Any | None
-    ) -> torch.utils.data.Dataset:
+    def _get_dataset(self, dataset_name: str, tokenizer: Any | None) -> torch.utils.data.Dataset:
         """Load or build evaluation dataset (cached)."""
         dataset_name = dataset_name.lower()
         if not hasattr(self, "_dataset_cache"):
@@ -782,11 +752,7 @@ class MultiModeBenchmarkRunner:
                     max_seq_len=self.seq_len,
                     use_synthetic_fallback=False,
                 )
-                eval_split = (
-                    splits.get("validation")
-                    or splits.get("test")
-                    or splits.get("train")
-                )
+                eval_split = splits.get("validation") or splits.get("test") or splits.get("train")
                 if eval_split is not None:
                     self._dataset_cache[dataset_name] = eval_split
                     return eval_split
@@ -813,18 +779,12 @@ class MultiModeBenchmarkRunner:
                     tokenizer_name=tok_name,
                     max_seq_len=self.seq_len,
                 )
-                eval_split = (
-                    splits.get("validation")
-                    or splits.get("test")
-                    or splits.get("train")
-                )
+                eval_split = splits.get("validation") or splits.get("test") or splits.get("train")
                 if eval_split is not None:
                     self._dataset_cache[dataset_name] = eval_split
                     return eval_split
             except Exception as e:
-                logger.warning(
-                    "Could not load real LM dataset '%s': %s", dataset_name, e
-                )
+                logger.warning("Could not load real LM dataset '%s': %s", dataset_name, e)
                 if not self.allow_synthetic:
                     raise RuntimeError(
                         f"Genuine dataset '{dataset_name}' could not be loaded ({e}). "
@@ -841,9 +801,7 @@ class MultiModeBenchmarkRunner:
             )
             data_dict = load_dataset(exp_conf)
             eval_split = (
-                data_dict.get("validation")
-                or data_dict.get("test")
-                or data_dict.get("train")
+                data_dict.get("validation") or data_dict.get("test") or data_dict.get("train")
             )
             if eval_split is not None:
                 self._dataset_cache[dataset_name] = eval_split
@@ -876,9 +834,7 @@ class MultiModeBenchmarkRunner:
                 torch.cuda.max_memory_allocated(self.device) / (1024 * 1024),
                 torch.cuda.memory_allocated(self.device) / (1024 * 1024),
             )
-        elif self.device.type == "mps" and hasattr(
-            torch.mps, "current_allocated_memory"
-        ):
+        elif self.device.type == "mps" and hasattr(torch.mps, "current_allocated_memory"):
             try:
                 alloc = torch.mps.current_allocated_memory() / (1024 * 1024)
                 return alloc, alloc
@@ -963,9 +919,7 @@ class MultiModeBenchmarkRunner:
                 error_message=str(e),
             )
 
-        num_params = sum(
-            p.numel() for p in model.parameters() if p.requires_grad or True
-        )
+        num_params = sum(p.numel() for p in model.parameters() if p.requires_grad or True)
 
         # Prepare dataset & dataloader
         dataset = self._get_dataset(dataset_name, tokenizer)
@@ -1044,13 +998,9 @@ class MultiModeBenchmarkRunner:
                     elif logits.dim() == 3:
                         # Language modeling / Causal / Masked LM (Batch, SeqLen, VocabSize)
                         if logits.size(1) > 1:
-                            shift_logits = (
-                                logits[:, :-1, :].contiguous().view(-1, logits.size(-1))
-                            )
+                            shift_logits = logits[:, :-1, :].contiguous().view(-1, logits.size(-1))
                             shift_labels = input_ids[:, 1:].contiguous().view(-1)
-                            step_loss = F.cross_entropy(
-                                shift_logits, shift_labels
-                            ).item()
+                            step_loss = F.cross_entropy(shift_logits, shift_labels).item()
                         else:
                             step_loss = F.cross_entropy(
                                 logits.view(-1, logits.size(-1)), input_ids.view(-1)
@@ -1131,9 +1081,7 @@ class MultiModeBenchmarkRunner:
             if self._baseline_vram_mb and self._baseline_vram_mb > 0
             else peak_vram
         )
-        mem_savings_pct = max(
-            0.0, ((base_mem - peak_vram) / max(base_mem, 1e-6)) * 100.0
-        )
+        mem_savings_pct = max(0.0, ((base_mem - peak_vram) / max(base_mem, 1e-6)) * 100.0)
 
         result = ModeBenchmarkResult(
             mode=mode,
@@ -1202,9 +1150,7 @@ class MultiModeBenchmarkRunner:
     def export_json(self, filepath: str | Path | None = None) -> str:
         """Export all benchmark outcomes to structured JSON."""
         target_file = (
-            Path(filepath)
-            if filepath
-            else self.output_dir / "multi_mode_benchmark_results.json"
+            Path(filepath) if filepath else self.output_dir / "multi_mode_benchmark_results.json"
         )
         payload = {
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -1226,9 +1172,7 @@ class MultiModeBenchmarkRunner:
         if not HAS_PANDAS:
             raise RuntimeError("pandas is required for CSV export.")
         target_file = (
-            Path(filepath)
-            if filepath
-            else self.output_dir / "multi_mode_benchmark_results.csv"
+            Path(filepath) if filepath else self.output_dir / "multi_mode_benchmark_results.csv"
         )
         df = self.to_dataframe()
         df.to_csv(target_file, index=False)
@@ -1275,11 +1219,7 @@ class MultiModeBenchmarkRunner:
                 col_widths[i] = max(col_widths[i], len(str(val)))
 
         sep = "+" + "+".join("-" * (w + 2) for w in col_widths) + "+"
-        header_str = (
-            "|"
-            + "|".join(f" {h:<{col_widths[i]}} " for i, h in enumerate(headers))
-            + "|"
-        )
+        header_str = "|" + "|".join(f" {h:<{col_widths[i]}} " for i, h in enumerate(headers)) + "|"
 
         print("\n" + "=" * len(sep))
         print(" MULTI-MODE ATTENTION & INFERENCE BENCHMARK REPORT")
@@ -1288,11 +1228,7 @@ class MultiModeBenchmarkRunner:
         print(header_str)
         print(sep)
         for row in rows:
-            print(
-                "|"
-                + "|".join(f" {v:<{col_widths[i]}} " for i, v in enumerate(row))
-                + "|"
-            )
+            print("|" + "|".join(f" {v:<{col_widths[i]}} " for i, v in enumerate(row)) + "|")
         print(sep + "\n")
 
     @classmethod
@@ -1356,9 +1292,7 @@ class MultiModeBenchmarkRunner:
             try:
                 module = cls(cfg, **kwargs).to(self.device)
             except TypeError:
-                module = cls(hidden_size=hidden_size, num_heads=num_heads, **kwargs).to(
-                    self.device
-                )
+                module = cls(hidden_size=hidden_size, num_heads=num_heads, **kwargs).to(self.device)
 
         dummy_x = torch.randn(batch_size, seq_len, hidden_size, device=self.device)
 

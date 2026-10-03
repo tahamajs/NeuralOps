@@ -48,9 +48,6 @@ if hasattr(torch, "set_float32_matmul_precision"):
 
 import torch.nn as nn
 import torch.nn.functional as F
-from neuralops.core.attention_utils import inject_attention
-from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-from neuralops.utils.replace_attention import UniversalAttentionWrapper
 from transformers import (
     BertConfig,
     BertForSequenceClassification,
@@ -63,6 +60,10 @@ from transformers import (
     T5Config,
     T5EncoderModel,
 )
+
+from neuralops.core.attention_utils import inject_attention
+from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+from neuralops.utils.replace_attention import UniversalAttentionWrapper
 
 logging.basicConfig(
     level=logging.INFO,
@@ -567,9 +568,7 @@ def _filter_batch(
         sig = inspect.signature(model.forward)
         params = sig.parameters
         valid = set(params.keys()) - {"self"}
-        has_varkwargs = any(
-            p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values()
-        )
+        has_varkwargs = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values())
         if not has_varkwargs:
             b = {k: v for k, v in b.items() if k in valid}
     except (ValueError, TypeError):
@@ -839,20 +838,14 @@ def apply_module_to_model(
                     attempts.append(lambda: m(calibration_data=calibration_data))
                 attempts.append(lambda: m(model))
                 if calibration_loader is not None:
-                    attempts.append(
-                        lambda: m(model, calibration_loader=calibration_loader)
-                    )
+                    attempts.append(lambda: m(model, calibration_loader=calibration_loader))
                 if calibration_data is not None:
                     attempts.append(lambda: m(model, calibration_data=calibration_data))
 
                 for fn in attempts:
                     try:
                         res = fn()
-                        if (
-                            isinstance(res, tuple)
-                            and res
-                            and isinstance(res[0], nn.Module)
-                        ):
+                        if isinstance(res, tuple) and res and isinstance(res[0], nn.Module):
                             if len(res) > 1 and isinstance(res[1], dict):
                                 try:
                                     res[0].compression_stats = res[1]
@@ -889,20 +882,14 @@ def apply_module_to_model(
                 continue
 
         if candidate is not None:
-            if (
-                isinstance(candidate, tuple)
-                and candidate
-                and isinstance(candidate[0], nn.Module)
-            ):
+            if isinstance(candidate, tuple) and candidate and isinstance(candidate[0], nn.Module):
                 model = candidate[0]
                 if len(candidate) > 1 and isinstance(candidate[1], dict):
                     try:
                         model.compression_stats = candidate[1]
                     except Exception:
                         pass
-            elif isinstance(candidate, nn.Module) and not hasattr(
-                candidate, "compress"
-            ):
+            elif isinstance(candidate, nn.Module) and not hasattr(candidate, "compress"):
                 model = candidate
             else:
                 res_mod = _invoke(candidate)
@@ -943,9 +930,7 @@ def apply_module_to_model(
 
 _MAX_CACHE_SIZE = 16
 
-_TOKENIZED_BATCH_CACHE: dict[
-    tuple[str, str, int, int, str], dict[str, torch.Tensor]
-] = {}
+_TOKENIZED_BATCH_CACHE: dict[tuple[str, str, int, int, str], dict[str, torch.Tensor]] = {}
 _PREPARED_DATASET_CACHE: dict[tuple[str, str, int], Any] = {}
 
 
@@ -973,9 +958,7 @@ def _generate_synthetic_batch(
 ) -> dict[str, torch.Tensor]:
     ds = dataset_name.lower()
     torch.manual_seed(42)
-    input_ids = torch.randint(
-        100, max(101, vocab_size - 100), (batch_size, seq_len), device=device
-    )
+    input_ids = torch.randint(100, max(101, vocab_size - 100), (batch_size, seq_len), device=device)
     attention_mask = torch.ones((batch_size, seq_len), dtype=torch.long, device=device)
 
     # FIX-8: only synthetic padding for bidirectional models
@@ -988,9 +971,7 @@ def _generate_synthetic_batch(
         labels[:, :-1] = input_ids[:, 1:]
         labels[:, -1] = -100
     else:
-        labels = torch.randint(
-            0, num_labels, (batch_size,), dtype=torch.long, device=device
-        )
+        labels = torch.randint(0, num_labels, (batch_size,), dtype=torch.long, device=device)
 
     return {
         "input_ids": input_ids,
@@ -1021,20 +1002,13 @@ def get_dataset_batch(
 
     if cache_key in _TOKENIZED_BATCH_CACHE:
         cached = _TOKENIZED_BATCH_CACHE[cache_key]
-        return {
-            k: v.clone() if isinstance(v, torch.Tensor) else v
-            for k, v in cached.items()
-        }
+        return {k: v.clone() if isinstance(v, torch.Tensor) else v for k, v in cached.items()}
 
     if ds == "synthetic":
-        batch = _generate_synthetic_batch(
-            ds, batch_size, seq_len, vocab_size, num_labels, device
-        )
+        batch = _generate_synthetic_batch(ds, batch_size, seq_len, vocab_size, num_labels, device)
         _TOKENIZED_BATCH_CACHE[cache_key] = batch
         _evict_if_needed(_TOKENIZED_BATCH_CACHE)
-        return {
-            k: v.clone() if isinstance(v, torch.Tensor) else v for k, v in batch.items()
-        }
+        return {k: v.clone() if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
 
     tok_name = MODEL_TOKENIZER_MAPPING.get(family, "bert-base-uncased")
     dataset_cache_key = (ds, tok_name, seq_len)
@@ -1087,13 +1061,9 @@ def get_dataset_batch(
                     tokenizer.pad_token_id = tokenizer.eos_token_id
 
                 try:
-                    raw_val = load_dataset(
-                        "wikitext", "wikitext-2-raw-v1", split="test"
-                    )
+                    raw_val = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
                 except Exception:
-                    raw_val = load_dataset(
-                        "Salesforce/wikitext", "wikitext-2-raw-v1", split="test"
-                    )
+                    raw_val = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="test")
 
                 valid_texts = [t for t in raw_val["text"] if len(t.strip()) > 10][:200]
                 if not valid_texts:
@@ -1114,9 +1084,7 @@ def get_dataset_batch(
                         "attention_mask": enc["attention_mask"],
                     }
                 )
-                val_tokenized.set_format(
-                    type="torch", columns=["input_ids", "attention_mask"]
-                )
+                val_tokenized.set_format(type="torch", columns=["input_ids", "attention_mask"])
                 _PREPARED_DATASET_CACHE[dataset_cache_key] = val_tokenized
                 _evict_if_needed(_PREPARED_DATASET_CACHE)
             else:
@@ -1150,31 +1118,22 @@ def get_dataset_batch(
                         raw_batch[k] = vals
             batch = {
                 ("labels" if k == "label" else k): (
-                    v.to(device, non_blocking=is_cuda)
-                    if isinstance(v, torch.Tensor)
-                    else v
+                    v.to(device, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v
                 )
                 for k, v in raw_batch.items()
             }
             _TOKENIZED_BATCH_CACHE[cache_key] = batch
             _evict_if_needed(_TOKENIZED_BATCH_CACHE)
-            return {
-                k: v.clone() if isinstance(v, torch.Tensor) else v
-                for k, v in batch.items()
-            }
+            return {k: v.clone() if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
     except Exception as e:
         logger.warning("Could not load GLUE dataset '%s': %s", ds, e)
         if not allow_synthetic:
             raise RuntimeError(f"Genuine dataset '{ds}' failed to load ({e})")
 
-    batch = _generate_synthetic_batch(
-        ds, batch_size, seq_len, vocab_size, num_labels, device
-    )
+    batch = _generate_synthetic_batch(ds, batch_size, seq_len, vocab_size, num_labels, device)
     _TOKENIZED_BATCH_CACHE[cache_key] = batch
     _evict_if_needed(_TOKENIZED_BATCH_CACHE)
-    return {
-        k: v.clone() if isinstance(v, torch.Tensor) else v for k, v in batch.items()
-    }
+    return {k: v.clone() if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
 
 
 # =============================================================================
@@ -1356,9 +1315,7 @@ def build_calibration_loader(
         return None, None, None
 
     if tokenizer.pad_token is None:
-        tokenizer.pad_token = (
-            tokenizer.eos_token or tokenizer.sep_token or tokenizer.pad_token
-        )
+        tokenizer.pad_token = tokenizer.eos_token or tokenizer.sep_token or tokenizer.pad_token
 
     ds = dataset.lower()
     source = None
@@ -1500,12 +1457,8 @@ def evaluate_single_combination_opt(
             if is_cuda:
                 torch.cuda.synchronize(device)
                 mem_phases["idle"] = {
-                    "allocated_mb": round(
-                        torch.cuda.memory_allocated(device) / (1024 * 1024), 2
-                    ),
-                    "reserved_mb": round(
-                        torch.cuda.memory_reserved(device) / (1024 * 1024), 2
-                    ),
+                    "allocated_mb": round(torch.cuda.memory_allocated(device) / (1024 * 1024), 2),
+                    "reserved_mb": round(torch.cuda.memory_reserved(device) / (1024 * 1024), 2),
                 }
 
             model, cfg = get_base_model_cached(
@@ -1521,12 +1474,8 @@ def evaluate_single_combination_opt(
             if is_cuda:
                 torch.cuda.synchronize(device)
                 mem_phases["model_load"] = {
-                    "allocated_mb": round(
-                        torch.cuda.memory_allocated(device) / (1024 * 1024), 2
-                    ),
-                    "reserved_mb": round(
-                        torch.cuda.memory_reserved(device) / (1024 * 1024), 2
-                    ),
+                    "allocated_mb": round(torch.cuda.memory_allocated(device) / (1024 * 1024), 2),
+                    "reserved_mb": round(torch.cuda.memory_reserved(device) / (1024 * 1024), 2),
                 }
 
             # ============ FIX-1: build calibration ============
@@ -1567,12 +1516,8 @@ def evaluate_single_combination_opt(
             if is_cuda:
                 torch.cuda.synchronize(device)
                 mem_phases["calibration"] = {
-                    "allocated_mb": round(
-                        torch.cuda.memory_allocated(device) / (1024 * 1024), 2
-                    ),
-                    "reserved_mb": round(
-                        torch.cuda.memory_reserved(device) / (1024 * 1024), 2
-                    ),
+                    "allocated_mb": round(torch.cuda.memory_allocated(device) / (1024 * 1024), 2),
+                    "reserved_mb": round(torch.cuda.memory_reserved(device) / (1024 * 1024), 2),
                 }
 
             # ============ Inject module ============
@@ -1595,18 +1540,12 @@ def evaluate_single_combination_opt(
             if is_cuda:
                 torch.cuda.synchronize(device)
                 mem_phases["compression"] = {
-                    "allocated_mb": round(
-                        torch.cuda.memory_allocated(device) / (1024 * 1024), 2
-                    ),
-                    "reserved_mb": round(
-                        torch.cuda.memory_reserved(device) / (1024 * 1024), 2
-                    ),
+                    "allocated_mb": round(torch.cuda.memory_allocated(device) / (1024 * 1024), 2),
+                    "reserved_mb": round(torch.cuda.memory_reserved(device) / (1024 * 1024), 2),
                 }
 
             comp_stats = getattr(model, "compression_stats", {}) or {}
-            if "layer_stats" in comp_stats and isinstance(
-                comp_stats["layer_stats"], dict
-            ):
+            if "layer_stats" in comp_stats and isinstance(comp_stats["layer_stats"], dict):
                 for l_name, l_info in comp_stats["layer_stats"].items():
                     per_layer_list.append(
                         {
@@ -1617,9 +1556,7 @@ def evaluate_single_combination_opt(
                         }
                     )
                     per_layer_errors[l_name] = l_info.get("rel_error", 0.0)
-            elif "layer_errors" in comp_stats and isinstance(
-                comp_stats["layer_errors"], dict
-            ):
+            elif "layer_errors" in comp_stats and isinstance(comp_stats["layer_errors"], dict):
                 for l_name, l_err in comp_stats["layer_errors"].items():
                     st = "fallback" if l_err > 0.5 else "compressed"
                     per_layer_list.append(
@@ -1631,9 +1568,7 @@ def evaluate_single_combination_opt(
                         }
                     )
                     per_layer_errors[l_name] = l_err
-            elif "per_layer" in comp_stats and isinstance(
-                comp_stats["per_layer"], list
-            ):
+            elif "per_layer" in comp_stats and isinstance(comp_stats["per_layer"], list):
                 per_layer_list = comp_stats["per_layer"]
                 for item in per_layer_list:
                     if isinstance(item, dict):
@@ -1647,9 +1582,7 @@ def evaluate_single_combination_opt(
                     "factorized_layers",
                     comp_stats.get(
                         "pruned_layers",
-                        sum(
-                            1 for x in per_layer_list if x.get("status") == "compressed"
-                        ),
+                        sum(1 for x in per_layer_list if x.get("status") == "compressed"),
                     ),
                 ),
             )
@@ -1657,11 +1590,7 @@ def evaluate_single_combination_opt(
                 "num_fallback_layers",
                 comp_stats.get(
                     "skipped_layers",
-                    sum(
-                        1
-                        for x in per_layer_list
-                        if x.get("status") in ("fallback", "skipped")
-                    ),
+                    sum(1 for x in per_layer_list if x.get("status") in ("fallback", "skipped")),
                 ),
             )
             if num_compressed == 0 and comp_ratio > 1.001:
@@ -1729,9 +1658,7 @@ def evaluate_single_combination_opt(
 
             # ---------- Additional warmups ----------
             for _ in range(num_warmup):
-                with (
-                    torch.amp.autocast("cuda") if is_cuda else contextlib.nullcontext()
-                ):
+                with torch.amp.autocast("cuda") if is_cuda else contextlib.nullcontext():
                     _ = model(**filtered_batch)
 
             model.train()
@@ -1741,18 +1668,10 @@ def evaluate_single_combination_opt(
             # ============ Timing loop ============
             if is_cuda:
                 torch.cuda.reset_peak_memory_stats(device)
-                fwd_start = [
-                    torch.cuda.Event(enable_timing=True) for _ in range(num_steps)
-                ]
-                fwd_end = [
-                    torch.cuda.Event(enable_timing=True) for _ in range(num_steps)
-                ]
-                bwd_start = [
-                    torch.cuda.Event(enable_timing=True) for _ in range(num_steps)
-                ]
-                bwd_end = [
-                    torch.cuda.Event(enable_timing=True) for _ in range(num_steps)
-                ]
+                fwd_start = [torch.cuda.Event(enable_timing=True) for _ in range(num_steps)]
+                fwd_end = [torch.cuda.Event(enable_timing=True) for _ in range(num_steps)]
+                bwd_start = [torch.cuda.Event(enable_timing=True) for _ in range(num_steps)]
+                bwd_end = [torch.cuda.Event(enable_timing=True) for _ in range(num_steps)]
 
                 for i in range(num_steps):
                     fwd_start[i].record()
@@ -1800,12 +1719,8 @@ def evaluate_single_combination_opt(
                     bwd_end[-1].synchronize()
                 for i in range(num_steps):
                     try:
-                        traj_fwd_ms.append(
-                            round(float(fwd_start[i].elapsed_time(fwd_end[i])), 4)
-                        )
-                        traj_bwd_ms.append(
-                            round(float(bwd_start[i].elapsed_time(bwd_end[i])), 4)
-                        )
+                        traj_fwd_ms.append(round(float(fwd_start[i].elapsed_time(fwd_end[i])), 4))
+                        traj_bwd_ms.append(round(float(bwd_start[i].elapsed_time(bwd_end[i])), 4))
                     except Exception:
                         pass
 
@@ -1853,9 +1768,7 @@ def evaluate_single_combination_opt(
                 result.forward_latency_ms + result.backward_latency_ms, 2
             )
             result.latency_variance_ms = (
-                round(float(np.var(traj_fwd_ms) + np.var(traj_bwd_ms)), 4)
-                if traj_fwd_ms
-                else 0.0
+                round(float(np.var(traj_fwd_ms) + np.var(traj_bwd_ms)), 4) if traj_fwd_ms else 0.0
             )
 
             # FIX-16: bounded throughput
@@ -1867,9 +1780,7 @@ def evaluate_single_combination_opt(
                 (num_steps * current_batch_size * seq_len) / total_time_s, 2
             )
             result.loss = round(float(np.mean(traj_loss)), 4) if traj_loss else 0.0
-            result.grad_norm = (
-                round(float(np.mean(traj_grad_norm)), 4) if traj_grad_norm else 0.0
-            )
+            result.grad_norm = round(float(np.mean(traj_grad_norm)), 4) if traj_grad_norm else 0.0
             result.trajectories = {
                 "loss": traj_loss,
                 "grad_norm": traj_grad_norm,
@@ -1901,9 +1812,7 @@ def evaluate_single_combination_opt(
             baseline_model = baseline_model.to(device)
 
             try:
-                tok_name = MODEL_TOKENIZER_MAPPING.get(
-                    model_family.lower(), "bert-base-uncased"
-                )
+                tok_name = MODEL_TOKENIZER_MAPPING.get(model_family.lower(), "bert-base-uncased")
                 dataset_cache_key = (dataset.lower(), tok_name, seq_len)
 
                 if dataset_cache_key in _PREPARED_DATASET_CACHE:
@@ -1917,9 +1826,7 @@ def evaluate_single_combination_opt(
 
                     # FIX-17: pre-build autocast context
                     autocast_ctx = (
-                        torch.amp.autocast("cuda")
-                        if is_cuda
-                        else contextlib.nullcontext()
+                        torch.amp.autocast("cuda") if is_cuda else contextlib.nullcontext()
                     )
 
                     with torch.no_grad():
@@ -1965,9 +1872,7 @@ def evaluate_single_combination_opt(
                             if is_lm and out.loss is not None:
                                 target_labels = filtered_inputs.get("labels")
                                 if target_labels is not None:
-                                    n_targets = int(
-                                        (target_labels != -100).sum().item()
-                                    )
+                                    n_targets = int((target_labels != -100).sum().item())
                                     lm_nll_sum += float(out.loss.detach().item()) * max(
                                         1, n_targets
                                     )
@@ -2032,10 +1937,7 @@ def evaluate_single_combination_opt(
                                             .detach()
                                             .float()
                                             .reshape(1, -1),
-                                            logits[b_i : b_i + 1]
-                                            .detach()
-                                            .float()
-                                            .reshape(1, -1),
+                                            logits[b_i : b_i + 1].detach().float().reshape(1, -1),
                                             dim=-1,
                                         ).item()
                                         sample_cosines.append(round(float(s_cos), 4))
@@ -2051,16 +1953,12 @@ def evaluate_single_combination_opt(
                                 else:
                                     preds = torch.argmax(logits, dim=-1)
                                 all_preds.extend(preds.cpu().numpy().tolist())
-                                all_labels.extend(
-                                    inputs["labels"].cpu().numpy().tolist()
-                                )
+                                all_labels.extend(inputs["labels"].cpu().numpy().tolist())
 
                     # ---------------- Final metrics ----------------
                     if is_lm and lm_token_count > 0:
                         mean_nll = lm_nll_sum / lm_token_count
-                        result.perplexity = round(
-                            float(math.exp(min(mean_nll, 100.0))), 4
-                        )
+                        result.perplexity = round(float(math.exp(min(mean_nll, 100.0))), 4)
                         logger.info(
                             "[EVAL] PPL=%.2f from %d target tokens",
                             result.perplexity,
@@ -2073,25 +1971,19 @@ def evaluate_single_combination_opt(
                             try:
                                 p_val, _ = pearsonr(all_labels, all_preds)
                                 result.pearson = (
-                                    round(float(p_val), 4)
-                                    if math.isfinite(p_val)
-                                    else None
+                                    round(float(p_val), 4) if math.isfinite(p_val) else None
                                 )
                             except Exception:
                                 result.pearson = None
                             try:
                                 s_val, _ = spearmanr(all_labels, all_preds)
                                 result.spearman = (
-                                    round(float(s_val), 4)
-                                    if math.isfinite(s_val)
-                                    else None
+                                    round(float(s_val), 4) if math.isfinite(s_val) else None
                                 )
                             except Exception:
                                 result.spearman = None
                         elif dataset.lower() == "cola":
-                            result.mcc = round(
-                                float(matthews_corrcoef(all_labels, all_preds)), 4
-                            )
+                            result.mcc = round(float(matthews_corrcoef(all_labels, all_preds)), 4)
                             result.accuracy_pct = round(
                                 float(accuracy_score(all_labels, all_preds)) * 100.0, 2
                             )
@@ -2120,9 +2012,7 @@ def evaluate_single_combination_opt(
                                 result.f1_score = 0.0
 
                     if batches_for_fidelity > 0:
-                        result.fidelity_score = round(
-                            sum_cosine_sim / batches_for_fidelity, 4
-                        )
+                        result.fidelity_score = round(sum_cosine_sim / batches_for_fidelity, 4)
 
                     t_eval = time.time() - t_eval_0
                     if is_cuda:
@@ -2150,9 +2040,7 @@ def evaluate_single_combination_opt(
 
         except RuntimeError as e:
             if "out of memory" in str(e).lower():
-                run_log_lines.append(
-                    f"[OOM] Out of memory at batch size {current_batch_size}: {e}"
-                )
+                run_log_lines.append(f"[OOM] Out of memory at batch size {current_batch_size}: {e}")
                 logger.warning(
                     "OOM at batch_size %d. Halving and retrying...",
                     current_batch_size,
@@ -2234,9 +2122,7 @@ def evaluate_single_combination_opt(
         # Calibration check
         if module_name in ACTIVATION_AWARE_MODULES and not result.calibration_used:
             result.status = "NO_CALIBRATION"
-            result.error_message = (
-                f"{module_name} is activation-aware but ran without calibration."
-            )
+            result.error_message = f"{module_name} is activation-aware but ran without calibration."
 
         # Compression check
         if (
@@ -2260,9 +2146,7 @@ def evaluate_single_combination_opt(
     # Comprehensive Traceable Artifacts Generation
     # ========================================================================
     try:
-        run_dir = (
-            Path(results_dir) / model_family / dataset / module_name / f"rank_{rank}"
-        )
+        run_dir = Path(results_dir) / model_family / dataset / module_name / f"rank_{rank}"
         try:
             run_dir.mkdir(parents=True, exist_ok=True)
         except OSError:
@@ -2286,9 +2170,7 @@ def evaluate_single_combination_opt(
         # 2. traceback.txt
         if result.status in ("FAIL", "OOM", "NO_CALIBRATION") and exc_traceback:
             (run_dir / "traceback.txt").write_text(exc_traceback, encoding="utf-8")
-        elif (
-            result.status in ("FAIL", "OOM", "NO_CALIBRATION") and result.error_message
-        ):
+        elif result.status in ("FAIL", "OOM", "NO_CALIBRATION") and result.error_message:
             (run_dir / "traceback.txt").write_text(
                 f"Error: {result.error_message}\n", encoding="utf-8"
             )
@@ -2305,9 +2187,7 @@ def evaluate_single_combination_opt(
             "python_version": sys.version.split()[0],
             "os": sys.platform,
         }
-        (run_dir / "environment.json").write_text(
-            json.dumps(env_dict, indent=2), encoding="utf-8"
-        )
+        (run_dir / "environment.json").write_text(json.dumps(env_dict, indent=2), encoding="utf-8")
 
         # 4. config.json
         cfg_dict = {
@@ -2323,9 +2203,7 @@ def evaluate_single_combination_opt(
             "allow_synthetic": allow_synthetic,
             "device": str(device),
         }
-        (run_dir / "config.json").write_text(
-            json.dumps(cfg_dict, indent=2), encoding="utf-8"
-        )
+        (run_dir / "config.json").write_text(json.dumps(cfg_dict, indent=2), encoding="utf-8")
 
         # 5. calibration_stats.json
         calib_stats_dict = {
@@ -2334,9 +2212,7 @@ def evaluate_single_combination_opt(
             "num_samples": 500 if result.calibration_used else 0,
             "batch_size": 8 if result.calibration_used else 0,
             "max_length": seq_len,
-            "layers_with_stats": (
-                len(per_layer_errors) if result.calibration_used else 0
-            ),
+            "layers_with_stats": (len(per_layer_errors) if result.calibration_used else 0),
             "layers_missing_stats": [],
             "statistics": {},
             "fisher_weighting_applied": bool(
@@ -2390,9 +2266,7 @@ def evaluate_single_combination_opt(
 
         # 10. fidelity_samples.json
         fidelity_dict = {
-            "baseline_logits": (
-                baseline_logits_samples[:8] if baseline_logits_samples else []
-            ),
+            "baseline_logits": (baseline_logits_samples[:8] if baseline_logits_samples else []),
             "compressed_logits": (
                 compressed_logits_samples[:8] if compressed_logits_samples else []
             ),
@@ -2405,9 +2279,7 @@ def evaluate_single_combination_opt(
 
         # 11. seed.json
         seed_dict = {"random": 42, "numpy": 42, "torch": 42, "cuda": 42}
-        (run_dir / "seed.json").write_text(
-            json.dumps(seed_dict, indent=2), encoding="utf-8"
-        )
+        (run_dir / "seed.json").write_text(json.dumps(seed_dict, indent=2), encoding="utf-8")
 
         # 12. result.json
         full_result_json = {
@@ -2422,9 +2294,7 @@ def evaluate_single_combination_opt(
                 "accuracy_pct": result.accuracy_pct if not is_lm else None,
                 "f1_score": result.f1_score if not is_lm else None,
                 "f1_macro": result.f1_score if not is_lm else None,
-                "precision": (
-                    round(result.accuracy_pct / 100.0, 4) if not is_lm else None
-                ),
+                "precision": (round(result.accuracy_pct / 100.0, 4) if not is_lm else None),
                 "recall": round(result.accuracy_pct / 100.0, 4) if not is_lm else None,
                 "loss": result.loss,
                 "perplexity": result.perplexity if is_lm else None,
@@ -2448,9 +2318,7 @@ def evaluate_single_combination_opt(
                 ),
                 "flops_reduction_pct": 0.0,
                 "storage_compression_ratio": round(
-                    comp_stats.get(
-                        "storage_compression_ratio", result.compression_ratio
-                    ),
+                    comp_stats.get("storage_compression_ratio", result.compression_ratio),
                     3,
                 ),
                 "avg_reconstruction_error": round(
@@ -2483,8 +2351,7 @@ def evaluate_single_combination_opt(
                 ),
                 "total_vram_mb": (
                     round(
-                        torch.cuda.get_device_properties(device).total_memory
-                        / (1024 * 1024),
+                        torch.cuda.get_device_properties(device).total_memory / (1024 * 1024),
                         2,
                     )
                     if torch.cuda.is_available() and device.type == "cuda"
@@ -2495,8 +2362,7 @@ def evaluate_single_combination_opt(
                 "activation_vram_mb": round(
                     max(
                         0.0,
-                        result.peak_memory_mb
-                        - mem_phases.get("idle", {}).get("allocated_mb", 0.0),
+                        result.peak_memory_mb - mem_phases.get("idle", {}).get("allocated_mb", 0.0),
                     ),
                     2,
                 ),
@@ -2612,9 +2478,7 @@ def run_track(
     for mtype_key in ("attentions", "compressors"):
         for module_name in modules_cfg.get(mtype_key, []):
             module_type = "attention" if mtype_key == "attentions" else "compressor"
-            logger.info(
-                "=== %s :: %s :: %s :: r=%d ===", track, module_name, model_family, rank
-            )
+            logger.info("=== %s :: %s :: %s :: r=%d ===", track, module_name, model_family, rank)
             try:
                 r = evaluate_single_combination_opt(
                     track=track,

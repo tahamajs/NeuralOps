@@ -137,9 +137,7 @@ def activation_hooks(
                 data["input"] = input[0].detach()
             if collect_output:
                 data["output"] = (
-                    output.detach()
-                    if isinstance(output, torch.Tensor)
-                    else output[0].detach()
+                    output.detach() if isinstance(output, torch.Tensor) else output[0].detach()
                 )
             activations[name] = data
 

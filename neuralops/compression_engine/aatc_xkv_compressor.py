@@ -20,6 +20,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
@@ -153,9 +154,7 @@ def quantize_coefficients(
     q_float = flat / scales.unsqueeze(0)
     q_min = torch.where(bits > 0, -(2.0 ** (bits - 1.0)), torch.zeros_like(bits))
     q_max_signed = torch.where(bits > 0, q_max, torch.zeros_like(bits))
-    q_float = torch.clamp(
-        q_float, min=q_min.unsqueeze(0), max=q_max_signed.unsqueeze(0)
-    )
+    q_float = torch.clamp(q_float, min=q_min.unsqueeze(0), max=q_max_signed.unsqueeze(0))
     q = torch.round(q_float).to(torch.int8)
 
     active_mask = (bits > 0).to(torch.int8).unsqueeze(0)
@@ -220,9 +219,7 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
 
         self._compressed: dict[int, list[dict[str, torch.Tensor]]] = {}
         # Reconstruction cache: layer_idx -> (full_k, full_v, n_entries_seen)
-        self._reconstruction_cache: dict[
-            int, tuple[torch.Tensor, torch.Tensor, int]
-        ] = {}
+        self._reconstruction_cache: dict[int, tuple[torch.Tensor, torch.Tensor, int]] = {}
 
         self._total_original_bytes = 0
         self._total_compressed_bytes = 0
@@ -444,12 +441,8 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
             U_k = dequantize_coefficients(e["q_k"], e["s_k"])
             U_v = dequantize_coefficients(e["q_v"], e["s_v"])
             device = U_k.device
-            rec_k = torch.matmul(U_k, V_k.to(device)) + mean_k.to(device).view(
-                1, 1, 1, -1
-            )
-            rec_v = torch.matmul(U_v, V_v.to(device)) + mean_v.to(device).view(
-                1, 1, 1, -1
-            )
+            rec_k = torch.matmul(U_k, V_k.to(device)) + mean_k.to(device).view(1, 1, 1, -1)
+            rec_v = torch.matmul(U_v, V_v.to(device)) + mean_v.to(device).view(1, 1, 1, -1)
             parts_k.append(rec_k.to(out_dtype))
             parts_v.append(rec_v.to(out_dtype))
 
@@ -526,10 +519,7 @@ def _forward_loss(model: nn.Module, batch: Any, device: torch.device) -> torch.T
       4. Otherwise, use entropy of the logits.
     """
     if isinstance(batch, dict):
-        batch = {
-            k: (v.to(device) if isinstance(v, torch.Tensor) else v)
-            for k, v in batch.items()
-        }
+        batch = {k: (v.to(device) if isinstance(v, torch.Tensor) else v) for k, v in batch.items()}
         input_ids = batch.get("input_ids")
         outputs = model(**batch)
     else:
@@ -607,19 +597,11 @@ def _collect_calibration_data(
 
     for idx, _, mod in attn_modules:
         k_layer = next(
-            (
-                getattr(mod, a)
-                for a in ("k_proj", "k_lin", "key", "W_k")
-                if hasattr(mod, a)
-            ),
+            (getattr(mod, a) for a in ("k_proj", "k_lin", "key", "W_k") if hasattr(mod, a)),
             None,
         )
         v_layer = next(
-            (
-                getattr(mod, a)
-                for a in ("v_proj", "v_lin", "value", "W_v")
-                if hasattr(mod, a)
-            ),
+            (getattr(mod, a) for a in ("v_proj", "v_lin", "value", "W_v") if hasattr(mod, a)),
             None,
         )
         if k_layer is not None:
@@ -653,18 +635,10 @@ def _collect_calibration_data(
                     gk = k_t.grad if k_t.grad is not None else torch.zeros_like(k_t)
                     gv = v_t.grad if v_t.grad is not None else torch.zeros_like(v_t)
 
-                    k_by_layer[idx].append(
-                        k_t.detach().reshape(-1, k_t.size(-1)).cpu().float()
-                    )
-                    v_by_layer[idx].append(
-                        v_t.detach().reshape(-1, v_t.size(-1)).cpu().float()
-                    )
-                    gk_by_layer[idx].append(
-                        gk.detach().reshape(-1, gk.size(-1)).cpu().float()
-                    )
-                    gv_by_layer[idx].append(
-                        gv.detach().reshape(-1, gv.size(-1)).cpu().float()
-                    )
+                    k_by_layer[idx].append(k_t.detach().reshape(-1, k_t.size(-1)).cpu().float())
+                    v_by_layer[idx].append(v_t.detach().reshape(-1, v_t.size(-1)).cpu().float())
+                    gk_by_layer[idx].append(gk.detach().reshape(-1, gk.size(-1)).cpu().float())
+                    gv_by_layer[idx].append(gv.detach().reshape(-1, gv.size(-1)).cpu().float())
                 n_seen += 1
             except Exception as e:
                 logger.debug("Calibration batch failed: %s", e)
@@ -677,12 +651,10 @@ def _collect_calibration_data(
 
     return {
         "k": {
-            i: torch.cat(k_by_layer[i], 0) if k_by_layer[i] else torch.empty(0)
-            for i in k_by_layer
+            i: torch.cat(k_by_layer[i], 0) if k_by_layer[i] else torch.empty(0) for i in k_by_layer
         },
         "v": {
-            i: torch.cat(v_by_layer[i], 0) if v_by_layer[i] else torch.empty(0)
-            for i in v_by_layer
+            i: torch.cat(v_by_layer[i], 0) if v_by_layer[i] else torch.empty(0) for i in v_by_layer
         },
         "gk": {
             i: torch.cat(gk_by_layer[i], 0) if gk_by_layer[i] else torch.empty(0)
@@ -789,9 +761,7 @@ class AATC_XKVCompressor(BaseCompressor):
         self.target_bits = float(_cget("aatc_bits", target_bits_per_component))
         self.energy_threshold = float(_cget("energy_threshold", energy_threshold))
         self.sink_tokens = int(_cget("sink_tokens", sink_tokens))
-        self.preserve_last_token = bool(
-            _cget("preserve_last_token", preserve_last_token)
-        )
+        self.preserve_last_token = bool(_cget("preserve_last_token", preserve_last_token))
 
         self.subspaces: dict[int, SharedSubspace] = {}
         self.layer_to_group: dict[int, int] = {}
@@ -881,12 +851,8 @@ class AATC_XKVCompressor(BaseCompressor):
             D = K_stack.size(-1)
             rank_cap = max(4, D // 4)
 
-            V_k, S_k, mean_k = _joint_svd_shared_basis(
-                K_stack, rank_cap, self.energy_threshold
-            )
-            V_v, S_v, mean_v = _joint_svd_shared_basis(
-                V_stack, rank_cap, self.energy_threshold
-            )
+            V_k, S_k, mean_k = _joint_svd_shared_basis(K_stack, rank_cap, self.energy_threshold)
+            V_v, S_v, mean_v = _joint_svd_shared_basis(V_stack, rank_cap, self.energy_threshold)
 
             r_k = V_k.size(0)
             r_v = V_v.size(0)
@@ -926,9 +892,7 @@ class AATC_XKVCompressor(BaseCompressor):
             return self.model, self.stats
 
         if not self.calib_batches:
-            logger.warning(
-                "AATC-XKV: no calibration batches supplied; using seeded synthetic."
-            )
+            logger.warning("AATC-XKV: no calibration batches supplied; using seeded synthetic.")
             self.calib_batches = self._synthetic_calib(device)
 
         calib = _collect_calibration_data(

@@ -22,6 +22,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import (
@@ -72,21 +73,15 @@ class SparseGPTCompressor(BaseCompressor):
         super().__init__(model, name="sparsegpt", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
-            sparsity = _cfg_get(
-                cfg, "sparsegpt_sparsity", _cfg_get(cfg, "sparsity", sparsity)
-            )
+            sparsity = _cfg_get(cfg, "sparsegpt_sparsity", _cfg_get(cfg, "sparsity", sparsity))
             structured_24 = _cfg_get(
                 cfg,
                 "sparsegpt_structured_24",
                 _cfg_get(cfg, "structured_24", structured_24),
             )
             max_error = _cfg_get(cfg, "max_error", max_error)
-            fallback_to_original = _cfg_get(
-                cfg, "fallback_to_original", fallback_to_original
-            )
-            target_attention_only = _cfg_get(
-                cfg, "target_attention_only", target_attention_only
-            )
+            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
 
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
@@ -97,9 +92,7 @@ class SparseGPTCompressor(BaseCompressor):
         self.calibration_loader = calibration_loader
         self.calibration_texts = calibration_texts
         self.target_attention_only = bool(target_attention_only)
-        self.structured_24 = structured_24 or (
-            prunen == 2 and prunem == 4 and self.sparsity == 0.5
-        )
+        self.structured_24 = structured_24 or (prunen == 2 and prunem == 4 and self.sparsity == 0.5)
         if self.structured_24:
             self.sparsity = 0.5
             self.prunen = 2
@@ -117,10 +110,7 @@ class SparseGPTCompressor(BaseCompressor):
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
-        if any(
-            k in name_l
-            for k in ["classifier", "score", "lm_head", "pooler", "embedding"]
-        ):
+        if any(k in name_l for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
             return False
 
         if self.target_attention_only:
@@ -192,9 +182,7 @@ class SparseGPTCompressor(BaseCompressor):
                 elif isinstance(calib_inputs, (list, tuple)):
                     self.model(*calib_inputs)
             except Exception as e:
-                logger.debug(
-                    "SparseGPT activation collection forward pass exception: %s", e
-                )
+                logger.debug("SparseGPT activation collection forward pass exception: %s", e)
 
         for h in hooks:
             h.remove()
@@ -235,9 +223,7 @@ class SparseGPTCompressor(BaseCompressor):
         if activations is not None and activations.numel() > 0:
             act_flat = activations.reshape(-1, activations.shape[-1]).float()
             if act_flat.shape[-1] == d_in:
-                _, H_inv = compute_empirical_hessian(
-                    act_flat, damping=self.percdamp, device=device
-                )
+                _, H_inv = compute_empirical_hessian(act_flat, damping=self.percdamp, device=device)
             else:
                 2.0 * torch.eye(d_in, device=device)
                 H_inv = 0.5 * torch.eye(d_in, device=device)
@@ -277,9 +263,7 @@ class SparseGPTCompressor(BaseCompressor):
                         ).clamp(min=1e-8)
                         sub_saliency = (sub_w**2) / (2.0 * sub_h_diag.unsqueeze(0))
                         k_keep = min(N, sub_w.shape[1])
-                        _, top_idx = torch.topk(
-                            sub_saliency, k=k_keep, dim=1, largest=True
-                        )
+                        _, top_idx = torch.topk(sub_saliency, k=k_keep, dim=1, largest=True)
                         sub_mask = torch.zeros_like(sub_w)
                         sub_mask.scatter_(1, top_idx, 1.0)
                         pruned_sub = sub_w * sub_mask
@@ -294,9 +278,7 @@ class SparseGPTCompressor(BaseCompressor):
                 else:
                     k_prune = int(d_out * self.sparsity)
                     if k_prune > 0:
-                        _, prune_idx = torch.topk(
-                            saliency_col, k=k_prune, largest=False
-                        )
+                        _, prune_idx = torch.topk(saliency_col, k=k_prune, largest=False)
                         mask_col = torch.ones(d_out, device=device)
                         mask_col[prune_idx] = 0.0
                         pruned_w_col = w_col * mask_col
@@ -352,23 +334,11 @@ class SparseGPTCompressor(BaseCompressor):
         ):
             src_lA = getattr(module.lora_A, "weight", module.lora_A)
             src_lB = getattr(module.lora_B, "weight", module.lora_B)
-            if (
-                hasattr(compressed_layer, "lora_A")
-                and compressed_layer.lora_A is not None
-            ):
-                if (
-                    hasattr(src_lA, "data")
-                    and src_lA.shape == compressed_layer.lora_A.shape
-                ):
+            if hasattr(compressed_layer, "lora_A") and compressed_layer.lora_A is not None:
+                if hasattr(src_lA, "data") and src_lA.shape == compressed_layer.lora_A.shape:
                     compressed_layer.lora_A.data.copy_(src_lA.data)
-            if (
-                hasattr(compressed_layer, "lora_B")
-                and compressed_layer.lora_B is not None
-            ):
-                if (
-                    hasattr(src_lB, "data")
-                    and src_lB.shape == compressed_layer.lora_B.shape
-                ):
+            if hasattr(compressed_layer, "lora_B") and compressed_layer.lora_B is not None:
+                if hasattr(src_lB, "data") and src_lB.shape == compressed_layer.lora_B.shape:
                     compressed_layer.lora_B.data.copy_(src_lB.data)
 
         # Determine if module is wrapped (LoRALinear) or standalone
@@ -422,9 +392,7 @@ def sparsegpt_factory(
     """Factory function for SparseGPT compressor."""
     sparsity = kwargs.pop(
         "sparsity",
-        _cfg_get(
-            comp_config, "sparsegpt_sparsity", _cfg_get(comp_config, "sparsity", 0.5)
-        ),
+        _cfg_get(comp_config, "sparsegpt_sparsity", _cfg_get(comp_config, "sparsity", 0.5)),
     )
     structured_24 = kwargs.pop(
         "structured_24",

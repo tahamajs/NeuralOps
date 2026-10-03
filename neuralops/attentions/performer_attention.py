@@ -24,6 +24,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -170,23 +171,17 @@ class LoRALinear(nn.Module):
         self.out_features = out_features
         self.lora_rank = int(lora_rank)
         self.lora_alpha = float(lora_alpha)
-        self.lora_scaling = (
-            (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
-        )
+        self.lora_scaling = (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((self.lora_rank, in_features), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((self.lora_rank, in_features), **factory_kwargs))
             self.lora_B = nn.Parameter(
                 torch.empty((out_features, self.lora_rank), **factory_kwargs)
             )
@@ -231,9 +226,7 @@ class LoRALinear(nn.Module):
             x = x.to(self.weight.dtype)
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
         return out
 
@@ -272,9 +265,7 @@ class PerformerAttention(BaseAttention):
         super().__init__(config, rank)
 
         # ---------------- Hidden size & heads ----------------
-        hidden_size = kwargs.get(
-            "hidden_size", kwargs.get("dim", kwargs.get("d_model"))
-        )
+        hidden_size = kwargs.get("hidden_size", kwargs.get("dim", kwargs.get("d_model")))
         num_heads = kwargs.get(
             "num_attention_heads", kwargs.get("num_heads", kwargs.get("n_heads"))
         )
@@ -531,8 +522,7 @@ class PerformerAttention(BaseAttention):
             success = self.copy_weights(source_attn)
             if not success:
                 logger.warning(
-                    "PerformerAttention: copy_weights failed. Proceeding with "
-                    "initialized weights."
+                    "PerformerAttention: copy_weights failed. Proceeding with initialized weights."
                 )
 
         # FIX 2: after is_nested_encoder is known, disable LoRA on out_proj
@@ -605,9 +595,7 @@ class PerformerAttention(BaseAttention):
             return False
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
 
         # FIX 4: robust nested detection
         is_nested = False
@@ -627,10 +615,7 @@ class PerformerAttention(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -762,8 +747,7 @@ class PerformerAttention(BaseAttention):
         ]
         if missing_after:
             logger.warning(
-                "PerformerAttention copy_weights failed: missing mandatory "
-                "projections %s from %s.",
+                "PerformerAttention copy_weights failed: missing mandatory projections %s from %s.",
                 missing_after,
                 src.__class__.__name__,
             )
@@ -871,23 +855,12 @@ class PerformerAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         scale = d**-0.25
-        Q = (
-            self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
-            * scale
-        )
+        Q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous() * scale
         K = (
-            self.key(hidden_states)
-            .view(B, N, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
+            self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
             * scale
         )
-        V = (
-            self.value(hidden_states)
-            .view(B, N, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        V = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # ---- RoPE ----
         if (
@@ -999,9 +972,7 @@ class PerformerAttention(BaseAttention):
             k_c = K_feat[:, :, start:end].float()
             v_c = V[:, :, start:end].float()
 
-            causal_mask = torch.tril(
-                torch.ones(L, L, device=device, dtype=torch.float32)
-            )
+            causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.float32))
             intra_attn = torch.matmul(q_c, k_c.transpose(-1, -2)) * causal_mask
             intra_num = torch.matmul(intra_attn, v_c)
             inter_num = torch.matmul(q_c, S)
@@ -1104,9 +1075,7 @@ def inject_performer(
     """
     depth = _get_inject_depth()
     if depth >= _MAX_DEPTH:
-        logger.error(
-            "Max injection depth reached in inject_performer — possible recursion"
-        )
+        logger.error("Max injection depth reached in inject_performer — possible recursion")
         return None
     _set_inject_depth(depth + 1)
 
@@ -1117,9 +1086,7 @@ def inject_performer(
         # ---- Recursive descent into model containers ----
         if _is_single_layer(target):
             pass  # handle below
-        elif hasattr(target, "distilbert") and hasattr(
-            target.distilbert, "transformer"
-        ):
+        elif hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
             return _inject_into_layers(
                 target.distilbert.transformer.layer,
                 cfg,
@@ -1203,9 +1170,7 @@ def inject_performer(
                 **kwargs,
             )
         except Exception as e:
-            logger.warning(
-                "PerformerAttention construction/weight copying failed: %s", e
-            )
+            logger.warning("PerformerAttention construction/weight copying failed: %s", e)
             return None
 
         if target is not None:

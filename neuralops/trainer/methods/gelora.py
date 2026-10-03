@@ -84,11 +84,7 @@ def collect_hidden_states(model, dataloader, num_batches=10, max_samples=800) ->
         for i, batch in enumerate(dataloader):
             if i >= num_batches or total >= max_samples:
                 break
-            batch = {
-                k: v.to(model.device)
-                for k, v in batch.items()
-                if isinstance(v, torch.Tensor)
-            }
+            batch = {k: v.to(model.device) for k, v in batch.items() if isinstance(v, torch.Tensor)}
             model(**batch)
             total += batch["input_ids"].size(0)
 
@@ -104,9 +100,7 @@ def collect_hidden_states(model, dataloader, num_batches=10, max_samples=800) ->
 
 def compute_gelora_base_ranks(model, dataloader, config) -> Any:
     """Compute and return gelora base ranks."""
-    layer_hidden = collect_hidden_states(
-        model, dataloader, num_batches=8, max_samples=800
-    )
+    layer_hidden = collect_hidden_states(model, dataloader, num_batches=8, max_samples=800)
     layer_id = {}
     for idx, hs in layer_hidden.items():
         if hs.shape[0] < 10:
@@ -144,6 +138,4 @@ def compute_gelora_base_ranks(model, dataloader, config) -> Any:
 @register_method("fisher_gelora")
 def apply_fisher_gelora(model, config) -> None:
     """Apply fisher gelora."""
-    logger.info(
-        "Fisher‑GeLoRA registered. Use compute_gelora_base_ranks in training script."
-    )
+    logger.info("Fisher‑GeLoRA registered. Use compute_gelora_base_ranks in training script.")

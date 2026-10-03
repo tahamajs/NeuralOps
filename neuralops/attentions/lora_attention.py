@@ -36,6 +36,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -84,22 +85,10 @@ def apply_rotary_pos_emb(
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q_rot.dtype)
-        )
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k_rot.dtype)
-        )
-        q = (
-            torch.cat([q_rot_embed, q_pass], dim=-1)
-            if q_pass.numel() > 0
-            else q_rot_embed
-        )
-        k = (
-            torch.cat([k_rot_embed, k_pass], dim=-1)
-            if k_pass.numel() > 0
-            else k_rot_embed
-        )
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     else:
         cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
         q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
@@ -139,9 +128,7 @@ class LoRALinear(nn.Module):
         self.out_features = int(out_features)
         self.lora_rank = int(lora_rank)
         self.lora_alpha = float(lora_alpha)
-        self.lora_scaling = (
-            (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
-        )
+        self.lora_scaling = (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
         self.freeze_base = bool(freeze_base)
 
         self.weight = nn.Parameter(torch.empty((out_features, in_features), **fk))
@@ -152,9 +139,7 @@ class LoRALinear(nn.Module):
 
         if self.lora_rank > 0:
             self.lora_A = nn.Parameter(torch.empty((self.lora_rank, in_features), **fk))
-            self.lora_B = nn.Parameter(
-                torch.zeros((out_features, self.lora_rank), **fk)
-            )
+            self.lora_B = nn.Parameter(torch.zeros((out_features, self.lora_rank), **fk))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -206,9 +191,7 @@ class LoRALinear(nn.Module):
 
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = (
-                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            )
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
             lora_out = F.linear(F.linear(x, a), bb) * self.lora_scaling
             out = out + lora_out
         return out
@@ -271,17 +254,11 @@ class LoRAAttention(BaseAttention):
         self.all_head_size = self.num_heads * self.head_dim
         self.kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = int(self.adapter.kv_repeat)
-        self.is_decoder = (
-            bool(getattr(cfg, "is_decoder", False)) if cfg is not None else False
-        )
+        self.is_decoder = bool(getattr(cfg, "is_decoder", False)) if cfg is not None else False
         self.is_nested_encoder = False
 
         self.lora_rank = actual_lora_rank
-        self.alpha = (
-            float(getattr(cfg, "lora_alpha", alpha))
-            if cfg is not None
-            else float(alpha)
-        )
+        self.alpha = float(getattr(cfg, "lora_alpha", alpha)) if cfg is not None else float(alpha)
 
         self.q_proj = LoRALinear(
             self.hidden_size,
@@ -412,9 +389,7 @@ class LoRAAttention(BaseAttention):
                 logger.debug("UniversalAdapter fallback failed: %s", e)
 
         # 2. GPT-2 fused c_attn
-        if hasattr(src, "c_attn") and any(
-            extracted[p][0] is None for p in ("q", "k", "v")
-        ):
+        if hasattr(src, "c_attn") and any(extracted[p][0] is None for p in ("q", "k", "v")):
             c_attn = src.c_attn
             base_c = getattr(c_attn, "base_layer", c_attn)
             cw = getattr(base_c, "weight", getattr(c_attn, "weight", None))
@@ -457,9 +432,7 @@ class LoRAAttention(BaseAttention):
                 extracted["o"] = (ow, bo.data.clone() if bo is not None else None)
 
         # 3. Nested BERT / RoBERTa
-        if hasattr(src, "self") and any(
-            extracted[p][0] is None for p in ("q", "k", "v")
-        ):
+        if hasattr(src, "self") and any(extracted[p][0] is None for p in ("q", "k", "v")):
             s = src.self
             if hasattr(s, "query") and extracted["q"][0] is None:
                 m = s.query
@@ -480,11 +453,7 @@ class LoRAAttention(BaseAttention):
                     m.bias.data if m.bias is not None else None,
                 )
 
-        if (
-            hasattr(src, "output")
-            and hasattr(src.output, "dense")
-            and extracted["o"][0] is None
-        ):
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             d = src.output.dense
             extracted["o"] = (
                 d.weight.data,
@@ -685,18 +654,8 @@ class LoRAAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
-        K = (
-            self.k_proj(kv_input)
-            .view(B, N_k, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V = (
-            self.v_proj(kv_input)
-            .view(B, N_k, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # RoPE
         if position_embeddings is None:
@@ -716,9 +675,7 @@ class LoRAAttention(BaseAttention):
             V = repeat_kv(V, self.kv_repeat)
 
         scale = d**-0.5
-        scores = (
-            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         # Attention mask
         mask = attention_mask if attention_mask is not None else kwargs.get("mask")
@@ -846,10 +803,7 @@ def inject_lora_attention(
         src_attn = target
 
     # LORA2-FIX-07: idempotency guard
-    if (
-        isinstance(src_attn, LoRAAttention)
-        or "LoRAAttention" in src_attn.__class__.__name__
-    ):
+    if isinstance(src_attn, LoRAAttention) or "LoRAAttention" in src_attn.__class__.__name__:
         return None
 
     if cfg is None:

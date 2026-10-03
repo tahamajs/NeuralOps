@@ -33,14 +33,12 @@ CODES = HERE.parent
 ROOT = CODES.parent
 sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "neuralops")]
 
+from neuralops.benchmarks.run_quality_sweep import evaluate_comprehensive, prepare_eval_batches
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.eval_all_models_datasets import apply_module_to_model
-from neuralops.benchmarks.run_quality_sweep import evaluate_comprehensive, prepare_eval_batches
 
 LOG = logging.getLogger("MultiSeedRunner")
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 SEEDS = [42, 123, 456]
 TARGET_MODULES = ["dense", "a3", "kmeans", "aasvd", "adaptive_svd", "adaptive"]
@@ -139,9 +137,7 @@ def main():
             try:
                 free_bytes, _ = torch.cuda.mem_get_info()
                 free_gb = free_bytes / (1024**3)
-                args.batch_size = (
-                    32 if free_gb >= 6.0 else (16 if free_gb >= 4.0 else 8)
-                )
+                args.batch_size = 32 if free_gb >= 6.0 else (16 if free_gb >= 4.0 else 8)
             except Exception:
                 args.batch_size = 16
         else:
@@ -174,14 +170,10 @@ def main():
         ds = load_from_disk(args.dataset_dir)
     else:
         ds = load_dataset("glue", "mnli")
-    val_split = (
-        ds["validation_matched"] if "validation_matched" in ds else ds["validation"]
-    )
+    val_split = ds["validation_matched"] if "validation_matched" in ds else ds["validation"]
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_path)
-    eval_batches = prepare_eval_batches(
-        tokenizer, val_split, "mnli", 128, args.batch_size, device
-    )
+    eval_batches = prepare_eval_batches(tokenizer, val_split, "mnli", 128, args.batch_size, device)
     LOG.info("Prepared %d validation batches for MNLI evaluation", len(eval_batches))
 
     # Store runs: module -> list of accuracies and F1s
@@ -199,9 +191,7 @@ def main():
             t0 = time.time()
 
             try:
-                model = AutoModelForSequenceClassification.from_pretrained(
-                    args.model_path
-                )
+                model = AutoModelForSequenceClassification.from_pretrained(args.model_path)
                 model.eval()
                 model.to(device)
 

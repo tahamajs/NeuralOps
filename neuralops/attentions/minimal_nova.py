@@ -5,6 +5,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -50,22 +51,10 @@ def apply_rotary_pos_emb(
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q_rot.dtype)
-        )
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k_rot.dtype)
-        )
-        q = (
-            torch.cat([q_rot_embed, q_pass], dim=-1)
-            if q_pass.numel() > 0
-            else q_rot_embed
-        )
-        k = (
-            torch.cat([k_rot_embed, k_pass], dim=-1)
-            if k_pass.numel() > 0
-            else k_rot_embed
-        )
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     else:
         cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
         q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
@@ -271,14 +260,10 @@ class MinimalNOVAAttention(BaseAttention):
             "num_attention_heads",
             getattr(cfg, "num_heads", kwargs.get("num_attention_heads", 4)),
         )
-        self.hidden_size: int = getattr(
-            cfg, "hidden_size", kwargs.get("hidden_size", 768)
-        )
+        self.hidden_size: int = getattr(cfg, "hidden_size", kwargs.get("hidden_size", 768))
 
         cfg_head_dim = getattr(cfg, "head_dim", None) if cfg else None
-        adapter_head_dim = (
-            getattr(getattr(cfg, "adapter", None), "head_dim", None) if cfg else None
-        )
+        adapter_head_dim = getattr(getattr(cfg, "adapter", None), "head_dim", None) if cfg else None
         self.head_dim: int = int(
             cfg_head_dim
             or adapter_head_dim
@@ -288,9 +273,7 @@ class MinimalNOVAAttention(BaseAttention):
         self.all_head_size: int = self.num_heads * self.head_dim
 
         cfg_kv = (
-            getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", None))
-            if cfg
-            else None
+            getattr(cfg, "num_key_value_heads", getattr(cfg, "num_kv_heads", None)) if cfg else None
         )
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
@@ -335,12 +318,8 @@ class MinimalNOVAAttention(BaseAttention):
         src_p = None
         if pretrained_attn is not None:
             src_p = next(pretrained_attn.parameters(), None)
-        target_dtype = kwargs.get(
-            "dtype", src_p.dtype if src_p is not None else torch.float32
-        )
-        target_device = kwargs.get(
-            "device", src_p.device if src_p is not None else None
-        )
+        target_dtype = kwargs.get("dtype", src_p.dtype if src_p is not None else torch.float32)
+        target_device = kwargs.get("device", src_p.device if src_p is not None else None)
 
         self.q_proj = FactorisedLinear(
             self.hidden_size,
@@ -388,9 +367,7 @@ class MinimalNOVAAttention(BaseAttention):
         )
 
         dropout_p = (
-            getattr(
-                cfg, "dropout", getattr(cfg, "attention_probs_dropout_prob", dropout)
-            )
+            getattr(cfg, "dropout", getattr(cfg, "attention_probs_dropout_prob", dropout))
             if cfg
             else dropout
         )
@@ -435,9 +412,7 @@ class MinimalNOVAAttention(BaseAttention):
 
         # 2. GPT-2 Fused c_attn / c_proj Conv1D handling
         if hasattr(src, "c_attn") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -450,10 +425,7 @@ class MinimalNOVAAttention(BaseAttention):
                 if (
                     ("Conv1D" in p_cls)
                     or hasattr(base_c, "nf")
-                    or (
-                        "Conv1D"
-                        in getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__
-                    )
+                    or ("Conv1D" in getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__)
                     or hasattr(c_attn_mod, "nf")
                     or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size)
                 ):
@@ -463,11 +435,7 @@ class MinimalNOVAAttention(BaseAttention):
                 k_w = weight[split_size : 2 * split_size, :]
                 v_w = weight[2 * split_size :, :]
                 q_b = bias_data[:split_size] if bias_data is not None else None
-                k_b = (
-                    bias_data[split_size : 2 * split_size]
-                    if bias_data is not None
-                    else None
-                )
+                k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
                 v_b = bias_data[2 * split_size :] if bias_data is not None else None
                 extracted["q"] = (q_w, q_b)
                 extracted["k"] = (k_w, k_b)
@@ -483,10 +451,7 @@ class MinimalNOVAAttention(BaseAttention):
                 if (
                     ("Conv1D" in p_cls)
                     or hasattr(base_o, "nf")
-                    or (
-                        "Conv1D"
-                        in getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__
-                    )
+                    or ("Conv1D" in getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__)
                     or hasattr(c_proj_mod, "nf")
                     or (w_o.dim() == 2 and w_o.shape[0] < w_o.shape[1])
                 ):
@@ -496,9 +461,7 @@ class MinimalNOVAAttention(BaseAttention):
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             s = src.self
             if hasattr(s, "query"):
@@ -508,11 +471,7 @@ class MinimalNOVAAttention(BaseAttention):
             if hasattr(s, "value"):
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if (
-            hasattr(src, "output")
-            and hasattr(src.output, "dense")
-            and extracted["o"][0] is None
-        ):
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -571,8 +530,7 @@ class MinimalNOVAAttention(BaseAttention):
             is_nested = True
         if hasattr(src, "config"):
             if (
-                getattr(src.config, "model_type", "").lower()
-                in ("roberta", "bert", "xlm-roberta")
+                getattr(src.config, "model_type", "").lower() in ("roberta", "bert", "xlm-roberta")
                 and not has_out_proj
             ):
                 is_nested = True
@@ -583,9 +541,7 @@ class MinimalNOVAAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            logger.warning(
-                "Module copy_weights warning. Proceeding with initialized weights."
-            )
+            logger.warning("Module copy_weights warning. Proceeding with initialized weights.")
 
         # Frobenius norm validation
         for proj_key in ["q", "k", "v"]:
@@ -657,10 +613,7 @@ class MinimalNOVAAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         # Defensive device check
-        if (
-            self.q_proj.down.weight.device != device
-            or self.q_proj.down.weight.dtype != dtype
-        ):
+        if self.q_proj.down.weight.device != device or self.q_proj.down.weight.dtype != dtype:
             self.to(device=device, dtype=dtype)
 
         is_cross = encoder_hidden_states is not None
@@ -668,18 +621,8 @@ class MinimalNOVAAttention(BaseAttention):
         N_kv = kv_input.shape[1]
 
         Q = self.q_proj(hidden_states).view(B, N, H, D).transpose(1, 2).contiguous()
-        K = (
-            self.k_proj(kv_input)
-            .view(B, N_kv, self.num_kv_heads, D)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V = (
-            self.v_proj(kv_input)
-            .view(B, N_kv, self.num_kv_heads, D)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        K = self.k_proj(kv_input).view(B, N_kv, self.num_kv_heads, D).transpose(1, 2).contiguous()
+        V = self.v_proj(kv_input).view(B, N_kv, self.num_kv_heads, D).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -695,7 +638,6 @@ class MinimalNOVAAttention(BaseAttention):
         # Memory-efficient: use SDPA to avoid OOM on large seqs; fallback to explicit if needed
 
         try:
-
             _qs = Q.half() if Q.dtype == torch.float32 else Q
 
             _ks = K.half() if K.dtype == torch.float32 else K
@@ -732,19 +674,14 @@ class MinimalNOVAAttention(BaseAttention):
             ), None
 
         except Exception:
-
             pass
 
-        scores = (
-            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder and not is_cross and N > 1:
             causal_mask = (
                 torch.triu(
-                    torch.full(
-                        (N, N_kv), float("-inf"), device=device, dtype=torch.float32
-                    ),
+                    torch.full((N, N_kv), float("-inf"), device=device, dtype=torch.float32),
                     diagonal=1,
                 )
                 .unsqueeze(0)
@@ -756,16 +693,11 @@ class MinimalNOVAAttention(BaseAttention):
         if eff_mask is not None:
             if eff_mask.dim() == 2:
                 if eff_mask.dtype == torch.bool:
-                    scores = scores.masked_fill(
-                        ~eff_mask.unsqueeze(1).unsqueeze(2), -10000.0
-                    )
+                    scores = scores.masked_fill(~eff_mask.unsqueeze(1).unsqueeze(2), -10000.0)
                 elif torch.is_floating_point(eff_mask) and (eff_mask < 0).any():
                     scores = scores + eff_mask.unsqueeze(1).unsqueeze(2).float()
                 else:
-                    scores = (
-                        scores
-                        + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
-                    )
+                    scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
             elif eff_mask.dim() == 3:
                 if eff_mask.dtype == torch.bool:
                     scores = scores.masked_fill(~eff_mask.unsqueeze(1), -10000.0)
@@ -852,9 +784,7 @@ def inject_minimal_nova(
 
     if layer_list is not None:
         # Pre-test on the first layer before mutating model
-        test_src = getattr(
-            layer_list[0], "attention", getattr(layer_list[0], "self", None)
-        )
+        test_src = getattr(layer_list[0], "attention", getattr(layer_list[0], "self", None))
         if test_src is not None:
             try:
                 test_module = MinimalNOVAAttention(
@@ -900,10 +830,7 @@ def inject_minimal_nova(
         return None
 
     # Double injection guard
-    if (
-        isinstance(src_attn, MinimalNOVAAttention)
-        or "MinimalNOVA" in src_attn.__class__.__name__
-    ):
+    if isinstance(src_attn, MinimalNOVAAttention) or "MinimalNOVA" in src_attn.__class__.__name__:
         return None
 
     new_attn = MinimalNOVAAttention(

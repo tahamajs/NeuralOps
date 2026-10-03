@@ -71,9 +71,7 @@ class A3FactorizedLinear(nn.Module):
         self.rank = max(1, min(rank, in_features, out_features))
         self.lora_rank = max(0, int(lora_rank))
         self.lora_alpha = float(lora_alpha)
-        self.lora_scaling = (
-            (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
-        )
+        self.lora_scaling = (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
 
         fk = {"dtype": dtype, "device": device}
         self.V = nn.Parameter(torch.empty(self.rank, in_features, **fk))
@@ -107,11 +105,7 @@ class A3FactorizedLinear(nn.Module):
                     _orthogonal_init(param)
             if self.bias is not None:
                 nn.init.zeros_(self.bias)
-            if (
-                self.lora_rank > 0
-                and self.lora_A is not None
-                and self.lora_B is not None
-            ):
+            if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
                 nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
                 nn.init.zeros_(self.lora_B)
 
@@ -134,9 +128,7 @@ class A3FactorizedLinear(nn.Module):
             w = w + torch.matmul(self.lora_B, self.lora_A) * self.lora_scaling
         return w
 
-    def set_low_rank_factors(
-        self, U_factor: torch.Tensor, V_factor: torch.Tensor
-    ) -> None:
+    def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
         with torch.no_grad():
             self.U.data.copy_(U_factor.to(device=self.U.device, dtype=self.U.dtype))
             self.V.data.copy_(V_factor.to(device=self.V.device, dtype=self.V.dtype))
@@ -224,9 +216,7 @@ def _orthogonal_init(tensor: torch.Tensor) -> None:
         nn.init.orthogonal_(tensor)
         return
     # Generate orthogonal via QR on a random matrix of the appropriate shape
-    a = torch.randn(
-        max(rows, cols), min(rows, cols), device=tensor.device, dtype=tensor.dtype
-    )
+    a = torch.randn(max(rows, cols), min(rows, cols), device=tensor.device, dtype=tensor.dtype)
     q, _ = torch.linalg.qr(a)
     if rows >= cols:
         tensor.copy_(q[:rows, :])
@@ -275,9 +265,7 @@ class A3Compressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="a3", **kwargs)
-        cfg = kwargs.get(
-            "comp_config", kwargs.get("cfg", getattr(model, "config", None))
-        )
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", getattr(model, "config", None)))
 
         # CLI overrides (kept for backward compatibility)
         import sys
@@ -286,13 +274,9 @@ class A3Compressor(BaseCompressor):
         cli_energy = None
         cli_rank = None
         for _idx, _arg in enumerate(sys.argv):
-            if _arg in ("--a3_use_cholesky", "--use_cholesky") and _idx + 1 < len(
-                sys.argv
-            ):
+            if _arg in ("--a3_use_cholesky", "--use_cholesky") and _idx + 1 < len(sys.argv):
                 cli_cholesky = sys.argv[_idx + 1].lower() in ("true", "1", "yes")
-            elif _arg.startswith("--a3_use_cholesky=") or _arg.startswith(
-                "--use_cholesky="
-            ):
+            elif _arg.startswith("--a3_use_cholesky=") or _arg.startswith("--use_cholesky="):
                 cli_cholesky = _arg.split("=")[1].lower() in ("true", "1", "yes")
             elif _arg in (
                 "--a3_use_energy_weighting",
@@ -328,9 +312,7 @@ class A3Compressor(BaseCompressor):
                 _cfg_get(
                     cfg,
                     "use_energy_weighting",
-                    _cfg_get(
-                        cfg, "a3_use_fisher", _cfg_get(cfg, "use_fisher", use_fisher)
-                    ),
+                    _cfg_get(cfg, "a3_use_fisher", _cfg_get(cfg, "use_fisher", use_fisher)),
                 ),
             )
             use_cholesky = _cfg_get(
@@ -341,12 +323,8 @@ class A3Compressor(BaseCompressor):
                 "a3_allow_ln_failure",
                 _cfg_get(cfg, "allow_ln_failure", allow_ln_failure),
             )
-            lora_rank = _cfg_get(
-                cfg, "a3_lora_rank", _cfg_get(cfg, "lora_rank", lora_rank)
-            )
-            lora_alpha = _cfg_get(
-                cfg, "a3_lora_alpha", _cfg_get(cfg, "lora_alpha", lora_alpha)
-            )
+            lora_rank = _cfg_get(cfg, "a3_lora_rank", _cfg_get(cfg, "lora_rank", lora_rank))
+            lora_alpha = _cfg_get(cfg, "a3_lora_alpha", _cfg_get(cfg, "lora_alpha", lora_alpha))
             recalibrate_ln = _cfg_get(
                 cfg,
                 "a3_recalibrate_ln",
@@ -357,12 +335,8 @@ class A3Compressor(BaseCompressor):
                 "a3_attention_only",
                 _cfg_get(cfg, "target_attention_only", target_attention_only),
             )
-            max_error = _cfg_get(
-                cfg, "a3_max_error", _cfg_get(cfg, "max_error", max_error)
-            )
-            max_retries = _cfg_get(
-                cfg, "a3_max_retries", _cfg_get(cfg, "max_retries", max_retries)
-            )
+            max_error = _cfg_get(cfg, "a3_max_error", _cfg_get(cfg, "max_error", max_error))
+            max_retries = _cfg_get(cfg, "a3_max_retries", _cfg_get(cfg, "max_retries", max_retries))
             fallback_to_original = _cfg_get(
                 cfg,
                 "a3_fallback_to_original",
@@ -388,9 +362,7 @@ class A3Compressor(BaseCompressor):
         self.max_error = float(max_error)
         self.n_calib = int(n_calib)
         self.max_retries = max(0, int(max_retries))
-        self.fallback_to_original = bool(
-            kwargs.get("fallback_to_original", fallback_to_original)
-        )
+        self.fallback_to_original = bool(kwargs.get("fallback_to_original", fallback_to_original))
         self.normalize_scale = bool(kwargs.get("normalize_scale", normalize_scale))
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.calibration_loader = calibration_loader
@@ -403,9 +375,7 @@ class A3Compressor(BaseCompressor):
         self.cov_dtype_name = str(cov_dtype).lower()
         if self.cov_dtype_name not in ("float32", "float16"):
             self.cov_dtype_name = "float32"
-        self.cov_dtype = (
-            torch.float32 if self.cov_dtype_name == "float32" else torch.float16
-        )
+        self.cov_dtype = torch.float32 if self.cov_dtype_name == "float32" else torch.float16
 
         self.stats: dict[str, Any] = {}
         self.compressed_layers: list[str] = []
@@ -527,19 +497,13 @@ class A3Compressor(BaseCompressor):
         A3-FIX-07: padding filter is more robust.
         A3-FIX-08: covariance can be accumulated in lower precision.
         """
-        if (
-            not self.use_energy_weighting
-            and not self.recalibrate_ln
-            and not self.use_cholesky
-        ):
+        if not self.use_energy_weighting and not self.recalibrate_ln and not self.use_cholesky:
             return {}, {}
 
         # Cache target names
         if self._target_module_names is None:
             self._target_module_names = [
-                name
-                for name, m in self.model.named_modules()
-                if self._is_target(name, m)
+                name for name, m in self.model.named_modules() if self._is_target(name, m)
             ]
 
         target_set = set(self._target_module_names)
@@ -602,11 +566,7 @@ class A3Compressor(BaseCompressor):
                         if isinstance(batch, dict):
                             self.model(
                                 **{
-                                    k: (
-                                        v.to(self.target_device)
-                                        if hasattr(v, "to")
-                                        else v
-                                    )
+                                    k: (v.to(self.target_device) if hasattr(v, "to") else v)
                                     for k, v in batch.items()
                                 }
                             )
@@ -616,11 +576,7 @@ class A3Compressor(BaseCompressor):
                             try:
                                 self.model(
                                     *[
-                                        (
-                                            b.to(self.target_device)
-                                            if hasattr(b, "to")
-                                            else b
-                                        )
+                                        (b.to(self.target_device) if hasattr(b, "to") else b)
                                         for b in batch
                                     ]
                                 )
@@ -645,10 +601,7 @@ class A3Compressor(BaseCompressor):
                             total_n = next(iter(calib_inputs.values())).shape[0]
                             bs = 16
                             for start in range(0, total_n, bs):
-                                sub = {
-                                    k: v[start : start + bs]
-                                    for k, v in calib_inputs.items()
-                                }
+                                sub = {k: v[start : start + bs] for k, v in calib_inputs.items()}
                                 self.model(**sub)
                         elif isinstance(calib_inputs, torch.Tensor):
                             total_n = calib_inputs.shape[0]
@@ -706,9 +659,7 @@ class A3Compressor(BaseCompressor):
         if r_ceiling < r_floor:
             return [r_ceiling]
         # Geometric grid between r_floor and r_ceiling with ~8 points
-        n_points = max(
-            4, min(10, int(math.log2(max(2, r_ceiling // max(1, r_floor)))) + 2)
-        )
+        n_points = max(4, min(10, int(math.log2(max(2, r_ceiling // max(1, r_floor)))) + 2))
         cands = set()
         for i in range(n_points):
             t = i / (n_points - 1) if n_points > 1 else 0
@@ -818,9 +769,7 @@ class A3Compressor(BaseCompressor):
         bias = getattr(target_mod, "bias", getattr(module, "bias", None))
 
         mod_with_nf = (
-            target_mod
-            if hasattr(target_mod, "nf")
-            else (module if hasattr(module, "nf") else None)
+            target_mod if hasattr(target_mod, "nf") else (module if hasattr(module, "nf") else None)
         )
         if mod_with_nf is not None:
             out_f = mod_with_nf.nf
@@ -872,9 +821,7 @@ class A3Compressor(BaseCompressor):
                 use_cholesky_this_layer = True
             except Exception as e:
                 # A3-FIX-12: log
-                logger.warning(
-                    "A3: Cholesky failed on %s (%s); using diagonal.", name, e
-                )
+                logger.warning("A3: Cholesky failed on %s (%s); using diagonal.", name, e)
                 diag_c = torch.diag(cov).float()
                 scale = torch.sqrt(diag_c.clamp(min=1e-8) + 1e-6)
                 if self.normalize_scale:
@@ -952,9 +899,7 @@ class A3Compressor(BaseCompressor):
                 V_r = V_r / scale.unsqueeze(0)
             best_layer_factors = (U_r, V_r)
             best_r = chosen_r
-            best_err = self._compute_activation_error(
-                W, torch.matmul(U_r, V_r), X_for_error, cov
-            )
+            best_err = self._compute_activation_error(W, torch.matmul(U_r, V_r), X_for_error, cov)
         else:
             r_floor = max(16, min(self.rank, r_ceiling))
             best_layer_factors, best_err, best_r = self._strs_search(
@@ -974,8 +919,7 @@ class A3Compressor(BaseCompressor):
         if best_err > self.max_error:
             if self.fallback_to_original:
                 logger.warning(
-                    "A3: %s exceeded max_error (%.3f > %.3f) at r=%d; "
-                    "falling back to original.",
+                    "A3: %s exceeded max_error (%.3f > %.3f) at r=%d; falling back to original.",
                     name,
                     best_err,
                     self.max_error,
@@ -993,9 +937,7 @@ class A3Compressor(BaseCompressor):
 
         wrapper_lora_rank = getattr(module, "lora_rank", getattr(module, "r", 0))
         effective_lora_rank = max(lora_rank, wrapper_lora_rank, self.lora_rank)
-        effective_lora_alpha = max(
-            lora_alpha, getattr(module, "lora_alpha", self.lora_alpha)
-        )
+        effective_lora_alpha = max(lora_alpha, getattr(module, "lora_alpha", self.lora_alpha))
 
         U_final, V_final = best_layer_factors
 
@@ -1013,13 +955,9 @@ class A3Compressor(BaseCompressor):
         factorized_layer.V.data.copy_(V_final.to(dtype=dtype, device=device))
         if bias is not None and factorized_layer.bias is not None:
             if factorized_layer.bias.shape == bias.shape:
-                factorized_layer.bias.data.copy_(
-                    bias.data.to(dtype=dtype, device=device)
-                )
+                factorized_layer.bias.data.copy_(bias.data.to(dtype=dtype, device=device))
             else:
-                logger.warning(
-                    "A3: bias shape mismatch on %s; skipping bias copy.", name
-                )
+                logger.warning("A3: bias shape mismatch on %s; skipping bias copy.", name)
 
         W_rec_final = torch.matmul(U_final, V_final)
         param_err = torch.linalg.norm(W - W_rec_final).item() / (norm_orig + 1e-8)
@@ -1140,17 +1078,13 @@ class A3Compressor(BaseCompressor):
                             f"set allow_ln_failure=True to bypass."
                         ) from e
             else:
-                logger.info(
-                    "A3: LayerNorm recalibration skipped (no calibration data)."
-                )
+                logger.info("A3: LayerNorm recalibration skipped (no calibration data).")
 
         self._compressed_params = self._count_params(self.model)
         avg_err = (total_err / factorized_count) if factorized_count > 0 else 0.0
         total_params = sum(layer_param_counts.values()) if layer_param_counts else 0
         weighted_err = (
-            sum(
-                layer_stats[k]["rel_error"] * layer_param_counts[k] for k in layer_stats
-            )
+            sum(layer_stats[k]["rel_error"] * layer_param_counts[k] for k in layer_stats)
             / max(1, total_params)
             if total_params > 0
             else 0.0
@@ -1241,18 +1175,14 @@ def a3_compressor_factory(
                 _cfg_get(
                     comp_config,
                     "a3_use_fisher",
-                    _cfg_get(
-                        comp_config, "use_fisher", kwargs.get("use_fisher", use_fisher)
-                    ),
+                    _cfg_get(comp_config, "use_fisher", kwargs.get("use_fisher", use_fisher)),
                 ),
             ),
         )
         u_chol = _cfg_get(
             comp_config,
             "a3_use_cholesky",
-            _cfg_get(
-                comp_config, "use_cholesky", kwargs.get("use_cholesky", use_cholesky)
-            ),
+            _cfg_get(comp_config, "use_cholesky", kwargs.get("use_cholesky", use_cholesky)),
         )
         allow_ln = _cfg_get(
             comp_config,
@@ -1308,9 +1238,7 @@ def a3_compressor_factory(
         norm_scale = _cfg_get(
             comp_config,
             "a3_normalize_scale",
-            _cfg_get(
-                comp_config, "normalize_scale", kwargs.get("normalize_scale", True)
-            ),
+            _cfg_get(comp_config, "normalize_scale", kwargs.get("normalize_scale", True)),
         )
         n_calib = _cfg_get(
             comp_config,
@@ -1319,9 +1247,7 @@ def a3_compressor_factory(
         )
     else:
         r = kwargs.pop("rank", rank)
-        u_fish = kwargs.get(
-            "use_energy_weighting", kwargs.get("use_fisher", use_fisher)
-        )
+        u_fish = kwargs.get("use_energy_weighting", kwargs.get("use_fisher", use_fisher))
         u_chol = kwargs.get("use_cholesky", use_cholesky)
         allow_ln = kwargs.get("allow_ln_failure", allow_ln_failure)
         l_rank = kwargs.get("lora_rank", lora_rank)

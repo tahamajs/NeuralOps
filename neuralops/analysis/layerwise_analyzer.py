@@ -103,9 +103,9 @@ class StreamingLayerAccumulator:
                 self.cov_samples = sub_n
             else:
                 total_s = self.cov_samples + sub_n
-                self.cov_matrix = self.cov_matrix * (
-                    self.cov_samples / total_s
-                ) + batch_cov * (sub_n / total_s)
+                self.cov_matrix = self.cov_matrix * (self.cov_samples / total_s) + batch_cov * (
+                    sub_n / total_s
+                )
                 self.cov_samples = total_s
 
             self.total_tokens += n_tokens
@@ -199,9 +199,7 @@ class LayerwiseAnalyzer:
         # Fallback: if no digit-indexed layers found, look for any layer module
         if not target_layers:
             for name, module in self.model.named_modules():
-                if "layer" in name.lower() and isinstance(
-                    module, (nn.ModuleList, nn.Sequential)
-                ):
+                if "layer" in name.lower() and isinstance(module, (nn.ModuleList, nn.Sequential)):
                     for sub_idx, sub_mod in enumerate(module):
                         target_layers.append((f"{name}.{sub_idx}", sub_mod))
                     break
@@ -213,9 +211,7 @@ class LayerwiseAnalyzer:
         layers = self._find_transformer_layers()
 
         num_layers = len(layers)
-        self.layer_accumulators = [
-            StreamingLayerAccumulator() for _ in range(num_layers)
-        ]
+        self.layer_accumulators = [StreamingLayerAccumulator() for _ in range(num_layers)]
 
         for layer_idx, (layer_name, module) in enumerate(layers):
 
@@ -312,13 +308,9 @@ class LayerwiseAnalyzer:
                 sim_clamped = 1.0
             similarities.append(sim_clamped)
 
-        effective_ranks = [
-            acc.compute_effective_rank() for acc in self.layer_accumulators
-        ]
+        effective_ranks = [acc.compute_effective_rank() for acc in self.layer_accumulators]
         max_outliers = [acc.max_activation for acc in self.layer_accumulators]
-        outlier_ratios = [
-            acc.compute_outlier_ratio() for acc in self.layer_accumulators
-        ]
+        outlier_ratios = [acc.compute_outlier_ratio() for acc in self.layer_accumulators]
         kurtosis_scores = [acc.compute_kurtosis() for acc in self.layer_accumulators]
 
         # Estimate intrinsic dimension using mean vectors

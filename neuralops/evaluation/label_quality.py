@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
+
 from neuralops.core.registry import Registry
 
 LABEL_QUALITY_REGISTRY = Registry("label_quality_methods")
@@ -23,9 +24,7 @@ class LabelQualityReport:
     issue_rate: float
     label_issue_indices: np.ndarray
     label_quality_scores: np.ndarray  # per‑sample confidence (0 = bad, 1 = perfect)
-    suggested_labels: np.ndarray | None = (
-        None  # what cleanlab thinks the label should be
-    )
+    suggested_labels: np.ndarray | None = None  # what cleanlab thinks the label should be
     per_class_issues: dict[int, int] = field(default_factory=dict)
     outlier_indices: np.ndarray = field(default_factory=lambda: np.array([]))
     near_duplicate_pairs: list[tuple[int, int]] = field(default_factory=list)
@@ -105,9 +104,7 @@ class LabelQualityDetector:
         )
 
     # ── Confident Joint (core algorithm) ────────────────────────────
-    def _compute_confident_joint(
-        self, labels: np.ndarray, pred_probs: np.ndarray
-    ) -> np.ndarray:
+    def _compute_confident_joint(self, labels: np.ndarray, pred_probs: np.ndarray) -> np.ndarray:
         """
         Estimate the joint distribution of noisy labels and true labels.
         This is the key insight from Cleanlab / confident learning.
@@ -161,9 +158,7 @@ class LabelQualityDetector:
         issue_mask = np.zeros(n_samples, dtype=bool)
         for k in range(n_classes):
             mask_k = labels == k
-            issue_mask[mask_k] = self_confidence[mask_k] < (
-                thresholds[k] * (1 - self.threshold)
-            )
+            issue_mask[mask_k] = self_confidence[mask_k] < (thresholds[k] * (1 - self.threshold))
 
         # Suggested labels: what the model predicts instead
         suggested = np.argmax(pred_probs, axis=1)

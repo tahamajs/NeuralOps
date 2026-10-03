@@ -44,6 +44,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.utils.compat import repeat_kv
@@ -177,20 +178,14 @@ def _apply_rope(q, k, cos, sin):
         cos = cos.unsqueeze(0)
         sin = sin.unsqueeze(0)
     if cos.shape[-2] != q.shape[-2]:
-        raise ValueError(
-            f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}"
-        )
+        raise ValueError(f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}")
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot = (q_rot * cos.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q_rot.dtype)
-        )
-        k_rot = (k_rot * cos.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k_rot.dtype)
-        )
+        q_rot = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
         q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot
         k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot
     else:
@@ -205,15 +200,9 @@ def _apply_rope(q, k, cos, sin):
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register(
-    "hybrid_attention", supports_causal=True, supports_gqa=True
-)
-@ATTENTION_REGISTRY.register(
-    "weighted_ensemble", supports_causal=True, supports_gqa=True
-)
-@ATTENTION_REGISTRY.register(
-    "smart_weighted_ensemble", supports_causal=True, supports_gqa=True
-)
+@ATTENTION_REGISTRY.register("hybrid_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("weighted_ensemble", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("smart_weighted_ensemble", supports_causal=True, supports_gqa=True)
 class HybridAttention(BaseAttention):
     """
     Hybrid softmax + linear attention with per-head dynamic gated fusion.
@@ -239,9 +228,7 @@ class HybridAttention(BaseAttention):
     ) -> None:
         super().__init__(config, rank, **kwargs)
 
-        cfg_source = (
-            getattr(config, "text_config", config) if config is not None else None
-        )
+        cfg_source = getattr(config, "text_config", config) if config is not None else None
         h_size = (
             hidden_size
             or getattr(cfg_source, "hidden_size", None)
@@ -374,9 +361,9 @@ class HybridAttention(BaseAttention):
                 attn_bias_sdp = None
                 if valid_mask is not None:
                     # Build a proper (B, 1, 1, N_k) additive mask.
-                    attn_bias_sdp = (
-                        (valid_mask[:, None, None, :].float() - 1.0) * 1e4
-                    ).to(q_sdp.dtype)
+                    attn_bias_sdp = ((valid_mask[:, None, None, :].float() - 1.0) * 1e4).to(
+                        q_sdp.dtype
+                    )
 
                 is_causal_sdp = self.is_decoder and past_len == 0 and N > 1
 
@@ -395,9 +382,7 @@ class HybridAttention(BaseAttention):
 
         # Manual path
         scale = 1.0 / math.sqrt(Dh)
-        scores = (
-            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         # Causal mask (offset-aware for cache)
         if self.is_decoder and N > 1:
@@ -406,9 +391,7 @@ class HybridAttention(BaseAttention):
                 abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
                 causal_mask = abs_k <= abs_q
             else:
-                causal_mask = torch.tril(
-                    torch.ones(N, N_k, device=Q.device, dtype=torch.bool)
-                )
+                causal_mask = torch.tril(torch.ones(N, N_k, device=Q.device, dtype=torch.bool))
             scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
 
         # Padding mask
@@ -416,9 +399,7 @@ class HybridAttention(BaseAttention):
             scores = scores.masked_fill(~valid_mask[:, None, None, :].bool(), -1e4)
         elif attention_mask is not None:
             if attention_mask.dim() == 2:
-                ext_mask = (
-                    1.0 - attention_mask.unsqueeze(1).unsqueeze(2).float()
-                ) * -1e4
+                ext_mask = (1.0 - attention_mask.unsqueeze(1).unsqueeze(2).float()) * -1e4
                 scores = scores + ext_mask.to(scores.dtype)
             elif attention_mask.dim() == 3:
                 scores = scores + attention_mask.unsqueeze(1).to(scores.dtype)
@@ -469,9 +450,7 @@ class HybridAttention(BaseAttention):
             chunk_size = 128
             num_chunks = (N_h + chunk_size - 1) // chunk_size
 
-            state_KV = torch.zeros(
-                B_h, H_h, D_h, D_h, device=phi_Q.device, dtype=phi_Q.dtype
-            )
+            state_KV = torch.zeros(B_h, H_h, D_h, D_h, device=phi_Q.device, dtype=phi_Q.dtype)
             state_K = torch.zeros(B_h, H_h, D_h, device=phi_Q.device, dtype=phi_Q.dtype)
 
             num_list = []
@@ -569,10 +548,7 @@ class HybridAttention(BaseAttention):
             cos, sin = position_embeddings
             past_len_rope = 0
             if past_key_value is not None:
-                if (
-                    isinstance(past_key_value, (tuple, list))
-                    and len(past_key_value) >= 1
-                ):
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
                     past_len_rope = past_key_value[0].shape[-2]
                 elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
                     past_len_rope = past_key_value.key_cache[0].shape[-2]
@@ -597,11 +573,7 @@ class HybridAttention(BaseAttention):
             K_cat = K_new
             V_cat = V_new
 
-        if (
-            past_key_value is not None
-            and hasattr(past_key_value, "update")
-            and not is_cross
-        ):
+        if past_key_value is not None and hasattr(past_key_value, "update") and not is_cross:
             past_key_value.update(K_new, V_new, layer_idx)
 
         N_kv = K_cat.shape[2]
@@ -691,9 +663,7 @@ class HybridAttention(BaseAttention):
                 and hasattr(getattr(old_attn, "output", None), "dense")
             )
         )
-        logger.debug(
-            "HybridAttention.copy_weights: nested_encoder=%s", self.is_nested_encoder
-        )
+        logger.debug("HybridAttention.copy_weights: nested_encoder=%s", self.is_nested_encoder)
 
         if hasattr(old_attn, "is_decoder"):
             self.is_decoder = bool(old_attn.is_decoder)
@@ -722,9 +692,7 @@ class HybridAttention(BaseAttention):
                 w, b = None, None
 
             if w is None:
-                logger.warning(
-                    "HybridAttention: no weight for '%s' in %s", proj, cls_name
-                )
+                logger.warning("HybridAttention: no weight for '%s' in %s", proj, cls_name)
                 continue
 
             if w.shape != target.weight.shape:
@@ -741,9 +709,9 @@ class HybridAttention(BaseAttention):
                     s_out, s_in = w.shape
                     with torch.no_grad():
                         target.weight.data.zero_()
-                        target.weight.data[
-                            : min(out_d, s_out), : min(in_d, s_in)
-                        ].copy_(w[: min(out_d, s_out), : min(in_d, s_in)])
+                        target.weight.data[: min(out_d, s_out), : min(in_d, s_in)].copy_(
+                            w[: min(out_d, s_out), : min(in_d, s_in)]
+                        )
                     if b is not None and target.bias is not None:
                         min_b = min(target.bias.numel(), b.numel())
                         with torch.no_grad():
@@ -823,9 +791,7 @@ def inject_weighted_ensemble(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -848,9 +814,7 @@ def inject_weighted_ensemble(
     layer = target
     try:
         if model_config is None:
-            if any(
-                hasattr(layer, a) for a in ("hidden_size", "d_model", "n_embd", "dim")
-            ):
+            if any(hasattr(layer, a) for a in ("hidden_size", "d_model", "n_embd", "dim")):
                 model_config = layer
             elif hasattr(layer, "attention"):
                 old_attn = layer.attention
@@ -858,9 +822,7 @@ def inject_weighted_ensemble(
         src_attn = (
             old_attn
             if old_attn is not None
-            else getattr(
-                layer, "attention", getattr(layer, "self", getattr(layer, "attn", None))
-            )
+            else getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
         )
         if src_attn is None:
             return None

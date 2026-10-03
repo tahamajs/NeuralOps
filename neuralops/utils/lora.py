@@ -83,17 +83,11 @@ class LoRALinear(nn.Module):
 
     def merge(self) -> None:
         """In-place merge LoRA delta weight into the base linear layer."""
-        if (
-            self.r > 0
-            and not self.merged
-            and self.lora_A is not None
-            and self.lora_B is not None
-        ):
+        if self.r > 0 and not self.merged and self.lora_A is not None and self.lora_B is not None:
             delta_w = (self.lora_B.weight @ self.lora_A.weight) * self.scaling
             is_conv1d = "conv1d" in self.base_layer.__class__.__name__.lower() or (
                 not isinstance(self.base_layer, nn.Linear)
-                and self.base_layer.weight.shape
-                == (self.in_features, self.out_features)
+                and self.base_layer.weight.shape == (self.in_features, self.out_features)
             )
             if is_conv1d:
                 delta_w = delta_w.t()
@@ -102,17 +96,11 @@ class LoRALinear(nn.Module):
 
     def unmerge(self) -> None:
         """Subtract LoRA delta weight to revert the base linear layer to unmerged state."""
-        if (
-            self.r > 0
-            and self.merged
-            and self.lora_A is not None
-            and self.lora_B is not None
-        ):
+        if self.r > 0 and self.merged and self.lora_A is not None and self.lora_B is not None:
             delta_w = (self.lora_B.weight @ self.lora_A.weight) * self.scaling
             is_conv1d = "conv1d" in self.base_layer.__class__.__name__.lower() or (
                 not isinstance(self.base_layer, nn.Linear)
-                and self.base_layer.weight.shape
-                == (self.in_features, self.out_features)
+                and self.base_layer.weight.shape == (self.in_features, self.out_features)
             )
             if is_conv1d:
                 delta_w = delta_w.t()
@@ -122,12 +110,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass combining base projection with low-rank adapter delta."""
         base_out = self.base_layer(x)
-        if (
-            self.r > 0
-            and not self.merged
-            and self.lora_A is not None
-            and self.lora_B is not None
-        ):
+        if self.r > 0 and not self.merged and self.lora_A is not None and self.lora_B is not None:
             lora_in = self.lora_dropout(x).to(dtype=self.lora_A.weight.dtype)
             lora_out = self.lora_B(self.lora_A(lora_in)) * self.scaling
             return base_out + lora_out.to(dtype=base_out.dtype)
@@ -187,9 +170,7 @@ def find_all_linear_submodule_names(model: nn.Module) -> set[str]:
             module, (nn.Linear, nn.Conv1d)
         ) or module.__class__.__name__ in ("Conv1D", "Linear", "LoRALinear")
         if is_linear_like:
-            if not any(
-                head in name.lower() for head in ("score", "classifier", "lm_head")
-            ):
+            if not any(head in name.lower() for head in ("score", "classifier", "lm_head")):
                 leaf_name = name.split(".")[-1]
                 names.add(leaf_name)
     return names
@@ -235,15 +216,11 @@ def apply_lora(
             is_target = any(target in name for target in targets) or any(
                 target == name for target in targets
             )
-            is_linear_like = (
-                isinstance(child, nn.Linear) or child.__class__.__name__ == "Conv1D"
-            )
+            is_linear_like = isinstance(child, nn.Linear) or child.__class__.__name__ == "Conv1D"
 
             if is_linear_like and is_target:
                 # Do not adapt classification heads
-                if any(
-                    head in name.lower() for head in ("score", "classifier", "lm_head")
-                ):
+                if any(head in name.lower() for head in ("score", "classifier", "lm_head")):
                     continue
                 wrapped = LoRALinear(child, r=r, alpha=alpha, dropout=dropout)
                 setattr(module, name, wrapped)
@@ -260,9 +237,7 @@ def get_lora_trainable_parameters(model: nn.Module) -> list[nn.Parameter]:
     return [p for p in model.parameters() if p.requires_grad]
 
 
-def save_lora_weights(
-    model: nn.Module, save_path: str, metadata: dict | None = None
-) -> None:
+def save_lora_weights(model: nn.Module, save_path: str, metadata: dict | None = None) -> None:
     """Save only trainable parameters (LoRA weights + task head) to disk."""
     trainable_state = {
         name: param.detach().cpu()
@@ -281,9 +256,7 @@ def load_lora_weights(model: nn.Module, load_path: str, strict: bool = False) ->
     """Load trainable parameters from saved checkpoint into model."""
     with open(load_path, "rb") as f:
         payload = torch.load(f, map_location="cpu", weights_only=False)
-    state_dict = (
-        payload.get("state_dict", payload) if isinstance(payload, dict) else payload
-    )
+    state_dict = payload.get("state_dict", payload) if isinstance(payload, dict) else payload
     missing, unexpected = model.load_state_dict(state_dict, strict=strict)
     return {
         "missing_keys": missing,

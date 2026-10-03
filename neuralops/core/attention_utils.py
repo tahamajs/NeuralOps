@@ -14,6 +14,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.utils.model_family import ModelAdapter, detect_family
 from neuralops.utils.qwen_compat import QwenIncompatibleError
 
@@ -68,9 +69,7 @@ FUSED_QKV_REGEX: re.Pattern = re.compile(
 )
 
 
-def _find_submodule_by_regex(
-    module: nn.Module, patterns: list[re.Pattern]
-) -> nn.Module | None:
+def _find_submodule_by_regex(module: nn.Module, patterns: list[re.Pattern]) -> nn.Module | None:
     """Find the first submodule matching any compiled regex pattern."""
     for name, sub in module.named_children():
         for pattern in patterns:
@@ -79,9 +78,7 @@ def _find_submodule_by_regex(
     return None
 
 
-def compute_reconstruction_error(
-    src_weight: torch.Tensor, target_mod: nn.Module
-) -> float:
+def compute_reconstruction_error(src_weight: torch.Tensor, target_mod: nn.Module) -> float:
     """Computes relative Frobenius reconstruction error ||W_src - W_target||_F / (||W_src||_F + 1e-9).
 
     Can be called standalone to verify weight copying fidelity across any module architecture.
@@ -91,10 +88,7 @@ def compute_reconstruction_error(
 
     with torch.no_grad():
         W_s = src_weight.detach().cpu().float()
-        if (
-            hasattr(target_mod, "__class__")
-            and target_mod.__class__.__name__ == "Conv1D"
-        ):
+        if hasattr(target_mod, "__class__") and target_mod.__class__.__name__ == "Conv1D":
             W_s = W_s.t() if (W_s.ndim == 2 and W_s.size(0) > W_s.size(1)) else W_s
 
         W_t = None
@@ -102,21 +96,14 @@ def compute_reconstruction_error(
         p_weight = getattr(target_mod, "weight", None)
         if isinstance(p_weight, nn.Parameter):
             W_t = p_weight.detach().cpu().float()
-        elif hasattr(target_mod, "weight") and isinstance(
-            target_mod.weight, torch.Tensor
-        ):
+        elif hasattr(target_mod, "weight") and isinstance(target_mod.weight, torch.Tensor):
             W_t = target_mod.weight.detach().cpu().float()
         elif hasattr(target_mod, "U") and hasattr(target_mod, "V"):
             W_t = (target_mod.U @ target_mod.V).detach().cpu().float()
         elif hasattr(target_mod, "up") and hasattr(target_mod, "down"):
             W_t = (target_mod.up.weight @ target_mod.down.weight).detach().cpu().float()
         elif hasattr(target_mod, "up_proj") and hasattr(target_mod, "down_proj"):
-            W_t = (
-                (target_mod.up_proj.weight @ target_mod.down_proj.weight)
-                .detach()
-                .cpu()
-                .float()
-            )
+            W_t = (target_mod.up_proj.weight @ target_mod.down_proj.weight).detach().cpu().float()
 
         if W_t is None:
             return 1.0
@@ -159,11 +146,7 @@ def _slice_fused_qkv_weights(
         # Shape-based Conv1D orientation: [in_dim, total_out_dim] where total_out_dim > in_dim (e.g. 2304 > 768)
         is_conv1d = True
 
-    if (
-        is_conv1d
-        and fused_weight.ndim == 2
-        and fused_weight.size(0) < fused_weight.size(1)
-    ):
+    if is_conv1d and fused_weight.ndim == 2 and fused_weight.size(0) < fused_weight.size(1):
         fused_weight = fused_weight.t()
 
     total_out_dim = fused_weight.size(0)
@@ -177,9 +160,7 @@ def _slice_fused_qkv_weights(
         v_w = fused_weight[2 * split_size :, :]
 
         q_b = fused_bias[:split_size] if fused_bias is not None else None
-        k_b = (
-            fused_bias[split_size : 2 * split_size] if fused_bias is not None else None
-        )
+        k_b = fused_bias[split_size : 2 * split_size] if fused_bias is not None else None
         v_b = fused_bias[2 * split_size :] if fused_bias is not None else None
     else:
         # Grouped-Query Attention (GQA) fused layout
@@ -193,11 +174,7 @@ def _slice_fused_qkv_weights(
 
         q_b = fused_bias[:q_dim] if fused_bias is not None else None
         k_b = fused_bias[q_dim : q_dim + kv_dim] if fused_bias is not None else None
-        v_b = (
-            fused_bias[q_dim + kv_dim : q_dim + 2 * kv_dim]
-            if fused_bias is not None
-            else None
-        )
+        v_b = fused_bias[q_dim + kv_dim : q_dim + 2 * kv_dim] if fused_bias is not None else None
 
     return {
         "q": (q_w.contiguous(), q_b.contiguous() if q_b is not None else None),
@@ -234,27 +211,20 @@ def _copy_projection_weights(
 
             if target_mod.weight.shape == src_weight_2d.shape:
                 target_mod.weight.data.copy_(src_weight_2d)
-            elif (
-                src_weight_2d.ndim == 2
-                and target_mod.weight.shape == src_weight_2d.t().shape
-            ):
+            elif src_weight_2d.ndim == 2 and target_mod.weight.shape == src_weight_2d.t().shape:
                 target_mod.weight.data.copy_(src_weight_2d.t())
             elif (
                 src_weight_2d.ndim == 2
                 and target_mod.weight.shape[1] == src_weight_2d.shape[1]
                 and target_mod.weight.shape[0] < src_weight_2d.shape[0]
             ):
-                target_mod.weight.data.copy_(
-                    src_weight_2d[: target_mod.weight.shape[0]]
-                )
+                target_mod.weight.data.copy_(src_weight_2d[: target_mod.weight.shape[0]])
             elif (
                 src_weight_2d.ndim == 2
                 and target_mod.weight.shape[1] == src_weight_2d.shape[0]
                 and target_mod.weight.shape[0] < src_weight_2d.shape[1]
             ):
-                target_mod.weight.data.copy_(
-                    src_weight_2d.t()[: target_mod.weight.shape[0]]
-                )
+                target_mod.weight.data.copy_(src_weight_2d.t()[: target_mod.weight.shape[0]])
             elif (
                 src_weight_2d.ndim == 2
                 and target_mod.weight.shape[1] == src_weight_2d.shape[1]
@@ -269,10 +239,7 @@ def _copy_projection_weights(
             ):
                 if src_bias is not None and target_mod.bias.shape == src_bias.shape:
                     target_mod.bias.data.copy_(src_bias)
-                elif (
-                    src_bias is not None
-                    and target_mod.bias.shape[0] <= src_bias.shape[0]
-                ):
+                elif src_bias is not None and target_mod.bias.shape[0] <= src_bias.shape[0]:
                     target_mod.bias.data.copy_(src_bias[: target_mod.bias.shape[0]])
                 elif (
                     src_bias is not None
@@ -380,11 +347,7 @@ def _copy_projection_weights(
                 r_u0 = min(up_mod.weight.shape[0], U_balanced.shape[0])
                 r_u1 = min(up_mod.weight.shape[1], U_balanced.shape[1])
                 up_mod.weight.data[:r_u0, :r_u1].copy_(U_balanced[:r_u0, :r_u1])
-                if (
-                    hasattr(up_mod, "bias")
-                    and up_mod.bias is not None
-                    and src_bias is not None
-                ):
+                if hasattr(up_mod, "bias") and up_mod.bias is not None and src_bias is not None:
                     min_b = min(up_mod.bias.shape[0], src_bias.shape[0])
                     up_mod.bias.data[:min_b].copy_(
                         src_bias[:min_b].to(up_mod.bias.device, up_mod.bias.dtype)
@@ -396,9 +359,7 @@ def _copy_projection_weights(
                 ):
                     min_b = min(target_mod.bias.shape[0], src_bias.shape[0])
                     target_mod.bias.data[:min_b].copy_(
-                        src_bias[:min_b].to(
-                            target_mod.bias.device, target_mod.bias.dtype
-                        )
+                        src_bias[:min_b].to(target_mod.bias.device, target_mod.bias.dtype)
                     )
 
             if (
@@ -469,9 +430,7 @@ def repeat_kv(x: torch.Tensor, n_rep: int) -> torch.Tensor:
     if n_rep <= 1:
         return x
     if x.dim() != 4:
-        raise ValueError(
-            f"repeat_kv expects [B, Hkv, L, D], got shape {tuple(x.shape)}"
-        )
+        raise ValueError(f"repeat_kv expects [B, Hkv, L, D], got shape {tuple(x.shape)}")
     b, h, l, d = x.shape
     return x[:, :, None, :, :].expand(b, h, n_rep, l, d).reshape(b, h * n_rep, l, d)
 
@@ -487,9 +446,7 @@ def inject_attention(
     attn_class = ATTENTION_REGISTRY.resolve(attention_type)
     if callable(attn_class) and not isinstance(attn_class, type):
         try:
-            res = attn_class(
-                model=model, rank=rank, copy_weights=copy_weights, **kwargs
-            )
+            res = attn_class(model=model, rank=rank, copy_weights=copy_weights, **kwargs)
             if res is not None:
                 return res
         except Exception as inj_err:
@@ -526,11 +483,7 @@ def inject_attention(
             getattr(
                 cfg_source,
                 "d_kv",
-                (
-                    hidden_size // max(1, num_heads)
-                    if (hidden_size and num_heads)
-                    else None
-                ),
+                (hidden_size // max(1, num_heads) if (hidden_size and num_heads) else None),
             ),
         )
         num_kv_heads = getattr(cfg_source, "num_key_value_heads", num_heads)
@@ -569,15 +522,11 @@ def inject_attention(
     replaced = 0
     modules_list = list(get_attention_modules(model))
     if not modules_list:
-        logger.warning(
-            "No attention modules found to replace for architecture '%s'", arch
-        )
+        logger.warning("No attention modules found to replace for architecture '%s'", arch)
 
     for name, old_attn in modules_list:
         # In hybrid architectures (like Qwen3.5), only replace linear_attn if candidate explicitly supports DeltaNet
-        if "linear_attn" in name and not getattr(
-            attn_class, "supports_delta_net", False
-        ):
+        if "linear_attn" in name and not getattr(attn_class, "supports_delta_net", False):
             continue
 
         # Dynamically infer dimensions from family_adapter and old_attn
@@ -610,17 +559,14 @@ def inject_attention(
             if num_kv_heads is None:
                 num_kv_heads = getattr(old_attn, "num_key_value_heads", num_heads)
             if head_dim is None and hidden_size is not None and num_heads is not None:
-                head_dim = getattr(
-                    old_attn, "head_dim", hidden_size // max(1, num_heads)
-                )
+                head_dim = getattr(old_attn, "head_dim", hidden_size // max(1, num_heads))
 
         # Ensure config exists or construct minimal namespace config
         if config is None:
             from types import SimpleNamespace
 
             is_decoder_family_bool = bool(
-                is_dec
-                or family in ("gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral")
+                is_dec or family in ("gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral")
             )
             config = SimpleNamespace(
                 hidden_size=hidden_size,
@@ -633,10 +579,7 @@ def inject_attention(
                 model_type=family,
             )
         else:
-            if (
-                family in ("gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral")
-                or is_dec
-            ):
+            if family in ("gpt", "gpt2", "qwen", "qwen3_5", "llama", "mistral") or is_dec:
                 config.is_decoder = True
                 config.is_causal = True
 
@@ -701,9 +644,7 @@ def inject_attention(
         # Standardized instantiation: try passing pretrained_attn=old_attn first so modules
         # can inherit pretrained weights during initialization, then fallback without it
         attempts = [
-            lambda: attn_class(
-                config, rank=effective_rank, pretrained_attn=old_attn, **kwargs
-            ),
+            lambda: attn_class(config, rank=effective_rank, pretrained_attn=old_attn, **kwargs),
             lambda: attn_class(config, pretrained_attn=old_attn, **kwargs),
             lambda: attn_class(config=config, pretrained_attn=old_attn, **kwargs),
             lambda: attn_class(config, rank=effective_rank, **kwargs),
@@ -723,9 +664,7 @@ def inject_attention(
                 continue
 
         if new_attn is None:
-            raise RuntimeError(
-                f"Could not instantiate attention class {attn_class.__name__}"
-            )
+            raise RuntimeError(f"Could not instantiate attention class {attn_class.__name__}")
 
         # Do not let a legacy full-MHA replacement silently retain randomly
         # initialized K/V projections on GQA decoders.  Such a module must
@@ -752,9 +691,7 @@ def inject_attention(
                         if (
                             out_features % expected[key] == 0
                             or expected[key] % out_features == 0
-                            or _find_submodule_by_regex(
-                                new_attn, PROJ_REGEX_PATTERNS["o"]
-                            )
+                            or _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS["o"])
                             is not None
                         ):
                             pass
@@ -790,17 +727,13 @@ def inject_attention(
                 except (AttributeError, RuntimeError, ValueError) as e:
                     logger.debug("Custom copy_weights failed on %s: %s", name, e)
                 except Exception as e:
-                    logger.warning(
-                        "Unexpected error in custom copy_weights on %s: %s", name, e
-                    )
+                    logger.warning("Unexpected error in custom copy_weights on %s: %s", name, e)
 
                 if not custom_copied:
                     # Detect fused QKV projection modules via regex and slice parameters
                     fused_mod = None
                     for child_name, child_mod in old_attn.named_children():
-                        if FUSED_QKV_REGEX.match(child_name) and hasattr(
-                            child_mod, "weight"
-                        ):
+                        if FUSED_QKV_REGEX.match(child_name) and hasattr(child_mod, "weight"):
                             fused_mod = child_mod
                             break
                     if fused_mod is None:
@@ -822,8 +755,7 @@ def inject_attention(
                             fused_mod.weight.data,
                             (
                                 fused_mod.bias.data
-                                if hasattr(fused_mod, "bias")
-                                and fused_mod.bias is not None
+                                if hasattr(fused_mod, "bias") and fused_mod.bias is not None
                                 else None
                             ),
                             num_heads=num_heads if num_heads is not None else 12,
@@ -845,26 +777,20 @@ def inject_attention(
                                     _copy_projection_weights(lin1, w, None)
                                     with torch.no_grad():
                                         W_f = w.detach().float()
-                                        if hasattr(lin1, "weight") and hasattr(
-                                            lin2, "weight"
-                                        ):
+                                        if hasattr(lin1, "weight") and hasattr(lin2, "weight"):
                                             if (
                                                 W_f.shape[1] != lin1.weight.shape[1]
                                                 and W_f.shape[0] == lin1.weight.shape[1]
                                             ):
                                                 W_f = W_f.t()
-                                            U, S, Vt = torch.linalg.svd(
-                                                W_f, full_matrices=False
-                                            )
+                                            U, S, Vt = torch.linalg.svd(W_f, full_matrices=False)
                                             r = min(
                                                 lin1.weight.shape[0],
                                                 lin2.weight.shape[1],
                                                 U.size(1),
                                                 Vt.size(0),
                                             )
-                                            sqrt_S = torch.sqrt(
-                                                torch.clamp(S[:r], min=1e-12)
-                                            )
+                                            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
                                             U_b = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
                                                 device=w.device, dtype=w.dtype
                                             )
@@ -875,8 +801,7 @@ def inject_attention(
                                             lin2.weight.data[:, :r].copy_(U_b)
                                             if (
                                                 b is not None
-                                                and getattr(lin2, "bias", None)
-                                                is not None
+                                                and getattr(lin2, "bias", None) is not None
                                             ):
                                                 lin2.bias.data.copy_(
                                                     b.to(
@@ -888,9 +813,7 @@ def inject_attention(
                         # Output projection
                         try:
                             src_w_o, src_b_o = adapter.get_weight_bias(old_attn, "o")
-                            target_o = _find_submodule_by_regex(
-                                new_attn, PROJ_REGEX_PATTERNS["o"]
-                            )
+                            target_o = _find_submodule_by_regex(new_attn, PROJ_REGEX_PATTERNS["o"])
                             if target_o is not None:
                                 _copy_projection_weights(target_o, src_w_o, src_b_o)
                             else:
@@ -912,44 +835,29 @@ def inject_attention(
                                             and W_f.shape[0] == lin1_o.weight.shape[1]
                                         ):
                                             W_f = W_f.t()
-                                        U, S, Vt = torch.linalg.svd(
-                                            W_f, full_matrices=False
-                                        )
+                                        U, S, Vt = torch.linalg.svd(W_f, full_matrices=False)
                                         r = min(
                                             lin1_o.weight.shape[0],
                                             lin2_o.weight.shape[1],
                                             U.size(1),
                                             Vt.size(0),
                                         )
-                                        sqrt_S = torch.sqrt(
-                                            torch.clamp(S[:r], min=1e-12)
-                                        )
+                                        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
                                         U_b = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
                                             device=src_w_o.device, dtype=src_w_o.dtype
                                         )
                                         V_b = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(
                                             device=src_w_o.device, dtype=src_w_o.dtype
                                         )
-                                        min_out = min(
-                                            lin2_o.weight.shape[0], U_b.shape[0]
-                                        )
-                                        min_in = min(
-                                            lin1_o.weight.shape[1], V_b.shape[1]
-                                        )
-                                        lin1_o.weight.data[:r, :min_in].copy_(
-                                            V_b[:, :min_in]
-                                        )
-                                        lin2_o.weight.data[:min_out, :r].copy_(
-                                            U_b[:min_out, :]
-                                        )
+                                        min_out = min(lin2_o.weight.shape[0], U_b.shape[0])
+                                        min_in = min(lin1_o.weight.shape[1], V_b.shape[1])
+                                        lin1_o.weight.data[:r, :min_in].copy_(V_b[:, :min_in])
+                                        lin2_o.weight.data[:min_out, :r].copy_(U_b[:min_out, :])
                                         if (
                                             src_b_o is not None
-                                            and getattr(lin2_o, "bias", None)
-                                            is not None
+                                            and getattr(lin2_o, "bias", None) is not None
                                         ):
-                                            min_b = min(
-                                                lin2_o.bias.shape[0], src_b_o.shape[0]
-                                            )
+                                            min_b = min(lin2_o.bias.shape[0], src_b_o.shape[0])
                                             lin2_o.bias.data[:min_b].copy_(
                                                 src_b_o[:min_b].to(
                                                     lin2_o.bias.device,
@@ -957,17 +865,13 @@ def inject_attention(
                                                 )
                                             )
                         except (ValueError, AttributeError) as e:
-                            logger.debug(
-                                "Could not copy output projection for %s: %s", name, e
-                            )
+                            logger.debug("Could not copy output projection for %s: %s", name, e)
                     else:
                         # Standard decoupled Q, K, V, O projections
                         for proj_key in ["q", "k", "v", "o"]:
                             src_weight, src_bias = None, None
                             try:
-                                src_weight, src_bias = adapter.get_weight_bias(
-                                    old_attn, proj_key
-                                )
+                                src_weight, src_bias = adapter.get_weight_bias(old_attn, proj_key)
                             except (ValueError, AttributeError) as e:
                                 logger.debug(
                                     "Could not get %s projection weights for %s: %s",
@@ -981,9 +885,7 @@ def inject_attention(
                             )
                             if target_proj is not None:
                                 if src_weight is not None:
-                                    _copy_projection_weights(
-                                        target_proj, src_weight, src_bias
-                                    )
+                                    _copy_projection_weights(target_proj, src_weight, src_bias)
                                 elif proj_key == "o":
                                     # Encoder self-attention (BERT/RoBERTa .self) has no internal out_proj
                                     # because the outer attention container already applies output.dense.
@@ -1007,11 +909,8 @@ def inject_attention(
                                                 target_proj.weight.data[
                                                     :min_d, :min_d
                                                 ].fill_diagonal_(1.0)
-                                        elif hasattr(
-                                            target_proj, "set_svd_factors"
-                                        ) or (
-                                            hasattr(target_proj, "U")
-                                            and hasattr(target_proj, "V")
+                                        elif hasattr(target_proj, "set_svd_factors") or (
+                                            hasattr(target_proj, "U") and hasattr(target_proj, "V")
                                         ):
                                             # Low-rank / factorized linear layer: set factors to truncated identity
                                             d_out = getattr(
@@ -1041,9 +940,7 @@ def inject_attention(
                                                     else None
                                                 ),
                                             )
-                                            _copy_projection_weights(
-                                                target_proj, eye_mat, None
-                                            )
+                                            _copy_projection_weights(target_proj, eye_mat, None)
                                         if (
                                             hasattr(target_proj, "bias")
                                             and target_proj.bias is not None
@@ -1076,13 +973,10 @@ def inject_attention(
                                     if src_weight is not None:
                                         with torch.no_grad():
                                             W_f = src_weight.detach().float()
-                                            if hasattr(lin1, "weight") and hasattr(
-                                                lin2, "weight"
-                                            ):
+                                            if hasattr(lin1, "weight") and hasattr(lin2, "weight"):
                                                 if (
                                                     W_f.shape[1] != lin1.weight.shape[1]
-                                                    and W_f.shape[0]
-                                                    == lin1.weight.shape[1]
+                                                    and W_f.shape[0] == lin1.weight.shape[1]
                                                 ):
                                                     W_f = W_f.t()
                                                 U, S, Vt = torch.linalg.svd(
@@ -1094,37 +988,24 @@ def inject_attention(
                                                     U.size(1),
                                                     Vt.size(0),
                                                 )
-                                                sqrt_S = torch.sqrt(
-                                                    torch.clamp(S[:r], min=1e-12)
-                                                )
-                                                U_b = (
-                                                    U[:, :r] * sqrt_S.unsqueeze(0)
-                                                ).to(
+                                                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+                                                U_b = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
                                                     device=src_weight.device,
                                                     dtype=src_weight.dtype,
                                                 )
-                                                V_b = (
-                                                    sqrt_S.unsqueeze(1) * Vt[:r, :]
-                                                ).to(
+                                                V_b = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(
                                                     device=src_weight.device,
                                                     dtype=src_weight.dtype,
                                                 )
-                                                min_out = min(
-                                                    lin2.weight.shape[0], U_b.shape[0]
-                                                )
-                                                min_in = min(
-                                                    lin1.weight.shape[1], V_b.shape[1]
-                                                )
-                                                lin1.weight.data[:r, :min_in].copy_(
-                                                    V_b[:, :min_in]
-                                                )
+                                                min_out = min(lin2.weight.shape[0], U_b.shape[0])
+                                                min_in = min(lin1.weight.shape[1], V_b.shape[1])
+                                                lin1.weight.data[:r, :min_in].copy_(V_b[:, :min_in])
                                                 lin2.weight.data[:min_out, :r].copy_(
                                                     U_b[:min_out, :]
                                                 )
                                                 if (
                                                     src_bias is not None
-                                                    and getattr(lin2, "bias", None)
-                                                    is not None
+                                                    and getattr(lin2, "bias", None) is not None
                                                 ):
                                                     min_b = min(
                                                         lin2.bias.shape[0],
@@ -1139,9 +1020,7 @@ def inject_attention(
                                     elif proj_key == "o":
                                         # Identity for dual out_proj
                                         with torch.no_grad():
-                                            if hasattr(lin1, "weight") and hasattr(
-                                                lin2, "weight"
-                                            ):
+                                            if hasattr(lin1, "weight") and hasattr(lin2, "weight"):
                                                 nn.init.zeros_(lin1.weight)
                                                 nn.init.zeros_(lin2.weight)
                                                 r = min(
@@ -1150,16 +1029,9 @@ def inject_attention(
                                                     lin1.weight.shape[1],
                                                     lin2.weight.shape[0],
                                                 )
-                                                lin1.weight.data[:r, :r].fill_diagonal_(
-                                                    1.0
-                                                )
-                                                lin2.weight.data[:r, :r].fill_diagonal_(
-                                                    1.0
-                                                )
-                                                if (
-                                                    getattr(lin2, "bias", None)
-                                                    is not None
-                                                ):
+                                                lin1.weight.data[:r, :r].fill_diagonal_(1.0)
+                                                lin2.weight.data[:r, :r].fill_diagonal_(1.0)
+                                                if getattr(lin2, "bias", None) is not None:
                                                     nn.init.zeros_(lin2.bias)
 
         from neuralops.utils.replace_attention import UniversalAttentionWrapper
@@ -1185,9 +1057,7 @@ def inject_attention(
     if not hasattr(model, "compression_stats"):
         model.compression_stats = {}
     model.compression_stats["num_compressed"] = replaced
-    model.compression_stats["total_params_after"] = sum(
-        p.numel() for p in model.parameters()
-    )
+    model.compression_stats["total_params_after"] = sum(p.numel() for p in model.parameters())
     return model
 
 

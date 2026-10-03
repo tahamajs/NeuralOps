@@ -11,6 +11,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.pruning_utils import apply_24_structured_mask, apply_block_mask
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -65,9 +66,7 @@ class ADMMCompressor(BaseCompressor):
         self.sparsity = max(
             0.0,
             min(
-                float(
-                    _cfg_get(cfg, "admm_sparsity", _cfg_get(cfg, "sparsity", sparsity))
-                ),
+                float(_cfg_get(cfg, "admm_sparsity", _cfg_get(cfg, "sparsity", sparsity))),
                 0.95,
             ),
         )
@@ -80,9 +79,7 @@ class ADMMCompressor(BaseCompressor):
             1, int(_cfg_get(cfg, "admm_max_iter", _cfg_get(cfg, "max_iter", max_iter)))
         )
         self.structured_24 = bool(
-            _cfg_get(
-                cfg, "admm_structured_24", _cfg_get(cfg, "structured_24", structured_24)
-            )
+            _cfg_get(cfg, "admm_structured_24", _cfg_get(cfg, "structured_24", structured_24))
         )
         self.block_size = block_size
         self.max_error = float(
@@ -103,9 +100,7 @@ class ADMMCompressor(BaseCompressor):
             )
         )
         self.target_modules = target_modules
-        self.quant_per_channel = bool(
-            _cfg_get(cfg, "admm_quant_per_channel", quant_per_channel)
-        )
+        self.quant_per_channel = bool(_cfg_get(cfg, "admm_quant_per_channel", quant_per_channel))
         self.comp_config = cfg
         self._compressed_params: int = 0
 
@@ -127,11 +122,7 @@ class ADMMCompressor(BaseCompressor):
         cls_name = module.__class__.__name__.lower()
 
         weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
-        if (
-            weight_tensor is None
-            or not hasattr(weight_tensor, "dim")
-            or weight_tensor.dim() != 2
-        ):
+        if weight_tensor is None or not hasattr(weight_tensor, "dim") or weight_tensor.dim() != 2:
             return False
 
         is_linear_like = (
@@ -240,9 +231,7 @@ class ADMMCompressor(BaseCompressor):
     def _prune_projection(self, tensor: torch.Tensor) -> torch.Tensor:
         with torch.no_grad():
             if self.structured_24:
-                pruned, _ = apply_24_structured_mask(
-                    tensor, saliency=tensor.abs(), dim=1
-                )
+                pruned, _ = apply_24_structured_mask(tensor, saliency=tensor.abs(), dim=1)
                 return pruned
             elif self.block_size != (1, 1):
                 pruned, _ = apply_block_mask(
@@ -275,9 +264,7 @@ class ADMMCompressor(BaseCompressor):
             return self.model, self.get_compression_stats()
 
         for name, module in targets:
-            target_mod = getattr(
-                module, "base_layer", getattr(module, "linear", module)
-            )
+            target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
             target_cls = target_mod.__class__.__name__.lower()
             is_conv1d = "conv1d" in target_cls
 
@@ -346,9 +333,7 @@ class ADMMCompressor(BaseCompressor):
                         finite_mask_curr = torch.isfinite(W).float()
                         mask_curr = (W != 0.0).float() * finite_mask_curr
                         W_curr = self._quantize_projection(W) * mask_curr
-                        curr_err = float(
-                            torch.norm(W0 - W_curr, p="fro").item() / norm_w0
-                        )
+                        curr_err = float(torch.norm(W0 - W_curr, p="fro").item() / norm_w0)
                         if curr_err < best_err:
                             best_err = curr_err
                             best_W_final = W_curr
@@ -364,11 +349,7 @@ class ADMMCompressor(BaseCompressor):
             self.layer_errors[name] = final_err
             self.layer_sparsities[name] = 0.5 if self.structured_24 else self.sparsity
 
-            if (
-                W_final is None
-                or not torch.isfinite(W_final).all()
-                or final_err > self.max_error
-            ):
+            if W_final is None or not torch.isfinite(W_final).all() or final_err > self.max_error:
                 logger.warning(
                     "ADMM reconstruction error %.4f on %s exceeded threshold %.4f.",
                     final_err,
@@ -407,9 +388,9 @@ class ADMMCompressor(BaseCompressor):
             self.layer_actual_sparsities[name] = actual_zero_frac
 
             # AC-FIX-05: LoRA always trainable (recovery).
-            has_lora = (
-                hasattr(module, "lora_A") and module.lora_A is not None
-            ) or hasattr(module, "base_layer")
+            has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(
+                module, "base_layer"
+            )
             if has_lora:
                 if hasattr(target_mod, "weight") and target_mod.weight is not None:
                     target_mod.weight.requires_grad = False
@@ -442,8 +423,7 @@ class ADMMCompressor(BaseCompressor):
             else 0.0
         )
         avg_actual_sparsity = (
-            sum(self.layer_actual_sparsities.values())
-            / max(1, len(self.layer_actual_sparsities))
+            sum(self.layer_actual_sparsities.values()) / max(1, len(self.layer_actual_sparsities))
             if self.layer_actual_sparsities
             else 0.0
         )

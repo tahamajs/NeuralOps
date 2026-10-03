@@ -66,9 +66,9 @@ def fp8_cast_simulate(
     else:
         raise ValueError(f"Unsupported FP8 format: {format!r}")
 
-    amax = (
-        x_f.abs().amax(dim=-1, keepdim=True) if per_channel else x_f.abs().amax()
-    ).clamp(min=1e-12)
+    amax = (x_f.abs().amax(dim=-1, keepdim=True) if per_channel else x_f.abs().amax()).clamp(
+        min=1e-12
+    )
     scale = max_val / amax
     x_scaled = (x_f * scale).clamp(min=-max_val, max=max_val)
 
@@ -151,14 +151,10 @@ class AegisSpectronFP8Config:
             kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
         )
         self.num_heads = int(
-            kwargs.get(
-                "num_heads", kwargs.get("num_attention_heads", kwargs.get("n_heads", 4))
-            )
+            kwargs.get("num_heads", kwargs.get("num_attention_heads", kwargs.get("n_heads", 4)))
         )
         self.num_key_value_heads = int(
-            kwargs.get(
-                "num_key_value_heads", kwargs.get("num_kv_heads", self.num_heads)
-            )
+            kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads", self.num_heads))
         )
         self.head_dim = int(
             kwargs.get(
@@ -167,13 +163,9 @@ class AegisSpectronFP8Config:
             )
         )
         self.window_size = int(
-            kwargs.get(
-                "window_size", kwargs.get("local_window", kwargs.get("block_size", 64))
-            )
+            kwargs.get("window_size", kwargs.get("local_window", kwargs.get("block_size", 64)))
         )
-        self.svd_rank = int(
-            kwargs.get("svd_rank", kwargs.pop("rank", min(128, self.hidden_size)))
-        )
+        self.svd_rank = int(kwargs.get("svd_rank", kwargs.pop("rank", min(128, self.hidden_size))))
         self.lora_rank = int(kwargs.get("lora_rank", kwargs.get("lora_r", 32)))
         self.temperature = float(kwargs.get("temperature", 1.0))
         self.lambda_cost = float(kwargs.get("lambda_cost", 0.1))
@@ -211,9 +203,7 @@ class FactorizedLinear(nn.Module):
         self.rank = max(1, min(int(rank), self.in_features, self.out_features))
         self.svd_rank = self.rank
         self.lora_rank = (
-            min(int(lora_rank), min(self.in_features, self.out_features))
-            if lora_rank > 0
-            else 0
+            min(int(lora_rank), min(self.in_features, self.out_features)) if lora_rank > 0 else 0
         )
 
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -268,16 +258,8 @@ class FactorizedLinear(nn.Module):
         latent_up = latent.to(self.lin2.weight.dtype)
         out = self.lin2(latent_up)
         if self.lora_A is not None:
-            a = (
-                self.lora_A.to(orig_dtype)
-                if self.lora_A.dtype != orig_dtype
-                else self.lora_A
-            )
-            b = (
-                self.lora_B.to(orig_dtype)
-                if self.lora_B.dtype != orig_dtype
-                else self.lora_B
-            )
+            a = self.lora_A.to(orig_dtype) if self.lora_A.dtype != orig_dtype else self.lora_A
+            b = self.lora_B.to(orig_dtype) if self.lora_B.dtype != orig_dtype else self.lora_B
             out = out.to(orig_dtype) + F.linear(F.linear(x, a), b)
         return out.to(orig_dtype)
 
@@ -292,18 +274,14 @@ class SpectronSpectralEntropyRouter(nn.Module):
         super().__init__()
         self.tau = float(config.temperature)
         self.lam = float(config.lambda_cost)
-        self.register_buffer(
-            "costs", torch.tensor([config.c_loc, config.c_glob, config.c_lin])
-        )
+        self.register_buffer("costs", torch.tensor([config.c_loc, config.c_glob, config.c_lin]))
         self.h_proj = nn.Linear(config.hidden_size, 3)
         nn.init.zeros_(self.h_proj.weight)
         self.h_proj.bias.data.copy_(
             torch.tensor(config.router_init_bias, dtype=self.h_proj.bias.dtype)
         )
 
-    def forward(
-        self, X: torch.Tensor, token_valid: torch.Tensor | None = None
-    ) -> torch.Tensor:
+    def forward(self, X: torch.Tensor, token_valid: torch.Tensor | None = None) -> torch.Tensor:
         B, N, D = X.shape
 
         with torch.no_grad():
@@ -465,12 +443,8 @@ def _state_recurrence_jit(
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register(
-    "aegis_spectron_fp8", supports_causal=True, supports_gqa=True
-)
-@ATTENTION_REGISTRY.register(
-    "aegis_spectron_fp8_attn", supports_causal=True, supports_gqa=True
-)
+@ATTENTION_REGISTRY.register("aegis_spectron_fp8", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("aegis_spectron_fp8_attn", supports_causal=True, supports_gqa=True)
 class AegisSpectronFP8Attention(BaseAttention):
     is_custom_attention = True
 
@@ -486,9 +460,7 @@ class AegisSpectronFP8Attention(BaseAttention):
         if not isinstance(config, AegisSpectronFP8Config):
             cfg_src = config if config is not None else kwargs
             if isinstance(cfg_src, dict):
-                h_size = hidden_size or cfg_src.get(
-                    "hidden_size", cfg_src.get("dim", 768)
-                )
+                h_size = hidden_size or cfg_src.get("hidden_size", cfg_src.get("dim", 768))
                 n_heads = num_heads or cfg_src.get(
                     "num_attention_heads", cfg_src.get("num_heads", 12)
                 )
@@ -522,12 +494,8 @@ class AegisSpectronFP8Attention(BaseAttention):
                 num_heads=n_heads,
                 num_key_value_heads=n_kv,
                 head_dim=h_dim,
-                window_size=getattr(
-                    cfg_src, "window_size", getattr(cfg_src, "local_window", 64)
-                ),
-                svd_rank=getattr(
-                    cfg_src, "svd_rank", getattr(cfg_src, "rank", min(128, h_size))
-                ),
+                window_size=getattr(cfg_src, "window_size", getattr(cfg_src, "local_window", 64)),
+                svd_rank=getattr(cfg_src, "svd_rank", getattr(cfg_src, "rank", min(128, h_size))),
                 lora_rank=getattr(cfg_src, "lora_rank", getattr(cfg_src, "lora_r", 32)),
                 dropout=getattr(cfg_src, "dropout", 0.1),
                 fp8_format=getattr(cfg_src, "fp8_format", "e4m3"),
@@ -668,9 +636,7 @@ class AegisSpectronFP8Attention(BaseAttention):
     # SVD init of FactorizedLinear
     # ------------------------------------------------------------------
     @staticmethod
-    def _svd_init(
-        w: torch.Tensor, b: torch.Tensor | None, proj: FactorizedLinear
-    ) -> None:
+    def _svd_init(w: torch.Tensor, b: torch.Tensor | None, proj: FactorizedLinear) -> None:
         with torch.no_grad():
             W = w.detach().float()
             if W.ndim != 2:
@@ -681,9 +647,7 @@ class AegisSpectronFP8Attention(BaseAttention):
             proj.lin2.weight.data.zero_()
             in_copy = min(W.shape[1], proj.lin1.weight.size(1))
             out_copy = min(W.shape[0], proj.lin2.weight.size(0))
-            proj.lin1.weight.data[:r, :in_copy].copy_(
-                Vh[:r, :in_copy].to(proj.lin1.weight.dtype)
-            )
+            proj.lin1.weight.data[:r, :in_copy].copy_(Vh[:r, :in_copy].to(proj.lin1.weight.dtype))
             US = U[:out_copy, :r] @ torch.diag(S[:r])
             proj.lin2.weight.data[:out_copy, :r].copy_(US.to(proj.lin2.weight.dtype))
             if b is not None and proj.lin2.bias is not None:
@@ -732,9 +696,7 @@ class AegisSpectronFP8Attention(BaseAttention):
                     or hasattr(mod, "nf")
                     or hasattr(base, "nf")
                 )
-                if is_conv1d or (
-                    c_w.dim() == 2 and c_w.shape[1] == 3 * self.hidden_size
-                ):
+                if is_conv1d or (c_w.dim() == 2 and c_w.shape[1] == 3 * self.hidden_size):
                     c_w = c_w.t().contiguous()
                 split = c_w.size(0) // 3
                 bias_holder = getattr(base, "bias", getattr(mod, "bias", None))
@@ -886,27 +848,17 @@ class AegisSpectronFP8Attention(BaseAttention):
         # Init svd_U_q / svd_U_k from Q / K weights.
         with torch.no_grad():
             if extracted["q"][0] is not None:
-                U, _, _ = torch.linalg.svd(
-                    extracted["q"][0].float(), full_matrices=False
-                )
+                U, _, _ = torch.linalg.svd(extracted["q"][0].float(), full_matrices=False)
                 r = min(self.rank, U.size(1), self.svd_U_q.size(1))
-                self.svd_U_q.data[:, :r].copy_(
-                    U[: self.svd_U_q.size(0), :r].to(self.svd_U_q.dtype)
-                )
+                self.svd_U_q.data[:, :r].copy_(U[: self.svd_U_q.size(0), :r].to(self.svd_U_q.dtype))
             if extracted["k"][0] is not None:
-                U, _, _ = torch.linalg.svd(
-                    extracted["k"][0].float(), full_matrices=False
-                )
+                U, _, _ = torch.linalg.svd(extracted["k"][0].float(), full_matrices=False)
                 r = min(self.rank, U.size(1), self.svd_U_k.size(1))
-                self.svd_U_k.data[:, :r].copy_(
-                    U[: self.svd_U_k.size(0), :r].to(self.svd_U_k.dtype)
-                )
+                self.svd_U_k.data[:, :r].copy_(U[: self.svd_U_k.size(0), :r].to(self.svd_U_k.dtype))
 
         if hasattr(old_attn, "is_decoder"):
             self.is_decoder = bool(old_attn.is_decoder)
-        elif (
-            hasattr(old_attn, "c_attn") or "gpt" in old_attn.__class__.__name__.lower()
-        ):
+        elif hasattr(old_attn, "c_attn") or "gpt" in old_attn.__class__.__name__.lower():
             self.is_decoder = True
 
     # ------------------------------------------------------------------
@@ -1040,9 +992,7 @@ class AegisSpectronFP8Attention(BaseAttention):
             X = X * token_valid.unsqueeze(-1).to(X.dtype)
 
         u = X * self.linear_B.view(1, 1, D).to(X.dtype)
-        gamma = torch.sigmoid(self.decay_param.to(X.dtype)).clamp(
-            min=1e-4, max=1.0 - 1e-4
-        )
+        gamma = torch.sigmoid(self.decay_param.to(X.dtype)).clamp(min=1e-4, max=1.0 - 1e-4)
 
         out_fwd = _state_recurrence_jit(u, gamma, reverse=False)
 
@@ -1050,20 +1000,12 @@ class AegisSpectronFP8Attention(BaseAttention):
             out_h = out_fwd.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
         else:
             out_bwd = _state_recurrence_jit(u, gamma, reverse=True)
-            gate = torch.sigmoid(self.bidir_gate.to(X.dtype)).view(
-                1, self.num_heads, 1, 1
-            )
-            out_fwd_h = out_fwd.view(B, N, self.num_heads, self.head_dim).transpose(
-                1, 2
-            )
-            out_bwd_h = out_bwd.view(B, N, self.num_heads, self.head_dim).transpose(
-                1, 2
-            )
+            gate = torch.sigmoid(self.bidir_gate.to(X.dtype)).view(1, self.num_heads, 1, 1)
+            out_fwd_h = out_fwd.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
+            out_bwd_h = out_bwd.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
             out_h = gate * out_fwd_h + (1.0 - gate) * out_bwd_h
 
-        out_h = out_h * self.linear_C.view(1, self.num_heads, 1, self.head_dim).to(
-            X.dtype
-        )
+        out_h = out_h * self.linear_C.view(1, self.num_heads, 1, self.head_dim).to(X.dtype)
         return out_h.contiguous()
 
     # ------------------------------------------------------------------
@@ -1104,26 +1046,16 @@ class AegisSpectronFP8Attention(BaseAttention):
         fp8_fmt = self.fp8_format
         use_ste = self.training
 
-        Q_new = fp8_cast_simulate(
-            self.q_proj(hidden_states), format=fp8_fmt, use_ste=use_ste
-        )
-        K_new = fp8_cast_simulate(
-            self.k_proj(kv_input), format=fp8_fmt, use_ste=use_ste
-        )
-        V_new = fp8_cast_simulate(
-            self.v_proj(kv_input), format=fp8_fmt, use_ste=use_ste
-        )
+        Q_new = fp8_cast_simulate(self.q_proj(hidden_states), format=fp8_fmt, use_ste=use_ste)
+        K_new = fp8_cast_simulate(self.k_proj(kv_input), format=fp8_fmt, use_ste=use_ste)
+        V_new = fp8_cast_simulate(self.v_proj(kv_input), format=fp8_fmt, use_ste=use_ste)
 
         Q = Q_new.view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
         K_new_h = (
-            K_new.view(B, N_kv_new, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
+            K_new.view(B, N_kv_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
         )
         V_new_h = (
-            V_new.view(B, N_kv_new, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
+            V_new.view(B, N_kv_new, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
         )
 
         # RoPE with past_len offset (SP-FIX-09).
@@ -1133,10 +1065,7 @@ class AegisSpectronFP8Attention(BaseAttention):
             cos, sin = position_embeddings
             past_len_rope = 0
             if past_key_value is not None:
-                if (
-                    isinstance(past_key_value, (tuple, list))
-                    and len(past_key_value) >= 1
-                ):
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
                     past_len_rope = past_key_value[0].shape[-2]
                 elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
                     past_len_rope = past_key_value.key_cache[0].shape[-2]
@@ -1150,9 +1079,7 @@ class AegisSpectronFP8Attention(BaseAttention):
             if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
                 past_k, past_v = past_key_value[0], past_key_value[1]
             elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
-                idx = min(
-                    getattr(self, "layer_idx", 0), len(past_key_value.key_cache) - 1
-                )
+                idx = min(getattr(self, "layer_idx", 0), len(past_key_value.key_cache) - 1)
                 past_k = past_key_value.key_cache[idx]
                 past_v = past_key_value.value_cache[idx]
 
@@ -1163,11 +1090,7 @@ class AegisSpectronFP8Attention(BaseAttention):
             K_cat = K_new_h
             V_cat = V_new_h
 
-        if (
-            past_key_value is not None
-            and hasattr(past_key_value, "update")
-            and not is_cross
-        ):
+        if past_key_value is not None and hasattr(past_key_value, "update") and not is_cross:
             idx = getattr(self, "layer_idx", 0)
             past_key_value.update(K_new_h, V_new_h, idx)
 
@@ -1237,21 +1160,15 @@ class AegisSpectronFP8Attention(BaseAttention):
             cos, sin = cos.unsqueeze(0), sin.unsqueeze(0)
 
         if cos.shape[-2] != q.shape[-2]:
-            raise ValueError(
-                f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}"
-            )
+            raise ValueError(f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}")
 
         rotary_dim = cos.shape[-1]
         head_dim = q.shape[-1]
         if rotary_dim <= head_dim:
             q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
             k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-            q_rot = (q_rot * cos.to(q_rot.dtype)) + (
-                _rotate_half(q_rot) * sin.to(q_rot.dtype)
-            )
-            k_rot = (k_rot * cos.to(k_rot.dtype)) + (
-                _rotate_half(k_rot) * sin.to(k_rot.dtype)
-            )
+            q_rot = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+            k_rot = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
             q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot
             k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot
         else:
@@ -1292,9 +1209,7 @@ def inject_aegis_spectron_fp8(
     if target is None:
         return None
 
-    cfg_root = (
-        model_config if model_config is not None else getattr(target, "config", None)
-    )
+    cfg_root = model_config if model_config is not None else getattr(target, "config", None)
 
     # Whole-model traversal.
     layer_list = None
@@ -1347,9 +1262,7 @@ def inject_aegis_spectron_fp8(
                         break
 
         if model_config is None:
-            if any(
-                hasattr(layer, a) for a in ("hidden_size", "d_model", "n_embd", "dim")
-            ):
+            if any(hasattr(layer, a) for a in ("hidden_size", "d_model", "n_embd", "dim")):
                 model_config = layer
             elif old_attn is not None:
                 model_config = getattr(old_attn, "config", None)
@@ -1374,9 +1287,7 @@ def inject_aegis_spectron_fp8(
                 getattr(
                     model_config,
                     "num_heads",
-                    getattr(
-                        model_config, "n_heads", getattr(model_config, "n_head", 12)
-                    ),
+                    getattr(model_config, "n_heads", getattr(model_config, "n_head", 12)),
                 ),
             )
             if model_config is not None
@@ -1409,9 +1320,7 @@ def inject_aegis_spectron_fp8(
             num_key_value_heads=n_kv_heads,
             head_dim=h_dim,
             window_size=(
-                getattr(
-                    comp_config, "window_size", getattr(comp_config, "local_window", 64)
-                )
+                getattr(comp_config, "window_size", getattr(comp_config, "local_window", 64))
                 if comp_config
                 else 64
             ),
@@ -1427,9 +1336,7 @@ def inject_aegis_spectron_fp8(
             ),
             dropout=getattr(comp_config, "dropout", 0.1) if comp_config else 0.1,
             is_decoder=is_dec,
-            fp8_format=(
-                getattr(comp_config, "fp8_format", "e4m3") if comp_config else "e4m3"
-            ),
+            fp8_format=(getattr(comp_config, "fp8_format", "e4m3") if comp_config else "e4m3"),
             chunk_size=getattr(comp_config, "chunk_size", 64) if comp_config else 64,
         )
 

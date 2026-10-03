@@ -12,6 +12,7 @@ import gc
 
 import torch
 import torch.nn as nn
+
 from neuralops.core.model_utils import replace_module
 
 

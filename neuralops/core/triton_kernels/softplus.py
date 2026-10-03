@@ -1,10 +1,19 @@
 try:
     import triton
     import triton.language as tl
+
     HAS_TRITON = True
 except ImportError:
     HAS_TRITON = False
-    triton = type("triton", (), {"jit": lambda f: f, "heuristics": lambda *a, **kw: lambda f: f, "autotune": lambda *a, **kw: lambda f: f})
+    triton = type(
+        "triton",
+        (),
+        {
+            "jit": lambda f: f,
+            "heuristics": lambda *a, **kw: lambda f: f,
+            "autotune": lambda *a, **kw: lambda f: f,
+        },
+    )
     tl = None
 from packaging import version
 

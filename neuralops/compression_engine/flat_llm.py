@@ -13,6 +13,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.pruning_utils import (
     adaptive_max_error,
@@ -170,9 +171,7 @@ class FLATLLMCompressor(BaseCompressor):
         self.cfg = cfg
 
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
-        raw_kr = _cfg_get(
-            cfg, "flat_llm_keep_ratio", _cfg_get(cfg, "keep_ratio", keep_ratio)
-        )
+        raw_kr = _cfg_get(cfg, "flat_llm_keep_ratio", _cfg_get(cfg, "keep_ratio", keep_ratio))
         self.keep_ratio = max(0.05, min(float(raw_kr), 1.0))
         # FLT-FIX-04
         self.damping = max(
@@ -186,13 +185,9 @@ class FLATLLMCompressor(BaseCompressor):
                 _cfg_get(cfg, "structured_24", structured_24),
             )
         )
-        c_max_error = _cfg_get(
-            cfg, "flat_llm_max_error", _cfg_get(cfg, "max_error", max_error)
-        )
+        c_max_error = _cfg_get(cfg, "flat_llm_max_error", _cfg_get(cfg, "max_error", max_error))
         if c_max_error is None or c_max_error == 0.35:
-            c_max_error = adaptive_max_error(
-                int(self.keep_ratio * 768), 768, 768, "distilbert"
-            )
+            c_max_error = adaptive_max_error(int(self.keep_ratio * 768), 768, 768, "distilbert")
             c_max_error = max(c_max_error, 0.60)
 
         self.max_error = float(c_max_error)
@@ -210,9 +205,7 @@ class FLATLLMCompressor(BaseCompressor):
                 _cfg_get(cfg, "fallback_to_original", fallback_to_original),
             )
         )
-        self.calibration_loader = calibration_loader or _cfg_get(
-            cfg, "calibration_loader", None
-        )
+        self.calibration_loader = calibration_loader or _cfg_get(cfg, "calibration_loader", None)
         self.calibration_texts = calibration_texts
         self.target_modules = target_modules
         self.target_device = (
@@ -325,11 +318,7 @@ class FLATLLMCompressor(BaseCompressor):
                 target_mod = getattr(module, "base_layer", module)
                 cls_name = target_mod.__class__.__name__.lower()
                 is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-                out_f = (
-                    target_mod.weight.shape[1]
-                    if is_conv1d
-                    else target_mod.weight.shape[0]
-                )
+                out_f = target_mod.weight.shape[1] if is_conv1d else target_mod.weight.shape[0]
                 if out.shape[-1] != out_f:
                     return
                 flat = out.reshape(-1, out_f).cpu()
@@ -444,8 +433,7 @@ class FLATLLMCompressor(BaseCompressor):
                 keep_ratio_actual = 1.0
                 bias_kept = (
                     target_mod.bias.data.float()
-                    if getattr(target_mod, "bias", None) is not None
-                    and target_mod.bias is not None
+                    if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None
                     else None
                 )
                 comp_layer_storage = orig_layer_storage
@@ -462,10 +450,7 @@ class FLATLLMCompressor(BaseCompressor):
                 W_pruned.index_copy_(0, kept_idx, W_kept)
 
                 # Bias handling: keep only the corresponding entries
-                if (
-                    getattr(target_mod, "bias", None) is not None
-                    and target_mod.bias is not None
-                ):
+                if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None:
                     bias_full = target_mod.bias.data.float()
                     bias_kept = bias_full.index_select(0, kept_idx).contiguous()
                 else:
@@ -483,9 +468,7 @@ class FLATLLMCompressor(BaseCompressor):
                 else:
                     W_pruned_full = torch.zeros_like(W)
                     W_pruned_full.index_copy_(0, kept_idx, W_kept)
-                    final_err = float(
-                        torch.norm(W - W_pruned_full, p="fro").item() / norm_w
-                    )
+                    final_err = float(torch.norm(W - W_pruned_full, p="fro").item() / norm_w)
 
             self.layer_errors[name] = final_err
             self.layer_keep_ratios[name] = float(keep_ratio_actual)
@@ -511,13 +494,9 @@ class FLATLLMCompressor(BaseCompressor):
                 new_module = target_mod
                 with torch.no_grad():
                     if is_conv1d:
-                        target_mod.weight.data.copy_(
-                            W_kept.t().to(dtype=dtype, device=device)
-                        )
+                        target_mod.weight.data.copy_(W_kept.t().to(dtype=dtype, device=device))
                     else:
-                        target_mod.weight.data.copy_(
-                            W_kept.to(dtype=dtype, device=device)
-                        )
+                        target_mod.weight.data.copy_(W_kept.to(dtype=dtype, device=device))
             else:
                 new_module = PrunedChannelLinear(
                     in_features=d_in,
@@ -525,9 +504,7 @@ class FLATLLMCompressor(BaseCompressor):
                     kept_idx=kept_idx.cpu(),
                     W_kept=W_kept.to(dtype=dtype, device=device),
                     bias_kept=(
-                        bias_kept.to(dtype=dtype, device=device)
-                        if bias_kept is not None
-                        else None
+                        bias_kept.to(dtype=dtype, device=device) if bias_kept is not None else None
                     ),
                 )
 
@@ -574,12 +551,8 @@ class FLATLLMCompressor(BaseCompressor):
             forward_check_success = False
 
         # Honest storage ratio
-        storage_ratio = (
-            total_orig_storage / total_comp_storage if total_comp_storage > 0 else 1.0
-        )
-        effective_ratio = (
-            total_comp_storage / total_orig_storage if total_orig_storage > 0 else 1.0
-        )
+        storage_ratio = total_orig_storage / total_comp_storage if total_comp_storage > 0 else 1.0
+        effective_ratio = total_comp_storage / total_orig_storage if total_orig_storage > 0 else 1.0
 
         try:
             self._compressed_params = self._count_params(self.model)
@@ -645,15 +618,11 @@ def flat_llm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     keep_ratio = kwargs.pop(
         "keep_ratio",
-        _cfg_get(
-            comp_config, "flat_llm_keep_ratio", _cfg_get(comp_config, "keep_ratio", 0.7)
-        ),
+        _cfg_get(comp_config, "flat_llm_keep_ratio", _cfg_get(comp_config, "keep_ratio", 0.7)),
     )
     damping = kwargs.pop(
         "damping",
-        _cfg_get(
-            comp_config, "flat_llm_damping", _cfg_get(comp_config, "damping", 1e-4)
-        ),
+        _cfg_get(comp_config, "flat_llm_damping", _cfg_get(comp_config, "damping", 1e-4)),
     )
     structured_24 = kwargs.pop(
         "structured_24",
@@ -665,9 +634,7 @@ def flat_llm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(
-            comp_config, "flat_llm_max_error", _cfg_get(comp_config, "max_error", 0.35)
-        ),
+        _cfg_get(comp_config, "flat_llm_max_error", _cfg_get(comp_config, "max_error", 0.35)),
     )
     target_attention_only = kwargs.pop(
         "target_attention_only",

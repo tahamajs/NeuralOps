@@ -12,6 +12,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.compression_engine.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
@@ -65,9 +66,7 @@ class SDRMCompressor(BaseCompressor):
             min(
                 float(
                     total_param_ratio
-                    or _cfg_get(
-                        cfg_obj, "total_param_ratio", _cfg_get(cfg_obj, "ratio", 0.7)
-                    )
+                    or _cfg_get(cfg_obj, "total_param_ratio", _cfg_get(cfg_obj, "ratio", 0.7))
                 ),
                 1.0,
             ),
@@ -83,9 +82,7 @@ class SDRMCompressor(BaseCompressor):
             if target_attention_only is not None
             else _cfg_get(cfg_obj, "target_attention_only", False)
         )
-        self.use_lora = bool(
-            use_lora or _cfg_get(cfg_obj, "use_lora", False) or (lora_r > 0)
-        )
+        self.use_lora = bool(use_lora or _cfg_get(cfg_obj, "use_lora", False) or (lora_r > 0))
         self.lora_r = int(lora_r or _cfg_get(cfg_obj, "lora_r", 0))
         self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, "lora_alpha", 1.0))
         self.target_modules = target_modules
@@ -96,9 +93,7 @@ class SDRMCompressor(BaseCompressor):
             else _cfg_get(cfg_obj, "fallback_to_original", True)
         )
         self.min_numel = max(1, int(min_numel or _cfg_get(cfg_obj, "min_numel", 16)))
-        self.protect_output_proj: bool = bool(
-            _cfg_get(cfg_obj, "protect_output_proj", True)
-        )
+        self.protect_output_proj: bool = bool(_cfg_get(cfg_obj, "protect_output_proj", True))
 
         # Target device derivation
         if device is not None:
@@ -112,9 +107,7 @@ class SDRMCompressor(BaseCompressor):
                 )
         else:
             self.target_device = (
-                next(model.parameters()).device
-                if list(model.parameters())
-                else torch.device("cpu")
+                next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
             )
 
         # Diagnostics & Tracking
@@ -136,11 +129,7 @@ class SDRMCompressor(BaseCompressor):
         num_kv_heads = getattr(
             cfg, "num_key_value_heads", getattr(module, "num_key_value_heads", None)
         )
-        is_gqa = (
-            num_heads is not None
-            and num_kv_heads is not None
-            and num_kv_heads < num_heads
-        )
+        is_gqa = num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads
 
         name_l = name.lower()
         is_attn_qkv = any(
@@ -341,9 +330,7 @@ class SDRMCompressor(BaseCompressor):
                 ):
                     dst_lB.data.copy_(src_lB.data)
             except Exception as e_lora:
-                logger.warning(
-                    "Could not copy existing LoRA adapters in SDRM: %s", e_lora
-                )
+                logger.warning("Could not copy existing LoRA adapters in SDRM: %s", e_lora)
 
         # Frobenius reconstruction error check
         W_rec = torch.matmul(U_r.float(), V_r.float())
@@ -400,14 +387,10 @@ class SDRMCompressor(BaseCompressor):
                 cls_name = base_m.__class__.__name__
                 is_conv1d = "conv1d" in cls_name.lower() or hasattr(base_m, "nf")
                 out_f = (
-                    raw_w.shape[1]
-                    if is_conv1d
-                    else getattr(base_m, "out_features", raw_w.shape[0])
+                    raw_w.shape[1] if is_conv1d else getattr(base_m, "out_features", raw_w.shape[0])
                 )
                 in_f = (
-                    raw_w.shape[0]
-                    if is_conv1d
-                    else getattr(base_m, "in_features", raw_w.shape[1])
+                    raw_w.shape[0] if is_conv1d else getattr(base_m, "in_features", raw_w.shape[1])
                 )
 
                 params = in_f * out_f
@@ -457,16 +440,12 @@ class SDRMCompressor(BaseCompressor):
                 dummy_input = torch.randint(0, 100, (1, 8), device=self.target_device)
                 self.model(dummy_input)
         except Exception as ex_sanity:
-            logger.warning(
-                "SDRM post-compression forward sanity check warning: %s", ex_sanity
-            )
+            logger.warning("SDRM post-compression forward sanity check warning: %s", ex_sanity)
             forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
         avg_err = (
-            (sum(self.layer_errors.values()) / len(self.layer_errors))
-            if self.layer_errors
-            else 0.0
+            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
         )
         stats = self.get_compression_stats()
         stats.update(
@@ -513,9 +492,7 @@ def sdrm_compressor_factory(
         "total_param_ratio",
         kwargs.pop(
             "ratio",
-            _cfg_get(
-                comp_config, "total_param_ratio", _cfg_get(comp_config, "ratio", 0.7)
-            ),
+            _cfg_get(comp_config, "total_param_ratio", _cfg_get(comp_config, "ratio", 0.7)),
         ),
     )
     min_rank = kwargs.pop("min_rank", _cfg_get(comp_config, "min_rank", 8))

@@ -15,6 +15,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.pruning_utils import (
     adaptive_max_error,
@@ -97,13 +98,9 @@ class FLAPCompressor(BaseCompressor):
             _cfg_get(cfg, "flap_metric_type", _cfg_get(cfg, "metric_type", metric_type))
         ).upper()
         self.structured_24 = bool(
-            _cfg_get(
-                cfg, "flap_structured_24", _cfg_get(cfg, "structured_24", structured_24)
-            )
+            _cfg_get(cfg, "flap_structured_24", _cfg_get(cfg, "structured_24", structured_24))
         )
-        c_max_error = _cfg_get(
-            cfg, "flap_max_error", _cfg_get(cfg, "max_error", max_error)
-        )
+        c_max_error = _cfg_get(cfg, "flap_max_error", _cfg_get(cfg, "max_error", max_error))
         if c_max_error is None or c_max_error == 0.35:
             c_max_error = adaptive_max_error(
                 int((1.0 - self.sparsity) * 768), 768, 768, "distilbert"
@@ -125,9 +122,7 @@ class FLAPCompressor(BaseCompressor):
                 _cfg_get(cfg, "fallback_to_original", fallback_to_original),
             )
         )
-        self.calibration_loader = calibration_loader or _cfg_get(
-            cfg, "calibration_loader", None
-        )
+        self.calibration_loader = calibration_loader or _cfg_get(cfg, "calibration_loader", None)
         self.calibration_texts = calibration_texts
         self.target_modules = target_modules
         self.target_device = (
@@ -227,11 +222,7 @@ class FLAPCompressor(BaseCompressor):
                 target_mod = getattr(module, "base_layer", module)
                 cls_name = target_mod.__class__.__name__.lower()
                 is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-                in_f = (
-                    target_mod.weight.shape[0]
-                    if is_conv1d
-                    else target_mod.weight.shape[1]
-                )
+                in_f = target_mod.weight.shape[0] if is_conv1d else target_mod.weight.shape[1]
                 flat = inp.reshape(-1, in_f).cpu()
                 if flat.size(0) >= 2:
                     var = flat.var(dim=0)
@@ -327,18 +318,13 @@ class FLAPCompressor(BaseCompressor):
 
         if self.target_attention_only:
             for name, module in self.model.named_modules():
-                if any(
-                    part in name.split(".")
-                    for part in ["lora_A", "lora_B", "base_layer"]
-                ):
+                if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
                     continue
                 target_mod = getattr(module, "base_layer", module)
                 cls_name = target_mod.__class__.__name__.lower()
                 is_linear = isinstance(target_mod, nn.Linear)
                 is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-                if (is_linear or is_conv1d) and not self._is_target_module(
-                    name, module
-                ):
+                if (is_linear or is_conv1d) and not self._is_target_module(name, module):
                     for p in module.parameters():
                         p.requires_grad = False
                     self.skipped_layers.append(name)
@@ -374,14 +360,10 @@ class FLAPCompressor(BaseCompressor):
             # FL-FIX-01: compute actual sparsity from mask.
             if self.structured_24:
                 saliency_matrix = scores.unsqueeze(0).expand_as(W)
-                W_pruned, mask = apply_24_structured_mask(
-                    W, saliency=saliency_matrix, dim=1
-                )
+                W_pruned, mask = apply_24_structured_mask(W, saliency=saliency_matrix, dim=1)
                 if mask is not None:
                     mask_f = mask.float()
-                    effective_sparsity = 1.0 - (
-                        mask_f.sum().item() / max(1, mask_f.numel())
-                    )
+                    effective_sparsity = 1.0 - (mask_f.sum().item() / max(1, mask_f.numel()))
                 else:
                     # Fallback: count zeros.
                     zeros = (W_pruned.abs() < 1e-12).float().sum().item()
@@ -433,15 +415,9 @@ class FLAPCompressor(BaseCompressor):
 
             # LoRA trainability.
             if hasattr(module, "lora_A") and hasattr(module, "lora_B"):
-                if (
-                    hasattr(module.lora_A, "weight")
-                    and module.lora_A.weight is not None
-                ):
+                if hasattr(module.lora_A, "weight") and module.lora_A.weight is not None:
                     module.lora_A.weight.requires_grad = True
-                if (
-                    hasattr(module.lora_B, "weight")
-                    and module.lora_B.weight is not None
-                ):
+                if hasattr(module.lora_B, "weight") and module.lora_B.weight is not None:
                     module.lora_B.weight.requires_grad = True
 
             self.compressed_layers.append(name)
@@ -464,11 +440,7 @@ class FLAPCompressor(BaseCompressor):
                         self.model(dummy)
                     except Exception:
                         first_linear = next(
-                            (
-                                m
-                                for m in self.model.modules()
-                                if isinstance(m, nn.Linear)
-                            ),
+                            (m for m in self.model.modules() if isinstance(m, nn.Linear)),
                             None,
                         )
                         in_dim = getattr(first_linear, "in_features", 8)
@@ -478,11 +450,7 @@ class FLAPCompressor(BaseCompressor):
                                 8,
                                 in_dim,
                                 device=dev,
-                                dtype=(
-                                    first_p.dtype
-                                    if first_p is not None
-                                    else torch.float32
-                                ),
+                                dtype=(first_p.dtype if first_p is not None else torch.float32),
                             )
                         )
         except Exception as e:
@@ -494,9 +462,7 @@ class FLAPCompressor(BaseCompressor):
         except Exception:
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
-        effective_ratio = (
-            (total_comp_params / total_orig_params) if total_orig_params > 0 else 1.0
-        )
+        effective_ratio = (total_comp_params / total_orig_params) if total_orig_params > 0 else 1.0
         avg_err = (
             sum(self.layer_errors[k] for k in self.compressed_layers)
             / max(1, len(self.compressed_layers))
@@ -573,9 +539,7 @@ def flap_compressor_factory(model: Any, comp_config: Any = None, **kwargs: Any) 
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(
-            comp_config, "flap_max_error", _cfg_get(comp_config, "max_error", 0.35)
-        ),
+        _cfg_get(comp_config, "flap_max_error", _cfg_get(comp_config, "max_error", 0.35)),
     )
     target_attention_only = kwargs.pop(
         "target_attention_only",

@@ -25,6 +25,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -104,21 +105,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -154,9 +149,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
         return out
 
@@ -177,9 +170,7 @@ class SpectraformerAttention(BaseAttention):
     ) -> None:
         super().__init__(config, rank or 64)
         self.config = config
-        comp_config = _cfg_get(config, "compression_config", None) or kwargs.get(
-            "comp_config"
-        )
+        comp_config = _cfg_get(config, "compression_config", None) or kwargs.get("comp_config")
 
         self.hidden_size = (
             kwargs.get("hidden_size")
@@ -318,11 +309,7 @@ class SpectraformerAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
-        source_attn = (
-            pretrained_attn
-            if pretrained_attn is not None
-            else kwargs.get("source_attn")
-        )
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -335,9 +322,7 @@ class SpectraformerAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
             (
@@ -355,10 +340,7 @@ class SpectraformerAttention(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -550,20 +532,14 @@ class SpectraformerAttention(BaseAttention):
 
         # Preserve existing LoRA adapters from source projections
         for proj_key, target_mod in target_map.items():
-            sub_name = {"q": "query", "k": "key", "v": "value", "o": "dense"}.get(
-                proj_key, ""
-            )
+            sub_name = {"q": "query", "k": "key", "v": "value", "o": "dense"}.get(proj_key, "")
             src_sub = getattr(src, sub_name, None)
             if src_sub is None and hasattr(src, f"{proj_key}_proj"):
                 src_sub = getattr(src, f"{proj_key}_proj")
             if src_sub is None and hasattr(src, f"{proj_key}_lin"):
                 src_sub = getattr(src, f"{proj_key}_lin")
 
-            if (
-                src_sub is not None
-                and hasattr(src_sub, "lora_A")
-                and hasattr(src_sub, "lora_B")
-            ):
+            if src_sub is not None and hasattr(src_sub, "lora_A") and hasattr(src_sub, "lora_B"):
                 if target_mod.lora_A is not None and hasattr(src_sub.lora_A, "weight"):
                     try:
                         target_mod.lora_A.data.copy_(src_sub.lora_A.weight.data)
@@ -643,11 +619,7 @@ class SpectraformerAttention(BaseAttention):
         R = self.R.to(dtype=hidden_states.dtype, device=hidden_states.device)
         if R.shape[0] != self.head_dim or R.shape[1] != self.rank:
             g = torch.Generator(
-                device=(
-                    hidden_states.device
-                    if hidden_states.device.type != "cpu"
-                    else "cpu"
-                )
+                device=(hidden_states.device if hidden_states.device.type != "cpu" else "cpu")
             ).manual_seed(42)
             H = torch.randn(
                 self.head_dim,
@@ -658,11 +630,7 @@ class SpectraformerAttention(BaseAttention):
             )
             R, _ = torch.linalg.qr(H)
             R = R.to(dtype=hidden_states.dtype)
-            if (
-                hasattr(self, "R")
-                and isinstance(self.R, torch.Tensor)
-                and self.R.shape == R.shape
-            ):
+            if hasattr(self, "R") and isinstance(self.R, torch.Tensor) and self.R.shape == R.shape:
                 self.R.data.copy_(R)
             else:
                 self.R = R
@@ -675,17 +643,13 @@ class SpectraformerAttention(BaseAttention):
         # Mask padding in K_proj
         if attention_mask is not None:
             valid_tok = get_token_valid_mask(attention_mask, B, N, hidden_states.device)
-            v_mask_4d = (
-                valid_tok.unsqueeze(1).unsqueeze(-1).to(dtype=hidden_states.dtype)
-            )
+            v_mask_4d = valid_tok.unsqueeze(1).unsqueeze(-1).to(dtype=hidden_states.dtype)
             K_proj = K_proj * v_mask_4d
             v = v * v_mask_4d
 
         if self.is_decoder:
             # Recurrent linear causal attention: exact vectorized computation
-            causal_mask = torch.tril(
-                torch.ones(N, N, device=Q_proj.device, dtype=torch.bool)
-            )
+            causal_mask = torch.tril(torch.ones(N, N, device=Q_proj.device, dtype=torch.bool))
             aff = torch.matmul(
                 Q_proj.float(), K_proj.float().transpose(-2, -1).contiguous()
             )  # (B, H, N, N)
@@ -717,9 +681,7 @@ class SpectraformerAttention(BaseAttention):
                 hm = hm.unsqueeze(1)
             context = context * hm
 
-        context = (
-            context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
-        )
+        context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
             output = context
@@ -785,9 +747,7 @@ def inject_spectraformer(
 
     src_attn = old_attn
     if src_attn is None and layer is not None:
-        src_attn = getattr(
-            layer, "attention", getattr(layer, "self", getattr(layer, "attn", None))
-        )
+        src_attn = getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
 
     hidden_size = (
         kwargs.get("hidden_size")
@@ -841,9 +801,7 @@ def inject_spectraformer(
                 else torch.device("cpu")
             )
             dtype = (
-                next(src_attn.parameters()).dtype
-                if list(src_attn.parameters())
-                else torch.float32
+                next(src_attn.parameters()).dtype if list(src_attn.parameters()) else torch.float32
             )
             dummy_input = torch.randn(1, 4, hidden_size, device=device, dtype=dtype)
 
@@ -858,8 +816,7 @@ def inject_spectraformer(
 
                     norm_old = torch.norm(old_out.float(), p="fro").clamp_min(1e-8)
                     rel_err = (
-                        torch.norm(old_out.float() - new_out.float(), p="fro")
-                        / norm_old
+                        torch.norm(old_out.float() - new_out.float(), p="fro") / norm_old
                     ).item()
                     if rel_err > max_error:
                         logger.warning(
@@ -898,9 +855,7 @@ def inject_spectraformer(
 
         return new_attn
     except Exception as e:
-        logger.warning(
-            "Failed to inject SpectraformerAttention at layer %d: %s", layer_idx, e
-        )
+        logger.warning("Failed to inject SpectraformerAttention at layer %d: %s", layer_idx, e)
         if src_attn is not None:
             for p in src_attn.parameters():
                 p.requires_grad = False

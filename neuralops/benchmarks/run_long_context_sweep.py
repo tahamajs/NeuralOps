@@ -62,10 +62,12 @@ def get_byte_imdb_dataloader(
         try:
             ds = load_dataset("imdb", split=split)
         except Exception:
-            ds = Dataset.from_dict({
-                "text": ["Sample long movie review text " * 100] * 32,
-                "label": [1] * 16 + [0] * 16,
-            })
+            ds = Dataset.from_dict(
+                {
+                    "text": ["Sample long movie review text " * 100] * 32,
+                    "label": [1] * 16 + [0] * 16,
+                }
+            )
 
     def encode(batch):
         res = []
@@ -80,7 +82,11 @@ def get_byte_imdb_dataloader(
             masks.append(mask)
         return {"input_ids": res, "attention_mask": masks, "labels": batch["label"]}
 
-    ds = ds.map(encode, batched=True, remove_columns=[c for c in ds.column_names if c not in ("label", "labels")])
+    ds = ds.map(
+        encode,
+        batched=True,
+        remove_columns=[c for c in ds.column_names if c not in ("label", "labels")],
+    )
     if "label" in ds.column_names and "labels" not in ds.column_names:
         ds = ds.rename_column("label", "labels")
     ds.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
@@ -88,9 +94,7 @@ def get_byte_imdb_dataloader(
 
 
 LOG = logging.getLogger("LongContextSweep")
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 DEFAULT_LONG_CONTEXT_MODULES = [
     "full",
@@ -178,12 +182,8 @@ def parse_args():
         default=4096,
         help="Target sequence length in tokens/bytes",
     )
-    parser.add_argument(
-        "--max_length", type=int, default=None, help="Alias for --seq_len"
-    )
-    parser.add_argument(
-        "--parallel", type=int, default=1, help="Parallel workers (default 1)"
-    )
+    parser.add_argument("--max_length", type=int, default=None, help="Alias for --seq_len")
+    parser.add_argument("--parallel", type=int, default=1, help="Parallel workers (default 1)")
     parser.add_argument(
         "--max_eval_samples",
         type=int,
@@ -191,9 +191,7 @@ def parse_args():
         help="Number of test samples to evaluate (None for full split)",
     )
     parser.add_argument("--rank", type=int, default=64, help="Compression rank")
-    parser.add_argument(
-        "--fp16", action="store_true", default=True, help="Use FP16 precision"
-    )
+    parser.add_argument("--fp16", action="store_true", default=True, help="Use FP16 precision")
     parser.add_argument(
         "--dry_run",
         action="store_true",
@@ -410,18 +408,14 @@ def main():
         if mod == "full":
             continue
 
-        LOG.info(
-            "[%d/%d] Evaluating long-context module: %s...", idx, len(args.modules), mod
-        )
+        LOG.info("[%d/%d] Evaluating long-context module: %s...", idx, len(args.modules), mod)
         t_mod = time.time()
         mod_dir = out_dir / mod
         mod_dir.mkdir(parents=True, exist_ok=True)
         res_json = mod_dir / "result.json"
 
         try:
-            cand_model = AutoModelForSequenceClassification.from_pretrained(
-                args.model_path
-            )
+            cand_model = AutoModelForSequenceClassification.from_pretrained(args.model_path)
             adapt_model_pos_embeddings(cand_model, target_seq_len=args.seq_len)
             if args.fp16 and device == "cuda":
                 cand_model.half()

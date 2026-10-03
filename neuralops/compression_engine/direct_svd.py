@@ -11,6 +11,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.compression_engine.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
@@ -151,11 +152,7 @@ class DirectSVDCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if (
-            num_heads is not None
-            and num_kv_heads is not None
-            and num_kv_heads < num_heads
-        ):
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
             name_lower = name.lower()
             if any(
                 p in name_lower
@@ -454,9 +451,7 @@ class DirectSVDCompressor(BaseCompressor):
                 self.model(dummy)
             forward_check_success = True
         except Exception as e:
-            logger.debug(
-                "DirectSVD post-compression forward sanity check exception: %s", e
-            )
+            logger.debug("DirectSVD post-compression forward sanity check exception: %s", e)
 
         effective_ratio = (
             total_comp_decomp_params / total_orig_decomp_params

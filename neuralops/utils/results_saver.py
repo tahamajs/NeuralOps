@@ -20,9 +20,7 @@ class ResultsSaver(PrimaryResultsSaver):
     Supports structured report generation and Hugging Face Hub uploads.
     """
 
-    def __init__(
-        self, run_id: str, base_dir: Path, config: dict[str, Any] | None = None
-    ) -> None:
+    def __init__(self, run_id: str, base_dir: Path, config: dict[str, Any] | None = None) -> None:
         super().__init__(run_id=run_id, base_dir=base_dir, config=config)
         self.config = config or {}
         self.legacy_base_dir = Path(base_dir) / str(run_id)

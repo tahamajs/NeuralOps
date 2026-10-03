@@ -117,16 +117,8 @@ def apply_rotary_pos_emb(
     q_rot_embed = (q_rot * cos) + (_rotate_half(q_rot) * sin)
     k_rot_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
 
-    q = (
-        torch.cat([q_rot_embed, q_pass], dim=-1)
-        if q_pass.shape[-1] > 0
-        else q_rot_embed
-    )
-    k = (
-        torch.cat([k_rot_embed, k_pass], dim=-1)
-        if k_pass.shape[-1] > 0
-        else k_rot_embed
-    )
+    q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot_embed
+    k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot_embed
 
     return q, k
 
@@ -152,21 +144,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -202,9 +188,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
         return out
 
@@ -440,11 +424,7 @@ class SpectralMambaAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
-        source_attn = (
-            pretrained_attn
-            if pretrained_attn is not None
-            else kwargs.get("source_attn")
-        )
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -453,9 +433,7 @@ class SpectralMambaAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
             (
@@ -473,10 +451,7 @@ class SpectralMambaAttention(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -633,9 +608,7 @@ class SpectralMambaAttention(BaseAttention):
                 ):
                     repeats = w.shape[0] // target_mod.weight.shape[0]
                     # For GQA: mean-average the head groups from source
-                    w_grouped = w.view(
-                        target_mod.weight.shape[0], repeats, w.shape[1]
-                    ).mean(dim=1)
+                    w_grouped = w.view(target_mod.weight.shape[0], repeats, w.shape[1]).mean(dim=1)
                     target_mod.weight.copy_(w_grouped)
                 else:
                     min_0 = min(target_mod.weight.shape[0], w.shape[0])
@@ -657,9 +630,7 @@ class SpectralMambaAttention(BaseAttention):
                         and b.shape[0] % target_mod.bias.shape[0] == 0
                     ):
                         repeats = b.shape[0] // target_mod.bias.shape[0]
-                        b_grouped = b.view(target_mod.bias.shape[0], repeats).mean(
-                            dim=1
-                        )
+                        b_grouped = b.view(target_mod.bias.shape[0], repeats).mean(dim=1)
                         target_mod.bias.copy_(b_grouped)
                     else:
                         min_b = min(target_mod.bias.shape[0], b.shape[0])
@@ -676,9 +647,7 @@ class SpectralMambaAttention(BaseAttention):
                             f"SpectralMambaAttention: weight copy for {proj_key} produced near-zero norm "
                             f"({fnorm:.2e}) from source norm ({source_norm:.2e}). Aborting."
                         )
-                    logger.warning(
-                        f"Weight copy notice for {proj_key}: norm {fnorm:.6f} < 1e-4"
-                    )
+                    logger.warning(f"Weight copy notice for {proj_key}: norm {fnorm:.6f} < 1e-4")
 
         if self.freeze_base:
             for mod in [self.q_lin, self.k_lin, self.v_lin, self.out_lin]:
@@ -727,11 +696,7 @@ class SpectralMambaAttention(BaseAttention):
             hidden_states = hidden_states.unsqueeze(0)
         B, N, D = hidden_states.shape
 
-        q = (
-            self.q_lin(hidden_states)
-            .view(B, N, self.num_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
+        q = self.q_lin(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
         k = (
             self.k_lin(hidden_states)
             .view(B, N, self.num_kv_heads, self.head_dim)
@@ -779,9 +744,7 @@ class SpectralMambaAttention(BaseAttention):
                     .contiguous()
                     .view(B, N, self.all_head_size)
                 )
-                _sdpa_out = torch.nan_to_num(
-                    _sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4
-                )
+                _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
                 attn_out = (
                     self.out_proj(_sdpa_out)
                     if not getattr(self, "is_nested_encoder", False)
@@ -792,17 +755,12 @@ class SpectralMambaAttention(BaseAttention):
                 attn_out = None
 
         if attn_out is None:
-            scores = (
-                torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous())
-                * scale
-            )
+            scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
             # Causal masking
             is_causal = self.is_decoder or kwargs.get("is_causal", False)
             if is_causal:
-                causal_mask = torch.triu(
-                    torch.full((N, N), -1e4, device=scores.device), diagonal=1
-                )
+                causal_mask = torch.triu(torch.full((N, N), -1e4, device=scores.device), diagonal=1)
                 scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
             # Attention mask
@@ -816,9 +774,9 @@ class SpectralMambaAttention(BaseAttention):
             # head_mask handling
             if head_mask is not None:
                 if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
-                    attn_weights = attn_weights * head_mask.view(
-                        1, self.num_heads, 1, 1
-                    ).to(attn_weights.dtype)
+                    attn_weights = attn_weights * head_mask.view(1, self.num_heads, 1, 1).to(
+                        attn_weights.dtype
+                    )
                 elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
                     attn_weights = attn_weights * head_mask.view(
                         head_mask.size(0), self.num_heads, 1, 1
@@ -845,9 +803,7 @@ class SpectralMambaAttention(BaseAttention):
 
         if mamba_out.shape[-1] != attn_out.shape[-1]:
             if mamba_out.shape[-1] < attn_out.shape[-1]:
-                mamba_out = F.pad(
-                    mamba_out, (0, attn_out.shape[-1] - mamba_out.shape[-1])
-                )
+                mamba_out = F.pad(mamba_out, (0, attn_out.shape[-1] - mamba_out.shape[-1]))
             else:
                 mamba_out = mamba_out[..., : attn_out.shape[-1]]
 
@@ -855,8 +811,7 @@ class SpectralMambaAttention(BaseAttention):
         gate_logits = F.linear(hidden_states, self.gate_weight, self.gate_bias)
         gate_logits = (
             gate_logits
-            + F.linear(F.linear(hidden_states, self.gate_lora_A), self.gate_lora_B)
-            * 2.0
+            + F.linear(F.linear(hidden_states, self.gate_lora_A), self.gate_lora_B) * 2.0
         )
         g = torch.sigmoid(gate_logits)  # (B, N, 1)
         out = g * attn_out + (1.0 - g) * mamba_out
@@ -969,9 +924,7 @@ def inject_spectral_mamba(
 
     src_attn = old_attn
     if src_attn is None and layer is not None:
-        src_attn = getattr(
-            layer, "attention", getattr(layer, "self", getattr(layer, "attn", None))
-        )
+        src_attn = getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
 
     hidden_size = (
         kwargs.get("hidden_size")

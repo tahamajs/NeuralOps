@@ -16,6 +16,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import apply_attention_mask, get_token_valid_mask
 from neuralops.core.base import BaseAttention
@@ -122,21 +123,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -172,10 +167,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = (
-                out
-                + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
         return out
 
 
@@ -208,9 +200,7 @@ class ViGAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        src_attn = (
-            pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn")
-        )
+        src_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn")
 
         if config is not None and not isinstance(config, int):
             self.adapter = ModelAdapter(config)
@@ -229,17 +219,13 @@ class ViGAttention(BaseAttention):
                 "hidden_size",
                 kwargs.get("hidden_size", kwargs.get("d_model", 768)),
             )
-            self.num_heads = _cfg_get(
-                config, "num_attention_heads", kwargs.get("num_heads", 12)
-            )
+            self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_heads", 12))
             self.num_kv_heads = _cfg_get(config, "num_key_value_heads", self.num_heads)
             self.head_dim = self.dim // max(1, self.num_heads)
             self.all_head_size = self.num_heads * self.head_dim
             self.kv_head_size = self.num_kv_heads * self.head_dim
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
-            self.is_decoder = bool(
-                _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
-            )
+            self.is_decoder = bool(_cfg_get(config, "is_decoder", kwargs.get("is_decoder", False)))
 
         # Explicit overrides
         if "hidden_size" in kwargs:
@@ -257,12 +243,8 @@ class ViGAttention(BaseAttention):
             self.is_decoder = bool(is_decoder)
 
         self.is_nested_encoder: bool = False
-        self.lora_rank = kwargs.get(
-            "lora_rank", _cfg_get(config, "lora_rank", lora_rank)
-        )
-        self.lora_alpha = kwargs.get(
-            "lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha)
-        )
+        self.lora_rank = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
+        self.lora_alpha = kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
 
         self.q_proj = LoRALinear(
             self.dim,
@@ -390,9 +372,7 @@ class ViGAttention(BaseAttention):
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(old_attn, "c_attn") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             weight = old_attn.c_attn.weight.data
             bias = getattr(old_attn.c_attn, "bias", None)
@@ -402,10 +382,7 @@ class ViGAttention(BaseAttention):
                 or hasattr(old_attn.c_attn, "nf")
                 or (
                     weight.dim() == 2
-                    and (
-                        weight.shape[0] < weight.shape[1]
-                        or weight.shape[1] == 3 * self.dim
-                    )
+                    and (weight.shape[0] < weight.shape[1] or weight.shape[1] == 3 * self.dim)
                 )
             ):
                 weight = weight.t().contiguous()
@@ -414,11 +391,7 @@ class ViGAttention(BaseAttention):
             k_w = weight[split_size : 2 * split_size, :]
             v_w = weight[2 * split_size :, :]
             q_b = bias_data[:split_size] if bias_data is not None else None
-            k_b = (
-                bias_data[split_size : 2 * split_size]
-                if bias_data is not None
-                else None
-            )
+            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
             v_b = bias_data[2 * split_size :] if bias_data is not None else None
             extracted["q"] = (q_w, q_b)
             extracted["k"] = (k_w, k_b)
@@ -443,9 +416,7 @@ class ViGAttention(BaseAttention):
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(old_attn, "self") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             s = old_attn.self
             if hasattr(s, "query"):
@@ -636,11 +607,7 @@ class ViGAttention(BaseAttention):
 
         # Rotary position embeddings
         pos_emb = kwargs.get("position_embeddings")
-        if (
-            pos_emb is not None
-            and isinstance(pos_emb, (tuple, list))
-            and len(pos_emb) >= 2
-        ):
+        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
         elif getattr(self, "rotary_emb", None) is not None:
@@ -655,9 +622,7 @@ class ViGAttention(BaseAttention):
                     kwargs.get("position_ids"),
                 )
             except Exception as e:
-                logger.warning(
-                    "maybe_apply_rotary failed: %s; continuing without RoPE", e
-                )
+                logger.warning("maybe_apply_rotary failed: %s; continuing without RoPE", e)
 
         # GQA expansion
         if self.kv_repeat > 1:
@@ -692,14 +657,10 @@ class ViGAttention(BaseAttention):
         # Branch 1: Topological Graph Attention
         scale = 1.0 / math.sqrt(Dh)
         scores_graph = torch.matmul(q, k.transpose(-1, -2).contiguous()) * scale
-        scores_graph = scores_graph.masked_fill(
-            ~graph_adj.unsqueeze(0).unsqueeze(0), -10000.0
-        )
+        scores_graph = scores_graph.masked_fill(~graph_adj.unsqueeze(0).unsqueeze(0), -10000.0)
         if attention_mask is not None:
             scores_graph = apply_attention_mask(scores_graph, attention_mask)
-        attn_graph = torch.nan_to_num(
-            F.softmax(scores_graph.float(), dim=-1), nan=0.0
-        ).to(dtype)
+        attn_graph = torch.nan_to_num(F.softmax(scores_graph.float(), dim=-1), nan=0.0).to(dtype)
         out_graph = torch.matmul(attn_graph, v)
 
         # Branch 2: Global Linear Recurrence / Attention with denom.clamp(min=1.0)
@@ -719,17 +680,11 @@ class ViGAttention(BaseAttention):
                 .unsqueeze(0)
                 .unsqueeze(0)
             )
-            scores_lin = (
-                torch.matmul(q_lin, k_lin.transpose(-1, -2).contiguous()) * causal_tril
-            )
+            scores_lin = torch.matmul(q_lin, k_lin.transpose(-1, -2).contiguous()) * causal_tril
             denom_lin = scores_lin.sum(dim=-1, keepdim=True)
-            out_global = (torch.matmul(scores_lin, v_f) / denom_lin.clamp(min=1.0)).to(
-                dtype
-            )
+            out_global = (torch.matmul(scores_lin, v_f) / denom_lin.clamp(min=1.0)).to(dtype)
         else:
-            kv = torch.matmul(
-                k_lin.transpose(-1, -2).contiguous(), v_f
-            )  # [B, H, Dh, Dh]
+            kv = torch.matmul(k_lin.transpose(-1, -2).contiguous(), v_f)  # [B, H, Dh, Dh]
             num = torch.matmul(q_lin, kv)  # [B, H, N, Dh]
             denom = torch.matmul(
                 q_lin, k_lin.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
@@ -737,9 +692,7 @@ class ViGAttention(BaseAttention):
             out_global = (num / denom.clamp(min=1.0)).to(dtype)
 
         # Gated Fusion
-        gates = torch.sigmoid(self.gate_net(hidden_states)).view(
-            B, N, self.num_heads, 2
-        )
+        gates = torch.sigmoid(self.gate_net(hidden_states)).view(B, N, self.num_heads, 2)
         gate_graph = gates[..., 0].transpose(1, 2).contiguous().unsqueeze(-1).to(dtype)
         gate_global = gates[..., 1].transpose(1, 2).contiguous().unsqueeze(-1).to(dtype)
 
@@ -807,9 +760,7 @@ def inject_vig(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -820,9 +771,7 @@ def inject_vig(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=(
-                    comp_config
-                    if "comp_config" in locals() or "comp_config" in kwargs
-                    else None
+                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
                 ),
                 layer_idx=idx,
                 total_layers=tot,

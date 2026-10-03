@@ -24,6 +24,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.attention_mask import apply_attention_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -112,21 +113,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -162,9 +157,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
         return out
 
@@ -294,19 +287,13 @@ class PrimalAttention(BaseAttention):
         self.v_proj = self.value
 
         dropout_p = (
-            getattr(
-                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
-            )
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
             if config
             else 0.1
         )
         self.dropout = nn.Dropout(dropout_p)
 
-        source_attn = (
-            pretrained_attn
-            if pretrained_attn is not None
-            else kwargs.get("source_attn")
-        )
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -318,9 +305,7 @@ class PrimalAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
             (
@@ -338,10 +323,7 @@ class PrimalAttention(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -530,8 +512,7 @@ class PrimalAttention(BaseAttention):
                 fnorm = torch.linalg.norm(target_mod.weight.float()).item()
                 if fnorm < 1e-4:
                     logger.warning(
-                        "PrimalAttention.copy_weights: %s has near-zero Frobenius "
-                        "norm (%.2e).",
+                        "PrimalAttention.copy_weights: %s has near-zero Frobenius norm (%.2e).",
                         proj_key,
                         fnorm,
                     )
@@ -593,12 +574,12 @@ class PrimalAttention(BaseAttention):
         num_landmarks = min(self.rank, seq_len)
         if seq_len % num_landmarks == 0:
             seg = seq_len // num_landmarks
-            Q_land = Q.reshape(
-                batch_size, self.num_heads, num_landmarks, seg, self.head_dim
-            ).mean(dim=3)
-            K_land = K.reshape(
-                batch_size, self.num_heads, num_landmarks, seg, self.head_dim
-            ).mean(dim=3)
+            Q_land = Q.reshape(batch_size, self.num_heads, num_landmarks, seg, self.head_dim).mean(
+                dim=3
+            )
+            K_land = K.reshape(batch_size, self.num_heads, num_landmarks, seg, self.head_dim).mean(
+                dim=3
+            )
         else:
             idx = torch.linspace(
                 0,
@@ -633,19 +614,9 @@ class PrimalAttention(BaseAttention):
             Kl = K_land[:, h0:h1]
 
             with torch.amp.autocast("cuda", enabled=False):
-
-                F1 = (
-                    torch.matmul(Qc.float(), Kl.float().transpose(-2, -1).contiguous())
-                    * scale
-                )
-                F2 = (
-                    torch.matmul(Ql.float(), Kl.float().transpose(-2, -1).contiguous())
-                    * scale
-                )
-                F3 = (
-                    torch.matmul(Ql.float(), Kc.float().transpose(-2, -1).contiguous())
-                    * scale
-                )
+                F1 = torch.matmul(Qc.float(), Kl.float().transpose(-2, -1).contiguous()) * scale
+                F2 = torch.matmul(Ql.float(), Kl.float().transpose(-2, -1).contiguous()) * scale
+                F3 = torch.matmul(Ql.float(), Kc.float().transpose(-2, -1).contiguous()) * scale
 
                 # PR-FIX-01: pseudoinverse + Schulz without gradient tracking.
                 # This eliminates the ~20x backward memory of pinv and stabilizes
@@ -698,9 +669,7 @@ class PrimalAttention(BaseAttention):
                     probs_c = probs_c * hm
                 elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
                     hm = (
-                        head_mask[:, h0:h1]
-                        .view(head_mask.size(0), h1 - h0, 1, 1)
-                        .to(probs_c.dtype)
+                        head_mask[:, h0:h1].view(head_mask.size(0), h1 - h0, 1, 1).to(probs_c.dtype)
                     )
                     probs_c = probs_c * hm
                 elif head_mask.dim() == 4:
@@ -717,9 +686,7 @@ class PrimalAttention(BaseAttention):
         # Concatenate chunks along head axis: (B, H_total, N, D)
         context = torch.cat(context_heads, dim=1)
         context = (
-            context.permute(0, 2, 1, 3)
-            .contiguous()
-            .view(batch_size, seq_len, self.all_head_size)
+            context.permute(0, 2, 1, 3).contiguous().view(batch_size, seq_len, self.all_head_size)
         )
 
         if self.is_nested_encoder:

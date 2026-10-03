@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -110,21 +111,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -173,9 +168,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = (
-                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            )
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
             lora_out = F.linear(F.linear(x, a), bb) * self.lora_scaling
             out = out + lora_out
         return out
@@ -348,9 +341,7 @@ class BlockTransformerHIBA(BaseAttention):
         )
 
         dropout_p = (
-            getattr(
-                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
-            )
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
             if config
             else 0.1
         )
@@ -445,10 +436,7 @@ class BlockTransformerHIBA(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -469,9 +457,7 @@ class BlockTransformerHIBA(BaseAttention):
         # 2. GPT-2: Fused c_attn + c_proj
         if hasattr(pretrained_attn, "c_attn") and pretrained_attn.c_attn is not None:
             c_attn_mod = pretrained_attn.c_attn
-            if hasattr(c_attn_mod, "merge") and not getattr(
-                c_attn_mod, "merged", False
-            ):
+            if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
@@ -504,14 +490,9 @@ class BlockTransformerHIBA(BaseAttention):
                 )
 
             # GPT-2 Output: c_proj
-            if (
-                hasattr(pretrained_attn, "c_proj")
-                and pretrained_attn.c_proj is not None
-            ):
+            if hasattr(pretrained_attn, "c_proj") and pretrained_attn.c_proj is not None:
                 c_proj_mod = pretrained_attn.c_proj
-                if hasattr(c_proj_mod, "merge") and not getattr(
-                    c_proj_mod, "merged", False
-                ):
+                if hasattr(c_proj_mod, "merge") and not getattr(c_proj_mod, "merged", False):
                     try:
                         c_proj_mod.merge()
                     except Exception as e:
@@ -534,9 +515,7 @@ class BlockTransformerHIBA(BaseAttention):
                     )
 
         # 3. RoBERTa / BERT nested self-attention (pretrained_attn.self)
-        elif hasattr(pretrained_attn, "self") and hasattr(
-            pretrained_attn.self, "query"
-        ):
+        elif hasattr(pretrained_attn, "self") and hasattr(pretrained_attn.self, "query"):
             s = pretrained_attn.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
@@ -546,9 +525,7 @@ class BlockTransformerHIBA(BaseAttention):
                         mod.bias.data.clone() if mod.bias is not None else None,
                     )
             # Output dense from outer container
-            if hasattr(pretrained_attn, "output") and hasattr(
-                pretrained_attn.output, "dense"
-            ):
+            if hasattr(pretrained_attn, "output") and hasattr(pretrained_attn.output, "dense"):
                 out_mod = pretrained_attn.output.dense
                 extracted["o"] = (
                     out_mod.weight.data.clone(),
@@ -644,9 +621,7 @@ class BlockTransformerHIBA(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
                     target_mod.bias.data[:min_b].copy_(
-                        b[:min_b].to(
-                            device=target_mod.bias.device, dtype=target_mod.bias.dtype
-                        )
+                        b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype)
                     )
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
@@ -672,9 +647,7 @@ class BlockTransformerHIBA(BaseAttention):
             return torch.ones(B, L, device=device, dtype=torch.bool)
         if attention_mask.dim() == 2:
             return (
-                attention_mask.bool()
-                if attention_mask.dtype == torch.bool
-                else attention_mask > 0
+                attention_mask.bool() if attention_mask.dtype == torch.bool else attention_mask > 0
             )
         elif attention_mask.dim() == 3:
             if attention_mask.shape[1] == 1:
@@ -687,28 +660,17 @@ class BlockTransformerHIBA(BaseAttention):
             else:
                 m = (
                     attention_mask > -1000.0
-                    if (
-                        attention_mask.dtype != torch.bool
-                        and attention_mask.min() < -100.0
-                    )
+                    if (attention_mask.dtype != torch.bool and attention_mask.min() < -100.0)
                     else (
-                        attention_mask
-                        if attention_mask.dtype == torch.bool
-                        else attention_mask > 0
+                        attention_mask if attention_mask.dtype == torch.bool else attention_mask > 0
                     )
                 )
                 return m.any(dim=1)
         elif attention_mask.dim() == 4:
             m = (
                 attention_mask > -1000.0
-                if (
-                    attention_mask.dtype != torch.bool and attention_mask.min() < -100.0
-                )
-                else (
-                    attention_mask
-                    if attention_mask.dtype == torch.bool
-                    else attention_mask > 0
-                )
+                if (attention_mask.dtype != torch.bool and attention_mask.min() < -100.0)
+                else (attention_mask if attention_mask.dtype == torch.bool else attention_mask > 0)
             )
             if m.shape[1] == 1:
                 m = m.squeeze(1)
@@ -789,10 +751,7 @@ class BlockTransformerHIBA(BaseAttention):
 
         scale = 1.0 / math.sqrt(D_h)
         scores = (
-            torch.matmul(
-                q_b.float(), k_neighbors.float().transpose(-2, -1).contiguous()
-            )
-            * scale
+            torch.matmul(q_b.float(), k_neighbors.float().transpose(-2, -1).contiguous()) * scale
         )
 
         pad_mask = ~valid_neighbors.unsqueeze(1).unsqueeze(2)
@@ -838,12 +797,7 @@ class BlockTransformerHIBA(BaseAttention):
         S = kv_states.shape[1]
 
         # 1. Base Projections
-        q = (
-            self.W_q(hidden_states)
-            .view(B, L, H, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        q = self.W_q(hidden_states).view(B, L, H, self.head_dim).transpose(1, 2).contiguous()
         k = (
             self.W_k(kv_states)
             .view(B, S, self.num_kv_heads, self.head_dim)
@@ -861,19 +815,11 @@ class BlockTransformerHIBA(BaseAttention):
         pos_emb = kwargs.get("position_embeddings")
         cos = kwargs.get(
             "cos",
-            (
-                pos_emb[0]
-                if isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2
-                else None
-            ),
+            (pos_emb[0] if isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2 else None),
         )
         sin = kwargs.get(
             "sin",
-            (
-                pos_emb[1]
-                if isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2
-                else None
-            ),
+            (pos_emb[1] if isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2 else None),
         )
 
         if cos is not None and sin is not None:
@@ -927,11 +873,7 @@ class BlockTransformerHIBA(BaseAttention):
                 _qs = q.half() if q.dtype == torch.float32 else q
                 _ks = k.half() if k.dtype == torch.float32 else k
                 _vs = v.half() if v.dtype == torch.float32 else v
-                _is_causal = (
-                    getattr(self, "is_decoder", False)
-                    and not is_cross_attention
-                    and L > 1
-                )
+                _is_causal = getattr(self, "is_decoder", False) and not is_cross_attention and L > 1
                 _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
                     _qs,
                     _ks,
@@ -945,9 +887,7 @@ class BlockTransformerHIBA(BaseAttention):
                     .contiguous()
                     .view(B, L, self.all_head_size)
                 )
-                _sdpa_out = torch.nan_to_num(
-                    _sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4
-                )
+                _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
                 return (
                     self.out_proj(_sdpa_out)
                     if not getattr(self, "is_nested_encoder", False)
@@ -956,10 +896,7 @@ class BlockTransformerHIBA(BaseAttention):
             except Exception:
                 pass
 
-            scores = (
-                torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous())
-                * scale
-            )
+            scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
             # If a 4D attention mask is provided, it already incorporates causal + padding constraints
             if active_mask is not None and active_mask.dim() == 4:
@@ -971,9 +908,7 @@ class BlockTransformerHIBA(BaseAttention):
                 # Causal mask for decoders
                 if self.is_decoder and not is_cross_attention:
                     causal_mask = torch.triu(
-                        torch.full(
-                            (L, S), -10000.0, device=scores.device, dtype=torch.float32
-                        ),
+                        torch.full((L, S), -10000.0, device=scores.device, dtype=torch.float32),
                         diagonal=1 + (S - L),
                     )
                     scores = scores + causal_mask.unsqueeze(0).unsqueeze(1)
@@ -1073,9 +1008,7 @@ def inject_block_transformer_hiba(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -1086,9 +1019,7 @@ def inject_block_transformer_hiba(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=(
-                    comp_config
-                    if "comp_config" in locals() or "comp_config" in kwargs
-                    else None
+                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
                 ),
                 layer_idx=idx,
                 total_layers=tot,
@@ -1107,9 +1038,7 @@ def inject_block_transformer_hiba(
 
     """Injection factory function for BlockTransformerHIBA attention blocks with safe pre-testing."""
     if old_attn is None and layer is not None:
-        old_attn = getattr(
-            layer, "attention", getattr(layer, "self", getattr(layer, "attn", None))
-        )
+        old_attn = getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
 
     hidden_size = (
         getattr(old_attn, "hidden_size", None)

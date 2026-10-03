@@ -37,6 +37,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -86,9 +87,7 @@ def apply_rotary_pos_emb(
     k_embed = (k_rot * cos) + (_rotate_half(k_rot) * sin)
 
     if q_pass.shape[-1] > 0:
-        return torch.cat([q_embed, q_pass], dim=-1), torch.cat(
-            [k_embed, k_pass], dim=-1
-        )
+        return torch.cat([q_embed, q_pass], dim=-1), torch.cat([k_embed, k_pass], dim=-1)
     return q_embed, k_embed
 
 
@@ -156,15 +155,9 @@ if HAS_TRITON:
             mask_n = cur_offs_n < N
 
             # 1. Load Q, K, V tiles
-            q_ptrs = q_base + (
-                cur_offs_n[:, None] * stride_qn + offs_d[None, :] * stride_qd
-            )
-            k_ptrs = k_base + (
-                cur_offs_n[:, None] * stride_kn + offs_d[None, :] * stride_kd
-            )
-            v_ptrs = v_base + (
-                cur_offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd
-            )
+            q_ptrs = q_base + (cur_offs_n[:, None] * stride_qn + offs_d[None, :] * stride_qd)
+            k_ptrs = k_base + (cur_offs_n[:, None] * stride_kn + offs_d[None, :] * stride_kd)
+            v_ptrs = v_base + (cur_offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd)
 
             q_tile = tl.load(q_ptrs, mask=mask_n[:, None], other=0.0)
             k_tile = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0)
@@ -190,9 +183,7 @@ if HAS_TRITON:
             k_s = phi_k * sin_pos
 
             # 4. Inter-chunk projection from running state:
-            num_inter = tl.dot(q_c.to(tl.float32), S_cos) + tl.dot(
-                q_s.to(tl.float32), S_sin
-            )
+            num_inter = tl.dot(q_c.to(tl.float32), S_cos) + tl.dot(q_s.to(tl.float32), S_sin)
             denom_inter = tl.sum(q_c * Z_cos[None, :], axis=1) + tl.sum(
                 q_s * Z_sin[None, :], axis=1
             )
@@ -203,9 +194,7 @@ if HAS_TRITON:
             A_total = A_cos + A_sin
 
             causal_mask = offs_chunk[:, None] >= offs_chunk[None, :]
-            A_causal = tl.where(
-                causal_mask & (mask_n[:, None] & mask_n[None, :]), A_total, 0.0
-            )
+            A_causal = tl.where(causal_mask & (mask_n[:, None] & mask_n[None, :]), A_total, 0.0)
 
             num_intra = tl.dot(A_causal.to(tl.float32), v_tile.to(tl.float32))
             denom_intra = tl.sum(A_causal, axis=1)
@@ -215,12 +204,8 @@ if HAS_TRITON:
             denom_tot = denom_inter + denom_intra + EPS
             out_tile = num_tot / denom_tot[:, None]
 
-            out_ptrs = out_base + (
-                cur_offs_n[:, None] * stride_on + offs_d[None, :] * stride_od
-            )
-            tl.store(
-                out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_n[:, None]
-            )
+            out_ptrs = out_base + (cur_offs_n[:, None] * stride_on + offs_d[None, :] * stride_od)
+            tl.store(out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_n[:, None])
 
             # 7. Update running state for subsequent chunks
             S_cos += tl.dot(tl.trans(k_c.to(tl.float32)), v_tile.to(tl.float32))
@@ -318,18 +303,12 @@ if HAS_TRITON:
 
             num = tl.dot(q_c.to(tl.float32), S_cos) + tl.dot(q_s.to(tl.float32), S_sin)
             denom = (
-                tl.sum(q_c * Z_cos[None, :], axis=1)
-                + tl.sum(q_s * Z_sin[None, :], axis=1)
-                + EPS
+                tl.sum(q_c * Z_cos[None, :], axis=1) + tl.sum(q_s * Z_sin[None, :], axis=1) + EPS
             )
 
             out_tile = num / denom[:, None]
-            out_ptrs = out_base + (
-                cur_m[:, None] * stride_on + offs_d[None, :] * stride_od
-            )
-            tl.store(
-                out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_m[:, None]
-            )
+            out_ptrs = out_base + (cur_m[:, None] * stride_on + offs_d[None, :] * stride_od)
+            tl.store(out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_m[:, None])
 
 
 # ============================================================================
@@ -620,9 +599,7 @@ def triton_cosformer_attention(
 # ============================================================================
 
 
-@ATTENTION_REGISTRY.register(
-    "triton_cosformer", supports_causal=True, supports_bidirectional=True
-)
+@ATTENTION_REGISTRY.register("triton_cosformer", supports_causal=True, supports_bidirectional=True)
 class TritonCosformerAttention(BaseAttention):
     r"""
     Triton-Accelerated Cosformer Linear Attention with Full Autograd Differentiability,
@@ -658,9 +635,7 @@ class TritonCosformerAttention(BaseAttention):
         }
 
         self.embed_dim = (
-            embed_dim
-            or kwargs.get("hidden_size")
-            or getattr(config, "hidden_size", 768)
+            embed_dim or kwargs.get("hidden_size") or getattr(config, "hidden_size", 768)
         )
         self.num_heads = (
             num_heads
@@ -860,11 +835,7 @@ class TritonCosformerAttention(BaseAttention):
                 v = v * mask
             elif attention_mask.dim() == 4:
                 if attention_mask.shape[-2] == 1:
-                    mask = (
-                        attention_mask.squeeze(1)
-                        .squeeze(1)[:, None, :, None]
-                        .to(q.dtype)
-                    )
+                    mask = attention_mask.squeeze(1).squeeze(1)[:, None, :, None].to(q.dtype)
                 else:
                     mask = attention_mask[:, 0, -1, :][:, None, :, None].to(q.dtype)
                 if (mask < 0).any():

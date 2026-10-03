@@ -9,16 +9,18 @@ import traceback
 from pathlib import Path
 
 import psutil
-try:
-    from django.conf import settings
-except Exception:
-    settings = None
 
 
 def _get_media_root() -> Path:
-    if settings is not None and getattr(settings, "configured", False):
-        return Path(getattr(settings, "MEDIA_ROOT", "/tmp"))
+    try:
+        from django.conf import settings
+
+        if getattr(settings, "configured", False) and hasattr(settings, "MEDIA_ROOT"):
+            return Path(settings.MEDIA_ROOT)
+    except Exception:
+        pass
     return Path("/tmp")
+
 
 try:
     from asgiref.sync import async_to_sync
@@ -193,13 +195,7 @@ def save_artifacts(experiment, final_metrics: dict) -> None:
         json.dump(final_metrics, f, indent=2)
 
     # Copy model if present
-    model_src = (
-        _get_media_root()
-        / "experiments"
-        / str(experiment.id)
-        / "artifacts"
-        / "model"
-    )
+    model_src = _get_media_root() / "experiments" / str(experiment.id) / "artifacts" / "model"
     if model_src.exists():
         import shutil
 

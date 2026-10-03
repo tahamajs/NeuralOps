@@ -173,9 +173,7 @@ class ResultWriter:
         # Accuracy curve
         if eval_accs:
             fig, ax = plt.subplots(figsize=(10, 5))
-            ax.plot(
-                eval_acc_steps, eval_accs, "g^-", label="Eval Accuracy", linewidth=1.5
-            )
+            ax.plot(eval_acc_steps, eval_accs, "g^-", label="Eval Accuracy", linewidth=1.5)
             ax.set_xlabel("Step")
             ax.set_ylabel("Accuracy")
             ax.set_title("Validation Accuracy")

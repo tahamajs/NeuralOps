@@ -25,6 +25,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import (
@@ -122,22 +123,14 @@ class OATSLoRALinear(nn.Module):
             if hasattr(base_layer, "bias") and base_layer.bias is not None
             else None
         )
-        in_features = getattr(
-            base_layer, "in_features", getattr(base_layer, "nx", None)
-        )
-        out_features = getattr(
-            base_layer, "out_features", getattr(base_layer, "nf", None)
-        )
+        in_features = getattr(base_layer, "in_features", getattr(base_layer, "nx", None))
+        out_features = getattr(base_layer, "out_features", getattr(base_layer, "nf", None))
         if in_features is None and out_features is None:
             out_features, in_features = weight.shape
         elif in_features is None:
-            in_features = (
-                weight.shape[1] if weight.shape[0] == out_features else weight.shape[0]
-            )
+            in_features = weight.shape[1] if weight.shape[0] == out_features else weight.shape[0]
         elif out_features is None:
-            out_features = (
-                weight.shape[0] if weight.shape[1] == in_features else weight.shape[1]
-            )
+            out_features = weight.shape[0] if weight.shape[1] == in_features else weight.shape[1]
 
         # Strictly orient weight as (out_features, in_features) for F.linear
         if weight.shape == (in_features, out_features) and in_features != out_features:
@@ -145,9 +138,7 @@ class OATSLoRALinear(nn.Module):
 
         existing_lora_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
         eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
-        eff_lora_alpha = getattr(
-            linear, "lora_alpha", getattr(linear, "alpha", lora_alpha)
-        )
+        eff_lora_alpha = getattr(linear, "lora_alpha", getattr(linear, "alpha", lora_alpha))
 
         layer = cls(
             in_features=in_features,
@@ -178,16 +169,9 @@ class OATSLoRALinear(nn.Module):
                     if hasattr(linear.lora_B, "weight")
                     else linear.lora_B.data
                 )
-                if (
-                    src_A.shape == layer.lora_A.shape
-                    and src_B.shape == layer.lora_B.shape
-                ):
-                    layer.lora_A.copy_(
-                        src_A.to(layer.lora_A.device, dtype=layer.lora_A.dtype)
-                    )
-                    layer.lora_B.copy_(
-                        src_B.to(layer.lora_B.device, dtype=layer.lora_B.dtype)
-                    )
+                if src_A.shape == layer.lora_A.shape and src_B.shape == layer.lora_B.shape:
+                    layer.lora_A.copy_(src_A.to(layer.lora_A.device, dtype=layer.lora_A.dtype))
+                    layer.lora_B.copy_(src_B.to(layer.lora_B.device, dtype=layer.lora_B.dtype))
 
         if layer.lora_A is not None:
             layer.lora_A.requires_grad = True
@@ -199,9 +183,9 @@ class OATSLoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = out + self.scaling * F.linear(
-                F.linear(x.float(), self.lora_A), self.lora_B
-            ).to(out.dtype)
+            out = out + self.scaling * F.linear(F.linear(x.float(), self.lora_A), self.lora_B).to(
+                out.dtype
+            )
         return out
 
 
@@ -276,21 +260,13 @@ class OATSCompressor(BaseCompressor):
         super().__init__(model, name="oats", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
-            sparsity = _cfg_get(
-                cfg, "oats_sparsity", _cfg_get(cfg, "sparsity", sparsity)
-            )
-            rank_ratio = _cfg_get(
-                cfg, "oats_rank_ratio", _cfg_get(cfg, "rank_ratio", rank_ratio)
-            )
-            num_iters = _cfg_get(
-                cfg, "oats_num_iters", _cfg_get(cfg, "num_iters", num_iters)
-            )
+            sparsity = _cfg_get(cfg, "oats_sparsity", _cfg_get(cfg, "sparsity", sparsity))
+            rank_ratio = _cfg_get(cfg, "oats_rank_ratio", _cfg_get(cfg, "rank_ratio", rank_ratio))
+            num_iters = _cfg_get(cfg, "oats_num_iters", _cfg_get(cfg, "num_iters", num_iters))
             structured_24 = _cfg_get(
                 cfg, "oats_structured_24", _cfg_get(cfg, "structured_24", structured_24)
             )
-            max_error = _cfg_get(
-                cfg, "oats_max_error", _cfg_get(cfg, "max_error", max_error)
-            )
+            max_error = _cfg_get(cfg, "oats_max_error", _cfg_get(cfg, "max_error", max_error))
             fallback_to_original = _cfg_get(
                 cfg,
                 "oats_fallback_to_original",
@@ -299,9 +275,7 @@ class OATSCompressor(BaseCompressor):
             lora_r = _cfg_get(cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
             skip_attention_qkv = _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
-            target_attention_only = _cfg_get(
-                cfg, "target_attention_only", target_attention_only
-            )
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
             min_rank = _cfg_get(cfg, "min_rank", min_rank)
 
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
@@ -339,11 +313,7 @@ class OATSCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if (
-            num_heads is not None
-            and num_kv_heads is not None
-            and num_kv_heads < num_heads
-        ):
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
             name_lower = name.lower()
             if any(
                 p in name_lower
@@ -520,9 +490,7 @@ class OATSCompressor(BaseCompressor):
             return W, rank
 
         if torch.isnan(W_comp).any() or torch.isinf(W_comp).any():
-            logger.warning(
-                "OATS decomposition produced NaNs or Infs; returning original weight"
-            )
+            logger.warning("OATS decomposition produced NaNs or Infs; returning original weight")
             return W, rank
         return W_comp, r
 
@@ -558,11 +526,7 @@ class OATSCompressor(BaseCompressor):
                 cls_name = base_module.__class__.__name__.lower()
                 is_conv1d = "conv1d" in cls_name or hasattr(base_module, "nf")
 
-                W = (
-                    raw_w.t().contiguous().clone().float()
-                    if is_conv1d
-                    else raw_w.clone().float()
-                )
+                W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
                 device = raw_w.device
                 dtype = raw_w.dtype
 
@@ -673,9 +637,7 @@ def oats_compressor_factory(model: Any, comp_config: Any = None, **kwargs: Any) 
     )
     rank_ratio = kwargs.pop(
         "rank_ratio",
-        _cfg_get(
-            comp_config, "oats_rank_ratio", _cfg_get(comp_config, "rank_ratio", 0.2)
-        ),
+        _cfg_get(comp_config, "oats_rank_ratio", _cfg_get(comp_config, "rank_ratio", 0.2)),
     )
     num_iters = kwargs.pop(
         "num_iters",
@@ -691,9 +653,7 @@ def oats_compressor_factory(model: Any, comp_config: Any = None, **kwargs: Any) 
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(
-            comp_config, "oats_max_error", _cfg_get(comp_config, "max_error", 0.85)
-        ),
+        _cfg_get(comp_config, "oats_max_error", _cfg_get(comp_config, "max_error", 0.85)),
     )
     fallback = kwargs.pop(
         "fallback_to_original",

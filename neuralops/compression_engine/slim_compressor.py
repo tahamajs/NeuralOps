@@ -23,6 +23,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import apply_24_structured_mask
@@ -65,20 +66,14 @@ class SLiMCompressor(BaseCompressor):
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             bits = _cfg_get(cfg, "slim_bits", _cfg_get(cfg, "bits", bits))
-            sparsity = _cfg_get(
-                cfg, "slim_sparsity", _cfg_get(cfg, "sparsity", sparsity)
-            )
+            sparsity = _cfg_get(cfg, "slim_sparsity", _cfg_get(cfg, "sparsity", sparsity))
             rank = _cfg_get(cfg, "slim_rank", _cfg_get(cfg, "rank", rank))
             structured_24 = _cfg_get(
                 cfg, "slim_structured_24", _cfg_get(cfg, "structured_24", structured_24)
             )
             max_error = _cfg_get(cfg, "max_error", max_error)
-            fallback_to_original = _cfg_get(
-                cfg, "fallback_to_original", fallback_to_original
-            )
-            target_attention_only = _cfg_get(
-                cfg, "target_attention_only", target_attention_only
-            )
+            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
 
         if "fallback_to_original" in kwargs:
             fallback_to_original = bool(kwargs["fallback_to_original"])
@@ -121,9 +116,7 @@ class SLiMCompressor(BaseCompressor):
         cls_name = base_mod.__class__.__name__.lower()
         # Fix 2: Reliable Conv1D check using class name and hasattr(nf)
         is_linear_like = (
-            isinstance(base_mod, nn.Linear)
-            or "conv1d" in cls_name
-            or hasattr(base_mod, "nf")
+            isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
         )
         if not is_linear_like:
             return False
@@ -161,20 +154,14 @@ class SLiMCompressor(BaseCompressor):
                 device = raw_w.device
                 dtype = raw_w.dtype
 
-                W = (
-                    raw_w.t().contiguous().clone().float()
-                    if is_conv1d
-                    else raw_w.clone().float()
-                )
+                W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
 
                 # 1. Quantize (Weights only; biases are preserved in full precision to avoid drift)
                 W_q = self._quantize(W)
 
                 # 2. Apply 2:4 structured sparsity or magnitude sparsity
                 if self.structured_24:
-                    W_sp, _ = apply_24_structured_mask(
-                        W_q, saliency=torch.abs(W_q), dim=1
-                    )
+                    W_sp, _ = apply_24_structured_mask(W_q, saliency=torch.abs(W_q), dim=1)
                 else:
                     flat = W_q.abs().reshape(-1)
                     k = max(1, int(flat.numel() * (1.0 - self.sparsity)))
@@ -188,9 +175,7 @@ class SLiMCompressor(BaseCompressor):
                     U, S, Vh = torch.linalg.svd(residual, full_matrices=False)
                     r = min(self.rank, len(S))
                     if r > 0:
-                        correction = torch.matmul(
-                            U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :]
-                        )
+                        correction = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :])
                         total_svd_energy += torch.norm(correction).item()
                         W_final = W_sp + correction
                     else:
@@ -238,19 +223,13 @@ class SLiMCompressor(BaseCompressor):
                 ):
                     src_lA = getattr(module.lora_A, "weight", module.lora_A)
                     src_lB = getattr(module.lora_B, "weight", module.lora_B)
-                    if (
-                        hasattr(compressed_layer, "lora_A")
-                        and compressed_layer.lora_A is not None
-                    ):
+                    if hasattr(compressed_layer, "lora_A") and compressed_layer.lora_A is not None:
                         if (
                             hasattr(src_lA, "data")
                             and src_lA.shape == compressed_layer.lora_A.shape
                         ):
                             compressed_layer.lora_A.data.copy_(src_lA.data)
-                    if (
-                        hasattr(compressed_layer, "lora_B")
-                        and compressed_layer.lora_B is not None
-                    ):
+                    if hasattr(compressed_layer, "lora_B") and compressed_layer.lora_B is not None:
                         if (
                             hasattr(src_lB, "data")
                             and src_lB.shape == compressed_layer.lora_B.shape
@@ -298,16 +277,12 @@ def slim_factory(
     **kwargs: Any,
 ) -> Any:
     """Factory function for SLiM compressor."""
-    bits = kwargs.pop(
-        "bits", _cfg_get(comp_config, "slim_bits", _cfg_get(comp_config, "bits", 4))
-    )
+    bits = kwargs.pop("bits", _cfg_get(comp_config, "slim_bits", _cfg_get(comp_config, "bits", 4)))
     sparsity = kwargs.pop(
         "sparsity",
         _cfg_get(comp_config, "slim_sparsity", _cfg_get(comp_config, "sparsity", 0.5)),
     )
-    rank = kwargs.pop(
-        "rank", _cfg_get(comp_config, "slim_rank", _cfg_get(comp_config, "rank", 8))
-    )
+    rank = kwargs.pop("rank", _cfg_get(comp_config, "slim_rank", _cfg_get(comp_config, "rank", 8)))
     structured_24 = kwargs.pop(
         "structured_24",
         _cfg_get(

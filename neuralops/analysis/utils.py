@@ -41,9 +41,7 @@ def correlation_matrix(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
     return df[columns].corr()
 
 
-def statistical_tests(
-    df: pd.DataFrame, group_col: str, value_col: str
-) -> dict[str, Any]:
+def statistical_tests(df: pd.DataFrame, group_col: str, value_col: str) -> dict[str, Any]:
     """Statistical tests."""
     from scipy import stats
 
@@ -54,7 +52,7 @@ def statistical_tests(
     pairwise = {}
     for i in range(len(groups) - 1):
         t, p = stats.ttest_ind(groups[i], groups[i + 1])
-        pairwise[f"{i}_vs_{i+1}"] = {"t": t, "p": p}
+        pairwise[f"{i}_vs_{i + 1}"] = {"t": t, "p": p}
     return {"anova_p": p_anova, "pairwise": pairwise}
 
 

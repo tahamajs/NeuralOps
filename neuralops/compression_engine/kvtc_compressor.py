@@ -28,6 +28,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -77,9 +78,7 @@ class SimpleEntropyCoder:
         return float(entropy)
 
     @staticmethod
-    def compute_compression_ratio(
-        tensor: torch.Tensor, uncompressed_bits: int = 16
-    ) -> float:
+    def compute_compression_ratio(tensor: torch.Tensor, uncompressed_bits: int = 16) -> float:
         """Estimate theoretical compression ratio relative to FP16/FP32 baseline."""
         entropy = SimpleEntropyCoder.compute_entropy(tensor)
         return float(uncompressed_bits / max(entropy, 1e-4))
@@ -151,12 +150,8 @@ class KVTCStore:
         h_k = SimpleEntropyCoder.compute_entropy(q_k)
         h_v = SimpleEntropyCoder.compute_entropy(q_v)
 
-        k_hat = torch.matmul(q_k * scale_k, self.pca_basis_k.t().contiguous()).reshape(
-            orig_shape
-        )
-        v_hat = torch.matmul(q_v * scale_v, self.pca_basis_v.t().contiguous()).reshape(
-            orig_shape
-        )
+        k_hat = torch.matmul(q_k * scale_k, self.pca_basis_k.t().contiguous()).reshape(orig_shape)
+        v_hat = torch.matmul(q_v * scale_v, self.pca_basis_v.t().contiguous()).reshape(orig_shape)
 
         mean_h = (h_k + h_v) / 2.0
         stats: dict[str, Any] = {
@@ -203,12 +198,8 @@ class KVTCQuantizedLoRALinear(nn.Module):
 
         # Store true integer weights as buffer (not float Parameter)
         self.register_buffer("int_weight", int_weight.to(device=target_device))
-        self.register_buffer(
-            "scale", scale.to(device=target_device, dtype=torch.float32)
-        )
-        self.register_buffer(
-            "zero_point", zero_point.to(device=target_device, dtype=torch.float32)
-        )
+        self.register_buffer("scale", scale.to(device=target_device, dtype=torch.float32))
+        self.register_buffer("zero_point", zero_point.to(device=target_device, dtype=torch.float32))
 
         if bias is not None:
             self.bias = nn.Parameter(
@@ -241,9 +232,7 @@ class KVTCQuantizedLoRALinear(nn.Module):
     @property
     def weight(self) -> torch.Tensor:
         """Backward-compatibility property returning on-the-fly dequantized weight."""
-        return (
-            self.int_weight.to(dtype=self.compute_dtype) * self.scale + self.zero_point
-        )
+        return self.int_weight.to(dtype=self.compute_dtype) * self.scale + self.zero_point
 
     @classmethod
     def from_linear(
@@ -306,14 +295,10 @@ class KVTCQuantizedLoRALinear(nn.Module):
                 and new_layer.lora_B is not None
             ):
                 new_layer.lora_A.data.copy_(
-                    w_A.data.to(
-                        dtype=new_layer.lora_A.dtype, device=new_layer.lora_A.device
-                    )
+                    w_A.data.to(dtype=new_layer.lora_A.dtype, device=new_layer.lora_A.device)
                 )
                 new_layer.lora_B.data.copy_(
-                    w_B.data.to(
-                        dtype=new_layer.lora_B.dtype, device=new_layer.lora_B.device
-                    )
+                    w_B.data.to(dtype=new_layer.lora_B.dtype, device=new_layer.lora_B.device)
                 )
                 new_layer.lora_A.requires_grad = True
                 new_layer.lora_B.requires_grad = True
@@ -362,9 +347,7 @@ class KVTCCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="kvtc", **kwargs)
-        cfg = kwargs.get(
-            "comp_config", kwargs.get("cfg", getattr(model, "config", None))
-        )
+        cfg = kwargs.get("comp_config", kwargs.get("cfg", getattr(model, "config", None)))
         self.cfg = cfg
         self.bits = int(_cfg_get(cfg, "kvtc_bits", _cfg_get(cfg, "bits", bits)))
         self.pca_energy = float(
@@ -389,9 +372,7 @@ class KVTCCompressor(BaseCompressor):
                 _cfg_get(cfg, "target_attention_only", target_attention_only),
             )
         )
-        self.skip_attention_qkv = bool(
-            _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
-        )
+        self.skip_attention_qkv = bool(_cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv))
         self.min_rank = max(1, int(_cfg_get(cfg, "min_rank", min_rank)))
         self.target_modules = target_modules
 
@@ -402,9 +383,7 @@ class KVTCCompressor(BaseCompressor):
         self.stats: dict[str, Any] = {}
 
     @staticmethod
-    def _percentile_clip(
-        W: torch.Tensor, low: float = 0.001, high: float = 0.999
-    ) -> torch.Tensor:
+    def _percentile_clip(W: torch.Tensor, low: float = 0.001, high: float = 0.999) -> torch.Tensor:
         """Clip extreme outliers from weight tensor before computing quantization scale."""
         if W.numel() == 0:
             return W
@@ -477,11 +456,7 @@ class KVTCCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if (
-            num_heads is not None
-            and num_kv_heads is not None
-            and num_kv_heads < num_heads
-        ):
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
             name_lower = name.lower()
             if any(
                 p in name_lower
@@ -526,9 +501,7 @@ class KVTCCompressor(BaseCompressor):
         target_mod = getattr(module, "base_layer", module)
         cls_name = target_mod.__class__.__name__.lower()
         is_linear_like = (
-            isinstance(target_mod, nn.Linear)
-            or "conv1d" in cls_name
-            or hasattr(target_mod, "nf")
+            isinstance(target_mod, nn.Linear) or "conv1d" in cls_name or hasattr(target_mod, "nf")
         )
         if not is_linear_like:
             return False
@@ -563,9 +536,7 @@ class KVTCCompressor(BaseCompressor):
                 cls_name = target_mod.__class__.__name__.lower()
                 is_linear = isinstance(target_mod, nn.Linear)
                 is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-                if (is_linear or is_conv1d) and not self._is_target_module(
-                    name, module
-                ):
+                if (is_linear or is_conv1d) and not self._is_target_module(name, module):
                     for p in module.parameters():
                         p.requires_grad = False
                     self.skipped_layers.append(name)
@@ -594,11 +565,7 @@ class KVTCCompressor(BaseCompressor):
             is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
             dtype = raw_w.dtype
 
-            W = (
-                raw_w.t().contiguous().clone().float()
-                if is_conv1d
-                else raw_w.clone().float()
-            )
+            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
             d_out, d_in = W.shape
             min_dim = min(d_out, d_in)
 
@@ -632,9 +599,7 @@ class KVTCCompressor(BaseCompressor):
 
                 # Reconstruction error check against original W
                 norm_orig = torch.norm(W, p="fro").item()
-                rel_err = (
-                    torch.norm(W - W_quant, p="fro") / max(norm_orig, 1e-12)
-                ).item()
+                rel_err = (torch.norm(W - W_quant, p="fro") / max(norm_orig, 1e-12)).item()
                 self.layer_errors[name] = float(rel_err)
 
                 if not math.isfinite(rel_err) or rel_err > self.max_error:
@@ -753,9 +718,7 @@ class KVTCCompressor(BaseCompressor):
         )
 
         bytes_reduction_pct = (
-            (initial_actual_bytes - final_actual_bytes)
-            / float(initial_actual_bytes)
-            * 100.0
+            (initial_actual_bytes - final_actual_bytes) / float(initial_actual_bytes) * 100.0
             if initial_actual_bytes > 0
             else 0.0
         )
@@ -782,9 +745,7 @@ class KVTCCompressor(BaseCompressor):
                 "initial_actual_bytes": initial_actual_bytes,
                 "final_actual_bytes": final_actual_bytes,
                 "actual_bytes_reduction_pct": round(bytes_reduction_pct, 2),
-                "theoretical_entropy_compression_ratio": round(
-                    16.0 / max(avg_entropy, 1e-4), 2
-                ),
+                "theoretical_entropy_compression_ratio": round(16.0 / max(avg_entropy, 1e-4), 2),
                 "theoretical_vram_saving": f"{(1.0 - self.bits / 16.0) * 100:.1f}% vs FP16",
                 "layer_errors": self.layer_errors,
                 "layer_details": layer_details,

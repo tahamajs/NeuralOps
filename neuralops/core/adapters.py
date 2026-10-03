@@ -86,9 +86,7 @@ class UniversalAdapter:
                 cfg = getattr(old_attn, "config", None)
                 tc = getattr(cfg, "text_config", cfg)
                 h_dim = getattr(tc, "head_dim", 256)
-                n_heads = getattr(
-                    tc, "num_attention_heads", getattr(old_attn, "num_heads", 8)
-                )
+                n_heads = getattr(tc, "num_attention_heads", getattr(old_attn, "num_heads", 8))
                 if w.shape[0] == n_heads * h_dim * 2:
                     w = (
                         w.view(n_heads, 2, h_dim, -1)[:, 0, :, :]
@@ -142,24 +140,16 @@ class UniversalAdapter:
                         b[split_b : 2 * split_b] if b is not None else None
                     )
                 elif proj == "v":
-                    return w[2 * split_w :, :], (
-                        b[2 * split_b :] if b is not None else None
-                    )
+                    return w[2 * split_w :, :], (b[2 * split_b :] if b is not None else None)
 
         # 4b. Fallback for Qwen3.5 / fused in_proj_qkv
         if proj in ("q", "k", "v") and hasattr(old_attn, "in_proj_qkv"):
             fused_result = _extract(old_attn.in_proj_qkv)
             if fused_result is not None:
                 w, b = fused_result
-                k_dim = getattr(
-                    old_attn, "key_dim", getattr(old_attn, "k_dim", w.size(0) // 3)
-                )
-                v_dim = getattr(
-                    old_attn, "value_dim", getattr(old_attn, "v_dim", w.size(0) // 3)
-                )
-                q_dim = (
-                    w.size(0) - k_dim - v_dim if (k_dim + v_dim < w.size(0)) else k_dim
-                )
+                k_dim = getattr(old_attn, "key_dim", getattr(old_attn, "k_dim", w.size(0) // 3))
+                v_dim = getattr(old_attn, "value_dim", getattr(old_attn, "v_dim", w.size(0) // 3))
+                q_dim = w.size(0) - k_dim - v_dim if (k_dim + v_dim < w.size(0)) else k_dim
                 if proj == "q":
                     return w[:q_dim, :], (b[:q_dim] if b is not None else None)
                 elif proj == "k":
@@ -168,9 +158,7 @@ class UniversalAdapter:
                     )
                 elif proj == "v":
                     return w[q_dim + k_dim : q_dim + k_dim + v_dim, :], (
-                        b[q_dim + k_dim : q_dim + k_dim + v_dim]
-                        if b is not None
-                        else None
+                        b[q_dim + k_dim : q_dim + k_dim + v_dim] if b is not None else None
                     )
 
         # 4c. PyTorch nn.MultiheadAttention in_proj_weight / separate proj_weight
@@ -190,9 +178,7 @@ class UniversalAdapter:
                 split_w = w.size(0) // 3
                 split_b = b.size(0) // 3 if b is not None else 0
                 if proj == "q":
-                    return w[:split_w, :].clone(), (
-                        b[:split_b].clone() if b is not None else None
-                    )
+                    return w[:split_w, :].clone(), (b[:split_b].clone() if b is not None else None)
                 elif proj == "k":
                     return w[split_w : 2 * split_w, :].clone(), (
                         b[split_b : 2 * split_b].clone() if b is not None else None
@@ -236,12 +222,8 @@ class UniversalAdapter:
                     and mod.weight.ndim == 2
                 ):
                     d = mod.weight.shape[0]
-                    eye_w = torch.eye(
-                        d, dtype=mod.weight.dtype, device=mod.weight.device
-                    )
-                    zero_b = torch.zeros(
-                        d, dtype=mod.weight.dtype, device=mod.weight.device
-                    )
+                    eye_w = torch.eye(d, dtype=mod.weight.dtype, device=mod.weight.device)
+                    zero_b = torch.zeros(d, dtype=mod.weight.dtype, device=mod.weight.device)
                     return eye_w, zero_b
 
         raise ValueError(
@@ -256,9 +238,7 @@ class UniversalAdapter:
     @staticmethod
     def get_kv_heads(config: Any) -> int:
         """Return number of key-value heads for GQA/MQA."""
-        return getattr(
-            config, "num_key_value_heads", getattr(config, "num_attention_heads", 12)
-        )
+        return getattr(config, "num_key_value_heads", getattr(config, "num_attention_heads", 12))
 
 
 # Backward compatibility aliases

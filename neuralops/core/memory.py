@@ -61,9 +61,7 @@ def get_gpu_memory_stats() -> dict[str, float]:
         try:
             stats["allocated_mb"] = torch.mps.current_allocated_memory() / (1024 * 1024)
             if hasattr(torch.mps, "driver_allocated_memory"):
-                stats["reserved_mb"] = torch.mps.driver_allocated_memory() / (
-                    1024 * 1024
-                )
+                stats["reserved_mb"] = torch.mps.driver_allocated_memory() / (1024 * 1024)
         except (
             AttributeError,
             KeyError,

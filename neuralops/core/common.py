@@ -56,11 +56,7 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     if n_rep <= 1:
         return hidden_states
     b, h, s, d = hidden_states.shape
-    return (
-        hidden_states[:, :, None, :, :]
-        .expand(b, h, n_rep, s, d)
-        .reshape(b, h * n_rep, s, d)
-    )
+    return hidden_states[:, :, None, :, :].expand(b, h, n_rep, s, d).reshape(b, h * n_rep, s, d)
 
 
 def _detect_decoder(
@@ -163,9 +159,7 @@ class LoRALinear(nn.Module):
         self.lora_alpha = float(lora_alpha)
         self.lora_scaling = (lora_alpha / effective_r) if effective_r > 0 else 1.0
         self.scaling = self.lora_scaling
-        self.lora_dropout = (
-            nn.Dropout(p=lora_dropout) if lora_dropout > 0.0 else nn.Identity()
-        )
+        self.lora_dropout = nn.Dropout(p=lora_dropout) if lora_dropout > 0.0 else nn.Identity()
         self.merged = False
         self.merge_weights = merge_weights
 
@@ -201,9 +195,7 @@ class LoRALinear(nn.Module):
                 torch.empty((self.out_features, self.in_features), **factory_kwargs)
             )
             if bias:
-                self.bias = nn.Parameter(
-                    torch.empty(self.out_features, **factory_kwargs)
-                )
+                self.bias = nn.Parameter(torch.empty(self.out_features, **factory_kwargs))
             else:
                 self.register_parameter("bias", None)
 
@@ -298,11 +290,7 @@ class LoRALinear(nn.Module):
             and self.lora_B is not None
         ):
             drop_x = self.lora_dropout(x)
-            if (
-                HAS_TRITON_COMMON
-                and triton_dispatch is not None
-                and drop_x.is_cuda
-            ):
+            if HAS_TRITON_COMMON and triton_dispatch is not None and drop_x.is_cuda:
                 try:
                     lora_out = (
                         triton_dispatch("low_rank", drop_x, self.lora_B, self.lora_A, bias=None)
@@ -310,14 +298,10 @@ class LoRALinear(nn.Module):
                     )
                 except Exception:
                     lora_out = (
-                        F.linear(F.linear(drop_x, self.lora_A), self.lora_B)
-                        * self.lora_scaling
+                        F.linear(F.linear(drop_x, self.lora_A), self.lora_B) * self.lora_scaling
                     )
             else:
-                lora_out = (
-                    F.linear(F.linear(drop_x, self.lora_A), self.lora_B)
-                    * self.lora_scaling
-                )
+                lora_out = F.linear(F.linear(drop_x, self.lora_A), self.lora_B) * self.lora_scaling
             res = res + lora_out
         return res
 
@@ -345,9 +329,7 @@ class FactorizedLinear(nn.Module):
         self.rank = max(1, min(int(rank), self.in_features, self.out_features))
         self.svd_rank = self.rank
         self.lora_rank = (
-            min(int(lora_rank), min(self.in_features, self.out_features))
-            if lora_rank > 0
-            else 0
+            min(int(lora_rank), min(self.in_features, self.out_features)) if lora_rank > 0 else 0
         )
 
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -405,11 +387,7 @@ class FactorizedLinear(nn.Module):
         return self.lin2.bias
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if (
-            HAS_TRITON_COMMON
-            and triton_dispatch is not None
-            and x.is_cuda
-        ):
+        if HAS_TRITON_COMMON and triton_dispatch is not None and x.is_cuda:
             try:
                 out = triton_dispatch(
                     "low_rank", x, self.lin2.weight, self.lin1.weight, bias=self.lin2.bias
@@ -420,15 +398,9 @@ class FactorizedLinear(nn.Module):
             out = self.lin2(self.lin1(x))
 
         if self.lora_A is not None:
-            if (
-                HAS_TRITON_COMMON
-                and triton_dispatch is not None
-                and x.is_cuda
-            ):
+            if HAS_TRITON_COMMON and triton_dispatch is not None and x.is_cuda:
                 try:
-                    lora_out = triton_dispatch(
-                        "low_rank", x, self.lora_B, self.lora_A, bias=None
-                    )
+                    lora_out = triton_dispatch("low_rank", x, self.lora_B, self.lora_A, bias=None)
                     out = out + lora_out
                 except Exception:
                     out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)

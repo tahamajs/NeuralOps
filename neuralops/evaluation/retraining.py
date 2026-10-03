@@ -30,9 +30,7 @@ class TriggerType(Enum):
 class RetrainPolicy:
     """Configuration for when and how to retrain."""
 
-    trigger_types: list[TriggerType] = field(
-        default_factory=lambda: [TriggerType.DRIFT]
-    )
+    trigger_types: list[TriggerType] = field(default_factory=lambda: [TriggerType.DRIFT])
 
     # Drift trigger
     drift_threshold: float = 0.3
@@ -186,9 +184,7 @@ class RetrainingOrchestrator:
                 details={"degradation": degradation},
             )
 
-        return RetrainDecision(
-            should_retrain=False, reason="Performance within acceptable range"
-        )
+        return RetrainDecision(should_retrain=False, reason="Performance within acceptable range")
 
     def _check_drift(self, drift_report) -> RetrainDecision:
         """check drift."""
@@ -204,9 +200,7 @@ class RetrainingOrchestrator:
                 urgency="high" if ratio > 0.5 else "medium",
                 details={"drifted_features": n_drifted, "total_features": n_total},
             )
-        return RetrainDecision(
-            should_retrain=False, reason="Drift within acceptable range"
-        )
+        return RetrainDecision(should_retrain=False, reason="Drift within acceptable range")
 
     def _check_data_volume(self, new_count: int) -> RetrainDecision:
         """check data volume."""

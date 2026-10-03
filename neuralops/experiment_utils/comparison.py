@@ -55,9 +55,7 @@ class ExperimentComparator:
 
     def load_runs(self) -> None:
         """Load runs from disk or config."""
-        self.runs = list(
-            TrainingRun.objects.filter(id__in=self.run_ids).order_by("created_at")
-        )
+        self.runs = list(TrainingRun.objects.filter(id__in=self.run_ids).order_by("created_at"))
 
     def compare(self) -> ComparisonResult:
         """Compare."""
@@ -65,9 +63,7 @@ class ExperimentComparator:
         if len(self.runs) < 2:
             raise ValueError("Need at least 2 runs to compare")
 
-        baseline = next(
-            (r for r in self.runs if str(r.id) == self.baseline_id), self.runs[0]
-        )
+        baseline = next((r for r in self.runs if str(r.id) == self.baseline_id), self.runs[0])
         result = ComparisonResult(
             run_ids=[str(r.id) for r in self.runs],
             metrics_table=self._build_metrics_table(),
@@ -113,16 +109,12 @@ class ExperimentComparator:
         diffs = {}
         for rid, cfg in configs.items():
             if rid != first_id:
-                diff = DeepDiff(
-                    configs[first_id], cfg, ignore_order=True, verbose_level=2
-                )
+                diff = DeepDiff(configs[first_id], cfg, ignore_order=True, verbose_level=2)
                 diffs[rid] = diff
         return {
             "baseline_id": first_id,
             "diffs": diffs,
-            "all_config_keys": list(
-                set().union(*[set(c.keys()) for c in configs.values()])
-            ),
+            "all_config_keys": list(set().union(*[set(c.keys()) for c in configs.values()])),
         }
 
     def _build_hyperparameter_table(self) -> list[dict[str, Any]]:
@@ -171,9 +163,7 @@ class ExperimentComparator:
                 if base_v is not None and run_v is not None:
                     delta_row[k] = round(run_v - base_v, 6)
                     delta_row[f"{k}_pct"] = (
-                        round(((run_v - base_v) / abs(base_v)) * 100, 2)
-                        if base_v != 0
-                        else None
+                        round(((run_v - base_v) / abs(base_v)) * 100, 2) if base_v != 0 else None
                     )
                 else:
                     delta_row[k] = None
@@ -230,9 +220,7 @@ class ExperimentComparator:
         """generate summary."""
         lines = [f"Comparison of {len(self.runs)} runs."]
         if result.best_run_id:
-            best_run = next(
-                (r for r in self.runs if str(r.id) == result.best_run_id), None
-            )
+            best_run = next((r for r in self.runs if str(r.id) == result.best_run_id), None)
             if best_run:
                 lines.append(f"Best run: {best_run.name or result.best_run_id[:8]}")
         # Count improvements

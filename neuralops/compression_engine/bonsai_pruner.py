@@ -13,6 +13,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import (
@@ -67,9 +68,7 @@ class BonsaiPrunedLoRALinear(nn.Module):
         self.nf = out_features  # Conv1D compatibility
         self.lora_r = max(0, int(lora_r))
         self.lora_alpha = float(lora_alpha)
-        self.scaling = (
-            (self.lora_alpha / max(1, self.lora_r)) if self.lora_r > 0 else 1.0
-        )
+        self.scaling = (self.lora_alpha / max(1, self.lora_r)) if self.lora_r > 0 else 1.0
 
         weight_dtype = dtype if dtype is not None else torch.float32
         self.weight = nn.Parameter(
@@ -83,9 +82,7 @@ class BonsaiPrunedLoRALinear(nn.Module):
         )
 
         if bias:
-            self.bias = nn.Parameter(
-                torch.zeros(out_features, dtype=weight_dtype, device=device)
-            )
+            self.bias = nn.Parameter(torch.zeros(out_features, dtype=weight_dtype, device=device))
         else:
             self.register_parameter("bias", None)
 
@@ -94,9 +91,7 @@ class BonsaiPrunedLoRALinear(nn.Module):
                 torch.empty(self.lora_r, in_features, dtype=weight_dtype, device=device)
             )
             self.lora_B = nn.Parameter(
-                torch.empty(
-                    out_features, self.lora_r, dtype=weight_dtype, device=device
-                )
+                torch.empty(out_features, self.lora_r, dtype=weight_dtype, device=device)
             )
             with torch.no_grad():
                 tmp_A = self.lora_A.data.float()
@@ -127,9 +122,7 @@ class BonsaiPrunedLoRALinear(nn.Module):
         out = F.linear(x_flat, W_sparse, self.bias)
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x_flat, self.lora_A), self.lora_B) * self.scaling
-            )
+            lora_out = F.linear(F.linear(x_flat, self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out
 
         return out.view(*orig_shape[:-1], self.out_features)
@@ -210,27 +203,19 @@ class BonsaiPruner(BaseCompressor):
         super().__init__(model, name="bonsai", **kwargs)
         cfg_obj = cfg or kwargs.get("comp_config")
 
-        self.sparsity = max(
-            0.0, min(float(sparsity or getattr(cfg_obj, "sparsity", 0.5)), 0.95)
-        )
+        self.sparsity = max(0.0, min(float(sparsity or getattr(cfg_obj, "sparsity", 0.5)), 0.95))
         self.steps = max(1, int(steps or getattr(cfg_obj, "steps", 8)))
         raw_recovery = int(
-            recovery_steps
-            if recovery_steps is not None
-            else getattr(cfg_obj, "recovery_steps", 3)
+            recovery_steps if recovery_steps is not None else getattr(cfg_obj, "recovery_steps", 3)
         )
         self.recovery_steps = max(0, min(raw_recovery, max_recovery_steps))
         self.recovery_lr = float(recovery_lr or getattr(cfg_obj, "recovery_lr", 1e-3))
         self.structured_24 = bool(
-            structured_24
-            if structured_24 is not None
-            else getattr(cfg_obj, "structured_24", False)
+            structured_24 if structured_24 is not None else getattr(cfg_obj, "structured_24", False)
         )
         self.block_size = block_size or getattr(cfg_obj, "block_size", (4, 4))
         self.protect_cls = bool(
-            protect_cls
-            if protect_cls is not None
-            else getattr(cfg_obj, "protect_cls", True)
+            protect_cls if protect_cls is not None else getattr(cfg_obj, "protect_cls", True)
         )
         self.target_attention_only = bool(target_attention_only)
         self.skip_attention_qkv = bool(
@@ -238,9 +223,7 @@ class BonsaiPruner(BaseCompressor):
             if skip_attention_qkv is not None
             else getattr(cfg_obj, "skip_attention_qkv", False)
         )
-        self.use_lora = bool(
-            use_lora or getattr(cfg_obj, "use_lora", False) or (lora_r > 0)
-        )
+        self.use_lora = bool(use_lora or getattr(cfg_obj, "use_lora", False) or (lora_r > 0))
         self.lora_r = int(lora_r or getattr(cfg_obj, "lora_r", 0))
         self.lora_alpha = float(lora_alpha or getattr(cfg_obj, "lora_alpha", 1.0))
         self.adaptive_sparsity = bool(
@@ -358,9 +341,7 @@ class BonsaiPruner(BaseCompressor):
             return True
 
         # (b) attention-only mode.
-        if self.target_attention_only and not any(
-            k in name_lower for k in self._ATTN_TOKENS
-        ):
+        if self.target_attention_only and not any(k in name_lower for k in self._ATTN_TOKENS):
             return True
 
         # (c) QKV protection.
@@ -368,11 +349,7 @@ class BonsaiPruner(BaseCompressor):
             last_part = name_lower.split(".")[-1]
             if any(k in last_part for k in self._QKV_TOKENS):
                 return True
-            if (
-                module is not None
-                and hasattr(module, "weight")
-                and module.weight.ndim == 2
-            ):
+            if module is not None and hasattr(module, "weight") and module.weight.ndim == 2:
                 if "attn" in name_lower or "attention" in name_lower:
                     w_shape = module.weight.shape
                     if w_shape[0] != w_shape[1]:  # GQA asymmetry
@@ -459,9 +436,7 @@ class BonsaiPruner(BaseCompressor):
 
                 if not forward_success:
                     try:
-                        dummy = torch.randint(
-                            0, 100, (1, 16), device=self.target_device
-                        )
+                        dummy = torch.randint(0, 100, (1, 16), device=self.target_device)
                         self.model(dummy)
                     except Exception as e4:
                         logger.debug("Bonsai synthetic calibration failed: %s", e4)
@@ -474,9 +449,7 @@ class BonsaiPruner(BaseCompressor):
         aggregated: dict[str, torch.Tensor] = {}
         for name, act_list in activations.items():
             if act_list:
-                aggregated[name] = torch.cat(
-                    [a.reshape(-1, a.shape[-1]) for a in act_list], dim=0
-                )
+                aggregated[name] = torch.cat([a.reshape(-1, a.shape[-1]) for a in act_list], dim=0)
         return aggregated
 
     # ------------------------------------------------------------------
@@ -519,11 +492,7 @@ class BonsaiPruner(BaseCompressor):
             device = raw_w.device
             is_conv1d = "conv1d" in cls_name.lower() or hasattr(module, "nf")
 
-            W0 = (
-                raw_w.t().float().contiguous()
-                if is_conv1d
-                else raw_w.float().contiguous()
-            )
+            W0 = raw_w.t().float().contiguous() if is_conv1d else raw_w.float().contiguous()
             out_f, in_f = W0.shape
 
             if (out_f * in_f) < self.min_numel:
@@ -544,9 +513,7 @@ class BonsaiPruner(BaseCompressor):
             if self.adaptive_sparsity and X is not None:
                 act_norm = torch.norm(X, p="fro").item() / max(1, X.shape[0])
                 scale_factor = 1.0 / (1.0 + math.log1p(max(0.0, act_norm)))
-                target_sp = max(
-                    0.05, min(0.95, self.sparsity * (0.7 + 0.6 * scale_factor))
-                )
+                target_sp = max(0.05, min(0.95, self.sparsity * (0.7 + 0.6 * scale_factor)))
             else:
                 target_sp = self.sparsity
 
@@ -559,9 +526,7 @@ class BonsaiPruner(BaseCompressor):
                 saliency = compute_taylor_first_order_saliency(W, activations=X)
 
                 if self.structured_24:
-                    W_pruned, final_mask = apply_24_structured_mask(
-                        W, saliency=saliency, dim=1
-                    )
+                    W_pruned, final_mask = apply_24_structured_mask(W, saliency=saliency, dim=1)
                 elif self.block_size != (1, 1):
                     W_pruned, final_mask = apply_block_mask(
                         W,
@@ -658,9 +623,7 @@ class BonsaiPruner(BaseCompressor):
                             W.t().contiguous().to(dtype=dtype, device=device)
                         )
                     else:
-                        target_mod.weight.data.copy_(
-                            W.contiguous().to(dtype=dtype, device=device)
-                        )
+                        target_mod.weight.data.copy_(W.contiguous().to(dtype=dtype, device=device))
 
             self.pruned_layers.append(name)
 
@@ -681,18 +644,14 @@ class BonsaiPruner(BaseCompressor):
         sanity_check_passed = True
         try:
             with torch.no_grad():
-                dummy = torch.randint(
-                    0, 100, (1, 8), device=self.target_device, dtype=torch.long
-                )
+                dummy = torch.randint(0, 100, (1, 8), device=self.target_device, dtype=torch.long)
                 attn = torch.ones_like(dummy)
                 try:
                     self.model(input_ids=dummy, attention_mask=attn)
                 except Exception:
                     self.model(dummy)
         except Exception as ex:
-            logger.debug(
-                "BonsaiPruner post-compression forward sanity check warning: %s", ex
-            )
+            logger.debug("BonsaiPruner post-compression forward sanity check warning: %s", ex)
             sanity_check_passed = False
 
         try:
@@ -706,9 +665,7 @@ class BonsaiPruner(BaseCompressor):
             stats = {}
 
         avg_err = (
-            (sum(self.layer_errors.values()) / len(self.layer_errors))
-            if self.layer_errors
-            else 0.0
+            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
         )
         stats.update(
             {

@@ -237,9 +237,7 @@ def get_all_decoder_modules(category: str = "all") -> list[str]:
     canonical = ["full"]
     for aliases in by_factory.values():
         # Prefer shorter / non-`_inject` aliases as canonical names
-        canonical.append(
-            sorted(aliases, key=lambda x: (x.endswith("_inject"), len(x), x))[0]
-        )
+        canonical.append(sorted(aliases, key=lambda x: (x.endswith("_inject"), len(x), x))[0])
 
     # Preserve insertion order but ensure "full" is first
     seen: set[str] = set()
@@ -262,9 +260,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     # Model / data
     p.add_argument("--model_path", type=str, default="models/gpt2_wikitext")
     p.add_argument("--dataset_name", type=str, default="wikitext-2-raw-v1")
-    p.add_argument(
-        "--split", type=str, default="test", choices=("test", "validation", "train")
-    )
+    p.add_argument("--split", type=str, default="test", choices=("test", "validation", "train"))
     p.add_argument("--output_dir", type=str, default="results/06_adhoc_experiments/gpt2_sweep")
 
     # Modules
@@ -283,9 +279,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     # Precision / device
     p.add_argument("--fp16", action="store_true", default=True)
     p.add_argument("--no_fp16", dest="fp16", action="store_false")
-    p.add_argument(
-        "--device", type=str, default="cuda", help="cuda, cuda:0, cuda:1, cpu"
-    )
+    p.add_argument("--device", type=str, default="cuda", help="cuda, cuda:0, cuda:1, cpu")
     p.add_argument("--seed", type=int, default=42)
 
     # Calibration
@@ -598,9 +592,7 @@ def run_kd_recovery(
         trainable_params = [p for p in student.parameters() if p.requires_grad]
 
     if not trainable_params:
-        LOG.warning(
-            "KD recovery: completely 0 trainable parameters, skipping recovery."
-        )
+        LOG.warning("KD recovery: completely 0 trainable parameters, skipping recovery.")
         return 0.0
 
     optimizer = torch.optim.AdamW(trainable_params, lr=lr, weight_decay=0.01)
@@ -608,9 +600,7 @@ def run_kd_recovery(
     scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
 
     # Tokenize training chunks
-    texts = [t.strip() for t in train_dataset["text"] if len(t.strip()) > 20][
-        : max(steps * 2, 200)
-    ]
+    texts = [t.strip() for t in train_dataset["text"] if len(t.strip()) > 20][: max(steps * 2, 200)]
     all_ids = []
     for t in texts:
         ids = tokenizer(t, add_special_tokens=False).input_ids
@@ -802,12 +792,12 @@ def write_markdown_report(out_dir: Path, csv_path: Path, baseline_ppl: float):
     for m in sorted(rows.keys(), key=lambda k: (k != "full", k)):
         r = rows[m]
         md_lines.append(
-            f"| {m} | {r.get('status','?')} | "
-            f"{r.get('perplexity','?')} | {r.get('ppl_ratio','?')} | "
-            f"{r.get('compression_rate','?')} | "
-            f"{r.get('num_injected_attention_layers',0)} | "
-            f"{r.get('num_compressed_layers',0)} | "
-            f"{r.get('latency_ms_per_token','?')} |"
+            f"| {m} | {r.get('status', '?')} | "
+            f"{r.get('perplexity', '?')} | {r.get('ppl_ratio', '?')} | "
+            f"{r.get('compression_rate', '?')} | "
+            f"{r.get('num_injected_attention_layers', 0)} | "
+            f"{r.get('num_compressed_layers', 0)} | "
+            f"{r.get('latency_ms_per_token', '?')} |"
         )
     out = out_dir / "REPORT.md"
     out.write_text("\n".join(md_lines), encoding="utf-8")
@@ -907,11 +897,7 @@ def main(argv: list[str] | None = None):
     if not parsed or parsed == ["all"]:
         parsed = get_all_decoder_modules("all")
     if args.total_workers > 1:
-        parsed = [
-            m
-            for i, m in enumerate(parsed)
-            if (i % args.total_workers) == args.worker_id
-        ]
+        parsed = [m for i, m in enumerate(parsed) if (i % args.total_workers) == args.worker_id]
         LOG.info(
             "Worker %d/%d assigned %d modules",
             args.worker_id,
@@ -986,9 +972,7 @@ def main(argv: list[str] | None = None):
         ds_test = load_dataset("wikitext", args.dataset_name, split=args.split)
         ds_train = load_dataset("wikitext", args.dataset_name, split="train")
     except Exception:
-        ds_test = load_dataset(
-            "Salesforce/wikitext", args.dataset_name, split=args.split
-        )
+        ds_test = load_dataset("Salesforce/wikitext", args.dataset_name, split=args.split)
         ds_train = load_dataset("Salesforce/wikitext", args.dataset_name, split="train")
 
     # ---- Calibration loader ----
@@ -1014,8 +998,7 @@ def main(argv: list[str] | None = None):
     if (
         not args.recompute_baseline
         and cached_base is not None
-        and str(cached_base.get("baseline_ppl", ""))
-        not in ("", "0", "0.0", "-1.0", "nan")
+        and str(cached_base.get("baseline_ppl", "")) not in ("", "0", "0.0", "-1.0", "nan")
     ):
         try:
             baseline_ppl = float(cached_base["baseline_ppl"])
@@ -1145,9 +1128,7 @@ def main(argv: list[str] | None = None):
 
     # ---- Iterate ----
     module_list = [m for m in args.modules if m != "full"]
-    iterator = (
-        tqdm(module_list, desc="Modules", unit="mod") if _HAS_TQDM else module_list
-    )
+    iterator = tqdm(module_list, desc="Modules", unit="mod") if _HAS_TQDM else module_list
 
     n_done = 0
     t_run_start = time.time()
@@ -1240,9 +1221,7 @@ def main(argv: list[str] | None = None):
             comp_pct = round(100.0 * (1.0 - p_after / max(1, total_params_baseline)), 2)
             delta_ppl = round(ppl - baseline_ppl, 4) if np.isfinite(ppl) else 999.0
             ppl_ratio = (
-                round(ppl / max(1e-9, baseline_ppl), 4)
-                if np.isfinite(ppl)
-                else float("inf")
+                round(ppl / max(1e-9, baseline_ppl), 4) if np.isfinite(ppl) else float("inf")
             )
 
             # ---- Classify ----
@@ -1263,11 +1242,7 @@ def main(argv: list[str] | None = None):
             # ---- Optional KD Recovery ----
             post_kd_ppl = -1.0
             delta_ppl_recovery = 0.0
-            if (
-                args.with_kd_recovery
-                and np.isfinite(ppl)
-                and ppl > (2.0 * baseline_ppl)
-            ):
+            if args.with_kd_recovery and np.isfinite(ppl) and ppl > (2.0 * baseline_ppl):
                 LOG.info(
                     "[%s] Zero-shot PPL %.2f > 2x baseline (%.2f); running KD recovery...",
                     mod,
@@ -1347,8 +1322,7 @@ def main(argv: list[str] | None = None):
                 delta_ppl_recovery=delta_ppl_recovery,
             )
             LOG.info(
-                "[%d/%d] %s -> %s | PPL=%.3f (ratio=%.3f) | "
-                "comp=%.3fx | inj=%d comp=%d | %.1fs",
+                "[%d/%d] %s -> %s | PPL=%.3f (ratio=%.3f) | comp=%.3fx | inj=%d comp=%d | %.1fs",
                 idx,
                 len(module_list),
                 mod,

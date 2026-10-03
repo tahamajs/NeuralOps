@@ -1,5 +1,6 @@
 import argparse
 
+
 def parse_args(argv=None):
     raw_argv = sys.argv[1:] if argv is None else argv
     has_explicit_batch = any(
@@ -112,13 +113,13 @@ def parse_args(argv=None):
     ap.add_argument("--aasvd_max_error", type=float, default=0.85)
     ap.add_argument(
         "--aasvd_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--aasvd_ema_beta", type=float, default=0.9)
     ap.add_argument(
         "--aasvd_fallback_to_original",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--group_size", type=int, default=3)
@@ -134,7 +135,7 @@ def parse_args(argv=None):
     ap.add_argument("--a3_max_error", type=float, default=None)
     ap.add_argument(
         "--a3_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--span_lambda", type=float, default=0.0)
@@ -142,13 +143,13 @@ def parse_args(argv=None):
     ap.add_argument("--adaptive_ranks_energy_threshold", type=float, default=0.92)
     ap.add_argument(
         "--adaptive_ranks_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--adasvd_max_error", type=float, default=0.70)
     ap.add_argument(
         "--adasvd_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--adasvd_min_rank", type=int, default=16)
@@ -156,13 +157,13 @@ def parse_args(argv=None):
     ap.add_argument("--admm_quant_bits", type=int, default=4)
     ap.add_argument(
         "--admm_structured_24",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--admm_max_error", type=float, default=0.45)
     ap.add_argument(
         "--admm_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--admm_rho1", type=float, default=0.1)
@@ -171,13 +172,13 @@ def parse_args(argv=None):
     ap.add_argument("--admm_pruner_sparsity", type=float, default=0.5)
     ap.add_argument(
         "--admm_pruner_structured_24",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--admm_pruner_max_error", type=float, default=0.45)
     ap.add_argument(
         "--admm_pruner_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--admm_pruner_lambda_distill", type=float, default=0.1)
@@ -188,51 +189,51 @@ def parse_args(argv=None):
     ap.add_argument("--armor_sparsity", type=float, default=0.5)
     ap.add_argument(
         "--armor_structured_24",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--armor_max_error", type=float, default=0.35)
     ap.add_argument(
         "--armor_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument(
         "--armor_decouple",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--armor_lora_alpha", type=float, default=1.0)
     ap.add_argument(
         "--armor_skip_attention_qkv",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=False,
     )
     ap.add_argument("--astro_bits", type=int, default=8)
     ap.add_argument(
         "--astro_symmetric",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument(
         "--astro_per_channel",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=False,
     )
     ap.add_argument(
         "--astro_use_ste",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=False,
     )
     ap.add_argument("--astro_max_error", type=float, default=0.20)
     ap.add_argument(
         "--astro_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument(
         "--astro_use_fisher_adaptive_bits",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=False,
     )
     ap.add_argument("--astro_target_avg_bits", type=float, default=6.0)
@@ -244,14 +245,14 @@ def parse_args(argv=None):
     ap.add_argument("--cachenotes_max_error", type=float, default=0.35)
     ap.add_argument(
         "--cachenotes_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--cachenotes_lora_r", type=int, default=16)
     ap.add_argument("--cachenotes_lora_alpha", type=float, default=1.0)
     ap.add_argument(
         "--cachenotes_skip_attention_qkv",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--come_target_layers", type=int, default=None)
@@ -261,12 +262,12 @@ def parse_args(argv=None):
     ap.add_argument("--come_lora_alpha", type=float, default=1.0)
     ap.add_argument(
         "--come_skip_attention_qkv",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument(
         "--come_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=False,
     )
     ap.add_argument("--coopq_bits", type=int, default=4)
@@ -274,29 +275,29 @@ def parse_args(argv=None):
     ap.add_argument("--coopq_max_bits", type=int, default=8)
     ap.add_argument(
         "--coopq_symmetric",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=False,
     )
     ap.add_argument(
         "--coopq_per_channel",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument(
         "--coopq_use_ste",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument(
         "--coopq_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--cr_rank", type=int, default=32)
     ap.add_argument("--cr_max_error", type=float, default=0.35)
     ap.add_argument(
         "--cr_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--cur_rank", type=int, default=32)
@@ -305,13 +306,13 @@ def parse_args(argv=None):
     ap.add_argument("--cur_max_error", type=float, default=0.35)
     ap.add_argument(
         "--cur_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--cur_moe_rank", type=int, default=32)
     ap.add_argument(
         "--cur_moe_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--delta_kv_rank", type=int, default=16)
@@ -319,14 +320,14 @@ def parse_args(argv=None):
     ap.add_argument("--delta_kv_max_error", type=float, default=0.35)
     ap.add_argument(
         "--delta_kv_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--direct_svd_rank", type=int, default=128)
     ap.add_argument("--direct_svd_max_error", type=float, default=0.35)
     ap.add_argument(
         "--direct_svd_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--dobi_rank", type=int, default=None)
@@ -335,7 +336,7 @@ def parse_args(argv=None):
     ap.add_argument("--dobi_max_error", type=float, default=0.35)
     ap.add_argument(
         "--dobi_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--dynamic_min_rank", type=int, default=16)
@@ -344,20 +345,20 @@ def parse_args(argv=None):
     ap.add_argument("--dynamic_max_error", type=float, default=0.35)
     ap.add_argument(
         "--dynamic_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--enlighten_rank", type=int, default=128)
     ap.add_argument("--enlighten_sparsity", type=float, default=0.5)
     ap.add_argument(
         "--enlighten_structured_24",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--enlighten_max_error", type=float, default=0.35)
     ap.add_argument(
         "--enlighten_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--entropy_budget_rank", type=int, default=None)
@@ -365,14 +366,14 @@ def parse_args(argv=None):
     ap.add_argument("--entropy_budget_max_error", type=float, default=0.35)
     ap.add_argument(
         "--entropy_budget_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--erc_allowed_error", type=float, default=0.20)
     ap.add_argument("--erc_max_error", type=float, default=0.35)
     ap.add_argument(
         "--erc_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--erc_rank", type=int, default=None)
@@ -380,45 +381,45 @@ def parse_args(argv=None):
     ap.add_argument("--faq_alpha", type=float, default=0.5)
     ap.add_argument(
         "--faq_symmetric",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument(
         "--faq_use_ste",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--faq_lora_r", type=int, default=16)
     ap.add_argument("--faq_max_error", type=float, default=0.35)
     ap.add_argument(
         "--faq_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--flap_sparsity", type=float, default=0.2)
     ap.add_argument("--flap_metric_type", type=str, default="WIFV")
     ap.add_argument(
         "--flap_structured_24",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=False,
     )
     ap.add_argument("--flap_max_error", type=float, default=0.35)
     ap.add_argument(
         "--flap_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--flat_llm_keep_ratio", type=float, default=0.7)
     ap.add_argument("--flat_llm_damping", type=float, default=1e-4)
     ap.add_argument(
         "--flat_llm_structured_24",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=False,
     )
     ap.add_argument("--flat_llm_max_error", type=float, default=0.35)
     ap.add_argument(
         "--flat_llm_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--frandi_rank", type=int, default=128)
@@ -427,7 +428,7 @@ def parse_args(argv=None):
     ap.add_argument("--frandi_max_error", type=float, default=0.35)
     ap.add_argument(
         "--frandi_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--grecodec_rank", type=int, default=128)
@@ -436,40 +437,40 @@ def parse_args(argv=None):
     ap.add_argument("--grecodec_max_error", type=float, default=0.35)
     ap.add_argument(
         "--grecodec_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--hashed_net_buckets", type=int, default=65536)
     ap.add_argument(
         "--hashed_net_use_sign",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--hashed_net_lora_r", type=int, default=16)
     ap.add_argument("--hashed_net_max_error", type=float, default=0.35)
     ap.add_argument(
         "--hashed_net_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--huffman_quantize_bits", type=int, default=8)
     ap.add_argument("--huffman_max_error", type=float, default=0.20)
     ap.add_argument(
         "--huffman_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--hybrid_svd_rank", type=int, default=128)
     ap.add_argument(
         "--hybrid_svd_use_full",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=False,
     )
     ap.add_argument("--hybrid_svd_lora_r", type=int, default=16)
     ap.add_argument("--hybrid_svd_max_error", type=float, default=0.55)
     ap.add_argument(
         "--hybrid_svd_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--hybridkv_budget", type=float, default=0.3)
@@ -479,7 +480,7 @@ def parse_args(argv=None):
     ap.add_argument("--hybridkv_recent_window", type=int, default=32)
     ap.add_argument(
         "--hybridkv_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--kmeans_clusters", type=int, default=256)
@@ -487,21 +488,21 @@ def parse_args(argv=None):
     ap.add_argument("--kmeans_max_error", type=float, default=0.20)
     ap.add_argument(
         "--kmeans_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--kronecker_rank", type=int, default=128)
     ap.add_argument("--kronecker_max_error", type=float, default=0.50)
     ap.add_argument(
         "--kronecker_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--tt_ranks", type=str, default="1,2,2,1")
     ap.add_argument("--kronecker_tt_lora_max_error", type=float, default=0.50)
     ap.add_argument(
         "--kronecker_tt_lora_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--kvtc_bits", type=int, default=4)
@@ -509,32 +510,32 @@ def parse_args(argv=None):
     ap.add_argument("--kvtc_max_error", type=float, default=0.20)
     ap.add_argument(
         "--kvtc_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument(
         "--kvtc_fallback_to_original",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--liftr_gelu_coefficient", type=float, default=0.8)
     ap.add_argument(
         "--liftr_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--lillama_rank_ratio", type=float, default=0.5)
     ap.add_argument("--lillama_max_error", type=float, default=0.50)
     ap.add_argument(
         "--lillama_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--lsc_sparsity", type=float, default=0.3)
     ap.add_argument("--lsc_max_error", type=float, default=0.50)
     ap.add_argument(
         "--lsc_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
 
@@ -553,9 +554,7 @@ def parse_args(argv=None):
 
     args, unknown_args = ap.parse_known_args(raw_argv)
     args.unknown_args = unknown_args
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-    )
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     extended_args = {}
     if unknown_args:
         LOG.info(
@@ -568,9 +567,7 @@ def parse_args(argv=None):
             flag = unknown_args[i]
             if flag.startswith("--"):
                 key = flag[2:].replace("-", "_")
-                if i + 1 < len(unknown_args) and not unknown_args[i + 1].startswith(
-                    "--"
-                ):
+                if i + 1 < len(unknown_args) and not unknown_args[i + 1].startswith("--"):
                     val = unknown_args[i + 1]
                     if val.lower() in ("true", "1", "yes"):
                         parsed_val = True

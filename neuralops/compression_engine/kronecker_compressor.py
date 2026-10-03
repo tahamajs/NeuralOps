@@ -14,6 +14,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -173,9 +174,7 @@ class KroneckerLinear(nn.Module):
             else:
                 self.register_parameter("bias", None)
         else:
-            effective_rank = rank or max(
-                1, min(self.in_features, self.out_features) // 4
-            )
+            effective_rank = rank or max(1, min(self.in_features, self.out_features) // 4)
             self.rank = min(effective_rank, self.in_features, self.out_features)
             self.U = nn.Parameter(
                 torch.empty(self.out_features, self.rank, dtype=dtype, device=device),
@@ -303,9 +302,7 @@ class KroneckerLinear(nn.Module):
             1,
             min(in_f, out_f, int(0.75 * (in_f * out_f) / max(in_f + out_f, 1))),
         )
-        base_r = (
-            rank if rank is not None and rank > 0 else max(1, min(in_f, out_f) // 4)
-        )
+        base_r = rank if rank is not None and rank > 0 else max(1, min(in_f, out_f) // 4)
         base_r = min(base_r, max_allowed_rank)
 
         try:
@@ -324,8 +321,7 @@ class KroneckerLinear(nn.Module):
                 V_r = torch.sqrt(S[:cand_r].unsqueeze(1)) * Vt[:cand_r, :]
                 W_cand = torch.matmul(U_r, V_r)
                 err = float(
-                    torch.norm(weight.float() - W_cand, p="fro").item()
-                    / max(W_norm, 1e-12)
+                    torch.norm(weight.float() - W_cand, p="fro").item() / max(W_norm, 1e-12)
                 )
                 best_r = cand_r
                 best_U_r = U_r
@@ -334,12 +330,8 @@ class KroneckerLinear(nn.Module):
                     break
         except Exception:
             best_r = base_r
-            best_U_r = torch.zeros(
-                out_f, best_r, device=target_device, dtype=torch.float32
-            )
-            best_V_r = torch.zeros(
-                best_r, in_f, device=target_device, dtype=torch.float32
-            )
+            best_U_r = torch.zeros(out_f, best_r, device=target_device, dtype=torch.float32)
+            best_V_r = torch.zeros(best_r, in_f, device=target_device, dtype=torch.float32)
 
         self.can_decompose = False
         # KL-FIX-05: clean removal of Kronecker parameters.
@@ -353,9 +345,7 @@ class KroneckerLinear(nn.Module):
 
         # KL-FIX-03 + KL-FIX-11: unconditional, dtype-matched bias.
         if bias is not None:
-            self.bias = nn.Parameter(
-                bias.clone().to(dtype=target_dtype, device=target_device)
-            )
+            self.bias = nn.Parameter(bias.clone().to(dtype=target_dtype, device=target_device))
         else:
             self.register_parameter("bias", None)
 
@@ -454,9 +444,7 @@ class KroneckerLinear(nn.Module):
             n1_, n2_ = kron_layer.n1, kron_layer.n2
             try:
                 # Rearrangement for Nearest Kronecker Product.
-                W_tensor = (
-                    weight.view(m1_, m2_, n1_, n2_).permute(0, 2, 1, 3).contiguous()
-                )
+                W_tensor = weight.view(m1_, m2_, n1_, n2_).permute(0, 2, 1, 3).contiguous()
                 W_reordered = W_tensor.view(m1_ * n1_, m2_ * n2_).float()
 
                 U, S, Vt = torch.linalg.svd(W_reordered, full_matrices=False)
@@ -474,9 +462,7 @@ class KroneckerLinear(nn.Module):
                 )
 
                 W_recon = torch.kron(kron_layer.A, kron_layer.B).float()
-                err = float(
-                    torch.norm(weight - W_recon, p="fro").item() / max(W_norm, 1e-12)
-                )
+                err = float(torch.norm(weight - W_recon, p="fro").item() / max(W_norm, 1e-12))
             except Exception as e:
                 import logging
 
@@ -498,9 +484,7 @@ class KroneckerLinear(nn.Module):
         # KL-FIX-08: forward sanity check.
         try:
             with torch.no_grad():
-                dummy = torch.randn(
-                    2, in_features, device=target_device, dtype=target_dtype
-                )
+                dummy = torch.randn(2, in_features, device=target_device, dtype=target_dtype)
                 _ = kron_layer(dummy)
         except Exception as e:
             import logging
@@ -585,9 +569,7 @@ class KroneckerCompressor(BaseCompressor):
         conf = cfg or kwargs.get("comp_config")
 
         rank = _cfg_get(conf, "kronecker_rank", _cfg_get(conf, "rank", rank))
-        max_error = _cfg_get(
-            conf, "kronecker_max_error", _cfg_get(conf, "max_error", max_error)
-        )
+        max_error = _cfg_get(conf, "kronecker_max_error", _cfg_get(conf, "max_error", max_error))
         fallback_to_original = _cfg_get(
             conf,
             "kronecker_fallback_to_original",
@@ -637,11 +619,7 @@ class KroneckerCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if (
-            num_heads is not None
-            and num_kv_heads is not None
-            and num_kv_heads < num_heads
-        ):
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
             if any(
                 p in name.lower()
                 for p in (
@@ -658,9 +636,7 @@ class KroneckerCompressor(BaseCompressor):
         return False
 
     # KC-FIX-12: debug-enriched target check.
-    def _is_target_module(
-        self, name: str, module: nn.Module, _debug: bool = False
-    ) -> bool:
+    def _is_target_module(self, name: str, module: nn.Module, _debug: bool = False) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
             if _debug:
@@ -742,9 +718,7 @@ class KroneckerCompressor(BaseCompressor):
         return True
 
     # ------------------------------------------------------------------
-    def compress(
-        self, model: nn.Module | None = None
-    ) -> tuple[nn.Module, dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         # KC-FIX-09: idempotence.
         if getattr(self.model, "_kronecker_compressed", False):
             logger.warning("KroneckerCompressor: model already compressed; skipping.")
@@ -845,13 +819,9 @@ class KroneckerCompressor(BaseCompressor):
                     lora_alpha=self.lora_alpha,
                 )
                 W_comp = new_layer.get_weight().float()
-                err = float(
-                    torch.norm(W_target - W_comp, p="fro").item() / max(W_norm, 1e-12)
-                )
+                err = float(torch.norm(W_target - W_comp, p="fro").item() / max(W_norm, 1e-12))
             except Exception as e:
-                logger.warning(
-                    "KroneckerLinear factorization failed on %s: %s", name, e
-                )
+                logger.warning("KroneckerLinear factorization failed on %s: %s", name, e)
                 new_layer = None
                 err = 1.0
 
@@ -864,11 +834,7 @@ class KroneckerCompressor(BaseCompressor):
                     err,
                     name,
                     self.max_error,
-                    (
-                        "Falling back."
-                        if self.fallback_to_original
-                        else "Keeping original weight."
-                    ),
+                    ("Falling back." if self.fallback_to_original else "Keeping original weight."),
                 )
                 if self.fallback_to_original:
                     self.fallback_layers.append(name)
@@ -927,17 +893,11 @@ class KroneckerCompressor(BaseCompressor):
 
         # KC-FIX-05: avg_err only over compressed layers.
         compressed_errs = [
-            self.layer_errors[n]
-            for n in self.compressed_layers
-            if n in self.layer_errors
+            self.layer_errors[n] for n in self.compressed_layers if n in self.layer_errors
         ]
-        avg_err = (
-            sum(compressed_errs) / len(compressed_errs) if compressed_errs else 0.0
-        )
+        avg_err = sum(compressed_errs) / len(compressed_errs) if compressed_errs else 0.0
         param_ratio = (
-            total_comp_params / max(total_orig_params, 1)
-            if total_orig_params > 0
-            else 1.0
+            total_comp_params / max(total_orig_params, 1) if total_orig_params > 0 else 1.0
         )
 
         try:
@@ -974,10 +934,7 @@ class KroneckerCompressor(BaseCompressor):
 
         # KC-FIX-09: write stats onto model.
         try:
-            if (
-                not hasattr(self.model, "compression_stats")
-                or self.model.compression_stats is None
-            ):
+            if not hasattr(self.model, "compression_stats") or self.model.compression_stats is None:
                 self.model.compression_stats = {}
             self.model.compression_stats.update(
                 {
@@ -1017,14 +974,10 @@ def kronecker_factory(
     **kwargs: Any,
 ) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """Kronecker compressor factory."""
-    rank = rank or _cfg_get(
-        comp_config, "kronecker_rank", _cfg_get(comp_config, "rank", 128)
-    )
+    rank = rank or _cfg_get(comp_config, "kronecker_rank", _cfg_get(comp_config, "rank", 128))
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(
-            comp_config, "kronecker_max_error", _cfg_get(comp_config, "max_error", 0.80)
-        ),
+        _cfg_get(comp_config, "kronecker_max_error", _cfg_get(comp_config, "max_error", 0.80)),
     )
     fallback = kwargs.pop(
         "fallback_to_original",

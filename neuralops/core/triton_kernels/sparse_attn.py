@@ -16,6 +16,7 @@ import math
 from typing import Any
 
 import torch
+
 from neuralops.core.triton_kernels._common import (
     HAS_TRITON,
     check_triton_suitability,
@@ -85,9 +86,7 @@ if HAS_TRITON:
             if IS_CAUSAL:
                 process_block = process_block and (k_blk_idx <= q_blk_idx)
             if HAS_MASK:
-                mask_val = tl.load(
-                    Mask_ptr + q_blk_idx * stride_mq + k_blk_idx * stride_mk
-                )
+                mask_val = tl.load(Mask_ptr + q_blk_idx * stride_mq + k_blk_idx * stride_mk)
                 process_block = process_block and (mask_val != 0)
 
             if process_block:
@@ -95,12 +94,8 @@ if HAS_TRITON:
                 offs_k = k_start + tl.arange(0, BLOCK_SIZE)
                 mask_k = offs_k < N_K
 
-                k_ptrs = k_base + (
-                    offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd
-                )
-                v_ptrs = v_base + (
-                    offs_k[:, None] * stride_vn + offs_d[None, :] * stride_vd
-                )
+                k_ptrs = k_base + (offs_k[:, None] * stride_kn + offs_d[None, :] * stride_kd)
+                v_ptrs = v_base + (offs_k[:, None] * stride_vn + offs_d[None, :] * stride_vd)
 
                 k = tl.load(k_ptrs, mask=mask_k[:, None], other=0.0)
                 v = tl.load(v_ptrs, mask=mask_k[:, None], other=0.0)
@@ -131,9 +126,7 @@ if HAS_TRITON:
 
         # Normalize output
         out = acc / (l_prev[:, None] + 1e-6)
-        out_ptrs = out_base + (
-            offs_q[:, None] * stride_on + offs_d[None, :] * stride_od
-        )
+        out_ptrs = out_base + (offs_q[:, None] * stride_on + offs_d[None, :] * stride_od)
         tl.store(out_ptrs, out.to(Out_ptr.dtype.element_ty), mask=mask_q[:, None])
 
 
@@ -227,9 +220,7 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
                 is_causal=ctx.is_causal,
                 eps=ctx.eps,
             )
-            grads = torch.autograd.grad(
-                out, [q_req, k_req, v_req], grad_out, retain_graph=False
-            )
+            grads = torch.autograd.grad(out, [q_req, k_req, v_req], grad_out, retain_graph=False)
 
         g_q = grads[0] if ctx.needs_input_grad[0] else None
         g_k = grads[1] if ctx.needs_input_grad[1] else None
@@ -237,15 +228,11 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
         return g_q, g_k, g_v, None, None, None, None
 
 
-def is_supported(
-    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, **kwargs: Any
-) -> bool:
+def is_supported(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, **kwargs: Any) -> bool:
     """Check whether block-sparse attention can run on the Triton kernel."""
     head_dim = q.shape[-1]
     seq_len = q.shape[-2]
-    suitable, _ = check_triton_suitability(
-        q, "sparse_attn", head_dim=head_dim, seq_len=seq_len
-    )
+    suitable, _ = check_triton_suitability(q, "sparse_attn", head_dim=head_dim, seq_len=seq_len)
     return suitable
 
 
@@ -271,9 +258,7 @@ def fwd(
             eps=eps,
             **kwargs,
         )
-    return _TritonSparseAttnAutogradFunction.apply(
-        q, k, v, block_mask, block_size, is_causal, eps
-    )
+    return _TritonSparseAttnAutogradFunction.apply(q, k, v, block_mask, block_size, is_causal, eps)
 
 
 def bwd(

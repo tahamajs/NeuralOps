@@ -53,9 +53,7 @@ def compute_dataset_metrics(
         return metrics
 
     ds = dataset.lower().replace("-", "")
-    metric_type = GLUE_METRIC_MAP.get(
-        ds, GLUE_METRIC_MAP.get(dataset.lower(), "accuracy")
-    )
+    metric_type = GLUE_METRIC_MAP.get(ds, GLUE_METRIC_MAP.get(dataset.lower(), "accuracy"))
 
     try:
         from scipy.stats import pearsonr, spearmanr
@@ -67,9 +65,7 @@ def compute_dataset_metrics(
     try:
         if metric_type == "mcc":
             metrics["mcc"] = round(float(matthews_corrcoef(all_labels, all_preds)), 4)
-            metrics["accuracy_pct"] = round(
-                float(accuracy_score(all_labels, all_preds)) * 100.0, 2
-            )
+            metrics["accuracy_pct"] = round(float(accuracy_score(all_labels, all_preds)) * 100.0, 2)
 
         elif metric_type == "pearson_spearman":
             p, _ = pearsonr(all_labels, all_preds)
@@ -80,9 +76,7 @@ def compute_dataset_metrics(
         elif metric_type == "f1_accuracy":
             labels_set = set(all_labels)
             avg = "binary" if len(labels_set) <= 2 else "macro"
-            metrics["accuracy_pct"] = round(
-                float(accuracy_score(all_labels, all_preds)) * 100.0, 2
-            )
+            metrics["accuracy_pct"] = round(float(accuracy_score(all_labels, all_preds)) * 100.0, 2)
             metrics["f1_score"] = round(
                 float(f1_score(all_labels, all_preds, average=avg, zero_division=0)), 4
             )
@@ -92,16 +86,12 @@ def compute_dataset_metrics(
                 metrics["perplexity"] = round(float(math.exp(min(mean_loss, 20))), 4)
 
         else:  # default: accuracy
-            metrics["accuracy_pct"] = round(
-                float(accuracy_score(all_labels, all_preds)) * 100.0, 2
-            )
+            metrics["accuracy_pct"] = round(float(accuracy_score(all_labels, all_preds)) * 100.0, 2)
             labels_set = set(all_labels)
             avg = "binary" if len(labels_set) <= 2 else "macro"
             try:
                 metrics["f1_score"] = round(
-                    float(
-                        f1_score(all_labels, all_preds, average=avg, zero_division=0)
-                    ),
+                    float(f1_score(all_labels, all_preds, average=avg, zero_division=0)),
                     4,
                 )
             except Exception:
@@ -113,9 +103,7 @@ def compute_dataset_metrics(
     return metrics
 
 
-def compute_fidelity(
-    baseline_logits_list: list[Any], compressed_logits_list: list[Any]
-) -> float:
+def compute_fidelity(baseline_logits_list: list[Any], compressed_logits_list: list[Any]) -> float:
     """Compute cosine-similarity fidelity between baseline and compressed logits."""
     if not baseline_logits_list or not compressed_logits_list:
         return 0.0

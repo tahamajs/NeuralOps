@@ -10,6 +10,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error
@@ -62,18 +63,12 @@ class CURMoECompressor(BaseCompressor):
         cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(
-            model if model is not None else nn.Identity(), name="cur_moe", **kwargs
-        )
+        super().__init__(model if model is not None else nn.Identity(), name="cur_moe", **kwargs)
         c_rank = _cfg_get(cfg, "cur_moe_rank", _cfg_get(cfg, "rank", rank))
         c_min_rank = _cfg_get(cfg, "cur_min_rank", _cfg_get(cfg, "min_rank", min_rank))
         c_method = _cfg_get(cfg, "cur_moe_method", _cfg_get(cfg, "method", method))
-        c_det = _cfg_get(
-            cfg, "cur_deterministic", _cfg_get(cfg, "deterministic", deterministic)
-        )
-        c_max_error = _cfg_get(
-            cfg, "cur_moe_max_error", _cfg_get(cfg, "max_error", max_error)
-        )
+        c_det = _cfg_get(cfg, "cur_deterministic", _cfg_get(cfg, "deterministic", deterministic))
+        c_max_error = _cfg_get(cfg, "cur_moe_max_error", _cfg_get(cfg, "max_error", max_error))
         c_fallback = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
         c_target_attn = _cfg_get(
             cfg,
@@ -113,9 +108,7 @@ class CURMoECompressor(BaseCompressor):
             or hasattr(module, "nf")
             or hasattr(target_mod, "nf")
         )
-        (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(
-            module, "base_layer"
-        )
+        (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(module, "base_layer")
 
         raw_w = target_mod.weight.data
         orig_w = raw_w.t().float() if is_conv1d else raw_w.float()
@@ -136,9 +129,9 @@ class CURMoECompressor(BaseCompressor):
 
         # Parameter reduction check: r*(in_f + out_f + r) < in_f * out_f
         target_r = min(self.rank, max_rank)
-        while target_r >= self.min_rank and (
-            target_r * (in_f + out_f + target_r)
-        ) >= 0.85 * (in_f * out_f):
+        while target_r >= self.min_rank and (target_r * (in_f + out_f + target_r)) >= 0.85 * (
+            in_f * out_f
+        ):
             target_r = int(target_r * 0.8)
 
         if target_r < self.min_rank:
@@ -169,15 +162,11 @@ class CURMoECompressor(BaseCompressor):
                     break
 
                 next_r = min(int(cur_r * 1.5), max_rank - 1)
-                if next_r <= cur_r or (next_r * (in_f + out_f + next_r)) >= 0.85 * (
-                    in_f * out_f
-                ):
+                if next_r <= cur_r or (next_r * (in_f + out_f + next_r)) >= 0.85 * (in_f * out_f):
                     break
                 cur_r = next_r
             except Exception as ex:
-                logger.warning(
-                    "CURMoECompressor: Error on %s with rank %d: %s", name, cur_r, ex
-                )
+                logger.warning("CURMoECompressor: Error on %s with rank %d: %s", name, cur_r, ex)
                 break
 
         if best_err > self.max_error or best_cur_layer is None:
@@ -198,8 +187,7 @@ class CURMoECompressor(BaseCompressor):
         compressed_layer = new_layer
 
         has_base_layer = hasattr(module, "base_layer") or (
-            hasattr(module, "linear")
-            and (hasattr(module, "lora_A") or hasattr(module, "r"))
+            hasattr(module, "linear") and (hasattr(module, "lora_A") or hasattr(module, "r"))
         )
         # Preserve existing LoRA adapter weights if the source module has them and not wrapped
         if (
@@ -231,12 +219,8 @@ class CURMoECompressor(BaseCompressor):
         if hasattr(module, "base_layer"):
             module.base_layer = compressed_layer  # put compressed layer inside wrapper
             new_module = module
-        elif hasattr(module, "linear") and (
-            hasattr(module, "lora_A") or hasattr(module, "r")
-        ):
-            module.linear = (
-                compressed_layer  # put compressed layer inside framework LoRALinear
-            )
+        elif hasattr(module, "linear") and (hasattr(module, "lora_A") or hasattr(module, "r")):
+            module.linear = compressed_layer  # put compressed layer inside framework LoRALinear
             new_module = module
         else:
             new_module = compressed_layer
@@ -258,9 +242,7 @@ class CURMoECompressor(BaseCompressor):
         self.total_comp_decomp_params += best_r * (in_f + out_f + best_r)
         return True
 
-    def compress(
-        self, model: nn.Module | None = None
-    ) -> tuple[nn.Module, dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         """Compress expert linear layers in MoE architecture, or fallback to FFN layers."""
         if model is not None:
             self.model = model
@@ -342,9 +324,7 @@ class CURMoECompressor(BaseCompressor):
         if len(self.compressed_layers) == 0:
             visited = set()
             for name, module in list(self.model.named_modules()):
-                target_mod = getattr(
-                    module, "base_layer", getattr(module, "linear", module)
-                )
+                target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
                 if id(target_mod) in visited:
                     continue
                 visited.add(id(target_mod))
@@ -388,9 +368,7 @@ class CURMoECompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         avg_err = (
-            (sum(self.layer_errors.values()) / len(self.layer_errors))
-            if self.layer_errors
-            else 0.0
+            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
         )
         effective_param_ratio = (
             self.total_comp_decomp_params / self.total_orig_decomp_params
@@ -440,24 +418,17 @@ def cur_moe_factory(
     """Factory function for CUR-MoE compressor."""
     effective_rank = kwargs.pop(
         "rank",
-        rank
-        or _cfg_get(comp_config, "cur_moe_rank", _cfg_get(comp_config, "rank", 64)),
+        rank or _cfg_get(comp_config, "cur_moe_rank", _cfg_get(comp_config, "rank", 64)),
     )
     min_rank = kwargs.pop("min_rank", _cfg_get(comp_config, "min_rank", 8))
     method = kwargs.pop(
         "method",
-        _cfg_get(
-            comp_config, "cur_moe_method", _cfg_get(comp_config, "method", "leverage")
-        ),
+        _cfg_get(comp_config, "cur_moe_method", _cfg_get(comp_config, "method", "leverage")),
     )
-    deterministic = kwargs.pop(
-        "deterministic", _cfg_get(comp_config, "deterministic", True)
-    )
+    deterministic = kwargs.pop("deterministic", _cfg_get(comp_config, "deterministic", True))
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(
-            comp_config, "cur_moe_max_error", _cfg_get(comp_config, "max_error", 0.90)
-        ),
+        _cfg_get(comp_config, "cur_moe_max_error", _cfg_get(comp_config, "max_error", 0.90)),
     )
     fallback = kwargs.pop(
         "fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True)

@@ -23,6 +23,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error
@@ -81,9 +82,7 @@ class MoDeGPTLowRankLinear(nn.Module):
         target_device = device if device is not None else U.device
         target_dtype = dtype if dtype is not None else U.dtype
 
-        self.U = nn.Parameter(
-            U.to(device=target_device, dtype=target_dtype), requires_grad=False
-        )
+        self.U = nn.Parameter(U.to(device=target_device, dtype=target_dtype), requires_grad=False)
 
         if shared_V is not None:
             # External tensor — NOT a parameter (owned by another module)
@@ -158,9 +157,7 @@ class MoDeGPTLowRankLinear(nn.Module):
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = (
-                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            )
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
             out = out + F.linear(F.linear(x, a), bb) * self.scaling
 
         return out
@@ -265,9 +262,7 @@ class MoDeGPTCompressor(BaseCompressor):
         if cfg is not None:
             rank = _cfg_get(cfg, "modegpt_rank", _cfg_get(cfg, "rank", rank))
             method = _cfg_get(cfg, "modegpt_method", _cfg_get(cfg, "method", method))
-            max_error = _cfg_get(
-                cfg, "modegpt_max_error", _cfg_get(cfg, "max_error", max_error)
-            )
+            max_error = _cfg_get(cfg, "modegpt_max_error", _cfg_get(cfg, "max_error", max_error))
             fallback_to_original = _cfg_get(
                 cfg,
                 "modegpt_fallback_to_original",
@@ -276,9 +271,7 @@ class MoDeGPTCompressor(BaseCompressor):
             lora_r = _cfg_get(cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
             skip_attention_qkv = _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
-            target_attention_only = _cfg_get(
-                cfg, "target_attention_only", target_attention_only
-            )
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
             min_rank = _cfg_get(cfg, "min_rank", min_rank)
 
         self.rank = max(1, int(rank))
@@ -384,11 +377,7 @@ class MoDeGPTCompressor(BaseCompressor):
         raw_w = target_layer.weight.data
         cls_name = target_layer.__class__.__name__.lower()
         is_conv1d = "conv1d" in cls_name or hasattr(target_layer, "nf")
-        W = (
-            raw_w.t().contiguous().clone().float()
-            if is_conv1d
-            else raw_w.clone().float()
-        )
+        W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
         return W, is_conv1d
 
     def _select_rank(self, joint_out: int, in_f: int) -> int:
@@ -494,8 +483,7 @@ class MoDeGPTCompressor(BaseCompressor):
                 if name1 in processed_names or name2 in processed_names:
                     continue
                 if not (
-                    self._is_target_module(name1, mod1)
-                    and self._is_target_module(name2, mod2)
+                    self._is_target_module(name1, mod1) and self._is_target_module(name2, mod2)
                 ):
                     continue
 
@@ -570,23 +558,13 @@ class MoDeGPTCompressor(BaseCompressor):
 
                 # Build new modules sharing V_shared
                 # MD-FIX-13: LoRA rank inherits from wrapper if present
-                lora_r_1 = (
-                    getattr(mod1, "lora_r", getattr(mod1, "r", self.lora_r))
-                    or self.lora_r
-                )
-                lora_r_2 = (
-                    getattr(mod2, "lora_r", getattr(mod2, "r", self.lora_r))
-                    or self.lora_r
-                )
+                lora_r_1 = getattr(mod1, "lora_r", getattr(mod1, "r", self.lora_r)) or self.lora_r
+                lora_r_2 = getattr(mod2, "lora_r", getattr(mod2, "r", self.lora_r)) or self.lora_r
                 bias1 = (
-                    target_l1.bias.data
-                    if getattr(target_l1, "bias", None) is not None
-                    else None
+                    target_l1.bias.data if getattr(target_l1, "bias", None) is not None else None
                 )
                 bias2 = (
-                    target_l2.bias.data
-                    if getattr(target_l2, "bias", None) is not None
-                    else None
+                    target_l2.bias.data if getattr(target_l2, "bias", None) is not None else None
                 )
 
                 in_f = W1_orig.shape[1]
@@ -687,14 +665,9 @@ class MoDeGPTCompressor(BaseCompressor):
                     continue
 
             bias = (
-                target_layer.bias.data
-                if getattr(target_layer, "bias", None) is not None
-                else None
+                target_layer.bias.data if getattr(target_layer, "bias", None) is not None else None
             )
-            lora_r = (
-                getattr(module, "lora_r", getattr(module, "r", self.lora_r))
-                or self.lora_r
-            )
+            lora_r = getattr(module, "lora_r", getattr(module, "r", self.lora_r)) or self.lora_r
             in_f = W_orig.shape[1]
             out_f = W_orig.shape[0]
 
@@ -736,9 +709,7 @@ class MoDeGPTCompressor(BaseCompressor):
                     try:
                         self.model(dummy)
                     except Exception as e2:
-                        logger.warning(
-                            "MoDeGPT post-compression forward check failed: %s", e2
-                        )
+                        logger.warning("MoDeGPT post-compression forward check failed: %s", e2)
                         forward_check_success = False
         except Exception as e:
             logger.warning("MoDeGPT forward check warning: %s", e)
@@ -818,9 +789,7 @@ def modegpt_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) ->
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(
-            comp_config, "modegpt_max_error", _cfg_get(comp_config, "max_error", 0.50)
-        ),
+        _cfg_get(comp_config, "modegpt_max_error", _cfg_get(comp_config, "max_error", 0.50)),
     )
     fallback = kwargs.pop(
         "fallback_to_original",

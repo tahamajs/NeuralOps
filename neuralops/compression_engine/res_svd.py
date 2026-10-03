@@ -18,6 +18,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -79,15 +80,11 @@ class ResSVDLinear(nn.Module):
         # Trainable Residual LoRA Adapters
         if self.residual_rank > 0:
             self.lora_A = nn.Parameter(
-                torch.empty(
-                    self.residual_rank, in_features, dtype=dtype, device=device
-                ),
+                torch.empty(self.residual_rank, in_features, dtype=dtype, device=device),
                 requires_grad=True,
             )
             self.lora_B = nn.Parameter(
-                torch.empty(
-                    out_features, self.residual_rank, dtype=dtype, device=device
-                ),
+                torch.empty(out_features, self.residual_rank, dtype=dtype, device=device),
                 requires_grad=True,
             )
         else:
@@ -95,9 +92,7 @@ class ResSVDLinear(nn.Module):
             self.register_parameter("lora_B", None)
 
         if bias:
-            self.bias = nn.Parameter(
-                torch.empty(out_features, dtype=dtype, device=device)
-            )
+            self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device))
         else:
             self.register_parameter("bias", None)
 
@@ -127,11 +122,7 @@ class ResSVDLinear(nn.Module):
             base = torch.matmul(self.base_U, self.base_V)
         else:
             base = self.base_weight
-        if (
-            self.residual_rank > 0
-            and self.lora_A is not None
-            and self.lora_B is not None
-        ):
+        if self.residual_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             res = self.scaling * torch.matmul(self.lora_B, self.lora_A)
             return base + res
         return base
@@ -149,11 +140,7 @@ class ResSVDLinear(nn.Module):
             base_out = F.linear(x, self.base_weight)
 
         # Trainable spectral residual LoRA adapter forward
-        if (
-            self.residual_rank > 0
-            and self.lora_A is not None
-            and self.lora_B is not None
-        ):
+        if self.residual_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             res_intermediate = F.linear(x, self.lora_A)
             res_out = self.scaling * F.linear(res_intermediate, self.lora_B)
             out = base_out + res_out
@@ -281,11 +268,7 @@ class ResSVDLinear(nn.Module):
             else:
                 W_base = self.base_weight.float()
 
-            if (
-                self.residual_rank > 0
-                and self.lora_A is not None
-                and self.lora_B is not None
-            ):
+            if self.residual_rank > 0 and self.lora_A is not None and self.lora_B is not None:
                 delta_W = self.scaling * (self.lora_B.float() @ self.lora_A.float())
                 W_total = W_base + delta_W
             else:
@@ -297,9 +280,7 @@ class ResSVDLinear(nn.Module):
 
         return merged_linear
 
-    def get_residual_error_norm(
-        self, original_weight: torch.Tensor | None = None
-    ) -> float:
+    def get_residual_error_norm(self, original_weight: torch.Tensor | None = None) -> float:
         """
         Calculate relative Frobenius norm reconstruction error:
         || W_orig - (W_base + scaling * B @ A) ||_F / || W_orig ||_F
@@ -310,14 +291,8 @@ class ResSVDLinear(nn.Module):
             else:
                 W_approx = self.base_weight.float()
 
-            if (
-                self.residual_rank > 0
-                and self.lora_A is not None
-                and self.lora_B is not None
-            ):
-                W_approx = W_approx + self.scaling * (
-                    self.lora_B.float() @ self.lora_A.float()
-                )
+            if self.residual_rank > 0 and self.lora_A is not None and self.lora_B is not None:
+                W_approx = W_approx + self.scaling * (self.lora_B.float() @ self.lora_A.float())
 
             if original_weight is not None:
                 W_orig = original_weight.float().to(W_approx.device)
@@ -421,9 +396,7 @@ class ResSVDCompressor(BaseCompressor):
 
         # Calculate statistics
         total_params = self._count_params(self.model)
-        trainable_params = sum(
-            p.numel() for p in self.model.parameters() if p.requires_grad
-        )
+        trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
         frozen_params = total_params - trainable_params
 
         stats = self.get_compression_stats()
@@ -466,9 +439,7 @@ def res_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Mo
     return compressed_model
 
 
-def spectral_residual_lora_factory(
-    model: Any, comp_config: Any = None, **kwargs: Any
-) -> nn.Module:
+def spectral_residual_lora_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Spectral Residual LoRA factory function."""
     compressor = SpectralResidualLoRA(model, comp_config=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()

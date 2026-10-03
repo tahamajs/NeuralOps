@@ -14,6 +14,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -71,9 +72,7 @@ def apply_rotary_pos_emb(
         sin = sin.unsqueeze(0)
 
     if cos.shape[-2] != q.shape[-2]:
-        raise ValueError(
-            f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}"
-        )
+        raise ValueError(f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}")
 
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
@@ -81,22 +80,10 @@ def apply_rotary_pos_emb(
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q_rot.dtype)
-        )
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k_rot.dtype)
-        )
-        q = (
-            torch.cat([q_rot_embed, q_pass], dim=-1)
-            if q_pass.numel() > 0
-            else q_rot_embed
-        )
-        k = (
-            torch.cat([k_rot_embed, k_pass], dim=-1)
-            if k_pass.numel() > 0
-            else k_rot_embed
-        )
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     else:
         cos_cut = cos[..., :head_dim].to(q.dtype)
         sin_cut = sin[..., :head_dim].to(q.dtype)
@@ -151,12 +138,8 @@ class FactorizedLoRALinear(nn.Module):
             self.up.bias.requires_grad = False
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty(self.lora_rank, self.in_features, **factory)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty(self.out_features, self.lora_rank, **factory)
-            )
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **factory))
+            self.lora_B = nn.Parameter(torch.empty(self.out_features, self.lora_rank, **factory))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             nn.init.zeros_(self.lora_B)
         else:
@@ -210,15 +193,9 @@ class FactorizedLoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         d_w = (
-            self.down.weight.to(x.dtype)
-            if self.down.weight.dtype != x.dtype
-            else self.down.weight
+            self.down.weight.to(x.dtype) if self.down.weight.dtype != x.dtype else self.down.weight
         )
-        u_w = (
-            self.up.weight.to(x.dtype)
-            if self.up.weight.dtype != x.dtype
-            else self.up.weight
-        )
+        u_w = self.up.weight.to(x.dtype) if self.up.weight.dtype != x.dtype else self.up.weight
         u_b = (
             self.up.bias.to(x.dtype)
             if (self.up.bias is not None and self.up.bias.dtype != x.dtype)
@@ -261,15 +238,11 @@ class RPCAttention(BaseAttention):
         except TypeError:
             super().__init__(config)
 
-        comp_config = kwargs.get(
-            "comp_config", getattr(config, "compression_config", None)
-        )
+        comp_config = kwargs.get("comp_config", getattr(config, "compression_config", None))
 
         self.dim = int(_cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768)))
         self.num_heads = int(
-            _cfg_get(
-                config, "num_attention_heads", kwargs.get("num_attention_heads", 12)
-            )
+            _cfg_get(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
         )
         self.num_kv_heads = int(
             _cfg_get(
@@ -296,8 +269,7 @@ class RPCAttention(BaseAttention):
                         break
 
         self.head_dim = int(
-            inferred
-            or (self.dim // max(1, self.num_heads) if self.num_heads > 0 else 64)
+            inferred or (self.dim // max(1, self.num_heads) if self.num_heads > 0 else 64)
         )
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
@@ -364,9 +336,7 @@ class RPCAttention(BaseAttention):
         self.lora_alpha = float(
             kwargs.get(
                 "lora_alpha",
-                _cfg_get(
-                    comp_config, "lora_alpha", _cfg_get(config, "lora_alpha", 32.0)
-                ),
+                _cfg_get(comp_config, "lora_alpha", _cfg_get(config, "lora_alpha", 32.0)),
             )
         )
 
@@ -417,14 +387,8 @@ class RPCAttention(BaseAttention):
         seed = int(kwargs.get("sketch_seed", 0xC0FFEE))
         gen = torch.Generator(device="cpu").manual_seed(seed)
         std = self.head_dim**-0.5
-        proj_q = (
-            torch.randn(self.num_heads, self.head_dim, self.sketch_rank, generator=gen)
-            * std
-        )
-        proj_k = (
-            torch.randn(self.num_heads, self.head_dim, self.sketch_rank, generator=gen)
-            * std
-        )
+        proj_q = torch.randn(self.num_heads, self.head_dim, self.sketch_rank, generator=gen) * std
+        proj_k = torch.randn(self.num_heads, self.head_dim, self.sketch_rank, generator=gen) * std
         self.register_buffer("proj_q", proj_q.float(), persistent=False)
         self.register_buffer("proj_k", proj_k.float(), persistent=False)
 
@@ -440,9 +404,7 @@ class RPCAttention(BaseAttention):
         )
 
         dropout_p = (
-            getattr(
-                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
-            )
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
             if config
             else 0.1
         )
@@ -501,9 +463,7 @@ class RPCAttention(BaseAttention):
     # SVD init
     # ------------------------------------------------------------------
     @staticmethod
-    def _svd_init(
-        w: torch.Tensor, b: torch.Tensor | None, proj: FactorizedLoRALinear
-    ) -> None:
+    def _svd_init(w: torch.Tensor, b: torch.Tensor | None, proj: FactorizedLoRALinear) -> None:
         with torch.no_grad():
             W = w.detach().float()
             if W.ndim != 2:
@@ -547,9 +507,7 @@ class RPCAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
             (
@@ -567,10 +525,7 @@ class RPCAttention(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 )
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -816,21 +771,9 @@ class RPCAttention(BaseAttention):
         L_kv = kv_input.shape[1]
 
         # ---- Projections ----
-        q = (
-            self.W_q(hidden_states)
-            .view(B, L, self.num_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
-        k = (
-            self.W_k(kv_input)
-            .view(B, L_kv, self.num_kv_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
-        v = (
-            self.W_v(kv_input)
-            .view(B, L_kv, self.num_kv_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
+        q = self.W_q(hidden_states).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        k = self.W_k(kv_input).view(B, L_kv, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        v = self.W_v(kv_input).view(B, L_kv, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
 
         # ---- RPC-08: RoPE with past_len ----
         if position_embeddings is None:
@@ -839,10 +782,7 @@ class RPCAttention(BaseAttention):
             cos, sin = position_embeddings
             past_len = 0
             if past_key_value is not None:
-                if (
-                    isinstance(past_key_value, (tuple, list))
-                    and len(past_key_value) >= 1
-                ):
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
                     past_len = past_key_value[0].shape[-2]
                 elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
                     past_len = past_key_value.key_cache[0].shape[-2]
@@ -876,9 +816,7 @@ class RPCAttention(BaseAttention):
             diag = 1 + max(0, L_kv - L)
             causal = (
                 torch.triu(
-                    torch.full(
-                        (L, L_kv), float("-inf"), device=device, dtype=torch.float32
-                    ),
+                    torch.full((L, L_kv), float("-inf"), device=device, dtype=torch.float32),
                     diagonal=diag,
                 )
                 .unsqueeze(0)
@@ -907,9 +845,7 @@ class RPCAttention(BaseAttention):
             probs = probs * head_mask.to(probs.dtype)
 
         context = torch.matmul(probs, v)
-        context = (
-            context.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
-        )
+        context = context.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         # ---- Output projection (RPC-10: assert shape) ----
@@ -919,9 +855,7 @@ class RPCAttention(BaseAttention):
             out = self.out_proj(context)
 
         if out.shape[-1] != D:
-            raise RuntimeError(
-                f"RPCAttention: output feature dim {out.shape[-1]} != input {D}"
-            )
+            raise RuntimeError(f"RPCAttention: output feature dim {out.shape[-1]} != input {D}")
 
         return out, (probs if output_attentions else None)
 
@@ -1004,9 +938,7 @@ def inject_rpc(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -1042,10 +974,7 @@ def inject_rpc(
         # Double-injection guard
         if isinstance(src, RPCAttention) or "RPCAttention" in src.__class__.__name__:
             return None
-        if (
-            "DeltaNet" in src.__class__.__name__
-            or "LinearAttention" in src.__class__.__name__
-        ):
+        if "DeltaNet" in src.__class__.__name__ or "LinearAttention" in src.__class__.__name__:
             return None
 
         new_attn = RPCAttention(

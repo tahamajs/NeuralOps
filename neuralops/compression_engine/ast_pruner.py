@@ -28,6 +28,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.pruning_utils import (
     adaptive_max_error,
@@ -127,12 +128,8 @@ class ASTPrunedLoRALinear(nn.Module):
         bias = None
         if hasattr(linear, "bias") and linear.bias is not None:
             bias = linear.bias.detach()
-        in_features = getattr(
-            linear, "in_features", getattr(linear, "nf", weight.shape[1])
-        )
-        out_features = getattr(
-            linear, "out_features", getattr(linear, "nf", weight.shape[0])
-        )
+        in_features = getattr(linear, "in_features", getattr(linear, "nf", weight.shape[1]))
+        out_features = getattr(linear, "out_features", getattr(linear, "nf", weight.shape[0]))
         return cls(
             in_features=in_features,
             out_features=out_features,
@@ -150,9 +147,7 @@ class ASTPrunedLoRALinear(nn.Module):
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             with torch.no_grad():
                 delta = (self.lora_B.float() @ self.lora_A.float()) * self.scaling
-                self.weight.data = (self.weight.data.float() + delta).to(
-                    self.weight.dtype
-                )
+                self.weight.data = (self.weight.data.float() + delta).to(self.weight.dtype)
                 self.lora_A = None
                 self.lora_B = None
                 self.lora_r = 0
@@ -225,23 +220,17 @@ class ASTPruner(BaseCompressor):
         super().__init__(model, name="ast_pruner", **kwargs)
         conf = cfg or kwargs.get("comp_config")
         if conf is not None:
-            block_size = _cfg_get(
-                conf, "ast_block_size", _cfg_get(conf, "block_size", block_size)
-            )
+            block_size = _cfg_get(conf, "ast_block_size", _cfg_get(conf, "block_size", block_size))
             n_keep = _cfg_get(conf, "ast_n_keep", _cfg_get(conf, "n_keep", n_keep))
             dim = _cfg_get(conf, "ast_dim", _cfg_get(conf, "dim", dim))
             use_pca = _cfg_get(conf, "ast_use_pca", _cfg_get(conf, "use_pca", use_pca))
-            use_fisher = _cfg_get(
-                conf, "ast_use_fisher", _cfg_get(conf, "use_fisher", use_fisher)
-            )
+            use_fisher = _cfg_get(conf, "ast_use_fisher", _cfg_get(conf, "use_fisher", use_fisher))
             recalibrate_ln = _cfg_get(
                 conf,
                 "ast_recalibrate_ln",
                 _cfg_get(conf, "recalibrate_ln", recalibrate_ln),
             )
-            max_error = _cfg_get(
-                conf, "ast_max_error", _cfg_get(conf, "max_error", max_error)
-            )
+            max_error = _cfg_get(conf, "ast_max_error", _cfg_get(conf, "max_error", max_error))
             fallback_to_original = _cfg_get(
                 conf,
                 "ast_fallback_to_original",
@@ -294,11 +283,7 @@ class ASTPruner(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if (
-            num_heads is not None
-            and num_kv_heads is not None
-            and num_kv_heads < num_heads
-        ):
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
             name_lower = name.lower()
             if any(
                 p in name_lower
@@ -318,9 +303,7 @@ class ASTPruner(BaseCompressor):
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         cls_name = module.__class__.__name__.lower()
         is_linear_like = (
-            isinstance(module, nn.Linear)
-            or "conv1d" in cls_name
-            or hasattr(module, "nf")
+            isinstance(module, nn.Linear) or "conv1d" in cls_name or hasattr(module, "nf")
         )
         if not is_linear_like or isinstance(module, ASTPrunedLoRALinear):
             return False
@@ -490,8 +473,7 @@ class ASTPruner(BaseCompressor):
                 fisher_info[k] = fisher_info[k] * inv
         else:
             logger.warning(
-                "AST: no successful backward passes; saliency "
-                "will fall back to |W| only."
+                "AST: no successful backward passes; saliency will fall back to |W| only."
             )
 
         # Build covariance map, then discard raw activations (AST-FIX-11)
@@ -499,9 +481,7 @@ class ASTPruner(BaseCompressor):
         for name, act_list in activations.items():
             if not act_list:
                 continue
-            act_concat = torch.cat(
-                [a.reshape(-1, a.shape[-1]) for a in act_list], dim=0
-            ).float()
+            act_concat = torch.cat([a.reshape(-1, a.shape[-1]) for a in act_list], dim=0).float()
             N, D = act_concat.shape
             if N < 2:
                 continue
@@ -514,9 +494,7 @@ class ASTPruner(BaseCompressor):
             # Free memory
             del act_concat, centered, mean
             if name not in fisher_info:
-                fisher_info[name] = torch.var(
-                    torch.zeros(1, D), dim=0, keepdim=True
-                ).expand(1, D)
+                fisher_info[name] = torch.var(torch.zeros(1, D), dim=0, keepdim=True).expand(1, D)
         activations.clear()
 
         return cov_map, fisher_info
@@ -620,9 +598,7 @@ class ASTPruner(BaseCompressor):
                         Q = self._pca_basis(cov_map[name], d_in, device)
                         # Project Fisher into rotated basis, then back
                         F_rot = F_mat @ (Q * Q)  # (d_out, d_in) × (d_in, d_in)
-                        F_proj = (
-                            F_rot @ Q.T
-                        )  # (d_out, d_in) × (d_in, d_in) → (d_out, d_in)
+                        F_proj = F_rot @ Q.T  # (d_out, d_in) × (d_in, d_in) → (d_out, d_in)
                     else:
                         F_proj = F_mat
                 elif F_mat.shape[-1] == d_in and F_mat.dim() == 1:
@@ -639,9 +615,7 @@ class ASTPruner(BaseCompressor):
             # ------------------------------------------------------------------
             # 2. Apply 2:4 structured mask on ORIGINAL weights
             # ------------------------------------------------------------------
-            W_pruned, _mask = apply_24_structured_mask(
-                W, saliency=saliency, dim=self.dim
-            )
+            W_pruned, _mask = apply_24_structured_mask(W, saliency=saliency, dim=self.dim)
             W_final = torch.nan_to_num(W_pruned, nan=0.0, posinf=0.0, neginf=0.0)
 
             # ------------------------------------------------------------------
@@ -687,18 +661,14 @@ class ASTPruner(BaseCompressor):
                             isinstance(src_a, torch.Tensor)
                             and src_a.shape == new_layer.lora_A.shape
                         ):
-                            new_layer.lora_A.data.copy_(
-                                src_a.to(new_layer.lora_A.dtype)
-                            )
+                            new_layer.lora_A.data.copy_(src_a.to(new_layer.lora_A.dtype))
                     if hasattr(module, "lora_B") and module.lora_B is not None:
                         src_b = getattr(module.lora_B, "weight", module.lora_B)
                         if (
                             isinstance(src_b, torch.Tensor)
                             and src_b.shape == new_layer.lora_B.shape
                         ):
-                            new_layer.lora_B.data.copy_(
-                                src_b.to(new_layer.lora_B.dtype)
-                            )
+                            new_layer.lora_B.data.copy_(src_b.to(new_layer.lora_B.dtype))
 
                     # Swap the base layer in place
                     if hasattr(module, "base_layer"):
@@ -825,19 +795,13 @@ def ast_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> An
         "n_keep",
         _cfg_get(comp_config, "ast_n_keep", _cfg_get(comp_config, "n_keep", 2)),
     )
-    dim = kwargs.pop(
-        "dim", _cfg_get(comp_config, "ast_dim", _cfg_get(comp_config, "dim", 1))
-    )
+    dim = kwargs.pop("dim", _cfg_get(comp_config, "ast_dim", _cfg_get(comp_config, "dim", 1)))
     use_pca = kwargs.pop("use_pca", _cfg_get(comp_config, "ast_use_pca", True))
     use_fisher = kwargs.pop("use_fisher", _cfg_get(comp_config, "ast_use_fisher", True))
-    recalibrate_ln = kwargs.pop(
-        "recalibrate_ln", _cfg_get(comp_config, "ast_recalibrate_ln", True)
-    )
+    recalibrate_ln = kwargs.pop("recalibrate_ln", _cfg_get(comp_config, "ast_recalibrate_ln", True))
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(
-            comp_config, "ast_max_error", _cfg_get(comp_config, "max_error", 0.20)
-        ),
+        _cfg_get(comp_config, "ast_max_error", _cfg_get(comp_config, "max_error", 0.20)),
     )
     fallback = kwargs.pop(
         "fallback_to_original",

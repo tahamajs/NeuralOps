@@ -34,11 +34,11 @@ def format_time(seconds: float) -> str:
 def format_number(num: int) -> str:
     """Format number."""
     if abs(num) >= 1_000_000_000:
-        return f"{num/1_000_000_000:.1f}B"
+        return f"{num / 1_000_000_000:.1f}B"
     if abs(num) >= 1_000_000:
-        return f"{num/1_000_000:.1f}M"
+        return f"{num / 1_000_000:.1f}M"
     if abs(num) >= 1_000:
-        return f"{num/1_000:.0f}K"
+        return f"{num / 1_000:.0f}K"
     return str(num)
 
 

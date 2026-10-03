@@ -1,21 +1,24 @@
 # framework/experiment/data.py
 from typing import Any
 
+from transformers import AutoTokenizer
+
 from neuralops.data.glue_loader import (
     GLUE_TASK_KEYS,
     get_num_labels_and_is_regression,
     load_glue_local,
 )
 from neuralops.data.preprocessing import preprocess_function as build_preprocess
-from transformers import AutoTokenizer
 
 
 def load_and_preprocess_data(config) -> Any:
     """Load and preprocess data from disk or config."""
     from neuralops.utils.paths import get_glue_dir
+
     glue_path = str(get_glue_dir())
     try:
         from django.conf import settings
+
         if settings.configured and hasattr(settings, "GLUE_DATA_PATH"):
             glue_path = settings.GLUE_DATA_PATH
     except Exception:

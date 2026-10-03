@@ -8,6 +8,15 @@ import os
 from pathlib import Path
 from typing import Any
 
+from transformers import (
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    DataCollatorWithPadding,
+    Trainer,
+    TrainerCallback,
+    TrainingArguments,
+)
+
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.core.utils import get_device, set_seed
 from neuralops.data.dataset_loader import ExperimentConfig as data_ExperimentConfig
@@ -24,14 +33,6 @@ from neuralops.trainer.callbacks import (
 )
 from neuralops.trainer.trainer_factory import get_trainer
 from neuralops.utils.layer_norm_fix import fix_layernorm_naming
-from transformers import (
-    AutoModelForSequenceClassification,
-    AutoTokenizer,
-    DataCollatorWithPadding,
-    Trainer,
-    TrainerCallback,
-    TrainingArguments,
-)
 
 # ---------- Safe import of LoggingCallback ----------
 try:
@@ -256,9 +257,7 @@ def run_compression(config, output_dir) -> Any:
     tokenizer.save_pretrained(output_dir)
 
     original_bytes = sum(p.numel() * p.element_size() for p in model.parameters())
-    compressed_bytes = sum(
-        p.numel() * p.element_size() for p in compressed_model.parameters()
-    )
+    compressed_bytes = sum(p.numel() * p.element_size() for p in compressed_model.parameters())
     reduction_ratio = original_bytes / compressed_bytes if compressed_bytes > 0 else 1
 
     stats = {
@@ -275,6 +274,7 @@ def run_compression(config, output_dir) -> Any:
 def main() -> None:
     """Main."""
     from experiment_logging.logger import LoggingConfig, MetricsTracker, setup_logging
+
     from neuralops.experiment_utils.config import build_config_from_args
 
     cfg = build_config_from_args()
@@ -293,9 +293,7 @@ def main() -> None:
         use_timestamp=cfg.use_timestamp,
     )
     logger = setup_logging(log_cfg)
-    tracker = MetricsTracker(
-        save_path=os.path.join(cfg.log_dir, f"{exp_name}_metrics.json")
-    )
+    tracker = MetricsTracker(save_path=os.path.join(cfg.log_dir, f"{exp_name}_metrics.json"))
 
     logger.info("══════════════════════════════════════")
     logger.info(f"🚀 Experiment: {exp_name}")
@@ -323,9 +321,7 @@ def main() -> None:
         cols.append("token_type_ids")
     dataset.set_format(type="torch", columns=cols)
 
-    logger.info(
-        f"Train: {len(dataset['train'])}, Val: {len(dataset.get('validation', []))}"
-    )
+    logger.info(f"Train: {len(dataset['train'])}, Val: {len(dataset.get('validation', []))}")
 
     model = AutoModelForSequenceClassification.from_pretrained(
         cfg.model_name, num_labels=num_labels

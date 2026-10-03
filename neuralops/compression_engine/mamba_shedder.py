@@ -30,6 +30,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.pruning_utils import (
     apply_24_structured_mask,
@@ -210,9 +211,7 @@ class MambaShedderCompressor(BaseCompressor):
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
 
         if cfg is not None:
-            sparsity = _cfg_get(
-                cfg, "mamba_shedder_sparsity", _cfg_get(cfg, "sparsity", sparsity)
-            )
+            sparsity = _cfg_get(cfg, "mamba_shedder_sparsity", _cfg_get(cfg, "sparsity", sparsity))
             shed_layers = _cfg_get(
                 cfg,
                 "mamba_shedder_shed_layers",
@@ -224,12 +223,8 @@ class MambaShedderCompressor(BaseCompressor):
                 _cfg_get(cfg, "structured_24", structured_24),
             )
             max_error = _cfg_get(cfg, "max_error", max_error)
-            fallback_to_original = _cfg_get(
-                cfg, "fallback_to_original", fallback_to_original
-            )
-            target_attention_only = _cfg_get(
-                cfg, "target_attention_only", target_attention_only
-            )
+            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
             max_calibration_batches = _cfg_get(
                 cfg, "max_calibration_batches", max_calibration_batches
             )
@@ -279,9 +274,7 @@ class MambaShedderCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     # Target check (MS-FIX-16: cached)
     # ------------------------------------------------------------------
-    def _is_target_module(
-        self, name: str, module: nn.Module, _debug: bool = False
-    ) -> bool:
+    def _is_target_module(self, name: str, module: nn.Module, _debug: bool = False) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
             if _debug:
@@ -316,9 +309,7 @@ class MambaShedderCompressor(BaseCompressor):
         base_mod = getattr(module, "base_layer", module)
         cls_lower = base_mod.__class__.__name__.lower()
         is_linear_like = (
-            isinstance(base_mod, nn.Linear)
-            or "conv1d" in cls_lower
-            or hasattr(base_mod, "nf")
+            isinstance(base_mod, nn.Linear) or "conv1d" in cls_lower or hasattr(base_mod, "nf")
         )
         if not is_linear_like:
             if _debug:
@@ -528,24 +519,16 @@ class MambaShedderCompressor(BaseCompressor):
                             hidden = getattr(cfg, "hidden_size", None) if cfg else None
                             if hidden is None:
                                 first_lin = next(
-                                    (
-                                        m
-                                        for m in self.model.modules()
-                                        if isinstance(m, nn.Linear)
-                                    ),
+                                    (m for m in self.model.modules() if isinstance(m, nn.Linear)),
                                     None,
                                 )
                                 hidden = getattr(first_lin, "in_features", 8)
                             dt = next(self.model.parameters()).dtype
                             self.model(
-                                torch.randn(
-                                    1, 8, hidden, device=self.target_device, dtype=dt
-                                )
+                                torch.randn(1, 8, hidden, device=self.target_device, dtype=dt)
                             )
             except Exception as e:
-                logger.warning(
-                    "MambaShedder: shedding validation failed (%s); reverting.", e
-                )
+                logger.warning("MambaShedder: shedding validation failed (%s); reverting.", e)
                 setattr(container_parent, container_attr, old_container)
                 return 0
 
@@ -703,9 +686,7 @@ class MambaShedderCompressor(BaseCompressor):
                 if getattr(base_mod, "bias", None) is not None:
                     b_full = base_mod.bias.data.float()
                     bias_kept = (
-                        b_full.index_select(0, keep_idx)
-                        .contiguous()
-                        .to(dtype=dtype, device=device)
+                        b_full.index_select(0, keep_idx).contiguous().to(dtype=dtype, device=device)
                     )
 
                 # Existing LoRA
@@ -793,11 +774,7 @@ class MambaShedderCompressor(BaseCompressor):
                         hidden = getattr(cfg, "hidden_size", None) if cfg else None
                         if hidden is None:
                             first_lin = next(
-                                (
-                                    m
-                                    for m in self.model.modules()
-                                    if isinstance(m, nn.Linear)
-                                ),
+                                (m for m in self.model.modules() if isinstance(m, nn.Linear)),
                                 None,
                             )
                             hidden = getattr(first_lin, "in_features", 8)
@@ -821,9 +798,7 @@ class MambaShedderCompressor(BaseCompressor):
             else 0.0
         )
 
-        storage_ratio = (
-            total_orig_bytes / max(1, total_comp_bytes) if total_comp_bytes > 0 else 1.0
-        )
+        storage_ratio = total_orig_bytes / max(1, total_comp_bytes) if total_comp_bytes > 0 else 1.0
         effective_ratio = (
             total_comp_bytes / max(1, total_orig_bytes) if total_orig_bytes > 0 else 1.0
         )

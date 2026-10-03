@@ -104,11 +104,7 @@ class RLTrainer(BaseTrainer):
                         logits = (
                             outputs.logits
                             if hasattr(outputs, "logits")
-                            else (
-                                outputs["logits"]
-                                if isinstance(outputs, dict)
-                                else outputs
-                            )
+                            else (outputs["logits"] if isinstance(outputs, dict) else outputs)
                         )
                         if labels is not None:
                             loss = nn.functional.cross_entropy(
@@ -124,9 +120,7 @@ class RLTrainer(BaseTrainer):
 
                     if torch.isfinite(loss):
                         loss.backward()
-                        torch.nn.utils.clip_grad_norm_(
-                            self.model.parameters(), max_norm=1.0
-                        )
+                        torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
                         optimizer.step()
                         total_loss += loss.item()
                         steps += 1
@@ -170,11 +164,7 @@ class RLTrainer(BaseTrainer):
                         logits = (
                             outputs.logits
                             if hasattr(outputs, "logits")
-                            else (
-                                outputs["logits"]
-                                if isinstance(outputs, dict)
-                                else outputs
-                            )
+                            else (outputs["logits"] if isinstance(outputs, dict) else outputs)
                         )
                         if labels is not None:
                             loss = nn.functional.cross_entropy(

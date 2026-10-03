@@ -86,9 +86,7 @@ def main():
                 }
             )
             Path(args.output_json).parent.mkdir(parents=True, exist_ok=True)
-            Path(args.output_json).write_text(
-                json.dumps(result, indent=2), encoding="utf-8"
-            )
+            Path(args.output_json).write_text(json.dumps(result, indent=2), encoding="utf-8")
             sys.exit(0)
 
         # CRITICAL: force parallel=1 so run_single_module_main uses the inline
@@ -119,11 +117,7 @@ def main():
                     f"base_delta={base_delta} (+{base_delta_pct:.1f}%) lora_excluded={lora_p}"
                 )
                 error_msg = f"{error_msg}; {expansion_err}".strip("; ")
-            elif (
-                base_params_after > p_before
-                and base_delta > 1024
-                and base_delta_pct > 0.05
-            ):
+            elif base_params_after > p_before and base_delta > 1024 and base_delta_pct > 0.05:
                 status = "MODERATE_EXPANSION"
                 expansion_err = (
                     f"MODERATE_EXPANSION: base_before={p_before} base_after={base_params_after} "
@@ -138,11 +132,7 @@ def main():
             or str(getattr(args, "dataset", "")).lower() == "c4"
             or getattr(args, "task_type", "") == "causal_lm"
         )
-        if (
-            not is_lm
-            and status in ("PASS", "PASS_LOW")
-            and (acc_val <= 0.0 or elapsed_val < 0.5)
-        ):
+        if not is_lm and status in ("PASS", "PASS_LOW") and (acc_val <= 0.0 or elapsed_val < 0.5):
             status = "EVAL_FAILED"
             fail_err = f"EVAL_FAILED: invalid evaluation results (acc={acc_val:.2f}%, elapsed={elapsed_val:.2f}s)"
             error_msg = f"{error_msg}; {fail_err}".strip("; ")
@@ -165,12 +155,9 @@ def main():
                 "peak_vram_mb": float(metrics.get("peak_vram_mb", 0.0) or 0.0),
                 "tokens_per_sec": float(metrics.get("tokens_per_sec", 0.0) or 0.0),
                 "throughput": float(metrics.get("tokens_per_sec", 0.0) or 0.0),
-                "throughput_tok_per_sec": float(
-                    metrics.get("tokens_per_sec", 0.0) or 0.0
-                ),
+                "throughput_tok_per_sec": float(metrics.get("tokens_per_sec", 0.0) or 0.0),
                 "latency_ms_per_token": float(
-                    metrics.get("latency_ms_per_token", metrics.get("latency_ms", 0.0))
-                    or 0.0
+                    metrics.get("latency_ms_per_token", metrics.get("latency_ms", 0.0)) or 0.0
                 ),
                 "elapsed_s": float(metrics.get("elapsed_s", 0.0) or 0.0),
                 "perplexity": (
@@ -188,40 +175,23 @@ def main():
                 "params_after": p_after,
                 "total_params_before": p_before,
                 "total_params_after": p_after,
-                "trainable_recovery_params": int(
-                    metrics.get("trainable_recovery_params", 0) or 0
-                ),
+                "trainable_recovery_params": int(metrics.get("trainable_recovery_params", 0) or 0),
                 "compression_ratio": float(metrics.get("compression_rate", 1.0) or 1.0),
                 "compression_rate": float(metrics.get("compression_rate", 1.0) or 1.0),
-                "compression_rate_raw": float(
-                    metrics.get("compression_rate_raw", 1.0) or 1.0
-                ),
-                "compression_rate_net": float(
-                    metrics.get("compression_rate_net", 1.0) or 1.0
-                ),
-                "compression_ratio_pct": float(
-                    metrics.get("compression_ratio_pct", 0.0) or 0.0
-                ),
-                "flops_reduction_pct": float(
-                    metrics.get("flops_reduction_pct", 0.0) or 0.0
-                ),
-                "num_compressed_layers": int(
-                    metrics.get("num_compressed_layers", 0) or 0
-                ),
+                "compression_rate_raw": float(metrics.get("compression_rate_raw", 1.0) or 1.0),
+                "compression_rate_net": float(metrics.get("compression_rate_net", 1.0) or 1.0),
+                "compression_ratio_pct": float(metrics.get("compression_ratio_pct", 0.0) or 0.0),
+                "flops_reduction_pct": float(metrics.get("flops_reduction_pct", 0.0) or 0.0),
+                "num_compressed_layers": int(metrics.get("num_compressed_layers", 0) or 0),
                 "num_fallback_layers": int(metrics.get("num_fallback_layers", 0) or 0),
-                "avg_reconstruction_error": metrics.get("avg_reconstruction_error", "")
-                or "",
-                "weighted_reconstruction_error": metrics.get(
-                    "weighted_reconstruction_error", ""
-                )
+                "avg_reconstruction_error": metrics.get("avg_reconstruction_error", "") or "",
+                "weighted_reconstruction_error": metrics.get("weighted_reconstruction_error", "")
                 or "",
                 "num_injected_attention_layers": int(
                     metrics.get("num_injected_attention_layers", 0) or 0
                 ),
                 "lora_params": int(metrics.get("lora_params", 0) or 0),
-                "calibration_time_s": float(
-                    metrics.get("calibration_time_s", 0.0) or 0.0
-                ),
+                "calibration_time_s": float(metrics.get("calibration_time_s", 0.0) or 0.0),
                 "recovery_time_s": float(metrics.get("recovery_time_s", 0.0) or 0.0),
                 # Path
                 "path": metrics.get("path", "") or "",

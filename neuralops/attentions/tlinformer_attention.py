@@ -15,6 +15,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 
@@ -146,9 +147,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = (
-                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            )
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -190,9 +189,7 @@ class TLinFormerAttention(BaseAttention):
         comp_config = getattr(config, "compression_config", None)
 
         # ---- hidden size / heads ----
-        self.hidden_size = getattr(
-            config, "hidden_size", kwargs.get("hidden_size", 768)
-        )
+        self.hidden_size = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
         if config is None or not hasattr(config, "hidden_size"):
             if pretrained_attn is not None:
                 for cand in ("q_lin", "query", "q_proj", "c_attn"):
@@ -204,9 +201,7 @@ class TLinFormerAttention(BaseAttention):
                             break
 
         self.num_heads = int(
-            getattr(
-                config, "num_attention_heads", kwargs.get("num_attention_heads", 12)
-            )
+            getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
             if config
             else 12
         )
@@ -248,9 +243,7 @@ class TLinFormerAttention(BaseAttention):
         # ---- decoder detection ----
         _mt = (getattr(config, "model_type", "") if config else "").lower()
         is_dec = bool(
-            getattr(config, "is_decoder", kwargs.get("is_decoder", False))
-            if config
-            else False
+            getattr(config, "is_decoder", kwargs.get("is_decoder", False)) if config else False
         )
         if any(
             _mt.startswith(p)
@@ -351,11 +344,7 @@ class TLinFormerAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
-        src = (
-            pretrained_attn
-            if pretrained_attn is not None
-            else kwargs.get("source_attn")
-        )
+        src = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
         if src is not None:
             self.copy_weights(src)
 
@@ -434,10 +423,7 @@ class TLinFormerAttention(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 )
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -611,9 +597,7 @@ class TLinFormerAttention(BaseAttention):
 
                 if b is not None and target.bias is not None:
                     mn = min(target.bias.numel(), b.numel())
-                    target.bias.data[:mn].copy_(
-                        b[:mn].to(target.bias.device, target.bias.dtype)
-                    )
+                    target.bias.data[:mn].copy_(b[:mn].to(target.bias.device, target.bias.dtype))
                 elif target.bias is not None:
                     nn.init.zeros_(target.bias)
 
@@ -779,9 +763,7 @@ class TLinFormerAttention(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         # ---- valid mask ----
-        valid = self._prepare_valid_mask(
-            attention_mask, B, N, hidden_states.device
-        )  # (B, N)
+        valid = self._prepare_valid_mask(attention_mask, B, N, hidden_states.device)  # (B, N)
         key_mask = valid.unsqueeze(1).unsqueeze(2)  # (B,1,1,N)
         q_mask = valid.unsqueeze(1).unsqueeze(-1)  # (B,1,N,1)
 
@@ -789,10 +771,7 @@ class TLinFormerAttention(BaseAttention):
 
         # ---- decoder / causal path: dense attention (TLF-FIX-01) ----
         if self.is_decoder:
-            scores = (
-                torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous())
-                * scale
-            )
+            scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
             causal = torch.triu(
                 torch.full((N, N), -1e4, device=scores.device, dtype=torch.float32),
                 diagonal=1,
@@ -805,9 +784,7 @@ class TLinFormerAttention(BaseAttention):
             attn = self.dropout(attn)
             # TLF-FIX-03: head_mask correctly
             if head_mask is not None:
-                attn = attn * self._reshape_head_mask(
-                    head_mask, B, H, attn.device, attn.dtype
-                )
+                attn = attn * self._reshape_head_mask(head_mask, B, H, attn.device, attn.dtype)
             ctx = torch.matmul(attn, v)
             # zero-out padded query positions
             ctx = ctx * q_mask.to(ctx.dtype)
@@ -820,19 +797,14 @@ class TLinFormerAttention(BaseAttention):
         # as the base model. Otherwise use the low-rank projection.
         if self.rank >= N:
             # Degenerate case → exact dense attention (safe baseline)
-            scores = (
-                torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous())
-                * scale
-            )
+            scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
             # TLF-FIX-10: mask KEYS
             scores = scores.masked_fill(~key_mask, -1e4)
             attn = F.softmax(scores, dim=-1).to(hidden_states.dtype)
             attn = torch.nan_to_num(attn, nan=0.0)
             attn = self.dropout(attn)
             if head_mask is not None:
-                attn = attn * self._reshape_head_mask(
-                    head_mask, B, H, attn.device, attn.dtype
-                )
+                attn = attn * self._reshape_head_mask(head_mask, B, H, attn.device, attn.dtype)
             ctx = torch.matmul(attn, v)
             ctx = ctx * q_mask.to(ctx.dtype)
             ctx = ctx.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
@@ -856,10 +828,7 @@ class TLinFormerAttention(BaseAttention):
         V_proj = torch.matmul(P_v, v_for_proj)  # (B, H, r, Dh)
 
         # scores: (B, H, N, r)
-        scores = (
-            torch.matmul(q.float(), K_proj.float().transpose(-2, -1).contiguous())
-            * scale
-        )
+        scores = torch.matmul(q.float(), K_proj.float().transpose(-2, -1).contiguous()) * scale
 
         # TLF-FIX-10: mask keys (padded positions were zeroed but we still
         # want to explicitly prevent attention to them)
@@ -874,9 +843,7 @@ class TLinFormerAttention(BaseAttention):
 
         # TLF-FIX-03: head_mask correctly
         if head_mask is not None:
-            attn = attn * self._reshape_head_mask(
-                head_mask, B, H, attn.device, attn.dtype
-            )
+            attn = attn * self._reshape_head_mask(head_mask, B, H, attn.device, attn.dtype)
 
         # context: (B, H, N, r) @ (B, H, r, Dh) → (B, H, N, Dh)
         ctx = torch.matmul(attn, V_proj)
@@ -1008,9 +975,7 @@ def inject_tlinformer(
                     ):
                         n_o = torch.norm(orig_out.float(), p="fro").clamp_min(1e-12)
                         output_error = float(
-                            (
-                                torch.norm((orig_out - new_out).float(), p="fro") / n_o
-                            ).item()
+                            (torch.norm((orig_out - new_out).float(), p="fro") / n_o).item()
                         )
 
                 if max_err is not None and output_error > max_err:
@@ -1024,9 +989,7 @@ def inject_tlinformer(
                         p.requires_grad = False
                     return None
             except Exception as ex:
-                logger.debug(
-                    "TLinFormer validation on layer %d failed: %s", layer_idx, ex
-                )
+                logger.debug("TLinFormer validation on layer %d failed: %s", layer_idx, ex)
 
         # splice
         if hasattr(layer, "attention") and hasattr(layer.attention, "self"):

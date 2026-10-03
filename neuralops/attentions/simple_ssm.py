@@ -18,6 +18,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.attentions.gated_delta_net import LoRALinear
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.base import BaseAttention
@@ -72,12 +73,8 @@ def apply_rotary_pos_emb(
     q_rot_embed = (q_rot * cos_cut) + (_rotate_half(q_rot) * sin_cut)
     k_rot_embed = (k_rot * cos_cut) + (_rotate_half(k_rot) * sin_cut)
 
-    q_out = (
-        torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-    )
-    k_out = (
-        torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
-    )
+    q_out = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+    k_out = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     return q_out, k_out
 
 
@@ -118,29 +115,18 @@ class SimpleSSM(BaseAttention):
         dim = d_model or _get("hidden_size") or _get("d_model") or _get("dim") or 64
         self.dim = int(dim)
 
-        heads = (
-            num_heads
-            or _get("num_attention_heads")
-            or _get("num_heads")
-            or _get("n_head")
-            or 4
-        )
+        heads = num_heads or _get("num_attention_heads") or _get("num_heads") or _get("n_head") or 4
         self.num_heads = int(heads)
 
         kv_heads = (
-            num_kv_heads
-            or _get("num_key_value_heads")
-            or _get("num_kv_heads")
-            or self.num_heads
+            num_kv_heads or _get("num_key_value_heads") or _get("num_kv_heads") or self.num_heads
         )
         self.num_kv_heads = int(kv_heads)
         self.head_dim = int(_get("head_dim", self.dim // max(1, self.num_heads)))
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         self.lora_rank = int(_get("lora_rank", kwargs.get("lora_rank", lora_rank)))
-        self.lora_alpha = float(
-            _get("lora_alpha", kwargs.get("lora_alpha", lora_alpha))
-        )
+        self.lora_alpha = float(_get("lora_alpha", kwargs.get("lora_alpha", lora_alpha)))
         self.freeze_base = self.lora_rank > 0
 
         # Projections
@@ -239,9 +225,7 @@ class SimpleSSM(BaseAttention):
             if w is not None:
                 d_out = min(w.shape[0], self.dim)
                 d_in = min(w.shape[1], self.dim)
-                self.in_proj.weight.data[:d_out, :d_in].copy_(
-                    w[:d_out, :d_in].to(target_dtype)
-                )
+                self.in_proj.weight.data[:d_out, :d_in].copy_(w[:d_out, :d_in].to(target_dtype))
                 if b is not None and self.in_proj.bias is not None:
                     self.in_proj.bias.data[: min(b.shape[0], self.dim)].copy_(
                         b[: min(b.shape[0], self.dim)].to(target_dtype)
@@ -284,16 +268,10 @@ class SimpleSSM(BaseAttention):
         # RoPE
         pos_emb = position_embeddings or kwargs.get("position_embeddings")
         pos_ids = kwargs.get("position_ids")
-        if (
-            pos_emb is not None
-            and isinstance(pos_emb, (tuple, list))
-            and len(pos_emb) >= 2
-        ):
+        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
             if cos is not None and sin is not None:
-                u_heads, _ = apply_rotary_pos_emb(
-                    u_heads, u_heads, cos, sin, position_ids=pos_ids
-                )
+                u_heads, _ = apply_rotary_pos_emb(u_heads, u_heads, cos, sin, position_ids=pos_ids)
 
         decay = torch.sigmoid(self.decay_param.to(target_dtype)).view(1, H, 1, 1)
         log_decay = torch.log(decay.clamp(min=1e-4, max=1.0 - 1e-4))
@@ -302,14 +280,10 @@ class SimpleSSM(BaseAttention):
         pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)
 
         if self.is_decoder:
-            tril = torch.tril(
-                torch.ones(L, L, device=hidden_states.device, dtype=target_dtype)
-            )
+            tril = torch.tril(torch.ones(L, L, device=hidden_states.device, dtype=target_dtype))
             decay_mat = (
                 torch.exp(
-                    (pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(
-                        min=-30.0, max=0.0
-                    )
+                    (pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(min=-30.0, max=0.0)
                 )
                 * tril
             )
@@ -317,12 +291,7 @@ class SimpleSSM(BaseAttention):
             dist = torch.abs(pos_diff).unsqueeze(0).unsqueeze(0)
             decay_mat = torch.exp((dist * log_decay).clamp(min=-30.0, max=0.0))
 
-        y = (
-            (decay_mat.to(target_dtype) @ u_heads)
-            .transpose(1, 2)
-            .contiguous()
-            .view(B, L, H * d)
-        )
+        y = (decay_mat.to(target_dtype) @ u_heads).transpose(1, 2).contiguous().view(B, L, H * d)
         if y.shape[-1] != self.dim:
             if y.shape[-1] < self.dim:
                 y = F.pad(y, (0, self.dim - y.shape[-1]))
@@ -364,16 +333,12 @@ def inject_simple_ssm(
     for attr in ("attention", "self_attn", "attn", "self"):
         if hasattr(target, attr):
             old = getattr(target, attr)
-            new_block = SimpleSSM(
-                config=cfg, old_attn=old, lora_rank=lora_rank, **kwargs
-            )
+            new_block = SimpleSSM(config=cfg, old_attn=old, lora_rank=lora_rank, **kwargs)
             setattr(target, attr, new_block)
             return new_block
 
     if isinstance(target, nn.Module) and not hasattr(target, "forward"):
-        new_block = SimpleSSM(
-            config=cfg, old_attn=old_attn, lora_rank=lora_rank, **kwargs
-        )
+        new_block = SimpleSSM(config=cfg, old_attn=old_attn, lora_rank=lora_rank, **kwargs)
         return new_block
 
     return None

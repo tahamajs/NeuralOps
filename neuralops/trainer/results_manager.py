@@ -68,9 +68,7 @@ class ResultsManager:
         if self.log_to_file:
             fh = logging.FileHandler(self.log_dir / "run.log")
             fh.setFormatter(
-                logging.Formatter(
-                    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-                )
+                logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
             )
             logger.addHandler(fh)
         return logger
@@ -110,9 +108,7 @@ class ResultsManager:
         cfg = {"hf_options": {"repo_id": repo_id}} if repo_id else self.config
         hf_backend.push(self.experiment_name, self.run_dir, cfg)
 
-    def generate_summary_report(
-        self, final_metrics: dict[str, Any] | None = None
-    ) -> None:
+    def generate_summary_report(self, final_metrics: dict[str, Any] | None = None) -> None:
         """Generate structured markdown and json summary reports for the run."""
 
         def _make_serializable(obj):
@@ -144,9 +140,7 @@ class ResultsManager:
             "total_steps": len(self.history),
             "config": _make_serializable(self.config),
             "final_metrics": _sanitize_json_value(
-                _make_serializable(
-                    final_metrics or (self.history[-1] if self.history else {})
-                )
+                _make_serializable(final_metrics or (self.history[-1] if self.history else {}))
             ),
             "timestamp": datetime.now().isoformat(),
         }

@@ -115,9 +115,7 @@ class ModelConfig:
     trust_remote_code: bool = False
     cache_dir: str = "./cache"
     fix_layernorm_naming: bool = True
-    variants: list[str] = field(
-        default_factory=list
-    )  # e.g., ["standard", "compressed"]
+    variants: list[str] = field(default_factory=list)  # e.g., ["standard", "compressed"]
 
 
 @dataclass
@@ -274,9 +272,7 @@ class SweepConfig:
 class ExperimentConfig:
     """Multi‑run experiment grid (SVD ranks, datasets, models)."""
 
-    base_models: dict[str, str] = field(
-        default_factory=lambda: {"bert": "bert-base-uncased"}
-    )
+    base_models: dict[str, str] = field(default_factory=lambda: {"bert": "bert-base-uncased"})
     svd_ranks: list[int] = field(default_factory=lambda: [8, 16, 32])
     datasets: list[DatasetConfig] = field(default_factory=list)
     min_samples: int = 10

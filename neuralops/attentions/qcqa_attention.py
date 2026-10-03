@@ -143,21 +143,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -193,9 +187,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
         return out
 
@@ -221,9 +213,7 @@ class QCQAAttention(BaseAttention):
         rank = kwargs.pop("rank", 64)
         super().__init__(config, rank)
         self.config = config
-        comp_config = kwargs.get("comp_config") or getattr(
-            config, "compression_config", None
-        )
+        comp_config = kwargs.get("comp_config") or getattr(config, "compression_config", None)
 
         # hidden_size detection
         h_size = (
@@ -254,9 +244,7 @@ class QCQAAttention(BaseAttention):
             or 12
         )
 
-        cfg_kv = getattr(
-            config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
-        )
+        cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
         if num_kv_heads is not None:
             self.num_kv_heads = int(num_kv_heads)
         elif cfg_kv is not None:
@@ -365,11 +353,7 @@ class QCQAAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
-        source_attn = (
-            pretrained_attn
-            if pretrained_attn is not None
-            else kwargs.get("source_attn")
-        )
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -382,9 +366,7 @@ class QCQAAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
 
         is_nested = False
         if (
@@ -540,9 +522,7 @@ class QCQAAttention(BaseAttention):
                             nn.init.zeros_(target_mod.bias)
                         continue
                     else:
-                        raise RuntimeError(
-                            f"QCQAAttention: missing weight for {proj_key}."
-                        )
+                        raise RuntimeError(f"QCQAAttention: missing weight for {proj_key}.")
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
@@ -580,8 +560,7 @@ class QCQAAttention(BaseAttention):
                 norm = float(torch.linalg.norm(target_mod.weight.float()).item())
                 if norm < 1e-4:
                     logger.warning(
-                        "QCQAAttention: weight for '%s' has near-zero "
-                        "Frobenius norm (%.2e).",
+                        "QCQAAttention: weight for '%s' has near-zero Frobenius norm (%.2e).",
                         proj_key,
                         norm,
                     )
@@ -660,12 +639,8 @@ class QCQAAttention(BaseAttention):
 
         # --- Projections ---
         q = self.q_proj(hidden_states).view(B, L, self.num_heads, self.head_dim)
-        k_new = self.k_proj(kv_input).view(
-            B, N_kv_new, self.num_kv_heads, self.head_dim
-        )
-        v_new = self.v_proj(kv_input).view(
-            B, N_kv_new, self.num_kv_heads, self.head_dim
-        )
+        k_new = self.k_proj(kv_input).view(B, N_kv_new, self.num_kv_heads, self.head_dim)
+        v_new = self.v_proj(kv_input).view(B, N_kv_new, self.num_kv_heads, self.head_dim)
 
         # --- RoPE (self-attention only) ---
         if position_embeddings is None:
@@ -674,10 +649,7 @@ class QCQAAttention(BaseAttention):
             cos, sin = position_embeddings
             past_len_rope = 0
             if past_key_value is not None:
-                if (
-                    isinstance(past_key_value, (tuple, list))
-                    and len(past_key_value) >= 1
-                ):
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
                     past_len_rope = past_key_value[0].shape[-2]
                 elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
                     idx = min(layer_idx, len(past_key_value.key_cache) - 1)
@@ -717,11 +689,7 @@ class QCQAAttention(BaseAttention):
             K_cat = k_new
             V_cat = v_new
 
-        if (
-            past_key_value is not None
-            and hasattr(past_key_value, "update")
-            and not is_cross
-        ):
+        if past_key_value is not None and hasattr(past_key_value, "update") and not is_cross:
             past_key_value.update(k_new, v_new, layer_idx)
 
         N_kv = K_cat.shape[1]
@@ -733,9 +701,7 @@ class QCQAAttention(BaseAttention):
         # Router: per-token distribution over KV heads
         # q: (B, L, H_q, d) → router → (B, L, H_q, H_kv)
         route_logits = self.router(q) / max(self.router_temp, 1e-4)
-        route_weights = F.softmax(route_logits.float(), dim=-1).to(
-            q.dtype
-        )  # (B, L, H_q, H_kv)
+        route_weights = F.softmax(route_logits.float(), dim=-1).to(q.dtype)  # (B, L, H_q, H_kv)
 
         # Aggregate over query positions to get head-level routing.
         # This keeps the routing input-dependent (from q) while remaining
@@ -780,15 +746,11 @@ class QCQAAttention(BaseAttention):
         if not output_attentions and head_mask is None:
             bias_parts = []
             if causal_mask is not None:
-                causal_bias = torch.zeros(
-                    1, 1, L, N_kv, device=device, dtype=torch.float32
-                )
+                causal_bias = torch.zeros(1, 1, L, N_kv, device=device, dtype=torch.float32)
                 causal_bias.masked_fill_(~causal_mask, -1e4)
                 bias_parts.append(causal_bias)
             if token_valid is not None:
-                pad_bias = torch.zeros(
-                    1, 1, 1, N_kv, device=device, dtype=torch.float32
-                )
+                pad_bias = torch.zeros(1, 1, 1, N_kv, device=device, dtype=torch.float32)
                 pad_bias.masked_fill_(~token_valid[:, None, None, :].bool(), -1e4)
                 bias_parts.append(pad_bias)
             if bias_parts:
@@ -797,21 +759,9 @@ class QCQAAttention(BaseAttention):
 
         if attn_bias_sdpa is not None or (causal_mask is None and token_valid is None):
             try:
-                q_sdp = (
-                    q_heads.to(torch.float16)
-                    if q_heads.dtype == torch.float32
-                    else q_heads
-                )
-                k_sdp = (
-                    K_mixed.to(torch.float16)
-                    if K_mixed.dtype == torch.float32
-                    else K_mixed
-                )
-                v_sdp = (
-                    V_mixed.to(torch.float16)
-                    if V_mixed.dtype == torch.float32
-                    else V_mixed
-                )
+                q_sdp = q_heads.to(torch.float16) if q_heads.dtype == torch.float32 else q_heads
+                k_sdp = K_mixed.to(torch.float16) if K_mixed.dtype == torch.float32 else K_mixed
+                v_sdp = V_mixed.to(torch.float16) if V_mixed.dtype == torch.float32 else V_mixed
 
                 out_sdp = F.scaled_dot_product_attention(
                     q_sdp,
@@ -868,9 +818,7 @@ class QCQAAttention(BaseAttention):
 
         # Context: (B, H_q, L, N_kv) @ (B, H_q, N_kv, d) → (B, H_q, L, d)
         context = torch.matmul(attn_probs, V_mixed)
-        context = (
-            context.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
-        )
+        context = context.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:
@@ -929,9 +877,7 @@ def inject_qcqa(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:

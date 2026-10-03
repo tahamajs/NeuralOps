@@ -47,22 +47,16 @@ def get_qkv_projection_dims(adapter: Any) -> tuple[int, int, int, int]:
         n_rep = int(adapter.get("kv_repeat", max(1, num_heads // max(1, num_kv_heads))))
     else:
         hidden_size = int(getattr(adapter, "hidden_size", 1024))
-        num_heads = int(
-            getattr(adapter, "num_attention_heads", getattr(adapter, "num_heads", 8))
-        )
+        num_heads = int(getattr(adapter, "num_attention_heads", getattr(adapter, "num_heads", 8)))
         num_kv_heads = int(getattr(adapter, "num_key_value_heads", num_heads))
         head_dim = int(getattr(adapter, "head_dim", hidden_size // num_heads))
         q_out = int(getattr(adapter, "q_proj_out", num_heads * head_dim))
         kv_out = int(getattr(adapter, "kv_proj_out", num_kv_heads * head_dim))
-        n_rep = int(
-            getattr(adapter, "kv_repeat", max(1, num_heads // max(1, num_kv_heads)))
-        )
+        n_rep = int(getattr(adapter, "kv_repeat", max(1, num_heads // max(1, num_kv_heads))))
     return q_out, kv_out, head_dim, n_rep
 
 
-def reshape_for_attention(
-    x: torch.Tensor, num_heads: int, head_dim: int
-) -> torch.Tensor:
+def reshape_for_attention(x: torch.Tensor, num_heads: int, head_dim: int) -> torch.Tensor:
     """
     Reshapes projected tensor (B, N, num_heads * head_dim) -> (B, num_heads, N, head_dim)
     Safe for both MHA and GQA query / key / value representations.

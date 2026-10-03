@@ -37,9 +37,7 @@ class HyperparameterOptimizer:
     def objective(self, trial) -> float:
         """Objective."""
         config = self.config_template.copy()
-        config["learning_rate"] = trial.suggest_float(
-            "learning_rate", 1e-6, 5e-5, log=True
-        )
+        config["learning_rate"] = trial.suggest_float("learning_rate", 1e-6, 5e-5, log=True)
         config["batch_size"] = trial.suggest_categorical("batch_size", [8, 16, 32])
         config["rank"] = trial.suggest_int("rank", 32, 256, step=32)
         config["weight_decay"] = trial.suggest_float("weight_decay", 0.0, 0.1)
@@ -50,9 +48,7 @@ class HyperparameterOptimizer:
                 ["standard_svd", "randomized_svd", "quantized_svd"],
             )
         if "energy_threshold" in config:
-            config["energy_threshold"] = trial.suggest_float(
-                "energy_threshold", 0.85, 0.99
-            )
+            config["energy_threshold"] = trial.suggest_float("energy_threshold", 0.85, 0.99)
         self.train_fn(config)
         metrics = self.eval_fn(config)
         return metrics.get("accuracy", metrics.get("matthews_correlation", 0.0))
@@ -140,9 +136,7 @@ class PrunedHyperparameterOptimizer(HyperparameterOptimizer):
             self.pruner = optuna.pruners.MedianPruner()
 
 
-def quick_optimize(
-    train_fn, eval_fn, n_trials=10, study_name="quick_opt"
-) -> dict[str, Any]:
+def quick_optimize(train_fn, eval_fn, n_trials=10, study_name="quick_opt") -> dict[str, Any]:
     """Quick optimize."""
     config_template = {
         "learning_rate": 2e-5,

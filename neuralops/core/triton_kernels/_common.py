@@ -49,9 +49,7 @@ def log_fallback_reason(kernel_name: str, reason: str) -> None:
     key = f"{kernel_name}:{reason}"
     if key not in _WARNED_REASONS:
         _WARNED_REASONS.add(key)
-        logger.info(
-            "Triton kernel '%s' using PyTorch fallback: %s", kernel_name, reason
-        )
+        logger.info("Triton kernel '%s' using PyTorch fallback: %s", kernel_name, reason)
 
 
 def check_triton_suitability(
@@ -195,18 +193,16 @@ def linear_attn_pytorch_fallback(
 
                 # Inter-chunk projection
                 num_inter = torch.matmul(qc, S_cos) + torch.matmul(qs, S_sin)
-                denom_inter = torch.matmul(qc, Z_cos.unsqueeze(-1)).squeeze(
-                    -1
-                ) + torch.matmul(qs, Z_sin.unsqueeze(-1)).squeeze(-1)
+                denom_inter = torch.matmul(qc, Z_cos.unsqueeze(-1)).squeeze(-1) + torch.matmul(
+                    qs, Z_sin.unsqueeze(-1)
+                ).squeeze(-1)
 
                 # Intra-chunk causal scores
                 A_intra = torch.matmul(qc, kc.transpose(-1, -2)) + torch.matmul(
                     qs, ks.transpose(-1, -2)
                 )
                 causal_mask = torch.tril(
-                    torch.ones(
-                        end - start, end - start, device=q.device, dtype=torch.bool
-                    )
+                    torch.ones(end - start, end - start, device=q.device, dtype=torch.bool)
                 )
                 A_intra = torch.where(causal_mask, A_intra, torch.zeros_like(A_intra))
                 num_intra = torch.matmul(A_intra, vc)
@@ -249,9 +245,7 @@ def linear_attn_pytorch_fallback(
 
                 A_intra = torch.matmul(qc, kc.transpose(-1, -2))
                 causal_mask = torch.tril(
-                    torch.ones(
-                        end - start, end - start, device=q.device, dtype=torch.bool
-                    )
+                    torch.ones(end - start, end - start, device=q.device, dtype=torch.bool)
                 )
                 A_intra = torch.where(causal_mask, A_intra, torch.zeros_like(A_intra))
                 num_intra = torch.matmul(A_intra, vc)
@@ -292,12 +286,8 @@ def linear_attn_pytorch_fallback(
                 denom_safe = torch.clamp(denom, min=eff_eps)
             else:
                 denom_sign = torch.sign(denom)
-                denom_sign = torch.where(
-                    denom_sign == 0, torch.ones_like(denom_sign), denom_sign
-                )
-                denom_safe = torch.where(
-                    denom.abs() < eff_eps, eff_eps * denom_sign, denom
-                )
+                denom_sign = torch.where(denom_sign == 0, torch.ones_like(denom_sign), denom_sign)
+                denom_safe = torch.where(denom.abs() < eff_eps, eff_eps * denom_sign, denom)
             res = (num / denom_safe).to(orig_dtype)
         else:
             KV = torch.matmul(phi_k.transpose(-1, -2), v_f)
@@ -308,12 +298,8 @@ def linear_attn_pytorch_fallback(
                 denom_safe = torch.clamp(denom, min=eff_eps)
             else:
                 denom_sign = torch.sign(denom)
-                denom_sign = torch.where(
-                    denom_sign == 0, torch.ones_like(denom_sign), denom_sign
-                )
-                denom_safe = torch.where(
-                    denom.abs() < eff_eps, eff_eps * denom_sign, denom
-                )
+                denom_sign = torch.where(denom_sign == 0, torch.ones_like(denom_sign), denom_sign)
+                denom_safe = torch.where(denom.abs() < eff_eps, eff_eps * denom_sign, denom)
             res = (num / denom_safe).to(orig_dtype)
 
     if orig_dim == 3:
@@ -355,9 +341,7 @@ def sparse_attn_pytorch_fallback(
                 block_size, dim=1
             )
             expanded_mask = expanded_mask[:N_q, :N_k]
-            scores = scores.masked_fill(
-                ~expanded_mask.unsqueeze(0).unsqueeze(0), float("-inf")
-            )
+            scores = scores.masked_fill(~expanded_mask.unsqueeze(0).unsqueeze(0), float("-inf"))
         elif bm.dim() == 4:
             expanded_mask = bm.repeat_interleave(block_size, dim=2).repeat_interleave(
                 block_size, dim=3
@@ -366,9 +350,7 @@ def sparse_attn_pytorch_fallback(
             scores = scores.masked_fill(~expanded_mask, float("-inf"))
 
     if is_causal:
-        causal_mask = torch.tril(
-            torch.ones(N_q, N_k, device=q.device, dtype=torch.bool)
-        )
+        causal_mask = torch.tril(torch.ones(N_q, N_k, device=q.device, dtype=torch.bool))
         scores = scores.masked_fill(~causal_mask, float("-inf"))
 
     attn_probs = F.softmax(scores, dim=-1)

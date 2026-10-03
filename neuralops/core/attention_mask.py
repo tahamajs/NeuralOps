@@ -145,9 +145,7 @@ def get_token_valid_mask(
     return torch.ones((batch_size, seq_len), dtype=torch.bool, device=device)
 
 
-def create_causal_mask(
-    seq_len: int, device: torch.device | None = None
-) -> torch.Tensor:
+def create_causal_mask(seq_len: int, device: torch.device | None = None) -> torch.Tensor:
     r"""Create a lower-triangular causal attention mask [SeqLen, SeqLen] where True = attend, False = mask."""
     mask = torch.tril(torch.ones((seq_len, seq_len), dtype=torch.bool, device=device))
     return mask

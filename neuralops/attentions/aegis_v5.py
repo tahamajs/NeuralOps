@@ -19,6 +19,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.attention_utils import repeat_kv
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -72,22 +73,10 @@ def apply_rotary_pos_emb(
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q_rot.dtype)
-        )
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k_rot.dtype)
-        )
-        q = (
-            torch.cat([q_rot_embed, q_pass], dim=-1)
-            if q_pass.numel() > 0
-            else q_rot_embed
-        )
-        k = (
-            torch.cat([k_rot_embed, k_pass], dim=-1)
-            if k_pass.numel() > 0
-            else k_rot_embed
-        )
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     else:
         cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
         q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
@@ -205,18 +194,12 @@ class FactorisedLinear(nn.Module):
         self.max_rank = int(max_rank)
         self.lora_rank = int(lora_rank)
         self.lora_alpha = float(lora_alpha)
-        self.lora_scaling = (
-            (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
-        )
+        self.lora_scaling = (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
 
         # --- Weight-tensor init path ---
         if isinstance(in_features_or_weight, torch.Tensor):
             W = in_features_or_weight
-            b = (
-                out_features_or_bias
-                if isinstance(out_features_or_bias, torch.Tensor)
-                else None
-            )
+            b = out_features_or_bias if isinstance(out_features_or_bias, torch.Tensor) else None
             out_dim, in_dim = W.shape
             self.in_features = in_dim
             self.out_features = out_dim
@@ -224,9 +207,7 @@ class FactorisedLinear(nn.Module):
             device = W.device
             dtype = W.dtype
 
-            self.down = nn.Linear(
-                in_dim, self.rank, bias=False, device=device, dtype=dtype
-            )
+            self.down = nn.Linear(in_dim, self.rank, bias=False, device=device, dtype=dtype)
             self.up = nn.Linear(
                 self.rank,
                 out_dim,
@@ -253,11 +234,7 @@ class FactorisedLinear(nn.Module):
         # --- Dimension init path ---
         else:
             in_dim = int(in_features_or_weight)
-            out_dim = (
-                int(out_features_or_bias)
-                if out_features_or_bias is not None
-                else in_dim
-            )
+            out_dim = int(out_features_or_bias) if out_features_or_bias is not None else in_dim
             self.in_features = in_dim
             self.out_features = out_dim
             self.rank = (
@@ -367,10 +344,7 @@ class FactorisedLinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = self.up(self.down(x))
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = (
-                out
-                + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
         return out
 
 
@@ -630,9 +604,7 @@ class AegisAttention(BaseAttention):
         self.rank: int = int(kwargs.pop("rank", 192))
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
-        self.cfg: AegisConfigV5 = (
-            aegis_cfg if aegis_cfg is not None else AegisConfigV5()
-        )
+        self.cfg: AegisConfigV5 = aegis_cfg if aegis_cfg is not None else AegisConfigV5()
 
         self.is_decoder: bool = _detect_decoder(cfg, is_decoder, pretrained_attn)
         self.is_nested_encoder: bool = False
@@ -683,9 +655,7 @@ class AegisAttention(BaseAttention):
         )
 
         # RFF projection for global heads (V5-FIX-14: buffer by default)
-        rff_init = torch.empty(
-            self.num_global_heads, self.head_dim, self.cfg.rff_features
-        )
+        rff_init = torch.empty(self.num_global_heads, self.head_dim, self.cfg.rff_features)
         for h in range(self.num_global_heads):
             dim = max(self.head_dim, self.cfg.rff_features)
             q_mat, _ = torch.linalg.qr(torch.randn(dim, dim))
@@ -776,9 +746,7 @@ class AegisAttention(BaseAttention):
                 logger.debug("UniversalAdapter failed for %s: %s", proj, e)
 
         # GPT-2 fused c_attn (Conv1D)
-        if hasattr(old_attn, "c_attn") and any(
-            extracted[k][0] is None for k in ("q", "k", "v")
-        ):
+        if hasattr(old_attn, "c_attn") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             weight = old_attn.c_attn.weight.data
             bias = getattr(old_attn.c_attn, "bias", None)
             bias_data = bias.data if bias is not None else None
@@ -810,9 +778,7 @@ class AegisAttention(BaseAttention):
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
         # BERT / RoBERTa nested encoder
-        if hasattr(old_attn, "self") and any(
-            extracted[k][0] is None for k in ("q", "k", "v")
-        ):
+        if hasattr(old_attn, "self") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             s = old_attn.self
             if hasattr(s, "query"):
                 extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
@@ -926,9 +892,7 @@ class AegisAttention(BaseAttention):
                 w, b = extracted[proj_key]
                 if w is not None:
                     in_dim = self.all_head_size if proj_key == "o" else self.hidden_size
-                    target.decompose_from_weight(
-                        _orient(w, in_dim), b, self.cfg.svd_energy
-                    )
+                    target.decompose_from_weight(_orient(w, in_dim), b, self.cfg.svd_energy)
                 elif proj_key == "o" and self.is_nested_encoder:
                     eye_w = torch.eye(
                         self.all_head_size,
@@ -1003,22 +967,15 @@ class AegisAttention(BaseAttention):
 
         # --- Projections ---
         Q = self.q_proj(hidden_states).view(B, N, H, D).transpose(1, 2).contiguous()
-        K_new = (
-            self.k_proj(kv_input).view(B, N_kv_new, Hkv, D).transpose(1, 2).contiguous()
-        )
-        V_new = (
-            self.v_proj(kv_input).view(B, N_kv_new, Hkv, D).transpose(1, 2).contiguous()
-        )
+        K_new = self.k_proj(kv_input).view(B, N_kv_new, Hkv, D).transpose(1, 2).contiguous()
+        V_new = self.v_proj(kv_input).view(B, N_kv_new, Hkv, D).transpose(1, 2).contiguous()
 
         # --- RoPE with past offset ---
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             past_k_probe = None
             if past_key_value is not None:
-                if (
-                    isinstance(past_key_value, (tuple, list))
-                    and len(past_key_value) >= 1
-                ):
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
                     past_k_probe = past_key_value[0]
                 elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
                     past_k_probe = past_key_value.key_cache[0]
@@ -1048,11 +1005,7 @@ class AegisAttention(BaseAttention):
             V_cat = V_new
 
         # Update DynamicCache in place if applicable (V5-FIX-K2 semantic).
-        if (
-            past_key_value is not None
-            and hasattr(past_key_value, "update")
-            and not is_cross
-        ):
+        if past_key_value is not None and hasattr(past_key_value, "update") and not is_cross:
             idx = getattr(self, "layer_idx", 0)
             past_key_value.update(K_new, V_new, idx)
         else:
@@ -1088,9 +1041,9 @@ class AegisAttention(BaseAttention):
             if eff_mask is not None and eff_mask.dim() == 4:
                 attn_bias_sdp = eff_mask.to(q_sdp.dtype)
             elif eff_mask is not None and eff_mask.dim() == 2:
-                attn_bias_sdp = (
-                    (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
-                ).to(q_sdp.dtype)
+                attn_bias_sdp = ((eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0).to(
+                    q_sdp.dtype
+                )
             is_causal_sdp = self.is_decoder and not is_cross and N > 1
 
             out = F.scaled_dot_product_attention(
@@ -1132,12 +1085,8 @@ class AegisAttention(BaseAttention):
 
             rff_proj_f = self.rff_proj.float()
             max_clamp = 11.0
-            Q_proj = torch.einsum("bhnd,hdf->bhnf", Q_g_norm, rff_proj_f).clamp(
-                max=max_clamp
-            )
-            K_proj = torch.einsum("bhnd,hdf->bhnf", K_g_norm, rff_proj_f).clamp(
-                max=max_clamp
-            )
+            Q_proj = torch.einsum("bhnd,hdf->bhnf", Q_g_norm, rff_proj_f).clamp(max=max_clamp)
+            K_proj = torch.einsum("bhnd,hdf->bhnf", K_g_norm, rff_proj_f).clamp(max=max_clamp)
             scale_rff = 1.0 / math.sqrt(self.rff_features)
             Q_feat = torch.exp(Q_proj) * scale_rff
             K_feat = torch.exp(K_proj) * scale_rff
@@ -1160,11 +1109,7 @@ class AegisAttention(BaseAttention):
             else:
                 KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V_global_f)
                 K_sum = K_feat.sum(dim=2)
-                denom = (
-                    torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum)
-                    .unsqueeze(-1)
-                    .clamp(min=1e-5)
-                )
+                denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1).clamp(min=1e-5)
                 ctx_global = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / denom
                 ctx_global = torch.nan_to_num(ctx_global, nan=0.0).to(Q.dtype)
 
@@ -1174,9 +1119,9 @@ class AegisAttention(BaseAttention):
                 gate_local = torch.sigmoid(
                     self.blend_logits.view(1, Hl, 1, 1) + self.gate_bias
                 )  # (1, Hl, 1, 1)
-                ctx_local = gate_local * ctx_local + (
-                    1.0 - gate_local
-                ) * global_mean.to(ctx_local.dtype)
+                ctx_local = gate_local * ctx_local + (1.0 - gate_local) * global_mean.to(
+                    ctx_local.dtype
+                )
             context = torch.cat([ctx_local, ctx_global], dim=1)
 
             # Reshape to (B, N, H, D)
@@ -1294,9 +1239,7 @@ def inject_aegis_v5(
     layer = target
     try:
         if model_config is None:
-            if any(
-                hasattr(layer, a) for a in ("hidden_size", "d_model", "n_embd", "dim")
-            ):
+            if any(hasattr(layer, a) for a in ("hidden_size", "d_model", "n_embd", "dim")):
                 model_config = layer
             elif hasattr(layer, "attention"):
                 old_attn = layer.attention

@@ -39,6 +39,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.attention_utils import repeat_kv
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -89,21 +90,15 @@ def apply_rotary_pos_emb(q, k, cos, sin):
     q_rot_emb = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
     k_rot_emb = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
 
-    q_out = (
-        torch.cat([q_rot_emb, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot_emb
-    )
-    k_out = (
-        torch.cat([k_rot_emb, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot_emb
-    )
+    q_out = torch.cat([q_rot_emb, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot_emb
+    k_out = torch.cat([k_rot_emb, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot_emb
     return q_out, k_out
 
 
 # ===========================================================================
 # Decoder detection
 # ===========================================================================
-def _detect_decoder(
-    config: Any, is_decoder: bool | None, old_attn: nn.Module | None
-) -> bool:
+def _detect_decoder(config: Any, is_decoder: bool | None, old_attn: nn.Module | None) -> bool:
     if is_decoder is not None:
         return bool(is_decoder)
     if config is not None:
@@ -193,9 +188,7 @@ class FactorizedLinear(nn.Module):
         self.rank = max(1, min(int(rank), self.in_features, self.out_features))
         self.svd_rank = self.rank
         self.lora_rank = (
-            min(int(lora_rank), min(self.in_features, self.out_features))
-            if lora_rank > 0
-            else 0
+            min(int(lora_rank), min(self.in_features, self.out_features)) if lora_rank > 0 else 0
         )
 
         fk = {"device": device, "dtype": dtype}
@@ -209,12 +202,8 @@ class FactorizedLinear(nn.Module):
             self.up.bias.requires_grad = False
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty(self.lora_rank, self.in_features, **fk)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty(self.out_features, self.lora_rank, **fk)
-            )
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **fk))
+            self.lora_B = nn.Parameter(torch.empty(self.out_features, self.lora_rank, **fk))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -283,16 +272,8 @@ class FactorizedLinear(nn.Module):
         latent_up = latent.to(self.up.weight.dtype)
         out = self.up(latent_up)
         if self.lora_A is not None:
-            a = (
-                self.lora_A.to(orig_dtype)
-                if self.lora_A.dtype != orig_dtype
-                else self.lora_A
-            )
-            b = (
-                self.lora_B.to(orig_dtype)
-                if self.lora_B.dtype != orig_dtype
-                else self.lora_B
-            )
+            a = self.lora_A.to(orig_dtype) if self.lora_A.dtype != orig_dtype else self.lora_A
+            b = self.lora_B.to(orig_dtype) if self.lora_B.dtype != orig_dtype else self.lora_B
             out = out.to(orig_dtype) + F.linear(F.linear(x, a), b)
         return out.to(orig_dtype)
 
@@ -313,9 +294,7 @@ class KernelFeatureMap(nn.Module):
         proj = torch.randn(self.head_dim, self.num_features, generator=gen)
         # Orthogonal init if m <= d
         if self.num_features <= self.head_dim:
-            q, _ = torch.linalg.qr(
-                torch.randn(self.head_dim, self.num_features, generator=gen)
-            )
+            q, _ = torch.linalg.qr(torch.randn(self.head_dim, self.num_features, generator=gen))
             proj = q
         self.register_buffer("proj", proj * math.sqrt(self.head_dim))
         self.scale = 1.0 / math.sqrt(self.num_features)
@@ -370,9 +349,7 @@ def _local_window_attention_chunked(
         k_hi = min(N_kv, q_max + radius + 1)
 
         if k_hi <= k_lo:
-            outs.append(
-                torch.zeros(B, H, q_end - q_start, D, device=device, dtype=Q.dtype)
-            )
+            outs.append(torch.zeros(B, H, q_end - q_start, D, device=device, dtype=Q.dtype))
             continue
 
         Kc = K[:, :, k_lo:k_hi]
@@ -871,9 +848,7 @@ class AegisHybridAttention(BaseAttention):
     def _read_past_kv(past_key_value, layer_idx=0):
         if past_key_value is None:
             return None, None
-        if hasattr(past_key_value, "key_cache") and hasattr(
-            past_key_value, "value_cache"
-        ):
+        if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
             if not past_key_value.key_cache:
                 return None, None
             idx = min(layer_idx, len(past_key_value.key_cache) - 1)
@@ -912,12 +887,7 @@ class AegisHybridAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         N_kv_new = kv_input.shape[1]
 
-        Q = (
-            self.q_proj(hidden_states)
-            .view(B, N, self.num_heads, Dh)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        Q = self.q_proj(hidden_states).view(B, N, self.num_heads, Dh).transpose(1, 2).contiguous()
         K_new = (
             self.k_proj(kv_input)
             .view(B, N_kv_new, self.num_kv_heads, Dh)
@@ -952,11 +922,7 @@ class AegisHybridAttention(BaseAttention):
             K_cat, V_cat = K_new, V_new
             past_len = 0
 
-        if (
-            past_key_value is not None
-            and hasattr(past_key_value, "update")
-            and not is_cross
-        ):
+        if past_key_value is not None and hasattr(past_key_value, "update") and not is_cross:
             past_key_value.update(K_new, V_new, layer_idx)
 
         N_kv = K_cat.shape[2]
@@ -1017,9 +983,7 @@ class AegisHybridAttention(BaseAttention):
 
         final = torch.nan_to_num(final, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        return final.to(hidden_states.dtype), (
-            attn_local if output_attentions else None
-        )
+        return final.to(hidden_states.dtype), (attn_local if output_attentions else None)
 
     # ------------------------------------------------------------------
     def storage_bytes(self) -> dict[str, int]:
@@ -1149,27 +1113,19 @@ def inject_aegis_hybrid(
         hidden_size=h_size,
         num_attention_heads=n_heads,
         head_dim=kwargs.get("head_dim", h_size // max(1, n_heads)),
-        num_key_value_heads=(
-            getattr(cfg, "num_key_value_heads", n_heads) if cfg else n_heads
-        ),
+        num_key_value_heads=(getattr(cfg, "num_key_value_heads", n_heads) if cfg else n_heads),
         local_window=kwargs.get(
             "local_window",
             getattr(comp_config, "local_window", 256) if comp_config else 256,
         ),
         rank=kwargs.pop(
             "rank",
-            (
-                getattr(comp_config, "rank", min(128, h_size))
-                if comp_config
-                else min(128, h_size)
-            ),
+            (getattr(comp_config, "rank", min(128, h_size)) if comp_config else min(128, h_size)),
         ),
         lora_rank=kwargs.get(
             "lora_rank", getattr(comp_config, "lora_rank", 32) if comp_config else 32
         ),
-        dropout=kwargs.get(
-            "dropout", getattr(comp_config, "dropout", 0.1) if comp_config else 0.1
-        ),
+        dropout=kwargs.get("dropout", getattr(comp_config, "dropout", 0.1) if comp_config else 0.1),
         is_decoder=dec,
         use_global=kwargs.get(
             "use_global",

@@ -30,6 +30,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -98,12 +99,8 @@ class SubspaceLinear(nn.Module):
         self.lora_alpha = float(lora_alpha)
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
 
-        self.A = nn.Parameter(
-            torch.empty(self.rank, in_features, dtype=dtype, device=device)
-        )
-        self.B = nn.Parameter(
-            torch.empty(out_features, self.rank, dtype=dtype, device=device)
-        )
+        self.A = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
+        self.B = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
 
         # Orthogonal init for A; xavier for B. Do it in fp32 for stability.
         with torch.no_grad():
@@ -119,22 +116,16 @@ class SubspaceLinear(nn.Module):
             self.B.data.copy_(B_fp32.to(dtype=dtype, device=device))
 
         if bias:
-            self.bias = nn.Parameter(
-                torch.zeros(out_features, dtype=dtype, device=device)
-            )
+            self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
-                torch.empty(
-                    (self.lora_r, in_features), dtype=torch.float32, device=device
-                )
+                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device)
             )
             self.lora_B = nn.Parameter(
-                torch.zeros(
-                    (out_features, self.lora_r), dtype=torch.float32, device=device
-                )
+                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device)
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
@@ -159,20 +150,13 @@ class SubspaceLinear(nn.Module):
         B = self.B if self.B.dtype == x_flat.dtype else self.B.to(x_flat.dtype)
         b = None
         if self.bias is not None:
-            b = (
-                self.bias
-                if self.bias.dtype == x_flat.dtype
-                else self.bias.to(x_flat.dtype)
-            )
+            b = self.bias if self.bias.dtype == x_flat.dtype else self.bias.to(x_flat.dtype)
 
         x_proj = F.linear(x_flat, A)  # (K, rank)
         out = F.linear(x_proj, B, b)  # (K, out)
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B)
-                * self.scaling
-            )
+            lora_out = F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out.to(out.dtype)
 
         return out.view(*orig_shape[:-1], self.out_features)
@@ -203,9 +187,7 @@ class SubspaceLinear(nn.Module):
             W = raw_w
             out_f, in_f = W.shape
 
-        bias = (
-            base_mod.bias.data if getattr(base_mod, "bias", None) is not None else None
-        )
+        bias = base_mod.bias.data if getattr(base_mod, "bias", None) is not None else None
 
         # ---------------- Rank budget (SP-FIX-07) ----------------
         max_r = min(out_f, in_f)
@@ -316,9 +298,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
         )
         cfg_obj = cfg or kwargs.get("comp_config")
 
-        self.rank = int(
-            rank or _cfg_get(cfg_obj, "subspace_rank", _cfg_get(cfg_obj, "rank", 64))
-        )
+        self.rank = int(rank or _cfg_get(cfg_obj, "subspace_rank", _cfg_get(cfg_obj, "rank", 64)))
         self.method = str(method or _cfg_get(cfg_obj, "subspace_method", "svd"))
         if self.method != "svd":
             logger.warning(
@@ -336,9 +316,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
         self.target_attention_only = bool(
             target_attention_only or _cfg_get(cfg_obj, "target_attention_only", False)
         )
-        self.use_lora = bool(
-            use_lora or _cfg_get(cfg_obj, "use_lora", False) or (lora_r > 0)
-        )
+        self.use_lora = bool(use_lora or _cfg_get(cfg_obj, "use_lora", False) or (lora_r > 0))
         self.lora_r = int(lora_r or _cfg_get(cfg_obj, "lora_r", 0))
         self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, "lora_alpha", 1.0))
         self.max_error = float(_cfg_get(cfg_obj, "max_error", max_error))
@@ -393,9 +371,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__.lower()
         is_linear_like = (
-            isinstance(base_mod, nn.Linear)
-            or "conv1d" in cls_name
-            or hasattr(base_mod, "nf")
+            isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
         )
         if not is_linear_like:
             return False
@@ -411,9 +387,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
         return any(t in name for t in self.target_layers)
 
     # ------------------------------------------------------------------
-    def compress(
-        self, model: nn.Module | None = None
-    ) -> tuple[nn.Module, dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         from neuralops.core.model_utils import replace_module
 
         if model is not None:
@@ -482,9 +456,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
             W_rec = new_layer.weight.float()
             if is_conv1d:
                 W_orig_cmp = W_orig
-                W_rec_cmp = (
-                    W_rec.t().contiguous() if W_rec.shape != W_orig.shape else W_rec
-                )
+                W_rec_cmp = W_rec.t().contiguous() if W_rec.shape != W_orig.shape else W_rec
             else:
                 W_orig_cmp = W_orig
                 W_rec_cmp = W_rec
@@ -495,8 +467,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
 
             if self.fallback_to_original and err > self.max_error:
                 logger.warning(
-                    "SubspaceProjection: err=%.4f on %s > max_error=%.4f; "
-                    "keeping original.",
+                    "SubspaceProjection: err=%.4f on %s > max_error=%.4f; keeping original.",
                     err,
                     name,
                     self.max_error,
@@ -517,9 +488,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
                 else:
                     replace_module(self.model, name, new_layer)
             except Exception as e:
-                logger.warning(
-                    "SubspaceProjection replacement failed on %s: %s", name, e
-                )
+                logger.warning("SubspaceProjection replacement failed on %s: %s", name, e)
                 self.fallback_layers.append(name)
                 total_comp_bytes += orig_bytes
                 continue
@@ -563,11 +532,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
                         hidden = getattr(cfg, "hidden_size", None) if cfg else None
                         if hidden is None:
                             first_lin = next(
-                                (
-                                    m
-                                    for m in self.model.modules()
-                                    if isinstance(m, nn.Linear)
-                                ),
+                                (m for m in self.model.modules() if isinstance(m, nn.Linear)),
                                 None,
                             )
                             hidden = getattr(first_lin, "in_features", 8)
@@ -590,9 +555,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
             if self.layer_errors
             else 0.0
         )
-        storage_ratio = (
-            total_orig_bytes / max(1, total_comp_bytes) if total_comp_bytes > 0 else 1.0
-        )
+        storage_ratio = total_orig_bytes / max(1, total_comp_bytes) if total_comp_bytes > 0 else 1.0
         effective_ratio = (
             total_comp_bytes / max(1, total_orig_bytes) if total_orig_bytes > 0 else 1.0
         )

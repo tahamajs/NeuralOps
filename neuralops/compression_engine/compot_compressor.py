@@ -13,6 +13,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error, get_calibration_tensors
@@ -58,12 +59,8 @@ class COMPOTLinear(nn.Module):
         self.out_features = out_features
         self.rank = max(1, min(rank, in_features, out_features))
 
-        self.A = nn.Parameter(
-            torch.empty(self.rank, in_features, dtype=dtype, device=device)
-        )
-        self.B = nn.Parameter(
-            torch.empty(out_features, self.rank, dtype=dtype, device=device)
-        )
+        self.A = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
+        self.B = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
 
         with torch.no_grad():
             A_f32 = torch.empty(self.rank, in_features, dtype=torch.float32)
@@ -72,9 +69,7 @@ class COMPOTLinear(nn.Module):
             nn.init.xavier_uniform_(self.B)
 
         if bias:
-            self.bias = nn.Parameter(
-                torch.zeros(out_features, dtype=dtype, device=device)
-            )
+            self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device))
         else:
             self.register_parameter("bias", None)
 
@@ -234,15 +229,11 @@ class COMPOTCompressor(BaseCompressor):
         target_layers: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(
-            model if model is not None else nn.Identity(), name="compot", **kwargs
-        )
+        super().__init__(model if model is not None else nn.Identity(), name="compot", **kwargs)
         conf = cfg or kwargs.get("comp_config")
         if conf is not None:
             rank = getattr(conf, "compot_rank", getattr(conf, "rank", rank))
-            max_error = getattr(
-                conf, "compot_max_error", getattr(conf, "max_error", max_error)
-            )
+            max_error = getattr(conf, "compot_max_error", getattr(conf, "max_error", max_error))
             fallback_to_original = getattr(
                 conf,
                 "compot_fallback_to_original",
@@ -314,16 +305,12 @@ class COMPOTCompressor(BaseCompressor):
                     inp = input[0].detach().float()
                     cls_name = module.__class__.__name__.lower()
                     is_conv1d = "conv1d" in cls_name or hasattr(module, "nf")
-                    in_f = (
-                        module.weight.shape[0] if is_conv1d else module.weight.shape[1]
-                    )
+                    in_f = module.weight.shape[0] if is_conv1d else module.weight.shape[1]
                     flat = inp.reshape(-1, in_f)
                     if name not in layer_data:
                         layer_data[name] = flat.cpu()
                     else:
-                        layer_data[name] = torch.cat(
-                            [layer_data[name], flat.cpu()], dim=0
-                        )
+                        layer_data[name] = torch.cat([layer_data[name], flat.cpu()], dim=0)
 
             return hook
 
@@ -350,18 +337,14 @@ class COMPOTCompressor(BaseCompressor):
                 elif isinstance(calib_inputs, (list, tuple)):
                     self.model(*calib_inputs)
             except Exception as e:
-                logger.debug(
-                    "COMPOT activation collection forward pass exception: %s", e
-                )
+                logger.debug("COMPOT activation collection forward pass exception: %s", e)
             finally:
                 for h in hooks:
                     h.remove()
 
         return layer_data
 
-    def compress(
-        self, model: nn.Module | None = None
-    ) -> tuple[nn.Module, dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         """Compress linear and Conv1D layers via COMPOT orthogonal dictionary learning."""
         if model is not None:
             self.model = model
@@ -494,17 +477,11 @@ def compot_compressor_factory(
 ) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """Factory function for COMPOT compression."""
     effective_rank = (
-        rank
-        or getattr(comp_config, "compot_rank", None)
-        or getattr(comp_config, "rank", 64)
+        rank or getattr(comp_config, "compot_rank", None) or getattr(comp_config, "rank", 64)
     )
     cal_texts = getattr(comp_config, "compot_calibration_texts", None)
-    tokenizer = getattr(comp_config, "tokenizer", None) or getattr(
-        model, "tokenizer", None
-    )
-    max_error = getattr(
-        comp_config, "compot_max_error", getattr(comp_config, "max_error", 0.20)
-    )
+    tokenizer = getattr(comp_config, "tokenizer", None) or getattr(model, "tokenizer", None)
+    max_error = getattr(comp_config, "compot_max_error", getattr(comp_config, "max_error", 0.20))
     fallback = getattr(
         comp_config,
         "compot_fallback_to_original",
