@@ -30,6 +30,16 @@ from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 
+try:
+    from neuralops.core.triton_kernels.gla_scan import (
+        MAX_REGISTER_DIM,
+        gla_scan_triton,
+    )
+
+    HAS_TRITON_DECAY = True
+except Exception:
+    HAS_TRITON_DECAY = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -725,6 +735,21 @@ class DecayLinearAttention(BaseAttention):
         Eliminates quadratic O(L^2) memory footprint and prevents GPU out-of-memory.
         """
         B, H, L, d = q.shape
+
+        # Path 1: Hardware-fused Triton kernel on CUDA
+        if (
+            HAS_TRITON_DECAY
+            and q.is_cuda
+            and d <= MAX_REGISTER_DIM
+            and mask is None
+            and not reverse
+        ):
+            try:
+                return gla_scan_triton(
+                    q.float(), k.float(), v.float(), lambdas.float()
+                ).to(q.dtype)
+            except Exception as e:
+                logger.debug("Triton decay scan failed, falling back to chunked PyTorch: %s", e)
 
         q_f = q.float()
         k_f = k.float()

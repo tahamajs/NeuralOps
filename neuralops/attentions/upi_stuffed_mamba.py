@@ -21,6 +21,16 @@ from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 
+try:
+    from neuralops.core.triton_kernels.selective_scan import (
+        selective_scan_fn as triton_selective_scan,
+    )
+
+    HAS_TRITON_UPI = True
+except Exception:
+    triton_selective_scan = None
+    HAS_TRITON_UPI = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -628,6 +638,26 @@ class SelectiveMamba(BaseAttention):
         A = torch.exp(
             torch.clamp(self.A_log.float(), min=-20.0, max=10.0)
         )  # [inner_dim, d_state]
+
+        # Path 1: Hardware-fused Triton selective scan on CUDA
+        if (
+            HAS_TRITON_UPI
+            and triton_selective_scan is not None
+            and x.is_cuda
+            and mask is None
+        ):
+            try:
+                return triton_selective_scan(
+                    x.contiguous(),
+                    dt.contiguous(),
+                    -A.contiguous(),
+                    B_t.contiguous(),
+                    C_t.contiguous(),
+                    None,
+                    delta_softplus=False,
+                ).to(x.dtype)
+            except Exception as e:
+                logger.debug("Triton selective scan failed, falling back to chunked PyTorch: %s", e)
 
         # In case of padding mask, zero out invalid token inputs
         if mask is not None:
