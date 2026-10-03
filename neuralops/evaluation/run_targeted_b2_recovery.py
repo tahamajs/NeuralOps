@@ -70,7 +70,13 @@ def run_targeted_b2_recovery(output_dir: Path | str | None = None) -> list[dict[
         with open(fpath, "w", encoding="utf-8") as f:
             json.dump(res, f, indent=2)
         results.append(res)
-        logger.info("Saved %s: Acc Before=%.2f%%, Acc After=%.2f%% (%s)", fpath, acc_before, acc_after, status)
+        logger.info(
+            "Saved %s: Acc Before=%.2f%%, Acc After=%.2f%% (%s)",
+            fpath,
+            acc_before,
+            acc_after,
+            status,
+        )
 
     csv_path = out_dir / "summary.csv"
     with open(csv_path, "w", encoding="utf-8") as f:

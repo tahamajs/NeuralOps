@@ -26,7 +26,7 @@ except ImportError:
 app = FastAPI(
     title="A3 Attention Real Inference API",
     description="Live PyTorch attention weights and token activation extraction for 3D Visualizer",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 app.add_middleware(
@@ -45,10 +45,11 @@ SUPPORTED_MODELS = {
     "gpt2": "GPT-2 (12 layers, 12 heads, 768d)",
 }
 
+
 def get_model(model_id: str = "distilbert-base-uncased") -> Tuple[Any, Any]:
     if AutoModel is None or AutoTokenizer is None:
         raise HTTPException(500, "Hugging Face transformers package is not installed.")
-    
+
     if model_id not in _models:
         try:
             tokenizer = AutoTokenizer.from_pretrained(model_id)
@@ -57,14 +58,16 @@ def get_model(model_id: str = "distilbert-base-uncased") -> Tuple[Any, Any]:
             _models[model_id] = (model, tokenizer)
         except Exception as e:
             raise HTTPException(500, f"Failed to load model '{model_id}': {str(e)}")
-            
+
     return _models[model_id]
+
 
 class AttentionRequest(BaseModel):
     text: str = Field(..., description="Prompt text to tokenize and pass through model")
     model_id: str = Field(default="distilbert-base-uncased", description="Hugging Face model ID")
     layer: int = Field(default=0, ge=0, description="0-indexed Transformer layer")
     head: int = Field(default=0, ge=0, description="0-indexed attention head")
+
 
 class AttentionResponse(BaseModel):
     tokens: List[str]
@@ -76,18 +79,14 @@ class AttentionResponse(BaseModel):
     entropy: float
     max_weight: float
 
+
 @app.post("/attention", response_model=AttentionResponse)
 def get_attention(req: AttentionRequest):
     if not req.text.strip():
         raise HTTPException(400, "Input text cannot be empty.")
 
     model, tokenizer = get_model(req.model_id)
-    inputs = tokenizer(
-        req.text,
-        return_tensors="pt",
-        truncation=True,
-        max_length=64
-    )
+    inputs = tokenizer(req.text, return_tensors="pt", truncation=True, max_length=64)
 
     with torch.no_grad():
         outputs = model(**inputs, output_attentions=True)
@@ -126,8 +125,9 @@ def get_attention(req: AttentionRequest):
         layer=req.layer,
         head=req.head,
         entropy=round(mean_entropy, 4),
-        max_weight=round(float(np.max(attn_matrix)), 4)
+        max_weight=round(float(np.max(attn_matrix)), 4),
     )
+
 
 @app.get("/health")
 def health():
@@ -136,11 +136,13 @@ def health():
         "loaded_models": list(_models.keys()),
         "supported_models": SUPPORTED_MODELS,
         "torch_version": torch.__version__,
-        "cuda_available": torch.cuda.is_available()
+        "cuda_available": torch.cuda.is_available(),
     }
+
 
 if __name__ == "__main__":
     import uvicorn
+
     port = int(os.environ.get("PORT", 8000))
     print(f"🚀 Starting A3 Real Attention Inference Backend on port {port}...")
     uvicorn.run(app, host="0.0.0.0", port=port)

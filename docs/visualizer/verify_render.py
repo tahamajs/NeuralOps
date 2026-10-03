@@ -2,6 +2,7 @@ import asyncio
 from playwright.async_api import async_playwright
 import os
 
+
 async def main():
     errors = []
     brave_path = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
@@ -18,7 +19,7 @@ async def main():
 
         out_dir = os.path.dirname(os.path.abspath(__file__))
 
-        models = ['distilbert', 'roberta', 'gpt2', 'qwen']
+        models = ["distilbert", "roberta", "gpt2", "qwen"]
         for m in models:
             print(f"\n--- Testing Model: {m.upper()} ---")
             await page.click(f".model-matrix-card[data-model='{m}']")
@@ -45,6 +46,7 @@ async def main():
         print(f"[FAIL] Page errors encountered: {errors}")
     else:
         print("[SUCCESS] All renders verified without any errors!")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

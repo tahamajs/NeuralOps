@@ -38,25 +38,43 @@ for mod in sorted(df["module"].dropna().unique()):
         # Check if any ok run exists without ratio restriction
         sub_all = ok[ok["module"] == mod]
         if sub_all.empty:
-            best_rows.append({"module": mod, "best_rank": "—", "accuracy": "—", "ratio": "—", "status": "FAIL/NONE"})
+            best_rows.append(
+                {
+                    "module": mod,
+                    "best_rank": "—",
+                    "accuracy": "—",
+                    "ratio": "—",
+                    "status": "FAIL/NONE",
+                }
+            )
         else:
             best = sub_all.sort_values("accuracy_pct", ascending=False).iloc[0]
-            best_rows.append({
-                "module": mod,
-                "best_rank": int(best["requested_rank"]) if pd.notnull(best["requested_rank"]) else "—",
-                "accuracy": round(best["accuracy_pct"], 2) if pd.notnull(best["accuracy_pct"]) else "—",
-                "ratio": round(best["param_ratio"], 3) if pd.notnull(best["param_ratio"]) else "—",
-                "status": f"{best['status']} (ratio >= 0.9)",
-            })
+            best_rows.append(
+                {
+                    "module": mod,
+                    "best_rank": int(best["requested_rank"])
+                    if pd.notnull(best["requested_rank"])
+                    else "—",
+                    "accuracy": round(best["accuracy_pct"], 2)
+                    if pd.notnull(best["accuracy_pct"])
+                    else "—",
+                    "ratio": round(best["param_ratio"], 3)
+                    if pd.notnull(best["param_ratio"])
+                    else "—",
+                    "status": f"{best['status']} (ratio >= 0.9)",
+                }
+            )
         continue
     best = sub.sort_values("accuracy_pct", ascending=False).iloc[0]
-    best_rows.append({
-        "module": mod,
-        "best_rank": int(best["requested_rank"]) if pd.notnull(best["requested_rank"]) else "—",
-        "accuracy": round(best["accuracy_pct"], 2),
-        "ratio": round(best["param_ratio"], 3),
-        "status": best["status"],
-    })
+    best_rows.append(
+        {
+            "module": mod,
+            "best_rank": int(best["requested_rank"]) if pd.notnull(best["requested_rank"]) else "—",
+            "accuracy": round(best["accuracy_pct"], 2),
+            "ratio": round(best["param_ratio"], 3),
+            "status": best["status"],
+        }
+    )
 
 print(pd.DataFrame(best_rows).to_string(index=False))
 print()
@@ -65,12 +83,18 @@ print()
 print("2. Mean behavior by requested rank (all modules):")
 print()
 if not ok.empty:
-    rank_summary = ok.groupby("requested_rank").agg({
-        "accuracy_pct": "mean",
-        "param_ratio": "mean",
-        "num_compressed_layers": "mean",
-        "elapsed_s": "mean",
-    }).round(3)
+    rank_summary = (
+        ok.groupby("requested_rank")
+        .agg(
+            {
+                "accuracy_pct": "mean",
+                "param_ratio": "mean",
+                "num_compressed_layers": "mean",
+                "elapsed_s": "mean",
+            }
+        )
+        .round(3)
+    )
     print(rank_summary.to_string())
 else:
     print("No passing runs to summarize.")
@@ -80,11 +104,15 @@ print()
 print("3. Param ratio matrix: model x rank:")
 print()
 if not ok.empty:
-    pivot = ok.pivot_table(index="requested_rank", columns="model", values="param_ratio", aggfunc="mean").round(3)
+    pivot = ok.pivot_table(
+        index="requested_rank", columns="model", values="param_ratio", aggfunc="mean"
+    ).round(3)
     print(pivot.to_string())
     print()
     print("Accuracy matrix: model x rank:")
-    pivot_acc = ok.pivot_table(index="requested_rank", columns="model", values="accuracy_pct", aggfunc="mean").round(2)
+    pivot_acc = ok.pivot_table(
+        index="requested_rank", columns="model", values="accuracy_pct", aggfunc="mean"
+    ).round(2)
     print(pivot_acc.to_string())
 print()
 
@@ -92,9 +120,7 @@ print()
 print("4. Modules that never achieve param_ratio < 1.0:")
 print()
 if not df.empty:
-    never = df.groupby("module").agg({
-        "param_ratio": "min"
-    }).round(3)
+    never = df.groupby("module").agg({"param_ratio": "min"}).round(3)
     never_comp = never[never["param_ratio"] >= 1.0]
     if not never_comp.empty:
         print(never_comp.to_string())

@@ -18,15 +18,16 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 DEFAULT_PORT = 8000
 
+
 class VisualizerHandler(SimpleHTTPRequestHandler):
     def end_headers(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
         super().end_headers()
 
     def log_message(self, format, *args):
         # Suppress verbose favicon 404 noise in terminal
-        if 'favicon.ico' in (args[0] if args else ''):
+        if "favicon.ico" in (args[0] if args else ""):
             return
         super().log_message(format, *args)
 
@@ -35,7 +36,7 @@ def find_available_port(starting_port=8000, max_attempts=50):
     for port in range(starting_port, starting_port + max_attempts):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
-                s.bind(('', port))
+                s.bind(("", port))
                 return port
             except OSError:
                 continue
@@ -47,7 +48,7 @@ def main():
     port = find_available_port(DEFAULT_PORT)
 
     HTTPServer.allow_reuse_address = True
-    server_address = ('', port)
+    server_address = ("", port)
     try:
         httpd = HTTPServer(server_address, VisualizerHandler)
     except OSError as e:
@@ -76,5 +77,5 @@ def main():
         httpd.server_close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

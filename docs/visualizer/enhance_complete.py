@@ -1,6 +1,6 @@
 """
 Comprehensive enhancement of the 3D Neural Architecture Visualizer:
-1. Fix control dock (play/pause, speed, scrubber)  
+1. Fix control dock (play/pause, speed, scrubber)
 2. Fix pipeline for all modules
 3. Add module search/filter hotkeys
 4. Add keyboard shortcuts (Space=play/pause, R=reset, 0-9=layer nav)
@@ -17,13 +17,13 @@ Comprehensive enhancement of the 3D Neural Architecture Visualizer:
 
 import re
 
-with open('Docs/visualizer/app.js', 'r') as f:
+with open("Docs/visualizer/app.js", "r") as f:
     code = f.read()
 
-with open('Docs/visualizer/style.css', 'r') as f:
+with open("Docs/visualizer/style.css", "r") as f:
     css = f.read()
 
-with open('Docs/visualizer/index.html', 'r') as f:
+with open("Docs/visualizer/index.html", "r") as f:
     html = f.read()
 
 # ==========================
@@ -184,7 +184,7 @@ else:
 # ==========================
 # PATCH 2: Fix SVG guides (camera variable)
 # ==========================
-code = code.replace('pos3D.project(camera);', 'pos3D.project(cameraBaseline);')
+code = code.replace("pos3D.project(camera);", "pos3D.project(cameraBaseline);")
 print("✅ Fixed SVG guides camera variable")
 
 # ==========================
@@ -344,7 +344,7 @@ else:
     print("⚠️ Could not patch pipeline steps global")
 
 # Write updated app.js
-with open('Docs/visualizer/app.js', 'w') as f:
+with open("Docs/visualizer/app.js", "w") as f:
     f.write(code)
 print("\n✅ app.js written")
 
@@ -552,9 +552,9 @@ kbd {
 }
 """
 
-if '/* COMPREHENSIVE UI ENHANCEMENTS */' not in css:
-    with open('Docs/visualizer/style.css', 'a') as f:
-        f.write('\n' + new_css)
+if "/* COMPREHENSIVE UI ENHANCEMENTS */" not in css:
+    with open("Docs/visualizer/style.css", "a") as f:
+        f.write("\n" + new_css)
     print("✅ Added comprehensive CSS enhancements")
 else:
     print("ℹ️  CSS already enhanced")
@@ -563,8 +563,8 @@ else:
 # PATCH HTML: Add shortcut button in header
 # ==========================
 old_hud_badge = '<span id="hud-model-name" class="hud-model-name">DISTILBERT</span>'
-new_hud_badge = '''<span id="hud-model-name" class="hud-model-name">DISTILBERT</span>
-                <span id="hud-active-module-badge" class="hud-badge" style="background:rgba(83,236,217,0.15);color:#53ecd9;border:1px solid rgba(83,236,217,0.4);">—</span>'''
+new_hud_badge = """<span id="hud-model-name" class="hud-model-name">DISTILBERT</span>
+                <span id="hud-active-module-badge" class="hud-badge" style="background:rgba(83,236,217,0.15);color:#53ecd9;border:1px solid rgba(83,236,217,0.4);">—</span>"""
 
 if old_hud_badge in html:
     html = html.replace(old_hud_badge, new_hud_badge)
@@ -594,10 +594,10 @@ else:
 
 # Add keyboard shortcut hint in control dock
 old_dock_html = '<span class="timecode" id="timeline-step">Step 1/7</span>'
-new_dock_html = '''<span class="timecode" id="timeline-step">01 Input</span>'''
+new_dock_html = """<span class="timecode" id="timeline-step">01 Input</span>"""
 html = html.replace(old_dock_html, new_dock_html)
 
-with open('Docs/visualizer/index.html', 'w') as f:
+with open("Docs/visualizer/index.html", "w") as f:
     f.write(html)
 print("✅ Updated index.html")
 

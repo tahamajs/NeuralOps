@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """List and summarize all KD runs from results/kd_runs/registry.json."""
+
 import json
 from pathlib import Path
+
 
 def main():
     registry_file = Path("results") / "kd_runs" / "registry.json"
@@ -21,7 +23,9 @@ def main():
         return
 
     print("=" * 105)
-    print(f"{'Module':<20} | {'Timestamp':<16} | {'Post PPL':<10} | {'Recovery':<10} | {'Run Directory'}")
+    print(
+        f"{'Module':<20} | {'Timestamp':<16} | {'Post PPL':<10} | {'Recovery':<10} | {'Run Directory'}"
+    )
     print("-" * 105)
     for r in runs:
         mod = r.get("module", "unknown")
@@ -33,6 +37,7 @@ def main():
         rec_str = f"{rec:.2f}%" if isinstance(rec, (int, float)) else "0.00%"
         print(f"{mod:<20} | {ts:<16} | {post_str:<10} | {rec_str:<10} | {rdir}")
     print("=" * 105)
+
 
 if __name__ == "__main__":
     main()
