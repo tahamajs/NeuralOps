@@ -231,6 +231,17 @@ def run_orchestrator(module_key: str, default_args: list = None):
     print("\nAll tasks completed.", flush=True)
 
 
+class UnifiedOrchestrator:
+    """Class wrapper for NeuralOps Unified Orchestrator."""
+
+    def __init__(self, default_args: list | None = None) -> None:
+        self.default_args = default_args or []
+
+    def run(self, module_key: str, args: list | None = None) -> None:
+        merged = list(self.default_args) + (args or [])
+        run_orchestrator(module_key, merged)
+
+
 def main():
     if len(sys.argv) < 2:
         print("Error: Missing module_key. Provide it as the first argument.")
@@ -240,3 +251,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
