@@ -161,3 +161,60 @@ def get_num_labels_and_is_regression(task_name: str) -> tuple[int, bool]:
 
 # Backward-compatibility alias
 load_glue_task = load_glue_local
+
+
+def get_calibration_dataloader(
+    task_name: str = "sst2",
+    tokenizer: Any = None,
+    batch_size: int = 8,
+    num_samples: int = 128,
+    seq_len: int = 128,
+    split: str = "train",
+) -> Any:
+    """
+    Builds a calibration DataLoader from local disk-cached GLUE data.
+    Used by data-aware SVD compression algorithms (ASVD, A3, FRanDI, DynamicRank,
+    SwiftSVD, SliceGPT, etc.) to collect activation covariance and Fisher information.
+    """
+    from torch.utils.data import DataLoader
+
+    t_name = task_name.lower().replace("-", "_")
+    ds_dict = load_glue_local(t_name)
+    if split not in ds_dict:
+        split = list(ds_dict.keys())[0]
+    ds = ds_dict[split]
+
+    if num_samples and len(ds) > num_samples:
+        ds = ds.select(range(min(num_samples, len(ds))))
+
+    if tokenizer is not None:
+        key1, key2 = GLUE_TASK_KEYS.get(t_name, ("sentence", None))
+        if key1 not in ds.column_names:
+            cols = [c for c in ds.column_names if c not in ("label", "labels", "idx")]
+            key1 = cols[0] if cols else "text"
+            key2 = None
+
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token or "[PAD]"
+
+        def tokenize_fn(examples):
+            args = (
+                (examples[key1],)
+                if key2 is None or key2 not in examples
+                else (examples[key1], examples[key2])
+            )
+            return tokenizer(
+                *args, padding="max_length", truncation=True, max_length=seq_len
+            )
+
+        remove_cols = [c for c in ds.column_names if c not in ("label", "labels")]
+        ds = ds.map(tokenize_fn, batched=True, remove_columns=remove_cols)
+        keep = [
+            c
+            for c in ["input_ids", "attention_mask", "token_type_ids"]
+            if c in ds.column_names
+        ]
+        ds.set_format(type="torch", columns=keep)
+
+    return DataLoader(ds, batch_size=batch_size, shuffle=False)
+

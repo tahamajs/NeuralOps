@@ -20,6 +20,7 @@ from .cached_tensors import get_cached_tokenized_dataset
 from .dataset_loader import ExperimentConfig, load_dataset
 from .glue_loader import (
     GLUE_TASK_KEYS,
+    get_calibration_dataloader,
     get_num_labels_and_is_regression,
     load_glue_local,
 )
@@ -39,6 +40,7 @@ __all__ = [
     "TaskType",
     "preprocess_function",
     "create_dataloader",
+    "get_calibration_dataloader",
     # Benchmark datasets
     "BenchmarkDatasetInfo",
     "BenchmarkDatasetRegistry",
