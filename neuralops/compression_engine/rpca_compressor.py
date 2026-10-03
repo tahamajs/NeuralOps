@@ -10,6 +10,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.compression_engine.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
@@ -64,15 +65,10 @@ class RPCACompressor(BaseCompressor):
         super().__init__(model, name="rpca", **kwargs)
         cfg_obj = cfg or kwargs.get("comp_config")
 
-        self.rank = int(
-            rank or _cfg_get(cfg_obj, "rpca_rank", _cfg_get(cfg_obj, "rank", 64))
-        )
-        self.mu = float(
-            mu or _cfg_get(cfg_obj, "rpca_mu", _cfg_get(cfg_obj, "mu", 1e-3))
-        )
+        self.rank = int(rank or _cfg_get(cfg_obj, "rpca_rank", _cfg_get(cfg_obj, "rank", 64)))
+        self.mu = float(mu or _cfg_get(cfg_obj, "rpca_mu", _cfg_get(cfg_obj, "mu", 1e-3)))
         self.max_iter = int(
-            max_iter
-            or _cfg_get(cfg_obj, "rpca_max_iter", _cfg_get(cfg_obj, "max_iter", 5))
+            max_iter or _cfg_get(cfg_obj, "rpca_max_iter", _cfg_get(cfg_obj, "max_iter", 5))
         )
         self.min_rank = max(1, int(min_rank or _cfg_get(cfg_obj, "min_rank", 8)))
         self.skip_attention_qkv = bool(
@@ -85,9 +81,7 @@ class RPCACompressor(BaseCompressor):
             if target_attention_only is not None
             else _cfg_get(cfg_obj, "target_attention_only", False)
         )
-        self.use_lora = bool(
-            use_lora or _cfg_get(cfg_obj, "use_lora", False) or (lora_r > 0)
-        )
+        self.use_lora = bool(use_lora or _cfg_get(cfg_obj, "use_lora", False) or (lora_r > 0))
         self.lora_r = int(lora_r or _cfg_get(cfg_obj, "lora_r", 0))
         self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, "lora_alpha", 1.0))
         self.target_modules = target_modules
@@ -111,9 +105,7 @@ class RPCACompressor(BaseCompressor):
                 )
         else:
             self.target_device = (
-                next(model.parameters()).device
-                if list(model.parameters())
-                else torch.device("cpu")
+                next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
             )
 
         # Diagnostics & Tracking
@@ -131,11 +123,7 @@ class RPCACompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        is_gqa = (
-            num_heads is not None
-            and num_kv_heads is not None
-            and num_kv_heads < num_heads
-        )
+        is_gqa = num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads
 
         name_l = name.lower()
         is_attn_qkv = any(
@@ -277,9 +265,7 @@ class RPCACompressor(BaseCompressor):
 
                 # Sparse soft-thresholding update on residual
                 resid = W - L_recon
-                S_sparse = torch.sign(resid) * torch.clamp(
-                    torch.abs(resid) - self.mu, min=0.0
-                )
+                S_sparse = torch.sign(resid) * torch.clamp(torch.abs(resid) - self.mu, min=0.0)
 
                 # Update low-rank target
                 L = W - S_sparse
@@ -407,16 +393,12 @@ class RPCACompressor(BaseCompressor):
                 dummy_input = torch.randint(0, 100, (1, 8), device=self.target_device)
                 self.model(dummy_input)
         except Exception as ex_sanity:
-            logger.warning(
-                "RPCA post-compression forward sanity check warning: %s", ex_sanity
-            )
+            logger.warning("RPCA post-compression forward sanity check warning: %s", ex_sanity)
             forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
         avg_err = (
-            (sum(self.layer_errors.values()) / len(self.layer_errors))
-            if self.layer_errors
-            else 0.0
+            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
         )
         stats = self.get_compression_stats()
         stats.update(
@@ -459,12 +441,8 @@ def rpca_compressor_factory(
     **kwargs: Any,
 ) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """RPCA factory function returning (compressed_model, stats) when requested."""
-    rank = kwargs.pop(
-        "rank", _cfg_get(comp_config, "rpca_rank", _cfg_get(comp_config, "rank", 64))
-    )
-    mu = kwargs.pop(
-        "mu", _cfg_get(comp_config, "rpca_mu", _cfg_get(comp_config, "mu", 1e-3))
-    )
+    rank = kwargs.pop("rank", _cfg_get(comp_config, "rpca_rank", _cfg_get(comp_config, "rank", 64)))
+    mu = kwargs.pop("mu", _cfg_get(comp_config, "rpca_mu", _cfg_get(comp_config, "mu", 1e-3)))
     max_iter = kwargs.pop(
         "max_iter",
         _cfg_get(comp_config, "rpca_max_iter", _cfg_get(comp_config, "max_iter", 5)),

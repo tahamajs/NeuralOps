@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 
@@ -135,21 +136,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -198,9 +193,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = (
-                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            )
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
             lora_out = F.linear(F.linear(x, a), bb) * self.lora_scaling
             out = out + lora_out
         return out
@@ -254,9 +247,7 @@ class FlashAttention3FP8(BaseAttention):
                     getattr(
                         source_attn,
                         "dense",
-                        getattr(
-                            source_attn, "c_proj", getattr(source_attn, "o_proj", None)
-                        ),
+                        getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None)),
                     ),
                 )
                 q_layer = getattr(
@@ -265,9 +256,7 @@ class FlashAttention3FP8(BaseAttention):
                     getattr(
                         source_attn,
                         "query",
-                        getattr(
-                            source_attn, "c_attn", getattr(source_attn, "q_proj", None)
-                        ),
+                        getattr(source_attn, "c_attn", getattr(source_attn, "q_proj", None)),
                     ),
                 )
                 if out_layer is not None and hasattr(out_layer, "out_features"):
@@ -275,9 +264,7 @@ class FlashAttention3FP8(BaseAttention):
                 elif q_layer is not None and hasattr(q_layer, "in_features"):
                     config.hidden_size = q_layer.in_features
                 else:
-                    config.hidden_size = kwargs.get(
-                        "hidden_size", kwargs.get("d_model", d_model)
-                    )
+                    config.hidden_size = kwargs.get("hidden_size", kwargs.get("d_model", d_model))
                 config.num_attention_heads = getattr(
                     source_attn,
                     "n_heads",
@@ -287,16 +274,12 @@ class FlashAttention3FP8(BaseAttention):
                         getattr(
                             source_attn,
                             "num_heads",
-                            kwargs.get(
-                                "num_heads", kwargs.get("num_attention_heads", n_heads)
-                            ),
+                            kwargs.get("num_heads", kwargs.get("num_attention_heads", n_heads)),
                         ),
                     ),
                 )
             else:
-                config.hidden_size = kwargs.get(
-                    "hidden_size", kwargs.get("d_model", d_model)
-                )
+                config.hidden_size = kwargs.get("hidden_size", kwargs.get("d_model", d_model))
                 config.num_attention_heads = kwargs.get(
                     "num_heads", kwargs.get("num_attention_heads", n_heads)
                 )
@@ -364,9 +347,7 @@ class FlashAttention3FP8(BaseAttention):
         self.use_fp8: bool = bool(use_fp8)
         if self.use_fp8:
             hopper_capable = False
-            if torch.cuda.is_available() and hasattr(
-                torch.cuda, "get_device_capability"
-            ):
+            if torch.cuda.is_available() and hasattr(torch.cuda, "get_device_capability"):
                 try:
                     cc = torch.cuda.get_device_capability()
                     hopper_capable = cc[0] >= 9
@@ -409,11 +390,7 @@ class FlashAttention3FP8(BaseAttention):
         self.freeze_base: bool = self.lora_rank > 0
 
         # Decoder & nested encoder detection
-        _mt = (
-            str(getattr(config, "model_type", "") or "").lower()
-            if config is not None
-            else ""
-        )
+        _mt = str(getattr(config, "model_type", "") or "").lower() if config is not None else ""
         _decoder_prefixes = (
             "gpt",
             "qwen",
@@ -459,10 +436,7 @@ class FlashAttention3FP8(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    src_cls.endswith("SelfAttention")
-                    and "distil" not in src_cls.lower()
-                )
+                or (src_cls.endswith("SelfAttention") and "distil" not in src_cls.lower())
                 or (hasattr(source_attn, "self") and hasattr(source_attn, "output"))
             ):
                 is_nested = True
@@ -476,9 +450,7 @@ class FlashAttention3FP8(BaseAttention):
             is_nested = False
         self.is_nested_encoder: bool = bool(is_nested)
         self.gradient_checkpointing: bool = (
-            getattr(config, "gradient_checkpointing", False)
-            if config is not None
-            else False
+            getattr(config, "gradient_checkpointing", False) if config is not None else False
         )
 
         # Multi-head projections equipped with LoRA adapters
@@ -516,9 +488,7 @@ class FlashAttention3FP8(BaseAttention):
         )
 
         dropout_p = (
-            getattr(
-                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
-            )
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
             if config
             else 0.1
         )
@@ -589,9 +559,7 @@ class FlashAttention3FP8(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if has_out_lin:
             is_nested = False
@@ -629,9 +597,7 @@ class FlashAttention3FP8(BaseAttention):
         # 1. GPT-2: Fused c_attn + c_proj
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
-            if hasattr(c_attn_mod, "merge") and not getattr(
-                c_attn_mod, "merged", False
-            ):
+            if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
@@ -800,9 +766,7 @@ class FlashAttention3FP8(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
                     target_mod.bias.data[:min_b].copy_(
-                        b[:min_b].to(
-                            device=target_mod.bias.device, dtype=target_mod.bias.dtype
-                        )
+                        b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype)
                     )
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
@@ -880,12 +844,7 @@ class FlashAttention3FP8(BaseAttention):
         # 4. FlashAttention-3 FP8 hardware acceleration path
         # Requires Hopper architecture (SM 9.0+), flash_attn, and CUDA tensor
         out = None
-        if (
-            FLASH_ATTN_AVAILABLE
-            and self.use_fp8
-            and q.is_cuda
-            and hasattr(torch, "float8_e4m3fn")
-        ):
+        if FLASH_ATTN_AVAILABLE and self.use_fp8 and q.is_cuda and hasattr(torch, "float8_e4m3fn"):
             # Check Hopper compute capability
             is_hopper = False
             if hasattr(torch.cuda, "get_device_capability"):
@@ -925,18 +884,14 @@ class FlashAttention3FP8(BaseAttention):
                         if head_mask.dim() == 1:
                             hm = head_mask.view(1, -1, 1, 1)
                         elif head_mask.dim() == 2:
-                            hm = head_mask.view(
-                                head_mask.shape[0], head_mask.shape[1], 1, 1
-                            )
+                            hm = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
                         elif head_mask.dim() == 3:
                             hm = head_mask.unsqueeze(-1)
                         else:
                             hm = head_mask
                         out_tensor_h = out_tensor_h * hm
                         out = (
-                            out_tensor_h.transpose(1, 2)
-                            .contiguous()
-                            .view(B, L, self.all_head_size)
+                            out_tensor_h.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
                         )
                     else:
                         out = out_tensor.contiguous().view(B, L, self.all_head_size)
@@ -952,12 +907,8 @@ class FlashAttention3FP8(BaseAttention):
             attn_mask = None
             if eff_mask is not None:
                 if eff_mask.dim() == 2:
-                    min_val = (
-                        torch.finfo(q.dtype).min if q.dtype.is_floating_point else -1e4
-                    )
-                    attn_mask = (
-                        1.0 - eff_mask.unsqueeze(1).unsqueeze(2).float()
-                    ) * min_val
+                    min_val = torch.finfo(q.dtype).min if q.dtype.is_floating_point else -1e4
+                    attn_mask = (1.0 - eff_mask.unsqueeze(1).unsqueeze(2).float()) * min_val
                 elif eff_mask.dim() == 3:
                     attn_mask = eff_mask.unsqueeze(1).float()
                 elif eff_mask.dim() == 4:
@@ -1003,9 +954,7 @@ class FlashAttention3FP8(BaseAttention):
                 if head_mask.dim() == 1:
                     head_mask = head_mask.view(1, -1, 1, 1)
                 elif head_mask.dim() == 2:
-                    head_mask = head_mask.view(
-                        head_mask.shape[0], head_mask.shape[1], 1, 1
-                    )
+                    head_mask = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
                 elif head_mask.dim() == 3:
                     head_mask = head_mask.unsqueeze(-1)
                 out_sdpa = out_sdpa * head_mask
@@ -1060,9 +1009,7 @@ def inject_flash3_fp8(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -1073,9 +1020,7 @@ def inject_flash3_fp8(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=(
-                    comp_config
-                    if "comp_config" in locals() or "comp_config" in kwargs
-                    else None
+                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
                 ),
                 layer_idx=idx,
                 total_layers=tot,

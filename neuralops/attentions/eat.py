@@ -31,6 +31,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -91,12 +92,8 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
     if rotary_dim < head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_e = (q_rot * cos.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q_rot.dtype)
-        )
-        k_rot_e = (k_rot * cos.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k_rot.dtype)
-        )
+        q_rot_e = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_e = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
         q = torch.cat([q_rot_e, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_e
         k = torch.cat([k_rot_e, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_e
     else:
@@ -142,9 +139,7 @@ class LoRALinear(nn.Module):
 
         if self.lora_rank > 0:
             self.lora_A = nn.Parameter(torch.empty((self.lora_rank, in_features), **fk))
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, self.lora_rank), **fk)
-            )
+            self.lora_B = nn.Parameter(torch.empty((out_features, self.lora_rank), **fk))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -192,9 +187,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = (
-                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            )
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -232,14 +225,8 @@ class EATBlock(BaseAttention):
 
         # ---- EAT-FIX-10: config None-safety ----
         cfg_obj = getattr(config, "text_config", config) if config is not None else None
-        hidden_size = (
-            getattr(cfg_obj, "hidden_size", None) if cfg_obj is not None else None
-        )
-        num_heads = (
-            getattr(cfg_obj, "num_attention_heads", None)
-            if cfg_obj is not None
-            else None
-        )
+        hidden_size = getattr(cfg_obj, "hidden_size", None) if cfg_obj is not None else None
+        num_heads = getattr(cfg_obj, "num_attention_heads", None) if cfg_obj is not None else None
 
         if hidden_size is None and source_attn is not None:
             for cand in ("q_lin", "query", "q_proj", "c_attn", "qkv"):
@@ -275,9 +262,7 @@ class EATBlock(BaseAttention):
         # ---- num_kv_heads ----
         cfg_kv = None
         if config is not None:
-            cfg_kv = getattr(
-                config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
-            )
+            cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
         if cfg_kv is None:
             cfg_kv = kwargs.get("num_kv_heads", self.num_heads)
         self.num_kv_heads = max(1, min(int(cfg_kv), self.num_heads))
@@ -333,8 +318,7 @@ class EATBlock(BaseAttention):
         is_dec = False
         if config is not None:
             is_dec = bool(
-                getattr(config, "is_decoder", False)
-                or getattr(config, "is_causal", False)
+                getattr(config, "is_decoder", False) or getattr(config, "is_causal", False)
             )
         if any(
             model_type.startswith(p)
@@ -357,9 +341,7 @@ class EATBlock(BaseAttention):
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
         if source_attn is not None:
-            if getattr(source_attn, "is_decoder", False) or hasattr(
-                source_attn, "c_attn"
-            ):
+            if getattr(source_attn, "is_decoder", False) or hasattr(source_attn, "c_attn"):
                 is_dec = True
         self.is_decoder = bool(is_dec)
         self.is_causal = self.is_decoder
@@ -444,9 +426,7 @@ class EATBlock(BaseAttention):
                     self.prune_layer = None
 
         self.rotary_emb = (
-            getattr(source_attn, "rotary_emb", None)
-            if source_attn is not None
-            else None
+            getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
         )
         self.comp_config = comp_config
 
@@ -533,20 +513,14 @@ class EATBlock(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 )
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        if (
-            hasattr(pretrained_attn, "rotary_emb")
-            and pretrained_attn.rotary_emb is not None
-        ):
+        if hasattr(pretrained_attn, "rotary_emb") and pretrained_attn.rotary_emb is not None:
             self.rotary_emb = pretrained_attn.rotary_emb
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
@@ -597,10 +571,7 @@ class EATBlock(BaseAttention):
                     c_b[2 * split :] if c_b is not None else None,
                 )
 
-            if (
-                hasattr(pretrained_attn, "c_proj")
-                and pretrained_attn.c_proj is not None
-            ):
+            if hasattr(pretrained_attn, "c_proj") and pretrained_attn.c_proj is not None:
                 c_proj_mod = pretrained_attn.c_proj
                 if (
                     hasattr(c_proj_mod, "merge")
@@ -631,9 +602,7 @@ class EATBlock(BaseAttention):
                     )
 
         # 2. Nested (BERT / RoBERTa)
-        elif hasattr(pretrained_attn, "self") and hasattr(
-            pretrained_attn.self, "query"
-        ):
+        elif hasattr(pretrained_attn, "self") and hasattr(pretrained_attn.self, "query"):
             s = pretrained_attn.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 m = getattr(s, sub, None)
@@ -643,9 +612,7 @@ class EATBlock(BaseAttention):
                         m.weight.data.clone(),
                         b.data.clone() if b is not None else None,
                     )
-            if hasattr(pretrained_attn, "output") and hasattr(
-                pretrained_attn.output, "dense"
-            ):
+            if hasattr(pretrained_attn, "output") and hasattr(pretrained_attn.output, "dense"):
                 d = pretrained_attn.output.dense
                 b = getattr(d, "bias", None)
                 extracted["o"] = (
@@ -740,9 +707,7 @@ class EATBlock(BaseAttention):
                 if b is not None and target.bias is not None:
                     mb = min(target.bias.numel(), b.numel())
                     target.bias.data.zero_()
-                    target.bias.data[:mb].copy_(
-                        b[:mb].to(target.bias.device, target.bias.dtype)
-                    )
+                    target.bias.data[:mb].copy_(b[:mb].to(target.bias.device, target.bias.dtype))
                 elif target.bias is not None:
                     nn.init.zeros_(target.bias)
 
@@ -819,11 +784,7 @@ class EATBlock(BaseAttention):
             if position_embeddings is not None
             else kwargs.get("position_embeddings")
         )
-        if (
-            pos_emb is not None
-            and isinstance(pos_emb, (tuple, list))
-            and len(pos_emb) == 2
-        ):
+        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2:
             cos, sin = pos_emb[0], pos_emb[1]
 
         if cos is not None and sin is not None and not is_cross:
@@ -833,9 +794,7 @@ class EATBlock(BaseAttention):
                 pos_ids = position_ids
                 if pos_ids is None:
                     pos_ids = (
-                        torch.arange(kv_len, device=hidden_states.device)
-                        .unsqueeze(0)
-                        .expand(B, -1)
+                        torch.arange(kv_len, device=hidden_states.device).unsqueeze(0).expand(B, -1)
                     )
                 cos_, sin_ = self.rotary_emb(k, seq_len=kv_len)
                 q, k = apply_rotary_pos_emb(q, k, cos_, sin_, pos_ids)
@@ -855,9 +814,7 @@ class EATBlock(BaseAttention):
         if eff_mask is not None or is_causal:
             if eff_mask is not None:
                 if eff_mask.dim() == 2:
-                    attn_mask_combined = (eff_mask > 0)[
-                        :, None, None, :
-                    ]  # (B,1,1,N_kv)
+                    attn_mask_combined = (eff_mask > 0)[:, None, None, :]  # (B,1,1,N_kv)
                 elif eff_mask.dim() == 3:
                     attn_mask_combined = (eff_mask > -1e4)[:, None, :, :]
                 elif eff_mask.dim() == 4:
@@ -878,10 +835,7 @@ class EATBlock(BaseAttention):
         scale = 1.0 / math.sqrt(self.head_dim)
 
         if attn_mask_combined is not None:
-            scores = (
-                torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous())
-                * scale
-            )
+            scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
             scores = scores.masked_fill(~attn_mask_combined, -1e4)
             scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
             probs = F.softmax(scores, dim=-1).to(dtype_in)
@@ -905,10 +859,7 @@ class EATBlock(BaseAttention):
                 attn_weights_for_return = None
                 _sdpa_out = _sdpa_out.to(dtype_in)
             except Exception:
-                scores = (
-                    torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous())
-                    * scale
-                )
+                scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
                 if is_causal:
                     causal = (
                         torch.triu(
@@ -1076,11 +1027,7 @@ def inject_eat(
     try:
         if model_config is None and hasattr(layer, "config"):
             model_config = layer.config
-        if (
-            model_config is None
-            and src_attn is not None
-            and hasattr(src_attn, "config")
-        ):
+        if model_config is None and src_attn is not None and hasattr(src_attn, "config"):
             model_config = src_attn.config
 
         new_attn = EATBlock(

@@ -37,6 +37,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -115,9 +116,7 @@ def allocate_ranks_spectron(
         cum_ent = cumulative_entropy_fraction(s, max_r)
         cost = 1.0 - cum_ent
         cost_tables.append(cost)
-        param_tables.append(
-            (np.arange(1, max_r + 1) * (d_in + d_out)).astype(np.float64)
-        )
+        param_tables.append((np.arange(1, max_r + 1) * (d_in + d_out)).astype(np.float64))
 
     low, high = lambda_range
     best_ranks = None
@@ -263,12 +262,8 @@ def apply_rotary_pos_emb(
     q_rot_emb = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
     k_rot_emb = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
 
-    q_out = (
-        torch.cat([q_rot_emb, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot_emb
-    )
-    k_out = (
-        torch.cat([k_rot_emb, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot_emb
-    )
+    q_out = torch.cat([q_rot_emb, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot_emb
+    k_out = torch.cat([k_rot_emb, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot_emb
     return q_out, k_out
 
 
@@ -311,9 +306,7 @@ def _autocast_off(x: torch.Tensor):
 # 7. SpectronAttention
 # ======================================================================
 @ATTENTION_REGISTRY.register("spectron", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register(
-    "spectron_attention", supports_causal=True, supports_gqa=True
-)
+@ATTENTION_REGISTRY.register("spectron_attention", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("spectron_attn", supports_causal=True, supports_gqa=True)
 class SpectronAttention(BaseAttention):
     supports_causal: bool = True
@@ -348,9 +341,7 @@ class SpectronAttention(BaseAttention):
             _cfg_get(
                 model_config,
                 "num_attention_heads",
-                _cfg_get(
-                    model_config, "num_heads", kwargs.get("num_attention_heads", 12)
-                ),
+                _cfg_get(model_config, "num_heads", kwargs.get("num_attention_heads", 12)),
             )
         )
         self.head_dim = int(
@@ -407,9 +398,7 @@ class SpectronAttention(BaseAttention):
         self.is_nested_encoder = False
 
         # Ranks (with global clamp)
-        default_r = int(
-            _cfg_get(model_config, "svd_rank", _cfg_get(model_config, "rank", 64))
-        )
+        default_r = int(_cfg_get(model_config, "svd_rank", _cfg_get(model_config, "rank", 64)))
         default_r = max(1, min(default_r, self.hidden_size, self.all_head_size))
         self.ranks: dict[str, int] = {}
         for k in ("q", "k", "v", "o"):
@@ -476,18 +465,10 @@ class SpectronAttention(BaseAttention):
 
         # ---- optional sparse residuals (init from zero) ----
         if self.add_sparse:
-            self.q_sparse = nn.Parameter(
-                torch.zeros(self.q_head_size, self.hidden_size)
-            )
-            self.k_sparse = nn.Parameter(
-                torch.zeros(self.kv_head_size, self.hidden_size)
-            )
-            self.v_sparse = nn.Parameter(
-                torch.zeros(self.kv_head_size, self.hidden_size)
-            )
-            self.o_sparse = nn.Parameter(
-                torch.zeros(self.hidden_size, self.q_head_size)
-            )
+            self.q_sparse = nn.Parameter(torch.zeros(self.q_head_size, self.hidden_size))
+            self.k_sparse = nn.Parameter(torch.zeros(self.kv_head_size, self.hidden_size))
+            self.v_sparse = nn.Parameter(torch.zeros(self.kv_head_size, self.hidden_size))
+            self.o_sparse = nn.Parameter(torch.zeros(self.hidden_size, self.q_head_size))
         else:
             self.register_parameter("q_sparse", None)
             self.register_parameter("k_sparse", None)
@@ -559,12 +540,8 @@ class SpectronAttention(BaseAttention):
                 U, s, Vt = torch.linalg.svd(W_f, full_matrices=False)
 
             sqrt_s = torch.sqrt(torch.clamp(s[:r], min=1e-12))
-            down_w = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(
-                down.weight.device, down.weight.dtype
-            )
-            up_w = (U[:, :r] * sqrt_s.unsqueeze(0)).to(
-                up.weight.device, up.weight.dtype
-            )
+            down_w = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(down.weight.device, down.weight.dtype)
+            up_w = (U[:, :r] * sqrt_s.unsqueeze(0)).to(up.weight.device, up.weight.dtype)
 
             down.weight.data.zero_()
             up.weight.data.zero_()
@@ -618,10 +595,7 @@ class SpectronAttention(BaseAttention):
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_w, c_b = _unpack_weight_bias(src.c_attn)
                 if c_w is not None:
-                    if (
-                        c_w.shape[0] == self.hidden_size
-                        and c_w.shape[1] != self.hidden_size
-                    ):
+                    if c_w.shape[0] == self.hidden_size and c_w.shape[1] != self.hidden_size:
                         c_w = c_w.t().contiguous()
                     q_dim = self.q_head_size
                     k_dim = self.hidden_size
@@ -636,17 +610,12 @@ class SpectronAttention(BaseAttention):
 
                 out_w, out_b = _unpack_weight_bias(src.c_proj)
                 if out_w is not None:
-                    if (
-                        out_w.shape[0] == self.hidden_size
-                        and out_w.shape[1] != self.hidden_size
-                    ):
+                    if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
                         out_w = out_w.t().contiguous()
                     w_o, b_o = out_w, out_b
 
             # BERT / RoBERTa nested
-            elif (
-                hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value")
-            ):
+            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q, b_q = _unpack_weight_bias(src.query)
                 w_k, b_k = _unpack_weight_bias(src.key)
                 w_v, b_v = _unpack_weight_bias(src.value)
@@ -657,11 +626,7 @@ class SpectronAttention(BaseAttention):
                             break
 
             # Qwen / LLaMA
-            elif (
-                hasattr(src, "q_proj")
-                and hasattr(src, "k_proj")
-                and hasattr(src, "v_proj")
-            ):
+            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q, b_q = _unpack_weight_bias(src.q_proj)
                 w_k, b_k = _unpack_weight_bias(src.k_proj)
                 w_v, b_v = _unpack_weight_bias(src.v_proj)
@@ -669,11 +634,7 @@ class SpectronAttention(BaseAttention):
                     w_o, b_o = _unpack_weight_bias(src.o_proj)
 
             # DistilBERT
-            elif (
-                hasattr(src, "q_lin")
-                and hasattr(src, "k_lin")
-                and hasattr(src, "v_lin")
-            ):
+            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q, b_q = _unpack_weight_bias(src.q_lin)
                 w_k, b_k = _unpack_weight_bias(src.k_lin)
                 w_v, b_v = _unpack_weight_bias(src.v_lin)
@@ -873,16 +834,8 @@ class SpectronAttention(BaseAttention):
         )
 
         Q = Q.view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        K = (
-            K.view(B, kv_len, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V = (
-            V.view(B, kv_len, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        K = K.view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V = V.view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # RoPE
         if position_embeddings is None:
@@ -891,10 +844,7 @@ class SpectronAttention(BaseAttention):
             cos, sin = position_embeddings
             past_len = 0
             if past_key_value is not None:
-                if (
-                    isinstance(past_key_value, (tuple, list))
-                    and len(past_key_value) >= 1
-                ):
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
                     past_len = past_key_value[0].shape[-2]
                 elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
                     past_len = past_key_value.key_cache[0].shape[-2]
@@ -913,9 +863,7 @@ class SpectronAttention(BaseAttention):
         is_causal = self.is_decoder and not is_cross and N > 1
 
         # SP-FIX-05: removed padding/truncation hack
-        scores = (
-            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         if is_causal:
             causal = (
@@ -936,10 +884,7 @@ class SpectronAttention(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is not None:
             if eff_mask.dim() == 2:
-                scores = (
-                    scores
-                    + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
-                )
+                scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
             elif eff_mask.dim() == 3:
                 scores = scores + eff_mask.unsqueeze(1).float()
             elif eff_mask.dim() == 4:
@@ -1028,9 +973,7 @@ def gather_attention_weights(model: Any) -> tuple[list[np.ndarray], list[str]]:
                 w = w.T
             # split into q, k, v
             q_d = w.shape[0] // 3
-            for tag, part in zip(
-                ("q", "k", "v"), (w[:q_d], w[q_d : 2 * q_d], w[2 * q_d :])
-            ):
+            for tag, part in zip(("q", "k", "v"), (w[:q_d], w[q_d : 2 * q_d], w[2 * q_d :])):
                 weights.append(part)
                 names.append(f"layer{layer_id}_{tag}")
             weights.append(attn.c_proj.weight.data.cpu().numpy())
@@ -1184,18 +1127,13 @@ def inject_spectron(
         src_attn = target
 
     # SP-FIX-09: idempotency guard
-    if (
-        isinstance(src_attn, SpectronAttention)
-        or "Spectron" in src_attn.__class__.__name__
-    ):
+    if isinstance(src_attn, SpectronAttention) or "Spectron" in src_attn.__class__.__name__:
         return None
 
     if cfg is None:
         cfg = getattr(src_attn, "config", None) or getattr(target, "config", None)
 
-    h_size = _cfg_get(
-        cfg, "hidden_size", _cfg_get(cfg, "dim", kwargs.get("hidden_size", 768))
-    )
+    h_size = _cfg_get(cfg, "hidden_size", _cfg_get(cfg, "dim", kwargs.get("hidden_size", 768)))
     rank = _cfg_get(
         comp_config,
         "svd_rank",
@@ -1290,6 +1228,7 @@ GLUE_TASK_KEYS: dict[str, tuple[str, str | None]] = {
 
 def load_glue_local(task: str) -> Any:
     from datasets import Dataset, DatasetDict
+
     from neuralops.utils.paths import get_glue_dir
 
     base = str(get_glue_dir())
@@ -1307,16 +1246,12 @@ def get_num_labels_and_type(task: str) -> tuple[int, bool]:
         return 1, True
     if task == "cola":
         return 2, False
-    return {"sst2": 2, "mrpc": 2, "qqp": 2, "mnli": 3, "qnli": 2, "rte": 2, "wnli": 2}[
-        task
-    ], False
+    return {"sst2": 2, "mrpc": 2, "qqp": 2, "mnli": 3, "qnli": 2, "rte": 2, "wnli": 2}[task], False
 
 
 def preprocess(examples, tokenizer, s1, s2, max_len, is_reg):
     if s2 is None:
-        t = tokenizer(
-            examples[s1], truncation=True, padding="max_length", max_length=max_len
-        )
+        t = tokenizer(examples[s1], truncation=True, padding="max_length", max_length=max_len)
     else:
         t = tokenizer(
             examples[s1],

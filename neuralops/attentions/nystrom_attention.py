@@ -22,6 +22,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -91,21 +92,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -145,9 +140,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
         return out
 
@@ -185,9 +178,7 @@ class NystromAttention(BaseAttention):
 
         if hidden_size is None:
             if config is not None:
-                hidden_size = getattr(
-                    config, "hidden_size", getattr(config, "dim", 768)
-                )
+                hidden_size = getattr(config, "hidden_size", getattr(config, "dim", 768))
             elif source_attn is not None:
                 out_layer = getattr(
                     source_attn,
@@ -195,24 +186,18 @@ class NystromAttention(BaseAttention):
                     getattr(
                         source_attn,
                         "dense",
-                        getattr(
-                            source_attn, "c_proj", getattr(source_attn, "o_proj", None)
-                        ),
+                        getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None)),
                     ),
                 )
                 hidden_size = (
-                    getattr(out_layer, "out_features", 768)
-                    if out_layer is not None
-                    else 768
+                    getattr(out_layer, "out_features", 768) if out_layer is not None else 768
                 )
             else:
                 hidden_size = 768
 
         if num_heads is None:
             if config is not None:
-                num_heads = getattr(
-                    config, "num_attention_heads", getattr(config, "n_heads", 12)
-                )
+                num_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12))
             elif source_attn is not None:
                 num_heads = getattr(
                     source_attn,
@@ -251,9 +236,7 @@ class NystromAttention(BaseAttention):
                 else getattr(
                     config,
                     "num_landmarks",
-                    getattr(
-                        config, "nystrom_landmarks", rank if rank is not None else 32
-                    ),
+                    getattr(config, "nystrom_landmarks", rank if rank is not None else 32),
                 )
             )
             if config is not None
@@ -359,9 +342,7 @@ class NystromAttention(BaseAttention):
         )
 
         dropout_p = (
-            getattr(
-                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
-            )
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
             if config
             else 0.1
         )
@@ -586,9 +567,7 @@ class NystromAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
                     target_mod.bias.data[:min_b].copy_(
-                        b[:min_b].to(
-                            device=target_mod.bias.device, dtype=target_mod.bias.dtype
-                        )
+                        b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype)
                     )
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
@@ -611,11 +590,7 @@ class NystromAttention(BaseAttention):
             alpha = 1.0 / (norm_1 * norm_inf + 1e-5)
 
             V = alpha * A.transpose(-2, -1).contiguous()
-            I = (
-                torch.eye(A.size(-1), device=A.device, dtype=A.dtype)
-                .unsqueeze(0)
-                .unsqueeze(0)
-            )
+            I = torch.eye(A.size(-1), device=A.device, dtype=A.dtype).unsqueeze(0).unsqueeze(0)
 
             for _ in range(iters):
                 V = torch.matmul(V, 2.0 * I - torch.matmul(A, V))
@@ -652,9 +627,7 @@ class NystromAttention(BaseAttention):
         except Exception:
             pass
 
-        scores = (
-            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
         scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
         attn_weights = F.softmax(scores, dim=-1).to(dtype)
         attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
@@ -672,9 +645,7 @@ class NystromAttention(BaseAttention):
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         if kwargs.get("encoder_hidden_states") is not None:
-            raise NotImplementedError(
-                "Cross-attention is not implemented for NystromAttention"
-            )
+            raise NotImplementedError("Cross-attention is not implemented for NystromAttention")
 
         B, N, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
@@ -682,18 +653,8 @@ class NystromAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         Q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
-        K = (
-            self.key(hidden_states)
-            .view(B, N, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V = (
-            self.value(hidden_states)
-            .view(B, N, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        K = self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         if position_embeddings is not None:
             cos, sin = position_embeddings
@@ -707,13 +668,8 @@ class NystromAttention(BaseAttention):
 
         if self.is_decoder or self.is_causal:
             scale = 1.0 / math.sqrt(d)
-            scores = (
-                torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous())
-                * scale
-            )
-            causal_mask = torch.tril(
-                torch.ones((N, N), device=device, dtype=torch.bool)
-            )
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+            causal_mask = torch.tril(torch.ones((N, N), device=device, dtype=torch.bool))
             scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
             scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
             attn_weights = F.softmax(scores, dim=-1).to(dtype)
@@ -732,24 +688,15 @@ class NystromAttention(BaseAttention):
             K_flat = K.reshape(B * H, N, d).transpose(1, 2).contiguous()
 
             Q_landmarks = (
-                F.adaptive_avg_pool1d(Q_flat, m)
-                .transpose(1, 2)
-                .contiguous()
-                .reshape(B, H, m, d)
+                F.adaptive_avg_pool1d(Q_flat, m).transpose(1, 2).contiguous().reshape(B, H, m, d)
             )
             K_landmarks = (
-                F.adaptive_avg_pool1d(K_flat, m)
-                .transpose(1, 2)
-                .contiguous()
-                .reshape(B, H, m, d)
+                F.adaptive_avg_pool1d(K_flat, m).transpose(1, 2).contiguous().reshape(B, H, m, d)
             )
 
             scale = 1.0 / math.sqrt(d)
             scores1 = (
-                torch.matmul(
-                    Q.float(), K_landmarks.float().transpose(-2, -1).contiguous()
-                )
-                * scale
+                torch.matmul(Q.float(), K_landmarks.float().transpose(-2, -1).contiguous()) * scale
             )
             scores2 = (
                 torch.matmul(
@@ -759,10 +706,7 @@ class NystromAttention(BaseAttention):
                 * scale
             )
             scores3 = (
-                torch.matmul(
-                    Q_landmarks.float(), K.float().transpose(-2, -1).contiguous()
-                )
-                * scale
+                torch.matmul(Q_landmarks.float(), K.float().transpose(-2, -1).contiguous()) * scale
             )
 
             mask_expanded = valid_mask.unsqueeze(1).unsqueeze(2)
@@ -842,9 +786,7 @@ def inject_nystrom(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -855,9 +797,7 @@ def inject_nystrom(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=(
-                    comp_config
-                    if "comp_config" in locals() or "comp_config" in kwargs
-                    else None
+                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
                 ),
                 layer_idx=idx,
                 total_layers=tot,
@@ -873,9 +813,7 @@ def inject_nystrom(
         old_attn
         if old_attn is not None
         else (
-            getattr(
-                layer, "attention", getattr(layer, "self", getattr(layer, "attn", None))
-            )
+            getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
             if layer is not None
             else None
         )

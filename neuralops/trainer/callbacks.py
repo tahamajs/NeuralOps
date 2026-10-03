@@ -72,9 +72,7 @@ class SVDAttentionCallback(TrainerCallback):
         compressed_params = 0
         total_params = 0
         for module in model.modules():
-            total_params += sum(
-                p.numel() for p in module.parameters() if p.requires_grad
-            )
+            total_params += sum(p.numel() for p in module.parameters() if p.requires_grad)
             name = module.__class__.__name__
             if name in [
                 "SVDLinearLayer",
@@ -85,9 +83,7 @@ class SVDAttentionCallback(TrainerCallback):
                 compressed_params += sum(p.numel() for p in module.parameters())
         if svd_layers > 0:
             logs["svd_layers"] = svd_layers
-            logs["compression_ratio"] = (
-                compressed_params / total_params if total_params > 0 else 0
-            )
+            logs["compression_ratio"] = compressed_params / total_params if total_params > 0 else 0
 
 
 class PreemptionCallback(TrainerCallback):

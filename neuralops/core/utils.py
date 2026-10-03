@@ -59,9 +59,9 @@ def count_parameters(model: torch.nn.Module, trainable_only: bool = True) -> int
 def format_number(num: int) -> str:
     """Format number."""
     if num >= 1_000_000:
-        return f"{num/1_000_000:.1f}M"
+        return f"{num / 1_000_000:.1f}M"
     if num >= 1_000:
-        return f"{num/1_000:.0f}K"
+        return f"{num / 1_000:.0f}K"
     return str(num)
 
 

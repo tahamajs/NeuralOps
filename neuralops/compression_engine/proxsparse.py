@@ -35,6 +35,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import apply_24_structured_mask, apply_block_mask
@@ -146,9 +147,7 @@ class ProxSparsePrunedLoRALinear(nn.Module):
             out_features = int(getattr(base_mod, "nf", pruned_weight.shape[0]))
         else:
             in_features = int(getattr(base_mod, "in_features", pruned_weight.shape[1]))
-            out_features = int(
-                getattr(base_mod, "out_features", pruned_weight.shape[0])
-            )
+            out_features = int(getattr(base_mod, "out_features", pruned_weight.shape[0]))
 
         bias = None
         if getattr(base_mod, "bias", None) is not None:
@@ -193,9 +192,7 @@ class ProxSparsePrunedLoRALinear(nn.Module):
         out = F.linear(x, w, b)
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_delta = (
-                F.linear(F.linear(x.float(), self.lora_A), self.lora_B) * self.scaling
-            )
+            lora_delta = F.linear(F.linear(x.float(), self.lora_A), self.lora_B) * self.scaling
             out = out + lora_delta.to(out.dtype)
         return out
 
@@ -257,9 +254,7 @@ class ProxSparsePruner(BaseCompressor):
             float(
                 lambda_prox
                 if lambda_prox is not None
-                else _cfg_get(
-                    cfg_obj, "proxsparse_lambda", _cfg_get(cfg_obj, "lambda_prox", 0.01)
-                )
+                else _cfg_get(cfg_obj, "proxsparse_lambda", _cfg_get(cfg_obj, "lambda_prox", 0.01))
             ),
         )
         self.steps = max(
@@ -267,9 +262,7 @@ class ProxSparsePruner(BaseCompressor):
             int(
                 steps
                 if steps is not None
-                else _cfg_get(
-                    cfg_obj, "proxsparse_steps", _cfg_get(cfg_obj, "steps", 5)
-                )
+                else _cfg_get(cfg_obj, "proxsparse_steps", _cfg_get(cfg_obj, "steps", 5))
             ),
         )
         # PS-FIX-04
@@ -278,9 +271,7 @@ class ProxSparsePruner(BaseCompressor):
             float(
                 learning_rate
                 if learning_rate is not None
-                else _cfg_get(
-                    cfg_obj, "proxsparse_lr", _cfg_get(cfg_obj, "learning_rate", 0.5)
-                )
+                else _cfg_get(cfg_obj, "proxsparse_lr", _cfg_get(cfg_obj, "learning_rate", 0.5))
             ),
         )
         self.structured_24 = bool(
@@ -304,9 +295,7 @@ class ProxSparsePruner(BaseCompressor):
             )
             and not self.target_attention_only
         )
-        self.use_lora = bool(
-            use_lora or _cfg_get(cfg_obj, "use_lora", False) or (lora_r > 0)
-        )
+        self.use_lora = bool(use_lora or _cfg_get(cfg_obj, "use_lora", False) or (lora_r > 0))
         self.lora_r = int(lora_r or _cfg_get(cfg_obj, "lora_r", 0))
         self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, "lora_alpha", 1.0))
         self.min_numel = max(1, int(min_numel or _cfg_get(cfg_obj, "min_numel", 16)))
@@ -337,9 +326,7 @@ class ProxSparsePruner(BaseCompressor):
                 )
         else:
             self.target_device = (
-                next(model.parameters()).device
-                if list(model.parameters())
-                else torch.device("cpu")
+                next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
             )
 
         self.visited_modules: set[int] = set()
@@ -359,11 +346,7 @@ class ProxSparsePruner(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        is_gqa = (
-            num_heads is not None
-            and num_kv_heads is not None
-            and num_kv_heads < num_heads
-        )
+        is_gqa = num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads
 
         name_l = name.lower()
         is_attn_qkv = any(
@@ -453,14 +436,10 @@ class ProxSparsePruner(BaseCompressor):
         """prox_{a ||.||_1}(x) = sign(x) * max(|x| - a, 0)."""
         return torch.sign(tensor) * torch.clamp(torch.abs(tensor) - threshold, min=0.0)
 
-    def _project_sparse(
-        self, tensor: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def _project_sparse(self, tensor: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Hard projection onto sparse constraint S. Returns (pruned, mask)."""
         if self.structured_24:
-            pruned, mask = apply_24_structured_mask(
-                tensor, saliency=torch.abs(tensor), dim=1
-            )
+            pruned, mask = apply_24_structured_mask(tensor, saliency=torch.abs(tensor), dim=1)
             return pruned, (mask > 0)
         elif self.block_size != (1, 1):
             pruned, mask = apply_block_mask(
@@ -504,17 +483,11 @@ class ProxSparsePruner(BaseCompressor):
                 dtype = raw_w.dtype
 
                 # Always operate in (out, in) orientation.
-                W_0 = (
-                    raw_w.t().contiguous().float()
-                    if is_conv1d
-                    else raw_w.contiguous().float()
-                )
+                W_0 = raw_w.t().contiguous().float() if is_conv1d else raw_w.contiguous().float()
 
                 # Early NaN/Inf guard on source.
                 if not torch.isfinite(W_0).all():
-                    logger.warning(
-                        "ProxSparse: %s has non-finite weights; skipping.", name
-                    )
+                    logger.warning("ProxSparse: %s has non-finite weights; skipping.", name)
                     self.failed_layers.append(name)
                     continue
 
@@ -568,9 +541,7 @@ class ProxSparsePruner(BaseCompressor):
                     )
                     replace_module(self.model, name, lora_layer)
                 else:
-                    final_w = (
-                        W_final.t().contiguous() if is_conv1d else W_final.contiguous()
-                    )
+                    final_w = W_final.t().contiguous() if is_conv1d else W_final.contiguous()
                     base_mod.weight.data.copy_(final_w.to(dtype=dtype, device=device))
 
                 self.compressed_layers.append(name)
@@ -669,15 +640,11 @@ def proxsparse_factory(
 ) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     sparsity = kwargs.pop(
         "sparsity",
-        _cfg_get(
-            comp_config, "proxsparse_sparsity", _cfg_get(comp_config, "sparsity", 0.5)
-        ),
+        _cfg_get(comp_config, "proxsparse_sparsity", _cfg_get(comp_config, "sparsity", 0.5)),
     )
     lambda_prox = kwargs.pop(
         "lambda_prox",
-        _cfg_get(
-            comp_config, "proxsparse_lambda", _cfg_get(comp_config, "lambda_prox", 0.01)
-        ),
+        _cfg_get(comp_config, "proxsparse_lambda", _cfg_get(comp_config, "lambda_prox", 0.01)),
     )
     steps = kwargs.pop(
         "steps",
@@ -685,9 +652,7 @@ def proxsparse_factory(
     )
     learning_rate = kwargs.pop(
         "learning_rate",
-        _cfg_get(
-            comp_config, "proxsparse_lr", _cfg_get(comp_config, "learning_rate", 0.5)
-        ),
+        _cfg_get(comp_config, "proxsparse_lr", _cfg_get(comp_config, "learning_rate", 0.5)),
     )
     structured_24 = kwargs.pop(
         "structured_24",

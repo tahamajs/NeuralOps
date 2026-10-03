@@ -62,9 +62,7 @@ def get_calibration_tensors(
     if calibration_loader is not None:
         for batch in calibration_loader:
             if isinstance(batch, dict):
-                return {
-                    k: v.to(device) if hasattr(v, "to") else v for k, v in batch.items()
-                }
+                return {k: v.to(device) if hasattr(v, "to") else v for k, v in batch.items()}
             elif isinstance(batch, (tuple, list)):
                 return [b.to(device) if hasattr(b, "to") else b for b in batch]
             elif isinstance(batch, torch.Tensor):
@@ -121,9 +119,7 @@ def get_calibration_tensors(
     input_ids[:, -1] = eos_token_id
     return {
         "input_ids": input_ids,
-        "attention_mask": torch.ones(
-            (sample_size, seq_len), device=device, dtype=torch.long
-        ),
+        "attention_mask": torch.ones((sample_size, seq_len), device=device, dtype=torch.long),
     }
 
 
@@ -243,9 +239,7 @@ def compute_taylor_first_order_saliency(
         else:
             X = activations.reshape(-1, activations.shape[-1]).float()
         # Mean absolute activation per input feature
-        act_norm = torch.mean(torch.abs(X), dim=0, keepdim=True).to(
-            W.device
-        )  # [1, d_in]
+        act_norm = torch.mean(torch.abs(X), dim=0, keepdim=True).to(W.device)  # [1, d_in]
         if act_norm.shape[1] == W.shape[1]:
             return torch.abs(W) * act_norm
 
@@ -322,9 +316,7 @@ def apply_24_structured_mask(
             keep = max(0, target_keep_total - kept_in_blocks)
             if keep > 0:
                 S_rem = S[:, start:]
-                _, top_idx = torch.topk(
-                    S_rem, k=min(keep, remainder), dim=-1, largest=True
-                )
+                _, top_idx = torch.topk(S_rem, k=min(keep, remainder), dim=-1, largest=True)
                 mask_rem = torch.zeros_like(S_rem)
                 mask_rem.scatter_(-1, top_idx, 1.0)
                 mask[:, start:] = mask_rem
@@ -350,9 +342,7 @@ def apply_24_structured_mask(
             keep = max(0, target_keep_total - kept_in_blocks)
             if keep > 0:
                 S_rem = S[start:, :]
-                _, top_idx = torch.topk(
-                    S_rem, k=min(keep, remainder), dim=0, largest=True
-                )
+                _, top_idx = torch.topk(S_rem, k=min(keep, remainder), dim=0, largest=True)
                 mask_rem = torch.zeros_like(S_rem)
                 mask_rem.scatter_(0, top_idx, 1.0)
                 mask[start:, :] = mask_rem
@@ -395,9 +385,7 @@ def apply_block_mask(
 
     # Reshape into blocks
     (W[: nb_r * br, : nb_c * bc].reshape(nb_r, br, nb_c, bc).permute(0, 2, 1, 3))
-    S_blocks = (
-        S[: nb_r * br, : nb_c * bc].reshape(nb_r, br, nb_c, bc).permute(0, 2, 1, 3)
-    )
+    S_blocks = S[: nb_r * br, : nb_c * bc].reshape(nb_r, br, nb_c, bc).permute(0, 2, 1, 3)
 
     # Block saliency: sum of element saliency within each block
     block_scores = S_blocks.sum(dim=(2, 3))  # [nb_r, nb_c]
@@ -473,9 +461,7 @@ def recalibrate_layernorms(
         def hook(module: nn.Module, inp: tuple[torch.Tensor, ...], out: Any):
             if inp and isinstance(inp[0], torch.Tensor):
                 x = inp[0].detach().float()
-                std = (
-                    torch.sqrt(torch.var(x, dim=-1, keepdim=True) + 1e-6).mean().item()
-                )
+                std = torch.sqrt(torch.var(x, dim=-1, keepdim=True) + 1e-6).mean().item()
                 if std > 0 and math.isfinite(std):
                     scales[mod] = std
 
@@ -514,9 +500,7 @@ def recalibrate_layernorms(
                     if target_stds is not None and m in target_stds:
                         # B3: Exact ratio scaling when pre-compression target std is recorded
                         target_std = target_stds[m]
-                        correction_factor = max(
-                            0.5, min(2.0, float(target_std) / float(std))
-                        )
+                        correction_factor = max(0.5, min(2.0, float(target_std) / float(std)))
                         m.weight.data.mul_(correction_factor)
                     else:
                         correction_factor = 1.0 / std

@@ -32,6 +32,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import apply_attention_mask
 from neuralops.core.base import BaseAttention
@@ -89,9 +90,7 @@ def calculate_spectral_entropy(singular_values: np.ndarray) -> float:
     return float(-np.sum(prob * np.log(prob)))
 
 
-def compute_cumulative_entropy(
-    singular_values: np.ndarray, max_rank: int
-) -> np.ndarray:
+def compute_cumulative_entropy(singular_values: np.ndarray, max_rank: int) -> np.ndarray:
     r"""Compute cumulative spectral energy fraction retained by top-$k$ singular values."""
     s = singular_values.astype(np.float64)
     s_sq = s**2
@@ -217,16 +216,8 @@ def apply_rotary_pos_emb(
     q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
     k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
 
-    q_out = (
-        torch.cat([q_rot_embed, q_pass], dim=-1)
-        if q_pass.shape[-1] > 0
-        else q_rot_embed
-    )
-    k_out = (
-        torch.cat([k_rot_embed, k_pass], dim=-1)
-        if k_pass.shape[-1] > 0
-        else k_rot_embed
-    )
+    q_out = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot_embed
+    k_out = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot_embed
     return q_out, k_out
 
 
@@ -247,12 +238,8 @@ def _unpack_weight_bias(proj: Any) -> tuple[torch.Tensor | None, torch.Tensor | 
 
 
 @ATTENTION_REGISTRY.register("svd_compressed", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register(
-    "svd_compressed_attention", supports_causal=True, supports_gqa=True
-)
-@ATTENTION_REGISTRY.register(
-    "svd_compressed_module", supports_causal=True, supports_gqa=True
-)
+@ATTENTION_REGISTRY.register("svd_compressed_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("svd_compressed_module", supports_causal=True, supports_gqa=True)
 class SVDCompressedAttention(BaseAttention):
     r"""Multi-head attention with truncated SVD projections, trainable LoRA adapters,
     GQA support, RoPE support, and optional sparse residuals.
@@ -285,9 +272,7 @@ class SVDCompressedAttention(BaseAttention):
             _cfg_get(
                 model_config,
                 "num_attention_heads",
-                _cfg_get(
-                    model_config, "num_heads", kwargs.get("num_attention_heads", 12)
-                ),
+                _cfg_get(model_config, "num_heads", kwargs.get("num_attention_heads", 12)),
             )
         )
         self.head_dim: int = int(
@@ -342,9 +327,7 @@ class SVDCompressedAttention(BaseAttention):
             )
 
         self.is_nested_encoder: bool = False
-        default_r = int(
-            _cfg_get(model_config, "svd_rank", _cfg_get(model_config, "rank", 64))
-        )
+        default_r = int(_cfg_get(model_config, "svd_rank", _cfg_get(model_config, "rank", 64)))
         default_r = max(1, min(default_r, self.hidden_size, self.all_head_size))
         self.ranks: dict[str, int] = {}
         for k in ("q", "k", "v", "o"):
@@ -418,18 +401,10 @@ class SVDCompressedAttention(BaseAttention):
             self.register_parameter("o_lora_B", None)
 
         if add_sparse:
-            self.q_sparse_weight = nn.Parameter(
-                torch.zeros(self.q_head_size, self.hidden_size)
-            )
-            self.k_sparse_weight = nn.Parameter(
-                torch.zeros(self.kv_head_size, self.hidden_size)
-            )
-            self.v_sparse_weight = nn.Parameter(
-                torch.zeros(self.kv_head_size, self.hidden_size)
-            )
-            self.o_sparse_weight = nn.Parameter(
-                torch.zeros(self.hidden_size, self.q_head_size)
-            )
+            self.q_sparse_weight = nn.Parameter(torch.zeros(self.q_head_size, self.hidden_size))
+            self.k_sparse_weight = nn.Parameter(torch.zeros(self.kv_head_size, self.hidden_size))
+            self.v_sparse_weight = nn.Parameter(torch.zeros(self.kv_head_size, self.hidden_size))
+            self.o_sparse_weight = nn.Parameter(torch.zeros(self.hidden_size, self.q_head_size))
         else:
             self.register_parameter("q_sparse_weight", None)
             self.register_parameter("k_sparse_weight", None)
@@ -449,12 +424,8 @@ class SVDCompressedAttention(BaseAttention):
 
         src_attn = old_attn or kwargs.get("pretrained_attn")
         src_p = next(src_attn.parameters(), None) if src_attn is not None else None
-        target_dtype = kwargs.get(
-            "dtype", src_p.dtype if src_p is not None else torch.float32
-        )
-        target_device = kwargs.get(
-            "device", src_p.device if src_p is not None else None
-        )
+        target_dtype = kwargs.get("dtype", src_p.dtype if src_p is not None else torch.float32)
+        target_device = kwargs.get("device", src_p.device if src_p is not None else None)
 
         if src_attn is not None:
             self.copy_weights(src_attn)
@@ -494,9 +465,7 @@ class SVDCompressedAttention(BaseAttention):
             down.weight.data[:r, :].copy_(down_weight)
             up.weight.data[:, :r].copy_(up_weight)
             if bias_tensor is not None and up.bias is not None:
-                up.bias.data.copy_(
-                    bias_tensor.to(device=up.bias.device, dtype=up.bias.dtype)
-                )
+                up.bias.data.copy_(bias_tensor.to(device=up.bias.device, dtype=up.bias.dtype))
 
     def copy_weights(self, old_attn: Any) -> None:
         """Robust weight copying from DistilBERT, RoBERTa nested, GPT-2 Conv1D, or Qwen/LLaMA."""
@@ -538,10 +507,7 @@ class SVDCompressedAttention(BaseAttention):
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_w, c_b = _unpack_weight_bias(src.c_attn)
                 if c_w is not None:
-                    if (
-                        c_w.shape[0] == self.hidden_size
-                        and c_w.shape[1] != self.hidden_size
-                    ):
+                    if c_w.shape[0] == self.hidden_size and c_w.shape[1] != self.hidden_size:
                         c_w = c_w.t().contiguous()
 
                     q_dim = self.q_head_size
@@ -559,18 +525,13 @@ class SVDCompressedAttention(BaseAttention):
 
                 out_w, out_b = _unpack_weight_bias(src.c_proj)
                 if out_w is not None:
-                    if (
-                        out_w.shape[0] == self.hidden_size
-                        and out_w.shape[1] != self.hidden_size
-                    ):
+                    if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
                         out_w = out_w.t().contiguous()
                     w_o = out_w
                     b_o = out_b
 
             # Pattern 2: RoBERTa / BERT separate query, key, value
-            elif (
-                hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value")
-            ):
+            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q, b_q = _unpack_weight_bias(src.query)
                 w_k, b_k = _unpack_weight_bias(src.key)
                 w_v, b_v = _unpack_weight_bias(src.value)
@@ -582,11 +543,7 @@ class SVDCompressedAttention(BaseAttention):
                             break
 
             # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
-            elif (
-                hasattr(src, "q_proj")
-                and hasattr(src, "k_proj")
-                and hasattr(src, "v_proj")
-            ):
+            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q, b_q = _unpack_weight_bias(src.q_proj)
                 w_k, b_k = _unpack_weight_bias(src.k_proj)
                 w_v, b_v = _unpack_weight_bias(src.v_proj)
@@ -594,11 +551,7 @@ class SVDCompressedAttention(BaseAttention):
                     w_o, b_o = _unpack_weight_bias(src.o_proj)
 
             # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
-            elif (
-                hasattr(src, "q_lin")
-                and hasattr(src, "k_lin")
-                and hasattr(src, "v_lin")
-            ):
+            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q, b_q = _unpack_weight_bias(src.q_lin)
                 w_k, b_k = _unpack_weight_bias(src.k_lin)
                 w_v, b_v = _unpack_weight_bias(src.v_lin)
@@ -638,9 +591,7 @@ class SVDCompressedAttention(BaseAttention):
             # Frobenius norm checks
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
                 if torch.norm(w.float(), p="fro").item() < 1e-4:
-                    log.warning(
-                        f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)"
-                    )
+                    log.warning(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
 
             # Orient weights if needed
             def _orient(w: torch.Tensor, out_dim: int, in_dim: int) -> torch.Tensor:
@@ -652,16 +603,12 @@ class SVDCompressedAttention(BaseAttention):
 
             w_q = _orient(w_q, self.q_head_size, self.hidden_size)
             # Factorize and set Q
-            self._set_factorised_weights(
-                w_q, b_q, self.q_down, self.q_up, self.ranks["q"]
-            )
+            self._set_factorised_weights(w_q, b_q, self.q_down, self.q_up, self.ranks["q"])
 
             # Factorize and set K & V with GQA pooling if needed
             if w_k.shape[0] == self.kv_head_size:
                 w_k = _orient(w_k, self.kv_head_size, self.hidden_size)
-                self._set_factorised_weights(
-                    w_k, b_k, self.k_down, self.k_up, self.ranks["k"]
-                )
+                self._set_factorised_weights(w_k, b_k, self.k_down, self.k_up, self.ranks["k"])
             else:
                 rep = max(1, w_k.shape[0] // self.kv_head_size)
                 w_k_pooled = (
@@ -680,9 +627,7 @@ class SVDCompressedAttention(BaseAttention):
 
             if w_v.shape[0] == self.kv_head_size:
                 w_v = _orient(w_v, self.kv_head_size, self.hidden_size)
-                self._set_factorised_weights(
-                    w_v, b_v, self.v_down, self.v_up, self.ranks["v"]
-                )
+                self._set_factorised_weights(w_v, b_v, self.v_down, self.v_up, self.ranks["v"])
             else:
                 rep = max(1, w_v.shape[0] // self.kv_head_size)
                 w_v_pooled = (
@@ -702,13 +647,9 @@ class SVDCompressedAttention(BaseAttention):
             # Set Out projection if not nested encoder
             if w_o is not None and not self.is_nested_encoder:
                 if torch.norm(w_o.float(), p="fro").item() < 1e-4:
-                    log.warning(
-                        "Copied out_proj weight has near-zero Frobenius norm (< 1e-4)"
-                    )
+                    log.warning("Copied out_proj weight has near-zero Frobenius norm (< 1e-4)")
                 w_o = _orient(w_o, self.hidden_size, self.q_head_size)
-                self._set_factorised_weights(
-                    w_o, b_o, self.o_down, self.o_up, self.ranks["o"]
-                )
+                self._set_factorised_weights(w_o, b_o, self.o_down, self.o_up, self.ranks["o"])
 
             # Initialize sparse residuals if enabled
             if self.add_sparse:
@@ -717,15 +658,11 @@ class SVDCompressedAttention(BaseAttention):
                 self.q_sparse_weight.data.copy_(res_q)
 
                 low_rank_k = self.k_up.weight @ self.k_down.weight
-                res_k = (
-                    w_k if w_k.shape[0] == self.kv_head_size else w_k_pooled
-                ) - low_rank_k
+                res_k = (w_k if w_k.shape[0] == self.kv_head_size else w_k_pooled) - low_rank_k
                 self.k_sparse_weight.data.copy_(res_k)
 
                 low_rank_v = self.v_up.weight @ self.v_down.weight
-                res_v = (
-                    w_v if w_v.shape[0] == self.kv_head_size else w_v_pooled
-                ) - low_rank_v
+                res_v = (w_v if w_v.shape[0] == self.kv_head_size else w_v_pooled) - low_rank_v
                 self.v_sparse_weight.data.copy_(res_v)
 
                 if w_o is not None and not self.is_nested_encoder:
@@ -761,15 +698,8 @@ class SVDCompressedAttention(BaseAttention):
             if x.device != self.q_down.weight.device:
                 x = x.to(self.q_down.weight.device)
             out = self.q_up(self.q_down(x))
-            if (
-                self.lora_rank > 0
-                and self.q_lora_A is not None
-                and self.q_lora_B is not None
-            ):
-                out = (
-                    out
-                    + F.linear(F.linear(x, self.q_lora_A), self.q_lora_B) * self.scaling
-                )
+            if self.lora_rank > 0 and self.q_lora_A is not None and self.q_lora_B is not None:
+                out = out + F.linear(F.linear(x, self.q_lora_A), self.q_lora_B) * self.scaling
             if self.add_sparse and self.q_sparse_weight is not None:
                 out = out + F.linear(x, self.q_sparse_weight)
             return out
@@ -778,15 +708,8 @@ class SVDCompressedAttention(BaseAttention):
             if x.device != self.k_down.weight.device:
                 x = x.to(self.k_down.weight.device)
             out = self.k_up(self.k_down(x))
-            if (
-                self.lora_rank > 0
-                and self.k_lora_A is not None
-                and self.k_lora_B is not None
-            ):
-                out = (
-                    out
-                    + F.linear(F.linear(x, self.k_lora_A), self.k_lora_B) * self.scaling
-                )
+            if self.lora_rank > 0 and self.k_lora_A is not None and self.k_lora_B is not None:
+                out = out + F.linear(F.linear(x, self.k_lora_A), self.k_lora_B) * self.scaling
             if self.add_sparse and self.k_sparse_weight is not None:
                 out = out + F.linear(x, self.k_sparse_weight)
             return out
@@ -795,15 +718,8 @@ class SVDCompressedAttention(BaseAttention):
             if x.device != self.v_down.weight.device:
                 x = x.to(self.v_down.weight.device)
             out = self.v_up(self.v_down(x))
-            if (
-                self.lora_rank > 0
-                and self.v_lora_A is not None
-                and self.v_lora_B is not None
-            ):
-                out = (
-                    out
-                    + F.linear(F.linear(x, self.v_lora_A), self.v_lora_B) * self.scaling
-                )
+            if self.lora_rank > 0 and self.v_lora_A is not None and self.v_lora_B is not None:
+                out = out + F.linear(F.linear(x, self.v_lora_A), self.v_lora_B) * self.scaling
             if self.add_sparse and self.v_sparse_weight is not None:
                 out = out + F.linear(x, self.v_sparse_weight)
             return out
@@ -812,15 +728,8 @@ class SVDCompressedAttention(BaseAttention):
             if x.device != self.o_down.weight.device:
                 x = x.to(self.o_down.weight.device)
             out = self.o_up(self.o_down(x))
-            if (
-                self.lora_rank > 0
-                and self.o_lora_A is not None
-                and self.o_lora_B is not None
-            ):
-                out = (
-                    out
-                    + F.linear(F.linear(x, self.o_lora_A), self.o_lora_B) * self.scaling
-                )
+            if self.lora_rank > 0 and self.o_lora_A is not None and self.o_lora_B is not None:
+                out = out + F.linear(F.linear(x, self.o_lora_A), self.o_lora_B) * self.scaling
             if self.add_sparse and self.o_sparse_weight is not None:
                 out = out + F.linear(x, self.o_sparse_weight)
             return out
@@ -859,9 +768,7 @@ class SVDCompressedAttention(BaseAttention):
 
         # 4. Attention scores in FP32
         scale = 1.0 / math.sqrt(self.head_dim)
-        scores = (
-            torch.matmul(Q.float(), K.float().transpose(-1, -2).contiguous()) * scale
-        )
+        scores = torch.matmul(Q.float(), K.float().transpose(-1, -2).contiguous()) * scale
 
         # 5. Masking
         if self.is_decoder and not is_cross and N > 1:
@@ -973,9 +880,7 @@ def inject_all_layers(
             add_sparse=add_sparse,
             sparsity_level=sparsity,
         )
-        if hasattr(distil_layer, "attention") and hasattr(
-            distil_layer.attention, "self"
-        ):
+        if hasattr(distil_layer, "attention") and hasattr(distil_layer.attention, "self"):
             distil_layer.attention.self = new_attn
         else:
             distil_layer.attention = new_attn
@@ -1001,6 +906,7 @@ GLUE_TASK_KEYS: dict[str, tuple[str, str | None]] = {
 def load_glue_local(task_name: str) -> Any:
     r"""Load GLUE benchmark dataset from local offline storage."""
     from datasets import Dataset, DatasetDict
+
     from neuralops.utils.paths import get_glue_dir
 
     base_path = str(get_glue_dir())
@@ -1062,9 +968,7 @@ def preprocess_function(
             padding="max_length",
             max_length=max_length,
         )
-    t["labels"] = (
-        [float(l) for l in examples["label"]] if is_regression else examples["label"]
-    )
+    t["labels"] = [float(l) for l in examples["label"]] if is_regression else examples["label"]
     return t
 
 
@@ -1117,9 +1021,7 @@ def main() -> None:
     os.makedirs(args.output_dir, exist_ok=True)
 
     raw_datasets = load_glue_local(args.task)
-    tokenizer = AutoTokenizer.from_pretrained(
-        args.model, use_fast=True, local_files_only=True
-    )
+    tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=True, local_files_only=True)
     num_labels, is_regression = get_num_labels_and_is_regression(args.task)
     sent1_key, sent2_key = GLUE_TASK_KEYS[args.task]
 
@@ -1144,7 +1046,7 @@ def main() -> None:
     target_budget = int(original_total_params * args.budget_ratio)
     log.info(
         f"Original attention parameters: {original_total_params:,}, "
-        f"target budget ({args.budget_ratio*100:.0f}%): {target_budget:,}"
+        f"target budget ({args.budget_ratio * 100:.0f}%): {target_budget:,}"
     )
 
     rank_dict = lagrangian_rank_allocation(
@@ -1288,9 +1190,7 @@ def inject_svd_compressed(
                 return None
             if "SVDCompressed" in src_attn.__class__.__name__:
                 return None
-            if hasattr(src_attn, "inner") and isinstance(
-                src_attn.inner, SVDCompressedAttention
-            ):
+            if hasattr(src_attn, "inner") and isinstance(src_attn.inner, SVDCompressedAttention):
                 return None
             if hasattr(src_attn, "_wrapped_attention") and isinstance(
                 src_attn._wrapped_attention, SVDCompressedAttention
@@ -1306,9 +1206,7 @@ def inject_svd_compressed(
                     return None
                 if "SVDCompressed" in cand.__class__.__name__:
                     return None
-                if hasattr(cand, "inner") and isinstance(
-                    cand.inner, SVDCompressedAttention
-                ):
+                if hasattr(cand, "inner") and isinstance(cand.inner, SVDCompressedAttention):
                     return None
                 if hasattr(cand, "_wrapped_attention") and isinstance(
                     cand._wrapped_attention, SVDCompressedAttention
@@ -1335,11 +1233,7 @@ def inject_svd_compressed(
             ranks = {"q": rank, "k": rank, "v": rank, "o": rank}
 
         dropout = _cfg_get(comp_config, "dropout", 0.1)
-        lr = (
-            lora_rank
-            if lora_rank is not None
-            else _cfg_get(comp_config, "lora_rank", 16)
-        )
+        lr = lora_rank if lora_rank is not None else _cfg_get(comp_config, "lora_rank", 16)
 
         new_attn = SVDCompressedAttention(
             config=cfg,

@@ -13,6 +13,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -50,9 +51,7 @@ def apply_rotary_pos_emb(
         cos = cos.unsqueeze(0)
         sin = sin.unsqueeze(0)
     if cos.shape[-2] != q.shape[-2]:
-        raise ValueError(
-            f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}"
-        )
+        raise ValueError(f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}")
 
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
@@ -81,9 +80,7 @@ def apply_rotary_pos_emb(
 
 
 class HeadRoPE(nn.Module):
-    def __init__(
-        self, head_dim: int, max_seq_len: int = 4096, base: float = 10000.0
-    ) -> None:
+    def __init__(self, head_dim: int, max_seq_len: int = 4096, base: float = 10000.0) -> None:
         super().__init__()
         self.head_dim = head_dim
         self.max_seq_len = max_seq_len
@@ -95,12 +92,8 @@ class HeadRoPE(nn.Module):
         t = torch.arange(seq_len, device=self.inv_freq.device).float()
         freqs = torch.einsum("i,j->ij", t, self.inv_freq)
         emb = torch.cat((freqs, freqs), dim=-1)
-        self.register_buffer(
-            "cos_cached", emb.cos().unsqueeze(0).unsqueeze(1), persistent=False
-        )
-        self.register_buffer(
-            "sin_cached", emb.sin().unsqueeze(0).unsqueeze(1), persistent=False
-        )
+        self.register_buffer("cos_cached", emb.cos().unsqueeze(0).unsqueeze(1), persistent=False)
+        self.register_buffer("sin_cached", emb.sin().unsqueeze(0).unsqueeze(1), persistent=False)
 
     def forward(self, x: torch.Tensor, past_len: int = 0) -> torch.Tensor:
         B, H, L, d = x.shape
@@ -123,9 +116,7 @@ class HeadRoPE(nn.Module):
 # ===========================================================================
 
 
-def _detect_decoder(
-    config: Any, is_decoder: bool | None, old_attn: nn.Module | None
-) -> bool:
+def _detect_decoder(config: Any, is_decoder: bool | None, old_attn: nn.Module | None) -> bool:
     if is_decoder is not None:
         return bool(is_decoder)
     if config is not None:
@@ -217,21 +208,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -265,9 +250,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
         return out
 
@@ -319,10 +302,7 @@ class HymbaTransXBlock(BaseAttention):
             )
         if hidden_size is None and source_attn is not None:
             for attr in ["hidden_size", "embed_dim", "dim", "d_model"]:
-                if (
-                    hasattr(source_attn, attr)
-                    and getattr(source_attn, attr) is not None
-                ):
+                if hasattr(source_attn, attr) and getattr(source_attn, attr) is not None:
                     hidden_size = getattr(source_attn, attr)
                     break
             if hidden_size is None:
@@ -332,15 +312,11 @@ class HymbaTransXBlock(BaseAttention):
                     getattr(
                         source_attn,
                         "dense",
-                        getattr(
-                            source_attn, "c_proj", getattr(source_attn, "o_proj", None)
-                        ),
+                        getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None)),
                     ),
                 )
                 hidden_size = (
-                    getattr(out_layer, "out_features", None)
-                    if out_layer is not None
-                    else None
+                    getattr(out_layer, "out_features", None) if out_layer is not None else None
                 )
         hidden_size = int(hidden_size or 768)
 
@@ -354,21 +330,15 @@ class HymbaTransXBlock(BaseAttention):
             num_heads = getattr(
                 source_attn,
                 "num_attention_heads",
-                getattr(
-                    source_attn, "n_heads", getattr(source_attn, "num_heads", None)
-                ),
+                getattr(source_attn, "n_heads", getattr(source_attn, "num_heads", None)),
             )
-        num_heads = int(
-            num_heads or (hidden_size // 64 if hidden_size % 64 == 0 else 12)
-        )
+        num_heads = int(num_heads or (hidden_size // 64 if hidden_size % 64 == 0 else 12))
 
         self.dim = hidden_size
         self.hidden_size = hidden_size
         self.num_heads = num_heads
         cfg_kv = (
-            getattr(
-                config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
-            )
+            getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
             if config
             else None
         )
@@ -387,9 +357,7 @@ class HymbaTransXBlock(BaseAttention):
                     cfg_head_dim = mod.weight.shape[0] // max(1, self.num_heads)
                     break
         self.head_dim = (
-            int(cfg_head_dim)
-            if cfg_head_dim is not None
-            else self.dim // max(1, self.num_heads)
+            int(cfg_head_dim) if cfg_head_dim is not None else self.dim // max(1, self.num_heads)
         )
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
@@ -492,9 +460,7 @@ class HymbaTransXBlock(BaseAttention):
         try:
             from neuralops.attentions.simple_ssm import SimpleSSM
 
-            self.mamba = SimpleSSM(
-                d_model=self.dim, config=config, is_decoder=self.is_decoder
-            )
+            self.mamba = SimpleSSM(d_model=self.dim, config=config, is_decoder=self.is_decoder)
         except ImportError:
             self.mamba = None
             logger.warning("HymbaTransX: SimpleSSM not available; SSM branch disabled.")
@@ -503,9 +469,7 @@ class HymbaTransXBlock(BaseAttention):
         self.alpha = nn.Parameter(torch.tensor(1.0))
 
         dropout_p = float(
-            getattr(
-                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
-            )
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
             if config
             else 0.1
         )
@@ -561,9 +525,7 @@ class HymbaTransXBlock(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
             self.is_nested_encoder = False
         elif (
@@ -638,11 +600,7 @@ class HymbaTransXBlock(BaseAttention):
                     if (
                         "Conv1D" in cls_o
                         or "Conv1D" in base_cls_o
-                        or (
-                            o_w.ndim == 2
-                            and o_w.shape[0] != self.dim
-                            and o_w.shape[1] == self.dim
-                        )
+                        or (o_w.ndim == 2 and o_w.shape[0] != self.dim and o_w.shape[1] == self.dim)
                     ):
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
@@ -773,12 +731,8 @@ class HymbaTransXBlock(BaseAttention):
             # HX-FIX-06: W_q2 and W_k2 = noisy copies of W_q1 and W_k1
             noise_q = torch.randn_like(self.W_q2.weight) * 0.01
             noise_k = torch.randn_like(self.W_k2.weight) * 0.01
-            self.W_q2.weight.data.copy_(
-                self.W_q1.weight.data + noise_q.to(self.W_q2.weight.dtype)
-            )
-            self.W_k2.weight.data.copy_(
-                self.W_k1.weight.data + noise_k.to(self.W_k2.weight.dtype)
-            )
+            self.W_q2.weight.data.copy_(self.W_q1.weight.data + noise_q.to(self.W_q2.weight.dtype))
+            self.W_k2.weight.data.copy_(self.W_k1.weight.data + noise_k.to(self.W_k2.weight.dtype))
 
     # ------------------------------------------------------------------
     # Mask helper
@@ -828,15 +782,9 @@ class HymbaTransXBlock(BaseAttention):
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         if encoder_hidden_states is not None:
-            raise NotImplementedError(
-                "HymbaTransXBlock does not support cross-attention."
-            )
+            raise NotImplementedError("HymbaTransXBlock does not support cross-attention.")
 
-        x = (
-            hidden_states
-            if hidden_states is not None
-            else kwargs.get("query", kwargs.get("x"))
-        )
+        x = hidden_states if hidden_states is not None else kwargs.get("query", kwargs.get("x"))
         if x is None and len(args) > 0:
             x = args[0]
         if x is None:
@@ -846,36 +794,11 @@ class HymbaTransXBlock(BaseAttention):
         device = x.device
 
         # Projections
-        q1 = (
-            self.W_q1(x)
-            .view(B, L, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        k1 = (
-            self.W_k1(x)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        q2 = (
-            self.W_q2(x)
-            .view(B, L, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        k2 = (
-            self.W_k2(x)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.W_v(x)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        q1 = self.W_q1(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k1 = self.W_k1(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        q2 = self.W_q2(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k2 = self.W_k2(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.W_v(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # HX-FIX-04: KV-cache.
         past_k1 = past_v = None
@@ -931,14 +854,8 @@ class HymbaTransXBlock(BaseAttention):
 
         # Differential attention
         scale = 1.0 / math.sqrt(self.head_dim)
-        scores1 = (
-            torch.matmul(q1.float(), k1_cat.float().transpose(-2, -1).contiguous())
-            * scale
-        )
-        scores2 = (
-            torch.matmul(q2.float(), k2_cat.float().transpose(-2, -1).contiguous())
-            * scale
-        )
+        scores1 = torch.matmul(q1.float(), k1_cat.float().transpose(-2, -1).contiguous()) * scale
+        scores2 = torch.matmul(q2.float(), k2_cat.float().transpose(-2, -1).contiguous()) * scale
 
         # Causal mask (HX-FIX-03: offset-aware for cache)
         if self.is_decoder:
@@ -947,18 +864,12 @@ class HymbaTransXBlock(BaseAttention):
                 abs_k = torch.arange(N_kv, device=device).unsqueeze(0)
                 causal = abs_k <= abs_q
             else:
-                causal = torch.tril(
-                    torch.ones(L, N_kv, device=device, dtype=torch.bool)
-                )
+                causal = torch.tril(torch.ones(L, N_kv, device=device, dtype=torch.bool))
             scores1 = scores1.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
             scores2 = scores2.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
 
         # Padding mask (HX-FIX-12)
-        eff_mask = (
-            encoder_attention_mask
-            if encoder_hidden_states is not None
-            else attention_mask
-        )
+        eff_mask = encoder_attention_mask if encoder_hidden_states is not None else attention_mask
         valid_mask = self._prepare_valid_mask(eff_mask, B, N_kv, device)
         if valid_mask is not None:
             scores1 = scores1.masked_fill(~valid_mask[:, None, None, :].bool(), -1e4)
@@ -1003,15 +914,11 @@ class HymbaTransXBlock(BaseAttention):
                     return self.mamba(h, attention_mask=m)[0]
 
                 if self.is_decoder:
-                    M_out = checkpoint(
-                        _run_mamba, x, attention_mask, use_reentrant=False
-                    )
+                    M_out = checkpoint(_run_mamba, x, attention_mask, use_reentrant=False)
                 else:
                     x_rev = torch.flip(x, dims=[1])
                     mf = checkpoint(_run_mamba, x, attention_mask, use_reentrant=False)
-                    mb = checkpoint(
-                        _run_mamba, x_rev, attention_mask, use_reentrant=False
-                    )
+                    mb = checkpoint(_run_mamba, x_rev, attention_mask, use_reentrant=False)
                     M_out = 0.5 * (mf + torch.flip(mb, dims=[1]))
             else:
                 if self.is_decoder:

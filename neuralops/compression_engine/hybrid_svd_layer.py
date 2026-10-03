@@ -20,6 +20,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.compression_engine.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
@@ -96,9 +97,7 @@ class SVDSingleHead(nn.Module):
             or self._pos_encoding.device != device
         ):
             pe = torch.zeros(seq_len, self.hidden_size, device=device)
-            position = torch.arange(
-                0, seq_len, dtype=torch.float, device=device
-            ).unsqueeze(1)
+            position = torch.arange(0, seq_len, dtype=torch.float, device=device).unsqueeze(1)
             div_term = torch.exp(
                 torch.arange(0, self.hidden_size, 2, dtype=torch.float, device=device)
                 * (-math.log(10000.0) / self.hidden_size)
@@ -311,18 +310,13 @@ class HybridSVDCompressor(BaseCompressor):
         # Freeze non-target layers if attention-only.
         if self.target_attention_only:
             for name, module in self.model.named_modules():
-                if any(
-                    part in name.split(".")
-                    for part in ["lora_A", "lora_B", "base_layer"]
-                ):
+                if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
                     continue
                 target_mod = getattr(module, "base_layer", module)
                 cls_name = target_mod.__class__.__name__.lower()
                 is_linear = isinstance(target_mod, nn.Linear)
                 is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-                if (is_linear or is_conv1d) and not self._is_target_module(
-                    name, module
-                ):
+                if (is_linear or is_conv1d) and not self._is_target_module(name, module):
                     for p in module.parameters():
                         p.requires_grad = False
                     self.skipped_layers.append(name)
@@ -374,8 +368,7 @@ class HybridSVDCompressor(BaseCompressor):
 
                     W_recon = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vt[:r, :])
                     err = (
-                        torch.norm(W - W_recon, p="fro")
-                        / torch.norm(W, p="fro").clamp_min(1e-8)
+                        torch.norm(W - W_recon, p="fro") / torch.norm(W, p="fro").clamp_min(1e-8)
                     ).item()
                     self.layer_errors[name] = float(err)
 
@@ -436,10 +429,7 @@ class HybridSVDCompressor(BaseCompressor):
                     lora_alpha=self.lora_alpha,
                 )
                 svd_layer.set_low_rank_factors(U_r, V_r)
-                if (
-                    getattr(target_mod, "bias", None) is not None
-                    and target_mod.bias is not None
-                ):
+                if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None:
                     svd_layer.bias.data.copy_(target_mod.bias.data)
 
                 if (
@@ -487,25 +477,17 @@ class HybridSVDCompressor(BaseCompressor):
                 vocab_size = getattr(cfg, "vocab_size", 1000)
                 max_tok = min(100, vocab_size - 1) if vocab_size > 10 else 2
                 min_tok = min(2, max_tok)
-                dummy = torch.randint(
-                    min_tok, max_tok + 1, (1, 8), device=dev, dtype=torch.long
-                )
+                dummy = torch.randint(min_tok, max_tok + 1, (1, 8), device=dev, dtype=torch.long)
                 attn_mask = torch.ones_like(dummy)
                 try:
                     self.model(input_ids=dummy, attention_mask=attn_mask)
                 except Exception:
                     # Try hidden-states form.
                     first_linear = next(
-                        (
-                            m
-                            for m in self.model.modules()
-                            if isinstance(m, (nn.Linear, SVDLinear))
-                        ),
+                        (m for m in self.model.modules() if isinstance(m, (nn.Linear, SVDLinear))),
                         None,
                     )
-                    in_dim = getattr(
-                        first_linear, "in_features", getattr(cfg, "hidden_size", 8)
-                    )
+                    in_dim = getattr(first_linear, "in_features", getattr(cfg, "hidden_size", 8))
                     dummy_float = torch.randn(
                         1,
                         8,
@@ -518,9 +500,7 @@ class HybridSVDCompressor(BaseCompressor):
             logger.warning("HybridSVD post-compression forward check warning: %s", e)
             forward_check_success = False
 
-        effective_ratio = (
-            (total_comp_params / total_orig_params) if total_orig_params > 0 else 1.0
-        )
+        effective_ratio = (total_comp_params / total_orig_params) if total_orig_params > 0 else 1.0
 
         try:
             self._compressed_params = self._count_params(self.model)

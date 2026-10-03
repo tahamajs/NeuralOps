@@ -17,6 +17,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
@@ -43,9 +44,7 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
     b = getattr(base, "bias", None)
     if w is not None:
         w = w.data.clone()
-        if (module.__class__.__name__ == "Conv1D") or (
-            base.__class__.__name__ == "Conv1D"
-        ):
+        if (module.__class__.__name__ == "Conv1D") or (base.__class__.__name__ == "Conv1D"):
             w = w.t().contiguous()
     if b is not None:
         b = b.data.clone()
@@ -178,19 +177,13 @@ class SVDProjectionLinear(nn.Module):
             r = min(self.rank, U.size(1), V.size(0))
             self.U.data.zero_()
             self.V.data.zero_()
-            self.U.data[:, :r].copy_(
-                U[:, :r].to(device=self.U.device, dtype=self.U.dtype)
-            )
-            self.V.data[:r, :].copy_(
-                V[:r, :].to(device=self.V.device, dtype=self.V.dtype)
-            )
+            self.U.data[:, :r].copy_(U[:, :r].to(device=self.U.device, dtype=self.U.dtype))
+            self.V.data[:r, :].copy_(V[:r, :].to(device=self.V.device, dtype=self.V.dtype))
 
 
 @ATTENTION_REGISTRY.register("svd_proj", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("svd_proj_attn", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register(
-    "svd_projection_attention", supports_causal=True, supports_gqa=True
-)
+@ATTENTION_REGISTRY.register("svd_projection_attention", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("svd_projection", supports_causal=True, supports_gqa=True)
 class SVDProjectionAttention(BaseAttention):
     r"""Multi-Head Attention using Factorized SVD Linear Projections.
@@ -243,9 +236,7 @@ class SVDProjectionAttention(BaseAttention):
             ),
         )
 
-        cfg_kv = _cfg_get(
-            config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None)
-        )
+        cfg_kv = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -298,9 +289,7 @@ class SVDProjectionAttention(BaseAttention):
         self.lora_rank = _cfg_get(
             config,
             "lora_rank",
-            _cfg_get(
-                comp_config, "lora_rank", lora_rank if lora_rank is not None else 16
-            ),
+            _cfg_get(comp_config, "lora_rank", lora_rank if lora_rank is not None else 16),
         )
         self.lora_alpha = _cfg_get(
             config, "lora_alpha", _cfg_get(comp_config, "lora_alpha", lora_alpha)
@@ -414,9 +403,7 @@ class SVDProjectionAttention(BaseAttention):
                 device=target.V.device, dtype=target.V.dtype
             )
             if target.bias is not None and bias is not None:
-                target.bias.data.copy_(
-                    bias.to(device=target.bias.device, dtype=target.bias.dtype)
-                )
+                target.bias.data.copy_(bias.to(device=target.bias.device, dtype=target.bias.dtype))
 
     def copy_weights(self, old_attn: nn.Module) -> None:
         """Robust weight copying from DistilBERT, RoBERTa nested, GPT-2 Conv1D, or Qwen/LLaMA."""
@@ -472,9 +459,7 @@ class SVDProjectionAttention(BaseAttention):
                 w_o, b_o = _unpack_weight_bias(src.c_proj)
 
             # Pattern 2: RoBERTa / BERT separate query, key, value
-            elif (
-                hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value")
-            ):
+            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q, b_q = _unpack_weight_bias(src.query)
                 w_k, b_k = _unpack_weight_bias(src.key)
                 w_v, b_v = _unpack_weight_bias(src.value)
@@ -486,11 +471,7 @@ class SVDProjectionAttention(BaseAttention):
                             break
 
             # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
-            elif (
-                hasattr(src, "q_proj")
-                and hasattr(src, "k_proj")
-                and hasattr(src, "v_proj")
-            ):
+            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q, b_q = _unpack_weight_bias(src.q_proj)
                 w_k, b_k = _unpack_weight_bias(src.k_proj)
                 w_v, b_v = _unpack_weight_bias(src.v_proj)
@@ -498,11 +479,7 @@ class SVDProjectionAttention(BaseAttention):
                     w_o, b_o = _unpack_weight_bias(src.o_proj)
 
             # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
-            elif (
-                hasattr(src, "q_lin")
-                and hasattr(src, "k_lin")
-                and hasattr(src, "v_lin")
-            ):
+            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q, b_q = _unpack_weight_bias(src.q_lin)
                 w_k, b_k = _unpack_weight_bias(src.k_lin)
                 w_v, b_v = _unpack_weight_bias(src.v_lin)
@@ -535,9 +512,7 @@ class SVDProjectionAttention(BaseAttention):
             # Frobenius norm checks
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
                 if torch.norm(w.float(), p="fro").item() < 1e-4:
-                    logger.warning(
-                        f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)"
-                    )
+                    logger.warning(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
 
             # Decompose and set Q
             self._decompose_and_set(self.q_proj, w_q, b_q)
@@ -548,10 +523,7 @@ class SVDProjectionAttention(BaseAttention):
             ) -> tuple[torch.Tensor, torch.Tensor | None]:
                 if w.shape[0] == self.kv_head_size:
                     return w, b
-                elif (
-                    w.shape[0] > self.kv_head_size
-                    and w.shape[0] % self.kv_head_size == 0
-                ):
+                elif w.shape[0] > self.kv_head_size and w.shape[0] % self.kv_head_size == 0:
                     rep = w.shape[0] // self.kv_head_size
                     w_pooled = (
                         w.view(self.num_kv_heads, rep, self.head_dim, -1)
@@ -559,17 +531,12 @@ class SVDProjectionAttention(BaseAttention):
                         .view(self.kv_head_size, -1)
                     )
                     b_pooled = (
-                        b.view(self.num_kv_heads, rep, self.head_dim)
-                        .mean(dim=1)
-                        .view(-1)
+                        b.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
                         if b is not None
                         else None
                     )
                     return w_pooled, b_pooled
-                elif (
-                    w.shape[0] < self.kv_head_size
-                    and self.kv_head_size % w.shape[0] == 0
-                ):
+                elif w.shape[0] < self.kv_head_size and self.kv_head_size % w.shape[0] == 0:
                     rep = self.kv_head_size // w.shape[0]
                     w_rep = w.repeat(rep, 1)
                     b_rep = b.repeat(rep) if b is not None else None
@@ -589,9 +556,7 @@ class SVDProjectionAttention(BaseAttention):
                     )
                     new_b = None
                     if b is not None:
-                        new_b = torch.zeros(
-                            self.kv_head_size, device=b.device, dtype=b.dtype
-                        )
+                        new_b = torch.zeros(self.kv_head_size, device=b.device, dtype=b.dtype)
                         new_b[: min(self.kv_head_size, b.shape[0])].copy_(
                             b[: min(self.kv_head_size, b.shape[0])]
                         )
@@ -606,9 +571,7 @@ class SVDProjectionAttention(BaseAttention):
             # Decompose and set out_proj if not nested encoder
             if w_o is not None and not self.is_nested_encoder:
                 if torch.norm(w_o.float(), p="fro").item() < 1e-4:
-                    logger.warning(
-                        "Copied out_proj weight has near-zero Frobenius norm (< 1e-4)"
-                    )
+                    logger.warning("Copied out_proj weight has near-zero Frobenius norm (< 1e-4)")
                 self._decompose_and_set(self.out_proj, w_o, b_o)
 
     def forward(
@@ -668,7 +631,6 @@ class SVDProjectionAttention(BaseAttention):
         # Memory-efficient: use SDPA to avoid OOM on large seqs; fallback to explicit if needed
 
         try:
-
             _qs = Q.half() if Q.dtype == torch.float32 else Q
 
             _ks = K.half() if K.dtype == torch.float32 else K
@@ -705,12 +667,9 @@ class SVDProjectionAttention(BaseAttention):
             ), None
 
         except Exception:
-
             pass
 
-        scores = (
-            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         # 5. Masking
         if self.is_decoder and not is_cross and N > 1:
@@ -732,10 +691,7 @@ class SVDProjectionAttention(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is not None:
             if eff_mask.dim() == 2:
-                scores = (
-                    scores
-                    + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
-                )
+                scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
             elif eff_mask.dim() == 3:
                 scores = scores + eff_mask.unsqueeze(1).float()
             elif eff_mask.dim() == 4:
@@ -756,9 +712,7 @@ class SVDProjectionAttention(BaseAttention):
             attn_weights = attn_weights * head_mask
 
         # 7. Context computation & Head Merge
-        context = (
-            torch.matmul(attn_weights, V).transpose(1, 2).contiguous().view(B, N, -1)
-        )
+        context = torch.matmul(attn_weights, V).transpose(1, 2).contiguous().view(B, N, -1)
         valid_mask = get_token_valid_mask(eff_mask, B, N, hidden_states.device)
         context = context * valid_mask.unsqueeze(-1).to(context.dtype)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)

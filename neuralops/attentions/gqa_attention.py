@@ -36,6 +36,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -197,9 +198,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = (
-                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            )
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -284,9 +283,7 @@ class GroupedQueryAttention(BaseAttention):
             num_heads = getattr(
                 src_attn,
                 "num_heads",
-                getattr(
-                    src_attn, "num_attention_heads", getattr(src_attn, "n_head", None)
-                ),
+                getattr(src_attn, "num_attention_heads", getattr(src_attn, "n_head", None)),
             )
         self.num_heads = int(
             num_heads or kwargs.get("num_attention_heads", kwargs.get("num_heads", 8))
@@ -294,9 +291,7 @@ class GroupedQueryAttention(BaseAttention):
 
         # ---- head_dim ----
         self.head_dim = int(
-            kwargs.get(
-                "head_dim", getattr(config, "head_dim", None) if config else None
-            )
+            kwargs.get("head_dim", getattr(config, "head_dim", None) if config else None)
             or (self.hidden_size // max(1, self.num_heads))
         )
 
@@ -386,9 +381,7 @@ class GroupedQueryAttention(BaseAttention):
             if any(model_type.startswith(p) for p in _dec_pfx):
                 is_dec = True
             if src_attn is not None:
-                if getattr(src_attn, "is_decoder", False) or hasattr(
-                    src_attn, "c_attn"
-                ):
+                if getattr(src_attn, "is_decoder", False) or hasattr(src_attn, "c_attn"):
                     is_dec = True
             self.is_decoder = bool(is_dec)
         self.is_nested_encoder = False
@@ -467,8 +460,7 @@ class GroupedQueryAttention(BaseAttention):
 
         # Log the resolved head config
         logger.debug(
-            "GQA: hidden=%d num_heads=%d num_kv_heads=%d (source=%s) "
-            "kv_repeat=%d head_dim=%d",
+            "GQA: hidden=%d num_heads=%d num_kv_heads=%d (source=%s) kv_repeat=%d head_dim=%d",
             self.hidden_size,
             self.num_heads,
             self.num_kv_heads,
@@ -545,9 +537,7 @@ class GroupedQueryAttention(BaseAttention):
 
         # GPT-2 fused c_attn
         if hasattr(src, "c_attn") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             weight, bias_data = _unpack_weight_bias(src.c_attn)
             if weight is not None:
@@ -558,11 +548,7 @@ class GroupedQueryAttention(BaseAttention):
                 )
                 extracted["k"] = (
                     weight[split_size : 2 * split_size, :],
-                    (
-                        bias_data[split_size : 2 * split_size]
-                        if bias_data is not None
-                        else None
-                    ),
+                    (bias_data[split_size : 2 * split_size] if bias_data is not None else None),
                 )
                 extracted["v"] = (
                     weight[2 * split_size :, :],
@@ -575,9 +561,7 @@ class GroupedQueryAttention(BaseAttention):
 
         # Nested BERT/RoBERTa
         if hasattr(src, "self") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             s = src.self
             if hasattr(s, "query") and extracted["q"][0] is None:
@@ -587,11 +571,7 @@ class GroupedQueryAttention(BaseAttention):
             if hasattr(s, "value") and extracted["v"][0] is None:
                 extracted["v"] = _unpack_weight_bias(s.value)
 
-        if (
-            hasattr(src, "output")
-            and hasattr(src.output, "dense")
-            and extracted["o"][0] is None
-        ):
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             extracted["o"] = _unpack_weight_bias(src.output.dense)
 
         # Flat modules
@@ -687,9 +667,7 @@ class GroupedQueryAttention(BaseAttention):
                 if key in ("k", "v"):
                     w = _pool_gqa(w, target.weight.shape[0])
                     if b is not None:
-                        b = _pool_gqa(b.unsqueeze(-1), target.weight.shape[0]).squeeze(
-                            -1
-                        )
+                        b = _pool_gqa(b.unsqueeze(-1), target.weight.shape[0]).squeeze(-1)
 
                 w = _orient(w, target.weight.shape)
                 out_d = min(target.weight.size(0), w.size(0))
@@ -702,9 +680,7 @@ class GroupedQueryAttention(BaseAttention):
                 if b is not None and target.bias is not None:
                     mn = min(target.bias.numel(), b.numel())
                     target.bias.data.zero_()
-                    target.bias.data[:mn].copy_(
-                        b[:mn].to(target.bias.device, target.bias.dtype)
-                    )
+                    target.bias.data[:mn].copy_(b[:mn].to(target.bias.device, target.bias.dtype))
                 elif target.bias is not None:
                     target.bias.data.zero_()
 
@@ -787,18 +763,8 @@ class GroupedQueryAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         Q = self.query(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
-        K = (
-            self.key(kv_input)
-            .view(B, N_k, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V = (
-            self.value(kv_input)
-            .view(B, N_k, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        K = self.key(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V = self.value(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # ---- RoPE ----
         if position_embeddings is None:
@@ -814,9 +780,7 @@ class GroupedQueryAttention(BaseAttention):
 
         # ---- Attention scores ----
         scale = d**-0.5
-        scores = (
-            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         # ---- Causal mask ----
         is_causal = bool(self.is_decoder and not is_cross)
@@ -825,9 +789,7 @@ class GroupedQueryAttention(BaseAttention):
             causal_diag = 1 + past_len
             causal = (
                 torch.triu(
-                    torch.full(
-                        (N_q, N_k), float("-inf"), device=device, dtype=torch.float32
-                    ),
+                    torch.full((N_q, N_k), float("-inf"), device=device, dtype=torch.float32),
                     diagonal=causal_diag,
                 )
                 .unsqueeze(0)
@@ -993,11 +955,7 @@ def inject_gqa(
     hidden_size = (
         getattr(src_attn, "hidden_size", None)
         or getattr(src_attn, "dim", None)
-        or (
-            getattr(src_attn.query, "in_features", None)
-            if hasattr(src_attn, "query")
-            else None
-        )
+        or (getattr(src_attn.query, "in_features", None) if hasattr(src_attn, "query") else None)
         or getattr(cfg, "hidden_size", 768)
     )
     num_heads = (
@@ -1051,9 +1009,7 @@ def inject_gqa(
         spliced = True
 
     if not spliced:
-        logger.error(
-            "inject_gqa: no writable attention attribute on %s", type(target).__name__
-        )
+        logger.error("inject_gqa: no writable attention attribute on %s", type(target).__name__)
         return None
 
     return new_attn

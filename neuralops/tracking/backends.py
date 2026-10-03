@@ -80,9 +80,7 @@ class LocalTracker(BaseTracker):
         self.metrics_file = os.path.join(
             self.log_dir, f"{experiment_name}_{timestamp}_metrics.jsonl"
         )
-        self.params_file = os.path.join(
-            self.log_dir, f"{experiment_name}_{timestamp}_params.json"
-        )
+        self.params_file = os.path.join(self.log_dir, f"{experiment_name}_{timestamp}_params.json")
         self.metrics = []
 
     def log_metric(self, name: str, value: float, step: int | None = None) -> None:
@@ -113,9 +111,7 @@ class LocalTracker(BaseTracker):
     def finalize(self, result: dict[str, Any] | None = None) -> None:
         """Finalize."""
         if result:
-            summary_file = os.path.join(
-                self.log_dir, f"{self.experiment_name}_summary.json"
-            )
+            summary_file = os.path.join(self.log_dir, f"{self.experiment_name}_summary.json")
             with open(summary_file, "w") as f:
                 json.dump(result, f, indent=2)
 

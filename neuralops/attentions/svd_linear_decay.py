@@ -9,6 +9,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.attentions.svd_linear_attention import (
     SVDLinear,
     SVDLinearAttention,
@@ -69,9 +70,7 @@ def inject_svd_linear_decay(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -82,9 +81,7 @@ def inject_svd_linear_decay(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=(
-                    comp_config
-                    if "comp_config" in locals() or "comp_config" in kwargs
-                    else None
+                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
                 ),
                 layer_idx=idx,
                 total_layers=tot,

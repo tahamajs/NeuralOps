@@ -82,9 +82,7 @@ def __getattr__(name: str) -> Any:
             globals()[name] = val
             return val
         except Exception as e:
-            logger.error(
-                "Failed to lazily load %s from neuralops.core.%s: %s", name, mod_name, e
-            )
+            logger.error("Failed to lazily load %s from neuralops.core.%s: %s", name, mod_name, e)
             raise
     # Submodule lookup fallback
     try:

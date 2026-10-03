@@ -68,9 +68,7 @@ class HuggingFaceTrainer(BaseTrainer):
                 if self.eval_dataset is not None
                 else False
             ),
-            "metric_for_best_model": self.config.get(
-                "metric_for_best_model", "eval_loss"
-            ),
+            "metric_for_best_model": self.config.get("metric_for_best_model", "eval_loss"),
             "fp16": self.config.get("fp16", False),
             "logging_dir": str(self.results_manager.log_dir),
             "logging_steps": self.config.get("logging_steps", 10),

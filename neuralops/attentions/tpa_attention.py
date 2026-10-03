@@ -178,9 +178,7 @@ def _cp_reconstruction_error(
     return num / den
 
 
-def _svd_factorize(
-    W: torch.Tensor, target_rank: int
-) -> tuple[torch.Tensor, torch.Tensor]:
+def _svd_factorize(W: torch.Tensor, target_rank: int) -> tuple[torch.Tensor, torch.Tensor]:
     """
     TPA-FIX-08/15: plain truncated SVD used for qk_proj path and CP fallback.
     Returns (U_r * sqrt(S), Vt_r) so that (A @ B) ≈ W.
@@ -259,9 +257,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = (
-                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            )
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
             out = out + F.linear(F.linear(x, a), bb) * self.scaling
         return out
 
@@ -354,16 +350,12 @@ class TPAttention(BaseAttention):
 
         # ---- GQA ----
         cfg_kv = (
-            _cfg_get(
-                config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None)
-            )
+            _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
             if config is not None
             else None
         )
         if cfg_kv is None and src is not None:
-            cfg_kv = getattr(
-                src, "num_key_value_heads", getattr(src, "num_kv_heads", None)
-            )
+            cfg_kv = getattr(src, "num_key_value_heads", getattr(src, "num_kv_heads", None))
         self.num_kv_heads = int(cfg_kv) if cfg_kv is not None else self.num_heads
         self.num_kv_groups = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.q_head_size = self.num_heads * self.head_dim
@@ -376,23 +368,15 @@ class TPAttention(BaseAttention):
         self.rank = int(raw_r)
         self._use_tensor_product = self.rank * self.rank == self.head_dim
         # Effective qk dimension after tensor-product or qk_proj
-        self.effective_qk_dim = (
-            self.rank * self.rank if self._use_tensor_product else self.head_dim
-        )
+        self.effective_qk_dim = self.rank * self.rank if self._use_tensor_product else self.head_dim
 
-        self.lora_rank = int(
-            kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
-        )
+        self.lora_rank = int(kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank)))
         self.lora_alpha = float(
             kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
         )
 
         # ---- decoder ----
-        _mt = (
-            str(_cfg_get(config, "model_type", "") or "").lower()
-            if config is not None
-            else ""
-        )
+        _mt = str(_cfg_get(config, "model_type", "") or "").lower() if config is not None else ""
         _dec_prefixes = (
             "gpt",
             "qwen",
@@ -500,15 +484,11 @@ class TPAttention(BaseAttention):
         # We store them as LoRALinear to align with the framework convention.
         # They apply to the concatenated (H*hd) space, not the factorized dims.
         if self.lora_rank > 0:
-            self.q_lora_A = nn.Parameter(
-                torch.empty(self.lora_rank, self.dim, dtype=target_dtype)
-            )
+            self.q_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.dim, dtype=target_dtype))
             self.q_lora_B = nn.Parameter(
                 torch.zeros(self.q_head_size, self.lora_rank, dtype=target_dtype)
             )
-            self.k_lora_A = nn.Parameter(
-                torch.empty(self.lora_rank, self.dim, dtype=target_dtype)
-            )
+            self.k_lora_A = nn.Parameter(torch.empty(self.lora_rank, self.dim, dtype=target_dtype))
             self.k_lora_B = nn.Parameter(
                 torch.zeros(self.kv_head_size, self.lora_rank, dtype=target_dtype)
             )
@@ -521,9 +501,7 @@ class TPAttention(BaseAttention):
             self.register_parameter("k_lora_B", None)
 
         dropout_p = (
-            getattr(
-                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
-            )
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
             if config
             else 0.1
         )
@@ -577,9 +555,7 @@ class TPAttention(BaseAttention):
             # GPT-2
             if hasattr(src, "c_attn"):
                 W = src.c_attn.weight.detach()
-                B_vec = (
-                    src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                )
+                B_vec = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
                 if W.shape[0] != 3 * self.dim and W.shape[1] == 3 * self.dim:
                     W = W.t().contiguous()
                 if W.shape[0] == 3 * self.dim:
@@ -590,16 +566,10 @@ class TPAttention(BaseAttention):
                     w_o = src.c_proj.weight.detach()
                     if w_o.shape[0] != self.dim and w_o.shape[1] == self.dim:
                         w_o = w_o.t().contiguous()
-                    b_o = (
-                        src.c_proj.bias.detach()
-                        if src.c_proj.bias is not None
-                        else None
-                    )
+                    b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
             # BERT/RoBERTa
-            elif (
-                hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value")
-            ):
+            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.detach()
                 b_q = src.query.bias.detach() if src.query.bias is not None else None
                 w_k = src.key.weight.detach()
@@ -615,11 +585,7 @@ class TPAttention(BaseAttention):
                             break
 
             # Qwen / LLaMA
-            elif (
-                hasattr(src, "q_proj")
-                and hasattr(src, "k_proj")
-                and hasattr(src, "v_proj")
-            ):
+            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q = src.q_proj.weight.detach()
                 b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
                 w_k = src.k_proj.weight.detach()
@@ -628,18 +594,10 @@ class TPAttention(BaseAttention):
                 b_v = src.v_proj.bias.detach() if src.v_proj.bias is not None else None
                 if hasattr(src, "o_proj"):
                     w_o = src.o_proj.weight.detach()
-                    b_o = (
-                        src.o_proj.bias.detach()
-                        if src.o_proj.bias is not None
-                        else None
-                    )
+                    b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
 
             # DistilBERT
-            elif (
-                hasattr(src, "q_lin")
-                and hasattr(src, "k_lin")
-                and hasattr(src, "v_lin")
-            ):
+            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q = src.q_lin.weight.detach()
                 b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
                 w_k = src.k_lin.weight.detach()
@@ -648,11 +606,7 @@ class TPAttention(BaseAttention):
                 b_v = src.v_lin.bias.detach() if src.v_lin.bias is not None else None
                 if hasattr(src, "out_lin"):
                     w_o = src.out_lin.weight.detach()
-                    b_o = (
-                        src.out_lin.bias.detach()
-                        if src.out_lin.bias is not None
-                        else None
-                    )
+                    b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
 
             # UniversalAdapter
             if w_q is None or w_k is None or w_v is None:
@@ -722,9 +676,7 @@ class TPAttention(BaseAttention):
                             proj2.weight.data[:r_rows, :in_dim].copy_(
                                 B[:r_rows, :in_dim].to(proj2.weight.dtype)
                             )
-                            logger.info(
-                                "TPAttention: CP OK (err=%.4f) for %d heads", err, num_h
-                            )
+                            logger.info("TPAttention: CP OK (err=%.4f) for %d heads", err, num_h)
                             cp_ok = True
                         else:
                             logger.warning(
@@ -827,17 +779,13 @@ class TPAttention(BaseAttention):
         def _compute_q(x):
             q1 = self.q_proj1(x).view(B, L, H, r)
             q2 = self.q_proj2(x).view(B, L, H, r)
-            out_q = (q1.unsqueeze(-1) * q2.unsqueeze(-2)).flatten(
-                -2, -1
-            )  # (B, L, H, r*r)
+            out_q = (q1.unsqueeze(-1) * q2.unsqueeze(-2)).flatten(-2, -1)  # (B, L, H, r*r)
             if self.qk_proj is not None:
                 out_q = F.linear(out_q, self.qk_proj.to(out_q.dtype))
             # TPA-FIX-11: add LoRA residual on the (H*hd) space
             if self.q_lora_A is not None:
                 lora = F.linear(F.linear(x, self.q_lora_A), self.q_lora_B)
-                out_q = out_q + lora.view(B, L, H, hd) * (
-                    self.lora_alpha / max(1, self.lora_rank)
-                )
+                out_q = out_q + lora.view(B, L, H, hd) * (self.lora_alpha / max(1, self.lora_rank))
             return out_q
 
         def _compute_k(x):
@@ -876,11 +824,7 @@ class TPAttention(BaseAttention):
 
         # ---- RoPE ----
         pos_emb = kwargs.get("position_embeddings")
-        if (
-            pos_emb is not None
-            and isinstance(pos_emb, (tuple, list))
-            and len(pos_emb) == 2
-        ):
+        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2:
             cos, sin = pos_emb
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 
@@ -891,9 +835,7 @@ class TPAttention(BaseAttention):
 
         # ---- Mask ----
         is_causal = self.is_decoder and L > 1
-        custom_mask = (
-            attention_mask if attention_mask is not None else kwargs.get("attn_mask")
-        )
+        custom_mask = attention_mask if attention_mask is not None else kwargs.get("attn_mask")
 
         # TPA-FIX-09: preprocess custom_mask WITHOUT losing causality.
         # Normalize custom_mask into a 4D bool mask if it exists.
@@ -947,9 +889,7 @@ class TPAttention(BaseAttention):
 
             try:
                 if _HAS_SDPA_KERNEL:
-                    with sdpa_kernel(
-                        [SDPBackend.FLASH_ATTENTION, SDPBackend.EFFICIENT_ATTENTION]
-                    ):
+                    with sdpa_kernel([SDPBackend.FLASH_ATTENTION, SDPBackend.EFFICIENT_ATTENTION]):
                         context = F.scaled_dot_product_attention(
                             query=Q,
                             key=K,
@@ -985,9 +925,7 @@ class TPAttention(BaseAttention):
             # TPA-FIX-09: apply causal first, then custom
             if is_causal:
                 causal_mask = torch.triu(
-                    torch.full(
-                        (L, L), float("-inf"), device=scores.device, dtype=scores.dtype
-                    ),
+                    torch.full((L, L), float("-inf"), device=scores.device, dtype=scores.dtype),
                     diagonal=1,
                 )
                 scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
@@ -1006,9 +944,7 @@ class TPAttention(BaseAttention):
                 if head_mask.dim() == 1:
                     head_mask = head_mask.view(1, -1, 1, 1)
                 elif head_mask.dim() == 2:
-                    head_mask = head_mask.view(
-                        head_mask.size(0), head_mask.size(1), 1, 1
-                    )
+                    head_mask = head_mask.view(head_mask.size(0), head_mask.size(1), 1, 1)
                 elif head_mask.dim() == 3:
                     head_mask = head_mask.unsqueeze(-1)
                 attn_weights = attn_weights * head_mask.to(attn_weights.dtype)
@@ -1122,10 +1058,7 @@ def inject_tpa(
             sub = getattr(src, sub_attr, None)
             if isinstance(sub, TPAttention):
                 return None
-        if (
-            "DeltaNet" in src.__class__.__name__
-            or "LinearAttention" in src.__class__.__name__
-        ):
+        if "DeltaNet" in src.__class__.__name__ or "LinearAttention" in src.__class__.__name__:
             return None
 
         if cfg is None and hasattr(src, "config"):
@@ -1135,9 +1068,7 @@ def inject_tpa(
             "rank", _cfg_get(comp_config, "tpa_rank", _cfg_get(comp_config, "rank", 8))
         )
         lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 0))
-        max_cp_error = kwargs.pop(
-            "max_cp_error", _cfg_get(comp_config, "tpa_max_cp_error", 0.35)
-        )
+        max_cp_error = kwargs.pop("max_cp_error", _cfg_get(comp_config, "tpa_max_cp_error", 0.35))
 
         new_attn = TPAttention(
             config=cfg,

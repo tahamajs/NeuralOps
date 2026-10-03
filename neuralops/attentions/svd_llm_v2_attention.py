@@ -17,6 +17,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -154,9 +155,7 @@ class SVDLLMV2Attention(BaseAttention):
 
         cfg_head_dim = _cfg_get(config, "head_dim", None)
         adapter_head_dim = (
-            getattr(getattr(config, "adapter", None), "head_dim", None)
-            if config
-            else None
+            getattr(getattr(config, "adapter", None), "head_dim", None) if config else None
         )
         inferred_head_dim = kwargs.get("head_dim", cfg_head_dim or adapter_head_dim)
         if inferred_head_dim is None and old_attn is not None:
@@ -172,9 +171,7 @@ class SVDLLMV2Attention(BaseAttention):
             else (self.hidden_size // self.num_heads if self.num_heads > 0 else 64)
         )
 
-        cfg_kv = _cfg_get(
-            config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None)
-        )
+        cfg_kv = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -193,9 +190,7 @@ class SVDLLMV2Attention(BaseAttention):
         self.lora_rank: int = _cfg_get(
             config,
             "lora_rank",
-            _cfg_get(
-                comp_config, "lora_rank", lora_rank if lora_rank is not None else 16
-            ),
+            _cfg_get(comp_config, "lora_rank", lora_rank if lora_rank is not None else 16),
         )
         self.lora_alpha: float = _cfg_get(
             config, "lora_alpha", _cfg_get(comp_config, "lora_alpha", lora_alpha)
@@ -230,77 +225,55 @@ class SVDLLMV2Attention(BaseAttention):
 
         # Device & Dtype detection from old_attn
         src_p = next(old_attn.parameters(), None) if old_attn is not None else None
-        target_dtype = kwargs.get(
-            "dtype", src_p.dtype if src_p is not None else torch.float32
-        )
-        target_device = kwargs.get(
-            "device", src_p.device if src_p is not None else None
-        )
+        target_dtype = kwargs.get("dtype", src_p.dtype if src_p is not None else torch.float32)
+        target_device = kwargs.get("device", src_p.device if src_p is not None else None)
 
         # 3. Create parameter buffers for SVD factors
         self.query_u = nn.Parameter(
-            torch.empty(
-                self.q_head_size, self.rank, device=target_device, dtype=target_dtype
-            )
+            torch.empty(self.q_head_size, self.rank, device=target_device, dtype=target_dtype)
         )
         self.query_s = nn.Parameter(
             torch.empty(self.rank, device=target_device, dtype=torch.float32)
         )
         self.query_vh = nn.Parameter(
-            torch.empty(
-                self.rank, self.hidden_size, device=target_device, dtype=target_dtype
-            )
+            torch.empty(self.rank, self.hidden_size, device=target_device, dtype=target_dtype)
         )
         self.query_bias = nn.Parameter(
             torch.zeros(self.q_head_size, device=target_device, dtype=target_dtype)
         )
 
         self.key_u = nn.Parameter(
-            torch.empty(
-                self.kv_head_size, self.rank, device=target_device, dtype=target_dtype
-            )
+            torch.empty(self.kv_head_size, self.rank, device=target_device, dtype=target_dtype)
         )
-        self.key_s = nn.Parameter(
-            torch.empty(self.rank, device=target_device, dtype=torch.float32)
-        )
+        self.key_s = nn.Parameter(torch.empty(self.rank, device=target_device, dtype=torch.float32))
         self.key_vh = nn.Parameter(
-            torch.empty(
-                self.rank, self.hidden_size, device=target_device, dtype=target_dtype
-            )
+            torch.empty(self.rank, self.hidden_size, device=target_device, dtype=target_dtype)
         )
         self.key_bias = nn.Parameter(
             torch.zeros(self.kv_head_size, device=target_device, dtype=target_dtype)
         )
 
         self.value_u = nn.Parameter(
-            torch.empty(
-                self.kv_head_size, self.rank, device=target_device, dtype=target_dtype
-            )
+            torch.empty(self.kv_head_size, self.rank, device=target_device, dtype=target_dtype)
         )
         self.value_s = nn.Parameter(
             torch.empty(self.rank, device=target_device, dtype=torch.float32)
         )
         self.value_vh = nn.Parameter(
-            torch.empty(
-                self.rank, self.hidden_size, device=target_device, dtype=target_dtype
-            )
+            torch.empty(self.rank, self.hidden_size, device=target_device, dtype=target_dtype)
         )
         self.value_bias = nn.Parameter(
             torch.zeros(self.kv_head_size, device=target_device, dtype=target_dtype)
         )
 
         self.out_proj_u = nn.Parameter(
-            torch.empty(
-                self.hidden_size, self.rank, device=target_device, dtype=target_dtype
-            )
+            torch.empty(self.hidden_size, self.rank, device=target_device, dtype=target_dtype)
         )
         self.out_proj_s = nn.Parameter(
             torch.empty(self.rank, device=target_device, dtype=torch.float32)
         )
         self.out_proj_vh = nn.Parameter(
-            torch.empty(
-                self.rank, self.q_head_size, device=target_device, dtype=target_dtype
-            )
+            torch.empty(self.rank, self.q_head_size, device=target_device, dtype=target_dtype)
         )
         self.out_proj_bias = nn.Parameter(
             torch.zeros(self.hidden_size, device=target_device, dtype=target_dtype)
@@ -499,17 +472,11 @@ class SVDLLMV2Attention(BaseAttention):
             u_param.data.zero_()
             s_param.data.zero_()
             vh_param.data.zero_()
-            u_param.data[:, :r] = U[:, :r].to(
-                dtype=u_param.dtype, device=u_param.device
-            )
+            u_param.data[:, :r] = U[:, :r].to(dtype=u_param.dtype, device=u_param.device)
             s_param.data[:r] = S[:r].to(dtype=s_param.dtype, device=s_param.device)
-            vh_param.data[:r, :] = Vt[:r, :].to(
-                dtype=vh_param.dtype, device=vh_param.device
-            )
+            vh_param.data[:r, :] = Vt[:r, :].to(dtype=vh_param.dtype, device=vh_param.device)
             if bias is not None:
-                bias_param.data.copy_(
-                    bias.to(dtype=bias_param.dtype, device=bias_param.device)
-                )
+                bias_param.data.copy_(bias.to(dtype=bias_param.dtype, device=bias_param.device))
 
     def copy_weights(self, old_attn: nn.Module) -> None:
         """Robust weight copying from DistilBERT, RoBERTa nested, GPT-2 Conv1D, or Qwen/LLaMA."""
@@ -541,9 +508,7 @@ class SVDLLMV2Attention(BaseAttention):
                 w_o, b_o = _unpack_weight_bias(src.c_proj)
 
             # Pattern 2: RoBERTa / BERT separate query, key, value
-            elif (
-                hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value")
-            ):
+            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q, b_q = _unpack_weight_bias(src.query)
                 w_k, b_k = _unpack_weight_bias(src.key)
                 w_v, b_v = _unpack_weight_bias(src.value)
@@ -555,11 +520,7 @@ class SVDLLMV2Attention(BaseAttention):
                             break
 
             # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
-            elif (
-                hasattr(src, "q_proj")
-                and hasattr(src, "k_proj")
-                and hasattr(src, "v_proj")
-            ):
+            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q, b_q = _unpack_weight_bias(src.q_proj)
                 w_k, b_k = _unpack_weight_bias(src.k_proj)
                 w_v, b_v = _unpack_weight_bias(src.v_proj)
@@ -567,11 +528,7 @@ class SVDLLMV2Attention(BaseAttention):
                     w_o, b_o = _unpack_weight_bias(src.o_proj)
 
             # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
-            elif (
-                hasattr(src, "q_lin")
-                and hasattr(src, "k_lin")
-                and hasattr(src, "v_lin")
-            ):
+            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q, b_q = _unpack_weight_bias(src.q_lin)
                 w_k, b_k = _unpack_weight_bias(src.k_lin)
                 w_v, b_v = _unpack_weight_bias(src.v_lin)
@@ -611,9 +568,7 @@ class SVDLLMV2Attention(BaseAttention):
             # Frobenius norm checks
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
                 if torch.norm(w.float(), p="fro").item() < 1e-4:
-                    logger.warning(
-                        f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)"
-                    )
+                    logger.warning(f"Copied weight {name} has near-zero Frobenius norm (< 1e-4)")
 
             # Decompose and set Q
             self._decompose_and_set(
@@ -674,9 +629,7 @@ class SVDLLMV2Attention(BaseAttention):
             # Decompose and set Out projection (if not nested encoder)
             if w_o is not None and not self.is_nested_encoder:
                 if torch.norm(w_o.float(), p="fro").item() < 1e-4:
-                    logger.warning(
-                        "Copied out_proj weight has near-zero Frobenius norm (< 1e-4)"
-                    )
+                    logger.warning("Copied out_proj weight has near-zero Frobenius norm (< 1e-4)")
                 self._decompose_and_set(
                     self.out_proj_u,
                     self.out_proj_s,
@@ -796,9 +749,7 @@ class SVDLLMV2Attention(BaseAttention):
                 _qs = Q.half() if Q.dtype == torch.float32 else Q
                 _ks = K.half() if K.dtype == torch.float32 else K
                 _vs = V.half() if V.dtype == torch.float32 else V
-                _is_causal = (
-                    getattr(self, "is_decoder", False) and not is_cross and seq_len > 1
-                )
+                _is_causal = getattr(self, "is_decoder", False) and not is_cross and seq_len > 1
                 _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
                     _qs,
                     _ks,
@@ -812,9 +763,7 @@ class SVDLLMV2Attention(BaseAttention):
                     .contiguous()
                     .view(batch_size, seq_len, self.all_head_size)
                 )
-                _sdpa_out = torch.nan_to_num(
-                    _sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4
-                )
+                _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
                 if self.is_nested_encoder:
                     out = _sdpa_out
                 else:
@@ -836,9 +785,7 @@ class SVDLLMV2Attention(BaseAttention):
             except Exception:
                 pass
 
-        scores = (
-            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         # 5. Masking
         if self.is_decoder and not is_cross and seq_len > 1:
@@ -861,16 +808,11 @@ class SVDLLMV2Attention(BaseAttention):
         if eff_mask is not None:
             if eff_mask.dim() == 2:
                 if eff_mask.dtype == torch.bool:
-                    scores = scores.masked_fill(
-                        ~eff_mask.unsqueeze(1).unsqueeze(2), -10000.0
-                    )
+                    scores = scores.masked_fill(~eff_mask.unsqueeze(1).unsqueeze(2), -10000.0)
                 elif torch.is_floating_point(eff_mask) and (eff_mask < 0).any():
                     scores = scores + eff_mask.unsqueeze(1).unsqueeze(2).float()
                 else:
-                    scores = (
-                        scores
-                        + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
-                    )
+                    scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
             elif eff_mask.dim() == 3:
                 if eff_mask.dtype == torch.bool:
                     scores = scores.masked_fill(~eff_mask.unsqueeze(1), -10000.0)
@@ -968,9 +910,7 @@ def inject_svd_llm_v2(
 
     if layer_list is not None:
         # Pre-test on the first layer before mutating model
-        test_src = getattr(
-            layer_list[0], "attention", getattr(layer_list[0], "self", None)
-        )
+        test_src = getattr(layer_list[0], "attention", getattr(layer_list[0], "self", None))
         if test_src is not None:
             try:
                 SVDLLMV2Attention(

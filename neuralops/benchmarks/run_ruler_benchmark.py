@@ -263,21 +263,15 @@ def evaluate_context_length(
                     pad_token_id=tokenizer.eos_token_id,
                 )
             generated_tokens = output_ids[0][input_tensor.shape[1] :]
-            generated_text = tokenizer.decode(
-                generated_tokens, skip_special_tokens=True
-            ).strip()
+            generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=True).strip()
             is_correct = answer.lower() in generated_text.lower()
         except torch.cuda.OutOfMemoryError as oom_err:
-            LOG.warning(
-                "CUDA OOM at ctx_len=%d, sample=%d: %s", context_len, i, oom_err
-            )
+            LOG.warning("CUDA OOM at ctx_len=%d, sample=%d: %s", context_len, i, oom_err)
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             raise oom_err
         except Exception as gen_err:
-            LOG.warning(
-                "Generation error at ctx_len=%d, sample=%d: %s", context_len, i, gen_err
-            )
+            LOG.warning("Generation error at ctx_len=%d, sample=%d: %s", context_len, i, gen_err)
             is_correct = False
 
         depth_stats[depth_key]["total"] += 1
@@ -306,17 +300,13 @@ def evaluate_context_length(
     }
 
 
-def print_summary_table(
-    results: dict[str, Any], depths: list[float], module_name: str
-) -> None:
+def print_summary_table(results: dict[str, Any], depths: list[float], module_name: str) -> None:
     """Print summary table formatted like: ctx_len | accuracy | depth_0.1 | depth_0.5 | depth_0.9"""
     print("\n" + "=" * 75)
     print(f" RULER NIAH RETRIEVAL BENCHMARK SUMMARY: {module_name}")
     print("=" * 75)
 
-    rep_depths = [
-        d for d in [0.1, 0.5, 0.9] if any(abs(d - cur) < 1e-4 for cur in depths)
-    ]
+    rep_depths = [d for d in [0.1, 0.5, 0.9] if any(abs(d - cur) < 1e-4 for cur in depths)]
     if not rep_depths:
         rep_depths = depths[:3]
 
@@ -328,11 +318,7 @@ def print_summary_table(
     print("-" * len(header))
 
     for ctx_len_str, res in results.items():
-        acc_str = (
-            f"{res.get('accuracy', 0.0):<10.4f}"
-            if "accuracy" in res
-            else f"{'ERR':<10}"
-        )
+        acc_str = f"{res.get('accuracy', 0.0):<10.4f}" if "accuracy" in res else f"{'ERR':<10}"
         by_d = res.get("by_depth", {})
         d_vals = []
         for rd in rep_depths:
@@ -343,19 +329,27 @@ def print_summary_table(
 
 
 def main(argv: list[str] | None = None) -> int:
-    global np, torch, AutoModelForCausalLM, AutoTokenizer, ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, apply_module_to_model
+    global \
+        np, \
+        torch, \
+        AutoModelForCausalLM, \
+        AutoTokenizer, \
+        ATTENTION_REGISTRY, \
+        COMPRESSOR_REGISTRY, \
+        apply_module_to_model
     args = parse_args(argv)
 
     try:
         import numpy as _np
         import torch as _torch
+        from transformers import AutoModelForCausalLM as _AutoModelForCausalLM
+        from transformers import AutoTokenizer as _AutoTokenizer
+
         from neuralops.core.registry import ATTENTION_REGISTRY as _ATTENTION_REGISTRY
         from neuralops.core.registry import COMPRESSOR_REGISTRY as _COMPRESSOR_REGISTRY
         from neuralops.eval_all_models_datasets import (
             apply_module_to_model as _apply_module_to_model,
         )
-        from transformers import AutoModelForCausalLM as _AutoModelForCausalLM
-        from transformers import AutoTokenizer as _AutoTokenizer
 
         np = _np
         torch = _torch

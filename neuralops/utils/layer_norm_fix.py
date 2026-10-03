@@ -69,7 +69,9 @@ class RMSNorm(nn.Module):
         return x_normed.to(input_dtype)
 
     def extra_repr(self) -> str:
-        return f"{self.normalized_shape}, eps={self.eps}, elementwise_affine={self.elementwise_affine}"
+        return (
+            f"{self.normalized_shape}, eps={self.eps}, elementwise_affine={self.elementwise_affine}"
+        )
 
 
 class LayerNorm(nn.Module):
@@ -138,7 +140,9 @@ class LayerNorm(nn.Module):
         return x_normed.to(input_dtype)
 
     def extra_repr(self) -> str:
-        return f"{self.normalized_shape}, eps={self.eps}, elementwise_affine={self.elementwise_affine}"
+        return (
+            f"{self.normalized_shape}, eps={self.eps}, elementwise_affine={self.elementwise_affine}"
+        )
 
 
 # Aliases for explicit usage

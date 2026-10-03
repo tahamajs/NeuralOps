@@ -13,6 +13,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -79,14 +80,10 @@ class ROASTLinear(nn.Module):
 
         # Precompute tile indices with high-entropy bitwise mixing (B11, J1)
         tile_idx_i = (
-            torch.arange(self.tiles_out, device=device)
-            .unsqueeze(1)
-            .expand(-1, self.tiles_in)
+            torch.arange(self.tiles_out, device=device).unsqueeze(1).expand(-1, self.tiles_in)
         )
         tile_idx_j = (
-            torch.arange(self.tiles_in, device=device)
-            .unsqueeze(0)
-            .expand(self.tiles_out, -1)
+            torch.arange(self.tiles_in, device=device).unsqueeze(0).expand(self.tiles_out, -1)
         )
         h = (tile_idx_i.long() * 0x9E3779B1) ^ (tile_idx_j.long() * 0x85EBCA77)
         h = h ^ (h >> 16)
@@ -103,14 +100,10 @@ class ROASTLinear(nn.Module):
 
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
-                torch.empty(
-                    (self.lora_r, in_features), dtype=torch.float32, device=device
-                )
+                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device)
             )
             self.lora_B = nn.Parameter(
-                torch.zeros(
-                    (out_features, self.lora_r), dtype=torch.float32, device=device
-                )
+                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device)
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
@@ -124,11 +117,7 @@ class ROASTLinear(nn.Module):
     @property
     def weight(self) -> torch.Tensor:
         """Reconstructed effective weight matrix (out_features, in_features) with evaluation caching."""
-        if (
-            self._cached_weight is not None
-            and not self._cache_stale
-            and not self.training
-        ):
+        if self._cached_weight is not None and not self._cache_stale and not self.training:
             return self._cached_weight
         W_tiles = self.weight_table[self.tile_hash_idx]  # (tiles_out, tiles_in)
         W_full = torch.repeat_interleave(
@@ -145,13 +134,9 @@ class ROASTLinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Vectorized forward pass without per-element python loops."""
         W = self.weight.to(device=x.device, dtype=x.dtype)
-        out = F.linear(
-            x, W, self.bias.to(dtype=x.dtype) if self.bias is not None else None
-        )
+        out = F.linear(x, W, self.bias.to(dtype=x.dtype) if self.bias is not None else None)
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x.float(), self.lora_A), self.lora_B) * self.scaling
-            )
+            lora_out = F.linear(F.linear(x.float(), self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out.to(out.dtype)
         return out
 
@@ -235,9 +220,7 @@ class ROASTLinear(nn.Module):
                     .contiguous()
                     .view(tiles_out, tiles_in, -1)
                 )
-                tile_means = W_blocks.sum(dim=-1) / mask_blocks.sum(dim=-1).clamp(
-                    min=1.0
-                )
+                tile_means = W_blocks.sum(dim=-1) / mask_blocks.sum(dim=-1).clamp(min=1.0)
             else:
                 tile_means = (
                     W.view(tiles_out, ts, tiles_in, ts)
@@ -287,19 +270,11 @@ class ROASTCompressor(BaseCompressor):
 
         self.n_buckets = max(
             1,
-            int(
-                n_buckets
-                if n_buckets is not None
-                else _cfg_get(cfg_obj, "n_buckets", 1024)
-            ),
+            int(n_buckets if n_buckets is not None else _cfg_get(cfg_obj, "n_buckets", 1024)),
         )
         self.tile_size = max(
             1,
-            int(
-                tile_size
-                if tile_size is not None
-                else _cfg_get(cfg_obj, "tile_size", 32)
-            ),
+            int(tile_size if tile_size is not None else _cfg_get(cfg_obj, "tile_size", 32)),
         )
         self.target_attention_only = bool(
             target_attention_only
@@ -317,9 +292,7 @@ class ROASTCompressor(BaseCompressor):
             )
             and not self.target_attention_only
         )
-        self.use_lora = bool(
-            use_lora or _cfg_get(cfg_obj, "use_lora", False) or (lora_r > 0)
-        )
+        self.use_lora = bool(use_lora or _cfg_get(cfg_obj, "use_lora", False) or (lora_r > 0))
         self.lora_r = int(lora_r or _cfg_get(cfg_obj, "lora_r", 0))
         self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, "lora_alpha", 1.0))
         self.target_modules = target_modules
@@ -333,11 +306,7 @@ class ROASTCompressor(BaseCompressor):
         )
         self.min_numel = max(
             1,
-            int(
-                min_numel
-                if min_numel is not None
-                else _cfg_get(cfg_obj, "min_numel", 16)
-            ),
+            int(min_numel if min_numel is not None else _cfg_get(cfg_obj, "min_numel", 16)),
         )
 
         # Target device derivation
@@ -352,9 +321,7 @@ class ROASTCompressor(BaseCompressor):
                 )
         else:
             self.target_device = (
-                next(model.parameters()).device
-                if list(model.parameters())
-                else torch.device("cpu")
+                next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
             )
 
         # Diagnostics & Tracking
@@ -373,11 +340,7 @@ class ROASTCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        is_gqa = (
-            num_heads is not None
-            and num_kv_heads is not None
-            and num_kv_heads < num_heads
-        )
+        is_gqa = num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads
 
         name_l = name.lower()
         is_attn_qkv = any(
@@ -490,9 +453,7 @@ class ROASTCompressor(BaseCompressor):
                     cls_name = base_mod.__class__.__name__
                     is_conv1d = "conv1d" in cls_name.lower() or hasattr(base_mod, "nf")
                     W_orig = (
-                        raw_w.t().contiguous().float()
-                        if is_conv1d
-                        else raw_w.contiguous().float()
+                        raw_w.t().contiguous().float() if is_conv1d else raw_w.contiguous().float()
                     )
 
                     new_layer = ROASTLinear.from_linear(
@@ -539,16 +500,12 @@ class ROASTCompressor(BaseCompressor):
                 dummy_input = torch.randint(0, 100, (1, 8), device=self.target_device)
                 self.model(dummy_input)
         except Exception as ex_sanity:
-            logger.warning(
-                "ROAST post-compression forward sanity check warning: %s", ex_sanity
-            )
+            logger.warning("ROAST post-compression forward sanity check warning: %s", ex_sanity)
             forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
         avg_err = (
-            (sum(self.layer_errors.values()) / len(self.layer_errors))
-            if self.layer_errors
-            else 0.0
+            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
         )
         stats = self.get_compression_stats()
         stats.update(

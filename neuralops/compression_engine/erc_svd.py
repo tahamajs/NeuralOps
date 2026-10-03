@@ -20,6 +20,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.compression_engine.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
@@ -89,18 +90,14 @@ class ERCCompressor(BaseCompressor):
         c_allowed = _cfg_get(
             cfg, "erc_allowed_error", _cfg_get(cfg, "allowed_error", allowed_error)
         )
-        effective_max = _cfg_get(
-            cfg, "erc_max_error", _cfg_get(cfg, "max_error", max_error)
-        )
+        effective_max = _cfg_get(cfg, "erc_max_error", _cfg_get(cfg, "max_error", max_error))
         if effective_max is None and (c_allowed is None or c_allowed <= 0.25):
             effective_max = adaptive_max_error(rank, 768, 768, "distilbert")
         if c_allowed is None or c_allowed <= 0.25:
             c_allowed = adaptive_max_error(rank, 768, 768, "distilbert")
 
         self.allowed_error = float(c_allowed)
-        self.max_error = float(
-            effective_max if effective_max is not None else self.allowed_error
-        )
+        self.max_error = float(effective_max if effective_max is not None else self.allowed_error)
         self.target_attention_only = bool(
             _cfg_get(
                 cfg,
@@ -124,8 +121,7 @@ class ERCCompressor(BaseCompressor):
         # Pre-LayerNorm encoder detection (e.g., RoBERTa): pre-LN amplifies residual truncation noise.
         # Enforce stricter maximum error threshold (0.15) to prevent below-chance catastrophic collapse.
         model_name_or_cls = (
-            getattr(getattr(model, "config", None), "_name_or_path", "")
-            or model.__class__.__name__
+            getattr(getattr(model, "config", None), "_name_or_path", "") or model.__class__.__name__
         ).lower()
         self.is_pre_layernorm_encoder = "roberta" in model_name_or_cls
         if self.is_pre_layernorm_encoder and self.max_error > 0.30:
@@ -288,8 +284,7 @@ class ERCCompressor(BaseCompressor):
                 out_features=out_f,
                 rank=r,
                 bias=(
-                    getattr(target_mod, "bias", None) is not None
-                    and target_mod.bias is not None
+                    getattr(target_mod, "bias", None) is not None and target_mod.bias is not None
                 ),
                 dtype=dtype,
                 device=device,
@@ -354,18 +349,13 @@ class ERCCompressor(BaseCompressor):
 
         if self.target_attention_only:
             for name, module in self.model.named_modules():
-                if any(
-                    part in name.split(".")
-                    for part in ["lora_A", "lora_B", "base_layer"]
-                ):
+                if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
                     continue
                 target_mod = getattr(module, "base_layer", module)
                 cls_name = target_mod.__class__.__name__.lower()
                 is_linear = isinstance(target_mod, nn.Linear)
                 is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-                if (is_linear or is_conv1d) and not self._is_target_module(
-                    name, module
-                ):
+                if (is_linear or is_conv1d) and not self._is_target_module(name, module):
                     for p in module.parameters():
                         p.requires_grad = False
                     self.skipped_layers.append(name)
@@ -437,15 +427,9 @@ class ERCCompressor(BaseCompressor):
                     try:
                         self.model(dummy)
                     except Exception as e_inner:
-                        logger.debug(
-                            "ERC-SVD forward check (input_ids) failed: %s", e_inner
-                        )
+                        logger.debug("ERC-SVD forward check (input_ids) failed: %s", e_inner)
                         first_linear = next(
-                            (
-                                m
-                                for m in self.model.modules()
-                                if isinstance(m, nn.Linear)
-                            ),
+                            (m for m in self.model.modules() if isinstance(m, nn.Linear)),
                             None,
                         )
                         in_dim = getattr(first_linear, "in_features", 8)
@@ -455,11 +439,7 @@ class ERCCompressor(BaseCompressor):
                                 8,
                                 in_dim,
                                 device=dev,
-                                dtype=(
-                                    first_p.dtype
-                                    if first_p is not None
-                                    else torch.float32
-                                ),
+                                dtype=(first_p.dtype if first_p is not None else torch.float32),
                             )
                         )
         except Exception as e:
@@ -471,9 +451,7 @@ class ERCCompressor(BaseCompressor):
         except Exception:
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
-        effective_ratio = (
-            (total_comp_params / total_orig_params) if total_orig_params > 0 else 1.0
-        )
+        effective_ratio = (total_comp_params / total_orig_params) if total_orig_params > 0 else 1.0
         avg_err = (
             sum(self.layer_errors[k] for k in self.compressed_layers)
             / max(1, len(self.compressed_layers))

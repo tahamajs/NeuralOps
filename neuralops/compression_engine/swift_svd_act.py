@@ -26,6 +26,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.compression_engine.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
@@ -88,12 +89,8 @@ class SwiftSVDActivationCompressor(BaseCompressor):
             calibration_loader = _cfg_get(cfg, "calibration_loader", calibration_loader)
             calibration_texts = _cfg_get(cfg, "calibration_texts", calibration_texts)
             max_error = _cfg_get(cfg, "max_error", max_error)
-            fallback_to_original = _cfg_get(
-                cfg, "fallback_to_original", fallback_to_original
-            )
-            target_attention_only = _cfg_get(
-                cfg, "target_attention_only", target_attention_only
-            )
+            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
             lora_r = _cfg_get(cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
             skip_attention_qkv = _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
@@ -101,9 +98,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
             num_calibration_batches = _cfg_get(
                 cfg, "num_calibration_batches", num_calibration_batches
             )
-            max_calibration_tokens = _cfg_get(
-                cfg, "max_calibration_tokens", max_calibration_tokens
-            )
+            max_calibration_tokens = _cfg_get(cfg, "max_calibration_tokens", max_calibration_tokens)
             use_fp64_cross_cov = _cfg_get(cfg, "use_fp64_cross_cov", use_fp64_cross_cov)
 
         if "rank" in kwargs and kwargs["rank"] is not None:
@@ -201,9 +196,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__.lower()
         is_linear_like = (
-            isinstance(base_mod, nn.Linear)
-            or "conv1d" in cls_name
-            or hasattr(base_mod, "nf")
+            isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
         )
         if not is_linear_like:
             return False
@@ -321,17 +314,12 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                         "in_f": in_f,
                         "out_f": out_f,
                     }
-                elif (
-                    accum[layer_name]["in_f"] != in_f
-                    or accum[layer_name]["out_f"] != out_f
-                ):
+                elif accum[layer_name]["in_f"] != in_f or accum[layer_name]["out_f"] != out_f:
                     # Shape changed across batches → skip
                     return
 
                 with torch.no_grad():
-                    cov_local = (
-                        x_out_2d.to(compute_dtype).t() @ x_in_2d.to(compute_dtype)
-                    ).cpu()
+                    cov_local = (x_out_2d.to(compute_dtype).t() @ x_in_2d.to(compute_dtype)).cpu()
                 accum[layer_name]["cov"] += cov_local
                 accum[layer_name]["n"] += n
 
@@ -380,8 +368,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                             self.model(batch.to(device))
                         elif isinstance(batch, (list, tuple)):
                             b_dev = [
-                                v.to(device) if isinstance(v, torch.Tensor) else v
-                                for v in batch
+                                v.to(device) if isinstance(v, torch.Tensor) else v for v in batch
                             ]
                             self.model(*b_dev)
                     except Exception as e:
@@ -461,11 +448,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         cls_name = base_layer.__class__.__name__.lower()
         is_conv1d = "conv1d" in cls_name or hasattr(base_layer, "nf")
 
-        W = (
-            raw_w.t().contiguous().clone().float()
-            if is_conv1d
-            else raw_w.clone().float()
-        )
+        W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
         out_f, in_f = W.shape
 
         r = self._select_rank(in_f, out_f)
@@ -493,9 +476,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                         if r_act > 0:
                             sqrt_S_m = torch.sqrt(torch.clamp(S_m[:r_act], min=1e-12))
                             A = (U_act @ U_m[:, :r_act]) * sqrt_S_m.unsqueeze(0)
-                            B = sqrt_S_m.unsqueeze(1) @ (
-                                Vt_m[:r_act, :] @ V_act.t().contiguous()
-                            )
+                            B = sqrt_S_m.unsqueeze(1) @ (Vt_m[:r_act, :] @ V_act.t().contiguous())
                             r = r_act
             except Exception as e:
                 logger.debug(
@@ -659,11 +640,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                         sub = getattr(module, attr, None)
                         if sub is None:
                             continue
-                        params = (
-                            sub.parameters()
-                            if hasattr(sub, "parameters")
-                            else iter([sub])
-                        )
+                        params = sub.parameters() if hasattr(sub, "parameters") else iter([sub])
                         for p in params:
                             if hasattr(p, "requires_grad"):
                                 p.requires_grad = True
@@ -774,9 +751,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
 # Factory
 # ===========================================================================
 @COMPRESSOR_REGISTRY.register("swift_svd_act_factory")
-def swift_svd_act_factory(
-    model: nn.Module, comp_config: Any = None, **kwargs: Any
-) -> Any:
+def swift_svd_act_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     """Swift-SVD activation-aware factory function."""
     rank = kwargs.pop(
         "rank",

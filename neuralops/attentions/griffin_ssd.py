@@ -14,6 +14,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.attentions.gated_delta_net import LoRALinear
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.base import BaseAttention
@@ -141,9 +142,7 @@ class GriffinSSDBlock(BaseAttention):
 
         # Resolve d_model
         if d_model is None:
-            d_model = _get(
-                "hidden_size", _get("d_model", _get("n_embd", _get("dim", None)))
-            )
+            d_model = _get("hidden_size", _get("d_model", _get("n_embd", _get("dim", None))))
         if d_model is None and old_attn is not None:
             d_model = (
                 getattr(old_attn, "hidden_size", None)
@@ -157,9 +156,7 @@ class GriffinSSDBlock(BaseAttention):
                         d_model = m.in_features
                         break
         if d_model is None:
-            d_model = kwargs.get(
-                "hidden_size", kwargs.get("d_model", kwargs.get("dim", 768))
-            )
+            d_model = kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
 
         # Resolve num_heads
         if num_heads is None:
@@ -197,9 +194,7 @@ class GriffinSSDBlock(BaseAttention):
             kv_heads = getattr(
                 old_attn,
                 "num_key_value_heads",
-                getattr(
-                    old_attn, "num_kv_heads", getattr(old_attn, "n_kv_heads", None)
-                ),
+                getattr(old_attn, "num_kv_heads", getattr(old_attn, "n_kv_heads", None)),
             )
             if (
                 kv_heads is None
@@ -208,15 +203,11 @@ class GriffinSSDBlock(BaseAttention):
                 and self.head_dim > 0
             ):
                 kv_heads = old_attn.k_proj.out_features // self.head_dim
-        self.num_kv_heads: int = int(
-            kv_heads if kv_heads is not None else self.num_heads
-        )
+        self.num_kv_heads: int = int(kv_heads if kv_heads is not None else self.num_heads)
 
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
-        self.window_size: int = int(
-            _get("window_size", kwargs.get("window_size", window_size))
-        )
+        self.window_size: int = int(_get("window_size", kwargs.get("window_size", window_size)))
 
         # Decoder / causal detection
         model_type = str(_get("model_type", "")).lower()
@@ -261,10 +252,7 @@ class GriffinSSDBlock(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    src_cls.endswith("SelfAttention")
-                    and "distil" not in src_cls.lower()
-                )
+                or (src_cls.endswith("SelfAttention") and "distil" not in src_cls.lower())
                 or (hasattr(old_attn, "self") and hasattr(old_attn, "output"))
             ):
                 is_nested = True
@@ -278,9 +266,7 @@ class GriffinSSDBlock(BaseAttention):
 
         # LoRA setup
         self.lora_rank: int = int(_get("lora_rank", kwargs.get("lora_rank", lora_rank)))
-        self.lora_alpha: float = float(
-            _get("lora_alpha", kwargs.get("lora_alpha", lora_alpha))
-        )
+        self.lora_alpha: float = float(_get("lora_alpha", kwargs.get("lora_alpha", lora_alpha)))
         self.freeze_base: bool = self.lora_rank > 0
 
         # Multi-head projections
@@ -328,9 +314,7 @@ class GriffinSSDBlock(BaseAttention):
         # Learnable decay gate for global SSD branch (0.0 -> sigmoid(0) = 0.5)
         self.decay_param = nn.Parameter(torch.zeros(self.num_heads, 1, 1))
 
-        self.rotary_emb = (
-            getattr(old_attn, "rotary_emb", None) if old_attn is not None else None
-        )
+        self.rotary_emb = getattr(old_attn, "rotary_emb", None) if old_attn is not None else None
         self.comp_config = comp_config
 
         if old_attn is not None:
@@ -381,11 +365,7 @@ class GriffinSSDBlock(BaseAttention):
             if hasattr(old_attn, "c_proj") and extracted["o"][0] is None:
                 o_w, o_b = _unpack_weight_bias(old_attn.c_proj)
                 if o_w is not None:
-                    if (
-                        o_w.dim() == 2
-                        and o_w.shape[0] != self.dim
-                        and o_w.shape[1] == self.dim
-                    ):
+                    if o_w.dim() == 2 and o_w.shape[0] != self.dim and o_w.shape[1] == self.dim:
                         o_w = o_w.t().contiguous()
                     extracted["o"] = (o_w, o_b)
 
@@ -479,38 +459,26 @@ class GriffinSSDBlock(BaseAttention):
         target_dtype = q.dtype
 
         decay_typed = decay.to(target_dtype)
-        log_decay = torch.log(
-            decay_typed.clamp(min=1e-4, max=1.0 - 1e-4)
-        )  # [1, H, 1, 1]
+        log_decay = torch.log(decay_typed.clamp(min=1e-4, max=1.0 - 1e-4))  # [1, H, 1, 1]
         pos = torch.arange(L, device=q.device, dtype=target_dtype)
         pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)  # [L, L]
 
-        attn_scores = (q @ k.transpose(-1, -2).contiguous()).to(
-            target_dtype
-        )  # [B, H, L, L]
+        attn_scores = (q @ k.transpose(-1, -2).contiguous()).to(target_dtype)  # [B, H, L, L]
 
         if mask is not None:
             mask_typed = (
-                mask.to(target_dtype)
-                if mask.dim() == 2
-                else mask[:, 0, 0, :].to(target_dtype)
+                mask.to(target_dtype) if mask.dim() == 2 else mask[:, 0, 0, :].to(target_dtype)
             )
-            mask_2d = mask_typed.unsqueeze(1).unsqueeze(-1) * mask_typed.unsqueeze(
-                1
-            ).unsqueeze(-2)
+            mask_2d = mask_typed.unsqueeze(1).unsqueeze(-1) * mask_typed.unsqueeze(1).unsqueeze(-2)
         else:
             mask_2d = None
 
         if self.is_decoder:
             # Forward causal decay matrix
-            tril_mask = torch.tril(
-                torch.ones(L, L, device=q.device, dtype=target_dtype)
-            )
+            tril_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=target_dtype))
             D_causal = (
                 torch.exp(
-                    (pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(
-                        min=-40.0, max=0.0
-                    )
+                    (pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(min=-40.0, max=0.0)
                 ).to(target_dtype)
                 * tril_mask
             )
@@ -523,9 +491,7 @@ class GriffinSSDBlock(BaseAttention):
         else:
             # Symmetric distance decay for bidirectional encoders: D_sym(i, j) = exp(|i - j| * log_decay)
             dist = torch.abs(pos_diff).unsqueeze(0).unsqueeze(0)
-            D_sym = torch.exp((dist * log_decay).clamp(min=-40.0, max=0.0)).to(
-                target_dtype
-            )
+            D_sym = torch.exp((dist * log_decay).clamp(min=-40.0, max=0.0)).to(target_dtype)
             if mask_2d is not None:
                 D_sym = D_sym * mask_2d
             D_sym = D_sym.to(target_dtype)
@@ -567,13 +533,7 @@ class GriffinSSDBlock(BaseAttention):
         H, d = self.num_heads, self.head_dim
 
         # 1. Multi-head Projections
-        q = (
-            self.W_q(hidden_states)
-            .view(B, L, H, d)
-            .transpose(1, 2)
-            .contiguous()
-            .to(target_dtype)
-        )
+        q = self.W_q(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous().to(target_dtype)
         k = (
             self.W_k(hidden_states)
             .view(B, L, self.num_kv_heads, d)
@@ -613,11 +573,7 @@ class GriffinSSDBlock(BaseAttention):
         elif self.rotary_emb is not None:
             rotary_mod = self.rotary_emb
             if pos_ids is None:
-                pos_ids = (
-                    torch.arange(L, device=hidden_states.device)
-                    .unsqueeze(0)
-                    .expand(B, -1)
-                )
+                pos_ids = torch.arange(L, device=hidden_states.device).unsqueeze(0).expand(B, -1)
             cos, sin = None, None
             try:
                 cos, sin = rotary_mod(q, seq_len=L)
@@ -639,9 +595,7 @@ class GriffinSSDBlock(BaseAttention):
             v = repeat_kv(v, repeats)
 
         # 2. Local Sliding Window Attention
-        scores = torch.matmul(q, k.transpose(-1, -2).contiguous()) / math.sqrt(
-            d
-        )  # [B, H, L, L]
+        scores = torch.matmul(q, k.transpose(-1, -2).contiguous()) / math.sqrt(d)  # [B, H, L, L]
         idx = torch.arange(L, device=hidden_states.device)
         dist = torch.abs(idx.unsqueeze(1) - idx.unsqueeze(0))
         window_mask = dist > self.window_size

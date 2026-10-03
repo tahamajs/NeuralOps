@@ -12,9 +12,7 @@ class DatasetConfig:
 
 @dataclass
 class ExperimentConfig:
-    base_models: dict[str, str] = field(
-        default_factory=lambda: {"bert": "bert-base-uncased"}
-    )
+    base_models: dict[str, str] = field(default_factory=lambda: {"bert": "bert-base-uncased"})
     svd_ranks: list[int] = field(default_factory=lambda: [8, 16, 32])
     datasets: list[DatasetConfig] = field(default_factory=list)
     min_samples: int = 10

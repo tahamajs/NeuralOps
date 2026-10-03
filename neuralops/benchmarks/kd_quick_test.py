@@ -126,21 +126,14 @@ def update_registry(
         valid_results = [
             r
             for r in results
-            if isinstance(r.get("post_ppl"), (int, float))
-            and np.isfinite(r["post_ppl"])
+            if isinstance(r.get("post_ppl"), (int, float)) and np.isfinite(r["post_ppl"])
         ]
-        best_post_ppl = min(
-            (r["post_ppl"] for r in valid_results), default=float("nan")
-        )
-        best_recovery = max(
-            (r.get("recovery_pct", 0.0) for r in valid_results), default=0.0
-        )
+        best_post_ppl = min((r["post_ppl"] for r in valid_results), default=float("nan"))
+        best_recovery = max((r.get("recovery_pct", 0.0) for r in valid_results), default=0.0)
 
         entry = {
             "module": module_name,
-            "timestamp": getattr(
-                args, "timestamp", datetime.now().strftime("%Y%m%d_%H%M%S")
-            ),
+            "timestamp": getattr(args, "timestamp", datetime.now().strftime("%Y%m%d_%H%M%S")),
             "run_dir": str(run_dir).replace("\\", "/"),
             "methods": args.methods,
             "batch_size": args.batch_size,
@@ -151,8 +144,7 @@ def update_registry(
             "best_post_ppl": best_post_ppl,
             "best_recovery_pct": best_recovery,
             "results": {
-                r["method"]: {k: v for k, v in r.items() if k != "method"}
-                for r in results
+                r["method"]: {k: v for k, v in r.items() if k != "method"} for r in results
             },
         }
         data["runs"].append(entry)
@@ -232,11 +224,7 @@ def compute_perplexity(
         accum_chars += len(t)
         if accum_chars >= target_chars:
             break
-    text = (
-        "\n\n".join(sample_texts)
-        if sample_texts
-        else "\n\n".join(test_dataset["text"][:100])
-    )
+    text = "\n\n".join(sample_texts) if sample_texts else "\n\n".join(test_dataset["text"][:100])
     enc = tokenizer(text, return_tensors="pt", truncation=False)
     input_ids = enc.input_ids
     if input_ids.dim() == 1:
@@ -325,13 +313,9 @@ def compute_hidden_mse(
 ) -> torch.Tensor:
     losses = []
     # Compare matching layer representations (skip index 0 = embeddings)
-    for idx, (s_h, t_h) in enumerate(
-        zip(student_hidden_states[1:], teacher_hidden_states[1:])
-    ):
+    for idx, (s_h, t_h) in enumerate(zip(student_hidden_states[1:], teacher_hidden_states[1:])):
         s_aligned = (
-            projection_adapter(idx, s_h.float())
-            if projection_adapter is not None
-            else s_h.float()
+            projection_adapter(idx, s_h.float()) if projection_adapter is not None else s_h.float()
         )
         losses.append(F.mse_loss(s_aligned, t_h.float()))
     return sum(losses) / max(1, len(losses))
@@ -375,9 +359,7 @@ def compute_method_d_loss(
         zip(student_out.hidden_states[1:], teacher_out.hidden_states[1:])
     ):
         s_aligned = (
-            projection_adapter(idx, s_h.float())
-            if projection_adapter is not None
-            else s_h.float()
+            projection_adapter(idx, s_h.float()) if projection_adapter is not None else s_h.float()
         )
         t_f = t_h.float()
         cos_sim = F.cosine_similarity(s_aligned, t_f, dim=-1)
@@ -388,9 +370,7 @@ def compute_method_d_loss(
     # 3. Next-token Cross Entropy
     shift_logits = student_out.logits[..., :-1, :].contiguous()
     shift_labels = input_ids[..., 1:].contiguous()
-    loss_ce = F.cross_entropy(
-        shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1)
-    )
+    loss_ce = F.cross_entropy(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
 
     return kl_weight * loss_kl + hidden_weight * hidden_d + ce_weight * loss_ce
 
@@ -445,9 +425,7 @@ def set_train_scope(model, train_scope="all"):
                         - 1
                     ]
                     # E.g. "...attn.q_proj.down.weight" → parent = "...attn.q_proj"
-                    parent_path = name.rsplit(".", 2)[
-                        0
-                    ]  # strip ".down.weight" → "...q_proj"
+                    parent_path = name.rsplit(".", 2)[0]  # strip ".down.weight" → "...q_proj"
                     parent_mod = named_mods.get(parent_path)
                     if parent_mod is not None:
                         has_lora = (
@@ -527,13 +505,9 @@ def get_cache_hash(
         "methods": sorted(list(set(methods))),
         "include_attn": bool(include_attn),
         "torch_version": torch.__version__,
-        "cuda_device": (
-            torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"
-        ),
+        "cuda_device": (torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"),
     }
-    return hashlib.sha256(
-        json.dumps(cache_key_data, sort_keys=True).encode()
-    ).hexdigest()[:12]
+    return hashlib.sha256(json.dumps(cache_key_data, sort_keys=True).encode()).hexdigest()[:12]
 
 
 def is_cache_valid(
@@ -567,8 +541,7 @@ def is_cache_valid(
         ):
             return False
         if need_attn and not (
-            manifest.get("has_attn")
-            and (cache_dir / (manifest.get("attn_file") or "")).exists()
+            manifest.get("has_attn") and (cache_dir / (manifest.get("attn_file") or "")).exists()
         ):
             return False
         return True
@@ -614,15 +587,11 @@ def build_teacher_cache(
 
     # Determine shapes from config to pre-allocate buffers directly (avoids torch.cat memory duplication)
     vocab_size = getattr(getattr(teacher, "config", None), "vocab_size", len(tokenizer))
-    num_layers = (
-        getattr(getattr(teacher, "config", None), "n_layer", 12) + 1
-    )  # +1 for embeddings
+    num_layers = getattr(getattr(teacher, "config", None), "n_layer", 12) + 1  # +1 for embeddings
     hidden_dim = getattr(getattr(teacher, "config", None), "n_embd", 768)
 
     logits_buffer = (
-        torch.empty((n_chunks, seq_len, vocab_size), dtype=torch.float16)
-        if need_logits
-        else None
+        torch.empty((n_chunks, seq_len, vocab_size), dtype=torch.float16) if need_logits else None
     )
     hidden_buffer = (
         torch.empty((num_layers, n_chunks, seq_len, hidden_dim), dtype=torch.float16)
@@ -657,25 +626,15 @@ def build_teacher_cache(
                 )
 
             if need_logits and logits_buffer is not None:
-                logits_buffer[start_idx:end_idx] = (
-                    out.logits.detach().to(torch.float16).cpu()
-                )
+                logits_buffer[start_idx:end_idx] = out.logits.detach().to(torch.float16).cpu()
 
-            if (
-                need_hidden
-                and hidden_buffer is not None
-                and out.hidden_states is not None
-            ):
+            if need_hidden and hidden_buffer is not None and out.hidden_states is not None:
                 for l, h in enumerate(out.hidden_states):
-                    hidden_buffer[l, start_idx:end_idx] = (
-                        h.detach().to(torch.float16).cpu()
-                    )
+                    hidden_buffer[l, start_idx:end_idx] = h.detach().to(torch.float16).cpu()
 
             if need_attn and attn_buffer is not None and out.attentions is not None:
                 for l, a in enumerate(out.attentions):
-                    attn_buffer[l, start_idx:end_idx] = (
-                        a.detach().to(torch.float16).cpu()
-                    )
+                    attn_buffer[l, start_idx:end_idx] = a.detach().to(torch.float16).cpu()
 
     manifest: dict[str, Any] = {
         "n_chunks": n_chunks,
@@ -775,23 +734,17 @@ def load_teacher_cache(cache_dir: Path) -> dict[str, Any]:
         hidden_path = cache_dir / manifest["hidden_file"]
         if hidden_path.exists():
             try:
-                cache["hidden_states"] = torch.load(
-                    hidden_path, map_location="cpu", mmap=True
-                )
+                cache["hidden_states"] = torch.load(hidden_path, map_location="cpu", mmap=True)
                 LOG.info("Loaded hidden states with mmap=True")
             except Exception as e:
-                LOG.warning(
-                    "mmap failed for hidden states, loading fully into RAM: %s", e
-                )
+                LOG.warning("mmap failed for hidden states, loading fully into RAM: %s", e)
                 cache["hidden_states"] = torch.load(hidden_path, map_location="cpu")
 
     if manifest.get("has_attn") and manifest.get("attn_file"):
         attn_path = cache_dir / manifest["attn_file"]
         if attn_path.exists():
             try:
-                cache["attentions"] = torch.load(
-                    attn_path, map_location="cpu", mmap=True
-                )
+                cache["attentions"] = torch.load(attn_path, map_location="cpu", mmap=True)
                 LOG.info("Loaded attentions with mmap=True")
             except Exception as e:
                 LOG.warning("mmap failed for attentions, loading fully into RAM: %s", e)
@@ -817,9 +770,7 @@ def can_use_cache_for_method(
         has_a = (cache.get("attentions") is not None) if include_attn else True
         return has_l and has_h and has_a
     elif method_name == "D":
-        return (
-            cache.get("logits") is not None and cache.get("hidden_states") is not None
-        )
+        return cache.get("logits") is not None and cache.get("hidden_states") is not None
     return False
 
 
@@ -889,10 +840,7 @@ def run_kd_method(
         )
         # چک تک‌تک لایه‌ها
         for name, mod in student.named_modules():
-            if (
-                isinstance(mod, type(student.transformer.h[0].attn))
-                or "cosformer" in name.lower()
-            ):
+            if isinstance(mod, type(student.transformer.h[0].attn)) or "cosformer" in name.lower():
                 print(
                     f"  Attn module: {name} | is_decoder={getattr(mod, 'is_decoder', '?')}, "
                     f"is_causal={getattr(mod, 'is_causal', '?')}"
@@ -957,16 +905,12 @@ def run_kd_method(
             else:
                 other_params.append(p)
 
-    adapter_params = (
-        list(projection_adapter.parameters()) if projection_adapter is not None else []
-    )
+    adapter_params = list(projection_adapter.parameters()) if projection_adapter is not None else []
 
     param_groups = []
     if attn_mamba_params:
         # 5x higher learning rate for the destroyed/injected attention/SSM weights
-        param_groups.append(
-            {"params": attn_mamba_params, "lr": args.learning_rate * 5.0}
-        )
+        param_groups.append({"params": attn_mamba_params, "lr": args.learning_rate * 5.0})
     if other_params:
         param_groups.append({"params": other_params, "lr": args.learning_rate})
     if adapter_params:
@@ -996,9 +940,7 @@ def run_kd_method(
             return float(current_step) / float(max(1, warmup_steps))
         if getattr(args, "no_cosine_lr", False):
             return 1.0  # constant after warmup
-        progress = float(current_step - warmup_steps) / float(
-            max(1, total_steps - warmup_steps)
-        )
+        progress = float(current_step - warmup_steps) / float(max(1, total_steps - warmup_steps))
         return max(0.1, 0.5 * (1.0 + math.cos(math.pi * progress)))
 
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
@@ -1032,9 +974,7 @@ def run_kd_method(
                 batch_ids = batch_ids[:, :current_seq_len]
             batch_ids = batch_ids.to(device)
 
-            with torch.cuda.amp.autocast(
-                enabled=args.fp16 and device.startswith("cuda")
-            ):
+            with torch.cuda.amp.autocast(enabled=args.fp16 and device.startswith("cuda")):
                 # Teacher forward or cached lookup
                 if use_cache and teacher_cache is not None:
                     c_logits = None
@@ -1059,9 +999,9 @@ def run_kd_method(
                     if teacher_cache.get("attentions") is not None:
                         raw_a = teacher_cache["attentions"]
                         c_attn = tuple(
-                            raw_a[l, batch_slice][
-                                :, :, :current_seq_len, :current_seq_len
-                            ].to(device, non_blocking=True)
+                            raw_a[l, batch_slice][:, :, :current_seq_len, :current_seq_len].to(
+                                device, non_blocking=True
+                            )
                             for l in range(raw_a.shape[0])
                         )
 
@@ -1096,9 +1036,7 @@ def run_kd_method(
                 kl_temp = getattr(args, "kl_temperature", 2.0)
                 kl_warmup = getattr(args, "kl_warmup_steps", 0)
                 warmup_factor = (
-                    min(1.0, float(step + 1) / float(max(1, kl_warmup)))
-                    if kl_warmup > 0
-                    else 1.0
+                    min(1.0, float(step + 1) / float(max(1, kl_warmup))) if kl_warmup > 0 else 1.0
                 )
 
                 # Loss computation based on Method
@@ -1182,15 +1120,11 @@ def run_kd_method(
                 max_norm = getattr(args, "max_grad_norm", 1.0)
                 if use_scaler:
                     scaler.unscale_(optimizer)
-                    torch.nn.utils.clip_grad_norm_(
-                        all_trainable_params, max_norm=max_norm
-                    )
+                    torch.nn.utils.clip_grad_norm_(all_trainable_params, max_norm=max_norm)
                     scaler.step(optimizer)
                     scaler.update()
                 else:
-                    torch.nn.utils.clip_grad_norm_(
-                        all_trainable_params, max_norm=max_norm
-                    )
+                    torch.nn.utils.clip_grad_norm_(all_trainable_params, max_norm=max_norm)
                     optimizer.step()
                 optimizer.zero_grad()
                 scheduler.step()
@@ -1270,7 +1204,7 @@ def run_kd_method(
     )
 
     LOG.info(
-        f"[{method_name}] COMPLETE | Pre: {pre_ppl:.2f} -> Post: {post_ppl:.2f} | Recovery: {recovery_pct}% | VRAM: {peak_vram} MB | Time: {train_time}s ({s_per_step*1000:.1f}ms/step)"
+        f"[{method_name}] COMPLETE | Pre: {pre_ppl:.2f} -> Post: {post_ppl:.2f} | Recovery: {recovery_pct}% | VRAM: {peak_vram} MB | Time: {train_time}s ({s_per_step * 1000:.1f}ms/step)"
     )
 
     # Generate loss and PPL curve
@@ -1342,15 +1276,13 @@ def run_kd_method(
                 plot_path = Path(args.run_dir) / f"loss_curve_{method_name}.png"
             else:
                 plot_path = (
-                    Path("results")
-                    / f"loss_curve_{method_name}_{getattr(args, 'tag', 'run')}.png"
+                    Path("results") / f"loss_curve_{method_name}_{getattr(args, 'tag', 'run')}.png"
                 )
             plot_path.parent.mkdir(parents=True, exist_ok=True)
             plt.savefig(plot_path, dpi=120)
             # Also keep legacy copy in results/
             legacy_plot = (
-                Path("results")
-                / f"loss_curve_{method_name}_{getattr(args, 'tag', 'run')}.png"
+                Path("results") / f"loss_curve_{method_name}_{getattr(args, 'tag', 'run')}.png"
             )
             if plot_path.resolve() != legacy_plot.resolve():
                 legacy_plot.parent.mkdir(parents=True, exist_ok=True)
@@ -1409,11 +1341,7 @@ def print_comparison_table(results: list[dict[str, Any]]):
     print(header)
     for r in results:
         m = r["method"]
-        pre = (
-            f"{r['pre_ppl']:.2f}"
-            if isinstance(r["pre_ppl"], (int, float))
-            else str(r["pre_ppl"])
-        )
+        pre = f"{r['pre_ppl']:.2f}" if isinstance(r["pre_ppl"], (int, float)) else str(r["pre_ppl"])
         post = (
             f"{r['post_ppl']:.2f}"
             if isinstance(r["post_ppl"], (int, float))
@@ -1438,18 +1366,14 @@ def print_comparison_table(results: list[dict[str, Any]]):
         print(
             f"| {m:<7} | {pre:>8} | {post:>8} | {rec:>8} | {t:>8} | {vram:>8} | {cached_str:>8} |"
         )
-    print(
-        "+---------+----------+----------+----------+----------+----------+----------+"
-    )
+    print("+---------+----------+----------+----------+----------+----------+----------+")
 
 
 # -----------------------------------------------------------------------------
 # Main Orchestrator
 # -----------------------------------------------------------------------------
 def main():
-    parser = argparse.ArgumentParser(
-        description="Adaptive KD experiment on MambaBlock."
-    )
+    parser = argparse.ArgumentParser(description="Adaptive KD experiment on MambaBlock.")
     parser.add_argument("--model_path", type=str, default="models/gpt2_wikitext")
     parser.add_argument("--module", type=str, default="mamba_block")
     parser.add_argument("--recovery_steps", type=int, default=1500)
@@ -1483,9 +1407,7 @@ def main():
         default=None,
         help="Where to store cache (default: cache/teacher_<hash>)",
     )
-    parser.add_argument(
-        "--cache_methods", nargs="+", default=None, help="Which methods need cache"
-    )
+    parser.add_argument("--cache_methods", nargs="+", default=None, help="Which methods need cache")
     parser.add_argument(
         "--cache_force_rebuild",
         action="store_true",
@@ -1530,9 +1452,7 @@ def main():
         default=0,
         help="Number of steps to linearly ramp up KL loss weight (default 0)",
     )
-    parser.add_argument(
-        "--tag", type=str, default="run", help="Tag for output plot filenames"
-    )
+    parser.add_argument("--tag", type=str, default="run", help="Tag for output plot filenames")
     parser.add_argument(
         "--no-cosine-lr",
         "--no_cosine_lr",
@@ -1573,9 +1493,7 @@ def main():
         args.batch_size * args.grad_accum_steps,
     )
     LOG.info("  Seq len:          %d (fallback=128 on OOM)", args.seq_len)
-    LOG.info(
-        "  Learning rate:    %.2e (warmup=%d)", args.learning_rate, args.warmup_steps
-    )
+    LOG.info("  Learning rate:    %.2e (warmup=%d)", args.learning_rate, args.warmup_steps)
     LOG.info("  Methods to test:  %s", ", ".join(args.methods))
     LOG.info("  Teacher Cache:    %s", "DISABLED" if args.no_cache else "ENABLED")
     LOG.info("=" * 70)
@@ -1593,16 +1511,11 @@ def main():
         ds_train = load_dataset("wikitext", "wikitext-2-raw-v1", split="train")
     except Exception:
         ds_test = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="test")
-        ds_train = load_dataset(
-            "Salesforce/wikitext", "wikitext-2-raw-v1", split="train"
-        )
+        ds_train = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="train")
 
     # 2. Tokenize Training Chunks
     max_train_texts = args.max_train_texts
-    if (
-        args.cache_max_train_texts is not None
-        and args.cache_max_train_texts < max_train_texts
-    ):
+    if args.cache_max_train_texts is not None and args.cache_max_train_texts < max_train_texts:
         max_train_texts = args.cache_max_train_texts
 
     if max_train_texts > 2000 and not args.no_cache:
@@ -1616,9 +1529,7 @@ def main():
         max_train_texts,
         args.seq_len,
     )
-    train_chunks = build_train_chunks(
-        ds_train, tokenizer, max_train_texts, args.seq_len
-    )
+    train_chunks = build_train_chunks(ds_train, tokenizer, max_train_texts, args.seq_len)
     LOG.info("Total training chunks prepared: %d", len(train_chunks))
 
     # 3. Load Teacher Model & Snapshot
@@ -1654,11 +1565,7 @@ def main():
         else:
             c_hash = get_cache_hash(
                 tok_src,
-                (
-                    tokenizer.name_or_path
-                    if hasattr(tokenizer, "name_or_path")
-                    else "gpt2"
-                ),
+                (tokenizer.name_or_path if hasattr(tokenizer, "name_or_path") else "gpt2"),
                 args.seq_len,
                 len(train_chunks),
                 cache_methods,
@@ -1841,9 +1748,7 @@ def main():
         s_step = r.get("s_per_step", 0.0)
         vram_mb = r.get("peak_vram_mb", 0.0)
         readme_lines.append(
-            f"- Pre-KD PPL: {pre_val:.2f}"
-            if np.isfinite(pre_val)
-            else f"- Pre-KD PPL: {pre_val}"
+            f"- Pre-KD PPL: {pre_val:.2f}" if np.isfinite(pre_val) else f"- Pre-KD PPL: {pre_val}"
         )
         readme_lines.append(
             f"- Post-KD PPL: {post_val:.2f}"
@@ -1856,7 +1761,7 @@ def main():
             if np.isfinite(ratio_val)
             else f"- Post/Baseline ratio: {ratio_val}"
         )
-        readme_lines.append(f"- Step time: {s_step*1000:.0f} ms")
+        readme_lines.append(f"- Step time: {s_step * 1000:.0f} ms")
         readme_lines.append(f"- Peak VRAM: {vram_mb:.0f} MB")
         readme_lines.append("")
 
@@ -1895,9 +1800,7 @@ def main():
                     methods_plotted.append(method)
                     ppls_plotted.append(post)
             if methods_plotted:
-                bars = ax.bar(
-                    methods_plotted, ppls_plotted, color="skyblue", edgecolor="navy"
-                )
+                bars = ax.bar(methods_plotted, ppls_plotted, color="skyblue", edgecolor="navy")
                 ax.bar_label(bars, fmt="%.1f", padding=3)
             ax.axhline(
                 y=baseline_ppl,

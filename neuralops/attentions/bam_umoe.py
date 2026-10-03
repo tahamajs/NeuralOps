@@ -37,6 +37,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -77,9 +78,7 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
             cos = cos[..., : q.shape[-2], :]
             sin = sin[..., : q.shape[-2], :]
         else:
-            raise ValueError(
-                f"RoPE seq mismatch: cos {cos.shape[-2]} < q {q.shape[-2]}"
-            )
+            raise ValueError(f"RoPE seq mismatch: cos {cos.shape[-2]} < q {q.shape[-2]}")
 
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
@@ -87,12 +86,8 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
     if rotary_dim < head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_e = (q_rot * cos.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q_rot.dtype)
-        )
-        k_rot_e = (k_rot * cos.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k_rot.dtype)
-        )
+        q_rot_e = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_e = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
         q = torch.cat([q_rot_e, q_pass], dim=-1)
         k = torch.cat([k_rot_e, k_pass], dim=-1)
     else:
@@ -148,9 +143,7 @@ class FactorisedLoRALinear(nn.Module):
         )
 
         if bias:
-            self.bias = nn.Parameter(
-                torch.zeros(out_features, **fk), requires_grad=False
-            )
+            self.bias = nn.Parameter(torch.zeros(out_features, **fk), requires_grad=False)
         else:
             self.register_parameter("bias", None)
 
@@ -163,9 +156,7 @@ class FactorisedLoRALinear(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
-    def set_svd_factors(
-        self, W: torch.Tensor, bias: torch.Tensor | None = None
-    ) -> None:
+    def set_svd_factors(self, W: torch.Tensor, bias: torch.Tensor | None = None) -> None:
         with torch.no_grad():
             W_f = W.float()
             if W_f.shape != (self.out_features, self.in_features):
@@ -178,9 +169,7 @@ class FactorisedLoRALinear(nn.Module):
             self.U.data.zero_()
             self.S.data.zero_()
             self.V.data.zero_()
-            self.U.data[:, :r].copy_(
-                U[:, :r].to(device=self.U.device, dtype=self.U.dtype)
-            )
+            self.U.data[:, :r].copy_(U[:, :r].to(device=self.U.device, dtype=self.U.dtype))
             self.S.data[:r].copy_(S[:r].to(device=self.S.device, dtype=self.S.dtype))
             self.V.data[:, :r].copy_(
                 Vt[:r, :].t().contiguous().to(device=self.V.device, dtype=self.V.dtype)
@@ -201,18 +190,12 @@ class FactorisedLoRALinear(nn.Module):
             out = out + self.bias.float()
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             xa = torch.matmul(x_f, self.lora_A.float().t().contiguous())
-            out = (
-                out
-                + torch.matmul(xa, self.lora_B.float().t().contiguous())
-                * self.lora_scaling
-            )
+            out = out + torch.matmul(xa, self.lora_B.float().t().contiguous()) * self.lora_scaling
         return out.to(orig_dtype)
 
     @property
     def weight(self) -> torch.Tensor:
-        W = (
-            self.U.float() * self.S.float().unsqueeze(0)
-        ) @ self.V.float().t().contiguous()
+        W = (self.U.float() * self.S.float().unsqueeze(0)) @ self.V.float().t().contiguous()
         return W
 
     def freeze_base_weights(self) -> None:
@@ -255,9 +238,7 @@ class UnifiedMoE(nn.Module):
         self.num_experts = max(1, int(num_experts))
         self.top_k = min(max(1, int(top_k)), self.num_experts)
         # BAM-FIX-02: default to dim // 4 for compact output
-        self.out_dim = (
-            int(output_dim) if output_dim is not None else max(16, self.dim // 4)
-        )
+        self.out_dim = int(output_dim) if output_dim is not None else max(16, self.dim // 4)
         self.noise_std = float(noise_std)
 
         self.router_ln = nn.LayerNorm(self.dim)
@@ -447,9 +428,7 @@ class BAMUMoEBlock(BaseAttention):
 
         # Decoder detection
         mt = str(getattr(config, "model_type", "") or "").lower()
-        is_dec = bool(
-            getattr(config, "is_decoder", False) or getattr(config, "causal", False)
-        )
+        is_dec = bool(getattr(config, "is_decoder", False) or getattr(config, "causal", False))
         if any(
             mt.startswith(p)
             for p in (
@@ -533,9 +512,7 @@ class BAMUMoEBlock(BaseAttention):
             self.qkv_moe = None
 
         dropout_p = float(
-            getattr(
-                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
-            )
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
         )
         self.dropout = nn.Dropout(dropout_p)
 
@@ -625,20 +602,14 @@ class BAMUMoEBlock(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 )
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        if (
-            hasattr(pretrained_attn, "rotary_emb")
-            and pretrained_attn.rotary_emb is not None
-        ):
+        if hasattr(pretrained_attn, "rotary_emb") and pretrained_attn.rotary_emb is not None:
             self.rotary_emb = pretrained_attn.rotary_emb
 
         extracted = {
@@ -675,10 +646,7 @@ class BAMUMoEBlock(BaseAttention):
                     cb[2 * split :] if cb is not None else None,
                 )
 
-            if (
-                hasattr(pretrained_attn, "c_proj")
-                and pretrained_attn.c_proj is not None
-            ):
+            if hasattr(pretrained_attn, "c_proj") and pretrained_attn.c_proj is not None:
                 o = pretrained_attn.c_proj
                 base_o = getattr(o, "base_layer", o)
                 ow = getattr(base_o, "weight", getattr(o, "weight", None))
@@ -695,9 +663,7 @@ class BAMUMoEBlock(BaseAttention):
                     extracted["o"] = (ow, bo.data.clone() if bo is not None else None)
 
         # Nested BERT / RoBERTa
-        elif hasattr(pretrained_attn, "self") and hasattr(
-            pretrained_attn.self, "query"
-        ):
+        elif hasattr(pretrained_attn, "self") and hasattr(pretrained_attn.self, "query"):
             s = pretrained_attn.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 m = getattr(s, sub, None)
@@ -707,9 +673,7 @@ class BAMUMoEBlock(BaseAttention):
                         m.weight.data.clone(),
                         b.data.clone() if b is not None else None,
                     )
-            if hasattr(pretrained_attn, "output") and hasattr(
-                pretrained_attn.output, "dense"
-            ):
+            if hasattr(pretrained_attn, "output") and hasattr(pretrained_attn.output, "dense"):
                 d = pretrained_attn.output.dense
                 b = getattr(d, "bias", None)
                 extracted["o"] = (
@@ -887,11 +851,7 @@ class BAMUMoEBlock(BaseAttention):
         cos = kwargs.get("cos")
         sin = kwargs.get("sin")
         pos_emb = kwargs.get("position_embeddings")
-        if (
-            pos_emb is not None
-            and isinstance(pos_emb, (tuple, list))
-            and len(pos_emb) == 2
-        ):
+        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2:
             cos, sin = pos_emb[0], pos_emb[1]
 
         if cos is not None and sin is not None and not is_cross:
@@ -913,15 +873,11 @@ class BAMUMoEBlock(BaseAttention):
 
         # ---- Dense attention (no SDPA shortcut when MoE enabled, to keep mask logic uniform) ----
         scale = 1.0 / math.sqrt(self.head_dim)
-        scores = (
-            torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder and not is_cross:
             causal = torch.triu(
-                torch.full(
-                    (L, S), float("-inf"), device=scores.device, dtype=torch.float32
-                ),
+                torch.full((L, S), float("-inf"), device=scores.device, dtype=torch.float32),
                 diagonal=1 + (S - L),
             )
             scores = scores + causal.unsqueeze(0).unsqueeze(1)
@@ -929,9 +885,7 @@ class BAMUMoEBlock(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is not None:
             if eff_mask.dim() == 2:
-                scores = scores.masked_fill(
-                    (eff_mask == 0).unsqueeze(1).unsqueeze(2), -1e4
-                )
+                scores = scores.masked_fill((eff_mask == 0).unsqueeze(1).unsqueeze(2), -1e4)
             elif eff_mask.dim() == 3:
                 scores = scores + eff_mask.unsqueeze(1).float()
             elif eff_mask.dim() == 4:
@@ -964,9 +918,7 @@ class BAMUMoEBlock(BaseAttention):
             out = self.out_lin(context)
 
         if out.shape[-1] != D:
-            raise RuntimeError(
-                f"BAMUMoE: output dim {out.shape[-1]} != hidden_size {D}"
-            )
+            raise RuntimeError(f"BAMUMoE: output dim {out.shape[-1]} != hidden_size {D}")
 
         return out, (probs if output_attentions else None)
 
@@ -1075,9 +1027,7 @@ def inject_bam_umoe(
 
     num_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads"))
     if num_heads is None and src_attn is not None:
-        num_heads = getattr(
-            src_attn, "num_heads", getattr(src_attn, "num_attention_heads", None)
-        )
+        num_heads = getattr(src_attn, "num_heads", getattr(src_attn, "num_attention_heads", None))
     if num_heads is None:
         num_heads = getattr(cfg, "num_attention_heads", 12) if cfg else 12
 

@@ -21,6 +21,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.compression_engine.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
@@ -65,17 +66,11 @@ class SAESSVDCompressorV2(BaseCompressor):
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = _cfg_get(cfg, "saes_rank", _cfg_get(cfg, "rank", rank))
-            rank_ratio = _cfg_get(
-                cfg, "saes_rank_ratio", _cfg_get(cfg, "rank_ratio", rank_ratio)
-            )
+            rank_ratio = _cfg_get(cfg, "saes_rank_ratio", _cfg_get(cfg, "rank_ratio", rank_ratio))
             correcting_steps = _cfg_get(cfg, "correcting_steps", correcting_steps)
             max_error = _cfg_get(cfg, "max_error", max_error)
-            fallback_to_original = _cfg_get(
-                cfg, "fallback_to_original", fallback_to_original
-            )
-            target_attention_only = _cfg_get(
-                cfg, "target_attention_only", target_attention_only
-            )
+            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
 
         if "rank" in kwargs and kwargs["rank"] is not None:
             rank = kwargs["rank"]
@@ -119,9 +114,7 @@ class SAESSVDCompressorV2(BaseCompressor):
         cls_name = base_mod.__class__.__name__.lower()
         # Fix 3: Reliable Conv1D check using class name and hasattr(nf)
         is_linear_like = (
-            isinstance(base_mod, nn.Linear)
-            or "conv1d" in cls_name
-            or hasattr(base_mod, "nf")
+            isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
         )
         if not is_linear_like:
             return False
@@ -232,9 +225,7 @@ class SAESSVDCompressorV2(BaseCompressor):
         )
         # Fix 5: Ensure bias is copied correctly for both Linear and Conv1D
         if has_bias and svd_layer.bias is not None:
-            svd_layer.bias.data.copy_(
-                base_layer.bias.data.to(dtype=dtype, device=device)
-            )
+            svd_layer.bias.data.copy_(base_layer.bias.data.to(dtype=dtype, device=device))
 
         if has_lora and svd_layer.use_lora:
             try:
@@ -243,9 +234,7 @@ class SAESSVDCompressorV2(BaseCompressor):
                 if hasattr(layer.lora_B, "weight"):
                     svd_layer.lora_B.weight.data.copy_(layer.lora_B.weight.data)
             except Exception as e_lora:
-                logger.warning(
-                    "Could not preserve LoRA adapters in SAES-SVD: %s", e_lora
-                )
+                logger.warning("Could not preserve LoRA adapters in SAES-SVD: %s", e_lora)
 
         # Store metadata on module
         svd_layer.reconstruction_error = rel_err

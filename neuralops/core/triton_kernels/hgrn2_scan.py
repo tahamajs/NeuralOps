@@ -15,13 +15,23 @@ Note: f, iv, h all have shape (B, L, D). No state-dim mixing.
 from __future__ import annotations
 
 import torch
+
 try:
     import triton
     import triton.language as tl
+
     HAS_TRITON = True
 except ImportError:
     HAS_TRITON = False
-    triton = type("triton", (), {"jit": lambda f: f, "heuristics": lambda *a, **kw: lambda f: f, "autotune": lambda *a, **kw: lambda f: f})
+    triton = type(
+        "triton",
+        (),
+        {
+            "jit": lambda f: f,
+            "heuristics": lambda *a, **kw: lambda f: f,
+            "autotune": lambda *a, **kw: lambda f: f,
+        },
+    )
     tl = None
 
 
@@ -72,9 +82,7 @@ def _hgrn2_fwd_kernel(
         if DO_CLIP:
             h = tl.minimum(tl.maximum(h, -CLIP_VAL), CLIP_VAL)
 
-        hw_ptrs = (
-            h_workspace_ptr + pid_b * stride_hwb + l * stride_hwl + offs_d * stride_hwd
-        )
+        hw_ptrs = h_workspace_ptr + pid_b * stride_hwb + l * stride_hwl + offs_d * stride_hwd
         tl.store(hw_ptrs, h, mask=mask_d)
 
         ho_ptrs = h_out_ptr + pid_b * stride_hob + l * stride_hol + offs_d * stride_hod
@@ -130,12 +138,7 @@ def _hgrn2_bwd_kernel(
 
         # Undo the clip: gradient flows only through un-clipped entries
         if DO_CLIP:
-            h_l_ptrs = (
-                h_workspace_ptr
-                + pid_b * stride_hwb
-                + l * stride_hwl
-                + offs_d * stride_hwd
-            )
+            h_l_ptrs = h_workspace_ptr + pid_b * stride_hwb + l * stride_hwl + offs_d * stride_hwd
             h_l = tl.load(h_l_ptrs, mask=mask_d, other=0.0).to(tl.float32)
             clip_mask = (tl.abs(h_l) < CLIP_VAL).to(tl.float32)
             dh_raw = dh_clipped * clip_mask
@@ -149,10 +152,7 @@ def _hgrn2_bwd_kernel(
         # Load h_{l-1}
         if l > 0:
             h_prev_ptrs = (
-                h_workspace_ptr
-                + pid_b * stride_hwb
-                + (l - 1) * stride_hwl
-                + offs_d * stride_hwd
+                h_workspace_ptr + pid_b * stride_hwb + (l - 1) * stride_hwl + offs_d * stride_hwd
             )
             h_prev = tl.load(h_prev_ptrs, mask=mask_d, other=0.0).to(tl.float32)
         else:
@@ -163,9 +163,7 @@ def _hgrn2_bwd_kernel(
         div_val = dh_raw
 
         df_ptrs = df_ptr + pid_b * stride_dfb + l * stride_dfl + offs_d * stride_dfd
-        div_ptrs = (
-            div_ptr + pid_b * stride_divb + l * stride_divl + offs_d * stride_divd
-        )
+        div_ptrs = div_ptr + pid_b * stride_divb + l * stride_divl + offs_d * stride_divd
         tl.store(df_ptrs, df_val.to(df_ptr.dtype.element_ty), mask=mask_d)
         tl.store(div_ptrs, div_val.to(div_ptr.dtype.element_ty), mask=mask_d)
 

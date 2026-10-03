@@ -637,17 +637,12 @@ def load_all_csv_records():
                 reader = csv.DictReader(f)
                 if not reader.fieldnames:
                     continue
-                fns = [
-                    c.strip().lower().replace(" ", "_") if c else ""
-                    for c in reader.fieldnames
-                ]
+                fns = [c.strip().lower().replace(" ", "_") if c else "" for c in reader.fieldnames]
                 if "module_name" not in fns and "module" not in fns:
                     continue
                 for r in reader:
                     norm_r = {
-                        k.strip().lower().replace(" ", "_"): v.strip()
-                        for k, v in r.items()
-                        if k
+                        k.strip().lower().replace(" ", "_"): v.strip() for k, v in r.items() if k
                     }
                     m = norm_r.get("module_name", "") or norm_r.get("module", "")
                     if not m or m in ("full", "baseline"):
@@ -687,11 +682,7 @@ def resolve_code_path(mod_name):
 
     # Check inside paper folder for python file
     p_files = glob.glob(str(PAPERS_DIR / mod_name / "*.py"))
-    p_files = [
-        f
-        for f in p_files
-        if not Path(f).name.startswith(("build", "apply_vars", "test"))
-    ]
+    p_files = [f for f in p_files if not Path(f).name.startswith(("build", "apply_vars", "test"))]
     if p_files:
         fname = Path(p_files[0]).name
         c1 = PROJECT_ROOT / f"neuralops/compression_engine/{fname}"
@@ -778,8 +769,7 @@ def determine_sub_category(mod_name, mod_type, cat):
             return "Compression-Failed"
 
     if any(
-        k in lname
-        for k in ["mamba", "jamba", "samba", "griffin", "hgrn2", "hymba", "simple_ssm"]
+        k in lname for k in ["mamba", "jamba", "samba", "griffin", "hgrn2", "hymba", "simple_ssm"]
     ):
         return "SSM"
     if any(
@@ -969,9 +959,7 @@ def main():
                 except Exception:
                     pass
         compression_ratio = (
-            f"{max(valid_comps):.3f}x"
-            if valid_comps
-            else ("1.000x" if all_mod_rows else "N/A")
+            f"{max(valid_comps):.3f}x" if valid_comps else ("1.000x" if all_mod_rows else "N/A")
         )
 
         # 19. params_before & 20. params_after
@@ -1129,21 +1117,19 @@ def main():
     for cat in ["VALID", "FALLBACK", "BROKEN", "QUESTIONABLE", "NO_DATA"]:
         n = cat_counts[cat]
         pct = 100.0 * n / len(analysis_rows)
-        md_lines.append(
-            f"| **{cat}** | {n} | {pct:.1f}% | {cat} empirical evaluation status |\n"
-        )
+        md_lines.append(f"| **{cat}** | {n} | {pct:.1f}% | {cat} empirical evaluation status |\n")
 
     md_lines.extend(
         [
             "\n## 2. Statistical Highlights\n\n",
             f"- **Total Evaluated Modules**: {len(analysis_rows)}\n",
-            f"- **Modules with Academic Literature Reference**: {with_paper} ({100.0*with_paper/len(analysis_rows):.1f}%)\n",
-            f"- **Modules with arXiv ID**: {with_arxiv} ({100.0*with_arxiv/len(analysis_rows):.1f}%)\n",
-            f"- **Modules with Empirical SST-2 Benchmark**: {with_sst2} ({100.0*with_sst2/len(analysis_rows):.1f}%)\n",
-            f"- **Modules with Empirical MNLI Benchmark**: {with_mnli} ({100.0*with_mnli/len(analysis_rows):.1f}%)\n",
-            f"- **Modules with Empirical AG News Benchmark**: {with_agnews} ({100.0*with_agnews/len(analysis_rows):.1f}%)\n",
-            f"- **Modules with GPT-2 WikiText-2 PPL**: {with_gpt2} ({100.0*with_gpt2/len(analysis_rows):.1f}%)\n",
-            f"- **Modules with Quarantined Fabricated Tables**: {with_fab} ({100.0*with_fab/len(analysis_rows):.1f}%)\n\n",
+            f"- **Modules with Academic Literature Reference**: {with_paper} ({100.0 * with_paper / len(analysis_rows):.1f}%)\n",
+            f"- **Modules with arXiv ID**: {with_arxiv} ({100.0 * with_arxiv / len(analysis_rows):.1f}%)\n",
+            f"- **Modules with Empirical SST-2 Benchmark**: {with_sst2} ({100.0 * with_sst2 / len(analysis_rows):.1f}%)\n",
+            f"- **Modules with Empirical MNLI Benchmark**: {with_mnli} ({100.0 * with_mnli / len(analysis_rows):.1f}%)\n",
+            f"- **Modules with Empirical AG News Benchmark**: {with_agnews} ({100.0 * with_agnews / len(analysis_rows):.1f}%)\n",
+            f"- **Modules with GPT-2 WikiText-2 PPL**: {with_gpt2} ({100.0 * with_gpt2 / len(analysis_rows):.1f}%)\n",
+            f"- **Modules with Quarantined Fabricated Tables**: {with_fab} ({100.0 * with_fab / len(analysis_rows):.1f}%)\n\n",
             "## 3. Actionable Priority Fix List\n\n",
             f"- **P0 (Broken - Immediate submission blockers)**: {prio_counts['P0']} modules\n",
             f"- **P1 (Fallback Compressors - Fixable via Cholesky whitening / LoRA unfreezing)**: {prio_counts['P1']} modules\n",

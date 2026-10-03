@@ -15,6 +15,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
@@ -138,9 +139,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = (
-                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            )
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -184,12 +183,8 @@ class SVDS6StateSpace(nn.Module):
         #   - sigma: rank                 (per-token singular values)
         #   - B:   d_model                (input gate)
         #   - C:   d_model                (output gate)
-        self.up_u = nn.Linear(
-            self.bottleneck_dim, d_model * self.rank, bias=False, **fk
-        )
-        self.up_v = nn.Linear(
-            self.bottleneck_dim, self.rank * d_model, bias=False, **fk
-        )
+        self.up_u = nn.Linear(self.bottleneck_dim, d_model * self.rank, bias=False, **fk)
+        self.up_v = nn.Linear(self.bottleneck_dim, self.rank * d_model, bias=False, **fk)
         self.up_sigma = nn.Linear(self.bottleneck_dim, self.rank, bias=True, **fk)
         self.up_b = nn.Linear(self.bottleneck_dim, d_model, bias=True, **fk)
         self.up_c = nn.Linear(self.bottleneck_dim, d_model, bias=True, **fk)
@@ -315,9 +310,7 @@ class MambaSVDFlash(BaseAttention):
                 )
             )
         elif comp_config is not None:
-            self.lora_rank = int(
-                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
-            )
+            self.lora_rank = int(getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
             self.lora_alpha = float(
                 getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
             )
@@ -335,8 +328,7 @@ class MambaSVDFlash(BaseAttention):
         is_dec = False
         if config_obj is not None:
             is_dec = bool(
-                getattr(config_obj, "is_decoder", False)
-                or getattr(config_obj, "is_causal", False)
+                getattr(config_obj, "is_decoder", False) or getattr(config_obj, "is_causal", False)
             )
         if any(
             model_type.startswith(p)
@@ -359,18 +351,14 @@ class MambaSVDFlash(BaseAttention):
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
         if source_attn is not None:
-            if hasattr(source_attn, "c_attn") or getattr(
-                source_attn, "is_decoder", False
-            ):
+            if hasattr(source_attn, "c_attn") or getattr(source_attn, "is_decoder", False):
                 is_dec = True
         self.is_decoder = bool(is_dec)
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
         # ---- heads / GQA ----
-        n_heads = (
-            num_heads or kwargs.get("n_heads") or kwargs.get("num_attention_heads")
-        )
+        n_heads = num_heads or kwargs.get("n_heads") or kwargs.get("num_attention_heads")
         if n_heads is None:
             if config_obj is not None:
                 n_heads = getattr(
@@ -388,9 +376,7 @@ class MambaSVDFlash(BaseAttention):
                 n_heads = 12
         self.num_heads = int(n_heads)
         if self.d_model % self.num_heads != 0:
-            logger.warning(
-                "MambaSVDFlash: d_model %% num_heads != 0; forcing num_heads=1"
-            )
+            logger.warning("MambaSVDFlash: d_model %% num_heads != 0; forcing num_heads=1")
             self.num_heads = 1
         self.head_dim = self.d_model // max(1, self.num_heads)
 
@@ -417,9 +403,7 @@ class MambaSVDFlash(BaseAttention):
         self.ssm_fwd = SVDS6StateSpace(self.d_model, rank=self.rank, bottleneck_dim=bd)
 
         if not self.is_decoder:
-            self.ssm_bwd = SVDS6StateSpace(
-                self.d_model, rank=self.rank, bottleneck_dim=bd
-            )
+            self.ssm_bwd = SVDS6StateSpace(self.d_model, rank=self.rank, bottleneck_dim=bd)
             # MSF-FIX-13: per-head mix
             self.bidirectional_mix = nn.Parameter(torch.zeros(self.num_heads))
         else:
@@ -492,9 +476,7 @@ class MambaSVDFlash(BaseAttention):
 
         self.source_attn = source_attn
         self.rotary_emb = (
-            getattr(source_attn, "rotary_emb", None)
-            if source_attn is not None
-            else None
+            getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
         )
 
         if source_attn is not None:
@@ -585,8 +567,7 @@ class MambaSVDFlash(BaseAttention):
 
         cls_name = old_attn.__class__.__name__
         has_out_proj = any(
-            hasattr(old_attn, a)
-            for a in ("out_proj", "out_lin", "c_proj", "dense", "o_proj")
+            hasattr(old_attn, a) for a in ("out_proj", "out_lin", "c_proj", "dense", "o_proj")
         )
         is_nested = False
         if (
@@ -605,10 +586,7 @@ class MambaSVDFlash(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 )
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_proj
         ):
@@ -720,9 +698,7 @@ class MambaSVDFlash(BaseAttention):
             if w is None and (k != "o" or not self.is_nested_encoder)
         ]
         if missing_after:
-            logger.warning(
-                "MambaSVDFlash: missing projections %s from %s", missing_after, cls_name
-            )
+            logger.warning("MambaSVDFlash: missing projections %s from %s", missing_after, cls_name)
 
         target_map = {
             "q": self.q_proj,
@@ -756,9 +732,7 @@ class MambaSVDFlash(BaseAttention):
                 )
                 if b is not None and target.bias is not None:
                     mb = min(target.bias.numel(), b.numel())
-                    target.bias.data[:mb].copy_(
-                        b[:mb].to(target.bias.device, target.bias.dtype)
-                    )
+                    target.bias.data[:mb].copy_(b[:mb].to(target.bias.device, target.bias.dtype))
                 elif target.bias is not None:
                     nn.init.zeros_(target.bias)
 
@@ -912,11 +886,7 @@ class MambaSVDFlash(BaseAttention):
 
         # MSF-FIX-08: preallocate output tensor (no list)
         H = torch.zeros(B, L, D, device=device, dtype=torch.float32)
-        h = (
-            torch.zeros(B, D, device=device, dtype=torch.float32)
-            if h0 is None
-            else h0.float()
-        )
+        h = torch.zeros(B, D, device=device, dtype=torch.float32) if h0 is None else h0.float()
 
         US = U.float() * Sigma.float().unsqueeze(-2)  # (B, L, D, r)
         V_f = V.float()
@@ -1029,9 +999,7 @@ class MambaSVDFlash(BaseAttention):
             if self.ssm_bwd is not None:
                 U_b, Sig_b, V_b, B_b, C_b = self.ssm_bwd(hidden_states)
                 x_rev = torch.flip(hidden_states, dims=[1])
-                mask_rev = (
-                    torch.flip(mask_bool, dims=[1]) if mask_bool is not None else None
-                )
+                mask_rev = torch.flip(mask_bool, dims=[1]) if mask_bool is not None else None
                 ssm_bwd_rev, _ = self._ssm_scan(
                     U_b,
                     Sig_b,
@@ -1046,17 +1014,10 @@ class MambaSVDFlash(BaseAttention):
                 ssm_bwd = torch.flip(ssm_bwd_rev, dims=[1])
                 # MSF-FIX-13: per-head mix
                 w = torch.sigmoid(self.bidirectional_mix).view(1, self.num_heads, 1, 1)
-                ssm_fwd_h = ssm_fwd.view(B, L, self.num_heads, self.head_dim).transpose(
-                    1, 2
-                )
-                ssm_bwd_h = ssm_bwd.view(B, L, self.num_heads, self.head_dim).transpose(
-                    1, 2
-                )
+                ssm_fwd_h = ssm_fwd.view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+                ssm_bwd_h = ssm_bwd.view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
                 ssm_out = (
-                    (w * ssm_fwd_h + (1 - w) * ssm_bwd_h)
-                    .transpose(1, 2)
-                    .contiguous()
-                    .view(B, L, D)
+                    (w * ssm_fwd_h + (1 - w) * ssm_bwd_h).transpose(1, 2).contiguous().view(B, L, D)
                 )
                 ssm_h_next = None
             else:
@@ -1099,9 +1060,7 @@ class MambaSVDFlash(BaseAttention):
         elif self.rotary_emb is not None:
             if position_ids is None:
                 position_ids = (
-                    torch.arange(past_len, past_len + L, device=device)
-                    .unsqueeze(0)
-                    .expand(B, -1)
+                    torch.arange(past_len, past_len + L, device=device).unsqueeze(0).expand(B, -1)
                 )
             cos = sin = None
             for call in (
@@ -1165,10 +1124,7 @@ class MambaSVDFlash(BaseAttention):
                 attn_out = None
 
         if attn_out is None:
-            scores = (
-                torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous())
-                * scale
-            )
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
             if self.is_decoder and L > 1:
                 kv_len = K.shape[-2]
@@ -1191,10 +1147,7 @@ class MambaSVDFlash(BaseAttention):
                 probs = self._apply_head_mask(head_mask, probs)
 
             attn_out = (
-                torch.matmul(probs, V_a)
-                .transpose(1, 2)
-                .contiguous()
-                .view(B, L, self.all_head_size)
+                torch.matmul(probs, V_a).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
             )
             attn_out = torch.nan_to_num(attn_out, nan=0.0)
 
@@ -1225,9 +1178,7 @@ class MambaSVDFlash(BaseAttention):
         attn_weights = probs if output_attentions else None
         return out, attn_weights, present_key_value
 
-    def _apply_head_mask(
-        self, head_mask: torch.Tensor, probs: torch.Tensor
-    ) -> torch.Tensor:
+    def _apply_head_mask(self, head_mask: torch.Tensor, probs: torch.Tensor) -> torch.Tensor:
         """MSF-FIX-11: unified head_mask broadcast. probs: (B, H, Lq, Lk)."""
         hm = head_mask.to(probs.dtype)
         H = self.num_heads
@@ -1360,8 +1311,7 @@ def inject_mamba_svd_flash(
         src_attn = target
 
     if src_attn is not None and (
-        isinstance(src_attn, MambaSVDFlash)
-        or "MambaSVDFlash" in src_attn.__class__.__name__
+        isinstance(src_attn, MambaSVDFlash) or "MambaSVDFlash" in src_attn.__class__.__name__
     ):
         return None
     if src_attn is not None and (

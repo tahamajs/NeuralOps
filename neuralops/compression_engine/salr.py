@@ -12,6 +12,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -79,14 +80,10 @@ class SALRLayer(nn.Module):
 
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
-                torch.empty(
-                    (self.lora_r, in_features), dtype=torch.float32, device=device
-                )
+                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device)
             )
             self.lora_B = nn.Parameter(
-                torch.zeros(
-                    (out_features, self.lora_r), dtype=torch.float32, device=device
-                )
+                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device)
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
@@ -101,9 +98,7 @@ class SALRLayer(nn.Module):
         if self.bias is not None:
             nn.init.zeros_(self.bias)
 
-    def set_low_rank_factors(
-        self, U_factor: torch.Tensor, V_factor: torch.Tensor
-    ) -> None:
+    def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
         with torch.no_grad():
             self.U.copy_(U_factor)
             self.V.copy_(V_factor)
@@ -115,9 +110,7 @@ class SALRLayer(nn.Module):
         out = F.linear(latent, self.U, self.bias)  # [..., out_features]
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x.float(), self.lora_A), self.lora_B) * self.scaling
-            )
+            lora_out = F.linear(F.linear(x.float(), self.lora_A), self.lora_B) * self.scaling
             out = out + lora_out.to(out.dtype)
         return out
 
@@ -183,9 +176,7 @@ class SALRCompressor(BaseCompressor):
             min(
                 float(
                     sparsity
-                    or _cfg_get(
-                        cfg_obj, "salr_sparsity", _cfg_get(cfg_obj, "sparsity", 0.5)
-                    )
+                    or _cfg_get(cfg_obj, "salr_sparsity", _cfg_get(cfg_obj, "sparsity", 0.5))
                 ),
                 0.90,
             ),
@@ -201,9 +192,7 @@ class SALRCompressor(BaseCompressor):
             if target_attention_only is not None
             else _cfg_get(cfg_obj, "target_attention_only", False)
         )
-        self.use_lora = bool(
-            use_lora or _cfg_get(cfg_obj, "use_lora", False) or (lora_r > 0)
-        )
+        self.use_lora = bool(use_lora or _cfg_get(cfg_obj, "use_lora", False) or (lora_r > 0))
         self.lora_r = int(lora_r or _cfg_get(cfg_obj, "lora_r", 0))
         self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, "lora_alpha", 1.0))
         self.target_modules = target_modules
@@ -227,9 +216,7 @@ class SALRCompressor(BaseCompressor):
                 )
         else:
             self.target_device = (
-                next(model.parameters()).device
-                if list(model.parameters())
-                else torch.device("cpu")
+                next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
             )
 
         # Diagnostics & Tracking
@@ -247,11 +234,7 @@ class SALRCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        is_gqa = (
-            num_heads is not None
-            and num_kv_heads is not None
-            and num_kv_heads < num_heads
-        )
+        is_gqa = num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads
 
         name_l = name.lower()
         is_attn_qkv = any(
@@ -506,16 +489,12 @@ class SALRCompressor(BaseCompressor):
                 dummy_input = torch.randint(0, 100, (1, 8), device=self.target_device)
                 self.model(dummy_input)
         except Exception as ex_sanity:
-            logger.warning(
-                "SALR post-compression forward sanity check warning: %s", ex_sanity
-            )
+            logger.warning("SALR post-compression forward sanity check warning: %s", ex_sanity)
             forward_check_success = False
 
         self._compressed_params = self._count_params(self.model)
         avg_err = (
-            (sum(self.layer_errors.values()) / len(self.layer_errors))
-            if self.layer_errors
-            else 0.0
+            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
         )
         stats = self.get_compression_stats()
         stats.update(
@@ -557,9 +536,7 @@ def salr_factory(
     **kwargs: Any,
 ) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """SALR factory function returning (compressed_model, stats) when requested."""
-    rank = kwargs.pop(
-        "rank", _cfg_get(comp_config, "salr_rank", _cfg_get(comp_config, "rank", 64))
-    )
+    rank = kwargs.pop("rank", _cfg_get(comp_config, "salr_rank", _cfg_get(comp_config, "rank", 64)))
     sparsity = kwargs.pop(
         "sparsity",
         _cfg_get(comp_config, "salr_sparsity", _cfg_get(comp_config, "sparsity", 0.5)),

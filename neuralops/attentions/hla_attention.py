@@ -16,6 +16,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -111,9 +112,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = (
-                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            )
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
             lora_out = F.linear(F.linear(x, a), bb) * self.scaling
             out = out + lora_out
         return out
@@ -154,43 +153,31 @@ class HLAAttention(BaseAttention):
 
         if num_heads is None:
             if config is not None:
-                num_heads = getattr(
-                    config, "num_attention_heads", getattr(config, "n_heads", 12)
-                )
+                num_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12))
             else:
                 num_heads = kwargs.get("num_attention_heads", 12)
 
         comp_cfg = kwargs.get("comp_config")
         if comp_cfg is not None:
-            lora_rank = getattr(
-                comp_cfg, "lora_rank", getattr(comp_cfg, "rank", lora_rank)
-            )
-            lora_alpha = getattr(
-                comp_cfg, "lora_alpha", getattr(comp_cfg, "alpha", lora_alpha)
-            )
+            lora_rank = getattr(comp_cfg, "lora_rank", getattr(comp_cfg, "rank", lora_rank))
+            lora_alpha = getattr(comp_cfg, "lora_alpha", getattr(comp_cfg, "alpha", lora_alpha))
         elif config is not None:
             lora_rank = getattr(config, "lora_rank", lora_rank)
             lora_alpha = getattr(config, "lora_alpha", lora_alpha)
 
         self.hidden_size: int = int(d_model)
         self.num_heads: int = int(num_heads)
-        self.head_dim: int = (
-            self.hidden_size // self.num_heads if self.num_heads > 0 else 64
-        )
+        self.head_dim: int = self.hidden_size // self.num_heads if self.num_heads > 0 else 64
         self.lora_rank: int = int(lora_rank) if lora_rank is not None else 16
         self.lora_alpha: float = float(lora_alpha) if lora_alpha is not None else 32.0
 
         cfg_kv = (
-            getattr(
-                config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
-            )
+            getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
             if config is not None
             else None
         )
         self.num_kv_heads: int = int(cfg_kv) if cfg_kv is not None else self.num_heads
-        self.num_key_value_groups: int = max(
-            1, self.num_heads // max(1, self.num_kv_heads)
-        )
+        self.num_key_value_groups: int = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         self.q_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
@@ -275,10 +262,7 @@ class HLAAttention(BaseAttention):
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
                 (src.c_attn.bias.detach() if src.c_attn.bias is not None else None)
-                if (
-                    c_attn_w.shape[0] == self.hidden_size
-                    and c_attn_w.shape[1] != self.hidden_size
-                ):
+                if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
                     c_attn_w = c_attn_w.t().contiguous()
 
                 q_dim = self.q_head_size
@@ -290,18 +274,13 @@ class HLAAttention(BaseAttention):
                 w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
 
                 out_w = src.c_proj.weight.detach()
-                if (
-                    out_w.shape[0] == self.hidden_size
-                    and out_w.shape[1] != self.hidden_size
-                ):
+                if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
                     out_w = out_w.t().contiguous()
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
             # Pattern 2: RoBERTa / BERT separate query, key, value
-            elif (
-                hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value")
-            ):
+            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.detach()
                 b_q = src.query.bias.detach() if src.query.bias is not None else None
                 w_k = src.key.weight.detach()
@@ -318,11 +297,7 @@ class HLAAttention(BaseAttention):
                             break
 
             # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
-            elif (
-                hasattr(src, "q_proj")
-                and hasattr(src, "k_proj")
-                and hasattr(src, "v_proj")
-            ):
+            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q = src.q_proj.weight.detach()
                 b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
                 w_k = src.k_proj.weight.detach()
@@ -332,18 +307,10 @@ class HLAAttention(BaseAttention):
 
                 if hasattr(src, "o_proj"):
                     w_o = src.o_proj.weight.detach()
-                    b_o = (
-                        src.o_proj.bias.detach()
-                        if src.o_proj.bias is not None
-                        else None
-                    )
+                    b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
 
             # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
-            elif (
-                hasattr(src, "q_lin")
-                and hasattr(src, "k_lin")
-                and hasattr(src, "v_lin")
-            ):
+            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q = src.q_lin.weight.detach()
                 b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
                 w_k = src.k_lin.weight.detach()
@@ -353,11 +320,7 @@ class HLAAttention(BaseAttention):
 
                 if hasattr(src, "out_lin"):
                     w_o = src.out_lin.weight.detach()
-                    b_o = (
-                        src.out_lin.bias.detach()
-                        if src.out_lin.bias is not None
-                        else None
-                    )
+                    b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
 
             # Pattern 5: UniversalAdapter fallback
             if w_q is None or w_k is None or w_v is None:
@@ -422,9 +385,7 @@ class HLAAttention(BaseAttention):
                     tb_o.data[:min_b].copy_(b_o_cast[:min_b])
                 f_norm_o = float(torch.linalg.norm(self.out_proj.weight))
                 if f_norm_o < 1e-4:
-                    logger.warning(
-                        f"HLAAttention: Out projection norm is near zero: {f_norm_o}"
-                    )
+                    logger.warning(f"HLAAttention: Out projection norm is near zero: {f_norm_o}")
 
     def _hla_scan(
         self,
@@ -463,13 +424,10 @@ class HLAAttention(BaseAttention):
         )  # [1, H]
         exp_arg = torch.where(
             tri_mask.unsqueeze(0).unsqueeze(0),
-            diff.unsqueeze(0).unsqueeze(0).float()
-            * log_decay.unsqueeze(-1).unsqueeze(-1),
+            diff.unsqueeze(0).unsqueeze(0).float() * log_decay.unsqueeze(-1).unsqueeze(-1),
             float("-inf"),
         )
-        decay_mat = torch.exp(
-            exp_arg
-        )  # [1, H, L, L], exactly 0.0 outside causal triangle
+        decay_mat = torch.exp(exp_arg)  # [1, H, L, L], exactly 0.0 outside causal triangle
 
         # Attention weights with exponential decay: scores = (q @ k^T) * decay_mat
         qk = torch.matmul(q_f, k_f.transpose(-1, -2).contiguous())  # [B, H, L, L]
@@ -611,9 +569,7 @@ def inject_hla(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -624,9 +580,7 @@ def inject_hla(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=(
-                    comp_config
-                    if "comp_config" in locals() or "comp_config" in kwargs
-                    else None
+                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
                 ),
                 layer_idx=idx,
                 total_layers=tot,
@@ -653,18 +607,14 @@ def inject_hla(
         d_model = 768
         num_heads = 12
         if model_config is not None:
-            d_model = getattr(
-                model_config, "hidden_size", getattr(model_config, "dim", 768)
-            )
+            d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768))
             num_heads = getattr(
                 model_config,
                 "num_attention_heads",
                 getattr(model_config, "n_heads", 12),
             )
         elif hasattr(layer, "config"):
-            d_model = getattr(
-                layer.config, "hidden_size", getattr(layer.config, "dim", 768)
-            )
+            d_model = getattr(layer.config, "hidden_size", getattr(layer.config, "dim", 768))
             num_heads = getattr(
                 layer.config,
                 "num_attention_heads",

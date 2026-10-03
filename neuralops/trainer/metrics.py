@@ -93,9 +93,7 @@ def get_task_metrics(task_name: str) -> Any:
             return {
                 "accuracy": accuracy_score(labels, preds),
                 "f1_macro": f1_score(labels, preds, average="macro", zero_division=0),
-                "f1_weighted": f1_score(
-                    labels, preds, average="weighted", zero_division=0
-                ),
+                "f1_weighted": f1_score(labels, preds, average="weighted", zero_division=0),
             }
 
     return fn

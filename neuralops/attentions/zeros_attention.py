@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -120,21 +121,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -170,10 +165,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = (
-                out
-                + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
         return out
 
 
@@ -214,20 +206,14 @@ class ZeroSAttention(BaseAttention):
             self.is_decoder: bool = getattr(config, "is_decoder", False)
         else:
             self.adapter = None
-            self.hidden_size = _cfg_get(
-                config, "hidden_size", kwargs.get("hidden_size", 768)
-            )
-            self.num_heads = _cfg_get(
-                config, "num_attention_heads", kwargs.get("num_heads", 12)
-            )
+            self.hidden_size = _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
+            self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_heads", 12))
             self.num_kv_heads = _cfg_get(config, "num_key_value_heads", self.num_heads)
             self.head_dim = self.hidden_size // max(1, self.num_heads)
             self.all_head_size = self.num_heads * self.head_dim
             self.kv_head_size = self.num_kv_heads * self.head_dim
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
-            self.is_decoder = bool(
-                _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
-            )
+            self.is_decoder = bool(_cfg_get(config, "is_decoder", kwargs.get("is_decoder", False)))
 
         # Prioritize explicit kwargs
         if "hidden_size" in kwargs:
@@ -309,9 +295,7 @@ class ZeroSAttention(BaseAttention):
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             weight = src.c_attn.weight.data
             bias = getattr(src.c_attn, "bias", None)
@@ -323,11 +307,7 @@ class ZeroSAttention(BaseAttention):
             k_w = weight[split_size : 2 * split_size, :]
             v_w = weight[2 * split_size :, :]
             q_b = bias_data[:split_size] if bias_data is not None else None
-            k_b = (
-                bias_data[split_size : 2 * split_size]
-                if bias_data is not None
-                else None
-            )
+            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
             v_b = bias_data[2 * split_size :] if bias_data is not None else None
             extracted["q"] = (q_w, q_b)
             extracted["k"] = (k_w, k_b)
@@ -346,9 +326,7 @@ class ZeroSAttention(BaseAttention):
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             s = src.self
             if hasattr(s, "query"):
@@ -358,11 +336,7 @@ class ZeroSAttention(BaseAttention):
             if hasattr(s, "value"):
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if (
-            hasattr(src, "output")
-            and hasattr(src.output, "dense")
-            and extracted["o"][0] is None
-        ):
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -520,18 +494,8 @@ class ZeroSAttention(BaseAttention):
         device = hidden_states.device
 
         Q = self.W_q(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()
-        K = (
-            self.W_k(kv_input)
-            .view(B, N_k, self.num_kv_heads, Dh)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V = (
-            self.W_v(kv_input)
-            .view(B, N_k, self.num_kv_heads, Dh)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        K = self.W_k(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
+        V = self.W_v(kv_input).view(B, N_k, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
 
         # Apply RoPE: Priority 1 = position_embeddings, Priority 2 = rotary_emb fallback
         position_embeddings = kwargs.get("position_embeddings")
@@ -544,14 +508,10 @@ class ZeroSAttention(BaseAttention):
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
         elif getattr(self, "rotary_emb", None) is not None:
             try:
-                rotary_out = self.rotary_emb(
-                    hidden_states, position_ids=kwargs.get("position_ids")
-                )
+                rotary_out = self.rotary_emb(hidden_states, position_ids=kwargs.get("position_ids"))
                 if isinstance(rotary_out, tuple) and len(rotary_out) >= 2:
                     cos, sin = rotary_out[0], rotary_out[1]
-                    Q, K = apply_rotary_pos_emb(
-                        Q, K, cos, sin, kwargs.get("position_ids")
-                    )
+                    Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
             except Exception:
                 try:
                     from neuralops.utils.compat import maybe_apply_rotary
@@ -591,9 +551,7 @@ class ZeroSAttention(BaseAttention):
                 count = torch.cumsum(mask_f, dim=2).clamp(min=1.0)
                 k_running_mean = k_cum_sum / count
             else:
-                step = torch.arange(1, N_k + 1, device=device, dtype=K.dtype).view(
-                    1, 1, N_k, 1
-                )
+                step = torch.arange(1, N_k + 1, device=device, dtype=K.dtype).view(1, 1, N_k, 1)
                 k_cum_sum = torch.cumsum(K, dim=2)
                 k_running_mean = k_cum_sum / step
 
@@ -603,17 +561,13 @@ class ZeroSAttention(BaseAttention):
             k_hat = F.relu(k_centered) + eps  # [B, H, N_k, d]
 
             # Causal linear attention via cumulative states
-            kv = torch.einsum(
-                "b h j d, b h j e -> b h j d e", k_hat, V
-            )  # [B, H, N_k, d, d]
+            kv = torch.einsum("b h j d, b h j e -> b h j d e", k_hat, V)  # [B, H, N_k, d, d]
             kv_cum = torch.cumsum(kv, dim=2)  # [B, H, N_k, d, d]
             k_cum = torch.cumsum(k_hat, dim=2)  # [B, H, N_k, d]
 
             sim = None
             if N_k == L:
-                num = torch.einsum(
-                    "b h l d, b h l d e -> b h l e", q_hat, kv_cum
-                )  # [B, H, L, d]
+                num = torch.einsum("b h l d, b h l d e -> b h l e", q_hat, kv_cum)  # [B, H, L, d]
                 den = (q_hat * k_cum).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
             elif N_k >= L:
                 kv_cum_slice = kv_cum[:, :, -L:, :, :]
@@ -623,12 +577,8 @@ class ZeroSAttention(BaseAttention):
                 )  # [B, H, L, d]
                 den = (q_hat * k_cum_slice).sum(dim=-1, keepdim=True)  # [B, H, L, 1]
             else:
-                sim = torch.matmul(
-                    q_hat, k_hat.transpose(-1, -2).contiguous()
-                )  # [B, H, L, N_k]
-                causal_mask = torch.tril(
-                    torch.ones(L, N_k, device=device, dtype=torch.bool)
-                )
+                sim = torch.matmul(q_hat, k_hat.transpose(-1, -2).contiguous())  # [B, H, L, N_k]
+                causal_mask = torch.tril(torch.ones(L, N_k, device=device, dtype=torch.bool))
                 sim = sim.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
                 num = torch.matmul(sim, V)  # [B, H, L, d]
                 den = sim.sum(dim=-1, keepdim=True)  # [B, H, L, 1]
@@ -647,9 +597,7 @@ class ZeroSAttention(BaseAttention):
             if valid_m is not None:
                 mask_f = valid_m.unsqueeze(1).unsqueeze(-1).to(K.dtype)
                 K = K * mask_f
-                k_mean = K.sum(dim=2, keepdim=True) / mask_f.sum(
-                    dim=2, keepdim=True
-                ).clamp(min=1.0)
+                k_mean = K.sum(dim=2, keepdim=True) / mask_f.sum(dim=2, keepdim=True).clamp(min=1.0)
             else:
                 k_mean = K.mean(dim=2, keepdim=True)
 
@@ -660,18 +608,16 @@ class ZeroSAttention(BaseAttention):
             S_kv = torch.matmul(k_hat.transpose(-2, -1).contiguous(), V)  # [B, H, d, d]
             num = torch.matmul(q_hat, S_kv)  # [B, H, L, d]
             den = (
-                torch.matmul(
-                    q_hat, k_hat.sum(dim=2, keepdim=True).transpose(-2, -1).contiguous()
-                )
+                torch.matmul(q_hat, k_hat.sum(dim=2, keepdim=True).transpose(-2, -1).contiguous())
                 + eps
             )
             context = num / den.clamp(min=eps)
             context = self.dropout(context)
 
             if output_attentions:
-                attn_map = torch.matmul(
-                    q_hat, k_hat.transpose(-1, -2).contiguous()
-                ) / den.clamp(min=eps)
+                attn_map = torch.matmul(q_hat, k_hat.transpose(-1, -2).contiguous()) / den.clamp(
+                    min=eps
+                )
 
         # Head mask broadcasting across 1D/2D/3D/4D
         if head_mask is not None:
@@ -739,9 +685,7 @@ def inject_zeros_attention(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -752,9 +696,7 @@ def inject_zeros_attention(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=(
-                    comp_config
-                    if "comp_config" in locals() or "comp_config" in kwargs
-                    else None
+                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
                 ),
                 layer_idx=idx,
                 total_layers=tot,

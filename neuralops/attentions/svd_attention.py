@@ -40,6 +40,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import apply_attention_mask, get_token_valid_mask
 from neuralops.core.base import BaseAttention
@@ -110,16 +111,8 @@ def apply_rotary_pos_emb(
     q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
     k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
 
-    q_out = (
-        torch.cat([q_rot_embed, q_pass], dim=-1)
-        if q_pass.shape[-1] > 0
-        else q_rot_embed
-    )
-    k_out = (
-        torch.cat([k_rot_embed, k_pass], dim=-1)
-        if k_pass.shape[-1] > 0
-        else k_rot_embed
-    )
+    q_out = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.shape[-1] > 0 else q_rot_embed
+    k_out = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.shape[-1] > 0 else k_rot_embed
     return q_out, k_out
 
 
@@ -178,9 +171,7 @@ class LoRALinear(nn.Module):
 
 @ATTENTION_REGISTRY.register("svd_seq", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("svd_sequence", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register(
-    "svd_sequence_attention", supports_causal=True, supports_gqa=True
-)
+@ATTENTION_REGISTRY.register("svd_sequence_attention", supports_causal=True, supports_gqa=True)
 class SVDLinearAttention(BaseAttention):
     r"""Low-Rank SVD-Compressed Sequence Attention Mechanism.
     Hardened for production use across diverse transformer architectures.
@@ -204,9 +195,7 @@ class SVDLinearAttention(BaseAttention):
         super().__init__(config, rank)
 
         # 1. Dimensions & Architecture
-        self.hidden_size: int = int(
-            _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
-        )
+        self.hidden_size: int = int(_cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768)))
         self.num_heads: int = int(
             kwargs.get("num_heads")
             or kwargs.get("num_attention_heads")
@@ -227,9 +216,7 @@ class SVDLinearAttention(BaseAttention):
             )
         )
 
-        cfg_kv = _cfg_get(
-            config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None)
-        )
+        cfg_kv = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -318,18 +305,14 @@ class SVDLinearAttention(BaseAttention):
             freeze_base=True,
         )
 
-        dropout_val: float = (
-            dropout if dropout is not None else getattr(config, "dropout", 0.1)
-        )
+        dropout_val: float = dropout if dropout is not None else getattr(config, "dropout", 0.1)
         self.dropout: nn.Dropout = nn.Dropout(dropout_val)
         self._last_u_r: torch.Tensor | None = None
 
         # Persistent SVD projection buffer (populated in copy_weights from W_K)
         # Shape: [hidden_size, rank] — the top-r right singular vectors of W_K
         init_rank = max(1, self.rank or 64)
-        self.register_buffer(
-            "svd_proj", torch.eye(self.hidden_size, init_rank), persistent=True
-        )
+        self.register_buffer("svd_proj", torch.eye(self.hidden_size, init_rank), persistent=True)
         self._svd_proj_ready: bool = False
         self.triton_kwargs = {}
 
@@ -396,9 +379,7 @@ class SVDLinearAttention(BaseAttention):
             # Pattern 1: GPT-2 Fused c_attn
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
-                c_attn_b = (
-                    src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                )
+                c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
                 p_cls = getattr(src.c_attn, "__class__", type(src.c_attn)).__name__
                 if (
                     ("Conv1D" in p_cls)
@@ -428,19 +409,14 @@ class SVDLinearAttention(BaseAttention):
                 if (
                     ("Conv1D" in p_proj_cls)
                     or hasattr(src.c_proj, "nf")
-                    or (
-                        out_w.shape[0] == self.hidden_size
-                        and out_w.shape[1] != self.hidden_size
-                    )
+                    or (out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size)
                 ):
                     out_w = out_w.t().contiguous()
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
             # Pattern 2: RoBERTa / BERT separate query, key, value
-            elif (
-                hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value")
-            ):
+            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.detach()
                 b_q = src.query.bias.detach() if src.query.bias is not None else None
                 w_k = src.key.weight.detach()
@@ -457,11 +433,7 @@ class SVDLinearAttention(BaseAttention):
                             break
 
             # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
-            elif (
-                hasattr(src, "q_proj")
-                and hasattr(src, "k_proj")
-                and hasattr(src, "v_proj")
-            ):
+            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q = src.q_proj.weight.detach()
                 b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
                 w_k = src.k_proj.weight.detach()
@@ -470,18 +442,10 @@ class SVDLinearAttention(BaseAttention):
                 b_v = src.v_proj.bias.detach() if src.v_proj.bias is not None else None
                 if hasattr(src, "o_proj"):
                     w_o = src.o_proj.weight.detach()
-                    b_o = (
-                        src.o_proj.bias.detach()
-                        if src.o_proj.bias is not None
-                        else None
-                    )
+                    b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
 
             # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
-            elif (
-                hasattr(src, "q_lin")
-                and hasattr(src, "k_lin")
-                and hasattr(src, "v_lin")
-            ):
+            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q = src.q_lin.weight.detach()
                 b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
                 w_k = src.k_lin.weight.detach()
@@ -490,11 +454,7 @@ class SVDLinearAttention(BaseAttention):
                 b_v = src.v_lin.bias.detach() if src.v_lin.bias is not None else None
                 if hasattr(src, "out_lin"):
                     w_o = src.out_lin.weight.detach()
-                    b_o = (
-                        src.out_lin.bias.detach()
-                        if src.out_lin.bias is not None
-                        else None
-                    )
+                    b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
 
             # Fallback: UniversalAdapter
             if w_q is None or w_k is None or w_v is None:
@@ -556,25 +516,17 @@ class SVDLinearAttention(BaseAttention):
                     target_proj.weight.copy_(w)
                     if b is not None and target_proj.bias is not None:
                         target_proj.bias.copy_(b)
-                elif (
-                    w.shape[0] > self.kv_head_size
-                    and w.shape[0] % self.kv_head_size == 0
-                ):
+                elif w.shape[0] > self.kv_head_size and w.shape[0] % self.kv_head_size == 0:
                     # GQA: take the first group from each cluster (deterministic)
                     rep = w.shape[0] // self.kv_head_size
-                    w_grouped = w.view(self.num_kv_heads, rep, self.head_dim, -1)[
-                        :, 0
-                    ].reshape(self.kv_head_size, -1)
+                    w_grouped = w.view(self.num_kv_heads, rep, self.head_dim, -1)[:, 0].reshape(
+                        self.kv_head_size, -1
+                    )
                     target_proj.weight.copy_(w_grouped)
                     if b is not None and target_proj.bias is not None:
-                        b_grouped = b.view(self.num_kv_heads, rep, self.head_dim)[
-                            :, 0
-                        ].reshape(-1)
+                        b_grouped = b.view(self.num_kv_heads, rep, self.head_dim)[:, 0].reshape(-1)
                         target_proj.bias.copy_(b_grouped)
-                elif (
-                    w.shape[0] < self.kv_head_size
-                    and self.kv_head_size % w.shape[0] == 0
-                ):
+                elif w.shape[0] < self.kv_head_size and self.kv_head_size % w.shape[0] == 0:
                     rep = self.kv_head_size // w.shape[0]
                     target_proj.weight.copy_(w.repeat(rep, 1))
                     if b is not None and target_proj.bias is not None:
@@ -590,9 +542,9 @@ class SVDLinearAttention(BaseAttention):
                         ]
                     )
                     if b is not None and target_proj.bias is not None:
-                        target_proj.bias.data[
-                            : min(len(target_proj.bias), len(b))
-                        ].copy_(b[: min(len(target_proj.bias), len(b))])
+                        target_proj.bias.data[: min(len(target_proj.bias), len(b))].copy_(
+                            b[: min(len(target_proj.bias), len(b))]
+                        )
 
             _copy_kv(self.key, w_k, b_k)
             _copy_kv(self.value, w_v, b_v)
@@ -601,9 +553,7 @@ class SVDLinearAttention(BaseAttention):
             # (including BertSelfOutput), so we must apply out_proj in all cases.
             if w_o is not None:
                 if torch.norm(w_o.float(), p="fro").item() < 1e-4:
-                    logger.warning(
-                        "out_proj weight has near-zero Frobenius norm — skipping copy"
-                    )
+                    logger.warning("out_proj weight has near-zero Frobenius norm — skipping copy")
                 else:
                     if w_o.shape == self.out_proj.weight.shape:
                         self.out_proj.weight.copy_(w_o)
@@ -724,11 +674,7 @@ class SVDLinearAttention(BaseAttention):
                             eff_mask.shape[0], 1, 1, eff_mask.shape[1]
                         )
                     elif eff_mask is not None and eff_mask.dim() == 4:
-                        _attn_mask = (
-                            eff_mask.bool()
-                            if eff_mask.dtype == torch.bool
-                            else eff_mask
-                        )
+                        _attn_mask = eff_mask.bool() if eff_mask.dtype == torch.bool else eff_mask
 
                     context = torch.nn.functional.scaled_dot_product_attention(
                         _q,
@@ -786,9 +732,7 @@ class SVDLinearAttention(BaseAttention):
                     device,
                 )
                 if q_valid_mask is not None:
-                    context = context * q_valid_mask.unsqueeze(1).unsqueeze(-1).to(
-                        dtype
-                    )
+                    context = context * q_valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
             attn_ret = probs if output_attentions else None
         else:
             # Use the fixed SVD subspace precomputed from W_K in copy_weights.
@@ -800,13 +744,9 @@ class SVDLinearAttention(BaseAttention):
 
                 # Project the kv_input sequence through the fixed subspace
                 # kv_input: [B, kv_len, hidden_size] → scores: [B, kv_len, actual_r]
-                seq_scores = torch.matmul(
-                    kv_input.float(), proj.float()
-                )  # [B, kv_len, r]
+                seq_scores = torch.matmul(kv_input.float(), proj.float())  # [B, kv_len, r]
                 try:
-                    U_r, _ = torch.linalg.qr(
-                        seq_scores.float(), mode="reduced"
-                    )  # [B, kv_len, r]
+                    U_r, _ = torch.linalg.qr(seq_scores.float(), mode="reduced")  # [B, kv_len, r]
                 except Exception:
                     U_r, _ = torch.linalg.qr(seq_scores.cpu().float(), mode="reduced")
                     U_r = U_r.to(device=device)
@@ -875,17 +815,11 @@ class SVDLinearAttention(BaseAttention):
                     device,
                 )
                 if q_valid_mask is not None:
-                    context = context * q_valid_mask.unsqueeze(1).unsqueeze(-1).to(
-                        dtype
-                    )
+                    context = context * q_valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
             attn_ret = probs if output_attentions else None
 
         # 4. Context merge & Output projection
-        context = (
-            context.transpose(1, 2)
-            .contiguous()
-            .view(batch_size, seq_len, self.all_head_size)
-        )
+        context = context.transpose(1, 2).contiguous().view(batch_size, seq_len, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
         # Always apply out_proj — our module replaces the full BertAttention container
@@ -961,9 +895,7 @@ def inject_svd_linear_attention(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -974,9 +906,7 @@ def inject_svd_linear_attention(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=(
-                    comp_config
-                    if "comp_config" in locals() or "comp_config" in kwargs
-                    else None
+                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
                 ),
                 layer_idx=idx,
                 total_layers=tot,

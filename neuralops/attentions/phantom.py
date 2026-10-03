@@ -24,6 +24,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -126,12 +127,8 @@ class FactorisedLinear_CUR(nn.Module):
         self.up = nn.Linear(self.cur_rank, out_features, bias=bias, **factory_kwargs)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -204,9 +201,7 @@ class FactorisedLinear_CUR(nn.Module):
                     )
                 else:
                     self.down.weight.data.zero_()
-                    self.down.weight.data[:rank, :in_dim].copy_(
-                        R.to(dtype=self.down.weight.dtype)
-                    )
+                    self.down.weight.data[:rank, :in_dim].copy_(R.to(dtype=self.down.weight.dtype))
                     self.up.weight.data.zero_()
                     self.up.weight.data[:out_dim, :rank].copy_(
                         C_Uint.to(dtype=self.up.weight.dtype)
@@ -233,9 +228,7 @@ class FactorisedLinear_CUR(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = self.up(self.down(x))
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
         return out
 
@@ -258,22 +251,16 @@ def lsh_attention(
     Q_norm = F.normalize(Q, p=2, dim=-1, eps=1e-5)
     K_norm = F.normalize(K, p=2, dim=-1, eps=1e-5)
 
-    bit_shifts = torch.tensor(
-        [2**i for i in range(n_bits)], device=Q.device, dtype=torch.float32
-    )
+    bit_shifts = torch.tensor([2**i for i in range(n_bits)], device=Q.device, dtype=torch.float32)
 
-    scores_base = (
-        torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-    )
+    scores_base = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
     if token_valid is not None:
         val_mask = token_valid.unsqueeze(1).unsqueeze(2)  # [B, 1, 1, N]
         scores_base = scores_base.masked_fill(~val_mask, -1e4)
 
     if is_causal:
         causal_mask = torch.triu(torch.full((N, N), True, device=Q.device), diagonal=1)
-        scores_base = scores_base.masked_fill(
-            causal_mask.unsqueeze(0).unsqueeze(0), -1e4
-        )
+        scores_base = scores_base.masked_fill(causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
 
     accum_out = torch.zeros_like(V)
 
@@ -331,9 +318,7 @@ class PHANTOMAttention(BaseAttention):
         self.cfg: PHANTOMConfig = phantom_cfg
 
         model_config = config or kwargs.get("model_config")
-        self.hidden_size: int = getattr(
-            model_config, "hidden_size", kwargs.get("hidden_size", 768)
-        )
+        self.hidden_size: int = getattr(model_config, "hidden_size", kwargs.get("hidden_size", 768))
         self.dim: int = self.hidden_size
         self.num_heads: int = getattr(
             model_config, "num_attention_heads", kwargs.get("num_attention_heads", 12)
@@ -380,11 +365,7 @@ class PHANTOMAttention(BaseAttention):
         )
         self.freeze_base = self.lora_rank > 0
 
-        source_attn = (
-            pretrained_attn
-            if pretrained_attn is not None
-            else kwargs.get("source_attn")
-        )
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
         target_dtype = kwargs.get("dtype")
         if target_dtype is None and source_attn is not None:
             target_dtype = next(source_attn.parameters(), torch.tensor([])).dtype
@@ -450,9 +431,7 @@ class PHANTOMAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
             hasattr(src, "self")
@@ -466,10 +445,7 @@ class PHANTOMAttention(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -606,9 +582,7 @@ class PHANTOMAttention(BaseAttention):
                 w, b = extracted[proj_key]
                 if w is None:
                     if proj_key == "o" and self.is_nested_encoder:
-                        target_mod.copy_cur(
-                            torch.eye(self.all_head_size, self.dim), None
-                        )
+                        target_mod.copy_cur(torch.eye(self.all_head_size, self.dim), None)
                         continue
                     else:
                         logger.warning(f"Missing required weights for {proj_key}")
@@ -641,9 +615,7 @@ class PHANTOMAttention(BaseAttention):
 
                 fnorm = torch.linalg.norm(target_mod.weight.float()).item()
                 if fnorm < 1e-4:
-                    logger.warning(
-                        f"Weight copy notice for {proj_key}: norm {fnorm:.6f} < 1e-4"
-                    )
+                    logger.warning(f"Weight copy notice for {proj_key}: norm {fnorm:.6f} < 1e-4")
 
         if self.freeze_base:
             for mod in [self.q_proj, self.k_proj, self.v_proj, self.out_proj]:
@@ -668,16 +640,8 @@ class PHANTOMAttention(BaseAttention):
         H, D = self.num_heads, self.head_dim
 
         Q = self.q_proj(hidden_states).view(B, N, H, D).permute(0, 2, 1, 3)
-        K = (
-            self.k_proj(hidden_states)
-            .view(B, N, self.num_kv_heads, D)
-            .permute(0, 2, 1, 3)
-        )
-        V = (
-            self.v_proj(hidden_states)
-            .view(B, N, self.num_kv_heads, D)
-            .permute(0, 2, 1, 3)
-        )
+        K = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, D).permute(0, 2, 1, 3)
+        V = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, D).permute(0, 2, 1, 3)
 
         # Apply RoPE if provided
         if position_embeddings is None:
@@ -701,9 +665,7 @@ class PHANTOMAttention(BaseAttention):
             V,
             rounds=self.cfg.lsh_rounds,
             bucket_size=self.cfg.lsh_bucket_size,
-            softpick_temp=(
-                self.cfg.softpick_temperature if self.cfg.softpick_enabled else 1.0
-            ),
+            softpick_temp=(self.cfg.softpick_temperature if self.cfg.softpick_enabled else 1.0),
             dropout=self.dropout if self.cfg.softpick_enabled else None,
             token_valid=token_valid,
             is_causal=is_causal,
@@ -712,19 +674,15 @@ class PHANTOMAttention(BaseAttention):
         # head_mask handling
         if head_mask is not None:
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
-                context = context * head_mask.view(1, self.num_heads, 1, 1).to(
+                context = context * head_mask.view(1, self.num_heads, 1, 1).to(context.dtype)
+            elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
+                context = context * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(
                     context.dtype
                 )
-            elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                context = context * head_mask.view(
-                    head_mask.size(0), self.num_heads, 1, 1
-                ).to(context.dtype)
             elif head_mask.dim() == 4:
                 context = context * head_mask.to(context.dtype)
 
-        context = (
-            context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
-        )
+        context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
             return context, None
@@ -814,9 +772,7 @@ def inject_phantom(
                 return None
             if "PHANTOM" in src_attn.__class__.__name__:
                 return None
-            if hasattr(src_attn, "inner") and isinstance(
-                src_attn.inner, PHANTOMAttention
-            ):
+            if hasattr(src_attn, "inner") and isinstance(src_attn.inner, PHANTOMAttention):
                 return None
             if hasattr(src_attn, "_wrapped_attention") and isinstance(
                 src_attn._wrapped_attention, PHANTOMAttention
@@ -854,8 +810,7 @@ def inject_phantom(
             or getattr(src_attn, "embed_dim", None)
             or (
                 src_attn.q_proj.in_features
-                if hasattr(src_attn, "q_proj")
-                and hasattr(src_attn.q_proj, "in_features")
+                if hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features")
                 else None
             )
             or (
@@ -913,7 +868,5 @@ def inject_phantom(
 
 # Aliases and Registry
 @ATTENTION_REGISTRY.register("phantom_inject")
-def inject_phantom_attention(
-    *args: Any, **kwargs: Any
-) -> PHANTOMAttention | nn.Module | None:
+def inject_phantom_attention(*args: Any, **kwargs: Any) -> PHANTOMAttention | nn.Module | None:
     return inject_phantom(*args, **kwargs)

@@ -35,6 +35,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.attention_mask import apply_attention_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -129,21 +130,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -179,9 +174,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
         return out
 
@@ -215,9 +208,7 @@ class SpectraV2Attention(BaseAttention):
 
         self.hidden_size = kwargs.get(
             "hidden_size",
-            _cfg_get(
-                cfg, "hidden_size", _cfg_get(cfg, "dim", _cfg_get(cfg, "d_model", 768))
-            ),
+            _cfg_get(cfg, "hidden_size", _cfg_get(cfg, "dim", _cfg_get(cfg, "d_model", 768))),
         )
         self.dim = self.hidden_size
         self.num_heads = kwargs.get(
@@ -310,16 +301,10 @@ class SpectraV2Attention(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        dropout_p = _cfg_get(
-            cfg, "dropout", _cfg_get(cfg, "attention_probs_dropout_prob", 0.1)
-        )
+        dropout_p = _cfg_get(cfg, "dropout", _cfg_get(cfg, "attention_probs_dropout_prob", 0.1))
         self.dropout = nn.Dropout(dropout_p)
 
-        source_attn = (
-            pretrained_attn
-            if pretrained_attn is not None
-            else kwargs.get("source_attn")
-        )
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -351,10 +336,7 @@ class SpectraV2Attention(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_proj
         ):
@@ -408,11 +390,7 @@ class SpectraV2Attention(BaseAttention):
             extracted["o"] = _unpack_weight_bias(getattr(src, "out_lin", None))
 
         # 3. BERT / RoBERTa style: query, key, value, dense
-        if (
-            hasattr(src, "query")
-            and src.query is not None
-            and extracted["q"][0] is None
-        ):
+        if hasattr(src, "query") and src.query is not None and extracted["q"][0] is None:
             extracted["q"] = _unpack_weight_bias(src.query)
             extracted["k"] = _unpack_weight_bias(getattr(src, "key", None))
             extracted["v"] = _unpack_weight_bias(getattr(src, "value", None))
@@ -421,11 +399,7 @@ class SpectraV2Attention(BaseAttention):
             )
 
         # 4. Nested structures (RoBERTa / BERT container objects)
-        if (
-            hasattr(src, "self")
-            and hasattr(src.self, "query")
-            and extracted["q"][0] is None
-        ):
+        if hasattr(src, "self") and hasattr(src.self, "query") and extracted["q"][0] is None:
             s = src.self
             extracted["q"] = _unpack_weight_bias(getattr(s, "query", None))
             extracted["k"] = _unpack_weight_bias(getattr(s, "key", None))
@@ -434,18 +408,12 @@ class SpectraV2Attention(BaseAttention):
                 extracted["o"] = _unpack_weight_bias(getattr(src.output, "dense", None))
 
         # 5. Qwen / LLaMA / HF Attention style: q_proj, k_proj, v_proj, o_proj
-        if (
-            hasattr(src, "q_proj")
-            and src.q_proj is not None
-            and extracted["q"][0] is None
-        ):
+        if hasattr(src, "q_proj") and src.q_proj is not None and extracted["q"][0] is None:
             extracted["q"] = _unpack_weight_bias(src.q_proj)
             extracted["k"] = _unpack_weight_bias(getattr(src, "k_proj", None))
             extracted["v"] = _unpack_weight_bias(getattr(src, "v_proj", None))
             extracted["o"] = _unpack_weight_bias(
-                getattr(
-                    src, "o_proj", getattr(src, "dense", getattr(src, "out_proj", None))
-                )
+                getattr(src, "o_proj", getattr(src, "dense", getattr(src, "out_proj", None)))
             )
 
         # 6. UniversalAdapter fallback for custom names
@@ -506,9 +474,7 @@ class SpectraV2Attention(BaseAttention):
                 ):
                     repeats = w.shape[0] // target_mod.weight.shape[0]
                     # For GQA: average the query head groups
-                    w_grouped = w.view(
-                        target_mod.weight.shape[0], repeats, w.shape[1]
-                    ).mean(dim=1)
+                    w_grouped = w.view(target_mod.weight.shape[0], repeats, w.shape[1]).mean(dim=1)
                     target_mod.weight.copy_(w_grouped)
                 else:
                     min_0 = min(target_mod.weight.shape[0], w.shape[0])
@@ -530,9 +496,7 @@ class SpectraV2Attention(BaseAttention):
                         and b.shape[0] % target_mod.bias.shape[0] == 0
                     ):
                         repeats = b.shape[0] // target_mod.bias.shape[0]
-                        b_grouped = b.view(target_mod.bias.shape[0], repeats).mean(
-                            dim=1
-                        )
+                        b_grouped = b.view(target_mod.bias.shape[0], repeats).mean(dim=1)
                         target_mod.bias.copy_(b_grouped)
                     else:
                         min_b = min(target_mod.bias.shape[0], b.shape[0])
@@ -584,21 +548,9 @@ class SpectraV2Attention(BaseAttention):
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
 
-        Q = (
-            self.query(hidden_states)
-            .view(B, N, self.num_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
-        K = (
-            self.key(kv_states)
-            .view(B, N_k, self.num_kv_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
-        V = (
-            self.value(kv_states)
-            .view(B, N_k, self.num_kv_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
+        Q = self.query(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        K = self.key(kv_states).view(B, N_k, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        V = self.value(kv_states).view(B, N_k, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
 
         # Apply RoPE if provided
         if position_embeddings is None:
@@ -651,18 +603,12 @@ class SpectraV2Attention(BaseAttention):
                     hm = head_mask.view(-1, self.num_heads)
                     if hm.shape[0] == 1:
                         hm = hm.expand(_sdpa_out.shape[0], -1)
-                    _sdpa_out = _sdpa_out * hm.view(
-                        _sdpa_out.shape[0], self.num_heads, 1, 1
-                    ).to(_sdpa_out.dtype)
+                    _sdpa_out = _sdpa_out * hm.view(_sdpa_out.shape[0], self.num_heads, 1, 1).to(
+                        _sdpa_out.dtype
+                    )
 
-                _sdpa_out = (
-                    _sdpa_out.transpose(1, 2)
-                    .contiguous()
-                    .view(B, N, self.all_head_size)
-                )
-                _sdpa_out = torch.nan_to_num(
-                    _sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4
-                )
+                _sdpa_out = _sdpa_out.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+                _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
                 context = _sdpa_out
                 if self.is_nested_encoder:
@@ -686,14 +632,10 @@ class SpectraV2Attention(BaseAttention):
                 pass
 
         # Fallback path (manual attention)
-        scores = (
-            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         if _is_causal:
-            causal_mask = torch.triu(
-                torch.full((N, N_k), -1e4, device=scores.device), diagonal=1
-            )
+            causal_mask = torch.triu(torch.full((N, N_k), -1e4, device=scores.device), diagonal=1)
             scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
         if eff_mask is not None:
@@ -705,9 +647,9 @@ class SpectraV2Attention(BaseAttention):
 
         if head_mask is not None:
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
-                attn_weights = attn_weights * head_mask.view(
-                    1, self.num_heads, 1, 1
-                ).to(attn_weights.dtype)
+                attn_weights = attn_weights * head_mask.view(1, self.num_heads, 1, 1).to(
+                    attn_weights.dtype
+                )
             elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
                 attn_weights = attn_weights * head_mask.view(
                     head_mask.size(0), self.num_heads, 1, 1
@@ -783,9 +725,7 @@ def inject_spectra_v2(
             and hasattr(target.bert.encoder, "layer")
         ):
             layer_list = target.bert.encoder.layer
-        elif hasattr(target, "layers") and isinstance(
-            target.layers, (torch.nn.ModuleList, list)
-        ):
+        elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
             layer_list = target.layers
 
         if layer_list is not None:

@@ -13,6 +13,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -135,9 +136,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = (
-                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            )
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -169,17 +168,9 @@ class GatedRecurrentMemory(nn.Module):
         # x: (B, L, D)
         target_dtype = x.dtype
         gw = self.gate_proj.weight.to(target_dtype)
-        gb = (
-            self.gate_proj.bias.to(target_dtype)
-            if self.gate_proj.bias is not None
-            else None
-        )
+        gb = self.gate_proj.bias.to(target_dtype) if self.gate_proj.bias is not None else None
         vw = self.value_proj.weight.to(target_dtype)
-        vb = (
-            self.value_proj.bias.to(target_dtype)
-            if self.value_proj.bias is not None
-            else None
-        )
+        vb = self.value_proj.bias.to(target_dtype) if self.value_proj.bias is not None else None
         g = torch.sigmoid(F.linear(x, gw, gb))
         v = torch.tanh(F.linear(x, vw, vb))
         # Parallel scan over sequence (small L → simple python loop)
@@ -238,14 +229,10 @@ class GoldFinchAHNBlock(BaseAttention):
 
         # ---- hidden size ----
         if d_model is None:
-            d_model = (
-                kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
-            )
+            d_model = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
             if d_model is None:
                 if config is not None:
-                    d_model = getattr(
-                        config, "hidden_size", getattr(config, "dim", 768)
-                    )
+                    d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
                 elif source_attn is not None:
                     out_layer = None
                     for attr in ("out_lin", "dense", "c_proj", "o_proj", "out_proj"):
@@ -300,9 +287,7 @@ class GoldFinchAHNBlock(BaseAttention):
             self.num_kv_heads = getattr(
                 config,
                 "num_key_value_heads",
-                getattr(
-                    config, "num_kv_heads", kwargs.get("num_kv_heads", self.num_heads)
-                ),
+                getattr(config, "num_kv_heads", kwargs.get("num_kv_heads", self.num_heads)),
             )
         elif source_attn is not None:
             self.num_kv_heads = (
@@ -344,23 +329,18 @@ class GoldFinchAHNBlock(BaseAttention):
             )
         elif comp_config is not None:
             self.window_size = int(
-                getattr(
-                    comp_config, "window_size", kwargs.get("window_size", window_size)
-                )
+                getattr(comp_config, "window_size", kwargs.get("window_size", window_size))
             )
         else:
             self.window_size = int(kwargs.get("window_size", window_size))
         self.window_radius = max(1, self.window_size // 2)
 
         # ---- decoder detection ----
-        model_type = (
-            str(getattr(config, "model_type", "") or "").lower() if config else ""
-        )
+        model_type = str(getattr(config, "model_type", "") or "").lower() if config else ""
         is_dec = False
         if config is not None:
             is_dec = bool(
-                getattr(config, "is_decoder", False)
-                or getattr(config, "is_causal", False)
+                getattr(config, "is_decoder", False) or getattr(config, "is_causal", False)
             )
         if any(
             model_type.startswith(p)
@@ -380,16 +360,10 @@ class GoldFinchAHNBlock(BaseAttention):
             )
         ):
             is_dec = True
-        if (
-            kwargs.get("is_decoder", False)
-            or kwargs.get("is_causal", False)
-            or is_causal
-        ):
+        if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False) or is_causal:
             is_dec = True
         if source_attn is not None:
-            if hasattr(source_attn, "c_attn") or getattr(
-                source_attn, "is_decoder", False
-            ):
+            if hasattr(source_attn, "c_attn") or getattr(source_attn, "is_decoder", False):
                 is_dec = True
         self.is_decoder = bool(is_dec)
         self.is_causal = self.is_decoder
@@ -413,18 +387,14 @@ class GoldFinchAHNBlock(BaseAttention):
                     config,
                     "lora_alpha",
                     (
-                        getattr(
-                            comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)
-                        )
+                        getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
                         if comp_config is not None
                         else kwargs.get("lora_alpha", 32.0)
                     ),
                 )
             )
         elif comp_config is not None:
-            self.lora_rank = int(
-                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
-            )
+            self.lora_rank = int(getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
             self.lora_alpha = float(
                 getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
             )
@@ -434,9 +404,7 @@ class GoldFinchAHNBlock(BaseAttention):
 
         self.freeze_base = self.lora_rank > 0
         self.rotary_emb = (
-            getattr(source_attn, "rotary_emb", None)
-            if source_attn is not None
-            else None
+            getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
         )
 
         # ---- projections ----
@@ -583,10 +551,7 @@ class GoldFinchAHNBlock(BaseAttention):
             pass
 
         cls_name = getattr(src, "__class__", type(src)).__name__
-        has_out = any(
-            hasattr(src, a)
-            for a in ("dense", "out_proj", "out_lin", "c_proj", "o_proj")
-        )
+        has_out = any(hasattr(src, a) for a in ("dense", "out_proj", "out_lin", "c_proj", "o_proj"))
         is_nested = False
         if (
             cls_name
@@ -758,9 +723,7 @@ class GoldFinchAHNBlock(BaseAttention):
 
                 if b is not None and target.bias is not None:
                     mb = min(target.bias.numel(), b.numel())
-                    target.bias.data[:mb].copy_(
-                        b[:mb].to(target.bias.device, target.bias.dtype)
-                    )
+                    target.bias.data[:mb].copy_(b[:mb].to(target.bias.device, target.bias.dtype))
                 elif target.bias is not None:
                     nn.init.zeros_(target.bias)
 
@@ -884,9 +847,7 @@ class GoldFinchAHNBlock(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         # ---- Sliding-window attention ----
-        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * (
-            d**-0.5
-        )
+        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * (d**-0.5)
 
         idx = torch.arange(L, device=device)
         diff = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs()
@@ -935,9 +896,7 @@ class GoldFinchAHNBlock(BaseAttention):
         gate_w = self.gate.weight.to(dtype_in)
         gate_b = self.gate.bias.to(dtype_in) if self.gate.bias is not None else None
         gate = (
-            torch.sigmoid(F.linear(x, gate_w, gate_b))
-            .mean(dim=-1, keepdim=True)
-            .to(dtype_in)
+            torch.sigmoid(F.linear(x, gate_w, gate_b)).mean(dim=-1, keepdim=True).to(dtype_in)
         )  # (B, L, 1)
 
         # Pad long_out to all_head_size if needed (should match since dim = all_head_size for MHA)
@@ -1065,8 +1024,7 @@ def inject_goldfinch_ahn(
 
     # GF-FIX-08: idempotency guard
     if src_attn is not None and (
-        isinstance(src_attn, GoldFinchAHNBlock)
-        or "GoldFinch" in src_attn.__class__.__name__
+        isinstance(src_attn, GoldFinchAHNBlock) or "GoldFinch" in src_attn.__class__.__name__
     ):
         return None
     if src_attn is not None and (
@@ -1082,11 +1040,7 @@ def inject_goldfinch_ahn(
         getattr(src_attn, "hidden_size", None)
         or getattr(src_attn, "embed_dim", None)
         or getattr(src_attn, "dim", None)
-        or (
-            getattr(src_attn.q_proj, "in_features", None)
-            if hasattr(src_attn, "q_proj")
-            else None
-        )
+        or (getattr(src_attn.q_proj, "in_features", None) if hasattr(src_attn, "q_proj") else None)
         or (getattr(target, "in_features", None) if target is not None else None)
         or getattr(cfg, "hidden_size", getattr(cfg, "dim", 64))
     )

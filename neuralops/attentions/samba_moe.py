@@ -14,6 +14,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 
@@ -129,9 +130,7 @@ class SambaMoEBlock(BaseAttention):
             if cand is not None:
                 hidden_size = cand
         if hidden_size is None and config is not None:
-            hidden_size = _cfg_get(
-                config, "hidden_size", _cfg_get(config, "d_model", None)
-            )
+            hidden_size = _cfg_get(config, "hidden_size", _cfg_get(config, "d_model", None))
         hidden_size = int(hidden_size or 768)
 
         if config is not None:
@@ -140,21 +139,15 @@ class SambaMoEBlock(BaseAttention):
                 "num_attention_heads",
                 _cfg_get(config, "n_heads", n_heads or 12),
             )
-            n_experts = _cfg_get(
-                config, "num_experts", _cfg_get(config, "n_experts", n_experts)
-            )
+            n_experts = _cfg_get(config, "num_experts", _cfg_get(config, "n_experts", n_experts))
             window = _cfg_get(config, "window_size", window)
         else:
             n_heads = n_heads or 12
 
         self.d_model = hidden_size
         self.n_heads = int(n_heads)
-        self.lora_rank = kwargs.get(
-            "lora_rank", _cfg_get(config, "lora_rank", lora_rank)
-        )
-        self.lora_alpha = kwargs.get(
-            "lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha)
-        )
+        self.lora_rank = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
+        self.lora_alpha = kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
 
         self.swa_mamba = SAMBAM3Block(
             config=config,
@@ -171,9 +164,7 @@ class SambaMoEBlock(BaseAttention):
             try:
                 self.moe = REAPMoE(self.d_model, n_experts=n_experts)
             except Exception as e:
-                logger.warning(
-                    "REAPMoE construction failed: %s, using MinimalMoEFallback", e
-                )
+                logger.warning("REAPMoE construction failed: %s, using MinimalMoEFallback", e)
                 self.moe = MinimalMoEFallback(self.d_model, n_experts=min(4, n_experts))
         else:
             self.moe = MinimalMoEFallback(self.d_model, n_experts=min(4, n_experts))
@@ -207,9 +198,7 @@ class SambaMoEBlock(BaseAttention):
 
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
         """Propagate weight transfer to internal SAMBA-M3 and SSM components."""
-        src_cls_name = getattr(
-            pretrained_attn, "__class__", type(pretrained_attn)
-        ).__name__
+        src_cls_name = getattr(pretrained_attn, "__class__", type(pretrained_attn)).__name__
         has_out_proj = any(
             hasattr(pretrained_attn, attr)
             for attr in (
@@ -280,9 +269,7 @@ class SambaMoEBlock(BaseAttention):
             x_moe = x
 
         moe_out, _ = self.moe(x_moe)
-        self.aux_loss = getattr(
-            self.moe, "aux_loss", torch.tensor(0.0, device=x.device)
-        )
+        self.aux_loss = getattr(self.moe, "aux_loss", torch.tensor(0.0, device=x.device))
 
         if moe_out.shape[-1] != x.shape[-1]:
             moe_out = (
@@ -344,9 +331,7 @@ def inject_samba_moe(
             layer_list = target.model.layers
         elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
             layer_list = target.encoder.layer
-        elif hasattr(target, "layers") and isinstance(
-            target.layers, (nn.ModuleList, list)
-        ):
+        elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
             layer_list = target.layers
 
         if layer_list is not None:
@@ -396,9 +381,7 @@ def inject_samba_moe(
             n_heads = getattr(src, "num_heads", getattr(src, "num_attention_heads", 12))
 
         if model_config is not None:
-            d_model = _cfg_get(
-                model_config, "hidden_size", _cfg_get(model_config, "dim", d_model)
-            )
+            d_model = _cfg_get(model_config, "hidden_size", _cfg_get(model_config, "dim", d_model))
             n_heads = _cfg_get(model_config, "num_attention_heads", n_heads)
 
         lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))

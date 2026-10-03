@@ -470,9 +470,7 @@ def launch_kd_run(
             f"-RedirectStandardOutput '{remote_out}' -RedirectStandardError '{remote_err}'"
         )
         run_command_smart(cmd, timeout=12)
-    logger.info(
-        f"Launched {module} (steps={recovery_steps}, seq={seq_len}) -> log: {remote_out}"
-    )
+    logger.info(f"Launched {module} (steps={recovery_steps}, seq={seq_len}) -> log: {remote_out}")
     return remote_out
 
 
@@ -488,9 +486,7 @@ def kill_kd_processes():
         logger.warning(f"Error killing KD processes: {e}")
 
 
-def wait_for_batch(
-    active_modules: list[str], poll_sec: int = 15, timeout_min: int = 35
-) -> bool:
+def wait_for_batch(active_modules: list[str], poll_sec: int = 15, timeout_min: int = 35) -> bool:
     """Wait until all active module jobs finish."""
     start_time = time.time()
     max_duration = timeout_min * 60
@@ -517,9 +513,7 @@ def wait_for_batch(
             return True
         time.sleep(poll_sec)
 
-    logger.warning(
-        f"Batch timed out after {timeout_min} minutes! Killing hanging jobs..."
-    )
+    logger.warning(f"Batch timed out after {timeout_min} minutes! Killing hanging jobs...")
     kill_kd_processes()
     return False
 
@@ -667,9 +661,7 @@ def main():
         default=500,
         help="KD recovery steps (default: 500)",
     )
-    parser.add_argument(
-        "--seq_len", type=int, default=128, help="Sequence length (default: 128)"
-    )
+    parser.add_argument("--seq_len", type=int, default=128, help="Sequence length (default: 128)")
     parser.add_argument(
         "--batch_size", type=int, default=1, help="Per-device batch size (default: 1)"
     )
@@ -687,9 +679,7 @@ def main():
         action="store_true",
         help="Include 76 compression engine modules",
     )
-    parser.add_argument(
-        "--dry_run", action="store_true", help="Print schedule without launching"
-    )
+    parser.add_argument("--dry_run", action="store_true", help="Print schedule without launching")
     args = parser.parse_args()
 
     # Determine full list

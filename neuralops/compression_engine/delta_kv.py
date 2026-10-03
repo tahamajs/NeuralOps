@@ -17,6 +17,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
@@ -120,9 +121,7 @@ class DeltaKVStore:
             self.update(k, v)
             return k, v
 
-        sim = torch.matmul(
-            k_4d.float(), ref_k_b.float().transpose(-2, -1).contiguous()
-        ) / (D**0.5)
+        sim = torch.matmul(k_4d.float(), ref_k_b.float().transpose(-2, -1).contiguous()) / (D**0.5)
         _, top_idx = torch.topk(sim, tk, dim=-1)
 
         top_idx_exp = top_idx.unsqueeze(-1).expand(B, H, N, tk, D)
@@ -251,9 +250,7 @@ class DeltaKVCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     # Target check (DKV-FIX-07)
     # ------------------------------------------------------------------
-    def _is_target_module(
-        self, name: str, module: nn.Module, _debug: bool = False
-    ) -> bool:
+    def _is_target_module(self, name: str, module: nn.Module, _debug: bool = False) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
             if _debug:
@@ -365,16 +362,12 @@ class DeltaKVCompressor(BaseCompressor):
             if self._is_target_module(name, module)
         ]
         if not target_list:
-            logger.warning(
-                "DeltaKV: no compressible layers found. Running diagnostic..."
-            )
+            logger.warning("DeltaKV: no compressible layers found. Running diagnostic...")
             n_scanned = 0
             for name, module in self.model.named_modules():
                 n_scanned += 1
                 self._is_target_module(name, module, _debug=True)
-            logger.warning(
-                "DeltaKV diagnostic: %d modules scanned, 0 targets.", n_scanned
-            )
+            logger.warning("DeltaKV diagnostic: %d modules scanned, 0 targets.", n_scanned)
             try:
                 stats = self.get_compression_stats()
             except Exception:
@@ -386,10 +379,7 @@ class DeltaKVCompressor(BaseCompressor):
         # Freeze non-target attention/linear layers when target_attention_only.
         if self.target_attention_only:
             for name, module in self.model.named_modules():
-                if any(
-                    part in name.split(".")
-                    for part in ("lora_A", "lora_B", "base_layer")
-                ):
+                if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
                     continue
                 target_mod = getattr(module, "base_layer", module)
                 if isinstance(target_mod, nn.Linear) or _is_conv1d(target_mod):
@@ -422,17 +412,13 @@ class DeltaKVCompressor(BaseCompressor):
 
                 residual = W - L
                 flat_r = residual.contiguous().abs().reshape(-1)
-                keep_n = max(
-                    1, min(int(flat_r.numel() * self.sparsity), flat_r.numel())
-                )
+                keep_n = max(1, min(int(flat_r.numel() * self.sparsity), flat_r.numel()))
                 threshold = torch.topk(flat_r, keep_n).values[-1]
                 mask = (residual.abs() >= threshold).float()
                 residual_sparse = residual * mask
 
                 W_compressed = L + residual_sparse
-                err = float(
-                    torch.norm(W - W_compressed, p="fro").item() / max(norm_w, 1e-12)
-                )
+                err = float(torch.norm(W - W_compressed, p="fro").item() / max(norm_w, 1e-12))
                 self.layer_errors[name] = err
                 self.layer_ranks[name] = r
 
@@ -455,9 +441,7 @@ class DeltaKVCompressor(BaseCompressor):
                         W_compressed.t().contiguous().to(dtype=target_mod.weight.dtype)
                     )
                 else:
-                    target_mod.weight.data.copy_(
-                        W_compressed.to(dtype=target_mod.weight.dtype)
-                    )
+                    target_mod.weight.data.copy_(W_compressed.to(dtype=target_mod.weight.dtype))
 
                 # DKV-FIX-10: requires_grad handled at module level.
                 for p in module.parameters():
@@ -501,9 +485,7 @@ class DeltaKVCompressor(BaseCompressor):
         except Exception:
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
-        effective_ratio = (
-            total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
-        )
+        effective_ratio = total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
         avg_err = (
             sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
             if self.layer_errors
@@ -547,10 +529,7 @@ class DeltaKVCompressor(BaseCompressor):
 
         # DKV-FIX-14: write stats on the model.
         try:
-            if (
-                not hasattr(self.model, "compression_stats")
-                or self.model.compression_stats is None
-            ):
+            if not hasattr(self.model, "compression_stats") or self.model.compression_stats is None:
                 self.model.compression_stats = {}
             self.model.compression_stats.update(
                 {
@@ -593,15 +572,11 @@ def delta_kv_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     )
     sparsity = kwargs.pop(
         "sparsity",
-        _cfg_get(
-            comp_config, "delta_kv_sparsity", _cfg_get(comp_config, "sparsity", 0.29)
-        ),
+        _cfg_get(comp_config, "delta_kv_sparsity", _cfg_get(comp_config, "sparsity", 0.29)),
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(
-            comp_config, "delta_kv_max_error", _cfg_get(comp_config, "max_error", 0.35)
-        ),
+        _cfg_get(comp_config, "delta_kv_max_error", _cfg_get(comp_config, "max_error", 0.35)),
     )
     target_attention_only = kwargs.pop(
         "target_attention_only",

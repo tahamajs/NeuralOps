@@ -17,13 +17,23 @@ Supports head_dim D <= 64.
 from __future__ import annotations
 
 import torch
+
 try:
     import triton
     import triton.language as tl
+
     HAS_TRITON = True
 except ImportError:
     HAS_TRITON = False
-    triton = type("triton", (), {"jit": lambda f: f, "heuristics": lambda *a, **kw: lambda f: f, "autotune": lambda *a, **kw: lambda f: f})
+    triton = type(
+        "triton",
+        (),
+        {
+            "jit": lambda f: f,
+            "heuristics": lambda *a, **kw: lambda f: f,
+            "autotune": lambda *a, **kw: lambda f: f,
+        },
+    )
     tl = None
 
 MAX_REGISTER_DIM = 64
@@ -86,35 +96,23 @@ def _gla_fwd_kernel(
 
     for t in range(L_size):
         q_t = tl.load(
-            q_ptr
-            + pid_b * stride_qb
-            + pid_h * stride_qh
-            + t * stride_ql
-            + offs_d * stride_qd,
+            q_ptr + pid_b * stride_qb + pid_h * stride_qh + t * stride_ql + offs_d * stride_qd,
             mask=mask_d,
             other=0.0,
         ).to(tl.float32)
         k_t = tl.load(
-            k_ptr
-            + pid_b * stride_kb
-            + pid_h * stride_kh
-            + t * stride_kl
-            + offs_d * stride_kd,
+            k_ptr + pid_b * stride_kb + pid_h * stride_kh + t * stride_kl + offs_d * stride_kd,
             mask=mask_d,
             other=0.0,
         ).to(tl.float32)
         v_t = tl.load(
-            v_ptr
-            + pid_b * stride_vb
-            + pid_h * stride_vh
-            + t * stride_vl
-            + offs_d * stride_vd,
+            v_ptr + pid_b * stride_vb + pid_h * stride_vh + t * stride_vl + offs_d * stride_vd,
             mask=mask_d,
             other=0.0,
         ).to(tl.float32)
-        lam_val = tl.load(
-            lam_ptr + pid_b * stride_lamb + pid_h * stride_lamh + t * stride_laml
-        ).to(tl.float32)
+        lam_val = tl.load(lam_ptr + pid_b * stride_lamb + pid_h * stride_lamh + t * stride_laml).to(
+            tl.float32
+        )
         lam_t = tl.maximum(tl.minimum(lam_val, 1.0 - 1e-4), 1e-4)
 
         # S_t = lam_t * S_{t-1} + k_t^T @ v_t
@@ -131,11 +129,7 @@ def _gla_fwd_kernel(
         y_t = num_t / denom_t
 
         tl.store(
-            y_ptr
-            + pid_b * stride_yb
-            + pid_h * stride_yh
-            + t * stride_yl
-            + offs_d * stride_yd,
+            y_ptr + pid_b * stride_yb + pid_h * stride_yh + t * stride_yl + offs_d * stride_yd,
             y_t.to(y_ptr.dtype.element_ty),
             mask=mask_d,
         )
@@ -238,43 +232,27 @@ def _gla_bwd_kernel(
         t = L_size - 1 - step_rev
 
         q_t = tl.load(
-            q_ptr
-            + pid_b * stride_qb
-            + pid_h * stride_qh
-            + t * stride_ql
-            + offs_d * stride_qd,
+            q_ptr + pid_b * stride_qb + pid_h * stride_qh + t * stride_ql + offs_d * stride_qd,
             mask=mask_d,
             other=0.0,
         ).to(tl.float32)
         k_t = tl.load(
-            k_ptr
-            + pid_b * stride_kb
-            + pid_h * stride_kh
-            + t * stride_kl
-            + offs_d * stride_kd,
+            k_ptr + pid_b * stride_kb + pid_h * stride_kh + t * stride_kl + offs_d * stride_kd,
             mask=mask_d,
             other=0.0,
         ).to(tl.float32)
         v_t = tl.load(
-            v_ptr
-            + pid_b * stride_vb
-            + pid_h * stride_vh
-            + t * stride_vl
-            + offs_d * stride_vd,
+            v_ptr + pid_b * stride_vb + pid_h * stride_vh + t * stride_vl + offs_d * stride_vd,
             mask=mask_d,
             other=0.0,
         ).to(tl.float32)
-        lam_val = tl.load(
-            lam_ptr + pid_b * stride_lamb + pid_h * stride_lamh + t * stride_laml
-        ).to(tl.float32)
+        lam_val = tl.load(lam_ptr + pid_b * stride_lamb + pid_h * stride_lamh + t * stride_laml).to(
+            tl.float32
+        )
         lam_t = tl.maximum(tl.minimum(lam_val, 1.0 - 1e-4), 1e-4)
 
         dy_t = tl.load(
-            dy_ptr
-            + pid_b * stride_dyb
-            + pid_h * stride_dyh
-            + t * stride_dyl
-            + offs_d * stride_dyd,
+            dy_ptr + pid_b * stride_dyb + pid_h * stride_dyh + t * stride_dyl + offs_d * stride_dyd,
             mask=mask_d,
             other=0.0,
         ).to(tl.float32)
@@ -305,9 +283,7 @@ def _gla_bwd_kernel(
 
         dnum_t = dy_t / denom_t
         # If denom_raw <= 1e-4, clamp_min is flat => gradient through denom_raw is 0
-        ddenom_t = tl.where(
-            denom_raw > 1e-4, -tl.sum(dy_t * num_t) / (denom_t * denom_t), 0.0
-        )
+        ddenom_t = tl.where(denom_raw > 1e-4, -tl.sum(dy_t * num_t) / (denom_t * denom_t), 0.0)
 
         dS += q_t[:, None] * dnum_t[None, :]
         dZ += q_t * ddenom_t
@@ -342,29 +318,17 @@ def _gla_bwd_kernel(
 
         # Store grads
         tl.store(
-            dq_ptr
-            + pid_b * stride_dqb
-            + pid_h * stride_dqh
-            + t * stride_dql
-            + offs_d * stride_dqd,
+            dq_ptr + pid_b * stride_dqb + pid_h * stride_dqh + t * stride_dql + offs_d * stride_dqd,
             dq_t.to(dq_ptr.dtype.element_ty),
             mask=mask_d,
         )
         tl.store(
-            dk_ptr
-            + pid_b * stride_dkb
-            + pid_h * stride_dkh
-            + t * stride_dkl
-            + offs_d * stride_dkd,
+            dk_ptr + pid_b * stride_dkb + pid_h * stride_dkh + t * stride_dkl + offs_d * stride_dkd,
             dk_t.to(dk_ptr.dtype.element_ty),
             mask=mask_d,
         )
         tl.store(
-            dv_ptr
-            + pid_b * stride_dvb
-            + pid_h * stride_dvh
-            + t * stride_dvl
-            + offs_d * stride_dvd,
+            dv_ptr + pid_b * stride_dvb + pid_h * stride_dvh + t * stride_dvl + offs_d * stride_dvd,
             dv_t.to(dv_ptr.dtype.element_ty),
             mask=mask_d,
         )

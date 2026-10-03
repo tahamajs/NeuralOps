@@ -94,9 +94,7 @@ def detect_family(model_or_config: Any) -> str:
     model_type = str(getattr(cfg, "model_type", "")).lower()
     cls = type(model_or_config).__name__.lower()
 
-    if any(
-        x in model_type or x in cls for x in ("qwen3_5", "qwen3.5", "qwen35", "qwen3")
-    ):
+    if any(x in model_type or x in cls for x in ("qwen3_5", "qwen3.5", "qwen35", "qwen3")):
         return "qwen3_5"
     if model_type.startswith("qwen") or "qwen" in cls:
         return "qwen"
@@ -168,18 +166,14 @@ class ModelAdapter:
             getattr(
                 self.source,
                 "num_key_value_heads_decoder",
-                getattr(
-                    self.source, "num_decoder_attention_heads", self.num_heads or 0
-                ),
+                getattr(self.source, "num_decoder_attention_heads", self.num_heads or 0),
             ),
         )
         self.num_key_value_heads = int(kv_heads or self.num_heads or 0)
         if self.num_key_value_heads <= 0:
             self.num_key_value_heads = self.num_heads
         self.num_hidden_layers = int(
-            getattr(
-                self.source, "num_hidden_layers", getattr(self.source, "num_layers", 0)
-            )
+            getattr(self.source, "num_hidden_layers", getattr(self.source, "num_layers", 0))
         )
         self.q_proj_out = self.num_heads * self.head_dim
         self.kv_proj_out = self.num_key_value_heads * self.head_dim
@@ -197,9 +191,7 @@ class ModelAdapter:
         # A family is causal if either:
         #   (a) its canonical family is in CAUSAL_FAMILIES, OR
         #   (b) its raw family is in CAUSAL_FAMILIES (defense in depth).
-        self.causal = (self.family in CAUSAL_FAMILIES) or (
-            raw_family in CAUSAL_FAMILIES
-        )
+        self.causal = (self.family in CAUSAL_FAMILIES) or (raw_family in CAUSAL_FAMILIES)
 
         # mask_rank: 4 for causal decoders, 2 for bidirectional encoders, 3 otherwise.
         if self.causal:
@@ -226,9 +218,7 @@ class ModelAdapter:
         else:
             self.position_embedding = "none"
 
-        self.supports_gqa = (
-            self.num_key_value_heads < self.num_heads
-        ) or self.family == "qwen3_5"
+        self.supports_gqa = (self.num_key_value_heads < self.num_heads) or self.family == "qwen3_5"
         self.supports_delta_net = self.family == "qwen3_5"
         self.supports_moe = self.family == "qwen3_5"
 

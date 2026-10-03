@@ -14,7 +14,10 @@ if str(_codes_dir) not in sys.path:
 if str(_cur_dir) not in sys.path:
     sys.path.insert(0, str(_cur_dir))
 
-def collect_activations(model: torch.nn.Module, dataloader: Any, num_samples: int = 512) -> dict[str, torch.Tensor]:
+
+def collect_activations(
+    model: torch.nn.Module, dataloader: Any, num_samples: int = 512
+) -> dict[str, torch.Tensor]:
     """Collects input activations for all Linear layers using forward hooks."""
     activations: dict[str, list[torch.Tensor]] = {}
     hooks = []
@@ -26,6 +29,7 @@ def collect_activations(model: torch.nn.Module, dataloader: Any, num_samples: in
                 if name not in activations:
                     activations[name] = []
                 activations[name].append(x)
+
         return hook
 
     for name, mod in model.named_modules():
@@ -48,7 +52,9 @@ def collect_activations(model: torch.nn.Module, dataloader: Any, num_samples: in
     return {k: torch.cat(v, dim=0)[:num_samples] for k, v in activations.items()}
 
 
-def cholesky_whitened_svd(W: torch.Tensor, X: torch.Tensor, rank: int, eps: float = 1e-4) -> torch.Tensor:
+def cholesky_whitened_svd(
+    W: torch.Tensor, X: torch.Tensor, rank: int, eps: float = 1e-4
+) -> torch.Tensor:
     """Computes Cholesky-whitened SVD on weight matrix W using activation covariance X^T X."""
     X = X.float()
     cov = (X.t() @ X) / max(1, X.shape[0]) + eps * torch.eye(X.shape[1])
@@ -66,7 +72,6 @@ def cholesky_whitened_svd(W: torch.Tensor, X: torch.Tensor, rank: int, eps: floa
     except Exception:
         W_out = W_approx
     return W_out.to(W.dtype)
-
 
 
 def compress_whitened(model_path, dataset_name, rank, num_samples, output_dir):
@@ -94,9 +99,7 @@ def compress_whitened(model_path, dataset_name, rank, num_samples, output_dir):
             if "text" in batch
             else ("sentence" if "sentence" in batch else list(batch.keys())[0])
         )
-        return tokenizer(
-            batch[key], padding="max_length", truncation=True, max_length=128
-        )
+        return tokenizer(batch[key], padding="max_length", truncation=True, max_length=128)
 
     ds = ds.map(tokenize, batched=True)
     ds.set_format(type="torch", columns=["input_ids", "attention_mask"])
@@ -113,9 +116,7 @@ def compress_whitened(model_path, dataset_name, rank, num_samples, output_dir):
     for name, module in model.named_modules():
         if isinstance(module, torch.nn.Linear) and name in activations:
             # Skip classifier head to preserve classification logits structure
-            if any(
-                h in name.lower() for h in ("classifier", "score", "pre_classifier")
-            ):
+            if any(h in name.lower() for h in ("classifier", "score", "pre_classifier")):
                 continue
             W = module.weight.data.cpu()
             X = activations[name]
@@ -141,6 +142,4 @@ if __name__ == "__main__":
     parser.add_argument("--output_dir", required=True)
     args = parser.parse_args()
 
-    compress_whitened(
-        args.model, args.dataset, args.rank, args.num_samples, args.output_dir
-    )
+    compress_whitened(args.model, args.dataset, args.rank, args.num_samples, args.output_dir)

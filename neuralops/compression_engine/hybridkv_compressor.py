@@ -15,6 +15,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
@@ -67,9 +68,7 @@ class HybridKVCache:
     ) -> None:
         self.budget = float(budget)
         self.max_cache_len = (
-            max(8, int(max_cache_len * self.budget))
-            if self.budget > 0
-            else int(max_cache_len)
+            max(8, int(max_cache_len * self.budget)) if self.budget > 0 else int(max_cache_len)
         )
         self.num_sinks = int(num_sinks)
         self.recent_window = int(recent_window)
@@ -205,9 +204,7 @@ class HybridKVCompressor(BaseCompressor):
         cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
-        self.budget = float(
-            _cfg_get(cfg, "hybridkv_budget", _cfg_get(cfg, "budget", budget))
-        )
+        self.budget = float(_cfg_get(cfg, "hybridkv_budget", _cfg_get(cfg, "budget", budget)))
         self.static_ratio = float(
             _cfg_get(
                 cfg,
@@ -356,9 +353,7 @@ class HybridKVCompressor(BaseCompressor):
         stats["dynamic_heads_count"] = dynamic_heads_count
         stats["head_classifications"] = head_stats
         stats["attached_caches"] = len(head_stats)
-        stats["kv_cache_budget_saving"] = (
-            f"{(1.0 - self.budget) * 100:.1f}% Footprint Reduction"
-        )
+        stats["kv_cache_budget_saving"] = f"{(1.0 - self.budget) * 100:.1f}% Footprint Reduction"
         stats["forward_check_success"] = forward_check_success
         return self.model, stats
 
@@ -390,9 +385,7 @@ def hybridkv_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     )
     num_sinks = kwargs.pop(
         "num_sinks",
-        _cfg_get(
-            comp_config, "hybridkv_num_sinks", _cfg_get(comp_config, "num_sinks", 4)
-        ),
+        _cfg_get(comp_config, "hybridkv_num_sinks", _cfg_get(comp_config, "num_sinks", 4)),
     )
     recent_window = kwargs.pop(
         "recent_window",

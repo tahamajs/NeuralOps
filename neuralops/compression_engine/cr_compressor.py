@@ -13,6 +13,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error
@@ -56,21 +57,15 @@ class CRLinear(nn.Module):
         self.nf = out_features  # Conv1D compatibility
         self.rank = max(1, min(rank, in_features, out_features))
 
-        self.C = nn.Parameter(
-            torch.empty(out_features, self.rank, dtype=dtype, device=device)
-        )
-        self.P = nn.Parameter(
-            torch.empty(self.rank, in_features, dtype=dtype, device=device)
-        )
+        self.C = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
+        self.P = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
 
         bound = 1.0 / math.sqrt(max(1, in_features))
         nn.init.uniform_(self.C, -bound, bound)
         nn.init.uniform_(self.P, -bound, bound)
 
         if bias:
-            self.bias = nn.Parameter(
-                torch.zeros(out_features, dtype=dtype, device=device)
-            )
+            self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device))
         else:
             self.register_parameter("bias", None)
 
@@ -103,11 +98,7 @@ class CRLinear(nn.Module):
         """
         target_mod = getattr(linear, "base_layer", getattr(linear, "linear", linear))
         raw_w = target_mod.weight.data
-        bias = (
-            target_mod.bias.data
-            if getattr(target_mod, "bias", None) is not None
-            else None
-        )
+        bias = target_mod.bias.data if getattr(target_mod, "bias", None) is not None else None
         cls_name = target_mod.__class__.__name__.lower()
         wrapper_name = linear.__class__.__name__.lower()
 
@@ -146,9 +137,7 @@ class CRLinear(nn.Module):
             _, _, piv = scipy.linalg.qr(W_np, mode="economic", pivoting=True)
             col_idx = torch.tensor(piv[:r], dtype=torch.long, device=W.device)
         except Exception as e:
-            logger.debug(
-                "CRLinear pivoted QR failed; using greedy column selection: %s", e
-            )
+            logger.debug("CRLinear pivoted QR failed; using greedy column selection: %s", e)
 
         if col_idx is None:
             # Pure PyTorch QRCP-equivalent greedy pivoted column selection
@@ -234,13 +223,9 @@ class CRCompressor(BaseCompressor):
         target_layers: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(
-            model if model is not None else nn.Identity(), name="cr", **kwargs
-        )
+        super().__init__(model if model is not None else nn.Identity(), name="cr", **kwargs)
         c_rank = _cfg_get(cfg, "cr_rank", _cfg_get(cfg, "rank", rank))
-        c_max_error = _cfg_get(
-            cfg, "cr_max_error", _cfg_get(cfg, "max_error", max_error)
-        )
+        c_max_error = _cfg_get(cfg, "cr_max_error", _cfg_get(cfg, "max_error", max_error))
         c_fallback = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
         c_target_attn = _cfg_get(
             cfg,
@@ -280,9 +265,7 @@ class CRCompressor(BaseCompressor):
         if not (is_linear or is_conv1d or is_lora):
             return False
 
-        if isinstance(module, CRLinear) or (
-            has_base and isinstance(module.base_layer, CRLinear)
-        ):
+        if isinstance(module, CRLinear) or (has_base and isinstance(module.base_layer, CRLinear)):
             return False
 
         name_lower = name.lower()
@@ -344,9 +327,7 @@ class CRCompressor(BaseCompressor):
 
         return True
 
-    def compress(
-        self, model: nn.Module | None = None
-    ) -> tuple[nn.Module, dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         """Compress linear layers using interpolative decomposition."""
         if model is not None:
             self.model = model
@@ -373,15 +354,9 @@ class CRCompressor(BaseCompressor):
                             p.requires_grad = False
                 continue
 
-            target_mod = getattr(
-                module, "base_layer", getattr(module, "linear", module)
-            )
+            target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
             cls_name = module.__class__.__name__.lower()
-            is_conv1d = (
-                "conv1d" in cls_name
-                or hasattr(module, "nf")
-                or hasattr(target_mod, "nf")
-            )
+            is_conv1d = "conv1d" in cls_name or hasattr(module, "nf") or hasattr(target_mod, "nf")
             (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(
                 module, "base_layer"
             )
@@ -419,15 +394,11 @@ class CRCompressor(BaseCompressor):
                         break
 
                     next_r = min(int(cur_r * 1.5), max_rank - 1)
-                    if next_r <= cur_r or next_r * (in_f + out_f) >= 0.85 * (
-                        in_f * out_f
-                    ):
+                    if next_r <= cur_r or next_r * (in_f + out_f) >= 0.85 * (in_f * out_f):
                         break
                     cur_r = next_r
                 except Exception as ex:
-                    logger.debug(
-                        "CR decomposition error on %s with rank %d: %s", name, cur_r, ex
-                    )
+                    logger.debug("CR decomposition error on %s with rank %d: %s", name, cur_r, ex)
                     break
 
             if best_err > self.max_error:
@@ -457,22 +428,14 @@ class CRCompressor(BaseCompressor):
                     src_lA = getattr(module.lora_A, "weight", module.lora_A)
                     src_lB = getattr(module.lora_B, "weight", module.lora_B)
                     if hasattr(new_layer, "lora_A") and new_layer.lora_A is not None:
-                        if (
-                            hasattr(src_lA, "data")
-                            and src_lA.shape == new_layer.lora_A.shape
-                        ):
+                        if hasattr(src_lA, "data") and src_lA.shape == new_layer.lora_A.shape:
                             new_layer.lora_A.data.copy_(src_lA.data)
                     if hasattr(new_layer, "lora_B") and new_layer.lora_B is not None:
-                        if (
-                            hasattr(src_lB, "data")
-                            and src_lB.shape == new_layer.lora_B.shape
-                        ):
+                        if hasattr(src_lB, "data") and src_lB.shape == new_layer.lora_B.shape:
                             new_layer.lora_B.data.copy_(src_lB.data)
 
                 if hasattr(module, "base_layer"):
-                    module.base_layer = (
-                        compressed_layer  # put compressed layer inside wrapper
-                    )
+                    module.base_layer = compressed_layer  # put compressed layer inside wrapper
                     # module itself (LoRALinear wrapper) remains the replacement
                     new_module = module
                 else:
@@ -480,9 +443,7 @@ class CRCompressor(BaseCompressor):
 
                 if hasattr(module, "base_layer"):
                     for p_name, p in module.named_parameters():
-                        if any(
-                            t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")
-                        ):
+                        if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
                             p.requires_grad = True
                 else:
                     if name == "":
@@ -499,9 +460,7 @@ class CRCompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         avg_err = (
-            (sum(self.layer_errors.values()) / len(self.layer_errors))
-            if self.layer_errors
-            else 0.0
+            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
         )
         effective_param_ratio = (
             total_comp_decomp_params / total_orig_decomp_params

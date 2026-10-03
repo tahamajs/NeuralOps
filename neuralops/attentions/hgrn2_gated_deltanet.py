@@ -29,6 +29,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.attentions.gated_delta_net import GatedDeltaNet, LoRALinear
 from neuralops.attentions.hgrn2_layer import HGRN2Layer
 from neuralops.core.adapters import UniversalAdapter
@@ -166,16 +167,12 @@ class HGRN2GatedDeltaNet(BaseAttention):
             if any(model_type.startswith(p) for p in _dec_pfx):
                 is_dec = True
             if old_attn is not None:
-                if getattr(old_attn, "is_decoder", False) or hasattr(
-                    old_attn, "c_attn"
-                ):
+                if getattr(old_attn, "is_decoder", False) or hasattr(old_attn, "c_attn"):
                     is_dec = True
             self.is_decoder = bool(is_dec)
 
         # ---- LoRA ----
-        self.lora_rank = int(
-            _cfg_get(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank))
-        )
+        self.lora_rank = int(_cfg_get(comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank)))
         self.lora_alpha = float(
             _cfg_get(comp_config, "lora_alpha", kwargs.get("lora_alpha", lora_alpha))
         )
@@ -241,9 +238,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
         if target_dtype is not None:
             self.to(target_dtype)
 
-        self._per_layer_trainable = sum(
-            p.numel() for p in self.parameters() if p.requires_grad
-        )
+        self._per_layer_trainable = sum(p.numel() for p in self.parameters() if p.requires_grad)
         if self._per_layer_trainable > 5e6:
             logger.warning(
                 "HGRN2GatedDeltaNet per-layer trainable: %.1fM.",
@@ -387,9 +382,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         if encoder_hidden_states is not None:
-            raise NotImplementedError(
-                "HGRN2GatedDeltaNet does not support cross-attention."
-            )
+            raise NotImplementedError("HGRN2GatedDeltaNet does not support cross-attention.")
 
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
@@ -417,9 +410,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
             )
 
         gate_dtype = next(self.gate.parameters()).dtype
-        gamma = torch.sigmoid(self.gate(hidden_states.to(gate_dtype))).to(
-            hidden_states.dtype
-        )
+        gamma = torch.sigmoid(self.gate(hidden_states.to(gate_dtype))).to(hidden_states.dtype)
         fused = gamma * hgrn_out.to(hidden_states.dtype) + (1.0 - gamma) * delta_out.to(
             hidden_states.dtype
         )
@@ -511,9 +502,7 @@ def inject_hgrn2_gated_deltanet(
         n = 0
         tot = len(layer_list)
         last = None
-        sub_kwargs = {
-            k: v for k, v in kwargs.items() if k not in ("lora_rank", "lora_alpha")
-        }
+        sub_kwargs = {k: v for k, v in kwargs.items() if k not in ("lora_rank", "lora_alpha")}
         for idx, lyr in enumerate(layer_list):
             res = inject_hgrn2_gated_deltanet(
                 layer=lyr,
@@ -560,9 +549,7 @@ def inject_hgrn2_gated_deltanet(
         cfg = getattr(src_attn, "config", None) or getattr(target, "config", None)
 
     try:
-        sub_kwargs = {
-            k: v for k, v in kwargs.items() if k not in ("lora_rank", "lora_alpha")
-        }
+        sub_kwargs = {k: v for k, v in kwargs.items() if k not in ("lora_rank", "lora_alpha")}
         new_layer = HGRN2GatedDeltaNet(
             config=cfg,
             old_attn=src_attn,

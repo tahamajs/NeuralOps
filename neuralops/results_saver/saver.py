@@ -228,9 +228,7 @@ class ResultsSaver:
         saver.push_all()
     """
 
-    def __init__(
-        self, run_id: str, base_dir: Path, config: dict[str, Any] | None = None
-    ) -> None:
+    def __init__(self, run_id: str, base_dir: Path, config: dict[str, Any] | None = None) -> None:
         self.run_id = run_id
         self.base_dir = Path(base_dir)
         self.run_dir = self.base_dir / run_id
@@ -248,11 +246,7 @@ class ResultsSaver:
             dirs.append(self.run_dir / "logs")
         if self.cfg.save_plots:
             dirs.append(self.run_dir / "plots")
-        if (
-            self.cfg.save_artifacts
-            or self.cfg.save_model
-            or self.cfg.model_export_formats
-        ):
+        if self.cfg.save_artifacts or self.cfg.save_model or self.cfg.model_export_formats:
             dirs.append(self.run_dir / "artifacts")
         if self.cfg.save_checkpoints:
             dirs.append(self.run_dir / "checkpoints")
@@ -290,9 +284,7 @@ class ResultsSaver:
 
         # FIX: Uses PRAGMA journal_mode=WAL;, PRAGMA synchronous=NORMAL;, and file locking for multi-GPU database write safety.
         """
-        target_db = (
-            Path(db_path) if db_path is not None else (self.base_dir / "experiments.db")
-        )
+        target_db = Path(db_path) if db_path is not None else (self.base_dir / "experiments.db")
         lock_path = target_db.with_suffix(".db.lock")
 
         cfg_dict = self._flatten_config(config) if config is not None else {}
@@ -354,9 +346,7 @@ class ResultsSaver:
 
         # FIX: Uses PRAGMA journal_mode=WAL; and PRAGMA synchronous=NORMAL; with file locking to ensure safe step metric logging.
         """
-        target_db = (
-            Path(db_path) if db_path is not None else (self.run_dir / "metrics.db")
-        )
+        target_db = Path(db_path) if db_path is not None else (self.run_dir / "metrics.db")
         lock_path = target_db.with_suffix(".db.lock")
 
         with sqlite_file_lock(lock_path):
@@ -576,6 +566,7 @@ class ResultsSaver:
         """generate plots."""
         try:
             import matplotlib.pyplot as plt
+
             from neuralops.analysis.plotting import (
                 plot_accuracy_curves,
                 plot_confusion_matrix,
@@ -591,16 +582,12 @@ class ResultsSaver:
 
             def save_fig(name, fig) -> None:
                 """Persist fig to disk."""
-                fig.savefig(
-                    self.run_dir / "plots" / f"{name}.png", dpi=dpi, bbox_inches="tight"
-                )
+                fig.savefig(self.run_dir / "plots" / f"{name}.png", dpi=dpi, bbox_inches="tight")
                 plt.close(fig)
 
             if opts.get("loss_curve", True):
                 try:
-                    plot_loss_curves(
-                        history, final_metrics, self.cfg, self.run_dir / "plots", opts
-                    )
+                    plot_loss_curves(history, final_metrics, self.cfg, self.run_dir / "plots", opts)
                 except Exception as e:
                     logger.debug(f"plot_loss_curves error: {e}")
 
@@ -614,9 +601,7 @@ class ResultsSaver:
 
             if opts.get("lr_schedule", True):
                 try:
-                    plot_lr_schedule(
-                        history, final_metrics, self.cfg, self.run_dir / "plots", opts
-                    )
+                    plot_lr_schedule(history, final_metrics, self.cfg, self.run_dir / "plots", opts)
                 except Exception as e:
                     logger.debug(f"plot_lr_schedule error: {e}")
 
@@ -642,9 +627,7 @@ class ResultsSaver:
                     save_fig("confusion_matrix", fig)
 
             if opts.get("radar_chart", False):
-                fig = plot_radar_chart(
-                    final_metrics, figsize=tuple(opts.get("figsize", [8, 8]))
-                )
+                fig = plot_radar_chart(final_metrics, figsize=tuple(opts.get("figsize", [8, 8])))
                 save_fig("radar_chart", fig)
 
             if opts.get("rank_allocation", False):
@@ -671,9 +654,7 @@ class ResultsSaver:
     # ------------------------------------------------------------------
     def _save_model_card(self, config, metrics) -> None:
         """save model card."""
-        cfg_dict = (
-            self._flatten_config(config) if hasattr(config, "__dict__") else config
-        )
+        cfg_dict = self._flatten_config(config) if hasattr(config, "__dict__") else config
         model_name = cfg_dict.get("model_name", "Model")
         task_name = cfg_dict.get("task_name", "Task")
         acc = metrics.get("eval_accuracy", "N/A")
@@ -684,8 +665,8 @@ class ResultsSaver:
 **Loss:** {loss}
 
 **Run ID:** {self.run_id}
-**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-**Compression:** {cfg_dict.get('attention_type', 'full')} (rank={cfg_dict.get('rank', 'N/A')})
+**Date:** {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+**Compression:** {cfg_dict.get("attention_type", "full")} (rank={cfg_dict.get("rank", "N/A")})
 """
         self._write_text("artifacts/model_card.md", card)
 
@@ -716,9 +697,7 @@ class ResultsSaver:
         try:
             if name == "local":
                 return
-            mod = __import__(
-                f"neuralops.results_saver.backends.{name}", fromlist=["push"]
-            )
+            mod = __import__(f"neuralops.results_saver.backends.{name}", fromlist=["push"])
             mod.push(self.run_dir, self.cfg)
         except ImportError:
             logger.warning(f"Backend '{name}' not available, skipping")
@@ -767,9 +746,7 @@ class ResultsSaver:
         """Push to registries."""
         for r in self.cfg.model_registries:
             try:
-                mod = __import__(
-                    f"neuralops.results_saver.backends.{r}", fromlist=["push"]
-                )
+                mod = __import__(f"neuralops.results_saver.backends.{r}", fromlist=["push"])
                 mod.push(self.run_id, self.run_dir, self.cfg)
             except ImportError:
                 logger.warning(f"Registry '{r}' not available")

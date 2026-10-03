@@ -98,9 +98,7 @@ def friedman_test(scores_matrix: np.ndarray) -> dict[str, float]:
 
     # Iman-Davenport correction (recommended over plain Friedman)
     iman_davenport = (
-        ((n - 1) * chi2_stat) / (n * (k - 1) - chi2_stat)
-        if chi2_stat < n * (k - 1)
-        else np.inf
+        ((n - 1) * chi2_stat) / (n * (k - 1) - chi2_stat) if chi2_stat < n * (k - 1) else np.inf
     )
     p_iman = 1 - f_dist.cdf(iman_davenport, k - 1, (k - 1) * (n - 1))
 
@@ -214,9 +212,7 @@ def critical_difference(k: int, N: int, alpha: float = 0.05) -> float:
     return cd
 
 
-def nemenyi_posthoc(
-    avg_ranks: np.ndarray, n_datasets: int, alpha: float = 0.05
-) -> pd.DataFrame:
+def nemenyi_posthoc(avg_ranks: np.ndarray, n_datasets: int, alpha: float = 0.05) -> pd.DataFrame:
     """
     Nemenyi post-hoc test: all vs. all pairwise comparisons.
 
@@ -229,7 +225,7 @@ def nemenyi_posthoc(
     for i in range(k):
         for j in range(k):
             diff_matrix[i, j] = abs(avg_ranks[i] - avg_ranks[j]) / cd
-    names = [f"Alg {i+1}" for i in range(k)]
+    names = [f"Alg {i + 1}" for i in range(k)]
     return pd.DataFrame(diff_matrix, index=names, columns=names)
 
 
@@ -392,9 +388,7 @@ def bergmann_hommel_posthoc(
 # ═════════════════════════════════════════════════════════════════════
 
 
-def wilcoxon_signed_rank_test(
-    scores_a: np.ndarray, scores_b: np.ndarray
-) -> dict[str, Any]:
+def wilcoxon_signed_rank_test(scores_a: np.ndarray, scores_b: np.ndarray) -> dict[str, Any]:
     """
     Wilcoxon signed-rank test – the recommended test for comparing
     two classifiers over multiple datasets (Demšar 2006).
@@ -436,9 +430,7 @@ def sign_test(scores_a: np.ndarray, scores_b: np.ndarray) -> dict[str, Any]:
     }
 
 
-def mcnemar_test(
-    y_true: np.ndarray, pred_a: np.ndarray, pred_b: np.ndarray
-) -> dict[str, Any]:
+def mcnemar_test(y_true: np.ndarray, pred_a: np.ndarray, pred_b: np.ndarray) -> dict[str, Any]:
     """
     McNemar's test for comparing two classifiers on a single test set.
     Uses a 2x2 contingency table of correct/incorrect predictions.
@@ -487,10 +479,7 @@ def cohens_d(a: np.ndarray, b: np.ndarray, paired: bool = True) -> dict[str, flo
     else:
         # Pooled standard deviation
         n1, n2 = len(a), len(b)
-        sd = np.sqrt(
-            ((n1 - 1) * np.var(a, ddof=1) + (n2 - 1) * np.var(b, ddof=1))
-            / (n1 + n2 - 2)
-        )
+        sd = np.sqrt(((n1 - 1) * np.var(a, ddof=1) + (n2 - 1) * np.var(b, ddof=1)) / (n1 + n2 - 2))
     d = diff / sd if sd > 0 else 0.0
     # Interpretation: small=0.2, medium=0.5, large=0.8
     magnitude = (
@@ -541,7 +530,11 @@ def cliffs_delta(a: np.ndarray, b: np.ndarray) -> dict[str, float]:
     magnitude = (
         "negligible"
         if d_abs < 0.147
-        else "small" if d_abs < 0.330 else "medium" if d_abs < 0.474 else "large"
+        else "small"
+        if d_abs < 0.330
+        else "medium"
+        if d_abs < 0.474
+        else "large"
     )
     return {"cliffs_delta": round(delta, 4), "magnitude": magnitude}
 
@@ -567,7 +560,11 @@ def vargha_delaney_a12(a: np.ndarray, b: np.ndarray) -> dict[str, float]:
     magnitude = (
         "negligible"
         if a12 < 0.56
-        else "small" if a12 < 0.64 else "medium" if a12 < 0.71 else "large"
+        else "small"
+        if a12 < 0.64
+        else "medium"
+        if a12 < 0.71
+        else "large"
     )
     return {"vargha_delaney_A12": round(a12, 4), "magnitude": magnitude}
 
@@ -731,7 +728,7 @@ def run_full_statistical_analysis(
     """
     n, k = scores_matrix.shape
     if algorithm_names is None:
-        algorithm_names = [f"Algorithm {i+1}" for i in range(k)]
+        algorithm_names = [f"Algorithm {i + 1}" for i in range(k)]
 
     # Omnibus tests
     friedman = friedman_test(scores_matrix)
@@ -747,8 +744,7 @@ def run_full_statistical_analysis(
         "friedman_aligned_ranks": friedman_aligned,
         "quade": quade,
         "ranking": [
-            (name, round(rank, 3))
-            for name, rank in zip(algorithm_names, friedman["avg_ranks"])
+            (name, round(rank, 3)) for name, rank in zip(algorithm_names, friedman["avg_ranks"])
         ],
         "best_algorithm": algorithm_names[np.argmin(friedman["avg_ranks"])],
     }

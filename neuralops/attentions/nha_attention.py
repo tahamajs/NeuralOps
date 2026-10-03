@@ -34,6 +34,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -189,9 +190,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = (
-                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            )
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -337,16 +336,12 @@ class NativeHybridAttention(BaseAttention):
             _cfg_get(
                 comp_config,
                 "rff_features",
-                _cfg_get(
-                    config, "rff_features", kwargs.get("rff_features", rff_features)
-                ),
+                _cfg_get(config, "rff_features", kwargs.get("rff_features", rff_features)),
             )
         )
 
         # ---------------- decoder detection ----------------
-        model_type = (
-            str(getattr(config, "model_type", "") or "").lower() if config else ""
-        )
+        model_type = str(getattr(config, "model_type", "") or "").lower() if config else ""
         is_dec = (
             getattr(
                 config,
@@ -477,9 +472,7 @@ class NativeHybridAttention(BaseAttention):
         nn.init.constant_(self.gate.bias, 3.0)
 
         self.rotary_emb = (
-            getattr(source_attn, "rotary_emb", None)
-            if source_attn is not None
-            else None
+            getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
         )
 
         if source_attn is not None:
@@ -513,9 +506,7 @@ class NativeHybridAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
             (
@@ -533,10 +524,7 @@ class NativeHybridAttention(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 )
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -718,9 +706,7 @@ class NativeHybridAttention(BaseAttention):
 
                 fnorm = float(torch.linalg.norm(target_mod.weight.float()).item())
                 if fnorm < 1e-4:
-                    logger.warning(
-                        "NHA: '%s' weight norm too small (%.2e).", key, fnorm
-                    )
+                    logger.warning("NHA: '%s' weight norm too small (%.2e).", key, fnorm)
 
         if self.lora_rank > 0:
             self.q_proj.freeze_base_weights()
@@ -816,11 +802,7 @@ class NativeHybridAttention(BaseAttention):
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
         valid_mask = get_token_valid_mask(attention_mask, B, N, hidden_states.device)
 
-        Q = (
-            self.q_proj(hidden_states)
-            .view(B, N, self.num_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
+        Q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
         K_new = (
             self.k_proj(hidden_states)
             .view(B, N, self.num_kv_heads, self.head_dim)
@@ -841,17 +823,11 @@ class NativeHybridAttention(BaseAttention):
             and len(position_embeddings) >= 2
         ):
             cos, sin = position_embeddings[0], position_embeddings[1]
-            Q, K_new = apply_rotary_pos_emb(
-                Q, K_new, cos, sin, kwargs.get("position_ids")
-            )
+            Q, K_new = apply_rotary_pos_emb(Q, K_new, cos, sin, kwargs.get("position_ids"))
         elif self.rotary_emb is not None:
             pos_ids = kwargs.get("position_ids")
             if pos_ids is None:
-                pos_ids = (
-                    torch.arange(N, device=hidden_states.device)
-                    .unsqueeze(0)
-                    .expand(B, -1)
-                )
+                pos_ids = torch.arange(N, device=hidden_states.device).unsqueeze(0).expand(B, -1)
             try:
                 # NHA-FIX-11: pass a meaningful reference tensor
                 cos, sin = self.rotary_emb(K_new, pos_ids)
@@ -898,9 +874,7 @@ class NativeHybridAttention(BaseAttention):
         if past_len > 0:
             all_valid = torch.cat(
                 [
-                    torch.ones(
-                        B, past_len, device=hidden_states.device, dtype=torch.bool
-                    ),
+                    torch.ones(B, past_len, device=hidden_states.device, dtype=torch.bool),
                     valid_mask,
                 ],
                 dim=1,
@@ -908,12 +882,8 @@ class NativeHybridAttention(BaseAttention):
         else:
             all_valid = valid_mask
 
-        local_out = self._local_window_attention(
-            Q, K_full, V_full, all_valid, is_causal=is_causal
-        )
-        global_out = self._global_rff_attention(
-            Q, K_full, V_full, all_valid, is_causal=is_causal
-        )
+        local_out = self._local_window_attention(Q, K_full, V_full, all_valid, is_causal=is_causal)
+        global_out = self._global_rff_attention(Q, K_full, V_full, all_valid, is_causal=is_causal)
 
         gate = torch.sigmoid(self.gate(hidden_states)).unsqueeze(1)  # (B, 1, N, 1)
 
@@ -924,9 +894,7 @@ class NativeHybridAttention(BaseAttention):
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                 out = out * head_mask.view(1, self.num_heads, 1, 1).to(out.dtype)
             elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                out = out * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(
-                    out.dtype
-                )
+                out = out * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(out.dtype)
             elif head_mask.dim() == 4:
                 out = out * head_mask.to(out.dtype)
 
@@ -1000,9 +968,7 @@ def inject_nha(
             layer_list = target.model.layers
         elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
             layer_list = target.encoder.layer
-        elif hasattr(target, "layers") and isinstance(
-            target.layers, (nn.ModuleList, list)
-        ):
+        elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
             layer_list = target.layers
 
         if layer_list is not None:

@@ -15,13 +15,23 @@ Supports d_k = d_v <= 64.
 from __future__ import annotations
 
 import torch
+
 try:
     import triton
     import triton.language as tl
+
     HAS_TRITON = True
 except ImportError:
     HAS_TRITON = False
-    triton = type("triton", (), {"jit": lambda f: f, "heuristics": lambda *a, **kw: lambda f: f, "autotune": lambda *a, **kw: lambda f: f})
+    triton = type(
+        "triton",
+        (),
+        {
+            "jit": lambda f: f,
+            "heuristics": lambda *a, **kw: lambda f: f,
+            "autotune": lambda *a, **kw: lambda f: f,
+        },
+    )
     tl = None
 
 MAX_REGISTER_DIM = 64
@@ -84,39 +94,27 @@ def _gdn_fwd_kernel(
     for t in range(L_size):
         # Load q, k, v
         q_t = tl.load(
-            q_ptr
-            + pid_b * stride_qb
-            + pid_h * stride_qh
-            + t * stride_ql
-            + offs_d * stride_qd,
+            q_ptr + pid_b * stride_qb + pid_h * stride_qh + t * stride_ql + offs_d * stride_qd,
             mask=mask_d,
             other=0.0,
         ).to(tl.float32)
         k_t = tl.load(
-            k_ptr
-            + pid_b * stride_kb
-            + pid_h * stride_kh
-            + t * stride_kl
-            + offs_d * stride_kd,
+            k_ptr + pid_b * stride_kb + pid_h * stride_kh + t * stride_kl + offs_d * stride_kd,
             mask=mask_d,
             other=0.0,
         ).to(tl.float32)
         v_t = tl.load(
-            v_ptr
-            + pid_b * stride_vb
-            + pid_h * stride_vh
-            + t * stride_vl
-            + offs_d * stride_vd,
+            v_ptr + pid_b * stride_vb + pid_h * stride_vh + t * stride_vl + offs_d * stride_vd,
             mask=mask_d,
             other=0.0,
         ).to(tl.float32)
 
-        beta_t = tl.load(
-            beta_ptr + pid_b * stride_bb + pid_h * stride_bh + t * stride_bl
-        ).to(tl.float32)
-        alpha_t = tl.load(
-            alpha_ptr + pid_b * stride_ab + pid_h * stride_ah + t * stride_al
-        ).to(tl.float32)
+        beta_t = tl.load(beta_ptr + pid_b * stride_bb + pid_h * stride_bh + t * stride_bl).to(
+            tl.float32
+        )
+        alpha_t = tl.load(alpha_ptr + pid_b * stride_ab + pid_h * stride_ah + t * stride_al).to(
+            tl.float32
+        )
 
         # inter_v = k_t @ S -> (D,)
         # k_t is (D,) and S is (D, D). Result = sum_i k_t[i] * S[i, :]
@@ -138,11 +136,7 @@ def _gdn_fwd_kernel(
 
         # Store y
         tl.store(
-            y_ptr
-            + pid_b * stride_yb
-            + pid_h * stride_yh
-            + t * stride_yl
-            + offs_d * stride_yd,
+            y_ptr + pid_b * stride_yb + pid_h * stride_yh + t * stride_yl + offs_d * stride_yd,
             y_t.to(y_ptr.dtype.element_ty),
             mask=mask_d,
         )
@@ -240,48 +234,32 @@ def _gdn_bwd_kernel(
     for t in range(L_size - 1, -1, -1):
         # Load inputs
         q_t = tl.load(
-            q_ptr
-            + pid_b * stride_qb
-            + pid_h * stride_qh
-            + t * stride_ql
-            + offs_d * stride_qd,
+            q_ptr + pid_b * stride_qb + pid_h * stride_qh + t * stride_ql + offs_d * stride_qd,
             mask=mask_d,
             other=0.0,
         ).to(tl.float32)
         k_t = tl.load(
-            k_ptr
-            + pid_b * stride_kb
-            + pid_h * stride_kh
-            + t * stride_kl
-            + offs_d * stride_kd,
+            k_ptr + pid_b * stride_kb + pid_h * stride_kh + t * stride_kl + offs_d * stride_kd,
             mask=mask_d,
             other=0.0,
         ).to(tl.float32)
         v_t = tl.load(
-            v_ptr
-            + pid_b * stride_vb
-            + pid_h * stride_vh
-            + t * stride_vl
-            + offs_d * stride_vd,
+            v_ptr + pid_b * stride_vb + pid_h * stride_vh + t * stride_vl + offs_d * stride_vd,
             mask=mask_d,
             other=0.0,
         ).to(tl.float32)
         dy_t = tl.load(
-            dy_ptr
-            + pid_b * stride_dyb
-            + pid_h * stride_dyh
-            + t * stride_dyl
-            + offs_d * stride_dyd,
+            dy_ptr + pid_b * stride_dyb + pid_h * stride_dyh + t * stride_dyl + offs_d * stride_dyd,
             mask=mask_d,
             other=0.0,
         ).to(tl.float32)
 
-        beta_t = tl.load(
-            beta_ptr + pid_b * stride_bb + pid_h * stride_bh + t * stride_bl
-        ).to(tl.float32)
-        alpha_t = tl.load(
-            alpha_ptr + pid_b * stride_ab + pid_h * stride_ah + t * stride_al
-        ).to(tl.float32)
+        beta_t = tl.load(beta_ptr + pid_b * stride_bb + pid_h * stride_bh + t * stride_bl).to(
+            tl.float32
+        )
+        alpha_t = tl.load(alpha_ptr + pid_b * stride_ab + pid_h * stride_ah + t * stride_al).to(
+            tl.float32
+        )
 
         # Load S_t and S_{t-1} from workspace
         s_t_ptrs = (
@@ -350,35 +328,21 @@ def _gdn_bwd_kernel(
         # === Compute dS_prev for the next (earlier) iteration ===
         # dS_prev = beta_t * dS - step * k_t @ k_t^T @ dS
         kk_outer = k_t[:, None] * k_t[None, :]  # (D, D)
-        dS_prev = beta_t * dS - step * tl.sum(
-            kk_outer[:, :, None] * dS[None, :, :], axis=1
-        )
+        dS_prev = beta_t * dS - step * tl.sum(kk_outer[:, :, None] * dS[None, :, :], axis=1)
 
         # Store gradients
         tl.store(
-            dq_ptr
-            + pid_b * stride_dqb
-            + pid_h * stride_dqh
-            + t * stride_dql
-            + offs_d * stride_dqd,
+            dq_ptr + pid_b * stride_dqb + pid_h * stride_dqh + t * stride_dql + offs_d * stride_dqd,
             dq_t.to(dq_ptr.dtype.element_ty),
             mask=mask_d,
         )
         tl.store(
-            dk_ptr
-            + pid_b * stride_dkb
-            + pid_h * stride_dkh
-            + t * stride_dkl
-            + offs_d * stride_dkd,
+            dk_ptr + pid_b * stride_dkb + pid_h * stride_dkh + t * stride_dkl + offs_d * stride_dkd,
             dk_total.to(dk_ptr.dtype.element_ty),
             mask=mask_d,
         )
         tl.store(
-            dv_ptr
-            + pid_b * stride_dvb
-            + pid_h * stride_dvh
-            + t * stride_dvl
-            + offs_d * stride_dvd,
+            dv_ptr + pid_b * stride_dvb + pid_h * stride_dvh + t * stride_dvl + offs_d * stride_dvd,
             dv_t.to(dv_ptr.dtype.element_ty),
             mask=mask_d,
         )

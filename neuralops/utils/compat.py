@@ -300,14 +300,10 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     has_svd = len(svd_modules) > 0
 
     LORA_KEYWORDS = ("lora_a", "lora_b", "lora_")
-    has_lora = any(
-        any(t in n.lower() for t in LORA_KEYWORDS) for n, _ in model.named_parameters()
-    )
+    has_lora = any(any(t in n.lower() for t in LORA_KEYWORDS) for n, _ in model.named_parameters())
 
     fallback_layers = set()
-    if hasattr(model, "compression_stats") and isinstance(
-        model.compression_stats, dict
-    ):
+    if hasattr(model, "compression_stats") and isinstance(model.compression_stats, dict):
         fb = model.compression_stats.get("fallback_layers", [])
         if isinstance(fb, (list, tuple, set)):
             fallback_layers = set(fb)
@@ -319,13 +315,10 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     for name, param in model.named_parameters():
         n_low = name.lower()
         parent_module_prefix = (
-            name.split(".base_layer.")[0]
-            if ".base_layer." in name
-            else name.rsplit(".", 1)[0]
+            name.split(".base_layer.")[0] if ".base_layer." in name else name.rsplit(".", 1)[0]
         )
         layer_has_lora = any(
-            k.startswith(parent_module_prefix)
-            and any(t in k.lower() for t in LORA_KEYWORDS)
+            k.startswith(parent_module_prefix) and any(t in k.lower() for t in LORA_KEYWORDS)
             for k, _ in model.named_parameters()
         )
 
@@ -393,10 +386,7 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
             )
         ):
             if (
-                has_lora
-                and any(
-                    d in n_low for d in ("classifier.", "pre_classifier.", "score.")
-                )
+                has_lora and any(d in n_low for d in ("classifier.", "pre_classifier.", "score."))
             ) or not param.requires_grad:
                 continue
             trainable_params.append(param)
@@ -608,9 +598,7 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
             n_l = name.lower()
             if _is_protected_param(n_l):
                 priority_buckets[0].append((name, param))
-            elif id(param) in svd_param_ids or any(
-                kw in n_l for kw in SVD_FACTOR_KEYWORDS
-            ):
+            elif id(param) in svd_param_ids or any(kw in n_l for kw in SVD_FACTOR_KEYWORDS):
                 priority_buckets[1].append((name, param))
             elif param.ndim <= 1 or param.numel() <= 32768:
                 priority_buckets[2].append((name, param))
@@ -659,9 +647,7 @@ def get_recovery_params(model: nn.Module) -> list[nn.Parameter]:
     )
     for name, param in model.named_parameters():
         if param.requires_grad:
-            logger.debug(
-                "  %s: %s (%d params)", name, tuple(param.shape), param.numel()
-            )
+            logger.debug("  %s: %s (%d params)", name, tuple(param.shape), param.numel())
 
     return trainable_params
 
@@ -731,9 +717,7 @@ def causal_mask_from_attention_mask(
         return attention_mask.bool()[:, None, None, :]
     if not adapter.causal:
         return attention_mask
-    raise QwenIncompatibleError(
-        f"causal_mask_format_{attention_mask.dim()}d_unsupported"
-    )
+    raise QwenIncompatibleError(f"causal_mask_format_{attention_mask.dim()}d_unsupported")
 
 
 def install_projection_aliases(module: nn.Module) -> nn.Module:
@@ -790,11 +774,7 @@ def convert_mask(
 
 
 def fp32_linalg(op, *tensors: torch.Tensor, **kwargs: Any):
-    dtypes = [
-        x.dtype
-        for x in tensors
-        if isinstance(x, torch.Tensor) and x.is_floating_point()
-    ]
+    dtypes = [x.dtype for x in tensors if isinstance(x, torch.Tensor) and x.is_floating_point()]
     dtype = dtypes[0] if dtypes else torch.float32
     result = op(
         *[
@@ -852,11 +832,7 @@ def wrap_for_family(module: nn.Module, model_family: str | None = None) -> nn.Mo
     family = model_family or detect_family(module)
     install_projection_aliases(module)
     family_aliases = globals().get("FAMILY_ALIASES", {})
-    canonical = (
-        family_aliases.get(family, family)
-        if isinstance(family_aliases, dict)
-        else family
-    )
+    canonical = family_aliases.get(family, family) if isinstance(family_aliases, dict) else family
     return (
         module
         if canonical in {"bert", "roberta", "unknown"}

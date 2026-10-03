@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -92,21 +93,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -146,9 +141,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
         return out
 
@@ -185,9 +178,7 @@ class NativeSparseAttention(BaseAttention):
 
         if hidden_size is None:
             if config is not None:
-                hidden_size = getattr(
-                    config, "hidden_size", getattr(config, "dim", 768)
-                )
+                hidden_size = getattr(config, "hidden_size", getattr(config, "dim", 768))
             elif source_attn is not None:
                 out_layer = getattr(
                     source_attn,
@@ -195,24 +186,18 @@ class NativeSparseAttention(BaseAttention):
                     getattr(
                         source_attn,
                         "dense",
-                        getattr(
-                            source_attn, "c_proj", getattr(source_attn, "o_proj", None)
-                        ),
+                        getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None)),
                     ),
                 )
                 hidden_size = (
-                    getattr(out_layer, "out_features", 768)
-                    if out_layer is not None
-                    else 768
+                    getattr(out_layer, "out_features", 768) if out_layer is not None else 768
                 )
             else:
                 hidden_size = 768
 
         if num_heads is None:
             if config is not None:
-                num_heads = getattr(
-                    config, "num_attention_heads", getattr(config, "n_heads", 12)
-                )
+                num_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12))
             elif source_attn is not None:
                 num_heads = getattr(
                     source_attn,
@@ -349,9 +334,7 @@ class NativeSparseAttention(BaseAttention):
         self.value = self.v_proj
 
         dropout_p = (
-            getattr(
-                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
-            )
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
             if config
             else 0.1
         )
@@ -546,9 +529,7 @@ class NativeSparseAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
                     target_mod.bias.data[:min_b].copy_(
-                        b[:min_b].to(
-                            device=target_mod.bias.device, dtype=target_mod.bias.dtype
-                        )
+                        b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype)
                     )
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
@@ -578,16 +559,8 @@ class NativeSparseAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         Q = self.q_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
-        K = (
-            self.k_proj(hidden_states)
-            .view(B, L, self.num_kv_heads, d)
-            .permute(0, 2, 1, 3)
-        )
-        V = (
-            self.v_proj(hidden_states)
-            .view(B, L, self.num_kv_heads, d)
-            .permute(0, 2, 1, 3)
-        )
+        K = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3)
+        V = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3)
         is_cross = bool(kwargs.get("is_cross_attention", False))
 
         if position_embeddings is not None:
@@ -609,9 +582,7 @@ class NativeSparseAttention(BaseAttention):
                 _qs = Q.half() if Q.dtype == torch.float32 else Q
                 _ks = K.half() if K.dtype == torch.float32 else K
                 _vs = V.half() if V.dtype == torch.float32 else V
-                _is_causal = (
-                    getattr(self, "is_decoder", False) and not is_cross and L > 1
-                )
+                _is_causal = getattr(self, "is_decoder", False) and not is_cross and L > 1
                 _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
                     _qs,
                     _ks,
@@ -625,9 +596,7 @@ class NativeSparseAttention(BaseAttention):
                     .contiguous()
                     .view(B, L, self.all_head_size)
                 )
-                _sdpa_out = torch.nan_to_num(
-                    _sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4
-                )
+                _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
                 return (
                     self.out_proj(_sdpa_out)
                     if not getattr(self, "is_nested_encoder", False)
@@ -679,9 +648,7 @@ class NativeSparseAttention(BaseAttention):
                 non_local_scores = non_local_scores.masked_fill(~causal_tril, -1e4)
             k_val = min(self.top_k, max(1, L - (2 * self.window_size + 1)))
             _, topk_ind = torch.topk(non_local_scores, k=k_val, dim=-1)
-            topk_mask = torch.zeros_like(scores, dtype=torch.bool).scatter_(
-                -1, topk_ind, True
-            )
+            topk_mask = torch.zeros_like(scores, dtype=torch.bool).scatter_(-1, topk_ind, True)
             total_mask = (local_mask_4d | topk_mask) & key_valid_4d
 
         if is_dec:
@@ -708,9 +675,7 @@ class NativeSparseAttention(BaseAttention):
 
         context = torch.matmul(attn, V)
         context = context * valid_mask_2d.unsqueeze(1).unsqueeze(-1).to(dtype)
-        context = (
-            context.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
-        )
+        context = context.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
 
         if self.is_nested_encoder:
             output = context
@@ -762,9 +727,7 @@ def inject_nsa(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -775,9 +738,7 @@ def inject_nsa(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=(
-                    comp_config
-                    if "comp_config" in locals() or "comp_config" in kwargs
-                    else None
+                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
                 ),
                 layer_idx=idx,
                 total_layers=tot,
@@ -793,9 +754,7 @@ def inject_nsa(
         old_attn
         if old_attn is not None
         else (
-            getattr(
-                layer, "attention", getattr(layer, "self", getattr(layer, "attn", None))
-            )
+            getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
             if layer is not None
             else None
         )

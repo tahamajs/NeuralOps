@@ -20,8 +20,9 @@ if str(_codes_dir) not in sys.path:
 if str(_cur_dir) not in sys.path:
     sys.path.insert(0, str(_cur_dir))
 
-from neuralops.eval_all_models_datasets import apply_module_to_model
 from lra_datasets import IMDbByteDataset, ListOpsDataset
+
+from neuralops.eval_all_models_datasets import apply_module_to_model
 
 TASK_CONFIG = {
     "listops": {
@@ -130,17 +131,11 @@ def train_task(
                 labels = torch.zeros(size, dtype=torch.long)
                 for i in range(size):
                     if op[i] == 0:
-                        labels[i] = int(
-                            self.input_ids[i, 1:16].sum().item() % num_labels
-                        )
+                        labels[i] = int(self.input_ids[i, 1:16].sum().item() % num_labels)
                     elif op[i] == 1:
-                        labels[i] = int(
-                            self.input_ids[i, 1:16].max().item() % num_labels
-                        )
+                        labels[i] = int(self.input_ids[i, 1:16].max().item() % num_labels)
                     else:
-                        labels[i] = int(
-                            self.input_ids[i, 1:16].min().item() % num_labels
-                        )
+                        labels[i] = int(self.input_ids[i, 1:16].min().item() % num_labels)
                 self.labels = labels
                 self.size = size
 
@@ -177,9 +172,7 @@ def train_task(
         model, _ = apply_module_to_model(model, module_name, device=device)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=current_lr, weight_decay=0.01)
-    train_loader = DataLoader(
-        train_ds, batch_size=current_batch_size, shuffle=True, num_workers=0
-    )
+    train_loader = DataLoader(train_ds, batch_size=current_batch_size, shuffle=True, num_workers=0)
 
     total_steps = (
         num_epochs * len(train_loader)
@@ -187,9 +180,7 @@ def train_task(
         else min(max_steps, num_epochs * len(train_loader))
     )
     actual_warmup_steps = (
-        warmup_steps
-        if warmup_steps is not None
-        else max(1, int(total_steps * warmup_ratio))
+        warmup_steps if warmup_steps is not None else max(1, int(total_steps * warmup_ratio))
     )
 
     from transformers import get_cosine_schedule_with_warmup
@@ -251,14 +242,14 @@ def train_task(
         ):
             acc = evaluate(model, test_ds, current_batch_size)
             print(
-                f"[{task}/{module_name}] Epoch {epoch+1:03d}/{num_epochs} (step {global_step}) | Loss: {avg_loss:.4f} | Acc: {acc:.2f}% (Best: {max(best_acc, acc):.2f}%)",
+                f"[{task}/{module_name}] Epoch {epoch + 1:03d}/{num_epochs} (step {global_step}) | Loss: {avg_loss:.4f} | Acc: {acc:.2f}% (Best: {max(best_acc, acc):.2f}%)",
                 flush=True,
             )
             if acc > best_acc:
                 best_acc = acc
         else:
             print(
-                f"[{task}/{module_name}] Epoch {epoch+1:03d}/{num_epochs} (step {global_step}) | Loss: {avg_loss:.4f}",
+                f"[{task}/{module_name}] Epoch {epoch + 1:03d}/{num_epochs} (step {global_step}) | Loss: {avg_loss:.4f}",
                 flush=True,
             )
 
@@ -298,24 +289,16 @@ if __name__ == "__main__":
     parser.add_argument("--task", required=True, choices=["listops", "imdb"])
     parser.add_argument("--module", required=True)
     parser.add_argument("--output_dir", required=True)
-    parser.add_argument(
-        "--epochs", type=int, default=100, help="Number of training epochs"
-    )
+    parser.add_argument("--epochs", type=int, default=100, help="Number of training epochs")
     parser.add_argument(
         "--max_steps", type=int, default=None, help="Maximum training steps per run"
     )
     parser.add_argument("--batch_size", type=int, default=8, help="Batch size override")
-    parser.add_argument(
-        "--seq_len", type=int, default=2048, help="Sequence length override"
-    )
+    parser.add_argument("--seq_len", type=int, default=2048, help="Sequence length override")
     parser.add_argument("--lr", type=float, default=5e-4, help="Learning rate")
     parser.add_argument("--hidden_size", type=int, default=256, help="Hidden dimension")
-    parser.add_argument(
-        "--num_layers", type=int, default=6, help="Number of transformer layers"
-    )
-    parser.add_argument(
-        "--num_heads", type=int, default=8, help="Number of attention heads"
-    )
+    parser.add_argument("--num_layers", type=int, default=6, help="Number of transformer layers")
+    parser.add_argument("--num_heads", type=int, default=8, help="Number of attention heads")
     parser.add_argument(
         "--intermediate_size", type=int, default=1024, help="Intermediate FFN dimension"
     )
@@ -330,9 +313,7 @@ if __name__ == "__main__":
         default=0.1,
         help="Warmup ratio for cosine schedule",
     )
-    parser.add_argument(
-        "--warmup_steps", type=int, default=None, help="Explicit warmup steps"
-    )
+    parser.add_argument("--warmup_steps", type=int, default=None, help="Explicit warmup steps")
     parser.add_argument(
         "--precision",
         type=str,

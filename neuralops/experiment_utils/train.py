@@ -4,9 +4,10 @@ import os
 from typing import Any
 
 from experiment_logging import LoggingCallback
+from transformers import DataCollatorWithPadding, TrainingArguments
+
 from neuralops.trainer.methods.rdrop_r3f import MethodTrainer
 from neuralops.trainer.trainer import CompressionTrainer, get_compute_metrics
-from transformers import DataCollatorWithPadding, TrainingArguments
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +25,7 @@ def setup_trainer(model, tokenizer, dataset, config, tracker, logger) -> Any:
 
     output_dir = os.path.join(
         config.output_dir,
-        config.exp_name
-        or f"{config.attn_type}_{config.method}_{config.task}_{config.seed}",
+        config.exp_name or f"{config.attn_type}_{config.method}_{config.task}_{config.seed}",
     )
     os.makedirs(output_dir, exist_ok=True)
 

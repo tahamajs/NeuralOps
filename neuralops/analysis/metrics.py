@@ -26,9 +26,7 @@ def compute_metrics(
         preds = np.argmax(predictions, axis=-1) if predictions.ndim > 1 else predictions
         metrics["accuracy"] = accuracy_score(labels, preds)
         metrics["f1_macro"] = f1_score(labels, preds, average="macro", zero_division=0)
-        metrics["f1_weighted"] = f1_score(
-            labels, preds, average="weighted", zero_division=0
-        )
+        metrics["f1_weighted"] = f1_score(labels, preds, average="weighted", zero_division=0)
         if len(np.unique(labels)) == 2:
             metrics["matthews_corrcoef"] = matthews_corrcoef(labels, preds)
     return metrics
@@ -56,9 +54,7 @@ class MetricsTracker:
         self.records: list[dict[str, Any]] = []
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
-    def log(
-        self, metrics: dict[str, Any], step: int | None = None, flush: bool = False
-    ) -> None:
+    def log(self, metrics: dict[str, Any], step: int | None = None, flush: bool = False) -> None:
         """Log."""
         entry = {"step": step} if step is not None else {}
         entry.update(metrics)

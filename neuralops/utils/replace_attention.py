@@ -2,6 +2,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.utils.qwen_compat import bypass_qwen_rope, qwen_attention_mask
 
@@ -35,9 +36,7 @@ class UniversalAttentionWrapper(nn.Module):
     def inner(self, module: nn.Module) -> None:
         self._wrapped_attention = module
 
-    def forward(
-        self, *args: Any, **kwargs: Any
-    ) -> tuple[torch.Tensor, torch.Tensor | None]:
+    def forward(self, *args: Any, **kwargs: Any) -> tuple[torch.Tensor, torch.Tensor | None]:
         # 1. Extract hidden states / input tensor
         hidden_states: torch.Tensor | None = None
         if len(args) > 0 and isinstance(args[0], tuple):
@@ -92,11 +91,7 @@ class UniversalAttentionWrapper(nn.Module):
         from neuralops.core.t5_compat import is_t5_model
 
         cfg = getattr(self._wrapped_attention, "config", getattr(self, "config", None))
-        is_t5 = (
-            is_t5_model(cfg)
-            or key_value_states is not None
-            or position_bias is not None
-        )
+        is_t5 = is_t5_model(cfg) or key_value_states is not None or position_bias is not None
 
         if is_t5:
             out, ret_pos_bias = self._forward_t5(
@@ -124,12 +119,8 @@ class UniversalAttentionWrapper(nn.Module):
                 output_attentions=output_attentions,
                 **kwargs,
             ),
-            lambda: self._wrapped_attention(
-                hidden_states, attention_mask=attention_mask, **kwargs
-            ),
-            lambda: self._wrapped_attention(
-                hidden_states, mask=attention_mask, **kwargs
-            ),
+            lambda: self._wrapped_attention(hidden_states, attention_mask=attention_mask, **kwargs),
+            lambda: self._wrapped_attention(hidden_states, mask=attention_mask, **kwargs),
             lambda: self._wrapped_attention(
                 query=hidden_states,
                 key=hidden_states,
@@ -246,9 +237,7 @@ class UniversalAttentionWrapper(nn.Module):
                 )
 
             if attention_mask is not None:
-                causal_mask = (
-                    attention_mask[:, :, :, :N_k] if attention_mask.dim() == 4 else None
-                )
+                causal_mask = attention_mask[:, :, :, :N_k] if attention_mask.dim() == 4 else None
                 if causal_mask is not None:
                     position_bias = position_bias + causal_mask.to(position_bias.dtype)
 
@@ -311,11 +300,7 @@ class UniversalAttentionWrapper(nn.Module):
                 scores = scores + position_bias.to(scores.dtype)
 
             if attention_mask is not None and attention_mask.dim() == 2:
-                min_val = (
-                    torch.finfo(scores.dtype).min
-                    if scores.dtype.is_floating_point
-                    else -1e4
-                )
+                min_val = torch.finfo(scores.dtype).min if scores.dtype.is_floating_point else -1e4
                 extended_mask = attention_mask.unsqueeze(1).unsqueeze(2) == 0
                 scores = scores.masked_fill(extended_mask, min_val)
 
@@ -329,9 +314,7 @@ class UniversalAttentionWrapper(nn.Module):
             if dropout is not None and callable(dropout):
                 probs = dropout(probs)
 
-            context = (
-                torch.matmul(probs, V).transpose(1, 2).contiguous().view(B, N_q, -1)
-            )
+            context = torch.matmul(probs, V).transpose(1, 2).contiguous().view(B, N_q, -1)
             output = o_mod(context) if o_mod is not None else context
             return output, position_bias
 
@@ -346,9 +329,7 @@ class UniversalAttentionWrapper(nn.Module):
         except TypeError:
             res = self._wrapped_attention(hidden_states, **kwargs)
         if isinstance(res, tuple):
-            return res[0], (
-                res[1] if len(res) > 1 and res[1] is not None else position_bias
-            )
+            return res[0], (res[1] if len(res) > 1 and res[1] is not None else position_bias)
         return res, position_bias
 
     def __getattr__(self, name: str) -> Any:
@@ -404,12 +385,8 @@ def _try_instantiate(
             lambda: attn_fn(config, pretrained_attn=old_attn),
             lambda: attn_fn(config, layer_idx=layer_idx, total_layers=total_layers),
             lambda: attn_fn(config),
-            lambda: attn_fn(
-                config.hidden_size, getattr(config, "num_attention_heads", 12)
-            ),
-            lambda: attn_fn(
-                config, config.hidden_size, getattr(config, "num_attention_heads", 12)
-            ),
+            lambda: attn_fn(config.hidden_size, getattr(config, "num_attention_heads", 12)),
+            lambda: attn_fn(config, config.hidden_size, getattr(config, "num_attention_heads", 12)),
         ]
         for attempt in class_attempts:
             try:
@@ -462,9 +439,7 @@ def _try_instantiate(
         # Pattern G: nha_compressor: (model, tokenizer)
         lambda: attn_fn(None, None),
         # Pattern H: config + hidden_size derived
-        lambda: attn_fn(
-            config, config.hidden_size, getattr(config, "num_attention_heads", 12)
-        ),
+        lambda: attn_fn(config, config.hidden_size, getattr(config, "num_attention_heads", 12)),
         # Pattern I: class(config) only
         lambda: attn_fn(config),
         # Pattern J: class(hidden_size, heads)
@@ -553,9 +528,7 @@ def replace_attention(model, attention_key, layer_indices=None, **kwargs) -> Any
     failed_count = 0
     for name, old_module, layer_idx in targets:
         try:
-            new_attn = _try_instantiate(
-                attn_fn, config, layer_idx, total_layers, old_module
-            )
+            new_attn = _try_instantiate(attn_fn, config, layer_idx, total_layers, old_module)
         except Exception as e:
             print(f"[WARN] Could not replace {name} with '{attention_key}': {e}")
             failed_count += 1
@@ -617,11 +590,9 @@ def replace_attention(model, attention_key, layer_indices=None, **kwargs) -> Any
         print(f"[WARN] No attention layers found to replace for key='{attention_key}'.")
     elif failed_count > 0:
         print(
-            f"Replaced {replaced_count}/{replaced_count+failed_count} layers with '{attention_key}' ({failed_count} skipped)."
+            f"Replaced {replaced_count}/{replaced_count + failed_count} layers with '{attention_key}' ({failed_count} skipped)."
         )
     else:
-        print(
-            f"Successfully replaced {replaced_count} attention layers with '{attention_key}'."
-        )
+        print(f"Successfully replaced {replaced_count} attention layers with '{attention_key}'.")
 
     return model

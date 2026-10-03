@@ -26,9 +26,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("generate_sweep_artifacts")
 
 # Styling constants for publication-grade figures (matching NeurIPS / ICML / ICLR aesthetics)
@@ -102,9 +100,7 @@ def classify_module(name: str, path: str = "") -> tuple[str, str]:
     if is_compressor:
         if any(k in name_lower for k in ["prun", "shed", "replaceme"]):
             return "Compressor", "Structured Pruning Compressor"
-        elif any(
-            k in name_lower for k in ["quant", "slicegpt", "int4", "int8", "rotat"]
-        ):
+        elif any(k in name_lower for k in ["quant", "slicegpt", "int4", "int8", "rotat"]):
             return "Compressor", "Quantization / Rotational Compressor"
         elif any(k in name_lower for k in ["kronecker", "tensor", "tt_"]):
             return "Compressor", "Tensor Decomposition Compressor"
@@ -112,19 +108,13 @@ def classify_module(name: str, path: str = "") -> tuple[str, str]:
             return "Compressor", "SVD Factorization Compressor"
 
     # Attention checks
-    if any(
-        k in name_lower
-        for k in ["mamba", "ssm", "s4", "s5", "h3", "rwkv", "retnet", "hyena"]
-    ):
+    if any(k in name_lower for k in ["mamba", "ssm", "s4", "s5", "h3", "rwkv", "retnet", "hyena"]):
         return "Attention", "State-Space Model (SSM)"
     elif any(
-        k in name_lower
-        for k in ["linear", "kernel", "cosformer", "performer", "reformer", "favor"]
+        k in name_lower for k in ["linear", "kernel", "cosformer", "performer", "reformer", "favor"]
     ):
         return "Attention", "Linear / Kernel Attention"
-    elif any(
-        k in name_lower for k in ["svd", "lora", "low_rank", "rank", "aegis", "lola"]
-    ):
+    elif any(k in name_lower for k in ["svd", "lora", "low_rank", "rank", "aegis", "lola"]):
         return "Attention", "Low-Rank / SVD Attention"
     elif any(
         k in name_lower
@@ -167,8 +157,7 @@ def load_and_enrich_summary(summary_csv: Path) -> pd.DataFrame:
 
     # Classifications
     classifications = [
-        classify_module(row["module_name"], str(row.get("path", "")))
-        for _, row in df.iterrows()
+        classify_module(row["module_name"], str(row.get("path", ""))) for _, row in df.iterrows()
     ]
     df["module_type"] = [c[0] for c in classifications]
     df["subfamily"] = [c[1] for c in classifications]
@@ -176,9 +165,7 @@ def load_and_enrich_summary(summary_csv: Path) -> pd.DataFrame:
     # Baseline comparison (if full attention is present)
     full_baseline = df[df["module_name"] == "full"]
     baseline_acc = (
-        float(full_baseline["accuracy_pct"].iloc[0])
-        if not full_baseline.empty
-        else 90.14
+        float(full_baseline["accuracy_pct"].iloc[0]) if not full_baseline.empty else 90.14
     )
     df["baseline_acc"] = baseline_acc
     df["delta_acc"] = df["accuracy_pct"] - baseline_acc
@@ -319,9 +306,7 @@ def plot_fig2_accuracy_vs_runtime(df: pd.DataFrame, out_dir: Path):
         )
 
     # Compute and plot Pareto frontier (maximizing accuracy, minimizing time)
-    sorted_df = passing.sort_values(
-        by=["elapsed_s", "accuracy_pct"], ascending=[True, False]
-    )
+    sorted_df = passing.sort_values(by=["elapsed_s", "accuracy_pct"], ascending=[True, False])
     pareto_points = []
     max_acc = -1.0
     for _, row in sorted_df.iterrows():
@@ -389,9 +374,7 @@ def plot_fig3_status_breakdown(df: pd.DataFrame, out_dir: Path):
         "FAIL": "#e377c2",
     }
     col_order = [
-        c
-        for c in ["PASS", "INCOMPATIBLE", "OOM_SKIP", "OTHER_SKIP", "FAIL"]
-        if c in ct.columns
+        c for c in ["PASS", "INCOMPATIBLE", "OOM_SKIP", "OTHER_SKIP", "FAIL"] if c in ct.columns
     ]
     ct = ct[col_order]
 
@@ -460,9 +443,7 @@ def plot_fig4_category_performance(df: pd.DataFrame, out_dir: Path):
 
     ax.set_xlim(0, 105)
     ax.set_xlabel("Mean SST-2 Accuracy (%) ± Std Dev", fontweight="bold")
-    ax.set_title(
-        "Performance Aggregated by Architectural Sub-Family", fontweight="bold", pad=12
-    )
+    ax.set_title("Performance Aggregated by Architectural Sub-Family", fontweight="bold", pad=12)
 
     out_png = out_dir / "fig4_category_performance.png"
     out_pdf = out_dir / "fig4_category_performance.pdf"
@@ -553,17 +534,13 @@ def generate_markdown_report(df: pd.DataFrame, out_file: Path, output_dir: Path)
     total_eval = len(df)
     passing = df[df["status"] == "PASS"]
     num_pass = len(passing)
-    num_incompat = len(
-        df[df["status"].str.contains("INCOMPATIBLE", case=False, na=False)]
-    )
+    num_incompat = len(df[df["status"].str.contains("INCOMPATIBLE", case=False, na=False)])
     num_oom = len(df[df["status"].str.contains("OOM", case=False, na=False)])
     num_fail = len(df[df["status"] == "FAIL"])
 
     full_baseline = df[df["module_name"] == "full"]
     baseline_acc = (
-        float(full_baseline["accuracy_pct"].iloc[0])
-        if not full_baseline.empty
-        else 90.14
+        float(full_baseline["accuracy_pct"].iloc[0]) if not full_baseline.empty else 90.14
     )
 
     top_attns = (
@@ -586,7 +563,7 @@ def generate_markdown_report(df: pd.DataFrame, out_file: Path, output_dir: Path)
         "---",
         "## 1. Executive Summary",
         f"- **Total Modules Evaluated:** {total_eval}",
-        f"- **Pass Rate:** {num_pass}/{total_eval} ({(num_pass/max(1, total_eval))*100:.1f}%)",
+        f"- **Pass Rate:** {num_pass}/{total_eval} ({(num_pass / max(1, total_eval)) * 100:.1f}%)",
         f"- **Architectural Incompatibility (Qwen GQA/DeltaNet):** {num_incompat}",
         f"- **CUDA Out-of-Memory (OOM):** {num_oom}",
         f"- **Execution / Dtype Failures:** {num_fail}",
@@ -625,9 +602,7 @@ def generate_markdown_report(df: pd.DataFrame, out_file: Path, output_dir: Path)
         ]
     )
 
-    for _, row in df.sort_values(
-        ["status", "accuracy_pct"], ascending=[True, False]
-    ).iterrows():
+    for _, row in df.sort_values(["status", "accuracy_pct"], ascending=[True, False]).iterrows():
         err_snippet = str(row.get("error", ""))[:80].replace("|", "\\|")
         lines.append(
             f"| `{row['module_name']}` | {row['module_type']} | `{row['status']}` | {row['accuracy_pct']:.2f}% | {row['elapsed_s']:.2f}s | {err_snippet} |"

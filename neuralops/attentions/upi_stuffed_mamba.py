@@ -16,6 +16,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
@@ -66,21 +67,15 @@ class LoRALinear(nn.Module):
         self.scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -115,11 +110,7 @@ class LoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         target_dtype = x.dtype
-        w = (
-            self.weight.to(target_dtype)
-            if self.weight.dtype != target_dtype
-            else self.weight
-        )
+        w = self.weight.to(target_dtype) if self.weight.dtype != target_dtype else self.weight
         b = (
             self.bias.to(target_dtype)
             if (self.bias is not None and self.bias.dtype != target_dtype)
@@ -127,23 +118,13 @@ class LoRALinear(nn.Module):
         )
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            a = (
-                self.lora_A.to(target_dtype)
-                if self.lora_A.dtype != target_dtype
-                else self.lora_A
-            )
-            bb = (
-                self.lora_B.to(target_dtype)
-                if self.lora_B.dtype != target_dtype
-                else self.lora_B
-            )
+            a = self.lora_A.to(target_dtype) if self.lora_A.dtype != target_dtype else self.lora_A
+            bb = self.lora_B.to(target_dtype) if self.lora_B.dtype != target_dtype else self.lora_B
             out = out + F.linear(F.linear(x, a), bb) * self.scaling
         return out.to(target_dtype)
 
 
-@ATTENTION_REGISTRY.register(
-    "selective_mamba", supports_causal=True, supports_bidirectional=True
-)
+@ATTENTION_REGISTRY.register("selective_mamba", supports_causal=True, supports_bidirectional=True)
 @ATTENTION_REGISTRY.register(
     "upi_mamba", supports_causal=True, supports_bidirectional=True
 )  # DEPRECATED alias
@@ -191,9 +172,7 @@ class SelectiveMamba(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        src_attn = (
-            pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn")
-        )
+        src_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn")
 
         if dim is None and d_model is None:
             if config is not None and not isinstance(config, int):
@@ -215,12 +194,8 @@ class SelectiveMamba(BaseAttention):
         self.d_conv: int = d_conv
         self.expand: int = expand
         self.inner_dim: int = self.dim * expand
-        self.lora_rank = kwargs.get(
-            "lora_rank", _cfg_get(config, "lora_rank", lora_rank)
-        )
-        self.lora_alpha = kwargs.get(
-            "lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha)
-        )
+        self.lora_rank = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
+        self.lora_alpha = kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
 
         if is_decoder is not None:
             self.is_decoder: bool = is_decoder
@@ -251,9 +226,7 @@ class SelectiveMamba(BaseAttention):
         # then log_decay = -dt * A (negative), giving decay < 1.
         # This is mathematically equivalent to Mamba's
         # A = -exp(A_log), decay = exp(dt * A).
-        A_init = torch.arange(1, d_state + 1, dtype=torch.float32).repeat(
-            self.inner_dim, 1
-        )
+        A_init = torch.arange(1, d_state + 1, dtype=torch.float32).repeat(self.inner_dim, 1)
         self.A_log = nn.Parameter(torch.log(A_init))
 
         # Trainable skip connection D matching inner_dim
@@ -276,8 +249,7 @@ class SelectiveMamba(BaseAttention):
         # Initialize dt_proj bias (Mamba paper Eq. 12)
         dt_min, dt_max = 0.001, 0.1
         dt_init = torch.exp(
-            torch.rand(self.inner_dim) * (math.log(dt_max) - math.log(dt_min))
-            + math.log(dt_min)
+            torch.rand(self.inner_dim) * (math.log(dt_max) - math.log(dt_min)) + math.log(dt_min)
         )
         dt_init_inv = dt_init + torch.log(-torch.expm1(-dt_init))
         with torch.no_grad():
@@ -368,17 +340,13 @@ class SelectiveMamba(BaseAttention):
                 w_v = c_attn_w[2 * split_q : 3 * split_q, :]
 
                 out_w = src.c_proj.weight.detach()
-                if out_w.dim() == 2 and (
-                    out_w.shape[0] != self.dim and out_w.shape[1] == self.dim
-                ):
+                if out_w.dim() == 2 and (out_w.shape[0] != self.dim and out_w.shape[1] == self.dim):
                     out_w = out_w.t()
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
             # Pattern 2: RoBERTa / BERT separate query, key, value
-            elif (
-                hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value")
-            ):
+            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.detach()
                 src.query.bias.detach() if src.query.bias is not None else None
                 w_k = src.key.weight.detach()
@@ -395,11 +363,7 @@ class SelectiveMamba(BaseAttention):
                             break
 
             # Pattern 3: Qwen / LLaMA
-            elif (
-                hasattr(src, "q_proj")
-                and hasattr(src, "k_proj")
-                and hasattr(src, "v_proj")
-            ):
+            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q = src.q_proj.weight.detach()
                 src.q_proj.bias.detach() if src.q_proj.bias is not None else None
                 w_k = src.k_proj.weight.detach()
@@ -409,18 +373,10 @@ class SelectiveMamba(BaseAttention):
 
                 if hasattr(src, "o_proj"):
                     w_o = src.o_proj.weight.detach()
-                    b_o = (
-                        src.o_proj.bias.detach()
-                        if src.o_proj.bias is not None
-                        else None
-                    )
+                    b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
 
             # Pattern 4: DistilBERT
-            elif (
-                hasattr(src, "q_lin")
-                and hasattr(src, "k_lin")
-                and hasattr(src, "v_lin")
-            ):
+            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q = src.q_lin.weight.detach()
                 src.q_lin.bias.detach() if src.q_lin.bias is not None else None
                 w_k = src.k_lin.weight.detach()
@@ -430,18 +386,10 @@ class SelectiveMamba(BaseAttention):
 
                 if hasattr(src, "out_lin"):
                     w_o = src.out_lin.weight.detach()
-                    b_o = (
-                        src.out_lin.bias.detach()
-                        if src.out_lin.bias is not None
-                        else None
-                    )
+                    b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
 
             # Fallback: UniversalAdapter extraction
-            if (
-                w_q is None
-                or w_v is None
-                or (w_o is None and not self.is_nested_encoder)
-            ):
+            if w_q is None or w_v is None or (w_o is None and not self.is_nested_encoder):
                 for proj in ["q", "k", "v", "o"]:
                     try:
                         w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
@@ -455,9 +403,7 @@ class SelectiveMamba(BaseAttention):
                             elif proj == "o" and w_o is None:
                                 w_o, b_o = w, b
                     except Exception as e:
-                        logger.debug(
-                            "UniversalAdapter extraction for %s failed: %s", proj, e
-                        )
+                        logger.debug("UniversalAdapter extraction for %s failed: %s", proj, e)
 
             missing = []
             if w_q is None:
@@ -518,9 +464,7 @@ class SelectiveMamba(BaseAttention):
             q_chunk = w_q_or[:, : self.dim]
 
             self.in_proj.weight.data[: self.inner_dim, : self.dim].copy_(v_chunk)
-            self.in_proj.weight.data[
-                self.inner_dim : 2 * self.inner_dim, : self.dim
-            ].copy_(q_chunk)
+            self.in_proj.weight.data[self.inner_dim : 2 * self.inner_dim, : self.dim].copy_(q_chunk)
 
             if w_o is not None:
                 w_o_or = _orient(w_o, self.inner_dim)
@@ -531,9 +475,9 @@ class SelectiveMamba(BaseAttention):
                 )
                 if b_o is not None and self.out_proj.bias is not None:
                     b_val = b_o.data if isinstance(b_o, nn.Parameter) else b_o
-                    self.out_proj.bias.data[
-                        : min(len(self.out_proj.bias), len(b_val))
-                    ].copy_(b_val[: min(len(self.out_proj.bias), len(b_val))])
+                    self.out_proj.bias.data[: min(len(self.out_proj.bias), len(b_val))].copy_(
+                        b_val[: min(len(self.out_proj.bias), len(b_val))]
+                    )
 
             # Frobenius norm checks
             for name, w in [
@@ -541,9 +485,7 @@ class SelectiveMamba(BaseAttention):
                 ("out_proj", self.out_proj.weight),
             ]:
                 if torch.norm(w.float(), p="fro").item() < 1e-4:
-                    logger.warning(
-                        f"SelectiveMamba: {name} has near-zero Frobenius norm (< 1e-4)"
-                    )
+                    logger.warning(f"SelectiveMamba: {name} has near-zero Frobenius norm (< 1e-4)")
 
             self.in_proj.freeze_base_weights()
             self.out_proj.freeze_base_weights()
@@ -604,9 +546,7 @@ class SelectiveMamba(BaseAttention):
                             )
                             self.out_proj.lora_A.requires_grad = True
                         if hasattr(src_lB, "data") and self.out_proj.lora_B is not None:
-                            out_min = min(
-                                self.out_proj.lora_B.shape[0], src_lB.shape[0]
-                            )
+                            out_min = min(self.out_proj.lora_B.shape[0], src_lB.shape[0])
                             r_min = min(self.out_proj.lora_B.shape[1], src_lB.shape[1])
                             self.out_proj.lora_B.data[:out_min, :r_min].copy_(
                                 src_lB.data[:out_min, :r_min]
@@ -635,17 +575,10 @@ class SelectiveMamba(BaseAttention):
                 mask = torch.flip(mask, dims=[1])
 
         batch, seqlen, _ = x.shape
-        A = torch.exp(
-            torch.clamp(self.A_log.float(), min=-20.0, max=10.0)
-        )  # [inner_dim, d_state]
+        A = torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0))  # [inner_dim, d_state]
 
         # Path 1: Hardware-fused Triton selective scan on CUDA
-        if (
-            HAS_TRITON_UPI
-            and triton_selective_scan is not None
-            and x.is_cuda
-            and mask is None
-        ):
+        if HAS_TRITON_UPI and triton_selective_scan is not None and x.is_cuda and mask is None:
             try:
                 return triton_selective_scan(
                     x.contiguous(),
@@ -667,9 +600,7 @@ class SelectiveMamba(BaseAttention):
 
         chunk_size = 64
         num_chunks = (seqlen + chunk_size - 1) // chunk_size
-        h_running = x.new_zeros(
-            batch, self.inner_dim, self.d_state, dtype=torch.float32
-        )
+        h_running = x.new_zeros(batch, self.inner_dim, self.d_state, dtype=torch.float32)
         y_chunks = []
         A_view = A.view(1, 1, self.inner_dim, self.d_state)
 
@@ -733,8 +664,7 @@ class SelectiveMamba(BaseAttention):
 
         if head_mask is not None:
             logger.warning(
-                "SelectiveMamba does not use head_mask (SSM has no heads). "
-                "Ignoring head_mask."
+                "SelectiveMamba does not use head_mask (SSM has no heads). Ignoring head_mask."
             )
 
         mask_bool = None
@@ -771,9 +701,7 @@ class SelectiveMamba(BaseAttention):
         x_in, z = xz.chunk(2, dim=-1)
 
         conv_w = self.conv1d.weight.to(x_in.dtype)
-        conv_b = (
-            self.conv1d.bias.to(x_in.dtype) if self.conv1d.bias is not None else None
-        )
+        conv_b = self.conv1d.bias.to(x_in.dtype) if self.conv1d.bias is not None else None
         x_conv = (
             F.conv1d(
                 x_in.transpose(1, 2),
@@ -825,9 +753,7 @@ class SelectiveMamba(BaseAttention):
         if is_decoder:
             y = y_fwd
         else:
-            y_bwd = self._selective_scan(
-                x_ssm, dt, B_t, C_t, mask=mask_bool, reverse=True
-            )
+            y_bwd = self._selective_scan(x_ssm, dt, B_t, C_t, mask=mask_bool, reverse=True)
             y = 0.5 * (y_fwd + y_bwd)
 
         gated = (y.to(target_dtype) * F.silu(z.to(target_dtype))).to(target_dtype)
@@ -889,9 +815,7 @@ class SelectiveMamba(BaseAttention):
             self.conv1d.weight,
             self.conv1d.bias,
             groups=self.inner_dim,
-        ).transpose(
-            1, 2
-        )  # (B, 1, inner_dim)
+        ).transpose(1, 2)  # (B, 1, inner_dim)
         new_conv_buf = x_conv_input[:, -(self.d_conv - 1) :]
 
         x_ssm = F.silu(x_conv)
@@ -956,9 +880,7 @@ def inject_selective_mamba(
             or (hasattr(target, "encoder") and hasattr(target.encoder, "layer"))
         ):
             layer_list = None
-            if hasattr(target, "distilbert") and hasattr(
-                target.distilbert, "transformer"
-            ):
+            if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
                 layer_list = target.distilbert.transformer.layer
             elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
                 layer_list = target.roberta.encoder.layer

@@ -15,6 +15,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -25,9 +26,7 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # Decoder detection (OHA-FIX-09)
 # ===========================================================================
-def _detect_decoder(
-    config: Any, is_decoder: bool | None, src_attn: nn.Module | None
-) -> bool:
+def _detect_decoder(config: Any, is_decoder: bool | None, src_attn: nn.Module | None) -> bool:
     if is_decoder is not None:
         return bool(is_decoder)
     if config is not None:
@@ -87,12 +86,8 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
     if rotary_dim < head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot = (q_rot * cos.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q_rot.dtype)
-        )
-        k_rot = (k_rot * cos.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k_rot.dtype)
-        )
+        q_rot = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
         q = torch.cat([q_rot, q_pass], dim=-1)
         k = torch.cat([k_rot, k_pass], dim=-1)
     else:
@@ -192,9 +187,7 @@ class LoRALinear(nn.Module):
 # Main attention
 # ===========================================================================
 @ATTENTION_REGISTRY.register("oha", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register(
-    "optimized_hybrid_attention", supports_causal=True, supports_gqa=True
-)
+@ATTENTION_REGISTRY.register("optimized_hybrid_attention", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("oha_attention", supports_causal=True, supports_gqa=True)
 class OptimizedHybridAttention(BaseAttention):
     is_custom_attention: bool = True
@@ -315,9 +308,7 @@ class OptimizedHybridAttention(BaseAttention):
             self.register_parameter("gate", None)
 
         dropout_p = (
-            getattr(
-                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
-            )
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
             if config
             else 0.1
         )
@@ -390,9 +381,7 @@ class OptimizedHybridAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
             hasattr(src, "self")
@@ -406,10 +395,7 @@ class OptimizedHybridAttention(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -586,18 +572,14 @@ class OptimizedHybridAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
                     target_mod.bias.data[:min_b].copy_(
-                        b[:min_b].to(
-                            device=target_mod.bias.device, dtype=target_mod.bias.dtype
-                        )
+                        b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype)
                     )
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
                 w_norm = float(torch.norm(target_mod.weight.data).item())
                 if w_norm < 1e-4:
-                    logger.warning(
-                        "OHA: weight '%s' has near-zero norm (%.2e)", proj_key, w_norm
-                    )
+                    logger.warning("OHA: weight '%s' has near-zero norm (%.2e)", proj_key, w_norm)
 
         # Sanity check (OHA-FIX-13)
         try:
@@ -658,11 +640,7 @@ class OptimizedHybridAttention(BaseAttention):
 
         Q = self.query(hidden_states).view(B, N, H, d).permute(0, 2, 1, 3)
         K = self.key(hidden_states).view(B, N, self.num_kv_heads, d).permute(0, 2, 1, 3)
-        V = (
-            self.value(hidden_states)
-            .view(B, N, self.num_kv_heads, d)
-            .permute(0, 2, 1, 3)
-        )
+        V = self.value(hidden_states).view(B, N, self.num_kv_heads, d).permute(0, 2, 1, 3)
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -670,10 +648,7 @@ class OptimizedHybridAttention(BaseAttention):
             cos, sin = position_embeddings
             past_len = 0
             if past_key_value is not None:
-                if (
-                    isinstance(past_key_value, (tuple, list))
-                    and len(past_key_value) >= 1
-                ):
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
                     past_len = past_key_value[0].shape[-2]
                 elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
                     past_len = past_key_value.key_cache[0].shape[-2]
@@ -686,9 +661,7 @@ class OptimizedHybridAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        valid_mask_2d = self._prepare_valid_mask(
-            attention_mask, B, N, device
-        )  # (B, N) bool
+        valid_mask_2d = self._prepare_valid_mask(attention_mask, B, N, device)  # (B, N) bool
         key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)  # (B,1,1,N)
 
         scale = 1.0 / math.sqrt(d)
@@ -704,9 +677,7 @@ class OptimizedHybridAttention(BaseAttention):
             band_mask = diff.abs() <= self.window_radius
         local_mask = band_mask.unsqueeze(0).unsqueeze(0) & key_valid_4d
 
-        local_scores = (
-            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-        )
+        local_scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
         local_scores = local_scores.masked_fill(~local_mask, -1e4)
         local_scores = torch.nan_to_num(local_scores, nan=-1e4, posinf=1e4, neginf=-1e4)
         local_probs = F.softmax(local_scores, dim=-1).to(dtype)
@@ -761,21 +732,15 @@ class OptimizedHybridAttention(BaseAttention):
         cv = torch.einsum("bhnd,bnr->bhrd", V, comp_v_weights)
 
         # Query-global attention
-        global_scores = (
-            torch.matmul(Q.float(), ck.float().transpose(-2, -1).contiguous()) * scale
-        )
-        global_scores = torch.nan_to_num(
-            global_scores, nan=-1e4, posinf=1e4, neginf=-1e4
-        )
+        global_scores = torch.matmul(Q.float(), ck.float().transpose(-2, -1).contiguous()) * scale
+        global_scores = torch.nan_to_num(global_scores, nan=-1e4, posinf=1e4, neginf=-1e4)
 
         if self.is_causal:
             # OHA-FIX-03: query at i sees slot r only if the entire chunk r ends at or before i.
             # chunk_ends[r] <= i
             query_pos = torch.arange(N, device=device).unsqueeze(1)  # (N, 1)
             chunk_ends_b = chunk_ends.unsqueeze(0)  # (1, R)
-            global_causal = (query_pos >= chunk_ends_b) & slot_valid.unsqueeze(
-                0
-            )  # (N, R)
+            global_causal = (query_pos >= chunk_ends_b) & slot_valid.unsqueeze(0)  # (N, R)
             global_scores = global_scores.masked_fill(
                 ~global_causal.unsqueeze(0).unsqueeze(0), -1e4
             )
@@ -810,9 +775,7 @@ class OptimizedHybridAttention(BaseAttention):
         # Zero-out padded query positions
         context = context * valid_mask_2d.unsqueeze(1).unsqueeze(-1).to(context.dtype)
 
-        context = (
-            context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
-        )
+        context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
             out = context
@@ -908,9 +871,7 @@ def inject_oha(
         new_attn = OptimizedHybridAttention(
             config=cfg,
             window_size=getattr(comp_config, "window_size", 64) if comp_config else 64,
-            compression_rank=(
-                getattr(comp_config, "compression_rank", 32) if comp_config else 32
-            ),
+            compression_rank=(getattr(comp_config, "compression_rank", 32) if comp_config else 32),
             comp_config=comp_config,
             old_attn=src_attn,
             is_decoder=is_dec,

@@ -28,6 +28,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.compression_engine.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
@@ -137,33 +138,19 @@ class FusedQKVSVDLinear(nn.Module):
             dtype = torch.float32
 
         # Q, K, V factor pairs
-        self.q_A = nn.Parameter(
-            torch.empty(self.split_size, self.rank, dtype=dtype, device=device)
-        )
-        self.q_B = nn.Parameter(
-            torch.empty(self.rank, in_features, dtype=dtype, device=device)
-        )
-        self.k_A = nn.Parameter(
-            torch.empty(self.split_size, self.rank, dtype=dtype, device=device)
-        )
-        self.k_B = nn.Parameter(
-            torch.empty(self.rank, in_features, dtype=dtype, device=device)
-        )
-        self.v_A = nn.Parameter(
-            torch.empty(self.split_size, self.rank, dtype=dtype, device=device)
-        )
-        self.v_B = nn.Parameter(
-            torch.empty(self.rank, in_features, dtype=dtype, device=device)
-        )
+        self.q_A = nn.Parameter(torch.empty(self.split_size, self.rank, dtype=dtype, device=device))
+        self.q_B = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
+        self.k_A = nn.Parameter(torch.empty(self.split_size, self.rank, dtype=dtype, device=device))
+        self.k_B = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
+        self.v_A = nn.Parameter(torch.empty(self.split_size, self.rank, dtype=dtype, device=device))
+        self.v_B = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
 
         for A, B in ((self.q_A, self.q_B), (self.k_A, self.k_B), (self.v_A, self.v_B)):
             nn.init.kaiming_uniform_(A, a=math.sqrt(5))
             nn.init.zeros_(B)
 
         if bias:
-            self.bias = nn.Parameter(
-                torch.zeros(out_features, dtype=dtype, device=device)
-            )
+            self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device))
         else:
             self.register_parameter("bias", None)
 
@@ -216,18 +203,12 @@ class FusedQKVSVDLinear(nn.Module):
             with torch.no_grad():
                 A_param.data.zero_()
                 B_param.data.zero_()
-                A_param.data[:, :r].copy_(
-                    A_new.to(device=A_param.device, dtype=A_param.dtype)
-                )
-                B_param.data[:r, :].copy_(
-                    B_new.to(device=B_param.device, dtype=B_param.dtype)
-                )
+                A_param.data[:, :r].copy_(A_new.to(device=A_param.device, dtype=A_param.dtype))
+                B_param.data[:r, :].copy_(B_new.to(device=B_param.device, dtype=B_param.dtype))
 
     # ------------------------------------------------------------------
     @staticmethod
-    def _forward_factor(
-        x: torch.Tensor, A: torch.Tensor, B: torch.Tensor
-    ) -> torch.Tensor:
+    def _forward_factor(x: torch.Tensor, A: torch.Tensor, B: torch.Tensor) -> torch.Tensor:
         h = F.linear(x.to(B.dtype), B)
         return F.linear(h, A)
 
@@ -262,9 +243,7 @@ class FusedQKVSVDLinear(nn.Module):
         """Register the calibration activation mean (input centering)."""
         mu_f = mu.detach().float().to(self._input_mean.device)
         if mu_f.shape[0] != self.in_features:
-            raise ValueError(
-                f"input_mean shape {tuple(mu_f.shape)} != ({self.in_features},)"
-            )
+            raise ValueError(f"input_mean shape {tuple(mu_f.shape)} != ({self.in_features},)")
         self._input_mean.copy_(mu_f)
         self._has_input_mean = True
 
@@ -334,9 +313,7 @@ class AdaSVDCompressor(BaseCompressor):
                     cli_rank = int(arg.split("=")[1])
                 except ValueError:
                     pass
-            elif arg in ("--adasvd_use_gating_d", "--use_gating_d") and idx + 1 < len(
-                sys.argv
-            ):
+            elif arg in ("--adasvd_use_gating_d", "--use_gating_d") and idx + 1 < len(sys.argv):
                 cli_use_gating_d = sys.argv[idx + 1].lower() in ("true", "1", "yes")
             elif arg.startswith(("--adasvd_use_gating_d=", "--use_gating_d=")):
                 cli_use_gating_d = arg.split("=")[1].lower() in ("true", "1", "yes")
@@ -360,9 +337,7 @@ class AdaSVDCompressor(BaseCompressor):
                 _cfg_get(cfg, "target_param_ratio", target_param_ratio),
             )
         )
-        self.num_iters = int(
-            _cfg_get(cfg, "adasvd_iters", _cfg_get(cfg, "num_iters", num_iters))
-        )
+        self.num_iters = int(_cfg_get(cfg, "adasvd_iters", _cfg_get(cfg, "num_iters", num_iters)))
         self.max_error = float(
             _cfg_get(cfg, "adasvd_max_error", _cfg_get(cfg, "max_error", max_error))
         )
@@ -380,9 +355,7 @@ class AdaSVDCompressor(BaseCompressor):
                 _cfg_get(cfg, "target_attention_only", target_attention_only),
             )
         )
-        self.min_rank = int(
-            _cfg_get(cfg, "adasvd_min_rank", _cfg_get(cfg, "min_rank", min_rank))
-        )
+        self.min_rank = int(_cfg_get(cfg, "adasvd_min_rank", _cfg_get(cfg, "min_rank", min_rank)))
 
         self.use_weighted_als = (
             cli_use_weighted_als
@@ -457,9 +430,7 @@ class AdaSVDCompressor(BaseCompressor):
             or DEFAULT_CALIBRATION_CORPUS
         )
         self.device = (
-            torch.device(device)
-            if device is not None
-            else next(model.parameters()).device
+            torch.device(device) if device is not None else next(model.parameters()).device
         )
         self.comp_config = cfg
 
@@ -490,8 +461,7 @@ class AdaSVDCompressor(BaseCompressor):
         if isinstance(module, (SVDLinear, FusedQKVSVDLinear)):
             return False
         if any(
-            name.endswith(sfx)
-            for sfx in (".base_layer", ".lora_A", ".lora_B", ".lora_dropout")
+            name.endswith(sfx) for sfx in (".base_layer", ".lora_A", ".lora_B", ".lora_dropout")
         ):
             return False
 
@@ -500,11 +470,7 @@ class AdaSVDCompressor(BaseCompressor):
         target_mod.__class__.__name__.lower()
 
         weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
-        if (
-            weight_tensor is None
-            or not hasattr(weight_tensor, "dim")
-            or weight_tensor.dim() != 2
-        ):
+        if weight_tensor is None or not hasattr(weight_tensor, "dim") or weight_tensor.dim() != 2:
             return False
 
         is_linear_like = (
@@ -626,9 +592,7 @@ class AdaSVDCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     # Calibration
     # ------------------------------------------------------------------
-    def _collect_activations(
-        self, calibration_data: Any | None = None
-    ) -> dict[str, torch.Tensor]:
+    def _collect_activations(self, calibration_data: Any | None = None) -> dict[str, torch.Tensor]:
         activations: dict[str, list[torch.Tensor]] = {}
         out_activations: dict[str, list[torch.Tensor]] = {}
         hooks = []
@@ -643,16 +607,12 @@ class AdaSVDCompressor(BaseCompressor):
                 is_conv1d = (
                     (
                         Conv1D is not None
-                        and (
-                            isinstance(module, Conv1D) or isinstance(target_mod, Conv1D)
-                        )
+                        and (isinstance(module, Conv1D) or isinstance(target_mod, Conv1D))
                     )
                     or hasattr(module, "nf")
                     or hasattr(target_mod, "nf")
                 )
-                weight_tensor = getattr(
-                    target_mod, "weight", getattr(module, "weight", None)
-                )
+                weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
                 if weight_tensor is None or weight_tensor.dim() != 2:
                     return
 
@@ -668,9 +628,7 @@ class AdaSVDCompressor(BaseCompressor):
                     bucket.append(x_active[:avail].cpu())
 
                 if isinstance(outp, torch.Tensor):
-                    out_f = (
-                        weight_tensor.shape[1] if is_conv1d else weight_tensor.shape[0]
-                    )
+                    out_f = weight_tensor.shape[1] if is_conv1d else weight_tensor.shape[0]
                     y_flat = outp.detach().float().reshape(-1, out_f)
                     y_bucket = out_activations.setdefault(layer_name, [])
                     curr_ny = sum(t.size(0) for t in y_bucket)
@@ -717,9 +675,7 @@ class AdaSVDCompressor(BaseCompressor):
                                 dummy_x = torch.randn(128, 64, device=dev)
                                 self.model(dummy_x)
                             except Exception as e:
-                                logger.debug(
-                                    "AdaSVD synthetic calibration failed: %s", e
-                                )
+                                logger.debug("AdaSVD synthetic calibration failed: %s", e)
         except Exception as e:
             logger.debug("AdaSVD calibration pass exception: %s", e)
         finally:
@@ -771,9 +727,7 @@ class AdaSVDCompressor(BaseCompressor):
                         self.model(batch.to(dev))
                     elif isinstance(batch, dict):
                         b_dev = {
-                            k: v.to(dev)
-                            for k, v in batch.items()
-                            if isinstance(v, torch.Tensor)
+                            k: v.to(dev) for k, v in batch.items() if isinstance(v, torch.Tensor)
                         }
                         self.model(**b_dev)
                     else:
@@ -863,9 +817,7 @@ class AdaSVDCompressor(BaseCompressor):
                 )
             diff = W.float() - recon
             num = math.sqrt(max(0.0, torch.trace(diff @ E @ diff.t()).item()))
-            den = math.sqrt(
-                max(1e-9, torch.trace(W.float() @ E @ W.float().t()).item())
-            )
+            den = math.sqrt(max(1e-9, torch.trace(W.float() @ E @ W.float().t()).item()))
             return float(num / (den + 1e-9))
 
         best_A, best_B = A.clone(), B.clone()
@@ -880,9 +832,7 @@ class AdaSVDCompressor(BaseCompressor):
                 A_new = (
                     WE
                     @ B.t()
-                    @ torch.linalg.inv(
-                        BEBt + eps_B * torch.eye(r, device=device, dtype=BEBt.dtype)
-                    )
+                    @ torch.linalg.inv(BEBt + eps_B * torch.eye(r, device=device, dtype=BEBt.dtype))
                 )
             except Exception:
                 break
@@ -891,9 +841,7 @@ class AdaSVDCompressor(BaseCompressor):
             eps_A = max(1e-9, float(1e-6 * AtDA.trace().item() / max(1, r)))
             try:
                 B_new = (
-                    torch.linalg.inv(
-                        AtDA + eps_A * torch.eye(r, device=device, dtype=AtDA.dtype)
-                    )
+                    torch.linalg.inv(AtDA + eps_A * torch.eye(r, device=device, dtype=AtDA.dtype))
                     @ A_new.t()
                     @ DW
                 )
@@ -936,9 +884,7 @@ class AdaSVDCompressor(BaseCompressor):
         raw_w = w.data
         in_f, out_f = raw_w.shape
         if out_f % 3 != 0:
-            logger.warning(
-                "FusedQKV %s: out_features %d not divisible by 3", name, out_f
-            )
+            logger.warning("FusedQKV %s: out_features %d not divisible by 3", name, out_f)
             return None, float("inf"), 0
 
         split_size = out_f // 3
@@ -998,8 +944,7 @@ class AdaSVDCompressor(BaseCompressor):
 
         if rel_err > threshold:
             logger.warning(
-                "AdaSVD fused-QKV %s: err=%.4f > threshold %.4f; "
-                "falling back to original.",
+                "AdaSVD fused-QKV %s: err=%.4f > threshold %.4f; falling back to original.",
                 name,
                 rel_err,
                 threshold,
@@ -1035,10 +980,7 @@ class AdaSVDCompressor(BaseCompressor):
 
         target_mod = getattr(layer, "base_layer", layer)
         is_conv1d = (
-            (
-                Conv1D is not None
-                and (isinstance(layer, Conv1D) or isinstance(target_mod, Conv1D))
-            )
+            (Conv1D is not None and (isinstance(layer, Conv1D) or isinstance(target_mod, Conv1D)))
             or hasattr(layer, "nf")
             or hasattr(target_mod, "nf")
         )
@@ -1055,9 +997,7 @@ class AdaSVDCompressor(BaseCompressor):
             out_f, in_f = raw_w.shape[0], raw_w.shape[1]
             W = raw_w.float()
 
-        max_param_r = max(
-            1, min(in_f, out_f, int(0.75 * (in_f * out_f) / (in_f + out_f)))
-        )
+        max_param_r = max(1, min(in_f, out_f, int(0.75 * (in_f * out_f) / (in_f + out_f))))
         if self.rank is not None:
             r_floor = max(1, min(self.min_rank, rank))
         else:
@@ -1075,11 +1015,7 @@ class AdaSVDCompressor(BaseCompressor):
             mean_shift = (W.float() @ mu_x).to(dtype=torch.float32)
             self.mean_shifts[name] = mean_shift.cpu()
 
-        X = (
-            X_calib
-            if X_calib is not None
-            else self.calibration_activations.get(name, None)
-        )
+        X = X_calib if X_calib is not None else self.calibration_activations.get(name, None)
         X_centered = None
         C_X = None
         if X is not None:
@@ -1089,18 +1025,9 @@ class AdaSVDCompressor(BaseCompressor):
         elif covariance is not None and covariance.shape == (in_f, in_f):
             C_X = covariance.to(device=device, dtype=torch.float32)
 
-        D_var = (
-            out_variance
-            if out_variance is not None
-            else self.layer_out_vars.get(name, None)
-        )
+        D_var = out_variance if out_variance is not None else self.layer_out_vars.get(name, None)
 
-        if (
-            C_X is not None
-            and D_var is not None
-            and self.use_weighted_als
-            and self.num_iters > 0
-        ):
+        if C_X is not None and D_var is not None and self.use_weighted_als and self.num_iters > 0:
             A, B, final_err, actual_iters = self._two_sided_als(
                 W,
                 r,
@@ -1162,9 +1089,7 @@ class AdaSVDCompressor(BaseCompressor):
             if hasattr(svd_layer, "register_buffer"):
                 try:
                     # Only register if not already registered
-                    if not any(
-                        n == "_input_mean" for n, _ in svd_layer.named_buffers()
-                    ):
+                    if not any(n == "_input_mean" for n, _ in svd_layer.named_buffers()):
                         svd_layer.register_buffer("_input_mean", mu_f, persistent=True)
                     else:
                         svd_layer._input_mean.copy_(mu_f)
@@ -1177,9 +1102,7 @@ class AdaSVDCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     # Main compress
     # ------------------------------------------------------------------
-    def compress(
-        self, calibration_data: Any | None = None
-    ) -> tuple[nn.Module, dict[str, Any]]:
+    def compress(self, calibration_data: Any | None = None) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers = []
         self.fallback_layers = []
         self.layer_errors = {}
@@ -1210,9 +1133,7 @@ class AdaSVDCompressor(BaseCompressor):
 
         # ---- Step 1: calibration ----
         t_calib_start = time.monotonic()
-        self.calibration_activations = self._collect_activations(
-            calibration_data=calibration_data
-        )
+        self.calibration_activations = self._collect_activations(calibration_data=calibration_data)
         self.calibration_time_s = time.monotonic() - t_calib_start
         logger.info("AdaSVD calibration time: %.2f s", self.calibration_time_s)
 
@@ -1221,9 +1142,7 @@ class AdaSVDCompressor(BaseCompressor):
         total_importance = 0.0
         for name, module in target_layers:
             target_mod = getattr(module, "base_layer", module)
-            weight_tensor = getattr(
-                target_mod, "weight", getattr(module, "weight", None)
-            )
+            weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
             if weight_tensor is None or weight_tensor.dim() != 2:
                 continue
             is_conv1d = (
@@ -1243,9 +1162,7 @@ class AdaSVDCompressor(BaseCompressor):
         # ---- Step 3: compress each layer ----
         for name, module in target_layers:
             target_mod = getattr(module, "base_layer", module)
-            weight_tensor = getattr(
-                target_mod, "weight", getattr(module, "weight", None)
-            )
+            weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
             if weight_tensor is None or weight_tensor.dim() != 2:
                 continue
             is_conv1d = (
@@ -1262,26 +1179,17 @@ class AdaSVDCompressor(BaseCompressor):
             else:
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
 
-            max_param_r = max(
-                1, min(in_f, out_f, int(0.75 * (in_f * out_f) / (in_f + out_f)))
-            )
+            max_param_r = max(1, min(in_f, out_f, int(0.75 * (in_f * out_f) / (in_f + out_f))))
             if self.rank is not None:
                 r_floor = max(1, min(self.min_rank, self.rank))
                 denom = max(1, len(target_layers))
-                frac = layer_importances.get(name, 1.0) / max(
-                    total_importance / denom, 1e-8
-                )
+                frac = layer_importances.get(name, 1.0) / max(total_importance / denom, 1e-8)
                 allocated_rank = int(round(self.rank * frac))
             else:
                 r_floor = max(self.min_rank, int(0.15 * min(in_f, out_f)))
                 frac = layer_importances.get(name, 1.0) / max(total_importance, 1e-8)
                 allocated_rank = int(
-                    round(
-                        min(in_f, out_f)
-                        * self.target_param_ratio
-                        * frac
-                        * len(target_layers)
-                    )
+                    round(min(in_f, out_f) * self.target_param_ratio * frac * len(target_layers))
                 )
 
             if self._is_fused_qkv_layer(name, module):
@@ -1328,9 +1236,7 @@ class AdaSVDCompressor(BaseCompressor):
                     sub = getattr(module, attr, None)
                     if sub is None:
                         continue
-                    params = (
-                        sub.parameters() if hasattr(sub, "parameters") else iter([sub])
-                    )
+                    params = sub.parameters() if hasattr(sub, "parameters") else iter([sub])
                     for p in params:
                         if hasattr(p, "requires_grad"):
                             p.requires_grad = True
@@ -1457,9 +1363,7 @@ def adasvd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(
-            comp_config, "adasvd_max_error", _cfg_get(comp_config, "max_error", 0.50)
-        ),
+        _cfg_get(comp_config, "adasvd_max_error", _cfg_get(comp_config, "max_error", 0.50)),
     )
     fallback = kwargs.pop(
         "fallback_to_original",

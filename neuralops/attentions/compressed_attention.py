@@ -62,22 +62,10 @@ def apply_rotary_pos_emb(
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q_rot.dtype)
-        )
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k_rot.dtype)
-        )
-        q = (
-            torch.cat([q_rot_embed, q_pass], dim=-1)
-            if q_pass.numel() > 0
-            else q_rot_embed
-        )
-        k = (
-            torch.cat([k_rot_embed, k_pass], dim=-1)
-            if k_pass.numel() > 0
-            else k_rot_embed
-        )
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     else:
         cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
         q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
@@ -128,9 +116,7 @@ class CompressedAttentionLayer(BaseAttention):
         self.num_kv_heads: int = self.adapter.num_key_value_heads or kwargs.get(
             "num_kv_heads", kwargs.get("num_key_value_heads", self.num_heads)
         )
-        self.head_dim: int = self.adapter.head_dim or (
-            self.hidden_size // max(1, self.num_heads)
-        )
+        self.head_dim: int = self.adapter.head_dim or (self.hidden_size // max(1, self.num_heads))
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
@@ -150,15 +136,12 @@ class CompressedAttentionLayer(BaseAttention):
             "stablelm",
         )
         self.is_decoder: bool = bool(
-            getattr(cfg, "is_decoder", False)
-            or any(_mt.startswith(p) for p in _decoder_prefixes)
+            getattr(cfg, "is_decoder", False) or any(_mt.startswith(p) for p in _decoder_prefixes)
         )
         self.is_nested_encoder: bool = False
 
         rank_val = rank or kwargs.get("rank_qkv", rank_qkv)
-        self.rank_qkv = min(
-            rank_val, self.all_head_size + 2 * self.kv_head_size, self.hidden_size
-        )
+        self.rank_qkv = min(rank_val, self.all_head_size + 2 * self.kv_head_size, self.hidden_size)
         self.rank_out = min(
             rank or kwargs.get("rank_out", rank_out),
             self.all_head_size,
@@ -190,16 +173,10 @@ class CompressedAttentionLayer(BaseAttention):
 
         # Trainable LoRA residual adapters
         if self.lora_rank > 0:
-            self.lora_A_qkv = nn.Parameter(
-                torch.empty(self.lora_rank, self.hidden_size)
-            )
+            self.lora_A_qkv = nn.Parameter(torch.empty(self.lora_rank, self.hidden_size))
             self.lora_B_qkv = nn.Parameter(torch.empty(qkv_out_dim, self.lora_rank))
-            self.lora_A_out = nn.Parameter(
-                torch.empty(self.lora_rank, self.all_head_size)
-            )
-            self.lora_B_out = nn.Parameter(
-                torch.empty(self.hidden_size, self.lora_rank)
-            )
+            self.lora_A_out = nn.Parameter(torch.empty(self.lora_rank, self.all_head_size))
+            self.lora_B_out = nn.Parameter(torch.empty(self.hidden_size, self.lora_rank))
             self.reset_lora_parameters()
         else:
             self.register_parameter("lora_A_qkv", None)
@@ -273,9 +250,7 @@ class CompressedAttentionLayer(BaseAttention):
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             weight = src.c_attn.weight.data
             bias = getattr(src.c_attn, "bias", None)
@@ -287,11 +262,7 @@ class CompressedAttentionLayer(BaseAttention):
             k_w = weight[split_size : 2 * split_size, :]
             v_w = weight[2 * split_size :, :]
             q_b = bias_data[:split_size] if bias_data is not None else None
-            k_b = (
-                bias_data[split_size : 2 * split_size]
-                if bias_data is not None
-                else None
-            )
+            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
             v_b = bias_data[2 * split_size :] if bias_data is not None else None
             extracted["q"] = (q_w, q_b)
             extracted["k"] = (k_w, k_b)
@@ -310,9 +281,7 @@ class CompressedAttentionLayer(BaseAttention):
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             s = src.self
             if hasattr(s, "query"):
@@ -322,11 +291,7 @@ class CompressedAttentionLayer(BaseAttention):
             if hasattr(s, "value"):
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if (
-            hasattr(src, "output")
-            and hasattr(src.output, "dense")
-            and extracted["o"][0] is None
-        ):
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -533,11 +498,7 @@ class CompressedAttentionLayer(BaseAttention):
         qkv = torch.matmul(v_proj, (self.U_qkv * self.S_qkv_sqrt).t()) + self.bias_qkv
 
         # LoRA residual adapter
-        if (
-            self.lora_rank > 0
-            and self.lora_A_qkv is not None
-            and self.lora_B_qkv is not None
-        ):
+        if self.lora_rank > 0 and self.lora_A_qkv is not None and self.lora_B_qkv is not None:
             lora_qkv = (
                 F.linear(F.linear(hidden_states, self.lora_A_qkv), self.lora_B_qkv)
                 * self.lora_scaling
@@ -576,9 +537,7 @@ class CompressedAttentionLayer(BaseAttention):
         try:
             # PyTorch 2.0+ Flash Attention / Memory Efficient Attention
             # This handles Causal masking automatically and saves massive VRAM
-            is_causal = self.is_decoder and (
-                attention_mask is None or attention_mask.dim() != 4
-            )
+            is_causal = self.is_decoder and (attention_mask is None or attention_mask.dim() != 4)
             attn_out = F.scaled_dot_product_attention(
                 q,
                 k,
@@ -602,9 +561,7 @@ class CompressedAttentionLayer(BaseAttention):
                 else:
                     valid_m = get_token_valid_mask(mask, B, N, device)
                     if valid_m is not None:
-                        scores = scores.masked_fill(
-                            (~valid_m).unsqueeze(1).unsqueeze(2), -10000.0
-                        )
+                        scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
 
             # Explicit Causal Masking
             if self.is_decoder and (mask is None or mask.dim() != 4):
@@ -628,14 +585,8 @@ class CompressedAttentionLayer(BaseAttention):
         else:
             # SVD Out forward
             out_v = torch.matmul(attn_out, self.Vh_out.t()) * self.S_out_sqrt
-            out = (
-                torch.matmul(out_v, (self.U_out * self.S_out_sqrt).t()) + self.bias_out
-            )
-            if (
-                self.lora_rank > 0
-                and self.lora_A_out is not None
-                and self.lora_B_out is not None
-            ):
+            out = torch.matmul(out_v, (self.U_out * self.S_out_sqrt).t()) + self.bias_out
+            if self.lora_rank > 0 and self.lora_A_out is not None and self.lora_B_out is not None:
                 lora_out = (
                     F.linear(F.linear(attn_out, self.lora_A_out), self.lora_B_out)
                     * self.lora_scaling
@@ -692,9 +643,7 @@ def inject_compressed_attention(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -705,9 +654,7 @@ def inject_compressed_attention(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=(
-                    comp_config
-                    if "comp_config" in locals() or "comp_config" in kwargs
-                    else None
+                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
                 ),
                 layer_idx=idx,
                 total_layers=tot,
@@ -720,9 +667,7 @@ def inject_compressed_attention(
     layer = target
 
     if model_config is None:
-        model_config = type(
-            "Cfg", (), {"hidden_size": 768, "num_heads": 12, "rank": 384}
-        )()
+        model_config = type("Cfg", (), {"hidden_size": 768, "num_heads": 12, "rank": 384})()
 
     src_attn = old_attn
     if src_attn is None:

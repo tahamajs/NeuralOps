@@ -19,6 +19,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -57,17 +58,11 @@ class LowRankLinear(nn.Module):
 
         # V: [in_features, rank] -> maps x to bottleneck
         # U: [out_features, rank] -> maps bottleneck to output
-        self.V = nn.Parameter(
-            torch.empty((in_features, self.rank), device=device, dtype=dtype)
-        )
-        self.U = nn.Parameter(
-            torch.empty((out_features, self.rank), device=device, dtype=dtype)
-        )
+        self.V = nn.Parameter(torch.empty((in_features, self.rank), device=device, dtype=dtype))
+        self.U = nn.Parameter(torch.empty((out_features, self.rank), device=device, dtype=dtype))
 
         if bias:
-            self.bias = nn.Parameter(
-                torch.zeros(out_features, device=device, dtype=dtype)
-            )
+            self.bias = nn.Parameter(torch.zeros(out_features, device=device, dtype=dtype))
         else:
             self.register_parameter("bias", None)
 
@@ -114,12 +109,8 @@ class LowRankCompressor(BaseCompressor):
                 cfg, "soka_energy", _cfg_get(cfg, "energy_threshold", energy_threshold)
             )
             max_error = _cfg_get(cfg, "max_error", max_error)
-            fallback_to_original = _cfg_get(
-                cfg, "fallback_to_original", fallback_to_original
-            )
-            target_attention_only = _cfg_get(
-                cfg, "target_attention_only", target_attention_only
-            )
+            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
 
         self.rank = max(1, int(rank))
         self.energy_threshold = energy_threshold
@@ -133,10 +124,7 @@ class LowRankCompressor(BaseCompressor):
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
-        if any(
-            k in name_l
-            for k in ["classifier", "score", "lm_head", "pooler", "embedding"]
-        ):
+        if any(k in name_l for k in ["classifier", "score", "lm_head", "pooler", "embedding"]):
             return False
 
         if self.target_attention_only:
@@ -217,11 +205,7 @@ class LowRankCompressor(BaseCompressor):
                 )
             )
 
-            W = (
-                raw_w.t().contiguous().clone().float()
-                if is_conv1d
-                else raw_w.clone().float()
-            )
+            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
             device = raw_w.device
             dtype = raw_w.dtype
             d_out, d_in = W.shape
@@ -242,9 +226,7 @@ class LowRankCompressor(BaseCompressor):
 
                 # Assign factorized weights: W ≈ (U_r sqrt(S)) @ (sqrt(S) V_r^T)
                 # U: [d_out, r], V: [d_in, r]
-                new_layer.U.data = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
-                    dtype=dtype, device=device
-                )
+                new_layer.U.data = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
                 new_layer.V.data = (Vh[:r, :].T * sqrt_S.unsqueeze(0)).to(
                     dtype=dtype, device=device
                 )
@@ -280,22 +262,14 @@ class LowRankCompressor(BaseCompressor):
                     src_lA = getattr(module.lora_A, "weight", module.lora_A)
                     src_lB = getattr(module.lora_B, "weight", module.lora_B)
                     if hasattr(new_layer, "lora_A") and new_layer.lora_A is not None:
-                        if (
-                            hasattr(src_lA, "data")
-                            and src_lA.shape == new_layer.lora_A.shape
-                        ):
+                        if hasattr(src_lA, "data") and src_lA.shape == new_layer.lora_A.shape:
                             new_layer.lora_A.data.copy_(src_lA.data)
                     if hasattr(new_layer, "lora_B") and new_layer.lora_B is not None:
-                        if (
-                            hasattr(src_lB, "data")
-                            and src_lB.shape == new_layer.lora_B.shape
-                        ):
+                        if hasattr(src_lB, "data") and src_lB.shape == new_layer.lora_B.shape:
                             new_layer.lora_B.data.copy_(src_lB.data)
 
                 if hasattr(module, "base_layer"):
-                    module.base_layer = (
-                        compressed_layer  # put compressed layer inside wrapper
-                    )
+                    module.base_layer = compressed_layer  # put compressed layer inside wrapper
                     # module itself (LoRALinear wrapper) remains the replacement
                     new_module = module
                 else:
@@ -350,14 +324,10 @@ def soka_factory(
     **kwargs: Any,
 ) -> Any:
     """Factory function for SoKA compressor."""
-    rank = kwargs.pop(
-        "rank", _cfg_get(comp_config, "soka_rank", _cfg_get(comp_config, "rank", 8))
-    )
+    rank = kwargs.pop("rank", _cfg_get(comp_config, "soka_rank", _cfg_get(comp_config, "rank", 8)))
     energy = kwargs.pop(
         "energy_threshold",
-        _cfg_get(
-            comp_config, "soka_energy", _cfg_get(comp_config, "energy_threshold", None)
-        ),
+        _cfg_get(comp_config, "soka_energy", _cfg_get(comp_config, "energy_threshold", None)),
     )
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.5))
     fallback = kwargs.pop(

@@ -12,6 +12,7 @@ import logging
 from typing import Any
 
 import torch.nn as nn
+
 from neuralops.attentions.minimal_svd import MinimalSVDAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 

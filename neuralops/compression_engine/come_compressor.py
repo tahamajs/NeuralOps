@@ -26,6 +26,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import recalibrate_layernorms
@@ -146,11 +147,7 @@ class CoMeBridge(nn.Module):
 
         if hasattr(hidden_states, "hidden_states"):
             hs = hidden_states.hidden_states
-            if (
-                isinstance(hs, tuple)
-                and len(hs) > 0
-                and isinstance(hs[-1], torch.Tensor)
-            ):
+            if isinstance(hs, tuple) and len(hs) > 0 and isinstance(hs[-1], torch.Tensor):
                 new_hs = list(hs)
                 new_hs[-1] = self._bridge_tensor(new_hs[-1])
                 hidden_states.hidden_states = tuple(new_hs)
@@ -253,9 +250,7 @@ class CoMeLoRALinear(nn.Module):
 
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
-                torch.empty(
-                    (self.lora_r, in_features), dtype=target_dtype, device=target_device
-                )
+                torch.empty((self.lora_r, in_features), dtype=target_dtype, device=target_device)
             )
             self.lora_B = nn.Parameter(
                 torch.zeros(
@@ -292,8 +287,7 @@ class CoMeLoRALinear(nn.Module):
 
         bias = (
             target_mod.bias.detach().clone()
-            if getattr(target_mod, "bias", None) is not None
-            and target_mod.bias is not None
+            if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None
             else None
         )
         return cls(
@@ -316,9 +310,7 @@ class CoMeLoRALinear(nn.Module):
             self.bias.to(x_flat.dtype) if self.bias is not None else None,
         )
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(
-                F.linear(x_flat.to(self.lora_A.dtype), self.lora_A), self.lora_B
-            )
+            lora_out = F.linear(F.linear(x_flat.to(self.lora_A.dtype), self.lora_A), self.lora_B)
             out = out + (self.scaling * lora_out).to(out.dtype)
         return out.reshape(*orig_shape[:-1], self.out_features)
 
@@ -463,9 +455,7 @@ class CoMeCompressor(BaseCompressor):
         )
 
         # -------- Store --------
-        self.tokenizer = tokenizer or kwargs.get(
-            "tokenizer", getattr(model, "tokenizer", None)
-        )
+        self.tokenizer = tokenizer or kwargs.get("tokenizer", getattr(model, "tokenizer", None))
         self.target_layers = target_layers
         self.sparsity = max(0.0, min(sparsity, 0.95))
         self.bridge_rank = int(bridge_rank)
@@ -500,11 +490,7 @@ class CoMeCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if (
-            num_heads is not None
-            and num_kv_heads is not None
-            and num_kv_heads < num_heads
-        ):
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
             name_lower = name.lower()
             if any(
                 p in name_lower
@@ -631,9 +617,7 @@ class CoMeCompressor(BaseCompressor):
         for name, m in layer.named_modules():
             if isinstance(m, nn.Linear) and any(k in name for k in _OUTPUT_PROJ_KEYS):
                 return m.out_features
-        sizes = [
-            m.in_features for _, m in layer.named_modules() if isinstance(m, nn.Linear)
-        ]
+        sizes = [m.in_features for _, m in layer.named_modules() if isinstance(m, nn.Linear)]
         if sizes:
             from collections import Counter
 
@@ -776,29 +760,18 @@ class CoMeCompressor(BaseCompressor):
                 keep_len = min(orig_len, max(1, self.target_layers))
 
             if keep_len < orig_len:
-                kept_indices = (
-                    np.round(np.linspace(0, orig_len - 1, keep_len))
-                    .astype(int)
-                    .tolist()
-                )
+                kept_indices = np.round(np.linspace(0, orig_len - 1, keep_len)).astype(int).tolist()
                 seen = set()
-                kept_indices = [
-                    x for x in kept_indices if not (x in seen or seen.add(x))
-                ]
+                kept_indices = [x for x in kept_indices if not (x in seen or seen.add(x))]
 
                 bridged_module_list = nn.ModuleList()
                 for i, layer_idx in enumerate(kept_indices):
                     layer = layers[layer_idx]
-                    is_gap = (
-                        i < len(kept_indices) - 1
-                        and kept_indices[i + 1] > layer_idx + 1
-                    )
+                    is_gap = i < len(kept_indices) - 1 and kept_indices[i + 1] > layer_idx + 1
                     if is_gap:
                         hidden_size = self._get_hidden_size(layer)
                         # Use hidden_size as cap on bridge_rank
-                        effective_bridge_rank = max(
-                            1, min(self.bridge_rank, hidden_size)
-                        )
+                        effective_bridge_rank = max(1, min(self.bridge_rank, hidden_size))
                         bridge = CoMeBridge(
                             hidden_size=hidden_size,
                             bridge_rank=effective_bridge_rank,
@@ -807,25 +780,19 @@ class CoMeCompressor(BaseCompressor):
                         p = next(layer.parameters(), None)
                         if p is not None:
                             bridge = bridge.to(device=p.device, dtype=p.dtype)
-                        bridged_module_list.append(
-                            CoMeBridgedLayer(layer, bridge=bridge)
-                        )
+                        bridged_module_list.append(CoMeBridgedLayer(layer, bridge=bridge))
                         bridges_inserted += 1
                     else:
                         bridged_module_list.append(layer)
 
                 setattr(parent, attr_name, bridged_module_list)
-                self.compressed_layers.append(
-                    f"{attr_name} (shed {orig_len - keep_len} layers)"
-                )
+                self.compressed_layers.append(f"{attr_name} (shed {orig_len - keep_len} layers)")
         else:
             # Fallback SVD compression (still supported)
             seen_weights: set[int] = set()
             for name, module in list(self.model.named_modules()):
                 if self._is_target_module(name, module):
-                    target_mod = getattr(
-                        module, "base_layer", getattr(module, "linear", module)
-                    )
+                    target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
                     w_id = id(target_mod.weight)
                     if w_id in seen_weights:
                         self.skipped_layers.append(name)
@@ -878,12 +845,10 @@ class CoMeCompressor(BaseCompressor):
             seen_weights: set[int] = set()
             for name, module in list(self.model.named_modules()):
                 if self._is_target_module(name, module):
-                    target_mod = getattr(
-                        module, "base_layer", getattr(module, "linear", module)
+                    target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
+                    has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(
+                        module, "base_layer"
                     )
-                    has_lora = (
-                        hasattr(module, "lora_A") and module.lora_A is not None
-                    ) or hasattr(module, "base_layer")
                     w_id = id(target_mod.weight)
                     if w_id in seen_weights:
                         self.skipped_layers.append(name)
@@ -897,10 +862,7 @@ class CoMeCompressor(BaseCompressor):
                         ):
                             target_mod.bias.requires_grad = False
                         for p_name, p in module.named_parameters():
-                            if any(
-                                t in p_name.lower()
-                                for t in ("lora_a", "lora_b", "adapter")
-                            ):
+                            if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
                                 p.requires_grad = True
                     else:
                         lora_mod = CoMeLoRALinear.from_linear(
@@ -933,9 +895,7 @@ class CoMeCompressor(BaseCompressor):
         except Exception as e:
             logger.error("CoMe post-compression forward sanity check failed: %s", e)
             if not self.allow_forward_failure:
-                raise RuntimeError(
-                    f"CoMe post-compression forward check failed: {e}"
-                ) from e
+                raise RuntimeError(f"CoMe post-compression forward check failed: {e}") from e
 
         self._compressed_params = self._count_params(self.model)
         shed_count = orig_len - keep_len if orig_len > 0 else 0
@@ -973,9 +933,7 @@ class CoMeCompressor(BaseCompressor):
                 "rank": self.rank,
                 "bridge_parameters": bridge_params_count,
                 "lora_parameters": lora_params_count,
-                "trainable_parameters": sum(
-                    p.numel() for p in self.get_trainable_params()
-                ),
+                "trainable_parameters": sum(p.numel() for p in self.get_trainable_params()),
                 "target_layers": self.target_layers,
                 "sparsity": self.sparsity,
                 "lora_r": self.lora_r,

@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -58,9 +59,7 @@ def apply_rotary_pos_emb(
         sin = sin.unsqueeze(0)
 
     if cos.shape[-2] != q.shape[-2]:
-        raise ValueError(
-            f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}"
-        )
+        raise ValueError(f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}")
 
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
@@ -74,16 +73,8 @@ def apply_rotary_pos_emb(
         sin_k = sin.to(k_rot.dtype)
         q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
         k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
-        q = (
-            torch.cat([q_rot_embed, q_pass], dim=-1)
-            if q_pass.numel() > 0
-            else q_rot_embed
-        )
-        k = (
-            torch.cat([k_rot_embed, k_pass], dim=-1)
-            if k_pass.numel() > 0
-            else k_rot_embed
-        )
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     else:
         cos_cut = cos[..., :head_dim].to(q.dtype)
         sin_cut = sin[..., :head_dim].to(q.dtype)
@@ -121,21 +112,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -155,11 +140,7 @@ class LoRALinear(nn.Module):
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             self.lora_A.requires_grad = True
         if self.lora_rank > 0 and self.lora_B is not None:
-            (
-                nn.zeros_(self.lora_B)
-                if hasattr(nn, "zeros_")
-                else torch.nn.init.zeros_(self.lora_B)
-            )
+            (nn.zeros_(self.lora_B) if hasattr(nn, "zeros_") else torch.nn.init.zeros_(self.lora_B))
             self.lora_B.requires_grad = True
 
     def freeze_base_weights(self) -> None:
@@ -256,9 +237,7 @@ class XAttentionScorer:
         N_s = Q_sample.size(2)
 
         scale = D**-0.5
-        attn_sample = (
-            torch.matmul(Q_sample, K_sample.transpose(-2, -1).contiguous()) * scale
-        )
+        attn_sample = torch.matmul(Q_sample, K_sample.transpose(-2, -1).contiguous()) * scale
 
         b_s = max(1, block_size // stride)
         target = n_blocks * b_s
@@ -387,9 +366,7 @@ class DualStageStripeAttention(nn.Module):
         scale = D**-0.5
 
         if self.cfg.xattn_enabled:
-            block_scores = self.xattn_scorer.score_blocks(
-                Q, K, bs, self.cfg.xattn_stride
-            )
+            block_scores = self.xattn_scorer.score_blocks(Q, K, bs, self.cfg.xattn_stride)
             inter_mask = self._inter_block_topk(block_scores, top_k)
         else:
             inter_mask = torch.ones(B, H, nb, nb, device=Q.device, dtype=torch.bool)
@@ -401,13 +378,11 @@ class DualStageStripeAttention(nn.Module):
         diag_idx = torch.arange(nb, device=Q.device)
         inter_mask[:, :, diag_idx, diag_idx] = True
 
-        scores = (
-            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
-        expanded_mask = inter_mask.repeat_interleave(bs, dim=2).repeat_interleave(
-            bs, dim=3
-        )[:, :, :N, :N]
+        expanded_mask = inter_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[
+            :, :, :N, :N
+        ]
         scores = scores.masked_fill(~expanded_mask, -10000.0)
 
         if self.cfg.stripe_enabled and N > 256:
@@ -417,23 +392,17 @@ class DualStageStripeAttention(nn.Module):
             q_stripe = stripe_group.unsqueeze(1)
             k_stripe = stripe_group.unsqueeze(0)
             stripe_mask = (q_stripe - k_stripe).abs() <= 1
-            scores = scores.masked_fill(
-                ~stripe_mask.unsqueeze(0).unsqueeze(0), -10000.0
-            )
+            scores = scores.masked_fill(~stripe_mask.unsqueeze(0).unsqueeze(0), -10000.0)
 
         if self.is_decoder:
             causal = torch.tril(torch.ones(N, N, device=Q.device, dtype=torch.bool))
             scores = scores.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -10000.0)
 
         if token_valid is not None:
-            scores = scores.masked_fill(
-                (~token_valid.bool()).unsqueeze(1).unsqueeze(2), -10000.0
-            )
+            scores = scores.masked_fill((~token_valid.bool()).unsqueeze(1).unsqueeze(2), -10000.0)
 
         if self.cfg.softpick_enabled:
-            attn = softpick(
-                scores, dim=-1, temperature=self.cfg.softpick_temperature
-            ).to(Q.dtype)
+            attn = softpick(scores, dim=-1, temperature=self.cfg.softpick_temperature).to(Q.dtype)
         else:
             scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
             attn = F.softmax(scores, dim=-1).to(Q.dtype)
@@ -460,9 +429,7 @@ class SpectraformerRectify(nn.Module):
             proj_init = proj_q
         self.proj = nn.Parameter(proj_init / math.sqrt(head_dim))
 
-    def forward(
-        self, Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor
-    ) -> torch.Tensor:
+    def forward(self, Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor) -> torch.Tensor:
         B, H, N, D = Q.shape
         F_dim = self.rff_features
 
@@ -519,9 +486,7 @@ class NEXUSAttention(BaseAttention):
             "num_attention_heads",
             getattr(model_config, "num_heads", kwargs.get("num_attention_heads", 4)),
         )
-        self.hidden_size: int = getattr(
-            model_config, "hidden_size", kwargs.get("hidden_size", 768)
-        )
+        self.hidden_size: int = getattr(model_config, "hidden_size", kwargs.get("hidden_size", 768))
         cfg_head_dim = getattr(model_config, "head_dim", None) if model_config else None
         adapter_head_dim = (
             getattr(getattr(model_config, "adapter", None), "head_dim", None)
@@ -565,11 +530,7 @@ class NEXUSAttention(BaseAttention):
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
-            _mt = (
-                str(getattr(model_config, "model_type", "") or "").lower()
-                if model_config
-                else ""
-            )
+            _mt = str(getattr(model_config, "model_type", "") or "").lower() if model_config else ""
             self.is_decoder = (
                 bool(
                     getattr(model_config, "is_decoder", False)
@@ -593,17 +554,9 @@ class NEXUSAttention(BaseAttention):
 
         self.is_nested_encoder: bool = False
 
-        src_p = (
-            next(pretrained_attn.parameters(), None)
-            if pretrained_attn is not None
-            else None
-        )
-        target_dtype = kwargs.get(
-            "dtype", src_p.dtype if src_p is not None else torch.float32
-        )
-        target_device = kwargs.get(
-            "device", src_p.device if src_p is not None else None
-        )
+        src_p = next(pretrained_attn.parameters(), None) if pretrained_attn is not None else None
+        target_dtype = kwargs.get("dtype", src_p.dtype if src_p is not None else torch.float32)
+        target_device = kwargs.get("device", src_p.device if src_p is not None else None)
 
         self.query = LoRALinear(
             self.hidden_size,
@@ -670,10 +623,7 @@ class NEXUSAttention(BaseAttention):
         self.is_rectify = (
             (self.rect_interval > 0)
             and (layer_idx % self.rect_interval == 0)
-            and (
-                (pretrained_attn is None)
-                or getattr(self.cfg, "enable_spectraformer", False)
-            )
+            and ((pretrained_attn is None) or getattr(self.cfg, "enable_spectraformer", False))
         )
         if self.is_rectify:
             self.spec_rectify: SpectraformerRectify | None = SpectraformerRectify(
@@ -780,9 +730,7 @@ class NEXUSAttention(BaseAttention):
                 pass
 
         if hasattr(src, "c_attn") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             weight = src.c_attn.weight.data
             bias = getattr(src.c_attn, "bias", None)
@@ -794,11 +742,7 @@ class NEXUSAttention(BaseAttention):
             k_w = weight[split_size : 2 * split_size, :]
             v_w = weight[2 * split_size :, :]
             q_b = bias_data[:split_size] if bias_data is not None else None
-            k_b = (
-                bias_data[split_size : 2 * split_size]
-                if bias_data is not None
-                else None
-            )
+            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
             v_b = bias_data[2 * split_size :] if bias_data is not None else None
             extracted["q"] = (q_w, q_b)
             extracted["k"] = (k_w, k_b)
@@ -816,9 +760,7 @@ class NEXUSAttention(BaseAttention):
             extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
         if hasattr(src, "self") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             s = src.self
             if hasattr(s, "query"):
@@ -828,11 +770,7 @@ class NEXUSAttention(BaseAttention):
             if hasattr(s, "value"):
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if (
-            hasattr(src, "output")
-            and hasattr(src.output, "dense")
-            and extracted["o"][0] is None
-        ):
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -893,18 +831,14 @@ class NEXUSAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            logger.warning(
-                "Module copy_weights warning. Proceeding with initialized weights."
-            )
+            logger.warning("Module copy_weights warning. Proceeding with initialized weights.")
 
         for proj_key in ["q", "k", "v"]:
             w = extracted[proj_key][0]
             if w is not None:
                 norm = torch.linalg.norm(w.float())
                 if norm < 1e-4:
-                    logger.warning(
-                        f"NEXUSAttention extracted weight for {proj_key} near-zero norm"
-                    )
+                    logger.warning(f"NEXUSAttention extracted weight for {proj_key} near-zero norm")
 
         if extracted["o"][0] is not None:
             norm_o = torch.linalg.norm(extracted["o"][0].float())
@@ -938,9 +872,7 @@ class NEXUSAttention(BaseAttention):
                                 target.bias.data.copy_(b)
                         elif src_out > out_d and src_out % out_d == 0:
                             rep = src_out // out_d
-                            target_w.data.copy_(
-                                w_oriented.view(out_d, rep, -1).mean(dim=1)
-                            )
+                            target_w.data.copy_(w_oriented.view(out_d, rep, -1).mean(dim=1))
                             if b is not None and target.bias is not None:
                                 target.bias.data.copy_(b.view(out_d, rep).mean(dim=1))
                         elif src_out < out_d and out_d % src_out == 0:
@@ -950,9 +882,7 @@ class NEXUSAttention(BaseAttention):
                                 target.bias.data.copy_(b.repeat(rep))
                         else:
                             target_w.data.zero_()
-                            target_w.data[
-                                : min(out_d, src_out), : min(in_d, src_in)
-                            ].copy_(
+                            target_w.data[: min(out_d, src_out), : min(in_d, src_in)].copy_(
                                 w_oriented[: min(out_d, src_out), : min(in_d, src_in)]
                             )
                             if b is not None and target.bias is not None:
@@ -1021,10 +951,7 @@ class NEXUSAttention(BaseAttention):
             cos, sin = position_embeddings
             past_len = 0
             if past_key_value is not None:
-                if (
-                    isinstance(past_key_value, (tuple, list))
-                    and len(past_key_value) >= 1
-                ):
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
                     past_len = past_key_value[0].shape[-2]
                 elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
                     past_len = past_key_value.key_cache[0].shape[-2]
@@ -1043,23 +970,16 @@ class NEXUSAttention(BaseAttention):
 
         is_causal = bool(self.is_decoder and not is_cross)
         min_seq_len = getattr(self.cfg, "sparse_min_seq_len", 8)
-        use_dense = (
-            is_causal or is_cross or (min_seq_len >= N) or (self.dss_attn is None)
-        )
+        use_dense = is_causal or is_cross or (min_seq_len >= N) or (self.dss_attn is None)
 
         if use_dense:
             scale = 1.0 / math.sqrt(D)
-            scores = (
-                torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous())
-                * scale
-            )
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
             if is_causal:
                 causal_diag = 1 + max(0, N_kv - N)
                 causal_mask = (
                     torch.triu(
-                        torch.full(
-                            (N, N_kv), float("-inf"), device=device, dtype=torch.float32
-                        ),
+                        torch.full((N, N_kv), float("-inf"), device=device, dtype=torch.float32),
                         diagonal=causal_diag,
                     )
                     .unsqueeze(0)
@@ -1069,10 +989,7 @@ class NEXUSAttention(BaseAttention):
 
             if eff_mask is not None:
                 if eff_mask.dim() == 2:
-                    scores = (
-                        scores
-                        + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
-                    )
+                    scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
                 elif eff_mask.dim() == 3:
                     scores = scores + eff_mask.unsqueeze(1).float()
                 elif eff_mask.dim() == 4:
@@ -1105,9 +1022,7 @@ class NEXUSAttention(BaseAttention):
                 context = self.dss_attn(Q, K, V, token_valid, seer_mask=seer_mask)
 
             if token_valid is not None:
-                context = context * token_valid.unsqueeze(1).unsqueeze(-1).to(
-                    context.dtype
-                )
+                context = context * token_valid.unsqueeze(1).unsqueeze(-1).to(context.dtype)
 
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
@@ -1210,10 +1125,7 @@ def inject_nexus(
         if src_attn is None:
             return None
 
-        if (
-            isinstance(src_attn, NEXUSAttention)
-            or "NEXUS" in src_attn.__class__.__name__
-        ):
+        if isinstance(src_attn, NEXUSAttention) or "NEXUS" in src_attn.__class__.__name__:
             return None
         if hasattr(src_attn, "inner") and isinstance(src_attn.inner, NEXUSAttention):
             return None
@@ -1243,12 +1155,8 @@ def inject_nexus(
         nexus_cfg = kwargs.get("nexus_cfg")
         if nexus_cfg is None:
             nexus_cfg = NEXUSConfig(
-                block_size=(
-                    getattr(comp_config, "block_size", 16) if comp_config else 16
-                ),
-                top_k_blocks=(
-                    getattr(comp_config, "top_k_inter", 4) if comp_config else 4
-                ),
+                block_size=(getattr(comp_config, "block_size", 16) if comp_config else 16),
+                top_k_blocks=(getattr(comp_config, "top_k_inter", 4) if comp_config else 4),
                 xattn_enabled=True,
                 seer_enabled=True,
                 dual_stage_enabled=True,
@@ -1256,15 +1164,11 @@ def inject_nexus(
                 rectify_interval=(
                     getattr(comp_config, "rectify_interval", 4) if comp_config else 4
                 ),
-                rff_features=(
-                    getattr(comp_config, "rff_features", 128) if comp_config else 128
-                ),
+                rff_features=(getattr(comp_config, "rff_features", 128) if comp_config else 128),
                 softpick_enabled=True,
                 sparse_min_seq_len=8,
                 enable_spectraformer=(
-                    getattr(comp_config, "enable_spectraformer", False)
-                    if comp_config
-                    else False
+                    getattr(comp_config, "enable_spectraformer", False) if comp_config else False
                 ),
                 dropout=getattr(comp_config, "dropout", 0.1) if comp_config else 0.1,
             )

@@ -14,6 +14,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 try:
@@ -170,10 +171,7 @@ class MambaBlock(nn.Module):
                 "olmo",
             )
             self.is_decoder = (
-                bool(
-                    getattr(config, "is_decoder", False)
-                    or getattr(config, "causal", False)
-                )
+                bool(getattr(config, "is_decoder", False) or getattr(config, "causal", False))
                 if config
                 else False
             ) or any(_mt.startswith(p) for p in _dec_prefixes)
@@ -188,24 +186,19 @@ class MambaBlock(nn.Module):
             padding=self.d_conv - 1,
             bias=conv_bias,
         )
-        self.x_proj = nn.Linear(
-            self.d_inner, self.dt_rank + 2 * self.d_state, bias=False
-        )
+        self.x_proj = nn.Linear(self.d_inner, self.dt_rank + 2 * self.d_state, bias=False)
         self.dt_proj = nn.Linear(self.dt_rank, self.d_inner, bias=True)
         self.out_proj = nn.Linear(self.d_inner, self.d_model, bias=bias)
 
         # ---- S4D-real initialization of A ----
-        A = torch.arange(1, self.d_state + 1, dtype=torch.float32).repeat(
-            self.d_inner, 1
-        )
+        A = torch.arange(1, self.d_state + 1, dtype=torch.float32).repeat(self.d_inner, 1)
         self.A_log = nn.Parameter(torch.log(A))
         self.D = nn.Parameter(torch.ones(self.d_inner))
 
         # ---- dt initialization ----
         dt_min, dt_max = 0.001, 0.1
         dt_init = torch.exp(
-            torch.rand(self.d_inner) * (math.log(dt_max) - math.log(dt_min))
-            + math.log(dt_min)
+            torch.rand(self.d_inner) * (math.log(dt_max) - math.log(dt_min)) + math.log(dt_min)
         )
         dt_init_inv = dt_init + torch.log(-torch.expm1(-dt_init))
         with torch.no_grad():
@@ -218,16 +211,12 @@ class MambaBlock(nn.Module):
 
         # ---- Bidirectional (backward SSM) ----
         if self.bidirectional:
-            self.A_log_bwd = nn.Parameter(
-                torch.log(A.clone() + 0.01 * torch.randn_like(A).abs())
-            )
+            self.A_log_bwd = nn.Parameter(torch.log(A.clone() + 0.01 * torch.randn_like(A).abs()))
             self.dt_proj_bwd = nn.Linear(self.dt_rank, self.d_inner, bias=True)
             with torch.no_grad():
                 self.dt_proj_bwd.bias.copy_(dt_init_inv)
                 nn.init.uniform_(self.dt_proj_bwd.weight, -bound, bound)
-            self.x_proj_bwd = nn.Linear(
-                self.d_inner, self.dt_rank + 2 * self.d_state, bias=False
-            )
+            self.x_proj_bwd = nn.Linear(self.d_inner, self.dt_rank + 2 * self.d_state, bias=False)
             self.D_bwd = nn.Parameter(torch.ones(self.d_inner))
 
         # ---- Output-format detection (MB-12) ----
@@ -405,13 +394,9 @@ class MambaBlock(nn.Module):
                 w_v_p = _to_t(w_v, self.d_inner, self.d_model)
                 if w_v_p is not None:
                     # x_ssm: full projection from W_v
-                    self.in_proj.weight.data[: self.d_inner, : self.d_model].copy_(
-                        w_v_p
-                    )
+                    self.in_proj.weight.data[: self.d_inner, : self.d_model].copy_(w_v_p)
                     # z: scaled copy so the gate starts balanced
-                    self.in_proj.weight.data[self.d_inner :, : self.d_model].copy_(
-                        0.5 * w_v_p
-                    )
+                    self.in_proj.weight.data[self.d_inner :, : self.d_model].copy_(0.5 * w_v_p)
 
             # ---------- x_proj: (dt_rank + 2*d_state, d_inner) ----------
             # rows [0 : dt_rank]                     → dt  (keep init)
@@ -686,9 +671,7 @@ class MambaBlock(nn.Module):
         else:
             x_cat = x_ssm
 
-        x_conv_full = self.conv1d(
-            x_cat.transpose(1, 2)
-        )  # (B, d_inner, L' + d_conv - 1)
+        x_conv_full = self.conv1d(x_cat.transpose(1, 2))  # (B, d_inner, L' + d_conv - 1)
         # Take only the L last positions
         x_conv = x_conv_full[..., -L:].transpose(1, 2)  # (B, L, d_inner)
 
@@ -701,9 +684,7 @@ class MambaBlock(nn.Module):
             conv_next = (
                 torch.cat(
                     [
-                        torch.zeros(
-                            B, pad, self.d_inner, device=device, dtype=x_cat.dtype
-                        ),
+                        torch.zeros(B, pad, self.d_inner, device=device, dtype=x_cat.dtype),
                         x_cat,
                     ],
                     dim=1,
@@ -716,9 +697,7 @@ class MambaBlock(nn.Module):
 
         # ---- 3. Selective parameters ----
         x_dbl = self.x_proj(x_ssm)  # (B, L, dt_rank + 2*d_state)
-        dt, B_ssm, C_ssm = x_dbl.split(
-            [self.dt_rank, self.d_state, self.d_state], dim=-1
-        )
+        dt, B_ssm, C_ssm = x_dbl.split([self.dt_rank, self.d_state, self.d_state], dim=-1)
         dt = self.dt_proj(dt)  # (B, L, d_inner)
 
         A = -torch.exp(self.A_log)  # (d_inner, d_state)
@@ -741,9 +720,7 @@ class MambaBlock(nn.Module):
         if self.bidirectional and not self.is_decoder:
             x_rev = torch.flip(x_ssm, dims=[1])
             x_dbl_rev = self.x_proj_bwd(x_rev)
-            dt_b, B_b, C_b = x_dbl_rev.split(
-                [self.dt_rank, self.d_state, self.d_state], dim=-1
-            )
+            dt_b, B_b, C_b = x_dbl_rev.split([self.dt_rank, self.d_state, self.d_state], dim=-1)
             dt_b = self.dt_proj_bwd(dt_b)
             A_b = -torch.exp(self.A_log_bwd)
             y_b = self._parallel_scan(
@@ -955,9 +932,7 @@ def inject_mamba(
             return None
 
         # Recompute return format (MB-12)
-        new_module._return_format = _detect_return_format(
-            src_attn, new_module.is_nested_encoder
-        )
+        new_module._return_format = _detect_return_format(src_attn, new_module.is_nested_encoder)
 
     return new_module
 

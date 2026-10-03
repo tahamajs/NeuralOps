@@ -21,6 +21,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import get_calibration_tensors
@@ -148,21 +149,15 @@ class OptimalSubspaceLoRALinear(nn.Module):
             if hasattr(base_layer, "bias") and base_layer.bias is not None
             else None
         )
-        in_features = getattr(
-            base_layer, "in_features", getattr(base_layer, "nx", None)
-        )
-        out_features = getattr(
-            base_layer, "out_features", getattr(base_layer, "nf", None)
-        )
+        in_features = getattr(base_layer, "in_features", getattr(base_layer, "nx", None))
+        out_features = getattr(base_layer, "out_features", getattr(base_layer, "nf", None))
         if in_features is None or out_features is None:
             out_features = out_features or weight.shape[0]
             in_features = in_features or weight.shape[1]
 
         existing_lora_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
         eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
-        eff_lora_alpha = getattr(
-            linear, "lora_alpha", getattr(linear, "alpha", lora_alpha)
-        )
+        eff_lora_alpha = getattr(linear, "lora_alpha", getattr(linear, "alpha", lora_alpha))
 
         layer = cls(
             in_features=in_features,
@@ -193,16 +188,9 @@ class OptimalSubspaceLoRALinear(nn.Module):
                     if hasattr(linear.lora_B, "weight")
                     else linear.lora_B.data
                 )
-                if (
-                    src_A.shape == layer.lora_A.shape
-                    and src_B.shape == layer.lora_B.shape
-                ):
-                    layer.lora_A.copy_(
-                        src_A.to(layer.lora_A.device, dtype=layer.lora_A.dtype)
-                    )
-                    layer.lora_B.copy_(
-                        src_B.to(layer.lora_B.device, dtype=layer.lora_B.dtype)
-                    )
+                if src_A.shape == layer.lora_A.shape and src_B.shape == layer.lora_B.shape:
+                    layer.lora_A.copy_(src_A.to(layer.lora_A.device, dtype=layer.lora_A.dtype))
+                    layer.lora_B.copy_(src_B.to(layer.lora_B.device, dtype=layer.lora_B.dtype))
             layer.lora_A.requires_grad = True
             layer.lora_B.requires_grad = True
 
@@ -211,9 +199,9 @@ class OptimalSubspaceLoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = out + self.scaling * F.linear(
-                F.linear(x.float(), self.lora_A), self.lora_B
-            ).to(out.dtype)
+            out = out + self.scaling * F.linear(F.linear(x.float(), self.lora_A), self.lora_B).to(
+                out.dtype
+            )
         return out
 
 
@@ -273,9 +261,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
             lora_r = _cfg_get(cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
             skip_attention_qkv = _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
-            target_attention_only = _cfg_get(
-                cfg, "target_attention_only", target_attention_only
-            )
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
             min_rank = _cfg_get(cfg, "min_rank", min_rank)
 
         self.calibration_loader = calibration_loader
@@ -311,11 +297,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if (
-            num_heads is not None
-            and num_kv_heads is not None
-            and num_kv_heads < num_heads
-        ):
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
             name_lower = name.lower()
             if any(
                 p in name_lower
@@ -379,9 +361,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         weight_id_to_scan_id: dict[int, int] = {}  # base weight id → cov key
         hooks = []
 
-        def hook_fn(
-            module: nn.Module, inputs: tuple[torch.Tensor, ...], output: Any
-        ) -> None:
+        def hook_fn(module: nn.Module, inputs: tuple[torch.Tensor, ...], output: Any) -> None:
             if not inputs or not isinstance(inputs[0], torch.Tensor):
                 return
             base = getattr(module, "base_layer", module)
@@ -472,11 +452,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
             cls_name = base_module.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(base_module, "nf")
 
-            W = (
-                raw_w.t().contiguous().clone().float()
-                if is_conv1d
-                else raw_w.clone().float()
-            )
+            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
             d_out, d_in = W.shape
             device = raw_w.device
             dtype = raw_w.dtype
@@ -526,12 +502,8 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
                 Vt_r = Vt[:r, :]
                 new_U = torch.matmul(Q, U_r)  # (d_out, r)
                 new_V = torch.matmul(Vt_r, L_inv)  # (r, d_in)
-                new_weight = torch.matmul(
-                    new_U * S_r.unsqueeze(0), new_V
-                )  # (d_out, d_in)
-                new_weight = torch.nan_to_num(
-                    new_weight, nan=0.0, posinf=0.0, neginf=0.0
-                )
+                new_weight = torch.matmul(new_U * S_r.unsqueeze(0), new_V)  # (d_out, d_in)
+                new_weight = torch.nan_to_num(new_weight, nan=0.0, posinf=0.0, neginf=0.0)
 
                 # ---------------- Error check ----------------
                 w_norm = torch.norm(W, p="fro").clamp_min(1e-12).item()
@@ -569,9 +541,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
                     replace_module(self.model, name, compressed_layer)
 
                 self.compressed_layers.append(name)
-                total_comp_params += sum(
-                    p.numel() for p in compressed_layer.parameters()
-                )
+                total_comp_params += sum(p.numel() for p in compressed_layer.parameters())
 
             except Exception as e:
                 logger.warning("OSP: SVD/decomposition failed on %s: %s", name, e)
@@ -601,11 +571,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
                         hidden = getattr(cfg, "hidden_size", None) if cfg else None
                         if hidden is None:
                             first_lin = next(
-                                (
-                                    m
-                                    for m in self.model.modules()
-                                    if isinstance(m, nn.Linear)
-                                ),
+                                (m for m in self.model.modules() if isinstance(m, nn.Linear)),
                                 None,
                             )
                             hidden = getattr(first_lin, "in_features", 8)
@@ -631,11 +597,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
             if self.compressed_layers
             else 0.0
         )
-        eff_ratio = (
-            total_comp_params / max(1, total_orig_params)
-            if total_orig_params > 0
-            else 1.0
-        )
+        eff_ratio = total_comp_params / max(1, total_orig_params) if total_orig_params > 0 else 1.0
         stats = self.get_compression_stats()
         stats.update(
             {
@@ -717,8 +679,7 @@ def optimal_subspace_projection_factory(
         )
         tokenizer = kwargs.pop(
             "tokenizer",
-            getattr(model, "tokenizer", None)
-            or _cfg_get(comp_config, "tokenizer", None),
+            getattr(model, "tokenizer", None) or _cfg_get(comp_config, "tokenizer", None),
         )
         lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
         lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
@@ -753,9 +714,7 @@ def optimal_subspace_projection_factory(
 # ===========================================================================
 @COMPRESSOR_REGISTRY.register("optimal_subspace_projection_inject")
 @COMPRESSOR_REGISTRY.register("inject_optimal_subspace_projection")
-def inject_optimal_subspace_projection(
-    model: Any = None, layer: Any = None, **kwargs: Any
-) -> Any:
+def inject_optimal_subspace_projection(model: Any = None, layer: Any = None, **kwargs: Any) -> Any:
     target = layer if layer is not None else model
     if target is None:
         return None

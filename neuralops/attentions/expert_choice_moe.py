@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 
@@ -109,21 +110,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -164,11 +159,7 @@ class LoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         target_dtype = x.dtype
-        w = (
-            self.weight.to(target_dtype)
-            if self.weight.dtype != target_dtype
-            else self.weight
-        )
+        w = self.weight.to(target_dtype) if self.weight.dtype != target_dtype else self.weight
         b = (
             self.bias.to(target_dtype)
             if (self.bias is not None and self.bias.dtype != target_dtype)
@@ -176,16 +167,8 @@ class LoRALinear(nn.Module):
         )
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            a = (
-                self.lora_A.to(target_dtype)
-                if self.lora_A.dtype != target_dtype
-                else self.lora_A
-            )
-            bb = (
-                self.lora_B.to(target_dtype)
-                if self.lora_B.dtype != target_dtype
-                else self.lora_B
-            )
+            a = self.lora_A.to(target_dtype) if self.lora_A.dtype != target_dtype else self.lora_A
+            bb = self.lora_B.to(target_dtype) if self.lora_B.dtype != target_dtype else self.lora_B
             lora_out = F.linear(F.linear(x, a), bb) * self.lora_scaling
             out = out + lora_out
         return out.to(target_dtype)
@@ -244,10 +227,7 @@ class ExpertChoiceMoE(nn.Module):
             logits = self.router(self.router_ln(x_flat))
         else:
             normed = F.layer_norm(x_flat, (D,))
-            if (
-                not hasattr(self, "_dynamic_router")
-                or self._dynamic_router.in_features != D
-            ):
+            if not hasattr(self, "_dynamic_router") or self._dynamic_router.in_features != D:
                 self._dynamic_router = nn.Linear(D, self.n_experts, bias=False).to(
                     device=x.device, dtype=x.dtype
                 )
@@ -289,8 +269,7 @@ class ExpertChoiceMoE(nn.Module):
                 expert_out = proj_out(self.experts[e](proj_in(selected_x)))
 
             update_val = (
-                expert_out.to(out_flat.dtype)
-                * topk_vals.unsqueeze(-1).to(out_flat.dtype)
+                expert_out.to(out_flat.dtype) * topk_vals.unsqueeze(-1).to(out_flat.dtype)
             ).to(dtype=out_flat.dtype)
             out_flat.index_add_(0, topk_indices, update_val)
 
@@ -335,14 +314,8 @@ class ExpertChoiceMoEAttention(BaseAttention):
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
         cfg_obj = getattr(config, "text_config", config) if config is not None else None
-        hidden_size = (
-            getattr(cfg_obj, "hidden_size", None) if cfg_obj is not None else None
-        )
-        num_heads = (
-            getattr(cfg_obj, "num_attention_heads", None)
-            if cfg_obj is not None
-            else None
-        )
+        hidden_size = getattr(cfg_obj, "hidden_size", None) if cfg_obj is not None else None
+        num_heads = getattr(cfg_obj, "num_attention_heads", None) if cfg_obj is not None else None
 
         if hidden_size is None and source_attn is not None:
             for cand in ["q_lin", "query", "q_proj", "c_attn", "in_proj_weight", "qkv"]:
@@ -367,9 +340,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
             if config is not None
             else self.num_heads
         )
-        self.head_dim = getattr(config, "head_dim", None) or (
-            self.dim // max(1, self.num_heads)
-        )
+        self.head_dim = getattr(config, "head_dim", None) or (self.dim // max(1, self.num_heads))
         self.all_head_size = self.num_heads * self.head_dim
         self.kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
@@ -476,9 +447,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
         self.moe_gate = nn.Parameter(torch.tensor(float(moe_init_gate)))
 
         dropout_p = (
-            getattr(
-                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
-            )
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
             if config
             else 0.1
         )
@@ -572,10 +541,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -595,9 +561,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
         # 1. GPT-2: Fused c_attn + c_proj
         if hasattr(pretrained_attn, "c_attn") and pretrained_attn.c_attn is not None:
             c_attn_mod = pretrained_attn.c_attn
-            if hasattr(c_attn_mod, "merge") and not getattr(
-                c_attn_mod, "merged", False
-            ):
+            if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
@@ -629,10 +593,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
                     c_b[2 * split_size :] if c_b is not None else None,
                 )
 
-            if (
-                hasattr(pretrained_attn, "c_proj")
-                and pretrained_attn.c_proj is not None
-            ):
+            if hasattr(pretrained_attn, "c_proj") and pretrained_attn.c_proj is not None:
                 c_proj_mod = pretrained_attn.c_proj
                 base_o = getattr(c_proj_mod, "base_layer", c_proj_mod)
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
@@ -651,9 +612,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
                     )
 
         # 2. RoBERTa / BERT nested self-attention
-        elif hasattr(pretrained_attn, "self") and hasattr(
-            pretrained_attn.self, "query"
-        ):
+        elif hasattr(pretrained_attn, "self") and hasattr(pretrained_attn.self, "query"):
             s = pretrained_attn.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
@@ -662,9 +621,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
                         mod.weight.data.clone(),
                         mod.bias.data.clone() if mod.bias is not None else None,
                     )
-            if hasattr(pretrained_attn, "output") and hasattr(
-                pretrained_attn.output, "dense"
-            ):
+            if hasattr(pretrained_attn, "output") and hasattr(pretrained_attn.output, "dense"):
                 out_mod = pretrained_attn.output.dense
                 extracted["o"] = (
                     out_mod.weight.data.clone(),
@@ -756,9 +713,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
                     target_mod.bias.data[:min_b].copy_(
-                        b[:min_b].to(
-                            device=target_mod.bias.device, dtype=target_mod.bias.dtype
-                        )
+                        b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype)
                     )
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
@@ -841,9 +796,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
             _qs = q.half() if q.dtype == torch.float32 else q
             _ks = k.half() if k.dtype == torch.float32 else k
             _vs = v.half() if v.dtype == torch.float32 else v
-            _is_causal = (
-                getattr(self, "is_decoder", False) and not is_cross_attention and L > 1
-            )
+            _is_causal = getattr(self, "is_decoder", False) and not is_cross_attention and L > 1
             _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
                 _qs,
                 _ks,
@@ -861,9 +814,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
             moe_out = self.moe(attn_out)
             self.aux_loss = self.moe.aux_loss
             moe_weight = torch.sigmoid(self.moe_gate).to(attn_out.dtype)
-            enriched_attn = (attn_out + moe_weight * moe_out.to(attn_out.dtype)).to(
-                attn_out.dtype
-            )
+            enriched_attn = (attn_out + moe_weight * moe_out.to(attn_out.dtype)).to(attn_out.dtype)
             if self.is_nested_encoder and enriched_attn.shape[-1] == self.dim:
                 out = enriched_attn
             else:
@@ -878,9 +829,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
         except Exception:
             pass
 
-        scores = (
-            torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder and not is_cross_attention:
             causal_mask = torch.triu(
@@ -929,9 +878,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
         moe_out = self.moe(attn_out)
         self.aux_loss = self.moe.aux_loss
         moe_weight = torch.sigmoid(self.moe_gate).to(attn_out.dtype)
-        enriched_attn = (attn_out + moe_weight * moe_out.to(attn_out.dtype)).to(
-            attn_out.dtype
-        )
+        enriched_attn = (attn_out + moe_weight * moe_out.to(attn_out.dtype)).to(attn_out.dtype)
 
         # 7. Output projection with nested encoder bypass
         if self.is_nested_encoder:
@@ -991,9 +938,7 @@ def inject_expert_choice_moe(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -1004,9 +949,7 @@ def inject_expert_choice_moe(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=(
-                    comp_config
-                    if "comp_config" in locals() or "comp_config" in kwargs
-                    else None
+                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
                 ),
                 layer_idx=idx,
                 total_layers=tot,

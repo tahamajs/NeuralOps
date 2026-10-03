@@ -24,6 +24,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -104,21 +105,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -154,9 +149,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
         return out
 
@@ -182,9 +175,7 @@ class PADReAttention(BaseAttention):
         self.config = config
         self.comp_config = comp_config or _cfg_get(config, "compression_config", None)
 
-        self.hidden_size = _cfg_get(
-            config, "hidden_size", kwargs.get("hidden_size", 768)
-        )
+        self.hidden_size = _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
         if (
             (config is None or not hasattr(config, "hidden_size"))
             and "hidden_size" not in kwargs
@@ -224,9 +215,7 @@ class PADReAttention(BaseAttention):
         self.temperature = _cfg_get(
             self.comp_config,
             "padre_temperature",
-            _cfg_get(
-                config, "padre_temperature", kwargs.get("temperature", temperature)
-            ),
+            _cfg_get(config, "padre_temperature", kwargs.get("temperature", temperature)),
         )
         self.max_error = float(
             _cfg_get(self.comp_config, "max_error", kwargs.get("max_error", 0.20))
@@ -310,9 +299,7 @@ class PADReAttention(BaseAttention):
         self.key = self.k_proj
         self.value = self.v_proj
 
-        dropout_p = _cfg_get(
-            config, "attention_probs_dropout_prob", kwargs.get("dropout", 0.1)
-        )
+        dropout_p = _cfg_get(config, "attention_probs_dropout_prob", kwargs.get("dropout", 0.1))
         self.dropout = nn.Dropout(dropout_p)
 
         self.stats: dict[str, Any] = {
@@ -327,11 +314,7 @@ class PADReAttention(BaseAttention):
             "effective_parameter_ratio": self.effective_parameter_ratio,
         }
 
-        source_attn = (
-            pretrained_attn
-            if pretrained_attn is not None
-            else kwargs.get("source_attn")
-        )
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -344,9 +327,7 @@ class PADReAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
             (
@@ -364,10 +345,7 @@ class PADReAttention(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -524,11 +502,7 @@ class PADReAttention(BaseAttention):
         source_lora: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {}
         for proj_key, target_mod in target_map.items():
             mod = None
-            if (
-                proj_key == "o"
-                and hasattr(src, "output")
-                and hasattr(src.output, "dense")
-            ):
+            if proj_key == "o" and hasattr(src, "output") and hasattr(src.output, "dense"):
                 mod = src.output.dense
             elif hasattr(src, "self"):
                 sub_map = {"q": "query", "k": "key", "v": "value"}
@@ -687,16 +661,12 @@ class PADReAttention(BaseAttention):
         # Determine invalid mask for padding and causal
         invalid_mask = torch.zeros(B, 1, N, N, device=scores.device, dtype=torch.bool)
         if attention_mask is not None:
-            valid_tok = get_token_valid_mask(
-                attention_mask, B, N, scores.device
-            )  # (B, N) bool
+            valid_tok = get_token_valid_mask(attention_mask, B, N, scores.device)  # (B, N) bool
             invalid_pad = ~valid_tok.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, N)
             invalid_mask = invalid_mask | invalid_pad
 
         if self.is_decoder:
-            causal_mask = torch.tril(
-                torch.ones(N, N, device=scores.device, dtype=torch.bool)
-            )
+            causal_mask = torch.tril(torch.ones(N, N, device=scores.device, dtype=torch.bool))
             invalid_causal = ~causal_mask.unsqueeze(0).unsqueeze(0)  # (1, 1, N, N)
             invalid_mask = invalid_mask | invalid_causal
 
@@ -706,9 +676,7 @@ class PADReAttention(BaseAttention):
         max_scores = masked_for_max.max(dim=-1, keepdim=True).values
         # If all keys are masked, avoid large negative value producing NaN
         thresh = -5e3 if scores.dtype in (torch.float16, torch.bfloat16) else -1e8
-        max_scores = torch.where(
-            max_scores <= thresh, torch.zeros_like(max_scores), max_scores
-        )
+        max_scores = torch.where(max_scores <= thresh, torch.zeros_like(max_scores), max_scores)
 
         scores_centered = (scores - max_scores) / max(self.temperature, 1e-6)
 
@@ -736,9 +704,7 @@ class PADReAttention(BaseAttention):
         attn_weights = self.dropout(attn_weights)
 
         context = torch.matmul(attn_weights, v)
-        context = (
-            context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
-        )
+        context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
             output = context
@@ -784,9 +750,7 @@ def inject_padre(
             layer_list = target.model.layers
         elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
             layer_list = target.encoder.layer
-        elif hasattr(target, "layers") and isinstance(
-            target.layers, (nn.ModuleList, list)
-        ):
+        elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
             layer_list = target.layers
 
         if layer_list is not None:
@@ -838,9 +802,7 @@ def inject_padre(
                 target_dev = next(new_attn.parameters()).device
                 target_dtype = next(new_attn.parameters()).dtype
                 h_size = getattr(new_attn, "hidden_size", 768)
-                dummy_x = torch.randn(
-                    1, 4, h_size, device=target_dev, dtype=target_dtype
-                )
+                dummy_x = torch.randn(1, 4, h_size, device=target_dev, dtype=target_dtype)
 
                 with torch.no_grad():
                     try:
@@ -857,14 +819,9 @@ def inject_padre(
                         and new_out is not None
                         and orig_out.shape == new_out.shape
                     ):
-                        norm_orig = torch.norm(orig_out.float(), p="fro").clamp_min(
-                            1e-12
-                        )
+                        norm_orig = torch.norm(orig_out.float(), p="fro").clamp_min(1e-12)
                         output_error = float(
-                            (
-                                torch.norm((orig_out - new_out).float(), p="fro")
-                                / norm_orig
-                            ).item()
+                            (torch.norm((orig_out - new_out).float(), p="fro") / norm_orig).item()
                         )
                     else:
                         output_error = 0.0

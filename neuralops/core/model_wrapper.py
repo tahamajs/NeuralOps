@@ -86,9 +86,7 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
         Inject a custom attention variant into all layers.
         This method also records the choice so it can be saved.
         """
-        inject_attention(
-            self.model, attention_type, rank=rank, copy_weights=copy_weights, **kwargs
-        )
+        inject_attention(self.model, attention_type, rank=rank, copy_weights=copy_weights, **kwargs)
         self._custom_config = UnifiedTransformerConfig(
             attention_type=attention_type,
             attention_rank=rank,
@@ -151,9 +149,7 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
             # If model_id is a Hub repo, we need to download the file
             from huggingface_hub import hf_hub_download
 
-            cfg_path = hf_hub_download(
-                repo_id=model_id, filename="unified_attention_config.json"
-            )
+            cfg_path = hf_hub_download(repo_id=model_id, filename="unified_attention_config.json")
 
         with open(cfg_path) as f:
             custom_cfg_dict = json.load(f)
@@ -203,9 +199,7 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
 
         has_custom = False
         if os.path.isdir(model_id):
-            has_custom = os.path.exists(
-                os.path.join(model_id, "unified_attention_config.json")
-            )
+            has_custom = os.path.exists(os.path.join(model_id, "unified_attention_config.json"))
 
         if has_custom:
             return cls._from_pretrained(model_id, **kwargs)
@@ -215,9 +209,7 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
                 sc_kwargs = dict(kwargs)
                 if num_labels is not None:
                     sc_kwargs["num_labels"] = num_labels
-                base = AutoModelForSequenceClassification.from_pretrained(
-                    model_id, **sc_kwargs
-                )
+                base = AutoModelForSequenceClassification.from_pretrained(model_id, **sc_kwargs)
             else:
                 base = AutoModel.from_pretrained(model_id, **kwargs)
             return cls(base)

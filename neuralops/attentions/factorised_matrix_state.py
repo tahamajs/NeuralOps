@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 
@@ -131,21 +132,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -187,9 +182,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
         return out
 
@@ -233,16 +226,10 @@ class FactorisedMatrixState(BaseAttention):
                     getattr(
                         source_attn,
                         "dense",
-                        getattr(
-                            source_attn, "c_proj", getattr(source_attn, "o_proj", None)
-                        ),
+                        getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None)),
                     ),
                 )
-                d_model = (
-                    getattr(out_layer, "out_features", 768)
-                    if out_layer is not None
-                    else 768
-                )
+                d_model = getattr(out_layer, "out_features", 768) if out_layer is not None else 768
             else:
                 d_model = kwargs.get("hidden_size", 768)
 
@@ -251,9 +238,7 @@ class FactorisedMatrixState(BaseAttention):
 
         if num_heads is None:
             if config is not None:
-                num_heads = getattr(
-                    config, "num_attention_heads", getattr(config, "num_heads", 12)
-                )
+                num_heads = getattr(config, "num_attention_heads", getattr(config, "num_heads", 12))
             elif source_attn is not None:
                 num_heads = getattr(
                     source_attn,
@@ -308,9 +293,7 @@ class FactorisedMatrixState(BaseAttention):
                 getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
             )
         elif comp_config is not None:
-            self.lora_rank: int = getattr(
-                comp_config, "lora_rank", kwargs.get("lora_rank", 16)
-            )
+            self.lora_rank: int = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
             self.lora_alpha: float = getattr(
                 comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)
             )
@@ -489,10 +472,7 @@ class FactorisedMatrixState(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -512,9 +492,7 @@ class FactorisedMatrixState(BaseAttention):
         # 1. GPT-2: Fused c_attn + c_proj
         if hasattr(old_attn, "c_attn") and old_attn.c_attn is not None:
             c_attn_mod = old_attn.c_attn
-            if hasattr(c_attn_mod, "merge") and not getattr(
-                c_attn_mod, "merged", False
-            ):
+            if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
@@ -666,9 +644,7 @@ class FactorisedMatrixState(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
                     target_mod.bias.data[:min_b].copy_(
-                        b[:min_b].to(
-                            device=target_mod.bias.device, dtype=target_mod.bias.dtype
-                        )
+                        b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype)
                     )
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
@@ -699,13 +675,7 @@ class FactorisedMatrixState(BaseAttention):
         """
         B, H, L, d = q.shape
 
-        if (
-            HAS_TRITON_FMS
-            and q.is_cuda
-            and d <= MAX_REGISTER_DIM
-            and mask is None
-            and not reverse
-        ):
+        if HAS_TRITON_FMS and q.is_cuda and d <= MAX_REGISTER_DIM and mask is None and not reverse:
             try:
                 decay_scalar = decay.float().clamp(min=1e-4, max=1.0 - 1e-4).squeeze()
                 if decay_scalar.dim() == 0:
@@ -767,9 +737,9 @@ class FactorisedMatrixState(BaseAttention):
                 idx_c = torch.arange(curr_c, device=q.device, dtype=torch.float32)
                 dist_c = idx_c.unsqueeze(1) - idx_c.unsqueeze(0)
                 causal_mask_c = dist_c >= 0
-                Dc = torch.exp(
-                    dist_c.unsqueeze(0).unsqueeze(0) * log_decay
-                ).masked_fill(~causal_mask_c.unsqueeze(0).unsqueeze(0), 0.0)
+                Dc = torch.exp(dist_c.unsqueeze(0).unsqueeze(0) * log_decay).masked_fill(
+                    ~causal_mask_c.unsqueeze(0).unsqueeze(0), 0.0
+                )
 
                 # Intra-chunk
                 scores_c = torch.matmul(qc, kc.transpose(-1, -2)) * Dc
@@ -848,18 +818,8 @@ class FactorisedMatrixState(BaseAttention):
 
         # 1. Projections
         q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
-        k = (
-            self.k_proj(kv_input)
-            .view(B, kv_len, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.v_proj(kv_input)
-            .view(B, kv_len, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        k = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # 2. Rotary Position Embeddings (RoPE)
         if position_embeddings is not None and not is_cross_attention:
@@ -896,9 +856,7 @@ class FactorisedMatrixState(BaseAttention):
         if self.is_decoder or is_cross_attention:
             y = y_fwd
         else:
-            y_bwd = self._matrix_scan_linear(
-                q, k, v, decay, mask=mask_bool, reverse=True
-            )
+            y_bwd = self._matrix_scan_linear(q, k, v, decay, mask=mask_bool, reverse=True)
             y = 0.5 * (y_fwd + y_bwd)
 
         # 6. Head mask handling
@@ -919,9 +877,7 @@ class FactorisedMatrixState(BaseAttention):
             out = y_flat
         else:
             # Low-rank factorized bilinear output projection + residual output projection
-            low_rank = torch.matmul(
-                torch.matmul(y_flat, self.L), self.R.t().contiguous()
-            )
+            low_rank = torch.matmul(torch.matmul(y_flat, self.L), self.R.t().contiguous())
             out = self.W_res(y_flat) + low_rank
 
         return out, None
@@ -969,9 +925,7 @@ def inject_factorised_matrix_state(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -982,9 +936,7 @@ def inject_factorised_matrix_state(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=(
-                    comp_config
-                    if "comp_config" in locals() or "comp_config" in kwargs
-                    else None
+                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
                 ),
                 layer_idx=idx,
                 total_layers=tot,

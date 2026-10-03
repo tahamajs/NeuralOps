@@ -13,6 +13,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.compression_engine.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
@@ -48,9 +49,7 @@ class DRONECompressor(BaseCompressor):
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = getattr(cfg, "drone_rank", getattr(cfg, "rank", rank))
-            max_error = getattr(
-                cfg, "drone_max_error", getattr(cfg, "max_error", max_error)
-            )
+            max_error = getattr(cfg, "drone_max_error", getattr(cfg, "max_error", max_error))
             fallback_to_original = getattr(
                 cfg,
                 "drone_fallback_to_original",
@@ -76,9 +75,7 @@ class DRONECompressor(BaseCompressor):
         self.target_modules = target_modules
         self.target_attention_only = target_attention_only
         self.device = (
-            torch.device(device)
-            if device is not None
-            else next(model.parameters()).device
+            torch.device(device) if device is not None else next(model.parameters()).device
         )
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
@@ -89,8 +86,7 @@ class DRONECompressor(BaseCompressor):
         if isinstance(module, SVDLinear):
             return False
         if any(
-            name.endswith(sfx)
-            for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]
+            name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]
         ):
             return False
 
@@ -182,9 +178,7 @@ class DRONECompressor(BaseCompressor):
                 or hasattr(layer, "nf")
                 or hasattr(target_mod, "nf")
             )
-            weight_tensor = getattr(
-                target_mod, "weight", getattr(layer, "weight", None)
-            )
+            weight_tensor = getattr(target_mod, "weight", getattr(layer, "weight", None))
             if weight_tensor is None:
                 return None, float("inf"), 0
 

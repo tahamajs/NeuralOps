@@ -15,6 +15,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.compression_engine.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
@@ -82,9 +83,7 @@ class FWSVDCompressor(BaseCompressor):
             rank = getattr(cfg, "fwsvd_rank", getattr(cfg, "rank", rank))
             tokenizer = getattr(cfg, "tokenizer", tokenizer)
             calibration_texts = getattr(cfg, "calibration_texts", calibration_texts)
-            max_error = getattr(
-                cfg, "fwsvd_max_error", getattr(cfg, "max_error", max_error)
-            )
+            max_error = getattr(cfg, "fwsvd_max_error", getattr(cfg, "max_error", max_error))
             fallback_to_original = getattr(
                 cfg,
                 "fwsvd_fallback_to_original",
@@ -108,9 +107,7 @@ class FWSVDCompressor(BaseCompressor):
         self.target_modules = target_modules
         self.target_attention_only = target_attention_only
         self.device = (
-            torch.device(device)
-            if device is not None
-            else next(model.parameters()).device
+            torch.device(device) if device is not None else next(model.parameters()).device
         )
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
@@ -121,8 +118,7 @@ class FWSVDCompressor(BaseCompressor):
         if isinstance(module, SVDLinear):
             return False
         if any(
-            name.endswith(sfx)
-            for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]
+            name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]
         ):
             return False
 
@@ -215,9 +211,7 @@ class FWSVDCompressor(BaseCompressor):
                 or hasattr(layer, "nf")
                 or hasattr(target_mod, "nf")
             )
-            weight_tensor = getattr(
-                target_mod, "weight", getattr(layer, "weight", None)
-            )
+            weight_tensor = getattr(target_mod, "weight", getattr(layer, "weight", None))
             if weight_tensor is None:
                 return None, float("inf"), 0
 
@@ -252,9 +246,9 @@ class FWSVDCompressor(BaseCompressor):
             inv_sqrt_f: torch.Tensor | None = None
 
             if fisher_diag is not None and fisher_diag.shape == (in_feat,):
-                f_clamped = fisher_diag.to(
-                    device=layer.weight.device, dtype=torch.float32
-                ).clamp(min=1e-8)
+                f_clamped = fisher_diag.to(device=layer.weight.device, dtype=torch.float32).clamp(
+                    min=1e-8
+                )
                 sqrt_f = torch.sqrt(f_clamped)
                 inv_sqrt_f = 1.0 / sqrt_f
 
@@ -263,9 +257,7 @@ class FWSVDCompressor(BaseCompressor):
             else:
                 W_weighted = W
 
-            W_weighted_dev = W_weighted.to(
-                device=layer.weight.device, dtype=torch.float32
-            )
+            W_weighted_dev = W_weighted.to(device=layer.weight.device, dtype=torch.float32)
             U, S, Vt = torch.linalg.svd(W_weighted_dev, full_matrices=False)
 
             sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
@@ -316,9 +308,7 @@ class FWSVDCompressor(BaseCompressor):
         fishers: dict[str, torch.Tensor] = {}
 
         if self.tokenizer is None:
-            logger.info(
-                "No tokenizer provided for FWSVD; proceeding with standard unweighted SVD."
-            )
+            logger.info("No tokenizer provided for FWSVD; proceeding with standard unweighted SVD.")
         else:
             hooks = []
 
@@ -348,11 +338,7 @@ class FWSVDCompressor(BaseCompressor):
                         )
                         if weight_tensor is None:
                             return
-                        in_f = (
-                            weight_tensor.shape[0]
-                            if is_conv1d
-                            else weight_tensor.shape[1]
-                        )
+                        in_f = weight_tensor.shape[0] if is_conv1d else weight_tensor.shape[1]
                         x_fp32 = x.float()
                         x_flat = x_fp32.reshape(-1, in_f)
                         mask = x_flat.abs().sum(dim=-1) > 1e-5
@@ -392,9 +378,7 @@ class FWSVDCompressor(BaseCompressor):
         for name, module in list(self.model.named_modules()):
             if self._is_target_module(name, module):
                 f_diag = fishers.get(name)
-                svd_layer, err, r = self.compress_linear(
-                    module, rank=self.rank, fisher_diag=f_diag
-                )
+                svd_layer, err, r = self.compress_linear(module, rank=self.rank, fisher_diag=f_diag)
                 self.layer_errors[name] = err
                 self.layer_ranks[name] = r
 

@@ -11,6 +11,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -88,9 +89,7 @@ class UniQLinear(nn.Module):
         )
 
         if bias is not None:
-            self.bias = nn.Parameter(
-                bias.to(dtype=dtype, device=device), requires_grad=False
-            )
+            self.bias = nn.Parameter(bias.to(dtype=dtype, device=device), requires_grad=False)
         else:
             self.register_parameter("bias", None)
 
@@ -130,9 +129,7 @@ class UniQLinear(nn.Module):
 # ---------------------------------------------------------------------------
 # Quantization helpers
 # ---------------------------------------------------------------------------
-def _uniform_quantize(
-    t: torch.Tensor, bits: int
-) -> tuple[torch.Tensor, torch.Tensor, float]:
+def _uniform_quantize(t: torch.Tensor, bits: int) -> tuple[torch.Tensor, torch.Tensor, float]:
     """
     Uniform min-max quantization to signed int8 (symmetric) with per-row or
     per-tensor scale. Returns (q_int8, scale, min_val_or_0).
@@ -146,9 +143,7 @@ def _uniform_quantize(
         max_abs = tf.abs().amax(dim=1, keepdim=True).clamp(min=1e-8)
         qmax = float((2 ** (bits - 1)) - 1)
         scale = (max_abs / qmax).squeeze(1)  # (rows,)
-        q = torch.clamp(torch.round(tf / scale.unsqueeze(1)), -qmax - 1, qmax).to(
-            torch.int8
-        )
+        q = torch.clamp(torch.round(tf / scale.unsqueeze(1)), -qmax - 1, qmax).to(torch.int8)
         return q, scale, 0.0
     elif tf.dim() == 1:
         max_abs = tf.abs().max().clamp(min=1e-8)
@@ -204,12 +199,8 @@ class UniQLCompressor(BaseCompressor):
                 cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error", max_error)
             )
             max_retries = _cfg_get(cfg, "max_retries", max_retries)
-            fallback_to_original = _cfg_get(
-                cfg, "fallback_to_original", fallback_to_original
-            )
-            target_attention_only = _cfg_get(
-                cfg, "target_attention_only", target_attention_only
-            )
+            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
             quantize_bias = _cfg_get(cfg, "uniql_quantize_bias", quantize_bias)
 
         if kwargs.get("rank") is not None:
@@ -228,9 +219,7 @@ class UniQLCompressor(BaseCompressor):
             quantize_bias = bool(kwargs["quantize_bias"])
 
         self.rank = max(1, int(rank))
-        self.bits = max(
-            2, min(16, int(bits))
-        )  # cap at 16 bits (int8 storage assumption)
+        self.bits = max(2, min(16, int(bits)))  # cap at 16 bits (int8 storage assumption)
         self.max_error = float(max_error)
         self.max_retries = max(0, int(max_retries))
         self.fallback_to_original = bool(fallback_to_original)
@@ -433,10 +422,7 @@ class UniQLCompressor(BaseCompressor):
 
             # ---- Build the new module ----
             bias_tensor = None
-            if (
-                getattr(base_layer, "bias", None) is not None
-                and base_layer.bias is not None
-            ):
+            if getattr(base_layer, "bias", None) is not None and base_layer.bias is not None:
                 b = base_layer.bias.data
                 if self.quantize_bias:
                     bq, bs, _ = _uniform_quantize(b.float(), result["bits"])
@@ -467,16 +453,12 @@ class UniQLCompressor(BaseCompressor):
                 # Freeze any remaining LoRA parameters so recovery can still
                 # train them if the pipeline expects that.
                 for p_name, p in module.named_parameters():
-                    if "lora_" in p_name.lower() and not p_name.startswith(
-                        "base_layer"
-                    ):
+                    if "lora_" in p_name.lower() and not p_name.startswith("base_layer"):
                         p.requires_grad = False
             else:
                 # Plain Linear / Conv1D: replace in the model.
                 parent_name, _, child_name = name.rpartition(".")
-                parent = (
-                    self.model.get_submodule(parent_name) if parent_name else self.model
-                )
+                parent = self.model.get_submodule(parent_name) if parent_name else self.model
                 setattr(parent, child_name, new_layer)
 
             # ---- Storage accounting (honest) ----
@@ -486,9 +468,7 @@ class UniQLCompressor(BaseCompressor):
                 result["U_q"].numel() + result["S_q"].numel() + result["Vt_q"].numel()
             )  # int8: 1 byte each
             comp_bytes += (
-                result["scale_u"].numel()
-                + result["scale_s"].numel()
-                + result["scale_v"].numel()
+                result["scale_u"].numel() + result["scale_s"].numel() + result["scale_v"].numel()
             ) * 4  # fp32 scales
             if bias_tensor is not None:
                 orig_bytes += base_layer.bias.numel() * base_layer.bias.element_size()
@@ -517,12 +497,8 @@ class UniQLCompressor(BaseCompressor):
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
         stats = self.get_compression_stats()
-        avg_err = (
-            (total_err / len(self.compressed_layers)) if self.compressed_layers else 0.0
-        )
-        ratio = (
-            (orig_storage_bytes / comp_storage_bytes) if comp_storage_bytes > 0 else 1.0
-        )
+        avg_err = (total_err / len(self.compressed_layers)) if self.compressed_layers else 0.0
+        ratio = (orig_storage_bytes / comp_storage_bytes) if comp_storage_bytes > 0 else 1.0
 
         stats.update(
             {
@@ -564,9 +540,7 @@ def uniql_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     rank = kwargs.pop(
         "rank", _cfg_get(comp_config, "uniql_rank", _cfg_get(comp_config, "rank", 64))
     )
-    bits = kwargs.pop(
-        "bits", _cfg_get(comp_config, "uniql_bits", _cfg_get(comp_config, "bits", 8))
-    )
+    bits = kwargs.pop("bits", _cfg_get(comp_config, "uniql_bits", _cfg_get(comp_config, "bits", 8)))
     target_attn = kwargs.pop(
         "target_attention_only", _cfg_get(comp_config, "target_attention_only", False)
     )
