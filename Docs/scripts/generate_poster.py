@@ -1,7 +1,7 @@
 from pptx import Presentation
 from pptx.util import Inches
 
-prs = Presentation('/Users/tahamajs/Documents/uni/Project/Docs/A1_Vertical_Template_Electronics.pptx')
+prs = Presentation('Docs/A1_Vertical_Template_Electronics.pptx')
 slide = prs.slides[0]
 
 def replace_paragraph_text(paragraph, new_text):
@@ -30,10 +30,10 @@ if len(slide.shapes) > 17 and slide.shapes[17].has_text_frame:
 # Find the picture placeholder or shape 20 bounds and insert our generated image + chart
 # We have `neuralops_cover.jpg` and `../thesis_final/chart.png`. Let's add them at the bottom.
 try:
-    slide.shapes.add_picture('/Users/tahamajs/Documents/uni/Project/Docs/neuralops_cover.jpg', Inches(1.5), Inches(24), Inches(10), Inches(7))
-    slide.shapes.add_picture('/Users/tahamajs/Documents/uni/Project/thesis_final/chart.png', Inches(12), Inches(24), Inches(10), Inches(6.5))
+    slide.shapes.add_picture('Docs/neuralops_cover.jpg', Inches(1.5), Inches(24), Inches(10), Inches(7))
+    slide.shapes.add_picture('thesis_final/chart.png', Inches(12), Inches(24), Inches(10), Inches(6.5))
 except Exception as e:
     print(f"Failed to add images: {e}")
 
-prs.save('/Users/tahamajs/Documents/uni/Project/Docs/A1_Vertical_Template_Electronics_Updated.pptx')
+prs.save('Docs/A1_Vertical_Template_Electronics_Updated.pptx')
 print("Poster text meticulously updated keeping the exact original fonts and layout.")

@@ -2,7 +2,7 @@ from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 
-prs = Presentation('/Users/tahamajs/Documents/uni/Project/Docs/A1_Vertical_Template_Electronics.pptx')
+prs = Presentation('Docs/A1_Vertical_Template_Electronics.pptx')
 slide = prs.slides[0]
 
 def replace_paragraph_text(paragraph, new_text):
@@ -28,10 +28,10 @@ if len(slide.shapes) > 15 and slide.shapes[15].has_text_frame:
 
 # Add stitched champion hero image & comparison chart
 try:
-    slide.shapes.add_picture('/Users/tahamajs/Documents/uni/Project/thesis_final/combined_hero_architecture.jpg', Inches(1.5), Inches(23.5), Inches(9.8), Inches(7.5))
-    slide.shapes.add_picture('/Users/tahamajs/Documents/uni/Project/thesis_final/chart_champion_comparison.png', Inches(11.8), Inches(23.5), Inches(10.2), Inches(6.8))
+    slide.shapes.add_picture('thesis_final/combined_hero_architecture.jpg', Inches(1.5), Inches(23.5), Inches(9.8), Inches(7.5))
+    slide.shapes.add_picture('thesis_final/chart_champion_comparison.png', Inches(11.8), Inches(23.5), Inches(10.2), Inches(6.8))
 except Exception as e:
     print(f"Failed to add images: {e}")
 
-prs.save('/Users/tahamajs/Documents/uni/Project/Docs/A1_Vertical_Template_Electronics_Updated.pptx')
+prs.save('Docs/A1_Vertical_Template_Electronics_Updated.pptx')
 print("Poster successfully updated with Champion model and stitched architecture image!")

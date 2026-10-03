@@ -5,7 +5,7 @@
 
 > [!WARNING]
 > **DEPRECATED & EXCLUDED FROM BENCHMARK QUEUE**
-> Tensor-Train compression has been removed from the active benchmark queue (`run_all_benchmarks_queue.py`). For detailed theoretical explanations of why TT on 2D matrices underperforms SVD, hardware execution bottlenecks, and empirical findings on pretrained weights, see [`Docs/content/compressions/tt.md`](file:///Users/tahamajs/Documents/uni/Project/Docs/content/compressions/tt.md).
+> Tensor-Train compression has been removed from the active benchmark queue (`run_all_benchmarks_queue.py`). For detailed theoretical explanations of why TT on 2D matrices underperforms SVD, hardware execution bottlenecks, and empirical findings on pretrained weights, see [`Docs/content/compressions/tt.md`](Docs/content/compressions/tt.md).
 > Experimental runners are preserved in `Codes/experimental/runners/`.
 
 ## 1. Executive Abstract & Theoretical Motivation

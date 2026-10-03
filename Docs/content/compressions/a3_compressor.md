@@ -9,7 +9,7 @@
 
 A3 is a post-training structured factorized compression method that reduces parameter counts and computational complexity (FLOPs) in transformer linear layers (including self-attention projections $Q, K, V, O$ and MLP projections) by replacing their weight matrices with true factorized low-rank modules obtained via Singular Value Decomposition (SVD).
 
-Unlike naive low-rank approximation methods that merely overwrite the weights of an existing dense $m \times n$ matrix (retaining full parameter memory and dense matrix multiplication cost), A3 performs **true physical structural replacement**: it replaces each eligible `nn.Linear` (or HuggingFace `Conv1D`) module with an [`A3FactorizedLinear`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/a3_compressor.py#L44-L152) layer.
+Unlike naive low-rank approximation methods that merely overwrite the weights of an existing dense $m \times n$ matrix (retaining full parameter memory and dense matrix multiplication cost), A3 performs **true physical structural replacement**: it replaces each eligible `nn.Linear` (or HuggingFace `Conv1D`) module with an [`A3FactorizedLinear`](Codes/framework/compression_engine/a3_compressor.py#L44-L152) layer.
 
 ```
        Original Linear Layer: y = x W^T + b       (m * n parameters)
@@ -74,7 +74,7 @@ $$V_{\text{factor}} \leftarrow V_{\text{factor}} \operatorname{diag}(1 / s)$$
 The forward pass executes a two-stage sequential projection:
 $$y = (x V_{\text{factor}}^\top) U_{\text{factor}}^\top + b$$
 
-In [`A3FactorizedLinear`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/a3_compressor.py#L44-L152), the effective dense weight matrix can be inspected via the `get_weight()` method:
+In [`A3FactorizedLinear`](Codes/framework/compression_engine/a3_compressor.py#L44-L152), the effective dense weight matrix can be inspected via the `get_weight()` method:
 ```python
 def get_weight(self) -> torch.Tensor:
     """Reconstructed effective weight matrix (out_features, in_features)."""
@@ -87,9 +87,9 @@ def get_weight(self) -> torch.Tensor:
 
 A3 is registered in the compression framework via `@COMPRESSOR_REGISTRY.register("a3")` and `@COMPRESSOR_REGISTRY.register("a3_compressor")`. 
 
-The factory function [`a3_compressor_factory`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/a3_compressor.py#L561-L615) extracts runtime hyperparameters, constructs an [`A3Compressor`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/a3_compressor.py#L154-L559) instance, runs `.compress()`, and returns the structurally modified model.
+The factory function [`a3_compressor_factory`](Codes/framework/compression_engine/a3_compressor.py#L561-L615) extracts runtime hyperparameters, constructs an [`A3Compressor`](Codes/framework/compression_engine/a3_compressor.py#L154-L559) instance, runs `.compress()`, and returns the structurally modified model.
 
-The compression engine iterates over all eligible linear-like modules, checks module compatibility via `should_compress_linear`, validates the relative reconstruction error against `max_error`, and swaps the module in-place using [`replace_module`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/core/model_utils.py).
+The compression engine iterates over all eligible linear-like modules, checks module compatibility via `should_compress_linear`, validates the relative reconstruction error against `max_error`, and swaps the module in-place using [`replace_module`](Codes/framework/core/model_utils.py).
 
 ---
 
@@ -125,15 +125,15 @@ The compression engine iterates over all eligible linear-like modules, checks mo
    - If error remains unacceptable after retries, `fallback_to_original` is triggered: compression is aborted for that layer, logging a warning and preserving the uncompressed dense layer to prevent model degradation.
 
 6. **Structural Replacement & LayerNorm Recalibration**:
-   - Instantiates [`A3FactorizedLinear`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/a3_compressor.py#L44-L152) directly on the target device and dtype using safe factory kwargs.
+   - Instantiates [`A3FactorizedLinear`](Codes/framework/compression_engine/a3_compressor.py#L44-L152) directly on the target device and dtype using safe factory kwargs.
    - Replaces the target module in the model hierarchy using `replace_module`.
-   - If `recalibrate_ln=True`, runs a post-compression calibration pass through [`recalibrate_layernorms`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/pruning_utils.py) to dynamically rescale LayerNorm/RMSNorm scale parameters ($\gamma$).
+   - If `recalibrate_ln=True`, runs a post-compression calibration pass through [`recalibrate_layernorms`](Codes/framework/compression_engine/pruning_utils.py) to dynamically rescale LayerNorm/RMSNorm scale parameters ($\gamma$).
 
 ---
 
 ## Autograd & Fine-Tuning Compatibility
 
-Unlike non-structural low-rank approximations, [`A3FactorizedLinear`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/a3_compressor.py#L44-L152) exposes genuine PyTorch parameters:
+Unlike non-structural low-rank approximations, [`A3FactorizedLinear`](Codes/framework/compression_engine/a3_compressor.py#L44-L152) exposes genuine PyTorch parameters:
 - `self.V`: $\mathbb{R}^{r \times d_{\text{in}}}$
 - `self.U`: $\mathbb{R}^{d_{\text{out}} \times r}$
 - `self.bias`: $\mathbb{R}^{d_{\text{out}}}$ (optional)
@@ -248,7 +248,7 @@ The hardened A3 compressor implementation was evaluated natively on a dedicated 
 
 ## Complete Source Code Implementation (`a3_compressor.py`)
 
-Below is the complete, production-hardened source code matching [`Codes/framework/compression_engine/a3_compressor.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/a3_compressor.py):
+Below is the complete, production-hardened source code matching [`Codes/framework/compression_engine/a3_compressor.py`](Codes/framework/compression_engine/a3_compressor.py):
 
 ```python
 """
