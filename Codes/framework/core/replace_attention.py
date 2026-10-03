@@ -31,7 +31,7 @@ import math
 import inspect
 from argparse import Namespace
 from types import SimpleNamespace
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -117,7 +117,7 @@ def _build_attention_from_registry(
     attempts.append(lambda: attn_cls(hidden_size, num_heads, **kwargs_clean))
     attempts.append(lambda: attn_cls(**kwargs_clean))
 
-    last_exc: Optional[Exception] = None
+    last_exc: Exception | None = None
     for fn in attempts:
         try:
             return fn()
@@ -142,11 +142,11 @@ def build_attention(attention_name: str, hidden_size: int, num_heads: int,
 # ===========================================================================
 
 def _replace_layers(
-    layers: List[nn.Module],
+    layers: list[nn.Module],
     attn_attr: str,
     inject_fn: Any,
     model_config: Any,
-    attention_params: Dict[str, Any],
+    attention_params: dict[str, Any],
     model_type: str,
 ) -> None:
     """
@@ -221,7 +221,7 @@ def _replace_layers(
             continue
 
 
-def _get_attn_submodule(layer: nn.Module, attn_attr: str, model_type: str) -> Optional[nn.Module]:
+def _get_attn_submodule(layer: nn.Module, attn_attr: str, model_type: str) -> nn.Module | None:
     """Get the innermost attention submodule (unwrap nested BERT/RoBERTa)."""
     container = getattr(layer, attn_attr, None)
     if container is None:
@@ -233,11 +233,11 @@ def _get_attn_submodule(layer: nn.Module, attn_attr: str, model_type: str) -> Op
         return None
 
     if hasattr(container, "self"):
-        return getattr(container, "self")
+        return container.self
     return container
 
 
-def _attach_new_attention(layer: nn.Module, attn_attr: str, new_attn: Optional[nn.Module],
+def _attach_new_attention(layer: nn.Module, attn_attr: str, new_attn: nn.Module | None,
                           model_type: str) -> None:
     """RE-06: attach with proper guard for nested encoders."""
     if new_attn is None:
@@ -270,7 +270,7 @@ def _attach_new_attention(layer: nn.Module, attn_attr: str, new_attn: Optional[n
         layer.self = new_attn
 
 
-INJECT_TO_CLASS_MAP: Dict[str, str] = {
+INJECT_TO_CLASS_MAP: dict[str, str] = {
     "inject_replace": "replace_class",
     "inject_replace_attention": "replace_class",
     "inject_gqa": "gqa_attention_class",
@@ -351,7 +351,7 @@ def _infer_num_heads(old_attn: nn.Module, attn_attr: str, model_type: str) -> in
 def replace_attention_in_model(
     model: nn.Module,
     attention_name: str,
-    attention_params: Optional[Dict[str, Any]] = None,
+    attention_params: dict[str, Any] | None = None,
 ) -> nn.Module:
     """
     Replace all self-attention layers in a transformer model with target attention variant.
@@ -423,7 +423,7 @@ def replace_attention_in_model(
 # ===========================================================================
 
 def _get_valid_mask(
-    attention_mask: Optional[torch.Tensor],
+    attention_mask: torch.Tensor | None,
     batch_size: int,
     seq_len: int,
     device: torch.device,
@@ -447,7 +447,7 @@ def _get_valid_mask(
 
     if attention_mask.dim() == 4:
         v = attention_mask if attention_mask.dtype == torch.bool else (
-            attention_mask > -1e4 if attention_mask.dtype.is_floating_point 
+            attention_mask > -1e4 if attention_mask.dtype.is_floating_point
             else attention_mask > 0
         )
         v = v.any(dim=-2)  # (B, H, N)
@@ -527,14 +527,14 @@ class ReplaceAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        old_attn: Optional[nn.Module] = None,
-        rank: Optional[int] = None,
-        hidden_size: Optional[int] = None,
-        num_heads: Optional[int] = None,
-        num_attention_heads: Optional[int] = None,
+        config: Any | None = None,
+        old_attn: nn.Module | None = None,
+        rank: int | None = None,
+        hidden_size: int | None = None,
+        num_heads: int | None = None,
+        num_attention_heads: int | None = None,
         dropout: float = 0.1,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         try:
@@ -561,7 +561,7 @@ class ReplaceAttention(BaseAttention):
 
         # GQA support (Fix 1)
         self.num_kv_heads = int(
-            _cfg_get(config, "num_key_value_heads", 
+            _cfg_get(config, "num_key_value_heads",
                      _cfg_get(config, "num_kv_heads", self.num_heads))
         )
         if self.num_kv_heads <= 0 or self.num_kv_heads > self.num_heads:
@@ -618,8 +618,8 @@ class ReplaceAttention(BaseAttention):
     # ------------------------------------------------------------------
     # RE-14 / RE-22: shape-checked weight copy
     # ------------------------------------------------------------------
-    def _copy_into(self, target_proj: nn.Module, w: Optional[torch.Tensor],
-                   b: Optional[torch.Tensor], target_out: int, target_in: int) -> None:
+    def _copy_into(self, target_proj: nn.Module, w: torch.Tensor | None,
+                   b: torch.Tensor | None, target_out: int, target_in: int) -> None:
         if w is None:
             return
         with torch.no_grad():
@@ -704,7 +704,7 @@ class ReplaceAttention(BaseAttention):
             b_o = c_proj.bias.data if c_proj.bias is not None else None
 
         # Pattern 2: BERT / RoBERTa nested
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             w_q = s.query.weight.data
             b_q = s.query.bias.data if s.query.bias is not None else None
@@ -712,7 +712,7 @@ class ReplaceAttention(BaseAttention):
             b_k = s.key.bias.data if s.key.bias is not None else None
             w_v = s.value.weight.data
             b_v = s.value.bias.data if s.value.bias is not None else None
-            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+            if hasattr(src, "output") and hasattr(src.output, "dense"):
                 w_o = src.output.dense.weight.data
                 b_o = src.output.dense.bias.data if src.output.dense.bias is not None else None
             self.is_nested_encoder = True
@@ -797,14 +797,14 @@ class ReplaceAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
         output_attentions: bool = False,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         if encoder_hidden_states is not None:
             raise NotImplementedError(
                 "ReplaceAttention: cross-attention is not supported."
@@ -927,10 +927,10 @@ def inject_replace(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
-) -> Optional[nn.Module]:
+) -> nn.Module | None:
     """Safe injection of ReplaceAttention with recursion guard."""
     if _depth > 8:
         logger.warning("inject_replace: max recursion depth exceeded.")
@@ -938,7 +938,7 @@ def inject_replace(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

@@ -16,7 +16,7 @@ Bug-fix map:
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -62,17 +62,17 @@ class ERCCompressor(BaseCompressor):
         self,
         model: nn.Module,
         allowed_error: float = 0.20,
-        max_error: Optional[float] = None,
+        max_error: float | None = None,
         fallback_to_original: bool = True,
         target_attention_only: bool = False,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         max_retries: int = 2,
-        target_modules: Optional[List[str]] = None,
-        cfg: Optional[Any] = None,
+        target_modules: list[str] | None = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="erc", **kwargs)
-        cfg = cfg or kwargs.get("comp_config", None)
+        cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
         c_allowed = _cfg_get(cfg, "erc_allowed_error", _cfg_get(cfg, "allowed_error", allowed_error))
@@ -112,11 +112,11 @@ class ERCCompressor(BaseCompressor):
             )
             self.max_error = min(self.max_error, 0.30)
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_ranks: Dict[str, int] = {}
-        self.layer_errors: Dict[str, float] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_ranks: dict[str, int] = {}
+        self.layer_errors: dict[str, float] = {}
         self._compressed_params: int = 0
 
     # ------------------------------------------------------------------
@@ -154,7 +154,7 @@ class ERCCompressor(BaseCompressor):
     # ER-FIX-02: PEFT-compatible LoRA rank detection
     # ------------------------------------------------------------------
     @staticmethod
-    def _detect_lora(module: nn.Module) -> Tuple[int, float]:
+    def _detect_lora(module: nn.Module) -> tuple[int, float]:
         """Return (lora_rank, lora_alpha) from an existing LoRA wrapper if present."""
         if not hasattr(module, "lora_A"):
             return 0, 1.0
@@ -180,7 +180,7 @@ class ERCCompressor(BaseCompressor):
     def compress_linear(
         self,
         module: nn.Module,
-    ) -> Tuple[Optional[SVDLinear], float, int]:
+    ) -> tuple[SVDLinear | None, float, int]:
         """Decompose a single linear, Conv1D, or LoRALinear layer via error-controlled SVD."""
         target_mod = getattr(module, "base_layer", module)
         cls_name = target_mod.__class__.__name__.lower()
@@ -225,7 +225,7 @@ class ERCCompressor(BaseCompressor):
             r_init = min(r_init, int(self.rank))
         current_r = max(1, min(r_init, max_r))
 
-        best_svd_layer: Optional[SVDLinear] = None
+        best_svd_layer: SVDLinear | None = None
         best_err = 1.0
         chosen_r = current_r
 
@@ -293,7 +293,7 @@ class ERCCompressor(BaseCompressor):
         return best_svd_layer, best_err, chosen_r
 
     # ------------------------------------------------------------------
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Compress all target linear and Conv1D layers across the model."""
         self.compressed_layers = []
         self.fallback_layers = []

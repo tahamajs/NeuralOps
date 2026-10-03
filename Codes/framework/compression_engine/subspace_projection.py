@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -49,7 +49,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-def _get_lora_param(mod: Any) -> Optional[torch.Tensor]:
+def _get_lora_param(mod: Any) -> torch.Tensor | None:
     """SP-FIX-04: extract a LoRA parameter from either a Parameter or a Module."""
     if mod is None:
         return None
@@ -85,8 +85,8 @@ class SubspaceLinear(nn.Module):
         bias: bool = True,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = int(in_features)
@@ -178,7 +178,7 @@ class SubspaceLinear(nn.Module):
         use_lora: bool = False,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-    ) -> "SubspaceLinear":
+    ) -> SubspaceLinear:
         """
         Project linear or Conv1D weight matrix onto top-rank subspace.
         """
@@ -275,11 +275,11 @@ class SubspaceProjectionCompressor(BaseCompressor):
 
     def __init__(
         self,
-        model: Optional[nn.Module] = None,
+        model: nn.Module | None = None,
         rank: int = 64,
         method: str = "svd",
-        cfg: Optional[Any] = None,
-        target_layers: Optional[List[str]] = None,
+        cfg: Any | None = None,
+        target_layers: list[str] | None = None,
         target_attention_only: bool = False,
         use_lora: bool = False,
         lora_r: int = 0,
@@ -293,7 +293,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
             name="subspace_projection",
             **kwargs,
         )
-        cfg_obj = cfg or kwargs.get("comp_config", None)
+        cfg_obj = cfg or kwargs.get("comp_config")
 
         self.rank = int(rank or _cfg_get(cfg_obj, "subspace_rank",
                                           _cfg_get(cfg_obj, "rank", 64)))
@@ -324,11 +324,11 @@ class SubspaceProjectionCompressor(BaseCompressor):
             _cfg_get(cfg_obj, "fallback_to_original", fallback_to_original)
         )
 
-        self.compressed_layers: List[Dict[str, Any]] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[dict[str, Any]] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
 
     # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
@@ -371,7 +371,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
         return any(t in name for t in self.target_layers)
 
     # ------------------------------------------------------------------
-    def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         from framework.core.model_utils import replace_module
 
         if model is not None:
@@ -390,7 +390,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
 
         total_orig_bytes = 0
         total_comp_bytes = 0
-        seen_weights: Set[int] = set()
+        seen_weights: set[int] = set()
 
         for name, module in list(self.model.named_modules()):
             if not self._is_target_module(name, module):
@@ -610,12 +610,12 @@ class SubspaceProjectionCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("subspace_projection_factory")
 def subspace_projection_factory(
     model: nn.Module,
-    comp_config: Optional[Any] = None,
-    rank: Optional[int] = None,
+    comp_config: Any | None = None,
+    rank: int | None = None,
     return_stats: bool = False,
     return_tuple: bool = False,
     **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     effective_rank = rank or _cfg_get(
         comp_config, "subspace_rank", _cfg_get(comp_config, "rank", 64)
     )

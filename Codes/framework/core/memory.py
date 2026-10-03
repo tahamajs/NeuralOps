@@ -5,7 +5,6 @@ Ensures 100% clean memory deallocation between training steps, epochs, and exper
 
 import gc
 import logging
-from typing import Dict, Optional
 import torch
 
 logger = logging.getLogger(__name__)
@@ -35,11 +34,11 @@ def cleanup_gpu_memory(force: bool = True) -> None:
             pass
 
 
-def get_gpu_memory_stats() -> Dict[str, float]:
+def get_gpu_memory_stats() -> dict[str, float]:
     """
     Get detailed memory statistics in Megabytes (MB).
     """
-    stats: Dict[str, float] = {
+    stats: dict[str, float] = {
         "allocated_mb": 0.0,
         "reserved_mb": 0.0,
         "max_allocated_mb": 0.0,

@@ -25,7 +25,6 @@ import argparse
 import csv
 import json
 import logging
-import os
 import sys
 import time
 from pathlib import Path
@@ -39,7 +38,7 @@ ROOT = CODES.parent
 sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "Codes")]
 
 from datasets import load_dataset, load_from_disk
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
 from framework.eval_all_models_datasets import apply_module_to_model
 from framework.run_quality_sweep import prepare_eval_batches, evaluate_comprehensive
 
@@ -179,7 +178,7 @@ def main():
                     val_ds = load_from_disk(f"Codes/framework/data/glue_data/{ds_name}")
                 else:
                     val_ds = load_dataset("glue" if ds_name != "ag_news" else "ag_news", ds_name if ds_name != "ag_news" else None)
-                
+
                 val_split = val_ds.get("validation_matched", val_ds.get("validation", val_ds.get("test", None)))
                 eval_batches = prepare_eval_batches(tok, val_split, ds_name, 128, args.batch_size, device)
                 eval_metrics = evaluate_comprehensive(

@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 import math
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -40,7 +40,7 @@ class SharedSubspace:
     bit_alloc_k: torch.Tensor
     bit_alloc_v: torch.Tensor
     group_id: int = 0
-    layer_indices: List[int] = field(default_factory=list)
+    layer_indices: list[int] = field(default_factory=list)
 
 
 # =========================================================================
@@ -131,7 +131,7 @@ def reverse_waterfilling(
 def quantize_coefficients(
     U: torch.Tensor,
     bit_alloc: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Quantize U along the last dimension with per-component bit widths.
     Components with b ≤ 0 are stored as zero with unit scale.
@@ -203,8 +203,8 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
 
     def __init__(
         self,
-        subspaces: Dict[int, SharedSubspace],
-        layer_to_group: Dict[int, int],
+        subspaces: dict[int, SharedSubspace],
+        layer_to_group: dict[int, int],
         sink_tokens: int = 1,
         preserve_last_token: bool = True,
     ):
@@ -215,10 +215,10 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
         self.preserve_last_token = bool(preserve_last_token)
         self.enabled = True
 
-        self._compressed: Dict[int, List[Dict[str, torch.Tensor]]] = {}
+        self._compressed: dict[int, list[dict[str, torch.Tensor]]] = {}
         # Reconstruction cache: layer_idx -> (full_k, full_v, n_entries_seen)
-        self._reconstruction_cache: Dict[
-            int, Tuple[torch.Tensor, torch.Tensor, int]
+        self._reconstruction_cache: dict[
+            int, tuple[torch.Tensor, torch.Tensor, int]
         ] = {}
 
         self._total_original_bytes = 0
@@ -260,8 +260,8 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
         key_states: torch.Tensor,
         value_states: torch.Tensor,
         layer_idx: int,
-        cache_kwargs: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        cache_kwargs: dict[str, Any] | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Append new K/V, return the full K/V needed for attention."""
         if not self.enabled or layer_idx not in self.layer_to_group:
             return super().update(key_states, value_states, layer_idx, cache_kwargs)
@@ -299,7 +299,7 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
                 n += e["last_k"].shape[2]
         return n
 
-    def get_max_length(self) -> Optional[int]:
+    def get_max_length(self) -> int | None:
         return None
 
     def get_usable_length(self, new_seq_length: int, layer_idx: int = 0) -> int:
@@ -339,7 +339,7 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
         v: torch.Tensor,
         sub: SharedSubspace,
         layer_idx: int,
-    ) -> Dict[str, torch.Tensor]:
+    ) -> dict[str, torch.Tensor]:
         B, H_kv, T_new, D = k.shape
 
         # AXKV-FIX-12: sinks are prepended only once — the first time we
@@ -421,10 +421,10 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
     # ------------------------------------------------------------------
     def _reconstruct_entry(
         self,
-        e: Dict[str, torch.Tensor],
+        e: dict[str, torch.Tensor],
         sub: SharedSubspace,
         out_dtype: torch.dtype,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """AXKV-FIX-11: reconstruct one entry in fp32, cast at return."""
         V_k = sub.V_k.to(torch.float32)
         V_v = sub.V_v.to(torch.float32)
@@ -460,7 +460,7 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
     def _reconstruct_full(
         self,
         layer_idx: int,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         entries = self._compressed.get(layer_idx, [])
         if not entries:
             raise RuntimeError("AATC_XKVCache: no entries for layer.")
@@ -499,7 +499,7 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
             return 1.0
         return self._total_original_bytes / self._total_compressed_bytes
 
-    def memory_bytes(self) -> Dict[str, int]:
+    def memory_bytes(self) -> dict[str, int]:
         return {
             "original": self._total_original_bytes,
             "compressed": self._total_compressed_bytes,
@@ -521,7 +521,7 @@ def _forward_loss(model: nn.Module, batch: Any, device: torch.device) -> torch.T
     if isinstance(batch, dict):
         batch = {k: (v.to(device) if isinstance(v, torch.Tensor) else v)
                  for k, v in batch.items()}
-        input_ids = batch.get("input_ids", None)
+        input_ids = batch.get("input_ids")
         outputs = model(**batch)
     else:
         input_ids = batch.to(device) if isinstance(batch, torch.Tensor) else None
@@ -570,21 +570,21 @@ def _forward_loss(model: nn.Module, batch: Any, device: torch.device) -> torch.T
 
 def _collect_calibration_data(
     model: nn.Module,
-    attn_modules: List[Tuple[int, str, nn.Module]],
-    calib_batches: List[Any],
+    attn_modules: list[tuple[int, str, nn.Module]],
+    calib_batches: list[Any],
     device: torch.device,
     max_batches: int = 16,
-) -> Dict[str, Dict[int, torch.Tensor]]:
+) -> dict[str, dict[int, torch.Tensor]]:
     """
     Run model forward+backward on real calibration batches.
     Collect K, V projections and their gradients per layer.
     """
-    k_by_layer: Dict[int, List[torch.Tensor]] = {idx: [] for idx, _, _ in attn_modules}
-    v_by_layer: Dict[int, List[torch.Tensor]] = {idx: [] for idx, _, _ in attn_modules}
-    gk_by_layer: Dict[int, List[torch.Tensor]] = {idx: [] for idx, _, _ in attn_modules}
-    gv_by_layer: Dict[int, List[torch.Tensor]] = {idx: [] for idx, _, _ in attn_modules}
+    k_by_layer: dict[int, list[torch.Tensor]] = {idx: [] for idx, _, _ in attn_modules}
+    v_by_layer: dict[int, list[torch.Tensor]] = {idx: [] for idx, _, _ in attn_modules}
+    gk_by_layer: dict[int, list[torch.Tensor]] = {idx: [] for idx, _, _ in attn_modules}
+    gv_by_layer: dict[int, list[torch.Tensor]] = {idx: [] for idx, _, _ in attn_modules}
 
-    captured: Dict[int, Dict[str, torch.Tensor]] = {}
+    captured: dict[int, dict[str, torch.Tensor]] = {}
     hooks = []
 
     def make_hook(layer_idx: int, tag: str):
@@ -679,7 +679,7 @@ def _joint_svd_shared_basis(
     rank_cap: int,
     energy_threshold: float,
     oversample: int = 16,
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     AXKV-FIX-06: top-r right singular vectors of a large (N, D) matrix.
     Uses a memory-bounded randomized algorithm when N*D is large.
@@ -747,8 +747,8 @@ class AATC_XKVCompressor(BaseCompressor):
         energy_threshold: float = 0.95,
         sink_tokens: int = 1,
         preserve_last_token: bool = True,
-        calib_batches: Optional[List[Any]] = None,
-        cfg: Optional[Any] = None,
+        calib_batches: list[Any] | None = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="aatc_xkv", **kwargs)
@@ -767,17 +767,17 @@ class AATC_XKVCompressor(BaseCompressor):
         self.sink_tokens = int(_cget("sink_tokens", sink_tokens))
         self.preserve_last_token = bool(_cget("preserve_last_token", preserve_last_token))
 
-        self.subspaces: Dict[int, SharedSubspace] = {}
-        self.layer_to_group: Dict[int, int] = {}
+        self.subspaces: dict[int, SharedSubspace] = {}
+        self.layer_to_group: dict[int, int] = {}
         self.calib_batches = calib_batches
-        self.stats: Dict[str, Any] = {}
+        self.stats: dict[str, Any] = {}
 
         # Storage accounting
         self._orig_kv_bytes = 0
         self._comp_kv_bytes = 0
 
     # ------------------------------------------------------------------
-    def _find_attention_modules(self) -> List[Tuple[int, str, nn.Module]]:
+    def _find_attention_modules(self) -> list[tuple[int, str, nn.Module]]:
         """
         AXKV-FIX-08: identify attention submodules with K/V projections.
         Avoids `value` attribute collisions by requiring explicit projection
@@ -826,8 +826,8 @@ class AATC_XKVCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     def _build_subspaces(
         self,
-        calib: Dict[str, Dict[int, torch.Tensor]],
-        attn_modules: List[Tuple[int, str, nn.Module]],
+        calib: dict[str, dict[int, torch.Tensor]],
+        attn_modules: list[tuple[int, str, nn.Module]],
     ) -> None:
         layer_indices = [idx for idx, _, _ in attn_modules]
         G = max(1, self.group_size)
@@ -883,7 +883,7 @@ class AATC_XKVCompressor(BaseCompressor):
             )
 
     # ------------------------------------------------------------------
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         device = next(self.model.parameters()).device
         attn_modules = self._find_attention_modules()
 
@@ -973,7 +973,7 @@ class AATC_XKVCompressor(BaseCompressor):
 
     # ------------------------------------------------------------------
     @staticmethod
-    def _synthetic_calib(device) -> List[Any]:
+    def _synthetic_calib(device) -> list[Any]:
         # AXKV-FIX-10: deterministic seed
         logger.warning("AATC-XKV: synthetic calibration is not recommended.")
         gen = torch.Generator(device="cpu").manual_seed(42)

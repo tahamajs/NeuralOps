@@ -38,7 +38,7 @@ Bug-fix map:
 from __future__ import annotations
 import logging
 import math
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -56,7 +56,7 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 
 def _extract_valid_mask(
-    mask: Optional[torch.Tensor],
+    mask: torch.Tensor | None,
     batch_size: int,
     seq_len: int,
     device: torch.device,
@@ -180,14 +180,14 @@ class HybridAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        pretrained_attn: Optional[nn.Module] = None,
-        hidden_size: Optional[int] = None,
-        num_heads: Optional[int] = None,
-        head_dim: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = None,
+        pretrained_attn: nn.Module | None = None,
+        hidden_size: int | None = None,
+        num_heads: int | None = None,
+        head_dim: int | None = None,
         dropout: float = 0.1,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank, **kwargs)
@@ -288,9 +288,9 @@ class HybridAttention(BaseAttention):
         Q: torch.Tensor,
         K: torch.Tensor,
         V: torch.Tensor,
-        attention_mask: Optional[torch.Tensor],
+        attention_mask: torch.Tensor | None,
         past_len: int = 0,
-        valid_mask: Optional[torch.Tensor] = None,
+        valid_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
         B, H, N, Dh = Q.shape
         N_k = K.shape[2]
@@ -439,19 +439,19 @@ class HybridAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         layer_idx: int = 0,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, N, _ = hidden_states.shape
         device = hidden_states.device
 
@@ -469,7 +469,7 @@ class HybridAttention(BaseAttention):
 
         # HA-FIX-08: RoPE with past_len offset
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             past_len_rope = 0
@@ -579,9 +579,7 @@ class HybridAttention(BaseAttention):
 
         if hasattr(old_attn, "is_decoder"):
             self.is_decoder = bool(old_attn.is_decoder)
-        elif cls_name in ("GPT2Attention", "Qwen2Attention", "LlamaAttention"):
-            self.is_decoder = True
-        elif hasattr(old_attn, "c_attn"):
+        elif cls_name in ("GPT2Attention", "Qwen2Attention", "LlamaAttention") or hasattr(old_attn, "c_attn"):
             self.is_decoder = True
 
         from framework.core.adapters import UniversalAdapter
@@ -660,10 +658,10 @@ def inject_weighted_ensemble(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
-) -> Optional[Union[nn.Module, Any]]:
+) -> nn.Module | Any | None:
     # HA-FIX-03: recursion guard.
     if _depth > 8:
         logger.warning("inject_weighted_ensemble: max recursion depth exceeded.")

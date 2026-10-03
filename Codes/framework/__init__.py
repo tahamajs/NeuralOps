@@ -14,7 +14,6 @@ __version__ = "0.1.0"
 
 # Transparent Import Hook for Cleaned Submodule Aliases
 import sys
-import importlib
 import importlib.util
 import importlib.machinery
 from importlib.abc import MetaPathFinder
@@ -173,10 +172,10 @@ _LAZY_EXPORTS = {
     "UnifiedTransformerConfig": ("framework.core.model_wrapper", "UnifiedTransformerConfig"),
     "UnifiedTransformerModel": ("framework.core.model_wrapper", "UnifiedTransformerModel"),
     "MultiModeBenchmarkRunner": ("framework.core.multi_mode_benchmark", "MultiModeBenchmarkRunner"),
-    
+
     # Models
     "BaseModel": ("framework.models", "BaseModel"),
-    
+
     # Trainers & Metrics
     "BaseTrainer": ("framework.trainer.base_trainer", "BaseTrainer"),
     "HuggingFaceTrainer": ("framework.trainer.hf_trainer", "HuggingFaceTrainer"),
@@ -184,7 +183,7 @@ _LAZY_EXPORTS = {
     "TrainerRegistry": ("framework.trainer.registry", "TrainerRegistry"),
     "get_task_metrics": ("framework.trainer.metrics", "get_task_metrics"),
     "aggregate_results": ("framework.trainer.metrics", "aggregate_results"),
-    
+
     # Data & Benchmark Datasets
     "DataConfig": ("framework.data.base", "DataConfig"),
     "TaskType": ("framework.data.base", "TaskType"),
@@ -199,13 +198,13 @@ _LAZY_EXPORTS = {
     "load_benchmark_dataset": ("framework.data.benchmark_datasets", "load_benchmark_dataset"),
     "generate_synthetic_data": ("framework.data.synthetic_generator", "generate_synthetic_data"),
     "run_universal_generation": ("framework.data.synthetic_generator", "run_universal_generation"),
-    
+
     # Benchmark & Pipeline
     "build_attention_module": ("framework.benchmark_attention", "build_attention_module"),
     "benchmark_single_module": ("framework.benchmark_attention", "benchmark_single_module"),
     "run_benchmark_suite": ("framework.benchmark_attention", "run_benchmark_suite"),
     "ResultWriter": ("framework.pipeline.result_writer", "ResultWriter"),
-    
+
     # Evaluation & Robustness
     "ABTester": ("framework.evaluation.ab_testing", "ABTester"),
     "ABTestResult": ("framework.evaluation.ab_testing", "ABTestResult"),
@@ -218,7 +217,7 @@ _LAZY_EXPORTS = {
     "RetrainingOrchestrator": ("framework.evaluation.retraining", "RetrainingOrchestrator"),
     "RobustnessReport": ("framework.evaluation.robustness", "RobustnessReport"),
     "TextAdversarialTester": ("framework.evaluation.robustness", "TextAdversarialTester"),
-    
+
     # Visualization & Dashboards
     "ChartGenerator": ("framework.visualization.chart_generator", "ChartGenerator"),
     "BaseVisualizer": ("framework.visualization.base", "BaseVisualizer"),
@@ -244,7 +243,7 @@ _LAZY_EXPORTS = {
     "create_custom_colormap": ("framework.visualization.utils", "create_custom_colormap"),
 }
 
-__all__: List[str] = ["__version__"] + sorted(list(_LAZY_EXPORTS.keys()))
+__all__: list[str] = ["__version__"] + sorted(list(_LAZY_EXPORTS.keys()))
 
 
 def __getattr__(name: str) -> Any:
@@ -257,5 +256,5 @@ def __getattr__(name: str) -> Any:
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
-def __dir__() -> List[str]:
+def __dir__() -> list[str]:
     return sorted(list(globals().keys()) + __all__)

@@ -29,7 +29,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -225,16 +225,16 @@ class ChelaSlayAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
+        config: Any | None = None,
         rank: int = 64,
         feature_dim: int = 128,
-        pretrained_attn: Optional[nn.Module] = None,
-        old_attn: Optional[nn.Module] = None,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
         gate_init_bias: float = 5.0,
-        comp_config: Optional[Any] = None,
-        layer_id: Optional[int] = None,
-        layer_idx: Optional[int] = None,
-        is_decoder: Optional[bool] = None,
+        comp_config: Any | None = None,
+        layer_id: int | None = None,
+        layer_idx: int | None = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config=config, rank=rank, **kwargs)
@@ -356,9 +356,7 @@ class ChelaSlayAttention(BaseAttention):
             )
             _dec_pfx = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
                          "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
-            if any(model_type.startswith(p) for p in _dec_pfx):
-                is_dec = True
-            elif any("GPT" in str(a) or "CausalLM" in str(a)
+            if any(model_type.startswith(p) for p in _dec_pfx) or any("GPT" in str(a) or "CausalLM" in str(a)
                       for a in (_safe_getattr(config, "architectures", []) or [])):
                 is_dec = True
             if source_attn is not None:
@@ -470,11 +468,9 @@ class ChelaSlayAttention(BaseAttention):
         )
         is_nested = False
         if (hasattr(pretrained_attn, "self")
-                and hasattr(getattr(pretrained_attn, "self"), "query")
+                and hasattr(pretrained_attn.self, "query")
                 and hasattr(pretrained_attn, "output")
-                and hasattr(getattr(pretrained_attn, "output"), "dense")):
-            is_nested = True
-        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
+                and hasattr(pretrained_attn.output, "dense")) or (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
                             "XLMRobertaSelfAttention", "ElectraSelfAttention",
                             "DebertaSelfAttention")
               or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())) \
@@ -485,7 +481,7 @@ class ChelaSlayAttention(BaseAttention):
         if hasattr(pretrained_attn, "rotary_emb"):
             self.rotary_emb = pretrained_attn.rotary_emb
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None),
             "v": (None, None), "o": (None, None),
         }
@@ -523,8 +519,8 @@ class ChelaSlayAttention(BaseAttention):
                     extracted["o"] = (o_w, o_b.data.clone() if o_b is not None else None)
 
         # Nested (BERT / RoBERTa)
-        elif hasattr(pretrained_attn, "self") and hasattr(getattr(pretrained_attn, "self"), "query"):
-            s = getattr(pretrained_attn, "self")
+        elif hasattr(pretrained_attn, "self") and hasattr(pretrained_attn.self, "query"):
+            s = pretrained_attn.self
             for key, sub_name in (("q", "query"), ("k", "key"), ("v", "value")):
                 m = _unwrap(getattr(s, sub_name, None))
                 if m is not None and hasattr(m, "weight"):
@@ -652,16 +648,16 @@ class ChelaSlayAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_ids: Optional[torch.Tensor] = None,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_ids: torch.Tensor | None = None,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -694,7 +690,7 @@ class ChelaSlayAttention(BaseAttention):
         # Dense stream
         dense_scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * (self.head_dim ** -0.5)
 
-        can_causal = bool(self.is_causal and not is_cross and L == kv_len)
+        can_causal = bool(self.is_causal and not is_cross and kv_len == L)
         if can_causal:
             causal = torch.triu(
                 torch.full((L, L), -1e4, device=x.device, dtype=torch.float32),
@@ -810,7 +806,7 @@ class ChelaSlayAttention(BaseAttention):
 
         return torch.cat(out_chunks, dim=2)
 
-    def storage_bytes(self) -> Dict[str, int]:
+    def storage_bytes(self) -> dict[str, int]:
         def _sz(p):
             if isinstance(p, (nn.Parameter, torch.Tensor)):
                 return p.numel() * p.element_size()
@@ -833,7 +829,7 @@ class ChelaSlayAttention(BaseAttention):
 def inject_chela_slay(
     layer: Any = None, model: Any = None, model_config: Any = None,
     comp_config: Any = None, layer_idx: int = 0, total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None, _depth: int = 0, **kwargs: Any,
+    old_attn: nn.Module | None = None, _depth: int = 0, **kwargs: Any,
 ):
     if _depth > 8:
         logger.warning("inject_chela_slay: max recursion depth exceeded.")

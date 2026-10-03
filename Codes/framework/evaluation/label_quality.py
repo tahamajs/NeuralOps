@@ -6,7 +6,7 @@ Reference: https://github.com/cleanlab/cleanlab
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 from framework.core.registry import Registry
@@ -23,12 +23,12 @@ class LabelQualityReport:
     issue_rate: float
     label_issue_indices: np.ndarray
     label_quality_scores: np.ndarray  # per‑sample confidence (0 = bad, 1 = perfect)
-    suggested_labels: Optional[np.ndarray] = (
+    suggested_labels: np.ndarray | None = (
         None  # what cleanlab thinks the label should be
     )
-    per_class_issues: Dict[int, int] = field(default_factory=dict)
+    per_class_issues: dict[int, int] = field(default_factory=dict)
     outlier_indices: np.ndarray = field(default_factory=lambda: np.array([]))
-    near_duplicate_pairs: List[Tuple[int, int]] = field(default_factory=list)
+    near_duplicate_pairs: list[tuple[int, int]] = field(default_factory=list)
     overall_quality_score: float = 0.0
 
 
@@ -53,7 +53,7 @@ class LabelQualityDetector:
         self,
         labels: np.ndarray,
         pred_probs: np.ndarray,
-        class_names: Optional[List[str]] = None,
+        class_names: list[str] | None = None,
     ) -> LabelQualityReport:
         """
         Run full label quality analysis.
@@ -139,7 +139,7 @@ class LabelQualityDetector:
     # ── Label Issue Detection ───────────────────────────────────────
     def _find_label_issues(
         self, labels: np.ndarray, pred_probs: np.ndarray, cj: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
         """
         Return: (issue_mask, quality_scores, suggested_labels)
         """
@@ -174,7 +174,7 @@ class LabelQualityDetector:
     # ── Near‑Duplicate Detection ────────────────────────────────────
     def _find_near_duplicates(
         self, pred_probs: np.ndarray, threshold: float = 0.95
-    ) -> List[Tuple[int, int]]:
+    ) -> list[tuple[int, int]]:
         """Find pairs of samples whose prediction vectors are nearly identical."""
         from sklearn.metrics.pairwise import cosine_similarity
 
@@ -198,7 +198,7 @@ class LabelQualityDetector:
         return result
 
     # ── Summary helpers ─────────────────────────────────────────────
-    def summary(self, report: LabelQualityReport) -> Dict[str, Any]:
+    def summary(self, report: LabelQualityReport) -> dict[str, Any]:
         """Summary."""
         return {
             "total_samples": report.n_samples,

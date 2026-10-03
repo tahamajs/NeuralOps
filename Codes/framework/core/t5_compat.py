@@ -5,7 +5,7 @@ and numerically stable FP16 forward execution for custom attention modules.
 """
 
 import math
-from typing import Any, Optional, Tuple
+from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -23,7 +23,7 @@ def is_t5_model(config: Any) -> bool:
     )
 
 
-def get_t5_dims(config: Any) -> Tuple[int, int, int]:
+def get_t5_dims(config: Any) -> tuple[int, int, int]:
     """Extract (hidden_size, num_heads, head_dim) cleanly from T5Config or standard config."""
     hidden_size = getattr(config, 'd_model', getattr(config, 'hidden_size', 512))
     num_heads = getattr(config, 'num_heads', getattr(config, 'num_attention_heads', 8))
@@ -61,12 +61,12 @@ def relative_position_bucket(
 def compute_t5_bias(
     query_length: int,
     key_length: int,
-    relative_attention_bias: Optional[nn.Embedding],
+    relative_attention_bias: nn.Embedding | None,
     is_decoder: bool = False,
     num_buckets: int = 32,
     max_distance: int = 128,
-    device: Optional[torch.device] = None,
-) -> Optional[torch.Tensor]:
+    device: torch.device | None = None,
+) -> torch.Tensor | None:
     """Compute binned relative position bias table [1, num_heads, query_length, key_length]."""
     if relative_attention_bias is None:
         return None
@@ -113,7 +113,7 @@ class T5AttentionMixin:
         self.relative_attention_max_distance = getattr(old_attn, 'relative_attention_max_distance', 128)
         self.is_decoder = getattr(old_attn, 'is_decoder', False)
 
-    def compute_bias(self, query_length: int, key_length: int, device: Optional[torch.device] = None) -> Optional[torch.Tensor]:
+    def compute_bias(self, query_length: int, key_length: int, device: torch.device | None = None) -> torch.Tensor | None:
         return compute_t5_bias(
             query_length=query_length,
             key_length=key_length,
@@ -127,11 +127,11 @@ class T5AttentionMixin:
     def forward_t5_base(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        key_value_states: Optional[torch.Tensor] = None,
-        position_bias: Optional[torch.Tensor] = None,
+        attention_mask: torch.Tensor | None = None,
+        key_value_states: torch.Tensor | None = None,
+        position_bias: torch.Tensor | None = None,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Numerically stable T5 forward execution supporting:
         - Encoder self-attention

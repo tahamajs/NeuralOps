@@ -12,7 +12,7 @@ Features:
 
 import math
 import logging
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -21,7 +21,6 @@ import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.selective_scan import selective_scan
-from framework.core.triton_kernels import triton_dispatch
 
 logger = logging.getLogger(__name__)
 
@@ -48,13 +47,13 @@ class SelectiveSSM(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        d_model: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = None,
+        d_model: int | None = None,
         d_state: int = 16,
         d_conv: int = 4,
         expand: int = 2,
-        dt_rank: Optional[int] = None,
+        dt_rank: int | None = None,
         conv_bias: bool = True,
         bias: bool = False,
         bidirectional: bool = False,
@@ -192,17 +191,17 @@ class SelectiveSSM(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         if encoder_hidden_states is not None:
             raise NotImplementedError("SelectiveSSM does not support cross-attention.")
 

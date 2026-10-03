@@ -12,10 +12,9 @@ Supports:
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
-import torch.nn.functional as F
 
 from framework.core.triton_kernels._common import (
     HAS_TRITON,
@@ -118,7 +117,7 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
         q: torch.Tensor,
         k: torch.Tensor,
         v: torch.Tensor,
-        block_mask: Optional[torch.Tensor],
+        block_mask: torch.Tensor | None,
         block_size: int,
         is_causal: bool,
         eps: float,
@@ -168,7 +167,7 @@ class _TritonSparseAttnAutogradFunction(torch.autograd.Function):
         return out.view(*orig_shape)
 
     @staticmethod
-    def backward(ctx: Any, grad_out: torch.Tensor) -> Tuple[Optional[torch.Tensor], ...]:
+    def backward(ctx: Any, grad_out: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
         q, k, v, block_mask = ctx.saved_tensors
         q_req = q.detach().requires_grad_(True)
         k_req = k.detach().requires_grad_(True)
@@ -202,7 +201,7 @@ def fwd(
     q: torch.Tensor,
     k: torch.Tensor,
     v: torch.Tensor,
-    block_mask: Optional[torch.Tensor] = None,
+    block_mask: torch.Tensor | None = None,
     block_size: int = 64,
     is_causal: bool = False,
     eps: float = 1e-6,
@@ -223,12 +222,12 @@ def bwd(
     k: torch.Tensor,
     v: torch.Tensor,
     grad_out: torch.Tensor,
-    block_mask: Optional[torch.Tensor] = None,
+    block_mask: torch.Tensor | None = None,
     block_size: int = 64,
     is_causal: bool = False,
     eps: float = 1e-6,
     **kwargs: Any,
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """Backward entrypoint computing gradients for q, k, v."""
     q_req = q.detach().requires_grad_(True)
     k_req = k.detach().requires_grad_(True)

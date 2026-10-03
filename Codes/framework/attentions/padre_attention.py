@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -52,8 +52,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -92,8 +92,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -163,11 +163,11 @@ class PADReAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
+        config: Any | None = None,
         order: int = 2,
         temperature: float = 1.0,
-        pretrained_attn: Optional[nn.Module] = None,
-        comp_config: Optional[Any] = None,
+        pretrained_attn: nn.Module | None = None,
+        comp_config: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank=order)
@@ -261,7 +261,7 @@ class PADReAttention(BaseAttention):
         dropout_p = _cfg_get(config, "attention_probs_dropout_prob", kwargs.get("dropout", 0.1))
         self.dropout = nn.Dropout(dropout_p)
 
-        self.stats: Dict[str, Any] = {
+        self.stats: dict[str, Any] = {
             "order": self.order,
             "temperature": self.temperature,
             "lora_rank": self.lora_rank,
@@ -273,7 +273,7 @@ class PADReAttention(BaseAttention):
             "effective_parameter_ratio": self.effective_parameter_ratio,
         }
 
-        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -290,19 +290,17 @@ class PADReAttention(BaseAttention):
         is_nested = False
         if (
             hasattr(src, "self")
-            and hasattr(getattr(src, "self"), "query")
+            and hasattr(src.self, "query")
             and hasattr(src, "output")
-            and hasattr(getattr(src, "output"), "dense")
-        ):
-            is_nested = True
-        elif (
+            and hasattr(src.output, "dense")
+        ) or (
             cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
             or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
         ) and not has_out_lin:
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -344,8 +342,8 @@ class PADReAttention(BaseAttention):
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
         # 2. RoBERTa nested encoder
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            s = getattr(src, "self")
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
+            s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None:
@@ -354,7 +352,7 @@ class PADReAttention(BaseAttention):
                     b = getattr(base_m, "bias", getattr(mod, "bias", None))
                     if w is not None:
                         extracted[proj_key] = (w.data.clone(), b.data.clone() if b is not None else None)
-            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+            if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
                 base_o = getattr(out_mod, "base_layer", out_mod)
                 w = getattr(base_o, "weight", getattr(out_mod, "weight", None))
@@ -411,10 +409,10 @@ class PADReAttention(BaseAttention):
         }
 
         # Check source for LoRA adapters to preserve if present
-        source_lora: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {}
+        source_lora: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {}
         for proj_key, target_mod in target_map.items():
             mod = None
-            if proj_key == "o" and hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+            if proj_key == "o" and hasattr(src, "output") and hasattr(src.output, "dense"):
                 mod = src.output.dense
             elif hasattr(src, "self"):
                 sub_map = {"q": "query", "k": "key", "v": "value"}
@@ -495,18 +493,18 @@ class PADReAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """
         Forward pass with polynomial attention:
         1. Linear projection to Q, K, V
@@ -524,7 +522,7 @@ class PADReAttention(BaseAttention):
 
         # Apply RoPE if provided
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
@@ -605,14 +603,14 @@ def inject_padre(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
-) -> Optional[Any]:
+) -> Any | None:
     """Single-layer and whole-model framework injection helper for PADReAttention."""
     try:
         target = layer if layer is not None else model
         if target is None:
-            target = kwargs.get("model", kwargs.get("layer", None))
+            target = kwargs.get("model", kwargs.get("layer"))
         if target is None:
             return None
 

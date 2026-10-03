@@ -4,7 +4,6 @@ Supports GLUE, custom CSV/JSON/Parquet, multi‑choice, synthetic, and HuggingFa
 """
 
 from pathlib import Path
-from typing import List, Optional
 
 try:
     from datasets import DatasetDict
@@ -34,16 +33,16 @@ class ExperimentConfig:
     def __init__(
         self,
         dataset_name: str,
-        dataset_path: Optional[str] = None,
+        dataset_path: str | None = None,
         task_type: str = "single",
-        text_columns: Optional[List[str]] = None,
-        label_column: Optional[str] = None,
+        text_columns: list[str] | None = None,
+        label_column: str | None = None,
         num_labels: int = 2,
         metric: str = "accuracy",
         max_seq_length: int = 128,
         split_ratio: float = 0.1,
         synthetic_samples: int = 5000,
-        glue_base_path: Optional[str] = None,
+        glue_base_path: str | None = None,
         **kwargs
     ) -> None:
         self.dataset_name = dataset_name

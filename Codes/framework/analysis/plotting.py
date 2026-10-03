@@ -4,7 +4,6 @@ from typing import Any
 import json
 import os
 from pathlib import Path
-from typing import Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -290,7 +289,7 @@ def plot_attention_heatmap(history, metrics, config, output_dir, opts) -> Any:
 
 
 def create_comprehensive_plots(
-    df: pd.DataFrame, output_dir: str, figsize: Tuple[int, int] = (18, 16)
+    df: pd.DataFrame, output_dir: str, figsize: tuple[int, int] = (18, 16)
 ) -> None:
     """Build and return comprehensive plots."""
     os.makedirs(output_dir, exist_ok=True)

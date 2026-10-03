@@ -17,15 +17,14 @@ Outputs:
 import os
 import sys
 import argparse
-import time
 import csv
 import logging
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 import numpy as np
 import torch
 import torch.nn as nn
-from transformers import AutoModelForCausalLM, AutoConfig
+from transformers import AutoModelForCausalLM
 
 # Add project root to sys.path
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -38,7 +37,6 @@ if CODES_DIR not in sys.path:
 
 from framework.core.snapshot_restore import ModelStateSnapshot
 from framework.eval_all_models_datasets import apply_module_to_model
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 
 logging.basicConfig(
     level=logging.INFO,
@@ -56,7 +54,7 @@ def measure_single_length(
     num_trials: int = 3,
     num_iters: int = 25,
     warmup_iters: int = 5,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Measures throughput, latency, and peak VRAM for a single sequence length.
     Runs `num_trials` times and returns the median results.
@@ -69,7 +67,7 @@ def measure_single_length(
     for trial in range(num_trials):
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
-        
+
         # Synthesize input_ids
         input_ids = torch.randint(
             low=10,
@@ -139,7 +137,7 @@ def run_benchmark_for_module(
     base_snapshot: ModelStateSnapshot,
     module_name: str,
     group_name: str,
-    seq_lens: List[int],
+    seq_lens: list[int],
     batch_size: int,
     device: torch.device,
     output_dir: str,
@@ -147,7 +145,7 @@ def run_benchmark_for_module(
     num_trials: int = 3,
     num_iters: int = 25,
     warmup_iters: int = 5,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """
     Evaluates one module across all specified sequence lengths.
     Restores baseline state before adapting.
@@ -252,7 +250,7 @@ def run_benchmark_for_module(
 def save_results(
     module_name: str,
     group_name: str,
-    results: List[Dict[str, Any]],
+    results: list[dict[str, Any]],
     output_dir: str,
     master_csv: str,
 ):
@@ -275,7 +273,7 @@ def save_results(
     os.makedirs(os.path.dirname(os.path.abspath(master_csv)), exist_ok=True)
     existing_rows = []
     if os.path.exists(master_csv) and os.path.getsize(master_csv) > 0:
-        with open(master_csv, mode="r", newline="", encoding="utf-8") as f:
+        with open(master_csv, newline="", encoding="utf-8") as f:
             reader = csv.reader(f)
             header = next(reader, None)
             if header:

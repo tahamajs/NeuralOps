@@ -12,7 +12,7 @@ Used by:
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
 
@@ -97,10 +97,10 @@ class _TritonStateUpdateAutogradFunction(torch.autograd.Function):
         A: torch.Tensor,
         B: torch.Tensor,
         C: torch.Tensor,
-        D: Optional[torch.Tensor],
-        state: Optional[torch.Tensor],
+        D: torch.Tensor | None,
+        state: torch.Tensor | None,
         eps: float,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         B_sz, L_sz, D_sz = u.shape
         N_sz = A.shape[-1]
 
@@ -143,7 +143,7 @@ class _TritonStateUpdateAutogradFunction(torch.autograd.Function):
         return y, new_state
 
     @staticmethod
-    def backward(ctx: Any, grad_y: torch.Tensor, grad_state: torch.Tensor) -> Tuple[Optional[torch.Tensor], ...]:
+    def backward(ctx: Any, grad_y: torch.Tensor, grad_state: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
         u, delta, A, B, C, D, state = ctx.saved_tensors
         u_req = u.detach().requires_grad_(True)
         delta_req = delta.detach().requires_grad_(True)
@@ -186,7 +186,7 @@ def is_supported(
     A: torch.Tensor,
     B: torch.Tensor,
     C: torch.Tensor,
-    D: Optional[torch.Tensor] = None,
+    D: torch.Tensor | None = None,
     **kwargs: Any,
 ) -> bool:
     """Check whether SSM state update can run on the Triton kernel."""
@@ -203,11 +203,11 @@ def fwd(
     A: torch.Tensor,
     B: torch.Tensor,
     C: torch.Tensor,
-    D: Optional[torch.Tensor] = None,
-    state: Optional[torch.Tensor] = None,
+    D: torch.Tensor | None = None,
+    state: torch.Tensor | None = None,
     eps: float = 1e-6,
     **kwargs: Any,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Forward entrypoint for fused Triton SSM state updates: (y, new_state)."""
     if not is_supported(u, delta, A, B, C, D=D, **kwargs):
         return state_update_pytorch_fallback(u, delta, A, B, C, D=D, state=state, eps=eps, **kwargs)
@@ -221,11 +221,11 @@ def bwd(
     B: torch.Tensor,
     C: torch.Tensor,
     grad_out: torch.Tensor,
-    D: Optional[torch.Tensor] = None,
-    state: Optional[torch.Tensor] = None,
+    D: torch.Tensor | None = None,
+    state: torch.Tensor | None = None,
     eps: float = 1e-6,
     **kwargs: Any,
-) -> Tuple[torch.Tensor, ...]:
+) -> tuple[torch.Tensor, ...]:
     """Backward entrypoint computing gradients for SSM inputs."""
     u_req = u.detach().requires_grad_(True)
     delta_req = delta.detach().requires_grad_(True)

@@ -21,11 +21,10 @@ import argparse
 import gc
 import json
 import logging
-import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -47,7 +46,7 @@ logger = logging.getLogger("EvalModulePPL")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 
-def build_calibration_loader(train_dataset, tokenizer, num_samples: int = 500, batch_size: int = 4, max_length: int = 128) -> List[Dict[str, torch.Tensor]]:
+def build_calibration_loader(train_dataset, tokenizer, num_samples: int = 500, batch_size: int = 4, max_length: int = 128) -> list[dict[str, torch.Tensor]]:
     """Build a list of batched dictionary samples from WikiText-2 train split."""
     valid_texts = []
     for item in train_dataset["text"]:
@@ -60,7 +59,7 @@ def build_calibration_loader(train_dataset, tokenizer, num_samples: int = 500, b
     if not valid_texts:
         valid_texts = ["The quick brown fox jumps over the lazy dog. SVD linear attention compression benchmark."] * num_samples
 
-    batches: List[Dict[str, torch.Tensor]] = []
+    batches: list[dict[str, torch.Tensor]] = []
     for i in range(0, len(valid_texts), batch_size):
         chunk = valid_texts[i:i + batch_size]
         enc = tokenizer(
@@ -81,9 +80,9 @@ def compute_perplexity(
     test_dataset: Any,
     seq_len: int = 1024,
     stride: int = 512,
-    max_eval_tokens: Optional[int] = None,
+    max_eval_tokens: int | None = None,
     device: str = "cuda",
-) -> Tuple[float, Dict[str, Any]]:
+) -> tuple[float, dict[str, Any]]:
     """
     Compute sliding-window perplexity identical to run_gpt2_sweep.py.
     """
@@ -206,8 +205,8 @@ def evaluate_module_ppl(
     rank: int = 64,
     seq_len: int = 1024,
     stride: int = 512,
-    max_eval_tokens: Optional[int] = None,
-) -> Dict[str, Any]:
+    max_eval_tokens: int | None = None,
+) -> dict[str, Any]:
     """
     Load base checkpoint, inject module with calibration data, compute PPL and telemetry.
     """

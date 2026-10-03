@@ -1,5 +1,5 @@
 import time
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 import psutil
@@ -97,7 +97,7 @@ def evaluate_model(model, data_loader, device, num_labels, is_multichoice=False)
 
 def benchmark_model(
     model: nn.Module, data_loader: DataLoader, device: torch.device
-) -> Dict:
+) -> dict:
     """Benchmark model."""
     model.eval()
     memory_before = psutil.Process().memory_info().rss / 1024 / 1024

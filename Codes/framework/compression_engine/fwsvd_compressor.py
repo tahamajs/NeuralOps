@@ -11,12 +11,10 @@ from __future__ import annotations
 
 import contextlib
 import logging
-import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
@@ -26,7 +24,7 @@ from framework.compression_engine.aa_svd_compressor import SVDLinear
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_CALIBRATION_CORPUS: List[str] = [
+DEFAULT_CALIBRATION_CORPUS: list[str] = [
     (
         "Transformers rely heavily on multi-head self-attention mechanisms to capture complex syntactic "
         "and semantic dependencies across arbitrary sequence lengths. However, the standard quadratic computational "
@@ -69,18 +67,18 @@ class FWSVDCompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        tokenizer: Optional[Any] = None,
+        tokenizer: Any | None = None,
         rank: int = 64,
         max_error: float = 0.50,
         fallback_to_original: bool = True,
-        calibration_texts: Optional[List[str]] = None,
-        device: Optional[Union[str, torch.device]] = None,
-        target_modules: Optional[List[str]] = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
+        target_modules: list[str] | None = None,
         target_attention_only: bool = True,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="fwsvd", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             rank = getattr(cfg, "fwsvd_rank", getattr(cfg, "rank", rank))
             tokenizer = getattr(cfg, "tokenizer", tokenizer)
@@ -108,10 +106,10 @@ class FWSVDCompressor(BaseCompressor):
             if device is not None
             else next(model.parameters()).device
         )
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, SVDLinear):
@@ -165,9 +163,9 @@ class FWSVDCompressor(BaseCompressor):
     def compress_linear(
         self,
         layer: nn.Module,
-        rank: Optional[int] = None,
-        fisher_diag: Optional[torch.Tensor] = None,
-    ) -> Tuple[Optional[SVDLinear], float, int]:
+        rank: int | None = None,
+        fisher_diag: torch.Tensor | None = None,
+    ) -> tuple[SVDLinear | None, float, int]:
         try:
             target_mod = getattr(layer, "base_layer", layer)
             cls_name = layer.__class__.__name__.lower()
@@ -197,8 +195,8 @@ class FWSVDCompressor(BaseCompressor):
             r = min(r, max_allowed_rank)
             W_norm = torch.norm(W, p="fro").item()
 
-            sqrt_f: Optional[torch.Tensor] = None
-            inv_sqrt_f: Optional[torch.Tensor] = None
+            sqrt_f: torch.Tensor | None = None
+            inv_sqrt_f: torch.Tensor | None = None
 
             if fisher_diag is not None and fisher_diag.shape == (in_feat,):
                 f_clamped = fisher_diag.to(device=layer.weight.device, dtype=torch.float32).clamp(min=1e-8)
@@ -251,14 +249,14 @@ class FWSVDCompressor(BaseCompressor):
             logger.warning("FWSVD factorization failed on linear: %s", e)
             return None, float("inf"), 0
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         self.model.eval()
         self.compressed_layers = []
         self.fallback_layers = []
         self.layer_errors = {}
         self.layer_ranks = {}
 
-        fishers: Dict[str, torch.Tensor] = {}
+        fishers: dict[str, torch.Tensor] = {}
 
         if self.tokenizer is None:
             logger.info("No tokenizer provided for FWSVD; proceeding with standard unweighted SVD.")
@@ -266,7 +264,7 @@ class FWSVDCompressor(BaseCompressor):
             hooks = []
 
             def make_hook(name: str):
-                def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any):
+                def hook(module: nn.Module, inp: tuple[torch.Tensor, ...], outp: Any):
                     if not inp or inp[0] is None:
                         return
                     x = inp[0].detach()
@@ -323,7 +321,7 @@ class FWSVDCompressor(BaseCompressor):
 
         for name, module in list(self.model.named_modules()):
             if self._is_target_module(name, module):
-                f_diag = fishers.get(name, None)
+                f_diag = fishers.get(name)
                 svd_layer, err, r = self.compress_linear(
                     module, rank=self.rank, fisher_diag=f_diag
                 )

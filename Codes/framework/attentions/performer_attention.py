@@ -19,7 +19,7 @@ from __future__ import annotations
 import logging
 import math
 import threading
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -27,7 +27,7 @@ import torch.nn.functional as F
 
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.core.triton_kernels import triton_dispatch
 
@@ -66,8 +66,8 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 def _resolve_config_value(
     config: Any,
     comp_config: Any,
-    kwargs: Dict[str, Any],
-    names: Tuple[str, ...],
+    kwargs: dict[str, Any],
+    names: tuple[str, ...],
     default: Any,
 ) -> Any:
     """Resolve a config value by trying multiple names across multiple sources.
@@ -106,8 +106,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -162,8 +162,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -250,25 +250,25 @@ class PerformerAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = None,
         eps: float = 1e-6,
-        pretrained_attn: Optional[nn.Module] = None,
-        old_attn: Optional[nn.Module] = None,
-        comp_config: Optional[Any] = None,
-        is_nested_encoder: Optional[bool] = None,  # FIX 4: explicit override
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
+        comp_config: Any | None = None,
+        is_nested_encoder: bool | None = None,  # FIX 4: explicit override
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
         super().__init__(config, rank)
 
         # ---------------- Hidden size & heads ----------------
-        hidden_size = kwargs.get("hidden_size", kwargs.get("dim", kwargs.get("d_model", None)))
+        hidden_size = kwargs.get("hidden_size", kwargs.get("dim", kwargs.get("d_model")))
         num_heads = kwargs.get(
-            "num_attention_heads", kwargs.get("num_heads", kwargs.get("n_heads", None))
+            "num_attention_heads", kwargs.get("num_heads", kwargs.get("n_heads"))
         )
         num_kv_heads = kwargs.get(
-            "num_key_value_heads", kwargs.get("num_kv_heads", None)
+            "num_key_value_heads", kwargs.get("num_kv_heads")
         )
 
         if hidden_size is None or num_heads is None:
@@ -391,9 +391,7 @@ class PerformerAttention(BaseAttention):
             "mpt",
             "stablelm",
         )
-        if any(_mt.startswith(p) for p in _decoder_prefixes):
-            is_dec = True
-        elif hasattr(config, "architectures") and any(
+        if any(_mt.startswith(p) for p in _decoder_prefixes) or hasattr(config, "architectures") and any(
             "GPT" in str(a) or "CausalLM" in str(a)
             for a in (getattr(config, "architectures", []) or [])
         ):
@@ -586,12 +584,10 @@ class PerformerAttention(BaseAttention):
         is_nested = False
         if (
             hasattr(src, "self")
-            and hasattr(getattr(src, "self"), "query")
+            and hasattr(src.self, "query")
             and hasattr(src, "output")
-            and hasattr(getattr(src, "output"), "dense")
-        ):
-            is_nested = True
-        elif (
+            and hasattr(src.output, "dense")
+        ) or (
             cls_name
             in [
                 "BertSelfAttention",
@@ -612,7 +608,7 @@ class PerformerAttention(BaseAttention):
         # assume the source is authoritative).
         self.is_nested_encoder = bool(is_nested)
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -667,8 +663,8 @@ class PerformerAttention(BaseAttention):
                     )
 
         # ---- 2. RoBERTa/BERT nested ----
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            s = getattr(src, "self")
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
+            s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
@@ -676,7 +672,7 @@ class PerformerAttention(BaseAttention):
                         mod.weight.data.clone(),
                         mod.bias.data.clone() if mod.bias is not None else None,
                     )
-            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+            if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
                 extracted["o"] = (
                     out_mod.weight.data.clone(),
@@ -809,15 +805,15 @@ class PerformerAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        output_attentions: Optional[bool] = False,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        output_attentions: bool | None = False,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         # FIX 5: explicit error instead of silent None
         if output_attentions:
             raise NotImplementedError(
@@ -869,7 +865,7 @@ class PerformerAttention(BaseAttention):
             cos, sin = position_embeddings[0], position_embeddings[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
         elif self.rotary_emb is not None:
-            pos_ids = kwargs.get("position_ids", None)
+            pos_ids = kwargs.get("position_ids")
             if pos_ids is None:
                 pos_ids = torch.arange(N, device=device).unsqueeze(0).expand(B, -1)
             try:
@@ -1061,10 +1057,10 @@ def inject_performer(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     lora_rank: int = 16,
     **kwargs: Any,
-) -> Optional[Any]:
+) -> Any | None:
     """Injection hook for PerformerAttention supporting single layers and whole models.
 
     FIX 15: uses thread-local recursion depth.
@@ -1080,7 +1076,7 @@ def inject_performer(
         cfg = (
             model_config
             or getattr(target, "config", None)
-            or kwargs.get("config", None)
+            or kwargs.get("config")
         )
 
         # ---- Recursive descent into model containers ----
@@ -1173,8 +1169,8 @@ def _inject_into_layers(
     comp_config: Any,
     lora_rank: int,
     target: Any,
-    kwargs: Dict[str, Any],
-) -> Optional[Any]:
+    kwargs: dict[str, Any],
+) -> Any | None:
     """Helper to iterate and inject into each layer in a list."""
     num_injected = 0
     for idx, lyr in enumerate(layer_list):

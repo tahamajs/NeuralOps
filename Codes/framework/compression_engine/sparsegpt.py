@@ -17,7 +17,7 @@ Mathematical Formulation:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 import logging
 import torch
 import torch.nn as nn
@@ -27,9 +27,7 @@ from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 from framework.core.pruning_utils import (
-    apply_24_structured_mask,
     compute_empirical_hessian,
-    compute_hessian_saliency,
     get_calibration_tensors,
 )
 
@@ -55,24 +53,24 @@ class SparseGPTCompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        tokenizer: Optional[Any] = None,
+        tokenizer: Any | None = None,
         sparsity: float = 0.5,
         prunen: int = 2,
         prunem: int = 4,
         block_size: int = 128,
         percdamp: float = 0.01,
-        calibration_loader: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
         target_attention_only: bool = False,
-        device: Optional[Union[str, torch.device]] = None,
+        device: str | torch.device | None = None,
         structured_24: bool = False,
         max_error: float = 0.5,
         fallback_to_original: bool = True,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="sparsegpt", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             sparsity = _cfg_get(cfg, "sparsegpt_sparsity", _cfg_get(cfg, "sparsity", sparsity))
             structured_24 = _cfg_get(cfg, "sparsegpt_structured_24", _cfg_get(cfg, "structured_24", structured_24))
@@ -102,8 +100,8 @@ class SparseGPTCompressor(BaseCompressor):
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
         self.target_modules = target_modules
-        self.layer_errors: Dict[str, float] = {}
-        self.stats: Dict[str, Any] = {}
+        self.layer_errors: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_l = name.lower()
@@ -126,14 +124,14 @@ class SparseGPTCompressor(BaseCompressor):
             return True
         return any(t in name for t in self.target_modules)
 
-    def _collect_layer_activations(self) -> Dict[str, torch.Tensor]:
+    def _collect_layer_activations(self) -> dict[str, torch.Tensor]:
         """Capture layer inputs via forward hooks."""
         self.model.eval()
-        activations: Dict[str, List[torch.Tensor]] = {}
+        activations: dict[str, list[torch.Tensor]] = {}
         hooks = []
 
         def make_hook(name: str):
-            def hook(module: nn.Module, inputs: Tuple[torch.Tensor, ...], output: Any):
+            def hook(module: nn.Module, inputs: tuple[torch.Tensor, ...], output: Any):
                 if inputs and isinstance(inputs[0], torch.Tensor):
                     inp = inputs[0].detach()
                     if name not in activations:
@@ -167,7 +165,7 @@ class SparseGPTCompressor(BaseCompressor):
         for h in hooks:
             h.remove()
 
-        aggregated: Dict[str, torch.Tensor] = {}
+        aggregated: dict[str, torch.Tensor] = {}
         for name, act_list in activations.items():
             if act_list:
                 aggregated[name] = torch.cat(act_list, dim=0)
@@ -178,7 +176,7 @@ class SparseGPTCompressor(BaseCompressor):
         self,
         name: str,
         module: nn.Module,
-        activations: Optional[torch.Tensor],
+        activations: torch.Tensor | None,
     ) -> bool:
         """Executes second-order SparseGPT pruning on a single Linear or Conv1D layer."""
         base_mod = getattr(module, "base_layer", module)
@@ -316,7 +314,7 @@ class SparseGPTCompressor(BaseCompressor):
             replace_module(self.model, name, new_module)
         return True
 
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         """Executes SparseGPT compression across all target linear layers."""
         self.layer_errors = {}
         activations_map = self._collect_layer_activations()

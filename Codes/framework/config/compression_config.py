@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -43,7 +42,7 @@ class CompressionConfig:
 
     # Training
     gradient_checkpointing: bool = False
-    early_stopping_patience: Optional[int] = None
+    early_stopping_patience: int | None = None
     max_grad_norm: float = 1.0
 
     # Attention‑specific common fields
@@ -89,7 +88,7 @@ class CompressionConfig:
     num_experts: int = 8
     top_k: int = 2
     ratio: int = 9  # for hybrid models
-    n_heads: Optional[int] = None  # can override
-    n_layers: Optional[int] = None
+    n_heads: int | None = None  # can override
+    n_layers: int | None = None
     use_full_attention: bool = False
     use_fp8: bool = False

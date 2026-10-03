@@ -5,8 +5,6 @@ truncated SVD factor initialization, and energy-based rank selection.
 """
 from __future__ import annotations
 
-import math
-from typing import Optional, Tuple, Union
 import torch
 import torch.nn as nn
 
@@ -14,7 +12,7 @@ import torch.nn as nn
 def stable_svd(
     weight: torch.Tensor,
     full_matrices: bool = False,
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Computes SVD with guaranteed FP32 precision to prevent CUDA half-precision solver crashes (e.g. geqrf_cuda).
     Returns (U, S, Vh) matching the original device and floating dtype.
@@ -31,7 +29,7 @@ def init_factorized_linear(
     lin1: nn.Linear,
     lin2: nn.Linear,
     rank: int,
-    src_bias: Optional[torch.Tensor] = None,
+    src_bias: torch.Tensor | None = None,
 ) -> None:
     """
     Initializes a two-stage linear projection (x @ lin1.T @ lin2.T) from a dense source weight
@@ -65,7 +63,7 @@ def select_rank_by_energy(
     singular_values: torch.Tensor,
     energy_threshold: float = 0.90,
     min_rank: int = 4,
-    max_rank: Optional[int] = None,
+    max_rank: int | None = None,
 ) -> int:
     """
     Selects truncation rank r such that sum(S[:r]^2) / sum(S^2) >= energy_threshold.

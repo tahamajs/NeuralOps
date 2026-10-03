@@ -26,12 +26,11 @@ import argparse
 import logging
 import os
 import sys
-import time
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
-from torch.utils.data import DataLoader, Dataset, TensorDataset
+from torch.utils.data import DataLoader, Dataset
 
 # Ensure framework is in sys.path
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -82,7 +81,7 @@ class SyntheticDataset(Dataset):
         torch.manual_seed(seed)
         self.input_ids = torch.randint(100, vocab_size - 100, (num_samples, seq_len), dtype=torch.long)
         self.attention_mask = torch.ones((num_samples, seq_len), dtype=torch.long)
-        
+
         # Introduce variable length padding
         for i in range(num_samples):
             pad_len = (i * 3) % (seq_len // 4)
@@ -100,7 +99,7 @@ class SyntheticDataset(Dataset):
     def __len__(self) -> int:
         return self.num_samples
 
-    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
+    def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
         return {
             "input_ids": self.input_ids[idx],
             "attention_mask": self.attention_mask[idx],
@@ -112,9 +111,9 @@ def prepare_glue_dataset(
     task_name: str,
     tokenizer_name: str = "bert-base-uncased",
     max_seq_len: int = 128,
-    save_dir: Optional[str] = None,
+    save_dir: str | None = None,
     use_synthetic_fallback: bool = True,
-) -> Dict[str, Dataset]:
+) -> dict[str, Dataset]:
     """
     Downloads, tokenizes, and formats a GLUE benchmark task.
     Saves tokenized dataset tensors to disk if save_dir is specified.
@@ -148,14 +147,14 @@ def prepare_glue_dataset(
 
     # 2. If HF is available, process and tokenize
     if hf_dataset is not None and tokenizer is not None:
-        tokenized_splits: Dict[str, Dataset] = {}
+        tokenized_splits: dict[str, Dataset] = {}
         for split_name in ["train", "validation", "test"]:
             if split_name not in hf_dataset:
                 continue
 
             raw_split = hf_dataset[split_name]
 
-            def tokenize_fn(examples: Dict[str, List[Any]]) -> Dict[str, Any]:
+            def tokenize_fn(examples: dict[str, list[Any]]) -> dict[str, Any]:
                 args = (examples[key1],) if key2 is None else (examples[key1], examples[key2])
                 return tokenizer(
                     *args,
@@ -207,8 +206,8 @@ def prepare_lm_dataset(
     dataset_name: str = "wikitext2",
     tokenizer_name: str = "bert-base-uncased",
     max_seq_len: int = 128,
-    save_dir: Optional[str] = None,
-) -> Dict[str, Dataset]:
+    save_dir: str | None = None,
+) -> dict[str, Dataset]:
     """Prepares Language Modeling benchmarks (WikiText-2, C4)."""
     ds_name = dataset_name.lower()
     logger.info("Preparing LM dataset '%s'...", ds_name)
@@ -228,7 +227,7 @@ def prepare_lm_dataset(
         else:
             raw = load_dataset(ds_name)
 
-        def tokenize_lm(examples: Dict[str, List[str]]) -> Dict[str, Any]:
+        def tokenize_lm(examples: dict[str, list[str]]) -> dict[str, Any]:
             tokens = tokenizer(
                 examples["text"],
                 padding="max_length",
@@ -275,14 +274,14 @@ def create_benchmark_dataloader(
     shuffle: bool = False,
     num_workers: int = 0,
     pin_memory: bool = True,
-    device: Optional[torch.device] = None,
+    device: torch.device | None = None,
 ) -> DataLoader:
     """
     Creates a high-throughput PyTorch DataLoader configured for GPU training/benchmarking.
     """
     is_cuda = (device is not None and device.type == "cuda") or torch.cuda.is_available()
 
-    def collate_fn(batch: List[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
+    def collate_fn(batch: list[dict[str, Any]]) -> dict[str, torch.Tensor]:
         if isinstance(batch[0], dict):
             keys = batch[0].keys()
             res = {}
@@ -309,10 +308,10 @@ def prepare_all_benchmarks(
     save_dir: str = "./benchmark_data",
     tokenizer_name: str = "bert-base-uncased",
     max_seq_len: int = 128,
-) -> Dict[str, Dict[str, Dataset]]:
+) -> dict[str, dict[str, Dataset]]:
     """Prepares and caches all GLUE and LM benchmarks."""
     os.makedirs(save_dir, exist_ok=True)
-    all_data: Dict[str, Dict[str, Dataset]] = {}
+    all_data: dict[str, dict[str, Dataset]] = {}
 
     # 1. GLUE
     for task in GLUE_TASK_CONFIG:
@@ -334,7 +333,7 @@ def prepare_all_benchmarks(
     return all_data
 
 
-MODEL_TOKENIZER_MAPPING: Dict[str, str] = {
+MODEL_TOKENIZER_MAPPING: dict[str, str] = {
     "bert": "bert-base-uncased",
     "roberta": "roberta-base",
     "t5": "t5-small",

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -54,7 +54,7 @@ class MGIECompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         max_error: float = 0.50,
         fallback_to_original: bool = True,
         lora_r: int = 0,
@@ -62,11 +62,11 @@ class MGIECompressor(BaseCompressor):
         skip_attention_qkv: bool = False,
         target_attention_only: bool = False,
         min_rank: int = 4,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="mgie", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
 
         if cfg is not None:
             rank = _cfg_get(cfg, "mgie_rank", _cfg_get(cfg, "rank", rank))
@@ -98,12 +98,12 @@ class MGIECompressor(BaseCompressor):
         self.min_rank = max(1, int(min_rank))
         self.target_modules = target_modules
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+        self.stats: dict[str, Any] = {}
 
     # ------------------------------------------------------------------
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
@@ -188,14 +188,14 @@ class MGIECompressor(BaseCompressor):
         return max(1, min(allocated_rank, max_rank))
 
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers = []
         self.fallback_layers = []
         self.skipped_layers = []
         self.layer_errors = {}
         self.layer_ranks = {}
 
-        seen_weights: Set[int] = set()
+        seen_weights: set[int] = set()
 
         # MGIE-FIX-04: compute original parameter count properly.
         total_orig_params = sum(p.numel() for p in self.model.parameters())
@@ -343,7 +343,7 @@ class MGIECompressor(BaseCompressor):
                 except Exception:
                     try:
                         self.model(dummy)
-                    except Exception as e2:
+                    except Exception:
                         cfg = getattr(self.model, "config", None)
                         hidden = getattr(cfg, "hidden_size", None) if cfg else None
                         if hidden is None:

@@ -13,7 +13,7 @@ Production-hardened with:
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -42,8 +42,8 @@ class ZeroKVNeoCache:
         self.max_cache_len = int(max_cache_len)
         self.num_attention_sinks = int(num_attention_sinks)
         self.recent_window = int(recent_window)
-        self.k_cache: Optional[torch.Tensor] = None
-        self.v_cache: Optional[torch.Tensor] = None
+        self.k_cache: torch.Tensor | None = None
+        self.v_cache: torch.Tensor | None = None
 
     def reset(self) -> None:
         """Clear cache tensors to avoid memory leaks."""
@@ -55,7 +55,7 @@ class ZeroKVNeoCache:
         self,
         new_k: torch.Tensor,
         new_v: torch.Tensor,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Append new KV tokens and evict non-essential tokens when exceeding capacity.
         Shapes: (B, H, N, D).
@@ -153,7 +153,7 @@ class ZeroKVNeoCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="zerokv_neo", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             keep_ratio = _cfg_get(cfg, "zerokv_keep_ratio", _cfg_get(cfg, "keep_ratio", keep_ratio))
             num_attention_sinks = _cfg_get(cfg, "zerokv_num_sinks", _cfg_get(cfg, "num_attention_sinks", num_attention_sinks))
@@ -181,9 +181,9 @@ class ZeroKVNeoCompressor(BaseCompressor):
         self.max_retries = max(0, int(max_retries))
         self.fallback_to_original = bool(fallback_to_original)
         self.target_attention_only = target_attention_only
-        self.compressed_layers: List[Dict[str, Any]] = []
-        self.fallback_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
+        self.compressed_layers: list[dict[str, Any]] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         # Protect critical classification heads, poolers, lm_heads, and embeddings
@@ -211,7 +211,7 @@ class ZeroKVNeoCompressor(BaseCompressor):
             return self._is_attention_proj(name)
         return True
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Compress linear projection weights preserving attention sinks and heavy hitters."""
         self.compressed_layers = []
         self.fallback_layers = []

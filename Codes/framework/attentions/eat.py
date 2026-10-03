@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -191,16 +191,16 @@ class EATBlock(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = 64,
-        d_model: Union[int, Any] = 768,
+        config: Any | None = None,
+        rank: int | None = 64,
+        d_model: int | Any = 768,
         n_heads: int = 12,
-        prune_layer: Optional[Any] = None,
-        pretrained_attn: Optional[nn.Module] = None,
-        old_attn: Optional[nn.Module] = None,
-        comp_config: Optional[Any] = None,
-        layer_id: Optional[int] = None,
-        layer_idx: Optional[int] = None,
+        prune_layer: Any | None = None,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
+        comp_config: Any | None = None,
+        layer_id: int | None = None,
+        layer_idx: int | None = None,
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
@@ -323,7 +323,7 @@ class EATBlock(BaseAttention):
         self.dropout = nn.Dropout(dropout_p)
 
         # ---- EAT-FIX-07: pruning only when explicitly requested ----
-        self.prune_layer: Optional[Any] = None
+        self.prune_layer: Any | None = None
         if prune_layer is not None:
             self.prune_layer = prune_layer
         else:
@@ -401,11 +401,9 @@ class EATBlock(BaseAttention):
                           ("out_lin", "c_proj", "o_proj", "out_proj", "dense"))
         is_nested = False
         if (hasattr(pretrained_attn, "self")
-                and hasattr(getattr(pretrained_attn, "self"), "query")
+                and hasattr(pretrained_attn.self, "query")
                 and hasattr(pretrained_attn, "output")
-                and hasattr(getattr(pretrained_attn, "output"), "dense")):
-            is_nested = True
-        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
+                and hasattr(pretrained_attn.output, "dense")) or (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
                             "XLMRobertaSelfAttention", "ElectraSelfAttention",
                             "DebertaSelfAttention")
               or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())) \
@@ -416,7 +414,7 @@ class EATBlock(BaseAttention):
         if hasattr(pretrained_attn, "rotary_emb") and pretrained_attn.rotary_emb is not None:
             self.rotary_emb = pretrained_attn.rotary_emb
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
@@ -472,7 +470,7 @@ class EATBlock(BaseAttention):
 
         # 2. Nested (BERT / RoBERTa)
         elif hasattr(pretrained_attn, "self") \
-                and hasattr(getattr(pretrained_attn, "self"), "query"):
+                and hasattr(pretrained_attn.self, "query"):
             s = pretrained_attn.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 m = getattr(s, sub, None)
@@ -589,19 +587,19 @@ class EATBlock(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_ids: Optional[torch.Tensor] = None,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_ids: torch.Tensor | None = None,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, L, D = hidden_states.shape
         dtype_in = hidden_states.dtype
 
@@ -614,10 +612,10 @@ class EATBlock(BaseAttention):
         v = self.v_lin(kv_input).view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # ---- RoPE ----
-        cos = kwargs.get("cos", None)
-        sin = kwargs.get("sin", None)
+        cos = kwargs.get("cos")
+        sin = kwargs.get("sin")
         pos_emb = position_embeddings if position_embeddings is not None \
-                  else kwargs.get("position_embeddings", None)
+                  else kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2:
             cos, sin = pos_emb[0], pos_emb[1]
 
@@ -763,7 +761,7 @@ def inject_eat(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):
@@ -774,7 +772,7 @@ def inject_eat(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

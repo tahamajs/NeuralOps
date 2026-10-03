@@ -30,7 +30,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -73,11 +73,11 @@ class ProxSparsePrunedLoRALinear(nn.Module):
         out_features: int,
         pruned_weight: torch.Tensor,
         mask: torch.Tensor,
-        bias: Optional[torch.Tensor] = None,
+        bias: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -131,7 +131,7 @@ class ProxSparsePrunedLoRALinear(nn.Module):
         mask: torch.Tensor,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-    ) -> "ProxSparsePrunedLoRALinear":
+    ) -> ProxSparsePrunedLoRALinear:
         base_mod = getattr(linear, "base_layer", linear)
 
         # PS-FIX-09: robust in/out detection for Linear and Conv1D.
@@ -210,22 +210,22 @@ class ProxSparsePruner(BaseCompressor):
         steps: int = 5,
         learning_rate: float = 0.5,   # PS-FIX-04
         structured_24: bool = False,
-        block_size: Tuple[int, int] = (1, 1),
+        block_size: tuple[int, int] = (1, 1),
         skip_attention_qkv: bool = True,
         use_lora: bool = False,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        max_error: Optional[float] = None,
+        max_error: float | None = None,
         fallback_to_original: bool = True,
         min_numel: int = 16,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         target_attention_only: bool = False,
-        device: Optional[Union[str, torch.device]] = None,
-        cfg: Optional[Any] = None,
+        device: str | torch.device | None = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="proxsparse", **kwargs)
-        cfg_obj = cfg or kwargs.get("comp_config", None)
+        cfg_obj = cfg or kwargs.get("comp_config")
 
         self.sparsity = max(
             0.0,
@@ -277,7 +277,7 @@ class ProxSparsePruner(BaseCompressor):
         self.target_modules = target_modules
 
         if max_error is not None:
-            self.max_error: Optional[float] = float(max_error)
+            self.max_error: float | None = float(max_error)
         elif _cfg_get(cfg_obj, "max_error", None) is not None:
             self.max_error = float(_cfg_get(cfg_obj, "max_error"))
         else:
@@ -303,15 +303,15 @@ class ProxSparsePruner(BaseCompressor):
                 if list(model.parameters()) else torch.device("cpu")
             )
 
-        self.visited_modules: Set[int] = set()
-        self.compressed_layers: List[str] = []
-        self.protected_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.failed_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_actual_sparsity: Dict[str, float] = {}
-        self.stats: Dict[str, Any] = {}
+        self.visited_modules: set[int] = set()
+        self.compressed_layers: list[str] = []
+        self.protected_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.failed_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_actual_sparsity: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
 
     # ------------------------------------------------------------------
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
@@ -380,7 +380,7 @@ class ProxSparsePruner(BaseCompressor):
         """prox_{a ||.||_1}(x) = sign(x) * max(|x| - a, 0)."""
         return torch.sign(tensor) * torch.clamp(torch.abs(tensor) - threshold, min=0.0)
 
-    def _project_sparse(self, tensor: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def _project_sparse(self, tensor: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Hard projection onto sparse constraint S. Returns (pruned, mask)."""
         if self.structured_24:
             pruned, mask = apply_24_structured_mask(
@@ -400,7 +400,7 @@ class ProxSparsePruner(BaseCompressor):
             return tensor * mask.float(), mask
 
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers.clear()
         self.visited_modules.clear()
         self.protected_layers.clear()
@@ -578,7 +578,7 @@ def proxsparse_factory(
     return_stats: bool = False,
     return_tuple: bool = False,
     **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     sparsity = kwargs.pop(
         "sparsity",
         _cfg_get(comp_config, "proxsparse_sparsity",

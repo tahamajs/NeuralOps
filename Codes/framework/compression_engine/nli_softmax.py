@@ -6,7 +6,7 @@ Uses standard forward softmax, simplified sigmoid-based backward.
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -36,7 +36,7 @@ class NLISoftmaxFunction(torch.autograd.Function):
         return y
 
     @staticmethod
-    def backward(ctx: Any, grad_output: torch.Tensor) -> Tuple[Optional[torch.Tensor], None]:
+    def backward(ctx: Any, grad_output: torch.Tensor) -> tuple[torch.Tensor | None, None]:
         (y,) = ctx.saved_tensors
         dot = (grad_output * y).sum(dim=-1, keepdim=True)
         grad_input = y * (grad_output - dot)
@@ -112,8 +112,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -195,12 +195,12 @@ class NLISoftmaxAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        dim: Optional[int] = None,
-        num_heads: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = None,
+        dim: int | None = None,
+        num_heads: int | None = None,
         is_nested_encoder: bool = False,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         # NLI-FIX-11: guard against varying BaseAttention signatures.
@@ -264,7 +264,7 @@ class NLISoftmaxAttention(BaseAttention):
         else:
             self.out_proj = None
 
-        old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn", None))
+        old_attn = kwargs.get("old_attn", kwargs.get("pretrained_attn"))
         if old_attn is not None:
             src_cls = old_attn.__class__.__name__
             if hasattr(old_attn, "c_attn") or "gpt" in src_cls.lower():
@@ -298,9 +298,7 @@ class NLISoftmaxAttention(BaseAttention):
         src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
 
         # Detect nested encoder.
-        if src_cls_name in _NESTED_ATTN_CLASSES:
-            self.is_nested_encoder = True
-        elif (hasattr(old_attn, "query") and not hasattr(old_attn, "dense")
+        if src_cls_name in _NESTED_ATTN_CLASSES or (hasattr(old_attn, "query") and not hasattr(old_attn, "dense")
               and not hasattr(old_attn, "out_proj")):
             self.is_nested_encoder = True
 
@@ -320,7 +318,7 @@ class NLISoftmaxAttention(BaseAttention):
                 lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=True,
             )
 
-        def _unpack(m: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+        def _unpack(m: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
             if m is None:
                 return None, None
             base = getattr(m, "base_layer", m)
@@ -370,9 +368,9 @@ class NLISoftmaxAttention(BaseAttention):
             if hasattr(src, "o_proj"):
                 w_o, b_o = _unpack(src.o_proj)
 
-        def _copy_param(target_linear: Optional[Any],
-                        w: Optional[torch.Tensor],
-                        b: Optional[torch.Tensor]) -> None:
+        def _copy_param(target_linear: Any | None,
+                        w: torch.Tensor | None,
+                        b: torch.Tensor | None) -> None:
             if target_linear is None or w is None:
                 return
             with torch.no_grad():
@@ -412,15 +410,15 @@ class NLISoftmaxAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         if encoder_hidden_states is not None:
             raise NotImplementedError(
                 "NLISoftmaxAttention does not support cross-attention"
@@ -489,10 +487,10 @@ def inject_nli_softmax(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
-) -> Optional[NLISoftmaxAttention]:
+) -> NLISoftmaxAttention | None:
     if _depth > 8:
         logger.warning("inject_nli_softmax: max recursion depth exceeded.")
         return None
@@ -500,7 +498,7 @@ def inject_nli_softmax(
     try:
         target = layer if layer is not None else model
         if target is None:
-            target = kwargs.get("model", kwargs.get("layer", None))
+            target = kwargs.get("model", kwargs.get("layer"))
         if target is None:
             return None
 
@@ -603,11 +601,11 @@ class NLISoftmaxCompressor(BaseCompressor):
         fallback_to_original: bool = True,
         target_attention_only: bool = False,
         skip_should_compress_filter: bool = False,
-        cfg: Optional[Any] = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="nli_softmax", **kwargs)
-        conf = cfg or kwargs.get("comp_config", None)
+        conf = cfg or kwargs.get("comp_config")
 
         if conf is not None:
             max_error = _cfg_get(conf, "nli_max_error", _cfg_get(conf, "max_error", max_error))
@@ -627,11 +625,11 @@ class NLISoftmaxCompressor(BaseCompressor):
         self.target_attention_only = bool(target_attention_only)
         self.skip_should_compress_filter = bool(skip_should_compress_filter)
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
         self._compressed_params: int = 0
 
     # NLI-FIX-12
@@ -643,7 +641,7 @@ class NLISoftmaxCompressor(BaseCompressor):
             "SVDLinear", "FactorisedLinear",
         )
 
-    def _should_skip(self, name: str, module: Optional[nn.Module] = None) -> bool:
+    def _should_skip(self, name: str, module: nn.Module | None = None) -> bool:
         lower = name.lower()
         skip_patterns = ["classifier", "score", "lm_head", "pooler", "head", "loss", "crit"]
         if any(pat in lower for pat in skip_patterns):
@@ -655,7 +653,7 @@ class NLISoftmaxCompressor(BaseCompressor):
         return False
 
     # ------------------------------------------------------------------
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         # NLI-FIX-09: idempotence
         if getattr(self.model, "_nli_softmax_compressed", False):
             logger.warning("NLISoftmaxCompressor: model already compressed; skipping.")
@@ -669,7 +667,7 @@ class NLISoftmaxCompressor(BaseCompressor):
         self.fallback_layers = []
         self.skipped_layers = []
         self.layer_errors = {}
-        seen_modules: Set[int] = set()
+        seen_modules: set[int] = set()
         device = _get_device(self.model)
 
         # ---- Pass 1: replace standalone nn.Softmax modules ----

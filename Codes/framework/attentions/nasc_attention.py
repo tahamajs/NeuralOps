@@ -8,14 +8,14 @@ SVD compression. Use lora_rank to control adapter size.
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos.dim() == 2:
         cos = cos.unsqueeze(0).unsqueeze(0)
         sin = sin.unsqueeze(0).unsqueeze(0)
@@ -95,8 +95,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -169,15 +169,15 @@ class NASCAttention(BaseAttention):
     def __init__(
         self,
         config: Any,
-        rank: Optional[int] = 16,
+        rank: int | None = 16,
         window_size: int = 64,
         block_size: int = 32,
         top_k: int = 2,
         rff_features: int = 64,
-        pretrained_attn: Optional[nn.Module] = None,
+        pretrained_attn: nn.Module | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
@@ -261,7 +261,7 @@ class NASCAttention(BaseAttention):
     def copy_weights(self, src: Any) -> None:
         from framework.core.adapters import UniversalAdapter
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -314,7 +314,7 @@ class NASCAttention(BaseAttention):
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            s = getattr(src, "self")
+            s = src.self
             if hasattr(s, "query"):
                 extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
             if hasattr(s, "key"):
@@ -322,7 +322,7 @@ class NASCAttention(BaseAttention):
             if hasattr(s, "value"):
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and extracted["o"][0] is None:
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -349,12 +349,10 @@ class NASCAttention(BaseAttention):
             self.is_nested_encoder = False
         elif (
             hasattr(src, "self")
-            and hasattr(getattr(src, "self"), "query")
+            and hasattr(src.self, "query")
             and hasattr(src, "output")
-            and hasattr(getattr(src, "output"), "dense")
-        ):
-            self.is_nested_encoder = True
-        elif (
+            and hasattr(src.output, "dense")
+        ) or (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
         ) and not has_out_proj:
@@ -552,18 +550,18 @@ class NASCAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, L, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
 
@@ -588,7 +586,7 @@ class NASCAttention(BaseAttention):
         V = self.v_proj(kv_input).view(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
@@ -673,15 +671,15 @@ class NASCAttention(BaseAttention):
 @ATTENTION_REGISTRY.register("inject_nasc")
 @ATTENTION_REGISTRY.register("inject_nasc_attention")
 def inject_nasc(
-    layer: Optional[nn.Module] = None,
-    model: Optional[nn.Module] = None,
+    layer: nn.Module | None = None,
+    model: nn.Module | None = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 1,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
-) -> Optional[Union[NASCAttention, nn.Module]]:
+) -> NASCAttention | nn.Module | None:
     target = layer if layer is not None else model
     if target is None:
         return None

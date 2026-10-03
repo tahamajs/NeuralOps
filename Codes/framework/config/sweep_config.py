@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict
+from typing import Any
 
 
 @dataclass
@@ -11,5 +11,5 @@ class SweepConfig:
     max_trials: int = 20
     parallel_workers: int = 1
     pruner: str = "hyperband"
-    search_space: Dict[str, Any] = field(default_factory=dict)
-    base_config: Dict[str, Any] = field(default_factory=dict)
+    search_space: dict[str, Any] = field(default_factory=dict)
+    base_config: dict[str, Any] = field(default_factory=dict)

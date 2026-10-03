@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -32,7 +32,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
     if module is None:
         return None, None
     base = getattr(module, "base_layer", module)
@@ -58,8 +58,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -107,13 +107,13 @@ class GriffinSSDBlock(BaseAttention):
     is_custom_attention: bool = True
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = 64,
+        config: Any | None = None,
+        rank: int | None = 64,
         window_size: int = 64,
-        d_model: Optional[Union[int, Any]] = None,
-        num_heads: Optional[int] = None,
-        old_attn: Optional[nn.Module] = None,
-        comp_config: Optional[Any] = None,
+        d_model: int | Any | None = None,
+        num_heads: int | None = None,
+        old_attn: nn.Module | None = None,
+        comp_config: Any | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         **kwargs: Any,
@@ -192,9 +192,7 @@ class GriffinSSDBlock(BaseAttention):
         # Decoder / causal detection
         model_type = str(_get("model_type", "")).lower()
         is_dec = _get("is_decoder", _get("is_causal", kwargs.get("is_causal", kwargs.get("is_decoder", False))))
-        if any(model_type.startswith(pfx) for pfx in ("gpt", "qwen", "llama", "mistral", "bloom", "opt", "falcon", "codegen")):
-            is_dec = True
-        elif hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
+        if any(model_type.startswith(pfx) for pfx in ("gpt", "qwen", "llama", "mistral", "bloom", "opt", "falcon", "codegen")) or hasattr(config, "architectures") and any("GPT" in str(a) or "CausalLM" in str(a) for a in (getattr(config, "architectures", []) or [])):
             is_dec = True
         self.is_decoder: bool = bool(is_dec)
         self.is_causal: bool = bool(is_dec)
@@ -239,7 +237,7 @@ class GriffinSSDBlock(BaseAttention):
         if old_attn is None:
             return
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -253,7 +251,7 @@ class GriffinSSDBlock(BaseAttention):
                 w, b = adapter.get_weight_bias(old_attn, proj)
                 if w is not None:
                     extracted[proj] = (w, b)
-        except Exception as e:
+        except Exception:
             pass
 
         # 2. GPT-2 Fused c_attn
@@ -275,13 +273,13 @@ class GriffinSSDBlock(BaseAttention):
                     extracted["o"] = (o_w, o_b)
 
         # 3. RoBERTa / BERT Nested
-        elif hasattr(old_attn, "self") and hasattr(getattr(old_attn, "self"), "query"):
+        elif hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
             self.is_nested_encoder = True
-            s = getattr(old_attn, "self")
+            s = old_attn.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 extracted[proj_key] = _unpack_weight_bias(mod)
-            if hasattr(old_attn, "output") and hasattr(getattr(old_attn, "output"), "dense"):
+            if hasattr(old_attn, "output") and hasattr(old_attn.output, "dense"):
                 extracted["o"] = _unpack_weight_bias(old_attn.output.dense)
 
         # 4. Flat projections (DistilBERT, Qwen, LLaMA)
@@ -351,8 +349,8 @@ class GriffinSSDBlock(BaseAttention):
         k: torch.Tensor,
         v: torch.Tensor,
         decay: torch.Tensor,
-        mask: Optional[torch.Tensor] = None,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        mask: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """State-Space Duality (SSD) matrix scan supporting forward causal and bidirectional mode."""
         B, H, L, d = q.shape
         target_dtype = q.dtype
@@ -394,23 +392,23 @@ class GriffinSSDBlock(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """Forward pass for Griffin SSD attention."""
         if encoder_hidden_states is not None:
             return hidden_states, None
 
-        mask = kwargs.get("mask", None)
+        mask = kwargs.get("mask")
         if attention_mask is None and mask is not None:
             attention_mask = mask
 
@@ -431,8 +429,8 @@ class GriffinSSDBlock(BaseAttention):
         q_ssd = self.ssd_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous().to(target_dtype)
 
         # Apply RoPE if provided or probe from rotary_emb
-        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings", None)
-        pos_ids = kwargs.get("position_ids", None)
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
+        pos_ids = kwargs.get("position_ids")
         if pos_emb is not None:
             if isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
                 cos, sin = pos_emb[0], pos_emb[1]
@@ -530,13 +528,13 @@ def inject_griffin_ssd(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     lora_rank: int = 16,
     **kwargs: Any,
-) -> Optional[Any]:
+) -> Any | None:
     r"""Injection hook for GriffinSSDBlock supporting single layers and whole models."""
     target = layer if layer is not None else model
-    cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
+    cfg = model_config or getattr(target, "config", None) or kwargs.get("config")
 
     # 1. Whole model traversal support
     if target is not None and (

@@ -3,7 +3,6 @@ import json
 import logging
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 
 class CheckpointManager:
@@ -14,9 +13,9 @@ class CheckpointManager:
     def save_checkpoint(
         self,
         experiment_id: int,
-        results: List[Dict],
+        results: list[dict],
         checkpoint_name: str = "checkpoint.json",
-        metadata: Optional[Dict] = None,
+        metadata: dict | None = None,
     ) -> Path:
         """Persist checkpoint to disk."""
         checkpoint_path = self.checkpoint_dir / checkpoint_name
@@ -35,13 +34,13 @@ class CheckpointManager:
 
     def load_checkpoint(
         self, checkpoint_name: str = "checkpoint.json"
-    ) -> Tuple[int, List[Dict], Optional[Dict]]:
+    ) -> tuple[int, list[dict], dict | None]:
         """Load checkpoint from disk or config."""
         checkpoint_path = self.checkpoint_dir / checkpoint_name
         if not checkpoint_path.exists():
             logging.info(f"No checkpoint found at {checkpoint_path}")
             return 0, [], None
-        with open(checkpoint_path, "r") as f:
+        with open(checkpoint_path) as f:
             data = json.load(f)
         logging.info(f"Checkpoint loaded: {checkpoint_path}")
         return (
@@ -57,11 +56,11 @@ class CheckpointManager:
             checkpoint_path.unlink()
             logging.info(f"Deleted checkpoint: {checkpoint_path}")
 
-    def list_checkpoints(self) -> List[Path]:
+    def list_checkpoints(self) -> list[Path]:
         """List checkpoints."""
         return list(self.checkpoint_dir.glob("*.json"))
 
-    def get_latest_checkpoint(self) -> Optional[Path]:
+    def get_latest_checkpoint(self) -> Path | None:
         """Return the latest checkpoint."""
         checkpoints = self.list_checkpoints()
         return (

@@ -25,11 +25,10 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from framework.attentions.gated_delta_net import GatedDeltaNet, LoRALinear
 from framework.attentions.hgrn2_layer import HGRN2Layer
@@ -48,7 +47,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
     if module is None:
         return None, None
     base = getattr(module, "base_layer", module)
@@ -84,15 +83,15 @@ class HGRN2GatedDeltaNet(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        d_model: Optional[Any] = None,
-        num_heads: Optional[int] = None,
-        comp_config: Optional[Any] = None,
-        old_attn: Optional[nn.Module] = None,
+        config: Any | None = None,
+        rank: int | None = None,
+        d_model: Any | None = None,
+        num_heads: int | None = None,
+        comp_config: Any | None = None,
+        old_attn: nn.Module | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         try:
@@ -211,7 +210,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
         if old_attn is not None:
             self.copy_weights(old_attn)
 
-        target_dtype = kwargs.get("dtype", None)
+        target_dtype = kwargs.get("dtype")
         if target_dtype is None and old_attn is not None:
             p = next(old_attn.parameters(), None)
             if p is not None:
@@ -282,7 +281,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
                     if target is not None and hasattr(target, cand):
                         mod = getattr(target, cand)
                         if hasattr(mod, "dense"):
-                            mod = getattr(mod, "dense")
+                            mod = mod.dense
                         cw, cb = _unpack_weight_bias(mod)
                         if cw is not None:
                             w_o, b_o = cw, cb
@@ -345,17 +344,17 @@ class HGRN2GatedDeltaNet(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         if encoder_hidden_states is not None:
             raise NotImplementedError(
                 "HGRN2GatedDeltaNet does not support cross-attention."
@@ -403,7 +402,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
     def get_ortho_loss(self):
         return torch.zeros((), device=self.out_proj.weight.device)
 
-    def storage_bytes(self) -> Dict[str, int]:
+    def storage_bytes(self) -> dict[str, int]:
         def _sz(p):
             if isinstance(p, (nn.Parameter, torch.Tensor)):
                 return p.numel() * p.element_size()
@@ -428,12 +427,12 @@ def inject_hgrn2_gated_deltanet(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     lora_rank: int = 16,
     lora_alpha: float = 32.0,
     _depth: int = 0,
     **kwargs: Any,
-) -> Optional[Any]:
+) -> Any | None:
     if _depth > 8:
         logger.warning("inject_hgrn2_gated_deltanet: max recursion depth exceeded.")
         return None

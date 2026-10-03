@@ -7,10 +7,10 @@ from __future__ import annotations
 import contextlib
 import json
 import logging
-import math
 import time
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any
+from collections.abc import Iterable
 
 import numpy as np
 import psutil
@@ -20,18 +20,18 @@ from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from framework.core.memory import cleanup_gpu_memory, get_gpu_memory_stats
+from framework.core.memory import cleanup_gpu_memory
 
 logger = logging.getLogger(__name__)
 
 
 def clip_grad_norm_factorized(
-    parameters: Union[torch.Tensor, Iterable[torch.Tensor], nn.Module],
+    parameters: torch.Tensor | Iterable[torch.Tensor] | nn.Module,
     max_norm: float = 1.0,
     norm_type: float = 2.0,
-    u_max_norm: Optional[float] = None,
-    v_max_norm: Optional[float] = None,
-    dense_max_norm: Optional[float] = None,
+    u_max_norm: float | None = None,
+    v_max_norm: float | None = None,
+    dense_max_norm: float | None = None,
 ) -> torch.Tensor:
     """
     Adaptive Factorized-Aware Layerwise Gradient Clipping.
@@ -55,9 +55,9 @@ def clip_grad_norm_factorized(
     v_limit = float(v_max_norm) if v_max_norm is not None else float(max_norm)
     dense_limit = float(dense_max_norm) if dense_max_norm is not None else float(max_norm)
 
-    u_params: List[torch.Tensor] = []
-    v_params: List[torch.Tensor] = []
-    dense_params: List[torch.Tensor] = []
+    u_params: list[torch.Tensor] = []
+    v_params: list[torch.Tensor] = []
+    dense_params: list[torch.Tensor] = []
 
     # FIX: Partition parameters into U factors, V factors, and dense projections based on named module semantics and tensor shape
     if isinstance(parameters, nn.Module):
@@ -98,8 +98,8 @@ def clip_grad_norm_factorized(
         return torch.tensor(0.0)
 
     # FIX: Scale grad(U) and grad(V) independently to maintain balanced gradient propagation through factorized layers
-    group_norms: List[torch.Tensor] = []
-    
+    group_norms: list[torch.Tensor] = []
+
     # 1. Clip Left Factor U
     if u_params:
         norm_u = torch.nn.utils.clip_grad_norm_(u_params, max_norm=u_limit, norm_type=norm_type)
@@ -132,7 +132,7 @@ def train_model(
     config: Any,
     num_labels: int,
     is_multichoice: bool = False,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     Train model with maximum GPU compute utilization, AMP precision, DDP gradient accumulation,
     and adaptive factorized gradient clipping safety.
@@ -178,7 +178,7 @@ def train_model(
             # FIX: Wrap non-final micro-batches in model.no_sync() for DDP to eliminate redundant all-reduce synchronization
             sync_context = (
                 contextlib.nullcontext()
-                if (is_sync_step or not hasattr(model, "no_sync") or not callable(getattr(model, "no_sync")))
+                if (is_sync_step or not hasattr(model, "no_sync") or not callable(model.no_sync))
                 else model.no_sync()
             )
 
@@ -255,7 +255,7 @@ def evaluate_model(
     num_labels: int,
     is_multichoice: bool = False,
     compute_all_metrics: bool = False,
-) -> Union[float, Dict[str, float]]:
+) -> float | dict[str, float]:
     """Evaluate model with non-blocking GPU execution and memory safety."""
     cleanup_gpu_memory(force=False)
     model.eval()
@@ -302,7 +302,7 @@ def evaluate_model(
     }
 
 
-def benchmark_model(model: nn.Module, data_loader: DataLoader, device: torch.device, warmup: int = 2) -> Dict[str, float]:
+def benchmark_model(model: nn.Module, data_loader: DataLoader, device: torch.device, warmup: int = 2) -> dict[str, float]:
     """Benchmark model forward pass latency and throughput."""
     model.eval()
     for i, batch in enumerate(data_loader):
@@ -316,7 +316,7 @@ def benchmark_model(model: nn.Module, data_loader: DataLoader, device: torch.dev
 
     memory_before = psutil.Process().memory_info().rss / 1024 / 1024
     start_time = time.time()
-    batch_times: List[float] = []
+    batch_times: list[float] = []
 
     with torch.no_grad():
         for batch in data_loader:
@@ -353,7 +353,7 @@ def count_parameters(model: nn.Module, trainable_only: bool = True) -> int:
     )
 
 
-def compute_metrics(eval_pred: Tuple[np.ndarray, np.ndarray], task: str = "classification") -> Dict[str, float]:
+def compute_metrics(eval_pred: tuple[np.ndarray, np.ndarray], task: str = "classification") -> dict[str, float]:
     """Compute and return metrics."""
     logits, labels = eval_pred
     preds = np.argmax(logits, axis=-1)
@@ -365,14 +365,14 @@ def compute_metrics(eval_pred: Tuple[np.ndarray, np.ndarray], task: str = "class
     return metrics
 
 
-def save_training_history(history: List[Dict[str, Any]], save_path: str) -> None:
+def save_training_history(history: list[dict[str, Any]], save_path: str) -> None:
     """Persist training history to disk."""
     Path(save_path).parent.mkdir(parents=True, exist_ok=True)
     with open(save_path, "w") as f:
         json.dump(history, f, indent=2)
 
 
-def plot_training_curves(history: List[Dict[str, Any]], save_path: str) -> None:
+def plot_training_curves(history: list[dict[str, Any]], save_path: str) -> None:
     """Plot training curves."""
     import matplotlib.pyplot as plt
 

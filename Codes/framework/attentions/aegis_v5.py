@@ -14,7 +14,7 @@ Architecture:
 import logging
 import math
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -47,7 +47,7 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Apply RoPE. Caller must slice cos/sin to the current window (past_len : past_len+N)."""
     if cos.dim() == 2:
         cos = cos.unsqueeze(0).unsqueeze(0)
@@ -86,8 +86,8 @@ def apply_rotary_pos_emb(
 
 def _detect_decoder(
     config: Any,
-    is_decoder: Optional[bool],
-    old_attn: Optional[nn.Module],
+    is_decoder: bool | None,
+    old_attn: nn.Module | None,
 ) -> bool:
     """V5-FIX-05: robust decoder detection, replaces the locals() hack."""
     if is_decoder is not None:
@@ -161,11 +161,11 @@ class FactorisedLinear(nn.Module):
     def __init__(
         self,
         in_features_or_weight: Any,
-        out_features_or_bias: Optional[Any] = None,
+        out_features_or_bias: Any | None = None,
         energy: float = 0.95,
         min_rank: int = 4,
         max_rank: int = 384,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         bias: bool = True,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
@@ -240,8 +240,8 @@ class FactorisedLinear(nn.Module):
     def decompose_from_weight(
         self,
         weight: torch.Tensor,
-        bias: Optional[torch.Tensor] = None,
-        energy: Optional[float] = None,
+        bias: torch.Tensor | None = None,
+        energy: float | None = None,
     ) -> None:
         # V5-FIX-17: document the padding / repeat handling.
         # If the source weight does not match (out_features, in_features), we
@@ -311,7 +311,7 @@ class FactorisedLinear(nn.Module):
         return base_w
 
     @property
-    def bias(self) -> Optional[torch.Tensor]:
+    def bias(self) -> torch.Tensor | None:
         return self.up.bias
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -341,7 +341,7 @@ def local_window_attention(
     V: torch.Tensor,
     window: int,
     softpick_temperature: float = 1.0,
-    token_valid: Optional[torch.Tensor] = None,
+    token_valid: torch.Tensor | None = None,
     is_decoder: bool = False,
     past_len: int = 0,
 ) -> torch.Tensor:
@@ -497,9 +497,9 @@ class AegisAttention(BaseAttention):
         self,
         model_config: Any = None,
         config: Any = None,
-        aegis_cfg: Optional[AegisConfigV5] = None,
-        pretrained_attn: Optional[nn.Module] = None,
-        is_decoder: Optional[bool] = None,
+        aegis_cfg: AegisConfigV5 | None = None,
+        pretrained_attn: nn.Module | None = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         cfg = model_config if model_config is not None else config
@@ -634,7 +634,7 @@ class AegisAttention(BaseAttention):
     def copy_weights(self, old_attn: Any) -> None:
         from framework.core.adapters import UniversalAdapter
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
@@ -708,11 +708,9 @@ class AegisAttention(BaseAttention):
         if hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj"):
             self.is_nested_encoder = False
         elif (hasattr(old_attn, "self")
-              and hasattr(getattr(old_attn, "self"), "query")
+              and hasattr(old_attn.self, "query")
               and hasattr(old_attn, "output")
-              and hasattr(getattr(old_attn, "output"), "dense")):
-            self.is_nested_encoder = True
-        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+              and hasattr(old_attn.output, "dense")) or (cls_name in ("BertSelfAttention", "RobertaSelfAttention")
               or (cls_name.endswith("SelfAttention") and not has_out_proj)):
             self.is_nested_encoder = True
         else:
@@ -772,9 +770,9 @@ class AegisAttention(BaseAttention):
     # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(
-        attention_mask: Optional[torch.Tensor],
+        attention_mask: torch.Tensor | None,
         B: int, N_kv: int, device: torch.device,
-    ) -> Optional[torch.Tensor]:
+    ) -> torch.Tensor | None:
         """
         Return a boolean tensor (B, N_kv): True = key is valid (padding).
         Returns None when no mask is provided.
@@ -804,18 +802,18 @@ class AegisAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
         Hkv = self.num_kv_heads
@@ -1028,7 +1026,7 @@ def inject_aegis_v5(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,  # V5-FIX-04: recursion guard
     **kwargs: Any,
 ):
@@ -1038,7 +1036,7 @@ def inject_aegis_v5(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

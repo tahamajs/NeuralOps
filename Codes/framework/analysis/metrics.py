@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -10,7 +10,7 @@ import pandas as pd
 
 def compute_metrics(
     predictions: np.ndarray, labels: np.ndarray, task: str = "classification"
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Compute and return metrics."""
     from scipy.stats import pearsonr, spearmanr
     from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
@@ -34,7 +34,7 @@ def compute_metrics(
     return metrics
 
 
-def aggregate_results(results_list: List[Dict[str, Any]]) -> Dict[str, Any]:
+def aggregate_results(results_list: list[dict[str, Any]]) -> dict[str, Any]:
     """Aggregate results."""
     if not results_list:
         return {}
@@ -53,11 +53,11 @@ class MetricsTracker:
 
     def __init__(self, filepath: str) -> None:
         self.filepath = filepath
-        self.records: List[Dict[str, Any]] = []
+        self.records: list[dict[str, Any]] = []
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
     def log(
-        self, metrics: Dict[str, Any], step: Optional[int] = None, flush: bool = False
+        self, metrics: dict[str, Any], step: int | None = None, flush: bool = False
     ) -> None:
         """Log."""
         entry = {"step": step} if step is not None else {}
@@ -82,7 +82,7 @@ class MetricsTracker:
         """To dataframe."""
         all_records = []
         if os.path.exists(self.filepath):
-            with open(self.filepath, "r") as f:
+            with open(self.filepath) as f:
                 for line in f:
                     try:
                         all_records.append(json.loads(line))

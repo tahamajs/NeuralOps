@@ -9,11 +9,9 @@ overhead per module evaluation.
 
 from __future__ import annotations
 
-import os
 import time
 import logging
 from pathlib import Path
-from typing import Dict, Optional, Tuple, Any, Union
 
 import torch
 from torch.utils.data import TensorDataset
@@ -40,15 +38,15 @@ GLUE_TASK_CONFIG = {
     "qqp": {"keys": ("question1", "question2"), "num_labels": 2, "type": "classification"},
 }
 
-_IN_MEMORY_CACHE: Dict[Tuple[str, str, int], Dict[str, TensorDataset]] = {}
+_IN_MEMORY_CACHE: dict[tuple[str, str, int], dict[str, TensorDataset]] = {}
 
 
 def get_cached_tokenized_dataset(
     dataset_name: str = "sst2",
     model_family: str = "distilbert",
     seq_len: int = 128,
-    cache_dir: Optional[Union[str, Path]] = None,
-) -> Dict[str, TensorDataset]:
+    cache_dir: str | Path | None = None,
+) -> dict[str, TensorDataset]:
     """Retrieves pre-tokenized TensorDatasets from RAM cache or disk cache (.pt).
 
     If missing on disk, automatically downloads, tokenizes, and saves the .pt cache.
@@ -89,7 +87,7 @@ def get_cached_tokenized_dataset(
     # Build cache
     logger.info(f"Pre-tokenized cache missing for {key}. Generating once and saving to {cache_file}...")
     t0 = time.time()
-    
+
     from datasets import load_dataset
     from transformers import AutoTokenizer
 
@@ -102,13 +100,13 @@ def get_cached_tokenized_dataset(
     task_cfg = GLUE_TASK_CONFIG.get(dataset_name.lower(), {"keys": ("sentence", None), "num_labels": 2})
     k1, k2 = task_cfg["keys"]
 
-    def _tokenize_split(split_name: str) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def _tokenize_split(split_name: str) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         raw_ds = load_dataset("glue", dataset_name.lower(), split=split_name)
         def tok_fn(ex):
             args = (ex[k1],) if k2 is None else (ex[k1], ex[k2])
             return tokenizer(*args, padding="max_length", truncation=True, max_length=seq_len)
         tokenized = raw_ds.map(tok_fn, batched=True, desc=f"Tokenizing {dataset_name} {split_name}")
-        
+
         input_ids = torch.tensor(tokenized["input_ids"], dtype=torch.long)
         attention_mask = torch.tensor(tokenized["attention_mask"], dtype=torch.long)
         label_key = "label" if "label" in tokenized.column_names else "labels"

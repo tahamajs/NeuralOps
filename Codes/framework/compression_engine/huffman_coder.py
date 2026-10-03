@@ -6,9 +6,8 @@ exact byte accounting, safe LoRA freezing, and robust tokenizer forward checks.
 from __future__ import annotations
 
 import heapq
-import math
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import torch
@@ -67,10 +66,10 @@ class HuffmanNode:
 
     def __init__(
         self,
-        symbol: Optional[int] = None,
+        symbol: int | None = None,
         freq: int = 0,
-        left: Optional[HuffmanNode] = None,
-        right: Optional[HuffmanNode] = None,
+        left: HuffmanNode | None = None,
+        right: HuffmanNode | None = None,
     ) -> None:
         self.symbol = symbol
         self.freq = freq
@@ -89,12 +88,12 @@ class HuffmanCoder:
     """
 
     @staticmethod
-    def build_tree(frequencies: Dict[int, int]) -> Optional[HuffmanNode]:
+    def build_tree(frequencies: dict[int, int]) -> HuffmanNode | None:
         """Build Huffman binary prefix tree from symbol frequencies."""
         if not frequencies:
             return None
 
-        heap: List[HuffmanNode] = [HuffmanNode(sym, freq) for sym, freq in frequencies.items()]
+        heap: list[HuffmanNode] = [HuffmanNode(sym, freq) for sym, freq in frequencies.items()]
         heapq.heapify(heap)
 
         if len(heap) == 1:
@@ -111,8 +110,8 @@ class HuffmanCoder:
 
     @staticmethod
     def generate_code_table(
-        root: Optional[HuffmanNode], current_code: str = "", code_table: Optional[Dict[int, str]] = None
-    ) -> Dict[int, str]:
+        root: HuffmanNode | None, current_code: str = "", code_table: dict[int, str] | None = None
+    ) -> dict[int, str]:
         """Traverse Huffman tree to generate prefix bitstring per symbol."""
         if code_table is None:
             code_table = {}
@@ -133,8 +132,8 @@ class HuffmanCoder:
     @staticmethod
     def encode(
         tensor: torch.Tensor,
-        quantize_bits: Optional[int] = 8,
-    ) -> Tuple[bytes, Dict[int, str], Dict[str, Any]]:
+        quantize_bits: int | None = 8,
+    ) -> tuple[bytes, dict[int, str], dict[str, Any]]:
         """
         Vectorized encode input tensor into packed bitstream bytes and Huffman codebook.
         """
@@ -212,9 +211,9 @@ class HuffmanCoder:
     @staticmethod
     def decode(
         packed_bytes: bytes,
-        code_table: Dict[int, str],
-        metadata: Dict[str, Any],
-        device: Optional[torch.device] = None,
+        code_table: dict[int, str],
+        metadata: dict[str, Any],
+        device: torch.device | None = None,
     ) -> torch.Tensor:
         """Vectorized decode bitstream back into reconstructed tensor."""
         total_elements = metadata.get("total_elements", 0)
@@ -306,11 +305,11 @@ class HuffmanCompressor(BaseCompressor):
         max_error: float = 0.20,
         target_attention_only: bool = False,
         fallback_to_original: bool = True,
-        cfg: Optional[Any] = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="huffman", **kwargs)
-        cfg = cfg or kwargs.get("comp_config", None)
+        cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
         self.quantize_bits = int(_cfg_get(cfg, "huffman_quantize_bits", _cfg_get(cfg, "quantize_bits", _cfg_get(cfg, "bits", quantize_bits))))
@@ -322,10 +321,10 @@ class HuffmanCompressor(BaseCompressor):
             _cfg_get(cfg, "huffman_fallback_to_original", _cfg_get(cfg, "fallback_to_original", fallback_to_original))
         )
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         name_lower = name.lower()
@@ -349,7 +348,7 @@ class HuffmanCompressor(BaseCompressor):
             return False
         return True
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Profile and apply Huffman entropy coding across all linear layers."""
         first_p = next(self.model.parameters(), None)
         _model_device = first_p.device if first_p is not None else torch.device("cpu")

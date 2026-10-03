@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -18,7 +18,7 @@ import torch.nn.functional as F
 
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.utils.model_family import ModelAdapter
 
@@ -36,8 +36,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -161,7 +161,7 @@ class LowRankCache(nn.Module):
                     except Exception:
                         pass
 
-    def get_cached(self) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+    def get_cached(self) -> tuple[torch.Tensor | None, torch.Tensor | None]:
         if self.recent_k.numel() == 0:
             return None, None
         B_H = self.recent_k.size(0)
@@ -195,13 +195,13 @@ class LowRankLinear(nn.Module):
         self.U: nn.Parameter = nn.Parameter(torch.empty(out_features, rank), requires_grad=False)
         self.V: nn.Parameter = nn.Parameter(torch.empty(rank, in_features), requires_grad=False)
         if bias:
-            self.bias: Optional[nn.Parameter] = nn.Parameter(torch.empty(out_features), requires_grad=False)
+            self.bias: nn.Parameter | None = nn.Parameter(torch.empty(out_features), requires_grad=False)
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A: Optional[nn.Parameter] = nn.Parameter(torch.empty(self.lora_rank, in_features))
-            self.lora_B: Optional[nn.Parameter] = nn.Parameter(torch.empty(out_features, self.lora_rank))
+            self.lora_A: nn.Parameter | None = nn.Parameter(torch.empty(self.lora_rank, in_features))
+            self.lora_B: nn.Parameter | None = nn.Parameter(torch.empty(out_features, self.lora_rank))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -255,13 +255,13 @@ class LoLAAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        model_config: Optional[Any] = None,
-        rank: Optional[int] = None,
+        config: Any | None = None,
+        model_config: Any | None = None,
+        rank: int | None = None,
         lora_rank: int = 16,
         dropout: float = 0.1,
-        comp_config: Optional[Any] = None,
-        pretrained_attn: Optional[nn.Module] = None,
+        comp_config: Any | None = None,
+        pretrained_attn: nn.Module | None = None,
         **kwargs: Any,
     ) -> None:
         cfg = config if config is not None else model_config
@@ -330,7 +330,7 @@ class LoLAAttention(BaseAttention):
             self.cache.reset()
 
     def _set_lowrank_factors(
-        self, lowrank: LowRankLinear, weight: torch.Tensor, bias: Optional[torch.Tensor],
+        self, lowrank: LowRankLinear, weight: torch.Tensor, bias: torch.Tensor | None,
     ) -> None:
         with torch.no_grad():
             W = weight.float()
@@ -363,7 +363,7 @@ class LoLAAttention(BaseAttention):
     def copy_weights(self, src: Any) -> None:
         from framework.core.adapters import UniversalAdapter
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
@@ -412,7 +412,7 @@ class LoLAAttention(BaseAttention):
 
         # RoBERTa / BERT nested
         if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            s = getattr(src, "self")
+            s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None:
@@ -423,7 +423,7 @@ class LoLAAttention(BaseAttention):
                             base_mod.bias.data.clone() if getattr(base_mod, "bias", None) is not None else None,
                         )
 
-        if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and extracted["o"][0] is None:
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             dense = src.output.dense
             base_dense = getattr(dense, "base_layer", dense)
             if hasattr(base_dense, "weight"):
@@ -457,9 +457,7 @@ class LoLAAttention(BaseAttention):
         has_out_proj = any(hasattr(src, attr) for attr in
                            ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
         is_nested = False
-        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            is_nested = True
-        elif (
+        if hasattr(src, "self") and hasattr(src.self, "query") or (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
         ) and not has_out_proj:
@@ -516,17 +514,17 @@ class LoLAAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
         is_cross_attention = key_value_states is not None
         kv_input = key_value_states if is_cross_attention else hidden_states
@@ -542,7 +540,7 @@ class LoLAAttention(BaseAttention):
         V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # RoPE
-        position_embeddings = kwargs.get("position_embeddings", None)
+        position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and isinstance(position_embeddings, (tuple, list)) and len(position_embeddings) >= 2:
             cos, sin = position_embeddings[0], position_embeddings[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
@@ -564,7 +562,7 @@ class LoLAAttention(BaseAttention):
 
         scores_lr = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
 
-        mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
+        mask = attention_mask if attention_mask is not None else kwargs.get("mask")
         if mask is not None:
             if mask.dim() == 4:
                 if mask.dtype == torch.bool:
@@ -659,12 +657,12 @@ def inject_lola_attention(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
 ):
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

@@ -3,9 +3,7 @@ Local GLUE Loader — loads pre-cached GLUE datasets from disk first, then HF Hu
 """
 from __future__ import annotations
 import logging
-import os
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
 from datasets import Dataset, DatasetDict
 
 logger = logging.getLogger(__name__)
@@ -36,7 +34,7 @@ GLUE_TASK_TEXT_KEYS = GLUE_TASK_KEYS
 def load_glue_split(
     task: str, split: str = "validation",
     tokenizer_name: str = "bert-base-uncased", max_seq_len: int = 128,
-) -> Optional[Dataset]:
+) -> Dataset | None:
     """Load GLUE split from disk cache or HF Hub. Returns torch-format Dataset."""
     task = task.lower()
     if task not in GLUE_TASK_HF_NAME:
@@ -121,7 +119,7 @@ def load_glue_local(task_name: str, base_path: str = None) -> DatasetDict:
         return hf_load_dataset("nyu-mll/glue", task_name)
 
 
-def get_num_labels_and_is_regression(task_name: str) -> Tuple[int, bool]:
+def get_num_labels_and_is_regression(task_name: str) -> tuple[int, bool]:
     """Return (num_labels, is_regression) for GLUE tasks."""
     t = task_name.lower()
     if t == "stsb":

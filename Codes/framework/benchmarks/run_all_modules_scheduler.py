@@ -8,13 +8,12 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import os
 import subprocess
 import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 logging.basicConfig(
     level=logging.INFO,
@@ -125,7 +124,7 @@ def get_free_vram_gb() -> float:
         logger.warning(f"Failed to query VRAM: {e}")
         return 0.0
 
-def get_active_kd_processes() -> List[Dict[str, str]]:
+def get_active_kd_processes() -> list[dict[str, str]]:
     """Return list of active kd_quick_test python processes."""
     try:
         ps_cmd = (
@@ -147,13 +146,13 @@ def get_active_kd_processes() -> List[Dict[str, str]]:
     except Exception:
         return []
 
-def get_registry_data() -> Dict[str, Any]:
+def get_registry_data() -> dict[str, Any]:
     """Fetch registry.json either locally on Windows or via SSH."""
     try:
         if IS_WINDOWS:
             reg_path = Path(REMOTE_RESULTS) / "registry.json"
             if reg_path.exists():
-                with open(reg_path, "r", encoding="utf-8") as f:
+                with open(reg_path, encoding="utf-8") as f:
                     return json.load(f)
             return {"runs": []}
         else:
@@ -163,7 +162,7 @@ def get_registry_data() -> Dict[str, Any]:
         logger.warning(f"Could not load registry.json: {e}")
         return {"runs": []}
 
-def get_tested_modules(include_failures: bool = False) -> Set[str]:
+def get_tested_modules(include_failures: bool = False) -> set[str]:
     """Find modules already successfully run in registry or hardcoded ALREADY_TESTED."""
     data = get_registry_data()
     tested = set(ALREADY_TESTED)
@@ -183,7 +182,7 @@ def get_tested_modules(include_failures: bool = False) -> Set[str]:
             tested.add(mod)
     return tested
 
-def get_nan_ppl_modules() -> Set[str]:
+def get_nan_ppl_modules() -> set[str]:
     """Return modules whose pre_ppl was NaN (injection failure — not retryable)."""
     data = get_registry_data()
     nan_mods = set()
@@ -275,7 +274,7 @@ def kill_kd_processes():
     except Exception as e:
         logger.warning(f"Error killing KD processes: {e}")
 
-def wait_for_batch(active_modules: List[str], poll_sec: int = 15, timeout_min: int = 35) -> bool:
+def wait_for_batch(active_modules: list[str], poll_sec: int = 15, timeout_min: int = 35) -> bool:
     """Wait until all active module jobs finish."""
     start_time = time.time()
     max_duration = timeout_min * 60
@@ -313,7 +312,7 @@ def sync_results():
     except Exception as e:
         logger.warning(f"Failed to sync registry.json: {e}")
 
-def generate_master_report(all_runs: List[Dict[str, Any]], total_candidates: int):
+def generate_master_report(all_runs: list[dict[str, Any]], total_candidates: int):
     """Generate Markdown and JSON master reports."""
     MASTER_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(MASTER_JSON_PATH, "w", encoding="utf-8") as f:
@@ -345,7 +344,7 @@ def generate_master_report(all_runs: List[Dict[str, Any]], total_candidates: int
             })
 
     # Deduplicate valid_runs keeping best post_ppl per module
-    best_valid: Dict[str, Dict[str, Any]] = {}
+    best_valid: dict[str, dict[str, Any]] = {}
     for r in valid_runs:
         m = r["module"]
         if m not in best_valid or r["post_ppl"] < best_valid[m]["post_ppl"]:
@@ -355,7 +354,7 @@ def generate_master_report(all_runs: List[Dict[str, Any]], total_candidates: int
     # Only report as failed if the module does not have a successful run
     failed_runs = [f for f in failed_runs if f["module"] not in best_valid]
     # Deduplicate failed runs by module
-    failed_dict: Dict[str, Dict[str, Any]] = {}
+    failed_dict: dict[str, dict[str, Any]] = {}
     for f in failed_runs:
         failed_dict[f["module"]] = f
     failed_runs = list(failed_dict.values())
@@ -367,7 +366,7 @@ def generate_master_report(all_runs: List[Dict[str, Any]], total_candidates: int
         "# All Modules Knowledge Distillation (KD) Master Results",
         "",
         f"**Last Updated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  ",
-        f"**Teacher Baseline PPL (GPT-2 on WikiText-2):** `31.54`  ",
+        "**Teacher Baseline PPL (GPT-2 on WikiText-2):** `31.54`  ",
         "",
         "## Summary",
         f"- **Total Modules Available:** {total_candidates}",
@@ -461,7 +460,7 @@ def main():
     while idx < len(remaining_modules):
         # 1. Dynamic VRAM Guard Check
         free_vram = get_free_vram_gb()
-        logger.info(f"\n=======================================================")
+        logger.info("\n=======================================================")
         logger.info(f"Batch {batch_idx + 1} - Free VRAM: {free_vram:.2f} GB")
 
         # Determine dynamic concurrency:

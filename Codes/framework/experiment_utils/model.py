@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 import torch
 from transformers import AutoConfig, AutoModelForSequenceClassification
 
@@ -13,7 +13,7 @@ class _MockObjectsManager:
     def filter(self, *args, **kwargs) -> Any:
         return self
 
-    def order_by(self, *args, **kwargs) -> List["TrainingRun"]:
+    def order_by(self, *args, **kwargs) -> list["TrainingRun"]:
         return []
 
 
@@ -25,9 +25,9 @@ class TrainingRun:
     name: str = ""
     status: str = "completed"
     created_at: datetime = field(default_factory=datetime.now)
-    config: Dict[str, Any] = field(default_factory=dict)
-    final_metrics: Dict[str, Any] = field(default_factory=dict)
-    training_history: Dict[str, Any] = field(default_factory=dict)
+    config: dict[str, Any] = field(default_factory=dict)
+    final_metrics: dict[str, Any] = field(default_factory=dict)
+    training_history: dict[str, Any] = field(default_factory=dict)
     actual_duration: float = 0.0
 
     objects: Any = _MockObjectsManager()

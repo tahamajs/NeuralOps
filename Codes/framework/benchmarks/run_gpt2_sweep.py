@@ -45,7 +45,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import atexit
 import copy
 import csv
 import gc
@@ -53,14 +52,13 @@ import json
 import logging
 import os
 import random
-import shutil
 import signal
 import sys
 import time
 import traceback
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import numpy as np
 import torch
@@ -106,7 +104,7 @@ logging.basicConfig(level=logging.INFO, format=_LOG_FORMAT)
 # ---------------------------------------------------------------------------
 # CSV schema — the single source of truth
 # ---------------------------------------------------------------------------
-CSV_FIELDS: List[str] = [
+CSV_FIELDS: list[str] = [
     # Identity
     "module_name",
     "status",
@@ -180,16 +178,16 @@ class ResultRow:
     post_kd_ppl: float = -1.0
     delta_ppl_recovery: float = 0.0
 
-    def to_csv_dict(self) -> Dict[str, Any]:
+    def to_csv_dict(self) -> dict[str, Any]:
         return {k: getattr(self, k, "") for k in CSV_FIELDS}
 
 
 # ---------------------------------------------------------------------------
 # Deprecated-module loading
 # ---------------------------------------------------------------------------
-def load_deprecated_modules() -> Set[str]:
+def load_deprecated_modules() -> set[str]:
     """Collect deprecated module names from all known file locations."""
-    deprecated: Set[str] = set()
+    deprecated: set[str] = set()
     candidates = [
         ROOT / "audit" / "deprecated_modules.txt",
         ROOT / "deprecated_modules.txt",
@@ -213,18 +211,18 @@ def load_deprecated_modules() -> Set[str]:
 # ---------------------------------------------------------------------------
 # Module discovery
 # ---------------------------------------------------------------------------
-def get_all_decoder_modules(category: str = "all") -> List[str]:
+def get_all_decoder_modules(category: str = "all") -> list[str]:
     """Dynamically discover all GPT-2-compatible attention and compressor modules."""
     import framework.attentions  # noqa: F401
     import framework.compression_engine  # noqa: F401
 
-    items: List[Tuple[str, Any]] = []
+    items: list[tuple[str, Any]] = []
     if category in ("all", "attentions"):
         items.extend(ATTENTION_REGISTRY.items())
     if category in ("all", "compressors"):
         items.extend(COMPRESSOR_REGISTRY.items())
 
-    by_factory: Dict[Any, List[str]] = {}
+    by_factory: dict[Any, list[str]] = {}
     for name, factory in items:
         if name == "full" or is_helper_module(name):
             continue
@@ -241,8 +239,8 @@ def get_all_decoder_modules(category: str = "all") -> List[str]:
         canonical.append(sorted(aliases, key=lambda x: (x.endswith("_inject"), len(x), x))[0])
 
     # Preserve insertion order but ensure "full" is first
-    seen: Set[str] = set()
-    out: List[str] = []
+    seen: set[str] = set()
+    out: list[str] = []
     for m in canonical:
         if m not in seen:
             seen.add(m)
@@ -253,7 +251,7 @@ def get_all_decoder_modules(category: str = "all") -> List[str]:
 # ---------------------------------------------------------------------------
 # Argument parsing
 # ---------------------------------------------------------------------------
-def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description="GPT-2 decoder perplexity benchmark sweep",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -319,7 +317,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
 # ---------------------------------------------------------------------------
 # Logging to file
 # ---------------------------------------------------------------------------
-def setup_logging(log_file: Optional[str], verbose: bool = False):
+def setup_logging(log_file: str | None, verbose: bool = False):
     level = logging.DEBUG if verbose else logging.INFO
     root = logging.getLogger()
     root.setLevel(level)
@@ -346,13 +344,13 @@ def build_calibration_loader(
     num_samples: int = 500,
     batch_size: int = 4,
     max_length: int = 128,
-) -> List[Dict[str, torch.Tensor]]:
+) -> list[dict[str, torch.Tensor]]:
     """
     Pack short WikiText lines into fixed-length chunks (no padding waste).
     Returns a list of batches: [{"input_ids": (B, T), "attention_mask": (B, T)}, ...]
     """
     # Collect enough text
-    texts: List[str] = []
+    texts: list[str] = []
     for item in train_dataset["text"]:
         t = item.strip()
         if len(t) > 20:
@@ -364,7 +362,7 @@ def build_calibration_loader(
         texts = ["The quick brown fox jumps over the lazy dog."] * 512
 
     # Tokenize each chunk (no padding), then concatenate
-    all_ids: List[int] = []
+    all_ids: list[int] = []
     for t in texts:
         ids = tokenizer(t, add_special_tokens=False).input_ids
         if not ids:
@@ -383,7 +381,7 @@ def build_calibration_loader(
     all_ids = all_ids[:target]
     ids_tensor = torch.tensor(all_ids, dtype=torch.long).view(num_samples, max_length)
 
-    batches: List[Dict[str, torch.Tensor]] = []
+    batches: list[dict[str, torch.Tensor]] = []
     for i in range(0, num_samples, batch_size):
         chunk = ids_tensor[i : i + batch_size]
         attn = torch.ones_like(chunk)
@@ -400,9 +398,9 @@ def compute_perplexity_with_metrics(
     test_dataset,
     seq_len: int = 1024,
     stride: int = 512,
-    max_eval_tokens: Optional[int] = None,
+    max_eval_tokens: int | None = None,
     device: str = "cuda",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Sliding-window perplexity (GPT-2 / LLaMA-style).
 
@@ -431,7 +429,7 @@ def compute_perplexity_with_metrics(
         torch.cuda.reset_peak_memory_stats()
 
     t0 = time.time()
-    nlls: List[torch.Tensor] = []
+    nlls: list[torch.Tensor] = []
     prev_end = 0
     tokens_eval = 0
 
@@ -510,7 +508,7 @@ def run_kd_recovery(
     """
     LOG.info("Running KD recovery: %d steps, batch=1, seq_len=%d, lr=%.2e", steps, seq_len, lr)
     t0 = time.time()
-    
+
     # Configure trainable parameters: unfreeze low-rank / SVD / injected params
     trainable_keywords = ("W_u", "W_v", "weight_u", "weight_v", "lora_A", "lora_B", "adapter", "A", "B")
     trainable_params = []
@@ -568,9 +566,8 @@ def run_kd_recovery(
         batch = chunks[step_idx : step_idx + 1].to(device)
         optimizer.zero_grad()
 
-        with torch.no_grad():
-            with torch.cuda.amp.autocast(enabled=device.startswith("cuda")):
-                t_out = teacher(batch)
+        with torch.no_grad(), torch.cuda.amp.autocast(enabled=device.startswith("cuda")):
+            t_out = teacher(batch)
 
         with torch.cuda.amp.autocast(enabled=device.startswith("cuda")):
             s_out = student(batch)
@@ -605,12 +602,12 @@ def run_kd_recovery(
 # ---------------------------------------------------------------------------
 # CSV upsert (no duplicates, atomic)
 # ---------------------------------------------------------------------------
-def _read_csv_rows(csv_path: Path) -> Dict[str, Dict[str, str]]:
+def _read_csv_rows(csv_path: Path) -> dict[str, dict[str, str]]:
     if not csv_path.exists() or csv_path.stat().st_size == 0:
         return {}
-    out: Dict[str, Dict[str, str]] = {}
+    out: dict[str, dict[str, str]] = {}
     try:
-        with open(csv_path, "r", newline="", encoding="utf-8") as f:
+        with open(csv_path, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for r in reader:
                 m = r.get("module_name")
@@ -621,7 +618,7 @@ def _read_csv_rows(csv_path: Path) -> Dict[str, Dict[str, str]]:
     return out
 
 
-def upsert_row(csv_path: Path, row: Dict[str, Any], lock_path: Optional[Path] = None):
+def upsert_row(csv_path: Path, row: dict[str, Any], lock_path: Path | None = None):
     """Atomic upsert by module_name. Uses FileLock for multiprocess safety."""
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     lock = lock_path or csv_path.with_suffix(".lock")
@@ -649,14 +646,14 @@ def write_diag(
     diag_path: Path,
     module: str,
     exc: BaseException,
-    extra: Optional[Dict[str, Any]] = None,
+    extra: dict[str, Any] | None = None,
     include_locals: bool = False,
 ):
     exc_type, exc_val, exc_tb = sys.exc_info()
     tb_lines = traceback.format_exception(exc_type, exc_val, exc_tb)
 
     last = traceback.extract_tb(exc_tb)[-1] if exc_tb else None
-    info: Dict[str, Any] = {
+    info: dict[str, Any] = {
         "module_name": module,
         "exception_type": exc_type.__name__ if exc_type else "Exception",
         "exception_message": str(exc_val),
@@ -700,7 +697,7 @@ def classify_status(ppl_ratio: float) -> str:
     return "FAIL_PPL_DIVERGED"
 
 
-def is_real_success(status: str, row: Dict[str, Any]) -> bool:
+def is_real_success(status: str, row: dict[str, Any]) -> bool:
     """A module is a 'real success' iff it PASSED AND did measurable work."""
     if status not in ("PASS", "PASS_SLIGHT_DEGRADATION"):
         return False
@@ -720,13 +717,13 @@ def write_markdown_report(out_dir: Path, csv_path: Path, baseline_ppl: float):
     if not rows:
         return
     md_lines = [
-        f"# GPT-2 Decoder Sweep Report",
-        f"",
+        "# GPT-2 Decoder Sweep Report",
+        "",
         f"- Baseline PPL: **{baseline_ppl:.2f}**",
         f"- Modules evaluated: {len(rows)}",
-        f"",
-        f"| Module | Status | PPL | PPL Ratio | Comp. | Inj. Layers | Comp. Layers | Latency (ms/tok) |",
-        f"|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|",
+        "",
+        "| Module | Status | PPL | PPL Ratio | Comp. | Inj. Layers | Comp. Layers | Latency (ms/tok) |",
+        "|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|",
     ]
     for m in sorted(rows.keys(), key=lambda k: (k != "full", k)):
         r = rows[m]
@@ -746,7 +743,7 @@ def write_markdown_report(out_dir: Path, csv_path: Path, baseline_ppl: float):
 # ---------------------------------------------------------------------------
 # Summary statistics
 # ---------------------------------------------------------------------------
-def print_summary_stats(rows: Dict[str, Dict[str, str]]):
+def print_summary_stats(rows: dict[str, dict[str, str]]):
     if not rows:
         return
     ppls = []
@@ -767,7 +764,7 @@ def print_summary_stats(rows: Dict[str, Dict[str, str]]):
     LOG.info("  n = %d | min PPL = %.2f | max PPL = %.2f | median = %.2f | mean = %.2f",
              len(arr), arr.min(), arr.max(), np.median(arr), arr.mean())
     # Count by status
-    status_counts: Dict[str, int] = {}
+    status_counts: dict[str, int] = {}
     for k, r in rows.items():
         s = r.get("status", "?")
         status_counts[s] = status_counts.get(s, 0) + 1
@@ -799,7 +796,7 @@ def _install_signal_handlers():
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
-def main(argv: Optional[List[str]] = None):
+def main(argv: list[str] | None = None):
     args = parse_args(argv)
     if args.max_length:
         args.seq_len = args.max_length
@@ -822,7 +819,7 @@ def main(argv: Optional[List[str]] = None):
     # Module list
     if not args.modules:
         args.modules = ["all"]
-    parsed: List[str] = []
+    parsed: list[str] = []
     for item in args.modules:
         parsed.extend([m.strip() for m in str(item).split(",") if m.strip()])
     if not parsed or parsed == ["all"]:
@@ -881,7 +878,7 @@ def main(argv: Optional[List[str]] = None):
     LOG.info("Loading tokenizer from %s ...", tok_src)
     try:
         tokenizer = AutoTokenizer.from_pretrained(tok_src)
-    except Exception as e:
+    except Exception:
         if (ROOT / "models" / "gpt2_wikitext").exists():
             tok_src = str(ROOT / "models" / "gpt2_wikitext")
             LOG.info("Retrying tokenizer from %s ...", tok_src)
@@ -913,7 +910,7 @@ def main(argv: Optional[List[str]] = None):
     # ---- Baseline (reuse cached unless --recompute_baseline) ----
     cached = _read_csv_rows(main_csv)
     cached_base = cached.get("full")
-    baseline_ppl: Optional[float] = None
+    baseline_ppl: float | None = None
     if (not args.recompute_baseline
             and cached_base is not None
             and str(cached_base.get("baseline_ppl", "")) not in ("", "0", "0.0", "-1.0", "nan")):
@@ -925,7 +922,7 @@ def main(argv: Optional[List[str]] = None):
 
     base_model = None
     total_params_baseline = 0
-    base_metrics: Dict[str, Any] = {}
+    base_metrics: dict[str, Any] = {}
 
     if baseline_ppl is None:
         LOG.info("Loading baseline GPT-2...")
@@ -1012,7 +1009,7 @@ def main(argv: Optional[List[str]] = None):
     # Retry flags: if a module has one of these statuses, re-evaluate
     retry_set = set(args.retry_flags or [])
 
-    skip: Set[str] = set()
+    skip: set[str] = set()
     if not args.no_skip:
         for m, r in existing_all.items():
             st = (r.get("status") or "").strip()

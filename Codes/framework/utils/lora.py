@@ -7,11 +7,10 @@ PEFT packages. Supports Qwen, BERT, DistilBERT, RoBERTa, GPT-2, and T5 architect
 from __future__ import annotations
 
 import math
-from typing import Any, Iterable, List, Optional, Set, Tuple, Union
+from collections.abc import Iterable
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.nn.init import kaiming_uniform_, zeros_
 
 
@@ -74,7 +73,7 @@ class LoRALinear(nn.Module):
         return self.base_layer.weight
 
     @property
-    def bias(self) -> Optional[torch.Tensor]:
+    def bias(self) -> torch.Tensor | None:
         """Expose base layer bias for compatibility with hooks and inspectors."""
         return self.base_layer.bias
 
@@ -174,8 +173,8 @@ def apply_lora(
     r: int = 16,
     alpha: float = 32.0,
     dropout: float = 0.05,
-    target_modules: Optional[Union[Iterable[str], str]] = None,
-) -> Tuple[nn.Module, int]:
+    target_modules: Iterable[str] | str | None = None,
+) -> tuple[nn.Module, int]:
     """Freeze base model parameters and inject LoRALinear into matching target modules.
 
     Args:
@@ -223,12 +222,12 @@ def apply_lora(
     return model, adapted_count
 
 
-def get_lora_trainable_parameters(model: nn.Module) -> List[nn.Parameter]:
+def get_lora_trainable_parameters(model: nn.Module) -> list[nn.Parameter]:
     """Return all parameters that require gradients (LoRA adapters + task heads)."""
     return [p for p in model.parameters() if p.requires_grad]
 
 
-def save_lora_weights(model: nn.Module, save_path: str, metadata: Optional[dict] = None) -> None:
+def save_lora_weights(model: nn.Module, save_path: str, metadata: dict | None = None) -> None:
     """Save only trainable parameters (LoRA weights + task head) to disk."""
     trainable_state = {
         name: param.detach().cpu()

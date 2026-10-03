@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import torch
@@ -31,7 +31,6 @@ from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.pruning_utils import (
-    get_calibration_tensors,
     recalibrate_layernorms,
 )
 from framework.utils.compat import should_compress_linear
@@ -143,17 +142,17 @@ class CoMeBridge(nn.Module):
         # BaseModelOutput or objects with .last_hidden_state / .hidden_states
         modified = False
         if hasattr(hidden_states, "last_hidden_state"):
-            t = getattr(hidden_states, "last_hidden_state")
+            t = hidden_states.last_hidden_state
             if isinstance(t, torch.Tensor):
-                setattr(hidden_states, "last_hidden_state", self._bridge_tensor(t))
+                hidden_states.last_hidden_state = self._bridge_tensor(t)
                 modified = True
 
         if hasattr(hidden_states, "hidden_states"):
-            hs = getattr(hidden_states, "hidden_states")
+            hs = hidden_states.hidden_states
             if isinstance(hs, tuple) and len(hs) > 0 and isinstance(hs[-1], torch.Tensor):
                 new_hs = list(hs)
                 new_hs[-1] = self._bridge_tensor(new_hs[-1])
-                setattr(hidden_states, "hidden_states", tuple(new_hs))
+                hidden_states.hidden_states = tuple(new_hs)
                 modified = True
 
         if modified:
@@ -172,7 +171,7 @@ class CoMeBridge(nn.Module):
 class CoMeBridgedLayer(nn.Module):
     """Wraps a retained transformer layer with a learnable CoMeBridge."""
 
-    def __init__(self, layer: nn.Module, bridge: Optional[CoMeBridge] = None) -> None:
+    def __init__(self, layer: nn.Module, bridge: CoMeBridge | None = None) -> None:
         super().__init__()
         self.layer = layer
         self.bridge = bridge
@@ -222,11 +221,11 @@ class CoMeLoRALinear(nn.Module):
         in_features: int,
         out_features: int,
         weight: torch.Tensor,
-        bias: Optional[torch.Tensor] = None,
+        bias: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -269,7 +268,7 @@ class CoMeLoRALinear(nn.Module):
         linear: nn.Module,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-    ) -> "CoMeLoRALinear":
+    ) -> CoMeLoRALinear:
         target_mod = getattr(linear, "base_layer", getattr(linear, "linear", linear))
         cls_name = target_mod.__class__.__name__.lower()
         is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
@@ -348,10 +347,10 @@ class CoMeCompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        tokenizer: Optional[Any] = None,
-        target_layers: Optional[int] = None,
+        tokenizer: Any | None = None,
+        target_layers: int | None = None,
         sparsity: float = 0.10,
-        bridge_rank: Optional[int] = None,
+        bridge_rank: int | None = None,
         alpha_init: float = 0.1,
         lora_r: int = 16,
         lora_alpha: float = 1.0,
@@ -360,13 +359,13 @@ class CoMeCompressor(BaseCompressor):
         target_attention_only: bool = False,
         recalibrate_ln: bool = True,
         allow_forward_failure: bool = False,
-        device: Optional[Union[str, torch.device]] = None,
-        target_modules: Optional[List[str]] = None,
-        rank: Optional[int] = None,
+        device: str | torch.device | None = None,
+        target_modules: list[str] | None = None,
+        rank: int | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="come", **kwargs)
-        conf = kwargs.get("comp_config", kwargs.get("cfg", None))
+        conf = kwargs.get("comp_config", kwargs.get("cfg"))
 
         # -------- Read config with precedence: explicit kwarg > comp_config > default --------
         rank = _cfg_get(conf, "rank", _cfg_get(conf, "come_rank", rank))
@@ -383,7 +382,7 @@ class CoMeCompressor(BaseCompressor):
         sparsity_explicit = _cfg_get(
             conf,
             "come_sparsity",
-            _cfg_get(conf, "sparsity", kwargs.get("sparsity", None)),
+            _cfg_get(conf, "sparsity", kwargs.get("sparsity")),
         )
         if sparsity_explicit is None and rank is not None:
             sparsity = _rank_to_sparsity(rank)
@@ -471,10 +470,10 @@ class CoMeCompressor(BaseCompressor):
         )
         self.comp_config = conf
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.stats: dict[str, Any] = {}
 
     # ------------------------------------------------------------------
     # helpers
@@ -590,7 +589,7 @@ class CoMeCompressor(BaseCompressor):
                 return ns[0] if isinstance(ns, (tuple, list)) else int(ns)
         raise ValueError(f"Cannot determine hidden_size for {type(layer).__name__}")
 
-    def _find_layer_container(self) -> Tuple[Optional[nn.Module], Optional[str], Optional[nn.ModuleList]]:
+    def _find_layer_container(self) -> tuple[nn.Module | None, str | None, nn.ModuleList | None]:
         candidates = [
             ("roberta.encoder.layer", lambda m: getattr(getattr(getattr(m, "roberta", None), "encoder", None), "layer", None)),
             ("bert.encoder.layer", lambda m: getattr(getattr(getattr(m, "bert", None), "encoder", None), "layer", None)),
@@ -642,7 +641,7 @@ class CoMeCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     # compress
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         parent, attr_name, layers = self._find_layer_container()
         bridges_inserted = 0
         self.compressed_layers = []
@@ -856,7 +855,7 @@ class CoMeCompressor(BaseCompressor):
             pass
         return self.model, stats
 
-    def get_trainable_params(self) -> List[nn.Parameter]:
+    def get_trainable_params(self) -> list[nn.Parameter]:
         trainable = []
         for _, param in self.model.named_parameters():
             if param.requires_grad:

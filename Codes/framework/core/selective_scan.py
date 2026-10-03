@@ -22,7 +22,6 @@ Bug-fix map:
 from __future__ import annotations
 import logging
 import math
-from typing import Optional, Tuple
 
 import torch
 import torch.nn.functional as F
@@ -78,9 +77,9 @@ def selective_scan_chunked(
     A: torch.Tensor,                          # (d_inner, N)
     B: torch.Tensor,                          # (B, N, L)
     C: torch.Tensor,                          # (B, N, L)
-    D: Optional[torch.Tensor] = None,         # (d_inner,)
-    z: Optional[torch.Tensor] = None,         # (B, d_inner, L)
-    delta_bias: Optional[torch.Tensor] = None,
+    D: torch.Tensor | None = None,         # (d_inner,)
+    z: torch.Tensor | None = None,         # (B, d_inner, L)
+    delta_bias: torch.Tensor | None = None,
     delta_softplus: bool = True,
     chunk_size: int = 32,
 ) -> torch.Tensor:
@@ -208,9 +207,9 @@ def selective_scan(
     A: torch.Tensor,
     B: torch.Tensor,
     C: torch.Tensor,
-    D: Optional[torch.Tensor] = None,
-    z: Optional[torch.Tensor] = None,
-    delta_bias: Optional[torch.Tensor] = None,
+    D: torch.Tensor | None = None,
+    z: torch.Tensor | None = None,
+    delta_bias: torch.Tensor | None = None,
     delta_softplus: bool = True,
     chunk_size: int = 32,
 ) -> torch.Tensor:

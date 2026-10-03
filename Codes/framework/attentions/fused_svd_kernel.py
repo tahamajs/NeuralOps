@@ -15,10 +15,10 @@ PyTorch autograd function with fallback.
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -135,8 +135,8 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         x: torch.Tensor,
         V: torch.Tensor,
         U: torch.Tensor,
-        norm_weight: Optional[torch.Tensor] = None,
-        bias: Optional[torch.Tensor] = None,
+        norm_weight: torch.Tensor | None = None,
+        bias: torch.Tensor | None = None,
         eps: float = 1e-6,
         use_rms_norm: bool = False,
     ) -> torch.Tensor:
@@ -235,7 +235,7 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         return y_2d.view(*orig_shape[:-1], K_out)
 
     @staticmethod
-    def backward(ctx: Any, grad_output: torch.Tensor) -> Tuple[Optional[torch.Tensor], ...]:
+    def backward(ctx: Any, grad_output: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
         x_2d, V, U, norm_weight, bias, z, rms, z_hat, z_norm = ctx.saved_tensors
         eps = ctx.eps
         use_rms_norm = ctx.use_rms_norm
@@ -282,8 +282,8 @@ def fused_svd_linear(
     x: torch.Tensor,
     V: torch.Tensor,
     U: torch.Tensor,
-    norm_weight: Optional[torch.Tensor] = None,
-    bias: Optional[torch.Tensor] = None,
+    norm_weight: torch.Tensor | None = None,
+    bias: torch.Tensor | None = None,
     eps: float = 1e-6,
     use_rms_norm: bool = False,
 ) -> torch.Tensor:
@@ -321,7 +321,7 @@ class FusedSVDLinear(nn.Module):
         use_rms_norm: bool = False,
         eps: float = 1e-6,
         dtype: torch.dtype = torch.float32,
-        device: Optional[torch.device] = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -378,7 +378,7 @@ class FusedSVDLinear(nn.Module):
             self.U.copy_(U_factor)
             self.V.copy_(V_factor)
 
-    def decompose_from_weight(self, weight: torch.Tensor, bias: Optional[torch.Tensor] = None) -> None:
+    def decompose_from_weight(self, weight: torch.Tensor, bias: torch.Tensor | None = None) -> None:
         """Decompose dense weight matrix into symmetric SVD factors."""
         with torch.no_grad():
             W = weight.float()
@@ -436,7 +436,7 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
     if cos.dim() == 2:
@@ -483,9 +483,9 @@ class FusedSVDKernelAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        old_attn: Optional[nn.Module] = None,
+        config: Any | None = None,
+        rank: int | None = None,
+        old_attn: nn.Module | None = None,
         use_fused_kernel: bool = True,
         use_rms_norm: bool = False,
         dropout: float = 0.1,
@@ -497,15 +497,15 @@ class FusedSVDKernelAttention(BaseAttention):
             or _cfg_get(config, "dim", None)
             or _cfg_get(config, "d_model", None)
             or _cfg_get(config, "n_embd", None)
-            or getattr(old_attn if old_attn is not None else kwargs.get("pretrained_attn", None), "embed_dim", None)
-            or getattr(old_attn if old_attn is not None else kwargs.get("pretrained_attn", None), "hidden_size", None)
+            or getattr(old_attn if old_attn is not None else kwargs.get("pretrained_attn"), "embed_dim", None)
+            or getattr(old_attn if old_attn is not None else kwargs.get("pretrained_attn"), "hidden_size", None)
             or 768
         )
         self.hidden_size: int = h_dim
         actual_rank = rank or _cfg_get(config, "rank", _cfg_get(config, "svd_rank", self.hidden_size))
         super().__init__(config, rank=actual_rank)
 
-        src_attn = old_attn if old_attn is not None else kwargs.get("pretrained_attn", None)
+        src_attn = old_attn if old_attn is not None else kwargs.get("pretrained_attn")
         self.num_heads: int = int(
             kwargs.get("num_heads")
             or kwargs.get("num_attention_heads")
@@ -592,10 +592,8 @@ class FusedSVDKernelAttention(BaseAttention):
 
             if hasattr(old_attn, "out_lin") or hasattr(old_attn, "c_proj") or hasattr(old_attn, "o_proj"):
                 self.is_nested_encoder = False
-            elif (hasattr(old_attn, "self") and hasattr(getattr(old_attn, "self"), "query")
-                  and hasattr(old_attn, "output") and hasattr(getattr(old_attn, "output"), "dense")):
-                self.is_nested_encoder = True
-            elif src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
+            elif (hasattr(old_attn, "self") and hasattr(old_attn.self, "query")
+                  and hasattr(old_attn, "output") and hasattr(old_attn.output, "dense")) or src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
                 hasattr(old_attn, "query") and not has_out
             ):
                 self.is_nested_encoder = True
@@ -658,9 +656,7 @@ class FusedSVDKernelAttention(BaseAttention):
                         out_w = out_w.data.clone()
                         cls_o = getattr(mod_o, "__class__", type(mod_o)).__name__
                         base_cls_o = getattr(base_o, "__class__", type(base_o)).__name__
-                        if "Conv1D" in cls_o or "Conv1D" in base_cls_o or hasattr(mod_o, "nf") or hasattr(base_o, "nf"):
-                            out_w = out_w.t().contiguous()
-                        elif out_w.ndim == 2 and out_w.shape[0] < out_w.shape[1]:
+                        if "Conv1D" in cls_o or "Conv1D" in base_cls_o or hasattr(mod_o, "nf") or hasattr(base_o, "nf") or out_w.ndim == 2 and out_w.shape[0] < out_w.shape[1]:
                             out_w = out_w.t().contiguous()
                         w_o = out_w
                         out_b = getattr(base_o, "bias", getattr(mod_o, "bias", None))
@@ -681,9 +677,9 @@ class FusedSVDKernelAttention(BaseAttention):
             # 3. Flat projection splitting (single in_proj_weight or qkv_proj / Wqkv / qkv)
             elif (
                 (hasattr(src, "in_proj_weight") and getattr(src, "in_proj_weight", None) is not None)
-                or (hasattr(src, "qkv_proj") and getattr(src, "qkv_proj", None) is not None and hasattr(getattr(src, "qkv_proj"), "weight"))
-                or (hasattr(src, "qkv") and getattr(src, "qkv", None) is not None and hasattr(getattr(src, "qkv"), "weight"))
-                or (hasattr(src, "Wqkv") and getattr(src, "Wqkv", None) is not None and hasattr(getattr(src, "Wqkv"), "weight"))
+                or (hasattr(src, "qkv_proj") and getattr(src, "qkv_proj", None) is not None and hasattr(src.qkv_proj, "weight"))
+                or (hasattr(src, "qkv") and getattr(src, "qkv", None) is not None and hasattr(src.qkv, "weight"))
+                or (hasattr(src, "Wqkv") and getattr(src, "Wqkv", None) is not None and hasattr(src.Wqkv, "weight"))
             ):
                 qkv_mod = getattr(src, "qkv_proj", getattr(src, "qkv", getattr(src, "Wqkv", None)))
                 if qkv_mod is not None:
@@ -811,25 +807,25 @@ class FusedSVDKernelAttention(BaseAttention):
 
     def forward(
         self,
-        hidden_states: Optional[torch.Tensor] = None,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        hidden_states: torch.Tensor | None = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         if encoder_hidden_states is not None:
             raise NotImplementedError("Cross-attention is not supported in FusedSVDKernelAttention")
 
-        x = hidden_states if hidden_states is not None else kwargs.get("query", kwargs.get("x", None))
+        x = hidden_states if hidden_states is not None else kwargs.get("query", kwargs.get("x"))
         if x is None and len(args) > 0:
             x = args[0]
         if attention_mask is None:
-            attention_mask = kwargs.get("mask", kwargs.get("attn_mask", None))
+            attention_mask = kwargs.get("mask", kwargs.get("attn_mask"))
 
         B, L, _ = x.shape
 
@@ -909,9 +905,9 @@ def inject_fused_svd_kernel(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
-) -> Optional[Any]:
+) -> Any | None:
     """Safe injection hook for fused SVD kernel attention."""
     target = layer if layer is not None else model
     if target is None:

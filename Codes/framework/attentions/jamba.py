@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +37,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -94,8 +94,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         fk = {"device": device, "dtype": dtype}
@@ -171,8 +171,8 @@ class SVDMambaSub(nn.Module):
     def __init__(
         self,
         d_model: int = 768,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = None,
         is_decoder: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -200,14 +200,14 @@ class SVDMambaSub(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        past_state: Optional[Any] = None,
+        attention_mask: torch.Tensor | None = None,
+        past_state: Any | None = None,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[Any]]:
+    ) -> tuple[torch.Tensor, Any | None]:
         x_proj = self.in_proj(hidden_states)
 
         ssm_result: Any = None
-        present_state: Optional[Any] = None
+        present_state: Any | None = None
 
         if self._ssm_supports_state:
             try:
@@ -242,9 +242,9 @@ class SVDMambaSub(nn.Module):
 # ===========================================================================
 def _detect_decoder(
     config: Any,
-    is_decoder: Optional[bool],
-    source_attn: Optional[nn.Module],
-    kwargs: Dict[str, Any],
+    is_decoder: bool | None,
+    source_attn: nn.Module | None,
+    kwargs: dict[str, Any],
 ) -> bool:
     if is_decoder is not None:
         return bool(is_decoder)
@@ -272,7 +272,7 @@ def _detect_decoder(
 
 
 def _detect_return_format(
-    source_attn: Optional[nn.Module],
+    source_attn: nn.Module | None,
     is_nested_encoder: bool,
 ) -> str:
     """
@@ -303,7 +303,7 @@ def _detect_return_format(
 def _read_cache(
     past_key_value: Any,
     layer_idx: int,
-) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor], int, Optional[Any]]:
+) -> tuple[torch.Tensor | None, torch.Tensor | None, int, Any | None]:
     """
     Returns (past_k, past_v, past_len, past_mamba_state).
 
@@ -358,7 +358,7 @@ def _read_cache(
 def _write_cache(
     k: torch.Tensor,
     v: torch.Tensor,
-    mamba_state: Optional[Any],
+    mamba_state: Any | None,
     past_key_value: Any,
     layer_idx: int,
 ) -> Any:
@@ -404,15 +404,15 @@ class Jamba2Block(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        d_model: Optional[int] = None,
-        n_heads: Optional[int] = None,
+        config: Any | None = None,
+        d_model: int | None = None,
+        n_heads: int | None = None,
         n_experts: int = 4,
         top_k: int = 2,
-        rank: Optional[int] = 64,
-        pretrained_attn: Optional[nn.Module] = None,
-        old_attn: Optional[nn.Module] = None,
-        comp_config: Optional[Any] = None,
+        rank: int | None = 64,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
+        comp_config: Any | None = None,
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
@@ -630,7 +630,7 @@ class Jamba2Block(BaseAttention):
                     extracted["o"] = (ow, bo.data.clone() if bo is not None else None)
 
         # Nested (BERT / RoBERTa)
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 m = getattr(s, sub, None)
@@ -744,9 +744,9 @@ class Jamba2Block(BaseAttention):
     def _format_output(
         self,
         out: torch.Tensor,
-        attn_weights: Optional[torch.Tensor],
-        present: Optional[Any],
-    ) -> Tuple:
+        attn_weights: torch.Tensor | None,
+        present: Any | None,
+    ) -> tuple:
         """JAMBA-FIX-19: emit the tuple layout expected by the host model."""
         fmt = self._return_format
         if fmt == "bert":
@@ -782,20 +782,20 @@ class Jamba2Block(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args: Any,
         **kwargs: Any,
     ):
         B, L, _ = hidden_states.shape
         layer_idx = int(kwargs.get("layer_idx", 0))
-        position_embeddings = kwargs.get("position_embeddings", None)
+        position_embeddings = kwargs.get("position_embeddings")
         target_dtype = hidden_states.dtype
 
         # ---- Read cache ----
@@ -825,7 +825,7 @@ class Jamba2Block(BaseAttention):
             sin = sin.narrow(-2, past_len, L) if sin.shape[-2] >= past_len + L else sin
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
         elif self.rotary_emb is not None:
-            pos_ids = kwargs.get("position_ids", None)
+            pos_ids = kwargs.get("position_ids")
             if pos_ids is None:
                 pos_ids = torch.arange(past_len, past_len + L,
                                        device=hidden_states.device)\
@@ -966,13 +966,13 @@ class Jamba2Block(BaseAttention):
         self._aux_loss_count += 1
 
     # ------------------------------------------------------------------
-    def storage_bytes(self) -> Dict[str, int]:
+    def storage_bytes(self) -> dict[str, int]:
         def _sz(p: Any) -> int:
             if isinstance(p, (nn.Parameter, torch.Tensor)):
                 return p.numel() * p.element_size()
             return 0
 
-        out: Dict[str, int] = {}
+        out: dict[str, int] = {}
         for name, m in (("q_lin", self.q_lin), ("k_lin", self.k_lin),
                          ("v_lin", self.v_lin), ("out_lin", self.out_lin),
                          ("mamba", self.mamba), ("moe", self.moe)):
@@ -995,10 +995,10 @@ def inject_jamba(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
-) -> Optional[Union[Jamba2Block, nn.Module]]:
+) -> Jamba2Block | nn.Module | None:
     if _depth > 8:
         logger.warning("inject_jamba: max recursion depth exceeded.")
         return None

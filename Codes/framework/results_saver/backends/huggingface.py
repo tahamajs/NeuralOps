@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 def push(
     run_id: str,
     run_dir: Path,
-    config: Dict[str, Any],
-) -> Optional[str]:
+    config: dict[str, Any],
+) -> str | None:
     """
     Upload all artifacts in run_dir to Hugging Face Hub.
 
@@ -33,8 +33,8 @@ def push(
     str | None
         Hugging Face repo URL on success, None if upload is skipped or fails.
     """
-    hf_opts: Dict[str, Any] = config.get("hf_options", {}) if isinstance(config, dict) else {}
-    repo_id: Optional[str] = hf_opts.get("repo_id")
+    hf_opts: dict[str, Any] = config.get("hf_options", {}) if isinstance(config, dict) else {}
+    repo_id: str | None = hf_opts.get("repo_id")
 
     if not repo_id:
         logger.debug("HuggingFace upload skipped — hf_options.repo_id not set.")
@@ -56,7 +56,7 @@ def push(
         return None
 
     private: bool = hf_opts.get("private", True)
-    token: Optional[str] = hf_opts.get("token") or None  # falls back to HF_TOKEN env var
+    token: str | None = hf_opts.get("token") or None  # falls back to HF_TOKEN env var
 
     try:
         api = HfApi(token=token)

@@ -30,7 +30,6 @@ os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
 import argparse
-import copy
 import csv
 import gc
 import importlib
@@ -42,13 +41,11 @@ import sys
 # Sanitize sys.path before importing 'datasets' package so local Codes/framework/datasets doesn't shadow HuggingFace datasets
 sys.path = [p for p in sys.path if not p.rstrip("/\\").replace("\\", "/").endswith("Codes/framework") and not p.rstrip("/\\").replace("\\", "/").endswith("framework")]
 
-import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
-import torch
 from datasets import load_from_disk, load_dataset
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
@@ -57,25 +54,15 @@ CODES = HERE.parent
 ROOT = CODES.parent
 sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "Codes")]
 
-from framework.core.snapshot_restore import ModelStateSnapshot
-from framework.core.registry import (
-    ATTENTION_REGISTRY,
-    COMPRESSOR_REGISTRY,
-    is_helper_module,
-)
 from framework.eval_all_models_datasets import apply_module_to_model
 from framework.utils.qwen_compat import (
     QwenIncompatibleError,
     install_qwen_aliases,
-    is_architecture_error,
     is_dtype_error,
     is_qwen_model,
-    qwen_module_policy,
 )
 from framework.utils.model_family import ModelAdapter, detect_family
 from framework.utils.compat import module_family_support, wrap_for_family
-import framework.attentions
-import framework.compression_engine
 
 LOG = logging.getLogger("QwenQualitySweep")
 
@@ -123,7 +110,7 @@ FIELDS = [
 # ============================================================================
 # Module-level deprecation & blocklist
 # ============================================================================
-DEPRECATED_MODULES: Dict[str, str] = {
+DEPRECATED_MODULES: dict[str, str] = {
     "gated_delta_net": "bad_alloc during backprop on 6-layer encoders; chunked scan demands >15GB RAM",
     "gated_deltanet_block": "same as gated_delta_net",
     "hgrn2_gated_deltanet": "same as gated_delta_net",
@@ -153,7 +140,7 @@ if _dep_file.exists():
 # ============================================================================
 # Unified SLOW_MODULE_TIMEOUT_OVERRIDES (Fix 12)
 # ============================================================================
-SLOW_MODULE_TIMEOUT_OVERRIDES: Dict[str, int] = {
+SLOW_MODULE_TIMEOUT_OVERRIDES: dict[str, int] = {
     "grecodec": 600, "grecodec_compressor": 600,
     "mlorq": 500, "lillama": 500, "cr": 500, "huffman": 500,
     "primal": 400, "primal_attention": 400,
@@ -189,7 +176,7 @@ SLOW_MODULE_TIMEOUT_OVERRIDES: Dict[str, int] = {
 }
 
 # Per-module batch_size overrides for VRAM-heavy modules on 8GB GPU
-OOM_MODULE_BATCH_OVERRIDES: Dict[str, int] = {
+OOM_MODULE_BATCH_OVERRIDES: dict[str, int] = {
     "granite_hybrid": 4, "grecodec": 4, "grecodec_compressor": 4,
     "hymba_transx": 4, "mamba_svd_flash": 8, "spectral_mamba": 8,
     "vspec": 8, "slicegpt": 8, "slicegpt_pca": 8,
@@ -206,10 +193,10 @@ OOM_MODULE_BATCH_OVERRIDES: Dict[str, int] = {
 # ============================================================================
 # Blocklist
 # ============================================================================
-def _load_blocklist() -> Dict[str, str]:
+def _load_blocklist() -> dict[str, str]:
     """Return {module_name: reason_comment} from blocklist.txt."""
     bl_path = Path(__file__).resolve().parent / "config" / "blocklist.txt"
-    blocked: Dict[str, str] = {}
+    blocked: dict[str, str] = {}
     if bl_path.exists():
         for raw in bl_path.read_text(encoding="utf-8").splitlines():
             line = raw.strip()
@@ -232,7 +219,7 @@ def _load_blocklist() -> Dict[str, str]:
     return blocked
 
 
-BLOCKED_MODULES: Dict[str, str] = _load_blocklist()
+BLOCKED_MODULES: dict[str, str] = _load_blocklist()
 
 
 # ============================================================================
@@ -274,7 +261,7 @@ def _get_git_dirty() -> bool:
 # ============================================================================
 # Compute helpers
 # ============================================================================
-def compute_t_test_p_value(accs1: List[float], accs2: List[float]) -> float:
+def compute_t_test_p_value(accs1: list[float], accs2: list[float]) -> float:
     import numpy as np
     try:
         from scipy import stats
@@ -289,7 +276,7 @@ def compute_t_test_p_value(accs1: List[float], accs2: List[float]) -> float:
         return 0.001 if diff > 5.0 else 0.5
 
 
-def compute_bh_fdr(raw_p: List[float]) -> List[float]:
+def compute_bh_fdr(raw_p: list[float]) -> list[float]:
     if not raw_p:
         return []
     import numpy as np
@@ -309,7 +296,7 @@ def compute_bh_fdr(raw_p: List[float]) -> List[float]:
     return out.tolist()
 
 
-def compute_bootstrap_ci(accs: List[float], n_bootstraps: int = 500, ci_level: float = 0.95) -> Tuple[float, float]:
+def compute_bootstrap_ci(accs: list[float], n_bootstraps: int = 500, ci_level: float = 0.95) -> tuple[float, float]:
     import numpy as np
     if not accs:
         return (0.0, 0.0)
@@ -327,7 +314,7 @@ def compute_bootstrap_ci(accs: List[float], n_bootstraps: int = 500, ci_level: f
     return (max(0.0, low), min(100.0, high))
 
 
-def compute_confidence_interval_95(accs: List[float]) -> Tuple[float, float]:
+def compute_confidence_interval_95(accs: list[float]) -> tuple[float, float]:
     import numpy as np
     if not accs:
         return (0.0, 0.0)
@@ -344,9 +331,7 @@ def compute_confidence_interval_95(accs: List[float]) -> Tuple[float, float]:
 # ============================================================================
 # Module discovery
 # ============================================================================
-def modules() -> List[str]:
-    import framework.attentions
-    import framework.compression_engine
+def modules() -> list[str]:
     from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, is_helper_module
 
     for package, folder in (
@@ -360,7 +345,7 @@ def modules() -> List[str]:
                 except Exception as e:
                     LOG.debug("Failed to import %s: %s", p.stem, e)
 
-    by_factory: Dict[Any, List[str]] = {}
+    by_factory: dict[Any, list[str]] = {}
     for name, factory in list(ATTENTION_REGISTRY.items()) + list(COMPRESSOR_REGISTRY.items()):
         if name != "full" and not is_helper_module(name):
             by_factory.setdefault(factory, []).append(name)
@@ -374,7 +359,7 @@ def modules() -> List[str]:
 # ============================================================================
 # Dataset helpers
 # ============================================================================
-def fields(name: str) -> Tuple[str, Optional[str]]:
+def fields(name: str) -> tuple[str, str | None]:
     if name in {"sst2", "cola"}:
         return ("sentence", None)
     if name in {"ag_news", "agnews", "imdb"} or "wikitext" in name.lower() or name == "c4":
@@ -406,7 +391,7 @@ def encode(tokenizer, batch, dataset_name, seq_len, device):
         return_tensors="pt",
     )
     is_cuda = device.type == "cuda"
-    
+
     if "wikitext" in dataset_name.lower() or dataset_name == "c4":
         if is_cuda:
             x = {k: v.pin_memory().to(device, non_blocking=True) for k, v in x.items()}
@@ -457,7 +442,7 @@ def compute_compression_metrics(
     total_params_before: int,
     total_params_after: int,
     trainable_recovery_params: int = 0,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     comp_stats = getattr(model, "compression_stats", {}) or {}
 
     num_svd_layers = sum(
@@ -530,12 +515,12 @@ def compute_compression_metrics(
             continue
         if hasattr(mod, "rank") and mod_name not in layer_ranks:
             try:
-                layer_ranks[mod_name] = int(getattr(mod, "rank"))
+                layer_ranks[mod_name] = int(mod.rank)
             except (ValueError, TypeError):
                 pass
         if hasattr(mod, "reconstruction_error") and mod_name not in layer_errors:
             try:
-                err_v = float(getattr(mod, "reconstruction_error"))
+                err_v = float(mod.reconstruction_error)
                 if not math.isnan(err_v) and not math.isinf(err_v):
                     layer_errors[mod_name] = round(err_v, 4)
             except (ValueError, TypeError):
@@ -660,7 +645,7 @@ def collect_and_export_full_metrics(
         if tokens_sec is None:
             tokens_sec = round(total_tokens / elapsed, 2)
 
-    span_data: Dict[str, List[float]] = {}
+    span_data: dict[str, list[float]] = {}
     total_span, total_heads = 0.0, 0
     for mod_name, mod in model.named_modules():
         if mod_name.endswith(".inner") or mod_name.endswith("._wrapped_attention"):
@@ -680,7 +665,7 @@ def collect_and_export_full_metrics(
         mean_span = float(seq_len)
         sparsity_ratio_pct = 0.0
 
-    scalability: Dict[str, Any] = {}
+    scalability: dict[str, Any] = {}
     max_pos = getattr(getattr(model, "config", None), "max_position_embeddings", 2048) or 2048
     if device_type == "cuda":
         for test_len in [128, 256, 512, 1024]:
@@ -761,25 +746,22 @@ def collect_and_export_full_metrics(
 # ============================================================================
 # Evaluation
 # ============================================================================
-import math
-import torch
-import time
 
 @torch.inference_mode()
 def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=True):
     model.eval()
     t0 = time.monotonic()
     device_type = "cuda" if device.type == "cuda" else "cpu"
-    
+
     texts = [t for t in ds["text"] if len(t.strip()) > 0]
     encodings = tokenizer("\n\n".join(texts), return_tensors="pt")
     input_ids = encodings.input_ids[0]
-    
+
     max_length = seq_len
     stride = seq_len // 2
     nlls = []
     total_tokens = 0
-    
+
     # Collect all chunks and target lengths first
     chunks = []
     trg_lens = []
@@ -836,7 +818,7 @@ def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=
 
     ppl = math.exp(sum(nlls) / total_tokens) if total_tokens > 0 else float("inf")
     t1 = time.monotonic()
-    
+
     if math.isnan(ppl) or math.isinf(ppl):
         status = "FAIL_PPL_NAN"
     elif ppl <= 50.0:
@@ -869,7 +851,7 @@ def evaluate_comprehensive(
 ):
     if "wikitext" in name.lower() or name == "c4":
         return evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=fp16)
-    
+
     model.eval()
     correct = total = 0
     correct_gpu = torch.tensor(0, device=device, dtype=torch.long)
@@ -894,19 +876,18 @@ def evaluate_comprehensive(
         try:
             with torch.autocast(
                 device_type, dtype=torch.float16, enabled=fp16 and device_type == "cuda"
-            ):
-                with torch.no_grad():
-                    outputs = model(**x)
-                    logits = outputs.logits
-                    if hasattr(outputs, "loss") and outputs.loss is not None:
-                        loss_val = float(outputs.loss.item())
-                    else:
-                        loss_val = float(
-                            loss_fn(
-                                logits.view(-1, logits.size(-1)),
-                                y.to(logits.device).view(-1),
-                            ).item()
-                        )
+            ), torch.no_grad():
+                outputs = model(**x)
+                logits = outputs.logits
+                if hasattr(outputs, "loss") and outputs.loss is not None:
+                    loss_val = float(outputs.loss.item())
+                else:
+                    loss_val = float(
+                        loss_fn(
+                            logits.view(-1, logits.size(-1)),
+                            y.to(logits.device).view(-1),
+                        ).item()
+                    )
         except RuntimeError as exc:
             if "out of memory" in str(exc).lower() or "allocate" in str(exc).lower():
                 torch.cuda.empty_cache()
@@ -921,13 +902,12 @@ def evaluate_comprehensive(
                         device_type,
                         dtype=torch.float16,
                         enabled=fp16 and device_type == "cuda",
-                    ):
-                        with torch.no_grad():
-                            sub_out = model(**sub_x)
-                            logits_list.append(sub_out.logits)
-                            loss_sum += (
-                                loss_fn(sub_out.logits, sub_y).item() * sub_y.size(0)
-                            )
+                    ), torch.no_grad():
+                        sub_out = model(**sub_x)
+                        logits_list.append(sub_out.logits)
+                        loss_sum += (
+                            loss_fn(sub_out.logits, sub_y).item() * sub_y.size(0)
+                        )
                 logits = torch.cat(logits_list, dim=0)
                 loss_val = float(loss_sum / b_size)
             else:
@@ -1384,9 +1364,7 @@ def _auto_parallel_and_batch(
     if explicit_parallel and requested_parallel is not None:
         parallel = requested_parallel
     else:
-        if free_gb >= 5.0:
-            parallel = 2
-        elif free_gb >= 3.0:
+        if free_gb >= 5.0 or free_gb >= 3.0:
             parallel = 2
         else:
             parallel = 1
@@ -1918,7 +1896,7 @@ def parse_args(argv=None):
     if pre_args.config and Path(pre_args.config).exists():
         import yaml
 
-        with open(pre_args.config, "r", encoding="utf-8") as yf:
+        with open(pre_args.config, encoding="utf-8") as yf:
             cfg_dict = yaml.safe_load(yf) or {}
         for k, v in cfg_dict.items():
             if k in ap._option_string_actions:
@@ -2077,567 +2055,567 @@ def _run_candidate_pipeline(model, name, args, device, family, effective_batch_s
                         setattr(model.config, stripped, attr_val)
 
                 if getattr(args, "strict_rank", None) is not None:
-                    setattr(model.config, "strict_rank", args.strict_rank)
+                    model.config.strict_rank = args.strict_rank
                 if getattr(args, "lora_rank", None) is not None:
-                    setattr(model.config, "lora_rank", args.lora_rank)
+                    model.config.lora_rank = args.lora_rank
                 if getattr(args, "asvd_dynamic_rank", None) is not None:
-                    setattr(model.config, "asvd_dynamic_rank", args.asvd_dynamic_rank)
+                    model.config.asvd_dynamic_rank = args.asvd_dynamic_rank
                 if getattr(args, "asvd_energy_threshold", None) is not None:
-                    setattr(model.config, "asvd_energy_threshold", args.asvd_energy_threshold)
+                    model.config.asvd_energy_threshold = args.asvd_energy_threshold
                 if getattr(args, "asvd_error_threshold", None) is not None:
-                    setattr(model.config, "asvd_error_threshold", args.asvd_error_threshold)
+                    model.config.asvd_error_threshold = args.asvd_error_threshold
                 if getattr(args, "aasvd_max_error", None) is not None:
-                    setattr(model.config, "aasvd_max_error", args.aasvd_max_error)
-                    setattr(model.config, "max_error", args.aasvd_max_error)
+                    model.config.aasvd_max_error = args.aasvd_max_error
+                    model.config.max_error = args.aasvd_max_error
                 if getattr(args, "aasvd_target_attention_only", None) is not None:
-                    setattr(model.config, "aasvd_target_attention_only", args.aasvd_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.aasvd_target_attention_only)
+                    model.config.aasvd_target_attention_only = args.aasvd_target_attention_only
+                    model.config.target_attention_only = args.aasvd_target_attention_only
                 if getattr(args, "aasvd_ema_beta", None) is not None:
-                    setattr(model.config, "aasvd_ema_beta", args.aasvd_ema_beta)
-                    setattr(model.config, "ema_beta", args.aasvd_ema_beta)
+                    model.config.aasvd_ema_beta = args.aasvd_ema_beta
+                    model.config.ema_beta = args.aasvd_ema_beta
                 if getattr(args, "aasvd_fallback_to_original", None) is not None:
-                    setattr(model.config, "aasvd_fallback_to_original", args.aasvd_fallback_to_original)
-                    setattr(model.config, "fallback_to_original", args.aasvd_fallback_to_original)
+                    model.config.aasvd_fallback_to_original = args.aasvd_fallback_to_original
+                    model.config.fallback_to_original = args.aasvd_fallback_to_original
                 if getattr(args, "adaptive_ranks_max_error", None) is not None:
-                    setattr(model.config, "adaptive_ranks_max_error", args.adaptive_ranks_max_error)
-                    setattr(model.config, "max_error", args.adaptive_ranks_max_error)
+                    model.config.adaptive_ranks_max_error = args.adaptive_ranks_max_error
+                    model.config.max_error = args.adaptive_ranks_max_error
                 if getattr(args, "adaptive_ranks_energy_threshold", None) is not None:
-                    setattr(model.config, "adaptive_ranks_energy_threshold", args.adaptive_ranks_energy_threshold)
-                    setattr(model.config, "energy_threshold", args.adaptive_ranks_energy_threshold)
+                    model.config.adaptive_ranks_energy_threshold = args.adaptive_ranks_energy_threshold
+                    model.config.energy_threshold = args.adaptive_ranks_energy_threshold
                 if getattr(args, "adaptive_ranks_target_attention_only", None) is not None:
-                    setattr(model.config, "adaptive_ranks_target_attention_only", args.adaptive_ranks_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.adaptive_ranks_target_attention_only)
+                    model.config.adaptive_ranks_target_attention_only = args.adaptive_ranks_target_attention_only
+                    model.config.target_attention_only = args.adaptive_ranks_target_attention_only
                 if getattr(args, "adasvd_max_error", None) is not None:
-                    setattr(model.config, "adasvd_max_error", args.adasvd_max_error)
-                    setattr(model.config, "max_error", args.adasvd_max_error)
+                    model.config.adasvd_max_error = args.adasvd_max_error
+                    model.config.max_error = args.adasvd_max_error
                 if getattr(args, "adasvd_target_attention_only", None) is not None:
-                    setattr(model.config, "adasvd_target_attention_only", args.adasvd_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.adasvd_target_attention_only)
+                    model.config.adasvd_target_attention_only = args.adasvd_target_attention_only
+                    model.config.target_attention_only = args.adasvd_target_attention_only
                 if getattr(args, "adasvd_min_rank", None) is not None:
-                    setattr(model.config, "adasvd_min_rank", args.adasvd_min_rank)
-                    setattr(model.config, "min_rank", args.adasvd_min_rank)
+                    model.config.adasvd_min_rank = args.adasvd_min_rank
+                    model.config.min_rank = args.adasvd_min_rank
                 if getattr(args, "admm_sparsity", None) is not None:
-                    setattr(model.config, "admm_sparsity", args.admm_sparsity)
-                    setattr(model.config, "sparsity", args.admm_sparsity)
+                    model.config.admm_sparsity = args.admm_sparsity
+                    model.config.sparsity = args.admm_sparsity
                 if getattr(args, "admm_quant_bits", None) is not None:
-                    setattr(model.config, "admm_quant_bits", args.admm_quant_bits)
-                    setattr(model.config, "quant_bits", args.admm_quant_bits)
+                    model.config.admm_quant_bits = args.admm_quant_bits
+                    model.config.quant_bits = args.admm_quant_bits
                 if getattr(args, "admm_structured_24", None) is not None:
-                    setattr(model.config, "admm_structured_24", args.admm_structured_24)
-                    setattr(model.config, "structured_24", args.admm_structured_24)
+                    model.config.admm_structured_24 = args.admm_structured_24
+                    model.config.structured_24 = args.admm_structured_24
                 if getattr(args, "admm_max_error", None) is not None:
-                    setattr(model.config, "admm_max_error", args.admm_max_error)
-                    setattr(model.config, "max_error", args.admm_max_error)
+                    model.config.admm_max_error = args.admm_max_error
+                    model.config.max_error = args.admm_max_error
                 if getattr(args, "admm_target_attention_only", None) is not None:
-                    setattr(model.config, "admm_target_attention_only", args.admm_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.admm_target_attention_only)
+                    model.config.admm_target_attention_only = args.admm_target_attention_only
+                    model.config.target_attention_only = args.admm_target_attention_only
                 if getattr(args, "admm_rho1", None) is not None:
-                    setattr(model.config, "admm_rho1", args.admm_rho1)
+                    model.config.admm_rho1 = args.admm_rho1
                 if getattr(args, "admm_rho2", None) is not None:
-                    setattr(model.config, "admm_rho2", args.admm_rho2)
+                    model.config.admm_rho2 = args.admm_rho2
                 if getattr(args, "admm_max_iter", None) is not None:
-                    setattr(model.config, "admm_max_iter", args.admm_max_iter)
+                    model.config.admm_max_iter = args.admm_max_iter
                 if getattr(args, "admm_pruner_sparsity", None) is not None:
-                    setattr(model.config, "admm_pruner_sparsity", args.admm_pruner_sparsity)
-                    setattr(model.config, "sparsity", args.admm_pruner_sparsity)
+                    model.config.admm_pruner_sparsity = args.admm_pruner_sparsity
+                    model.config.sparsity = args.admm_pruner_sparsity
                 if getattr(args, "admm_pruner_structured_24", None) is not None:
-                    setattr(model.config, "admm_pruner_structured_24", args.admm_pruner_structured_24)
-                    setattr(model.config, "structured_24", args.admm_pruner_structured_24)
+                    model.config.admm_pruner_structured_24 = args.admm_pruner_structured_24
+                    model.config.structured_24 = args.admm_pruner_structured_24
                 if getattr(args, "admm_pruner_max_error", None) is not None:
-                    setattr(model.config, "admm_pruner_max_error", args.admm_pruner_max_error)
-                    setattr(model.config, "max_error", args.admm_pruner_max_error)
+                    model.config.admm_pruner_max_error = args.admm_pruner_max_error
+                    model.config.max_error = args.admm_pruner_max_error
                 if getattr(args, "admm_pruner_target_attention_only", None) is not None:
-                    setattr(model.config, "admm_pruner_target_attention_only", args.admm_pruner_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.admm_pruner_target_attention_only)
+                    model.config.admm_pruner_target_attention_only = args.admm_pruner_target_attention_only
+                    model.config.target_attention_only = args.admm_pruner_target_attention_only
                 if getattr(args, "admm_pruner_lambda_distill", None) is not None:
-                    setattr(model.config, "admm_pruner_lambda_distill", args.admm_pruner_lambda_distill)
-                    setattr(model.config, "lambda_distill", args.admm_pruner_lambda_distill)
+                    model.config.admm_pruner_lambda_distill = args.admm_pruner_lambda_distill
+                    model.config.lambda_distill = args.admm_pruner_lambda_distill
                 if getattr(args, "admm_pruner_distill_batch_size", None) is not None:
-                    setattr(model.config, "admm_pruner_distill_batch_size", args.admm_pruner_distill_batch_size)
-                    setattr(model.config, "distill_batch_size", args.admm_pruner_distill_batch_size)
+                    model.config.admm_pruner_distill_batch_size = args.admm_pruner_distill_batch_size
+                    model.config.distill_batch_size = args.admm_pruner_distill_batch_size
                 if getattr(args, "admm_pruner_rho", None) is not None:
-                    setattr(model.config, "admm_pruner_rho", args.admm_pruner_rho)
+                    model.config.admm_pruner_rho = args.admm_pruner_rho
                 if getattr(args, "admm_pruner_max_iter", None) is not None:
-                    setattr(model.config, "admm_pruner_max_iter", args.admm_pruner_max_iter)
+                    model.config.admm_pruner_max_iter = args.admm_pruner_max_iter
                 if getattr(args, "armor_rank", None) is not None:
-                    setattr(model.config, "armor_rank", args.armor_rank)
-                    setattr(model.config, "rank", args.armor_rank)
+                    model.config.armor_rank = args.armor_rank
+                    model.config.rank = args.armor_rank
                 if getattr(args, "armor_sparsity", None) is not None:
-                    setattr(model.config, "armor_sparsity", args.armor_sparsity)
-                    setattr(model.config, "sparsity", args.armor_sparsity)
+                    model.config.armor_sparsity = args.armor_sparsity
+                    model.config.sparsity = args.armor_sparsity
                 if getattr(args, "armor_structured_24", None) is not None:
-                    setattr(model.config, "armor_structured_24", args.armor_structured_24)
-                    setattr(model.config, "structured_24", args.armor_structured_24)
+                    model.config.armor_structured_24 = args.armor_structured_24
+                    model.config.structured_24 = args.armor_structured_24
                 if getattr(args, "armor_max_error", None) is not None:
-                    setattr(model.config, "armor_max_error", args.armor_max_error)
-                    setattr(model.config, "max_error", args.armor_max_error)
+                    model.config.armor_max_error = args.armor_max_error
+                    model.config.max_error = args.armor_max_error
                 if getattr(args, "armor_target_attention_only", None) is not None:
-                    setattr(model.config, "armor_target_attention_only", args.armor_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.armor_target_attention_only)
+                    model.config.armor_target_attention_only = args.armor_target_attention_only
+                    model.config.target_attention_only = args.armor_target_attention_only
                 if getattr(args, "armor_decouple", None) is not None:
-                    setattr(model.config, "armor_decouple", args.armor_decouple)
-                    setattr(model.config, "decouple", args.armor_decouple)
+                    model.config.armor_decouple = args.armor_decouple
+                    model.config.decouple = args.armor_decouple
                 if getattr(args, "armor_lora_alpha", None) is not None:
-                    setattr(model.config, "armor_lora_alpha", args.armor_lora_alpha)
-                    setattr(model.config, "lora_alpha", args.armor_lora_alpha)
+                    model.config.armor_lora_alpha = args.armor_lora_alpha
+                    model.config.lora_alpha = args.armor_lora_alpha
                 if getattr(args, "armor_skip_attention_qkv", None) is not None:
-                    setattr(model.config, "armor_skip_attention_qkv", args.armor_skip_attention_qkv)
-                    setattr(model.config, "skip_attention_qkv", args.armor_skip_attention_qkv)
+                    model.config.armor_skip_attention_qkv = args.armor_skip_attention_qkv
+                    model.config.skip_attention_qkv = args.armor_skip_attention_qkv
                 if getattr(args, "astro_bits", None) is not None:
-                    setattr(model.config, "astro_bits", args.astro_bits)
-                    setattr(model.config, "bits", args.astro_bits)
+                    model.config.astro_bits = args.astro_bits
+                    model.config.bits = args.astro_bits
                 if getattr(args, "astro_symmetric", None) is not None:
-                    setattr(model.config, "astro_symmetric", args.astro_symmetric)
-                    setattr(model.config, "symmetric", args.astro_symmetric)
+                    model.config.astro_symmetric = args.astro_symmetric
+                    model.config.symmetric = args.astro_symmetric
                 if getattr(args, "astro_per_channel", None) is not None:
-                    setattr(model.config, "astro_per_channel", args.astro_per_channel)
-                    setattr(model.config, "per_channel", args.astro_per_channel)
+                    model.config.astro_per_channel = args.astro_per_channel
+                    model.config.per_channel = args.astro_per_channel
                 if getattr(args, "astro_use_ste", None) is not None:
-                    setattr(model.config, "astro_use_ste", args.astro_use_ste)
-                    setattr(model.config, "use_ste", args.astro_use_ste)
+                    model.config.astro_use_ste = args.astro_use_ste
+                    model.config.use_ste = args.astro_use_ste
                 if getattr(args, "astro_max_error", None) is not None:
-                    setattr(model.config, "astro_max_error", args.astro_max_error)
-                    setattr(model.config, "max_error", args.astro_max_error)
+                    model.config.astro_max_error = args.astro_max_error
+                    model.config.max_error = args.astro_max_error
                 if getattr(args, "astro_target_attention_only", None) is not None:
-                    setattr(model.config, "astro_target_attention_only", args.astro_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.astro_target_attention_only)
+                    model.config.astro_target_attention_only = args.astro_target_attention_only
+                    model.config.target_attention_only = args.astro_target_attention_only
                 if getattr(args, "astro_use_fisher_adaptive_bits", None) is not None:
-                    setattr(model.config, "astro_use_fisher_adaptive_bits", args.astro_use_fisher_adaptive_bits)
-                    setattr(model.config, "use_fisher_adaptive_bits", args.astro_use_fisher_adaptive_bits)
+                    model.config.astro_use_fisher_adaptive_bits = args.astro_use_fisher_adaptive_bits
+                    model.config.use_fisher_adaptive_bits = args.astro_use_fisher_adaptive_bits
                 if getattr(args, "astro_target_avg_bits", None) is not None:
-                    setattr(model.config, "astro_target_avg_bits", args.astro_target_avg_bits)
-                    setattr(model.config, "target_avg_bits", args.astro_target_avg_bits)
+                    model.config.astro_target_avg_bits = args.astro_target_avg_bits
+                    model.config.target_avg_bits = args.astro_target_avg_bits
                 if getattr(args, "astro_min_bits", None) is not None:
-                    setattr(model.config, "astro_min_bits", args.astro_min_bits)
-                    setattr(model.config, "min_bits", args.astro_min_bits)
+                    model.config.astro_min_bits = args.astro_min_bits
+                    model.config.min_bits = args.astro_min_bits
                 if getattr(args, "astro_max_bits", None) is not None:
-                    setattr(model.config, "astro_max_bits", args.astro_max_bits)
-                    setattr(model.config, "max_bits", args.astro_max_bits)
+                    model.config.astro_max_bits = args.astro_max_bits
+                    model.config.max_bits = args.astro_max_bits
                 if getattr(args, "astro_fisher_beta", None) is not None:
-                    setattr(model.config, "astro_fisher_beta", args.astro_fisher_beta)
-                    setattr(model.config, "fisher_beta", args.astro_fisher_beta)
+                    model.config.astro_fisher_beta = args.astro_fisher_beta
+                    model.config.fisher_beta = args.astro_fisher_beta
                 if getattr(args, "cachenotes_task", None) is not None:
-                    setattr(model.config, "cachenotes_task", args.cachenotes_task)
-                    setattr(model.config, "task_type", args.cachenotes_task)
+                    model.config.cachenotes_task = args.cachenotes_task
+                    model.config.task_type = args.cachenotes_task
                 if getattr(args, "cachenotes_keep_ratio", None) is not None:
-                    setattr(model.config, "cachenotes_keep_ratio", args.cachenotes_keep_ratio)
-                    setattr(model.config, "keep_ratio", args.cachenotes_keep_ratio)
+                    model.config.cachenotes_keep_ratio = args.cachenotes_keep_ratio
+                    model.config.keep_ratio = args.cachenotes_keep_ratio
                 if getattr(args, "cachenotes_max_error", None) is not None:
-                    setattr(model.config, "cachenotes_max_error", args.cachenotes_max_error)
-                    setattr(model.config, "max_error", args.cachenotes_max_error)
+                    model.config.cachenotes_max_error = args.cachenotes_max_error
+                    model.config.max_error = args.cachenotes_max_error
                 if getattr(args, "cachenotes_target_attention_only", None) is not None:
-                    setattr(model.config, "cachenotes_target_attention_only", args.cachenotes_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.cachenotes_target_attention_only)
+                    model.config.cachenotes_target_attention_only = args.cachenotes_target_attention_only
+                    model.config.target_attention_only = args.cachenotes_target_attention_only
                 if getattr(args, "cachenotes_lora_r", None) is not None:
-                    setattr(model.config, "cachenotes_lora_r", args.cachenotes_lora_r)
-                    setattr(model.config, "lora_r", args.cachenotes_lora_r)
-                    setattr(model.config, "lora_rank", args.cachenotes_lora_r)
+                    model.config.cachenotes_lora_r = args.cachenotes_lora_r
+                    model.config.lora_r = args.cachenotes_lora_r
+                    model.config.lora_rank = args.cachenotes_lora_r
                 if getattr(args, "cachenotes_lora_alpha", None) is not None:
-                    setattr(model.config, "cachenotes_lora_alpha", args.cachenotes_lora_alpha)
-                    setattr(model.config, "lora_alpha", args.cachenotes_lora_alpha)
+                    model.config.cachenotes_lora_alpha = args.cachenotes_lora_alpha
+                    model.config.lora_alpha = args.cachenotes_lora_alpha
                 if getattr(args, "cachenotes_skip_attention_qkv", None) is not None:
-                    setattr(model.config, "cachenotes_skip_attention_qkv", args.cachenotes_skip_attention_qkv)
-                    setattr(model.config, "skip_attention_qkv", args.cachenotes_skip_attention_qkv)
+                    model.config.cachenotes_skip_attention_qkv = args.cachenotes_skip_attention_qkv
+                    model.config.skip_attention_qkv = args.cachenotes_skip_attention_qkv
                 if getattr(args, "come_target_layers", None) is not None:
-                    setattr(model.config, "come_target_layers", args.come_target_layers)
-                    setattr(model.config, "target_layers", args.come_target_layers)
+                    model.config.come_target_layers = args.come_target_layers
+                    model.config.target_layers = args.come_target_layers
                 if getattr(args, "come_sparsity", None) is not None:
-                    setattr(model.config, "come_sparsity", args.come_sparsity)
-                    setattr(model.config, "sparsity", args.come_sparsity)
+                    model.config.come_sparsity = args.come_sparsity
+                    model.config.sparsity = args.come_sparsity
                 if getattr(args, "come_alpha_init", None) is not None:
-                    setattr(model.config, "come_alpha_init", args.come_alpha_init)
-                    setattr(model.config, "alpha_init", args.come_alpha_init)
+                    model.config.come_alpha_init = args.come_alpha_init
+                    model.config.alpha_init = args.come_alpha_init
                 if getattr(args, "come_lora_r", None) is not None:
-                    setattr(model.config, "come_lora_r", args.come_lora_r)
-                    setattr(model.config, "lora_r", args.come_lora_r)
-                    setattr(model.config, "lora_rank", args.come_lora_r)
+                    model.config.come_lora_r = args.come_lora_r
+                    model.config.lora_r = args.come_lora_r
+                    model.config.lora_rank = args.come_lora_r
                 if getattr(args, "come_lora_alpha", None) is not None:
-                    setattr(model.config, "come_lora_alpha", args.come_lora_alpha)
-                    setattr(model.config, "lora_alpha", args.come_lora_alpha)
+                    model.config.come_lora_alpha = args.come_lora_alpha
+                    model.config.lora_alpha = args.come_lora_alpha
                 if getattr(args, "come_skip_attention_qkv", None) is not None:
-                    setattr(model.config, "come_skip_attention_qkv", args.come_skip_attention_qkv)
-                    setattr(model.config, "skip_attention_qkv", args.come_skip_attention_qkv)
+                    model.config.come_skip_attention_qkv = args.come_skip_attention_qkv
+                    model.config.skip_attention_qkv = args.come_skip_attention_qkv
                 if getattr(args, "come_target_attention_only", None) is not None:
-                    setattr(model.config, "come_target_attention_only", args.come_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.come_target_attention_only)
+                    model.config.come_target_attention_only = args.come_target_attention_only
+                    model.config.target_attention_only = args.come_target_attention_only
                 # CoopQ
                 if getattr(args, "coopq_bits", None) is not None:
-                    setattr(model.config, "coopq_bits", args.coopq_bits)
-                    setattr(model.config, "bits", args.coopq_bits)
+                    model.config.coopq_bits = args.coopq_bits
+                    model.config.bits = args.coopq_bits
                 if getattr(args, "coopq_min_bits", None) is not None:
-                    setattr(model.config, "coopq_min_bits", args.coopq_min_bits)
-                    setattr(model.config, "min_bits", args.coopq_min_bits)
+                    model.config.coopq_min_bits = args.coopq_min_bits
+                    model.config.min_bits = args.coopq_min_bits
                 if getattr(args, "coopq_max_bits", None) is not None:
-                    setattr(model.config, "coopq_max_bits", args.coopq_max_bits)
-                    setattr(model.config, "max_bits", args.coopq_max_bits)
+                    model.config.coopq_max_bits = args.coopq_max_bits
+                    model.config.max_bits = args.coopq_max_bits
                 if getattr(args, "coopq_symmetric", None) is not None:
-                    setattr(model.config, "coopq_symmetric", args.coopq_symmetric)
-                    setattr(model.config, "symmetric", args.coopq_symmetric)
+                    model.config.coopq_symmetric = args.coopq_symmetric
+                    model.config.symmetric = args.coopq_symmetric
                 if getattr(args, "coopq_per_channel", None) is not None:
-                    setattr(model.config, "coopq_per_channel", args.coopq_per_channel)
-                    setattr(model.config, "per_channel", args.coopq_per_channel)
+                    model.config.coopq_per_channel = args.coopq_per_channel
+                    model.config.per_channel = args.coopq_per_channel
                 if getattr(args, "coopq_use_ste", None) is not None:
-                    setattr(model.config, "coopq_use_ste", args.coopq_use_ste)
-                    setattr(model.config, "use_ste", args.coopq_use_ste)
+                    model.config.coopq_use_ste = args.coopq_use_ste
+                    model.config.use_ste = args.coopq_use_ste
                 if getattr(args, "coopq_target_attention_only", None) is not None:
-                    setattr(model.config, "coopq_target_attention_only", args.coopq_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.coopq_target_attention_only)
+                    model.config.coopq_target_attention_only = args.coopq_target_attention_only
+                    model.config.target_attention_only = args.coopq_target_attention_only
                 # CR
                 if getattr(args, "cr_rank", None) is not None:
-                    setattr(model.config, "cr_rank", args.cr_rank)
-                    setattr(model.config, "rank", args.cr_rank)
+                    model.config.cr_rank = args.cr_rank
+                    model.config.rank = args.cr_rank
                 if getattr(args, "cr_max_error", None) is not None:
-                    setattr(model.config, "cr_max_error", args.cr_max_error)
-                    setattr(model.config, "max_error", args.cr_max_error)
+                    model.config.cr_max_error = args.cr_max_error
+                    model.config.max_error = args.cr_max_error
                 if getattr(args, "cr_target_attention_only", None) is not None:
-                    setattr(model.config, "cr_target_attention_only", args.cr_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.cr_target_attention_only)
+                    model.config.cr_target_attention_only = args.cr_target_attention_only
+                    model.config.target_attention_only = args.cr_target_attention_only
                 # CUR
                 if getattr(args, "cur_rank", None) is not None:
-                    setattr(model.config, "cur_rank", args.cur_rank)
-                    setattr(model.config, "rank", args.cur_rank)
+                    model.config.cur_rank = args.cur_rank
+                    model.config.rank = args.cur_rank
                 if getattr(args, "cur_min_rank", None) is not None:
-                    setattr(model.config, "cur_min_rank", args.cur_min_rank)
-                    setattr(model.config, "min_rank", args.cur_min_rank)
+                    model.config.cur_min_rank = args.cur_min_rank
+                    model.config.min_rank = args.cur_min_rank
                 if getattr(args, "cur_method", None) is not None:
-                    setattr(model.config, "cur_method", args.cur_method)
-                    setattr(model.config, "method", args.cur_method)
+                    model.config.cur_method = args.cur_method
+                    model.config.method = args.cur_method
                 if getattr(args, "cur_max_error", None) is not None:
-                    setattr(model.config, "cur_max_error", args.cur_max_error)
-                    setattr(model.config, "max_error", args.cur_max_error)
+                    model.config.cur_max_error = args.cur_max_error
+                    model.config.max_error = args.cur_max_error
                 if getattr(args, "cur_target_attention_only", None) is not None:
-                    setattr(model.config, "cur_target_attention_only", args.cur_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.cur_target_attention_only)
+                    model.config.cur_target_attention_only = args.cur_target_attention_only
+                    model.config.target_attention_only = args.cur_target_attention_only
                 # CUR-MoE
                 if getattr(args, "cur_moe_rank", None) is not None:
-                    setattr(model.config, "cur_moe_rank", args.cur_moe_rank)
-                    setattr(model.config, "rank", args.cur_moe_rank)
+                    model.config.cur_moe_rank = args.cur_moe_rank
+                    model.config.rank = args.cur_moe_rank
                 if getattr(args, "cur_moe_target_attention_only", None) is not None:
-                    setattr(model.config, "cur_moe_target_attention_only", args.cur_moe_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.cur_moe_target_attention_only)
+                    model.config.cur_moe_target_attention_only = args.cur_moe_target_attention_only
+                    model.config.target_attention_only = args.cur_moe_target_attention_only
                 # DeltaKV
                 if getattr(args, "delta_kv_rank", None) is not None:
-                    setattr(model.config, "delta_kv_rank", args.delta_kv_rank)
-                    setattr(model.config, "rank", args.delta_kv_rank)
+                    model.config.delta_kv_rank = args.delta_kv_rank
+                    model.config.rank = args.delta_kv_rank
                 if getattr(args, "delta_kv_sparsity", None) is not None:
-                    setattr(model.config, "delta_kv_sparsity", args.delta_kv_sparsity)
-                    setattr(model.config, "sparsity", args.delta_kv_sparsity)
+                    model.config.delta_kv_sparsity = args.delta_kv_sparsity
+                    model.config.sparsity = args.delta_kv_sparsity
                 if getattr(args, "delta_kv_max_error", None) is not None:
-                    setattr(model.config, "delta_kv_max_error", args.delta_kv_max_error)
-                    setattr(model.config, "max_error", args.delta_kv_max_error)
+                    model.config.delta_kv_max_error = args.delta_kv_max_error
+                    model.config.max_error = args.delta_kv_max_error
                 if getattr(args, "delta_kv_target_attention_only", None) is not None:
-                    setattr(model.config, "delta_kv_target_attention_only", args.delta_kv_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.delta_kv_target_attention_only)
+                    model.config.delta_kv_target_attention_only = args.delta_kv_target_attention_only
+                    model.config.target_attention_only = args.delta_kv_target_attention_only
                 # DirectSVD
                 if getattr(args, "direct_svd_rank", None) is not None:
-                    setattr(model.config, "direct_svd_rank", args.direct_svd_rank)
-                    setattr(model.config, "rank", args.direct_svd_rank)
+                    model.config.direct_svd_rank = args.direct_svd_rank
+                    model.config.rank = args.direct_svd_rank
                 if getattr(args, "direct_svd_max_error", None) is not None:
-                    setattr(model.config, "direct_svd_max_error", args.direct_svd_max_error)
-                    setattr(model.config, "max_error", args.direct_svd_max_error)
+                    model.config.direct_svd_max_error = args.direct_svd_max_error
+                    model.config.max_error = args.direct_svd_max_error
                 if getattr(args, "direct_svd_target_attention_only", None) is not None:
-                    setattr(model.config, "direct_svd_target_attention_only", args.direct_svd_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.direct_svd_target_attention_only)
+                    model.config.direct_svd_target_attention_only = args.direct_svd_target_attention_only
+                    model.config.target_attention_only = args.direct_svd_target_attention_only
                 # Dobi-SVD
                 if getattr(args, "dobi_rank", None) is not None:
-                    setattr(model.config, "dobi_rank", args.dobi_rank)
-                    setattr(model.config, "rank", args.dobi_rank)
+                    model.config.dobi_rank = args.dobi_rank
+                    model.config.rank = args.dobi_rank
                 if getattr(args, "dobi_init_rank_ratio", None) is not None:
-                    setattr(model.config, "dobi_init_rank_ratio", args.dobi_init_rank_ratio)
-                    setattr(model.config, "init_rank_ratio", args.dobi_init_rank_ratio)
+                    model.config.dobi_init_rank_ratio = args.dobi_init_rank_ratio
+                    model.config.init_rank_ratio = args.dobi_init_rank_ratio
                 if getattr(args, "dobi_init_gate_val", None) is not None:
-                    setattr(model.config, "dobi_init_gate_val", args.dobi_init_gate_val)
-                    setattr(model.config, "init_gate_val", args.dobi_init_gate_val)
+                    model.config.dobi_init_gate_val = args.dobi_init_gate_val
+                    model.config.init_gate_val = args.dobi_init_gate_val
                 if getattr(args, "dobi_max_error", None) is not None:
-                    setattr(model.config, "dobi_max_error", args.dobi_max_error)
-                    setattr(model.config, "max_error", args.dobi_max_error)
+                    model.config.dobi_max_error = args.dobi_max_error
+                    model.config.max_error = args.dobi_max_error
                 if getattr(args, "dobi_target_attention_only", None) is not None:
-                    setattr(model.config, "dobi_target_attention_only", args.dobi_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.dobi_target_attention_only)
+                    model.config.dobi_target_attention_only = args.dobi_target_attention_only
+                    model.config.target_attention_only = args.dobi_target_attention_only
                 # Dynamic Entropy SVD
                 if getattr(args, "dynamic_min_rank", None) is not None:
-                    setattr(model.config, "dynamic_min_rank", args.dynamic_min_rank)
-                    setattr(model.config, "min_rank", args.dynamic_min_rank)
+                    model.config.dynamic_min_rank = args.dynamic_min_rank
+                    model.config.min_rank = args.dynamic_min_rank
                 if getattr(args, "dynamic_max_rank", None) is not None:
-                    setattr(model.config, "dynamic_max_rank", args.dynamic_max_rank)
-                    setattr(model.config, "max_rank", args.dynamic_max_rank)
+                    model.config.dynamic_max_rank = args.dynamic_max_rank
+                    model.config.max_rank = args.dynamic_max_rank
                 if getattr(args, "dynamic_target_param_ratio", None) is not None:
-                    setattr(model.config, "dynamic_target_param_ratio", args.dynamic_target_param_ratio)
-                    setattr(model.config, "target_param_ratio", args.dynamic_target_param_ratio)
+                    model.config.dynamic_target_param_ratio = args.dynamic_target_param_ratio
+                    model.config.target_param_ratio = args.dynamic_target_param_ratio
                 if getattr(args, "dynamic_max_error", None) is not None:
-                    setattr(model.config, "dynamic_max_error", args.dynamic_max_error)
-                    setattr(model.config, "max_error", args.dynamic_max_error)
+                    model.config.dynamic_max_error = args.dynamic_max_error
+                    model.config.max_error = args.dynamic_max_error
                 if getattr(args, "dynamic_target_attention_only", None) is not None:
-                    setattr(model.config, "dynamic_target_attention_only", args.dynamic_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.dynamic_target_attention_only)
+                    model.config.dynamic_target_attention_only = args.dynamic_target_attention_only
+                    model.config.target_attention_only = args.dynamic_target_attention_only
                 # ENLighten
                 if getattr(args, "enlighten_rank", None) is not None:
-                    setattr(model.config, "enlighten_rank", args.enlighten_rank)
-                    setattr(model.config, "rank", args.enlighten_rank)
+                    model.config.enlighten_rank = args.enlighten_rank
+                    model.config.rank = args.enlighten_rank
                 if getattr(args, "enlighten_sparsity", None) is not None:
-                    setattr(model.config, "enlighten_sparsity", args.enlighten_sparsity)
-                    setattr(model.config, "sparsity", args.enlighten_sparsity)
+                    model.config.enlighten_sparsity = args.enlighten_sparsity
+                    model.config.sparsity = args.enlighten_sparsity
                 if getattr(args, "enlighten_structured_24", None) is not None:
-                    setattr(model.config, "enlighten_structured_24", args.enlighten_structured_24)
-                    setattr(model.config, "structured_24", args.enlighten_structured_24)
+                    model.config.enlighten_structured_24 = args.enlighten_structured_24
+                    model.config.structured_24 = args.enlighten_structured_24
                 if getattr(args, "enlighten_max_error", None) is not None:
-                    setattr(model.config, "enlighten_max_error", args.enlighten_max_error)
-                    setattr(model.config, "max_error", args.enlighten_max_error)
+                    model.config.enlighten_max_error = args.enlighten_max_error
+                    model.config.max_error = args.enlighten_max_error
                 if getattr(args, "enlighten_target_attention_only", None) is not None:
-                    setattr(model.config, "enlighten_target_attention_only", args.enlighten_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.enlighten_target_attention_only)
+                    model.config.enlighten_target_attention_only = args.enlighten_target_attention_only
+                    model.config.target_attention_only = args.enlighten_target_attention_only
                 # Entropy Budget SVD
                 if getattr(args, "entropy_budget_rank", None) is not None:
-                    setattr(model.config, "entropy_budget_rank", args.entropy_budget_rank)
-                    setattr(model.config, "rank", args.entropy_budget_rank)
+                    model.config.entropy_budget_rank = args.entropy_budget_rank
+                    model.config.rank = args.entropy_budget_rank
                 if getattr(args, "entropy_budget_total_budget_ratio", None) is not None:
-                    setattr(model.config, "entropy_budget_total_budget_ratio", args.entropy_budget_total_budget_ratio)
-                    setattr(model.config, "total_budget_ratio", args.entropy_budget_total_budget_ratio)
+                    model.config.entropy_budget_total_budget_ratio = args.entropy_budget_total_budget_ratio
+                    model.config.total_budget_ratio = args.entropy_budget_total_budget_ratio
                 if getattr(args, "entropy_budget_max_error", None) is not None:
-                    setattr(model.config, "entropy_budget_max_error", args.entropy_budget_max_error)
-                    setattr(model.config, "max_error", args.entropy_budget_max_error)
+                    model.config.entropy_budget_max_error = args.entropy_budget_max_error
+                    model.config.max_error = args.entropy_budget_max_error
                 if getattr(args, "entropy_budget_target_attention_only", None) is not None:
-                    setattr(model.config, "entropy_budget_target_attention_only", args.entropy_budget_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.entropy_budget_target_attention_only)
+                    model.config.entropy_budget_target_attention_only = args.entropy_budget_target_attention_only
+                    model.config.target_attention_only = args.entropy_budget_target_attention_only
                 # ERC-SVD
                 if getattr(args, "erc_allowed_error", None) is not None:
-                    setattr(model.config, "erc_allowed_error", args.erc_allowed_error)
-                    setattr(model.config, "allowed_error", args.erc_allowed_error)
+                    model.config.erc_allowed_error = args.erc_allowed_error
+                    model.config.allowed_error = args.erc_allowed_error
                 if getattr(args, "erc_max_error", None) is not None:
-                    setattr(model.config, "erc_max_error", args.erc_max_error)
-                    setattr(model.config, "max_error", args.erc_max_error)
+                    model.config.erc_max_error = args.erc_max_error
+                    model.config.max_error = args.erc_max_error
                 if getattr(args, "erc_target_attention_only", None) is not None:
-                    setattr(model.config, "erc_target_attention_only", args.erc_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.erc_target_attention_only)
+                    model.config.erc_target_attention_only = args.erc_target_attention_only
+                    model.config.target_attention_only = args.erc_target_attention_only
                 if getattr(args, "erc_rank", None) is not None:
-                    setattr(model.config, "erc_rank", args.erc_rank)
-                    setattr(model.config, "rank", args.erc_rank)
+                    model.config.erc_rank = args.erc_rank
+                    model.config.rank = args.erc_rank
                 # FAQ Quantizer
                 if getattr(args, "faq_bits", None) is not None:
-                    setattr(model.config, "faq_bits", args.faq_bits)
-                    setattr(model.config, "bits", args.faq_bits)
+                    model.config.faq_bits = args.faq_bits
+                    model.config.bits = args.faq_bits
                 if getattr(args, "faq_alpha", None) is not None:
-                    setattr(model.config, "faq_alpha", args.faq_alpha)
-                    setattr(model.config, "alpha", args.faq_alpha)
+                    model.config.faq_alpha = args.faq_alpha
+                    model.config.alpha = args.faq_alpha
                 if getattr(args, "faq_symmetric", None) is not None:
-                    setattr(model.config, "faq_symmetric", args.faq_symmetric)
-                    setattr(model.config, "symmetric", args.faq_symmetric)
+                    model.config.faq_symmetric = args.faq_symmetric
+                    model.config.symmetric = args.faq_symmetric
                 if getattr(args, "faq_use_ste", None) is not None:
-                    setattr(model.config, "faq_use_ste", args.faq_use_ste)
-                    setattr(model.config, "use_ste", args.faq_use_ste)
+                    model.config.faq_use_ste = args.faq_use_ste
+                    model.config.use_ste = args.faq_use_ste
                 if getattr(args, "faq_lora_r", None) is not None:
-                    setattr(model.config, "faq_lora_r", args.faq_lora_r)
-                    setattr(model.config, "lora_r", args.faq_lora_r)
+                    model.config.faq_lora_r = args.faq_lora_r
+                    model.config.lora_r = args.faq_lora_r
                 if getattr(args, "faq_max_error", None) is not None:
-                    setattr(model.config, "faq_max_error", args.faq_max_error)
-                    setattr(model.config, "max_error", args.faq_max_error)
+                    model.config.faq_max_error = args.faq_max_error
+                    model.config.max_error = args.faq_max_error
                 if getattr(args, "faq_target_attention_only", None) is not None:
-                    setattr(model.config, "faq_target_attention_only", args.faq_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.faq_target_attention_only)
+                    model.config.faq_target_attention_only = args.faq_target_attention_only
+                    model.config.target_attention_only = args.faq_target_attention_only
                 # FLAP
                 if getattr(args, "flap_sparsity", None) is not None:
-                    setattr(model.config, "flap_sparsity", args.flap_sparsity)
-                    setattr(model.config, "sparsity", args.flap_sparsity)
+                    model.config.flap_sparsity = args.flap_sparsity
+                    model.config.sparsity = args.flap_sparsity
                 if getattr(args, "flap_metric_type", None) is not None:
-                    setattr(model.config, "flap_metric_type", args.flap_metric_type)
-                    setattr(model.config, "metric_type", args.flap_metric_type)
+                    model.config.flap_metric_type = args.flap_metric_type
+                    model.config.metric_type = args.flap_metric_type
                 if getattr(args, "flap_structured_24", None) is not None:
-                    setattr(model.config, "flap_structured_24", args.flap_structured_24)
-                    setattr(model.config, "structured_24", args.flap_structured_24)
+                    model.config.flap_structured_24 = args.flap_structured_24
+                    model.config.structured_24 = args.flap_structured_24
                 if getattr(args, "flap_max_error", None) is not None:
-                    setattr(model.config, "flap_max_error", args.flap_max_error)
-                    setattr(model.config, "max_error", args.flap_max_error)
+                    model.config.flap_max_error = args.flap_max_error
+                    model.config.max_error = args.flap_max_error
                 if getattr(args, "flap_target_attention_only", None) is not None:
-                    setattr(model.config, "flap_target_attention_only", args.flap_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.flap_target_attention_only)
+                    model.config.flap_target_attention_only = args.flap_target_attention_only
+                    model.config.target_attention_only = args.flap_target_attention_only
                 # FLAT-LLM
                 if getattr(args, "flat_llm_keep_ratio", None) is not None:
-                    setattr(model.config, "flat_llm_keep_ratio", args.flat_llm_keep_ratio)
-                    setattr(model.config, "keep_ratio", args.flat_llm_keep_ratio)
+                    model.config.flat_llm_keep_ratio = args.flat_llm_keep_ratio
+                    model.config.keep_ratio = args.flat_llm_keep_ratio
                 if getattr(args, "flat_llm_damping", None) is not None:
-                    setattr(model.config, "flat_llm_damping", args.flat_llm_damping)
-                    setattr(model.config, "damping", args.flat_llm_damping)
+                    model.config.flat_llm_damping = args.flat_llm_damping
+                    model.config.damping = args.flat_llm_damping
                 if getattr(args, "flat_llm_structured_24", None) is not None:
-                    setattr(model.config, "flat_llm_structured_24", args.flat_llm_structured_24)
-                    setattr(model.config, "structured_24", args.flat_llm_structured_24)
+                    model.config.flat_llm_structured_24 = args.flat_llm_structured_24
+                    model.config.structured_24 = args.flat_llm_structured_24
                 if getattr(args, "flat_llm_max_error", None) is not None:
-                    setattr(model.config, "flat_llm_max_error", args.flat_llm_max_error)
-                    setattr(model.config, "max_error", args.flat_llm_max_error)
+                    model.config.flat_llm_max_error = args.flat_llm_max_error
+                    model.config.max_error = args.flat_llm_max_error
                 if getattr(args, "flat_llm_target_attention_only", None) is not None:
-                    setattr(model.config, "flat_llm_target_attention_only", args.flat_llm_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.flat_llm_target_attention_only)
+                    model.config.flat_llm_target_attention_only = args.flat_llm_target_attention_only
+                    model.config.target_attention_only = args.flat_llm_target_attention_only
                 # FRanDI
                 if getattr(args, "frandi_rank", None) is not None:
-                    setattr(model.config, "frandi_rank", args.frandi_rank)
-                    setattr(model.config, "rank", args.frandi_rank)
+                    model.config.frandi_rank = args.frandi_rank
+                    model.config.rank = args.frandi_rank
                 if getattr(args, "frandi_energy_threshold", None) is not None:
-                    setattr(model.config, "frandi_energy_threshold", args.frandi_energy_threshold)
-                    setattr(model.config, "energy_threshold", args.frandi_energy_threshold)
+                    model.config.frandi_energy_threshold = args.frandi_energy_threshold
+                    model.config.energy_threshold = args.frandi_energy_threshold
                 if getattr(args, "frandi_lora_r", None) is not None:
-                    setattr(model.config, "frandi_lora_r", args.frandi_lora_r)
-                    setattr(model.config, "lora_r", args.frandi_lora_r)
+                    model.config.frandi_lora_r = args.frandi_lora_r
+                    model.config.lora_r = args.frandi_lora_r
                 if getattr(args, "frandi_max_error", None) is not None:
-                    setattr(model.config, "frandi_max_error", args.frandi_max_error)
-                    setattr(model.config, "max_error", args.frandi_max_error)
+                    model.config.frandi_max_error = args.frandi_max_error
+                    model.config.max_error = args.frandi_max_error
                 if getattr(args, "frandi_target_attention_only", None) is not None:
-                    setattr(model.config, "frandi_target_attention_only", args.frandi_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.frandi_target_attention_only)
+                    model.config.frandi_target_attention_only = args.frandi_target_attention_only
+                    model.config.target_attention_only = args.frandi_target_attention_only
                 # GreCoDeC
                 if getattr(args, "grecodec_rank", None) is not None:
-                    setattr(model.config, "grecodec_rank", args.grecodec_rank)
-                    setattr(model.config, "rank", args.grecodec_rank)
+                    model.config.grecodec_rank = args.grecodec_rank
+                    model.config.rank = args.grecodec_rank
                 if getattr(args, "grecodec_max_iter", None) is not None:
-                    setattr(model.config, "grecodec_max_iter", args.grecodec_max_iter)
-                    setattr(model.config, "max_iter", args.grecodec_max_iter)
+                    model.config.grecodec_max_iter = args.grecodec_max_iter
+                    model.config.max_iter = args.grecodec_max_iter
                 if getattr(args, "grecodec_lora_r", None) is not None:
-                    setattr(model.config, "grecodec_lora_r", args.grecodec_lora_r)
-                    setattr(model.config, "lora_r", args.grecodec_lora_r)
+                    model.config.grecodec_lora_r = args.grecodec_lora_r
+                    model.config.lora_r = args.grecodec_lora_r
                 if getattr(args, "grecodec_max_error", None) is not None:
-                    setattr(model.config, "grecodec_max_error", args.grecodec_max_error)
-                    setattr(model.config, "max_error", args.grecodec_max_error)
+                    model.config.grecodec_max_error = args.grecodec_max_error
+                    model.config.max_error = args.grecodec_max_error
                 if getattr(args, "grecodec_target_attention_only", None) is not None:
-                    setattr(model.config, "grecodec_target_attention_only", args.grecodec_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.grecodec_target_attention_only)
+                    model.config.grecodec_target_attention_only = args.grecodec_target_attention_only
+                    model.config.target_attention_only = args.grecodec_target_attention_only
                 # HashedNets & HashedNet
                 if getattr(args, "hashed_net_buckets", None) is not None:
-                    setattr(model.config, "hashed_net_buckets", args.hashed_net_buckets)
-                    setattr(model.config, "n_buckets", args.hashed_net_buckets)
+                    model.config.hashed_net_buckets = args.hashed_net_buckets
+                    model.config.n_buckets = args.hashed_net_buckets
                 if getattr(args, "hashed_net_use_sign", None) is not None:
-                    setattr(model.config, "hashed_net_use_sign", args.hashed_net_use_sign)
-                    setattr(model.config, "use_sign", args.hashed_net_use_sign)
+                    model.config.hashed_net_use_sign = args.hashed_net_use_sign
+                    model.config.use_sign = args.hashed_net_use_sign
                 if getattr(args, "hashed_net_lora_r", None) is not None:
-                    setattr(model.config, "hashed_net_lora_r", args.hashed_net_lora_r)
-                    setattr(model.config, "lora_r", args.hashed_net_lora_r)
+                    model.config.hashed_net_lora_r = args.hashed_net_lora_r
+                    model.config.lora_r = args.hashed_net_lora_r
                 if getattr(args, "hashed_net_max_error", None) is not None:
-                    setattr(model.config, "hashed_net_max_error", args.hashed_net_max_error)
-                    setattr(model.config, "max_error", args.hashed_net_max_error)
+                    model.config.hashed_net_max_error = args.hashed_net_max_error
+                    model.config.max_error = args.hashed_net_max_error
                 if getattr(args, "hashed_net_target_attention_only", None) is not None:
-                    setattr(model.config, "hashed_net_target_attention_only", args.hashed_net_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.hashed_net_target_attention_only)
+                    model.config.hashed_net_target_attention_only = args.hashed_net_target_attention_only
+                    model.config.target_attention_only = args.hashed_net_target_attention_only
                 # Huffman
                 if getattr(args, "huffman_quantize_bits", None) is not None:
-                    setattr(model.config, "huffman_quantize_bits", args.huffman_quantize_bits)
-                    setattr(model.config, "quantize_bits", args.huffman_quantize_bits)
-                    setattr(model.config, "bits", args.huffman_quantize_bits)
+                    model.config.huffman_quantize_bits = args.huffman_quantize_bits
+                    model.config.quantize_bits = args.huffman_quantize_bits
+                    model.config.bits = args.huffman_quantize_bits
                 if getattr(args, "huffman_max_error", None) is not None:
-                    setattr(model.config, "huffman_max_error", args.huffman_max_error)
-                    setattr(model.config, "max_error", args.huffman_max_error)
+                    model.config.huffman_max_error = args.huffman_max_error
+                    model.config.max_error = args.huffman_max_error
                 if getattr(args, "huffman_target_attention_only", None) is not None:
-                    setattr(model.config, "huffman_target_attention_only", args.huffman_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.huffman_target_attention_only)
+                    model.config.huffman_target_attention_only = args.huffman_target_attention_only
+                    model.config.target_attention_only = args.huffman_target_attention_only
                 # Hybrid SVD
                 if getattr(args, "hybrid_svd_rank", None) is not None:
-                    setattr(model.config, "hybrid_svd_rank", args.hybrid_svd_rank)
-                    setattr(model.config, "svd_rank", args.hybrid_svd_rank)
-                    setattr(model.config, "rank", args.hybrid_svd_rank)
+                    model.config.hybrid_svd_rank = args.hybrid_svd_rank
+                    model.config.svd_rank = args.hybrid_svd_rank
+                    model.config.rank = args.hybrid_svd_rank
                 if getattr(args, "hybrid_svd_use_full", None) is not None:
-                    setattr(model.config, "hybrid_svd_use_full", args.hybrid_svd_use_full)
-                    setattr(model.config, "use_full_layer_replacement", args.hybrid_svd_use_full)
+                    model.config.hybrid_svd_use_full = args.hybrid_svd_use_full
+                    model.config.use_full_layer_replacement = args.hybrid_svd_use_full
                 if getattr(args, "hybrid_svd_lora_r", None) is not None:
-                    setattr(model.config, "hybrid_svd_lora_r", args.hybrid_svd_lora_r)
-                    setattr(model.config, "lora_r", args.hybrid_svd_lora_r)
+                    model.config.hybrid_svd_lora_r = args.hybrid_svd_lora_r
+                    model.config.lora_r = args.hybrid_svd_lora_r
                 if getattr(args, "hybrid_svd_max_error", None) is not None:
-                    setattr(model.config, "hybrid_svd_max_error", args.hybrid_svd_max_error)
-                    setattr(model.config, "max_error", args.hybrid_svd_max_error)
+                    model.config.hybrid_svd_max_error = args.hybrid_svd_max_error
+                    model.config.max_error = args.hybrid_svd_max_error
                 if getattr(args, "hybrid_svd_target_attention_only", None) is not None:
-                    setattr(model.config, "hybrid_svd_target_attention_only", args.hybrid_svd_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.hybrid_svd_target_attention_only)
+                    model.config.hybrid_svd_target_attention_only = args.hybrid_svd_target_attention_only
+                    model.config.target_attention_only = args.hybrid_svd_target_attention_only
                 # HybridKV
                 if getattr(args, "hybridkv_budget", None) is not None:
-                    setattr(model.config, "hybridkv_budget", args.hybridkv_budget)
-                    setattr(model.config, "budget", args.hybridkv_budget)
+                    model.config.hybridkv_budget = args.hybridkv_budget
+                    model.config.budget = args.hybridkv_budget
                 if getattr(args, "hybridkv_static_ratio", None) is not None:
-                    setattr(model.config, "hybridkv_static_ratio", args.hybridkv_static_ratio)
-                    setattr(model.config, "static_ratio", args.hybridkv_static_ratio)
+                    model.config.hybridkv_static_ratio = args.hybridkv_static_ratio
+                    model.config.static_ratio = args.hybridkv_static_ratio
                 if getattr(args, "hybridkv_max_cache_len", None) is not None:
-                    setattr(model.config, "hybridkv_max_cache_len", args.hybridkv_max_cache_len)
-                    setattr(model.config, "max_cache_len", args.hybridkv_max_cache_len)
+                    model.config.hybridkv_max_cache_len = args.hybridkv_max_cache_len
+                    model.config.max_cache_len = args.hybridkv_max_cache_len
                 if getattr(args, "hybridkv_num_sinks", None) is not None:
-                    setattr(model.config, "hybridkv_num_sinks", args.hybridkv_num_sinks)
-                    setattr(model.config, "num_sinks", args.hybridkv_num_sinks)
+                    model.config.hybridkv_num_sinks = args.hybridkv_num_sinks
+                    model.config.num_sinks = args.hybridkv_num_sinks
                 if getattr(args, "hybridkv_recent_window", None) is not None:
-                    setattr(model.config, "hybridkv_recent_window", args.hybridkv_recent_window)
-                    setattr(model.config, "recent_window", args.hybridkv_recent_window)
+                    model.config.hybridkv_recent_window = args.hybridkv_recent_window
+                    model.config.recent_window = args.hybridkv_recent_window
                 if getattr(args, "hybridkv_target_attention_only", None) is not None:
-                    setattr(model.config, "hybridkv_target_attention_only", args.hybridkv_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.hybridkv_target_attention_only)
+                    model.config.hybridkv_target_attention_only = args.hybridkv_target_attention_only
+                    model.config.target_attention_only = args.hybridkv_target_attention_only
                 # KMeans Quantizer
                 if getattr(args, "kmeans_clusters", None) is not None:
-                    setattr(model.config, "kmeans_clusters", args.kmeans_clusters)
-                    setattr(model.config, "n_clusters", args.kmeans_clusters)
+                    model.config.kmeans_clusters = args.kmeans_clusters
+                    model.config.n_clusters = args.kmeans_clusters
                 if getattr(args, "kmeans_lora_r", None) is not None:
-                    setattr(model.config, "kmeans_lora_r", args.kmeans_lora_r)
-                    setattr(model.config, "lora_r", args.kmeans_lora_r)
+                    model.config.kmeans_lora_r = args.kmeans_lora_r
+                    model.config.lora_r = args.kmeans_lora_r
                 if getattr(args, "kmeans_max_error", None) is not None:
-                    setattr(model.config, "kmeans_max_error", args.kmeans_max_error)
-                    setattr(model.config, "max_error", args.kmeans_max_error)
+                    model.config.kmeans_max_error = args.kmeans_max_error
+                    model.config.max_error = args.kmeans_max_error
                 if getattr(args, "kmeans_target_attention_only", None) is not None:
-                    setattr(model.config, "kmeans_target_attention_only", args.kmeans_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.kmeans_target_attention_only)
+                    model.config.kmeans_target_attention_only = args.kmeans_target_attention_only
+                    model.config.target_attention_only = args.kmeans_target_attention_only
                 # Kronecker
                 if getattr(args, "kronecker_rank", None) is not None:
-                    setattr(model.config, "kronecker_rank", args.kronecker_rank)
-                    setattr(model.config, "rank", args.kronecker_rank)
+                    model.config.kronecker_rank = args.kronecker_rank
+                    model.config.rank = args.kronecker_rank
                 if getattr(args, "kronecker_max_error", None) is not None:
-                    setattr(model.config, "kronecker_max_error", args.kronecker_max_error)
-                    setattr(model.config, "max_error", args.kronecker_max_error)
+                    model.config.kronecker_max_error = args.kronecker_max_error
+                    model.config.max_error = args.kronecker_max_error
                 if getattr(args, "kronecker_target_attention_only", None) is not None:
-                    setattr(model.config, "kronecker_target_attention_only", args.kronecker_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.kronecker_target_attention_only)
+                    model.config.kronecker_target_attention_only = args.kronecker_target_attention_only
+                    model.config.target_attention_only = args.kronecker_target_attention_only
                 # Kronecker TT LoRA
                 if getattr(args, "tt_ranks", None) is not None:
-                    setattr(model.config, "tt_ranks", args.tt_ranks)
+                    model.config.tt_ranks = args.tt_ranks
                 if getattr(args, "kronecker_tt_lora_max_error", None) is not None:
-                    setattr(model.config, "kronecker_tt_lora_max_error", args.kronecker_tt_lora_max_error)
-                    setattr(model.config, "max_error", args.kronecker_tt_lora_max_error)
+                    model.config.kronecker_tt_lora_max_error = args.kronecker_tt_lora_max_error
+                    model.config.max_error = args.kronecker_tt_lora_max_error
                 if getattr(args, "kronecker_tt_lora_target_attention_only", None) is not None:
-                    setattr(model.config, "kronecker_tt_lora_target_attention_only", args.kronecker_tt_lora_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.kronecker_tt_lora_target_attention_only)
+                    model.config.kronecker_tt_lora_target_attention_only = args.kronecker_tt_lora_target_attention_only
+                    model.config.target_attention_only = args.kronecker_tt_lora_target_attention_only
                 # KVTC Compressor
                 if getattr(args, "kvtc_bits", None) is not None:
-                    setattr(model.config, "kvtc_bits", args.kvtc_bits)
-                    setattr(model.config, "bits", args.kvtc_bits)
+                    model.config.kvtc_bits = args.kvtc_bits
+                    model.config.bits = args.kvtc_bits
                 if getattr(args, "kvtc_pca_energy", None) is not None:
-                    setattr(model.config, "kvtc_pca_energy", args.kvtc_pca_energy)
-                    setattr(model.config, "pca_energy", args.kvtc_pca_energy)
+                    model.config.kvtc_pca_energy = args.kvtc_pca_energy
+                    model.config.pca_energy = args.kvtc_pca_energy
                 if getattr(args, "kvtc_max_error", None) is not None:
-                    setattr(model.config, "kvtc_max_error", args.kvtc_max_error)
-                    setattr(model.config, "max_error", args.kvtc_max_error)
+                    model.config.kvtc_max_error = args.kvtc_max_error
+                    model.config.max_error = args.kvtc_max_error
                 if getattr(args, "kvtc_target_attention_only", None) is not None:
-                    setattr(model.config, "kvtc_target_attention_only", args.kvtc_target_attention_only)
-                    setattr(model.config, "target_attention_only", args.kvtc_target_attention_only)
+                    model.config.kvtc_target_attention_only = args.kvtc_target_attention_only
+                    model.config.target_attention_only = args.kvtc_target_attention_only
                 if getattr(args, "kvtc_fallback_to_original", None) is not None:
-                    setattr(model.config, "kvtc_fallback_to_original", args.kvtc_fallback_to_original)
-                    setattr(model.config, "fallback_to_original", args.kvtc_fallback_to_original)
+                    model.config.kvtc_fallback_to_original = args.kvtc_fallback_to_original
+                    model.config.fallback_to_original = args.kvtc_fallback_to_original
 
                 # Enforce module-specific max_error and target_attention_only to prevent contamination from unrelated compressors
                 if getattr(args, f"{name}_max_error", None) is not None:
-                    setattr(model.config, "max_error", getattr(args, f"{name}_max_error"))
+                    model.config.max_error = getattr(args, f"{name}_max_error")
                 elif getattr(args, "max_error", None) is not None:
-                    setattr(model.config, "max_error", args.max_error)
+                    model.config.max_error = args.max_error
 
                 if getattr(args, f"{name}_target_attention_only", None) is not None:
-                    setattr(model.config, "target_attention_only", getattr(args, f"{name}_target_attention_only"))
+                    model.config.target_attention_only = getattr(args, f"{name}_target_attention_only")
                 elif getattr(args, "target_attention_only", None) is not None:
-                    setattr(model.config, "target_attention_only", args.target_attention_only)
+                    model.config.target_attention_only = args.target_attention_only
 
                 if name in ("svd_llm", "svd_llm_compressor"):
                     if getattr(args, "rank_ratio", None) is not None:
-                        setattr(model.config, "rank_ratio", args.rank_ratio)
+                        model.config.rank_ratio = args.rank_ratio
                     if getattr(args, "max_error", None) is not None:
-                        setattr(model.config, "max_error", args.max_error)
+                        model.config.max_error = args.max_error
                     if getattr(args, "lora_rank", None) is not None:
-                        setattr(model.config, "lora_rank", args.lora_rank)
+                        model.config.lora_rank = args.lora_rank
 
                 if name in ("a3", "a3_compressor"):
                     a3_err = getattr(args, "a3_max_error", None)
                     if a3_err is None:
                         a3_err = getattr(args, "max_error", 0.50)
-                    setattr(model.config, "a3_max_error", a3_err)
-                    setattr(model.config, "max_error", a3_err)
+                    model.config.a3_max_error = a3_err
+                    model.config.max_error = a3_err
                     a3_attn = getattr(args, "a3_target_attention_only", getattr(args, "target_attention_only", True))
-                    setattr(model.config, "a3_attention_only", a3_attn)
-                    setattr(model.config, "target_attention_only", a3_attn)
+                    model.config.a3_attention_only = a3_attn
+                    model.config.target_attention_only = a3_attn
 
                     LOG.info(
                         "Calling apply_module_to_model with rank=%d for module=%s (lora_rank=%s)",
@@ -3049,7 +3027,7 @@ def run_single_module_main(args) -> dict:
     LOG.info("Configured dataset '%s' with num_labels=%d", args.dataset, num_classes)
     try:
         from transformers import AutoModelForCausalLM, AutoConfig
-        
+
         cfg = AutoConfig.from_pretrained(args.model)
         if "wikitext" in args.dataset.lower() or args.dataset == "c4":
             if cfg.model_type in ("distilbert", "bert", "roberta", "albert", "deberta", "deberta-v2", "electra"):
@@ -3060,7 +3038,7 @@ def run_single_module_main(args) -> dict:
                 with open(out / csv_name, "w", newline="", encoding="utf-8") as f:
                     f.write("module_name,status,accuracy_pct\n")
                 return {}
-                
+
             try:
                 base = AutoModelForCausalLM.from_pretrained(args.model, dtype=dtype).to(device)
             except TypeError:
@@ -3234,16 +3212,14 @@ def run_single_module_main(args) -> dict:
         try:
             probe = torch.load(active_ckpt, map_location="cpu", weights_only=False)
             if isinstance(probe, dict):
-                if probe.get("metadata", {}).get("finetune_mode") == "lora":
-                    is_lora_mode = True
-                elif any(".lora_" in k for k in probe.get("state_dict", probe).keys()):
+                if probe.get("metadata", {}).get("finetune_mode") == "lora" or any(".lora_" in k for k in probe.get("state_dict", probe).keys()):
                     is_lora_mode = True
         except Exception:
             pass
 
     # If LoRA mode is requested or detected, apply LoRA wrappers to the backbone
     if is_lora_mode:
-        from framework.utils.lora import apply_lora, save_lora_weights, load_lora_weights, find_all_linear_submodule_names
+        from framework.utils.lora import apply_lora, save_lora_weights, find_all_linear_submodule_names
         dynamic_targets = find_all_linear_submodule_names(base)
         default_cli_targets = "q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj"
         if args.lora_target_modules != default_cli_targets:
@@ -3324,7 +3300,7 @@ def run_single_module_main(args) -> dict:
     cache_meta = _cached_dir / "meta.json"
     if cache_meta.exists():
         try:
-            with open(cache_meta, "r", encoding="utf-8") as f:
+            with open(cache_meta, encoding="utf-8") as f:
                 meta = json.load(f)
             if meta.get("dataset") != args.dataset:
                 import shutil
@@ -3338,7 +3314,7 @@ def run_single_module_main(args) -> dict:
     eval_seq_len = args.eval_seq_len if args.eval_seq_len is not None else args.seq_len
     eval_batches = []
     train_batches = []
-    
+
     if "wikitext" not in args.dataset.lower() and args.dataset != "c4":
         if _eval_cache and _eval_cache.exists() and _train_cache and _train_cache.exists():
             LOG.info("Loading pre-cached batches from %s (skipping tokenization)", _cached_dir)
@@ -3385,7 +3361,7 @@ def run_single_module_main(args) -> dict:
     for m in base.modules():
         if hasattr(m, "merge") and callable(m.merge):
             try: m.merge()
-            except Exception as e: pass
+            except Exception: pass
 
     base.to(device)
     base_benchmark_ppl = None
@@ -3428,7 +3404,7 @@ def run_single_module_main(args) -> dict:
         total_val_samples = len(val_labels)
         majority_count = max(label_counts.values()) if label_counts else 0
         majority_baseline_ratio = majority_count / total_val_samples if total_val_samples > 0 else 0.5
-        
+
     majority_baseline_pct = round(majority_baseline_ratio * 100.0, 2)
 
     p0 = majority_baseline_ratio
@@ -3517,8 +3493,8 @@ def run_single_module_main(args) -> dict:
                 LOG.warning("TPA: overriding module_rank %d -> %d (head_dim=%d, sqrt required).", module_rank, _optimal, _hd)
                 module_rank = _optimal
                 if hasattr(base, "config") and base.config is not None:
-                    setattr(base.config, "rank", _optimal)
-                    setattr(base.config, "tpa_rank", _optimal)
+                    base.config.rank = _optimal
+                    base.config.tpa_rank = _optimal
         if name in DEPRECATED_MODULES:
             dep_reason = DEPRECATED_MODULES[name]
             LOG.warning(">>> Skipping DEPRECATED module [%d/%d]: %s (%s)", n, len(names), name, dep_reason)
@@ -3657,7 +3633,7 @@ def run_single_module_main(args) -> dict:
             perf_metrics, comp_metrics, injected, path_name, had_nan, recovery_time_s, measured_calib_time = _run_candidate_pipeline(model, name, args, device, family, effective_batch_size, tokenizer, val, base, train, effective_timeout, out, model_slug, total_params_before, module_rank, eval_batches, train_batches, eval_seq_len, pass_threshold_pct, typ, t)
             # *** Critical: extract acc from perf_metrics on successful run ***
             acc = perf_metrics.get("accuracy_pct", 0.0)
-        except TimeoutError as exc:
+        except TimeoutError:
             status = f"SKIP_{family.upper()}_TIMEOUT"
             err = f"Module pipeline exceeded hard {effective_timeout}s timeout"
             acc = 0.0
@@ -3796,7 +3772,7 @@ def run_single_module_main(args) -> dict:
         json_path = out / f"{model_slug}_{name}_full_metrics.json"
         if json_path.exists():
             try:
-                with open(json_path, "r", encoding="utf-8") as jf:
+                with open(json_path, encoding="utf-8") as jf:
                     jdata = json.load(jf)
                 jdata["performance"]["status"] = status
                 jdata["performance"]["elapsed_s"] = round(time.monotonic() - t, 2)
@@ -3904,7 +3880,7 @@ def run_single_module_main(args) -> dict:
                     "model": str(args.model),
                     "dataset": args.dataset,
                     "status": status,
-                    "perplexity": row.get("perplexity", None),
+                    "perplexity": row.get("perplexity"),
                     "accuracy_pct": row.get("accuracy_pct", 0.0),
                     "error": err[:1000] if err else "",
                     "timestamp": row.get("timestamp", datetime.now().isoformat())
@@ -4034,7 +4010,7 @@ def run_single_module_main(args) -> dict:
         # Log per-module timing
         t_total = time.monotonic() - t
         LOG.info("[%d/%d] %s Timing: eval_time=%.2fs", n, len(names), name, t_total)
-        
+
         LOG.info("Restoring model state from snapshot for next module...")
         base_snapshot.restore()
 
@@ -4143,13 +4119,12 @@ def run_single_module_main(args) -> dict:
 
 
 import subprocess
-import time
-import json
 from pathlib import Path
 import torch
 
 def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
-    import os, sys
+    import os
+    import sys
     tmp_dir = Path("logs/isolated_results")
     tmp_dir.mkdir(parents=True, exist_ok=True)
     result_json = tmp_dir / f"{module_name}_{int(time.time() * 1000)}_{os.getpid()}.json"
@@ -4211,7 +4186,7 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
         cmd = [c for i, c in enumerate(cmd) if not (cmd[i-1] == "--dataset_dir" or c == "--dataset_dir")]
     if getattr(args, "unknown_args", None):
         cmd.extend(args.unknown_args)
-        
+
     log_path = Path(f"logs/isolated/{module_name}_r{args.rank}_{args.model_family}.log")
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -4267,7 +4242,7 @@ def clear_vram_between_modules():
 def main():
     args = parse_args()
     from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-    
+
     all_available = modules()
     if isinstance(args.modules, list):
         raw_mods = []
@@ -4310,14 +4285,14 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     csv_filename = f"summary_{args.output_suffix}.csv" if getattr(args, "output_suffix", None) else "summary.csv"
     path = out / csv_filename
-    
+
     summary_dict = {}
     if path.exists() and not args.fresh:
         import csv
         with path.open("r", encoding="utf8") as f:
             for r in csv.DictReader(f):
                 summary_dict[r["module_name"]] = r
-                
+
     existing = set() if (args.fresh or getattr(args, "no_skip", False)) else {
         m for m, r in summary_dict.items()
         if r.get("status") in {
@@ -4326,7 +4301,7 @@ def main():
             "TIMEOUT", "SKIP_BERT_ARCHITECTURAL", "SKIP_BLOCKED",
         }
     }
-    
+
 
     import threading
     csv_write_lock = threading.Lock()
@@ -4432,7 +4407,7 @@ def main():
         LOG.info("Running %d attention modules in-memory sequentially", len(attention_modules))
         args.modules = attention_modules
         run_single_module_main(args)
-        
+
         # Merge results from run_single_module_main into summary.csv
         path = out / csv_filename
         if path.exists():

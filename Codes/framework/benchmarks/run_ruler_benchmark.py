@@ -22,7 +22,7 @@ import random
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Path Setup
@@ -57,7 +57,7 @@ LOG = logging.getLogger("RulerNIAH")
 # ---------------------------------------------------------------------------
 # Needle & Haystack Bank
 # ---------------------------------------------------------------------------
-NEEDLE_BANK: List[Tuple[str, str, str]] = [
+NEEDLE_BANK: list[tuple[str, str, str]] = [
     ("The secret passcode is 7402.", "What is the secret passcode?", "7402"),
     ("The hidden city is Zephyria.", "What is the hidden city?", "Zephyria"),
     ("The magic number is 9183.", "What is the magic number?", "9183"),
@@ -68,7 +68,7 @@ NEEDLE_BANK: List[Tuple[str, str, str]] = [
     ("The scientist's name is Dr. Aris Thorne.", "What is the scientist's name?", "Aris Thorne"),
 ]
 
-FILLER_SENTENCES: List[str] = [
+FILLER_SENTENCES: list[str] = [
     "The grass is green. The sky is blue. The sun is yellow. ",
     "Here we go. There and back again. ",
     "A journey of a thousand miles begins with a single step. ",
@@ -80,7 +80,7 @@ FILLER_SENTENCES: List[str] = [
 ]
 
 
-def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run Needle-in-a-Haystack (NIAH) context retrieval benchmark on GPT-2 with an injected module."
     )
@@ -165,7 +165,7 @@ def construct_niah_prompt(
     question: str,
     depth: float,
     effective_length: int,
-) -> List[int]:
+) -> list[int]:
     """
     Construct token IDs for needle inserted into haystack filler at the requested depth ratio.
     The final tokens will end with question and answer prompt.
@@ -202,11 +202,11 @@ def evaluate_context_length(
     model: torch.nn.Module,
     tokenizer: Any,
     context_len: int,
-    depths: List[float],
+    depths: list[float],
     num_samples: int,
     max_position: int,
     device: torch.device,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Evaluate retrieval accuracy across num_samples for a given context length.
     Clamps effective prompt length to min(context_len, max_position).
@@ -215,7 +215,7 @@ def evaluate_context_length(
     LOG.info("Evaluating context_len=%d (clamped effective_len=%d, samples=%d)...",
              context_len, effective_len, num_samples)
 
-    depth_stats: Dict[str, Dict[str, int]] = {
+    depth_stats: dict[str, dict[str, int]] = {
         str(round(d, 4)): {"correct": 0, "total": 0} for d in depths
     }
     total_correct = 0
@@ -266,7 +266,7 @@ def evaluate_context_length(
                  context_len, depth, is_correct, answer)
 
     accuracy = round(total_correct / max(1, num_samples), 4)
-    by_depth: Dict[str, float] = {}
+    by_depth: dict[str, float] = {}
     for d_str, counts in depth_stats.items():
         by_depth[d_str] = round(counts["correct"] / max(1, counts["total"]), 4)
 
@@ -278,7 +278,7 @@ def evaluate_context_length(
     }
 
 
-def print_summary_table(results: Dict[str, Any], depths: List[float], module_name: str) -> None:
+def print_summary_table(results: dict[str, Any], depths: list[float], module_name: str) -> None:
     """Print summary table formatted like: ctx_len | accuracy | depth_0.1 | depth_0.5 | depth_0.9"""
     print("\n" + "=" * 75)
     print(f" RULER NIAH RETRIEVAL BENCHMARK SUMMARY: {module_name}")
@@ -304,7 +304,7 @@ def print_summary_table(results: Dict[str, Any], depths: List[float], module_nam
     print("=" * 75 + "\n")
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     global np, torch, AutoModelForCausalLM, AutoTokenizer, ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, apply_module_to_model
     args = parse_args(argv)
 
@@ -355,7 +355,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     model = AutoModelForCausalLM.from_pretrained(tok_src)
 
     # Inject module if requested
-    injection_stats: Dict[str, Any] = {}
+    injection_stats: dict[str, Any] = {}
     if not args.no_inject and args.module != "full":
         typ = "attention" if args.module in ATTENTION_REGISTRY else "compressor"
         LOG.info("Injecting %s module '%s' (rank=%d)...", typ, args.module, args.rank)
@@ -383,7 +383,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     model.to(device)
     model.eval()
 
-    all_results: Dict[str, Any] = {}
+    all_results: dict[str, Any] = {}
 
     for ctx_len in args.context_lengths:
         try:
@@ -421,7 +421,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / f"{args.module}_niah.json"
 
-    payload: Dict[str, Any] = {
+    payload: dict[str, Any] = {
         "module": args.module,
         "model_path": args.model_path,
         "rank": args.rank,

@@ -7,8 +7,7 @@ Registered in COMPRESSOR_REGISTRY as 'admm' and 'admm_compressor'.
 from __future__ import annotations
 
 import logging
-import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -53,11 +52,11 @@ class ADMMCompressor(BaseCompressor):
         rho2: float = 0.1,
         max_iter: int = 8,
         structured_24: bool = True,
-        block_size: Tuple[int, int] = (4, 4),
+        block_size: tuple[int, int] = (4, 4),
         max_error: float = 0.45,
         fallback_to_original: bool = True,
         target_attention_only: bool = False,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         quant_per_channel: bool = True,     # AC-FIX-02
         comp_config: Any = None,
         **kwargs: Any,
@@ -92,11 +91,11 @@ class ADMMCompressor(BaseCompressor):
         self.comp_config = cfg
         self._compressed_params: int = 0
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_sparsities: Dict[str, float] = {}
-        self.layer_actual_sparsities: Dict[str, float] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_sparsities: dict[str, float] = {}
+        self.layer_actual_sparsities: dict[str, float] = {}
 
     # ------------------------------------------------------------------
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
@@ -199,7 +198,7 @@ class ADMMCompressor(BaseCompressor):
                 return tensor * mask
 
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         self.compressed_layers = []
         self.fallback_layers = []
         self.layer_errors = {}
@@ -231,7 +230,7 @@ class ADMMCompressor(BaseCompressor):
             norm_w0 = float(torch.norm(W0, p="fro").item())
             norm_w0 = max(norm_w0, 1e-12)
 
-            best_W_final: Optional[torch.Tensor] = None
+            best_W_final: torch.Tensor | None = None
             best_err = float("inf")
 
             try:
@@ -465,7 +464,7 @@ def admm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     )
     compressed_model, stats = compressor.compress()
     try:
-        setattr(compressed_model, "compression_stats", stats)
+        compressed_model.compression_stats = stats
     except Exception:
         pass
     if return_stats:

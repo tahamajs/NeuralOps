@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -187,16 +187,16 @@ class GoldFinchAHNBlock(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        d_model: Optional[Union[int, Any]] = None,
-        num_heads: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = None,
+        d_model: int | Any | None = None,
+        num_heads: int | None = None,
         window_size: int = 64,
         is_causal: bool = False,
-        pretrained_attn: Optional[nn.Module] = None,
-        old_attn: Optional[nn.Module] = None,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
         gate_init_bias: float = 1.8,
-        comp_config: Optional[Any] = None,
+        comp_config: Any | None = None,
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
@@ -429,11 +429,7 @@ class GoldFinchAHNBlock(BaseAttention):
         is_nested = False
         if cls_name in ("BertSelfAttention", "RobertaSelfAttention",
                          "XLMRobertaSelfAttention", "ElectraSelfAttention",
-                         "DebertaSelfAttention"):
-            is_nested = True
-        elif hasattr(src, "query") and not has_out:
-            is_nested = True
-        elif hasattr(src, "self") and hasattr(src, "output"):
+                         "DebertaSelfAttention") or hasattr(src, "query") and not has_out or hasattr(src, "self") and hasattr(src, "output"):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -476,8 +472,8 @@ class GoldFinchAHNBlock(BaseAttention):
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
         # Nested (BERT / RoBERTa)
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            s = getattr(src, "self")
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
+            s = src.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 m = getattr(s, sub, None)
                 if m is not None and hasattr(m, "weight"):
@@ -624,15 +620,15 @@ class GoldFinchAHNBlock(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args: Any,
         **kwargs: Any,
     ):
@@ -658,7 +654,7 @@ class GoldFinchAHNBlock(BaseAttention):
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
         elif self.rotary_emb is not None:
-            pos_ids = kwargs.get("position_ids", None)
+            pos_ids = kwargs.get("position_ids")
             if pos_ids is None:
                 pos_ids = torch.arange(L, device=device).unsqueeze(0).expand(B, -1)
             try:
@@ -746,7 +742,7 @@ class GoldFinchAHNBlock(BaseAttention):
         return out.to(dtype_in), (attn_weights if output_attentions else None)
 
     # ------------------------------------------------------------------
-    def storage_bytes(self) -> Dict[str, int]:
+    def storage_bytes(self) -> dict[str, int]:
         def _sz(p):
             if isinstance(p, (nn.Parameter, torch.Tensor)):
                 return p.numel() * p.element_size()
@@ -774,10 +770,10 @@ def inject_goldfinch_ahn(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
-) -> Optional[Union[GoldFinchAHNBlock, nn.Module]]:
+) -> GoldFinchAHNBlock | nn.Module | None:
     if _depth > 8:
         logger.warning("inject_goldfinch_ahn: max recursion depth exceeded.")
         return None

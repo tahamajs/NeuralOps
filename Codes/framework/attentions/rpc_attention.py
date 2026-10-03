@@ -9,14 +9,14 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -113,8 +113,8 @@ class FactorizedLoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         bias: bool = True,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.in_features = int(in_features)
@@ -143,10 +143,10 @@ class FactorizedLoRALinear(nn.Module):
             self.register_parameter("lora_B", None)
 
         # RPC-16: cache
-        self._cached_weight: Optional[torch.Tensor] = None
-        self._cached_versions: Tuple[int, ...] = ()
+        self._cached_weight: torch.Tensor | None = None
+        self._cached_versions: tuple[int, ...] = ()
 
-    def _current_versions(self) -> Tuple[int, ...]:
+    def _current_versions(self) -> tuple[int, ...]:
         v = [getattr(self.down.weight, "_version", 0),
              getattr(self.up.weight, "_version", 0)]
         if self.lora_A is not None:
@@ -169,7 +169,7 @@ class FactorizedLoRALinear(nn.Module):
         return w
 
     @property
-    def bias(self) -> Optional[torch.Tensor]:
+    def bias(self) -> torch.Tensor | None:
         return self.up.bias
 
     def freeze_base_weights(self) -> None:
@@ -213,8 +213,8 @@ class RPCAttention(BaseAttention):
         self,
         config: Any = None,
         rank: int = 64,
-        pretrained_attn: Optional[nn.Module] = None,
-        is_decoder: Optional[bool] = None,
+        pretrained_attn: nn.Module | None = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         try:
@@ -234,7 +234,7 @@ class RPCAttention(BaseAttention):
         ))
 
         cfg_head_dim = _cfg_get(config, "head_dim", None)
-        kw_head_dim = kwargs.get("head_dim", None)
+        kw_head_dim = kwargs.get("head_dim")
         inferred = cfg_head_dim or kw_head_dim
 
         if inferred is None and pretrained_attn is not None:
@@ -372,7 +372,7 @@ class RPCAttention(BaseAttention):
     # SVD init
     # ------------------------------------------------------------------
     @staticmethod
-    def _svd_init(w: torch.Tensor, b: Optional[torch.Tensor],
+    def _svd_init(w: torch.Tensor, b: torch.Tensor | None,
                    proj: FactorizedLoRALinear) -> None:
         with torch.no_grad():
             W = w.detach().float()
@@ -419,10 +419,8 @@ class RPCAttention(BaseAttention):
         cls_name = src.__class__.__name__
         has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
-        if (hasattr(src, "self") and hasattr(getattr(src, "self"), "query")
-                and hasattr(src, "output") and hasattr(getattr(src, "output"), "dense")):
-            is_nested = True
-        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
+        if (hasattr(src, "self") and hasattr(src.self, "query")
+                and hasattr(src, "output") and hasattr(src.output, "dense")) or (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
                             "XLMRobertaSelfAttention", "ElectraSelfAttention",
                             "DebertaSelfAttention")
               or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
@@ -437,7 +435,7 @@ class RPCAttention(BaseAttention):
         except Exception:
             pass
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
@@ -475,14 +473,14 @@ class RPCAttention(BaseAttention):
                     extracted["o"] = (o_w, bo.data.clone() if bo is not None else None)
 
         # BERT / RoBERTa nested
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            s = getattr(src, "self")
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
+            s = src.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 m = getattr(s, sub, None)
                 if m is not None and hasattr(m, "weight"):
                     extracted[key] = (m.weight.data.clone(),
                                        m.bias.data.clone() if m.bias is not None else None)
-            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+            if hasattr(src, "output") and hasattr(src.output, "dense"):
                 om = src.output.dense
                 extracted["o"] = (om.weight.data.clone(),
                                    om.bias.data.clone() if om.bias is not None else None)
@@ -571,9 +569,9 @@ class RPCAttention(BaseAttention):
     # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(
-        attention_mask: Optional[torch.Tensor],
+        attention_mask: torch.Tensor | None,
         B: int, L: int, device: torch.device,
-    ) -> Optional[torch.Tensor]:
+    ) -> torch.Tensor | None:
         """
         Returns a bool mask of shape (B, L) where True = valid token.
         If the input mask cannot be interpreted, returns None (no masking).
@@ -612,15 +610,15 @@ class RPCAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         layer_idx: int = 0,
         *args: Any,
         **kwargs: Any,
@@ -640,7 +638,7 @@ class RPCAttention(BaseAttention):
 
         # ---- RPC-08: RoPE with past_len ----
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             past_len = 0
@@ -718,7 +716,7 @@ class RPCAttention(BaseAttention):
         return out, (probs if output_attentions else None)
 
     # ------------------------------------------------------------------
-    def storage_bytes(self) -> Dict[str, int]:
+    def storage_bytes(self) -> dict[str, int]:
         """Report per-component storage."""
         def _sz(p):
             if p is None:
@@ -754,7 +752,7 @@ def inject_rpc(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):
@@ -764,7 +762,7 @@ def inject_rpc(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

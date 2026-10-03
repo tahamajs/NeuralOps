@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -25,7 +25,7 @@ except ImportError:
     _HAS_SDPA_KERNEL = False
 
 from framework.core.adapters import UniversalAdapter
-from framework.core.attention_mask import apply_attention_mask, get_token_valid_mask
+from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
@@ -110,7 +110,7 @@ def _cp_decompose_qk_fast(
     head_dim: int,
     n_iter: int = 3,
     eps: float = 1e-6,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Fast CP decomposition of W (H*head_dim, in_dim):
         W[h*hd + a*r + b, k] ≈ A[h, a, k] · B[h, b, k]
@@ -175,7 +175,7 @@ def _cp_reconstruction_error(
     return num / den
 
 
-def _svd_factorize(W: torch.Tensor, target_rank: int) -> Tuple[torch.Tensor, torch.Tensor]:
+def _svd_factorize(W: torch.Tensor, target_rank: int) -> tuple[torch.Tensor, torch.Tensor]:
     """
     TPA-FIX-08/15: plain truncated SVD used for qk_proj path and CP fallback.
     Returns (U_r * sqrt(S), Vt_r) so that (A @ B) ≈ W.
@@ -260,12 +260,12 @@ class TPAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
+        config: Any | None = None,
         rank: int = 8,
-        pretrained_attn: Optional[nn.Module] = None,
+        pretrained_attn: nn.Module | None = None,
         lora_rank: int = 0,
         lora_alpha: float = 1.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         max_cp_error: float = 0.35,
         **kwargs: Any,
     ) -> None:
@@ -274,7 +274,7 @@ class TPAttention(BaseAttention):
         except TypeError:
             super().__init__(config)
 
-        src = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn", None)
+        src = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn")
         self.max_cp_error = float(max_cp_error)
 
         # ---- hidden size ----
@@ -313,13 +313,13 @@ class TPAttention(BaseAttention):
 
         # ---- head_dim ----
         cfg_hd = _cfg_get(config, "head_dim", None) if config is not None else None
-        kw_hd = kwargs.get("head_dim", None)
+        kw_hd = kwargs.get("head_dim")
         if cfg_hd is not None:
             self.head_dim = int(cfg_hd)
         elif kw_hd is not None:
             self.head_dim = int(kw_hd)
         elif src is not None and getattr(src, "head_dim", None) is not None:
-            self.head_dim = int(getattr(src, "head_dim"))
+            self.head_dim = int(src.head_dim)
         else:
             self.head_dim = self.dim // self.num_heads
 
@@ -368,7 +368,7 @@ class TPAttention(BaseAttention):
         # TPA-FIX-14: gradient checkpointing only when explicitly requested.
         self.gradient_checkpointing = bool(kwargs.get("gradient_checkpointing", False))
 
-        target_dtype = kwargs.get("dtype", None)
+        target_dtype = kwargs.get("dtype")
         if target_dtype is None and src is not None:
             p = next(src.parameters(), None)
             if p is not None:
@@ -661,14 +661,14 @@ class TPAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args, **kwargs,
     ):
         B, L, D = hidden_states.shape
@@ -719,7 +719,7 @@ class TPAttention(BaseAttention):
         v = v.transpose(1, 2).contiguous()
 
         # ---- RoPE ----
-        pos_emb = kwargs.get("position_embeddings", None)
+        pos_emb = kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2:
             cos, sin = pos_emb
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
@@ -731,7 +731,7 @@ class TPAttention(BaseAttention):
 
         # ---- Mask ----
         is_causal = self.is_decoder and L > 1
-        custom_mask = attention_mask if attention_mask is not None else kwargs.get("attn_mask", None)
+        custom_mask = attention_mask if attention_mask is not None else kwargs.get("attn_mask")
 
         # TPA-FIX-09: preprocess custom_mask WITHOUT losing causality.
         # Normalize custom_mask into a 4D bool mask if it exists.
@@ -871,14 +871,14 @@ def inject_tpa(
     old_attn: Any = None,
     _depth: int = 0,
     **kwargs: Any,
-) -> Optional[Union[TPAttention, nn.Module]]:
+) -> TPAttention | nn.Module | None:
     if _depth > 8:
         logger.warning("inject_tpa: max recursion depth exceeded")
         return None
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

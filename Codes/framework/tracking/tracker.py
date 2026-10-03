@@ -3,7 +3,7 @@ Unified ExperimentTracker – select a backend via string or TrackingBackend enu
 Provides a single, consistent API: log_metric, log_params, log_artifact, finalize.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .backends import (
     LOCAL_BACKEND,
@@ -39,9 +39,9 @@ class ExperimentTracker:
         backend: str = LOCAL_BACKEND,
         experiment_name: str = "experiment",
         log_dir: str = "./experiments/logs",
-        project: Optional[str] = None,
-        config_dict: Optional[Dict[str, Any]] = None,
-        tracking_uri: Optional[str] = None,
+        project: str | None = None,
+        config_dict: dict[str, Any] | None = None,
+        tracking_uri: str | None = None,
     ) -> None:
         """
         Args:
@@ -91,12 +91,12 @@ class ExperimentTracker:
         else:
             raise NotImplementedError(f"Backend '{backend}' not implemented")
 
-    def log_metric(self, name: str, value: float, step: Optional[int] = None) -> None:
+    def log_metric(self, name: str, value: float, step: int | None = None) -> None:
         """Log a single metric (scalar)."""
         self._tracker.log_metric(name, value, step)
 
     def log_metrics(
-        self, metrics: Dict[str, float], step: Optional[int] = None
+        self, metrics: dict[str, float], step: int | None = None
     ) -> None:
         """Log multiple metrics at once."""
         for k, v in metrics.items():
@@ -106,7 +106,7 @@ class ExperimentTracker:
         """Log a single hyperparameter."""
         self._tracker.log_params({key: value})
 
-    def log_params(self, params: Dict[str, Any]) -> None:
+    def log_params(self, params: dict[str, Any]) -> None:
         """Log multiple hyperparameters."""
         self._tracker.log_params(params)
 
@@ -114,7 +114,7 @@ class ExperimentTracker:
         """Save or upload a file (model checkpoint, plot, etc.)."""
         self._tracker.log_artifact(local_path)
 
-    def finalize(self, result: Optional[Dict[str, Any]] = None) -> None:
+    def finalize(self, result: dict[str, Any] | None = None) -> None:
         """
         Mark the run as completed and store final results.
         After calling this, the tracker should not be used again.

@@ -33,8 +33,8 @@ from __future__ import annotations
 
 import logging
 import math
-from dataclasses import dataclass, field
-from typing import Any, Dict, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -98,7 +98,7 @@ def apply_rotary_pos_emb(q, k, cos, sin):
 # ===========================================================================
 # Decoder detection
 # ===========================================================================
-def _detect_decoder(config: Any, is_decoder: Optional[bool], old_attn: Optional[nn.Module]) -> bool:
+def _detect_decoder(config: Any, is_decoder: bool | None, old_attn: nn.Module | None) -> bool:
     if is_decoder is not None:
         return bool(is_decoder)
     if config is not None:
@@ -129,7 +129,7 @@ class AegisHybridConfig:
     hidden_size: int = 768
     num_attention_heads: int = 12
     head_dim: int = 64
-    num_key_value_heads: Optional[int] = None
+    num_key_value_heads: int | None = None
     local_window: int = 256
     rank: int = 128
     lora_rank: int = 32
@@ -164,8 +164,8 @@ class FactorizedLinear(nn.Module):
         rank: int = 128,
         lora_rank: int = 32,
         bias: bool = True,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.in_features = int(in_features)
@@ -192,8 +192,8 @@ class FactorizedLinear(nn.Module):
             self.register_parameter("lora_B", None)
 
         # AH-FIX-03: cached weight, invalidated on parameter mutation
-        self._cached_weight: Optional[torch.Tensor] = None
-        self._cached_versions: Tuple[int, ...] = ()
+        self._cached_weight: torch.Tensor | None = None
+        self._cached_versions: tuple[int, ...] = ()
 
         self.reset_parameters()
 
@@ -213,7 +213,7 @@ class FactorizedLinear(nn.Module):
                 nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
                 nn.init.zeros_(self.lora_B)
 
-    def _current_versions(self) -> Tuple[int, ...]:
+    def _current_versions(self) -> tuple[int, ...]:
         vs = [getattr(self.down.weight, "_version", 0),
               getattr(self.up.weight, "_version", 0)]
         if self.lora_A is not None:
@@ -237,7 +237,7 @@ class FactorizedLinear(nn.Module):
         return w
 
     @property
-    def bias(self) -> Optional[torch.Tensor]:
+    def bias(self) -> torch.Tensor | None:
         return self.up.bias
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -293,12 +293,12 @@ def _local_window_attention_chunked(
     K: torch.Tensor,
     V: torch.Tensor,
     window: int,
-    token_valid: Optional[torch.Tensor],
+    token_valid: torch.Tensor | None,
     is_decoder: bool,
     past_len: int,
     dropout_p: float,
     training: bool,
-) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+) -> tuple[torch.Tensor, torch.Tensor | None]:
     B, H, N, D = Q.shape
     N_kv = K.shape[2]
     radius = max(1, window // 2)
@@ -375,7 +375,7 @@ def _global_linear_attention(
     K: torch.Tensor,
     V: torch.Tensor,
     feature_map: KernelFeatureMap,
-    token_valid: Optional[torch.Tensor],
+    token_valid: torch.Tensor | None,
 ) -> torch.Tensor:
     """y = φ(Q) · (φ(K)^T V) / (φ(Q) · Σφ(K))."""
     Q_feat = feature_map(Q)
@@ -412,14 +412,14 @@ class AegisHybridAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        hidden_size: Optional[int] = None,
-        num_heads: Optional[int] = None,
-        pretrained_attn: Optional[nn.Module] = None,
-        rank: Optional[int] = None,
-        lora_rank: Optional[int] = None,
-        is_decoder: Optional[bool] = None,
-        whitening: Optional[Dict[str, torch.Tensor]] = None,
+        config: Any | None = None,
+        hidden_size: int | None = None,
+        num_heads: int | None = None,
+        pretrained_attn: nn.Module | None = None,
+        rank: int | None = None,
+        lora_rank: int | None = None,
+        is_decoder: bool | None = None,
+        whitening: dict[str, torch.Tensor] | None = None,
         **kwargs: Any,
     ) -> None:
         try:
@@ -528,9 +528,9 @@ class AegisHybridAttention(BaseAttention):
     @staticmethod
     def _svd_init(
         w: torch.Tensor,
-        b: Optional[torch.Tensor],
+        b: torch.Tensor | None,
         proj: FactorizedLinear,
-        whitening_L: Optional[torch.Tensor] = None,
+        whitening_L: torch.Tensor | None = None,
     ) -> None:
         with torch.no_grad():
             W = w.detach().float()
@@ -604,7 +604,7 @@ class AegisHybridAttention(BaseAttention):
             pass
 
         from framework.core.adapters import UniversalAdapter
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None),
             "v": (None, None), "o": (None, None),
         }
@@ -641,7 +641,7 @@ class AegisHybridAttention(BaseAttention):
             extracted["o"] = (w_o, b_o.data.clone() if b_o is not None else None)
 
         # Nested BERT/RoBERTa
-        if hasattr(old_attn, "self") and hasattr(getattr(old_attn, "self"), "query"):
+        if hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
             s = old_attn.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 if extracted[key][0] is None:
@@ -709,7 +709,7 @@ class AegisHybridAttention(BaseAttention):
     # AH-FIX-06: comprehensive mask normalization
     # ------------------------------------------------------------------
     @staticmethod
-    def _prepare_valid_mask(attention_mask, B, L, device) -> Optional[torch.Tensor]:
+    def _prepare_valid_mask(attention_mask, B, L, device) -> torch.Tensor | None:
         if attention_mask is None:
             return None
 
@@ -763,15 +763,15 @@ class AegisHybridAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         layer_idx: int = 0,
         *args: Any,
         **kwargs: Any,
@@ -793,7 +793,7 @@ class AegisHybridAttention(BaseAttention):
 
         # ---- RoPE ----
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             past_k_probe, _ = self._read_past_kv(past_key_value, layer_idx)
@@ -870,7 +870,7 @@ class AegisHybridAttention(BaseAttention):
         return final.to(hidden_states.dtype), (attn_local if output_attentions else None)
 
     # ------------------------------------------------------------------
-    def storage_bytes(self) -> Dict[str, int]:
+    def storage_bytes(self) -> dict[str, int]:
         def _sz(p):
             if isinstance(p, (nn.Parameter, torch.Tensor)):
                 return p.numel() * p.element_size()
@@ -898,7 +898,7 @@ def inject_aegis_hybrid(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):

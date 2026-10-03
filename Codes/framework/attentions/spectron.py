@@ -27,12 +27,11 @@ Mathematical Mechanism:
 
 from __future__ import annotations
 
-import argparse
 import logging
 import math
 import os
 import warnings
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import torch
@@ -41,7 +40,7 @@ import torch.nn.functional as F
 
 from framework.core.adapters import UniversalAdapter
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -86,14 +85,14 @@ def cumulative_entropy_fraction(s: np.ndarray, max_rank: int) -> np.ndarray:
 # 3. Lagrangian rank allocator (ON WHITENED weights)
 # ======================================================================
 def allocate_ranks_spectron(
-    weight_matrices: List[np.ndarray],
+    weight_matrices: list[np.ndarray],
     target_budget: int,
-    names: List[str],
+    names: list[str],
     max_rank_factor: float = 0.75,
-    lambda_range: Tuple[float, float] = (1e-5, 5.0),
+    lambda_range: tuple[float, float] = (1e-5, 5.0),
     steps: int = 100,
-    whitening_factors: Optional[List[Optional[np.ndarray]]] = None,
-) -> Dict[str, int]:
+    whitening_factors: list[np.ndarray | None] | None = None,
+) -> dict[str, int]:
     """
     Lagrangian optimization allocating rank per weight matrix under a
     parameter budget.
@@ -163,7 +162,7 @@ class LowRankSparseLinear(nn.Module):
         down: nn.Linear,
         up: nn.Linear,
         sparse_weight: torch.Tensor,
-        bias: Optional[torch.Tensor] = None,
+        bias: torch.Tensor | None = None,
     ) -> None:
         super().__init__()
         self.down = down
@@ -233,8 +232,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -269,7 +268,7 @@ def apply_rotary_pos_emb(
     return q_out, k_out
 
 
-def _unpack_weight_bias(proj: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+def _unpack_weight_bias(proj: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
     if proj is None:
         return None, None
     if hasattr(proj, "base_layer"):
@@ -312,21 +311,21 @@ class SpectronAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        old_attn: Optional[Any] = None,
+        config: Any | None = None,
+        old_attn: Any | None = None,
         dropout: float = 0.1,
         layer_idx: int = 0,
-        ranks: Optional[Dict[str, int]] = None,
+        ranks: dict[str, int] | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         add_sparse: bool = False,
         sparsity_level: float = 0.7,
-        whitening: Optional[Dict[str, torch.Tensor]] = None,
+        whitening: dict[str, torch.Tensor] | None = None,
         seed: int = 42,
         **kwargs: Any,
     ) -> None:
-        model_config = config or kwargs.get("model_config", None)
+        model_config = config or kwargs.get("model_config")
         super().__init__(model_config)
 
         torch.manual_seed(seed)
@@ -374,7 +373,7 @@ class SpectronAttention(BaseAttention):
         default_r = int(_cfg_get(model_config, "svd_rank",
                         _cfg_get(model_config, "rank", 64)))
         default_r = max(1, min(default_r, self.hidden_size, self.all_head_size))
-        self.ranks: Dict[str, int] = {}
+        self.ranks: dict[str, int] = {}
         for k in ("q", "k", "v", "o"):
             val = ranks.get(k, default_r) if ranks else default_r
             self.ranks[k] = max(1, min(int(val), self.hidden_size, self.all_head_size))
@@ -448,7 +447,7 @@ class SpectronAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(float(dropout_p) if dropout_p is not None else 0.1)
 
-        src_attn = old_attn or kwargs.get("pretrained_attn", None)
+        src_attn = old_attn or kwargs.get("pretrained_attn")
         if src_attn is not None:
             self.copy_weights(src_attn)
 
@@ -458,11 +457,11 @@ class SpectronAttention(BaseAttention):
     def _factorise_and_set(
         self,
         W: torch.Tensor,
-        bias: Optional[torch.Tensor],
+        bias: torch.Tensor | None,
         down: nn.Linear,
         up: nn.Linear,
         rank: int,
-        whitening_L: Optional[torch.Tensor] = None,
+        whitening_L: torch.Tensor | None = None,
     ) -> None:
         """
         Factories W into down/up via activation-aware SVD:
@@ -691,9 +690,9 @@ class SpectronAttention(BaseAttention):
         x: torch.Tensor,
         down: nn.Linear,
         up: nn.Linear,
-        lora_A: Optional[nn.Parameter],
-        lora_B: Optional[nn.Parameter],
-        sparse_w: Optional[nn.Parameter],
+        lora_A: nn.Parameter | None,
+        lora_B: nn.Parameter | None,
+        sparse_w: nn.Parameter | None,
     ) -> torch.Tensor:
         out = up(down(x))
         if self.lora_rank > 0 and lora_A is not None and lora_B is not None:
@@ -710,18 +709,18 @@ class SpectronAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, N, _ = hidden_states.shape
         is_cross = encoder_hidden_states is not None
         kv_input = encoder_hidden_states if is_cross else hidden_states
@@ -740,7 +739,7 @@ class SpectronAttention(BaseAttention):
 
         # RoPE
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             past_len = 0
@@ -838,13 +837,13 @@ class SpectronAttention(BaseAttention):
 # ======================================================================
 # 8. Multi-architecture weight gathering (SP-FIX-06)
 # ======================================================================
-def gather_attention_weights(model: Any) -> Tuple[List[np.ndarray], List[str]]:
+def gather_attention_weights(model: Any) -> tuple[list[np.ndarray], list[str]]:
     """
     Return flattened list of Q/K/V/O weight matrices and their layer names.
     Supports DistilBERT, BERT/RoBERTa, GPT-2, LLaMA/Qwen.
     """
-    weights: List[np.ndarray] = []
-    names: List[str] = []
+    weights: list[np.ndarray] = []
+    names: list[str] = []
 
     def _collect_attention_block(attn, layer_id):
         # GPT-2 fused c_attn
@@ -937,7 +936,7 @@ def inject_spectron(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):
@@ -947,7 +946,7 @@ def inject_spectron(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 
@@ -1085,7 +1084,7 @@ class SparsePruningCallback(_HFTrainerCallback):
 # ======================================================================
 # 11. GLUE helpers (unchanged)
 # ======================================================================
-GLUE_TASK_KEYS: Dict[str, Tuple[str, Optional[str]]] = {
+GLUE_TASK_KEYS: dict[str, tuple[str, str | None]] = {
     "cola": ("sentence", None),
     "sst2": ("sentence", None),
     "mrpc": ("sentence1", "sentence2"),
@@ -1111,7 +1110,7 @@ def load_glue_local(task: str) -> Any:
     return DatasetDict(splits)
 
 
-def get_num_labels_and_type(task: str) -> Tuple[int, bool]:
+def get_num_labels_and_type(task: str) -> tuple[int, bool]:
     if task == "stsb":
         return 1, True
     if task == "cola":

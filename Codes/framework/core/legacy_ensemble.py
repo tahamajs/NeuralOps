@@ -28,7 +28,7 @@ Bug-fix map (2026 revision):
 from __future__ import annotations
 import logging
 import math
-from typing import Any, List, Optional
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -87,7 +87,7 @@ class TaskAwareAttention(nn.Module):
         self,
         task_id: int,
         all_logits: torch.Tensor,
-        model_task_ids: List[int],
+        model_task_ids: list[int],
     ) -> torch.Tensor:
         device = all_logits.device
         num_models = all_logits.shape[0]
@@ -136,9 +136,9 @@ class SmartWeightedEnsemble(nn.Module):
 
     def __init__(
         self,
-        models: List[nn.Module],
+        models: list[nn.Module],
         num_tasks: int = 1,
-        device: Optional[torch.device] = None,
+        device: torch.device | None = None,
         trainable_dynamic: bool = False,
     ) -> None:
         _warn_deprecated()   # LE-06
@@ -183,7 +183,7 @@ class SmartWeightedEnsemble(nn.Module):
     def update_performance(
         self,
         task_id: int,
-        model_outputs: List[torch.Tensor],
+        model_outputs: list[torch.Tensor],
         target: torch.Tensor,
         metric: str = "accuracy",
     ) -> None:
@@ -210,7 +210,7 @@ class SmartWeightedEnsemble(nn.Module):
         self,
         model: nn.Module,
         input_ids: torch.Tensor,
-        attention_mask: Optional[torch.Tensor],
+        attention_mask: torch.Tensor | None,
         **kwargs: Any,
     ) -> torch.Tensor:
         """LE-08: robust forward with logits fallback."""
@@ -238,7 +238,7 @@ class SmartWeightedEnsemble(nn.Module):
         self,
         task_id: int,
         input_ids: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
+        attention_mask: torch.Tensor | None = None,
         **kwargs: Any,
     ) -> torch.Tensor:
         device = self.device
@@ -279,10 +279,10 @@ class SmartWeightedEnsemble(nn.Module):
         self,
         task_id: int,
         all_logits: torch.Tensor,
-        input_ids: Optional[torch.Tensor] = None,
-        attention_mask: Optional[torch.Tensor] = None,
+        input_ids: torch.Tensor | None = None,
+        attention_mask: torch.Tensor | None = None,
         method: str = "hybrid",
-        model_task_ids: Optional[List[int]] = None,
+        model_task_ids: list[int] | None = None,
         **kwargs: Any,
     ) -> torch.Tensor:
         # LE-11: shape validation
@@ -351,9 +351,9 @@ class SmartWeightedEnsemble(nn.Module):
         self,
         input_ids: torch.Tensor,
         task_id: int = 0,
-        attention_mask: Optional[torch.Tensor] = None,
+        attention_mask: torch.Tensor | None = None,
         method: str = "hybrid",
-        model_task_ids: Optional[List[int]] = None,
+        model_task_ids: list[int] | None = None,
         **kwargs: Any,
     ) -> torch.Tensor:
         device = self.device
@@ -388,7 +388,7 @@ class SmartWeightedEnsemble(nn.Module):
     def forward_simple_average(
         self,
         input_ids: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
+        attention_mask: torch.Tensor | None = None,
         **kwargs: Any,
     ) -> torch.Tensor:
         return self.forward(

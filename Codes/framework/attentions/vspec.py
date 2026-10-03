@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -20,7 +20,7 @@ import torch.nn.functional as F
 from framework.core.adapters import UniversalAdapter
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.utils.model_family import ModelAdapter
 
@@ -36,7 +36,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-def _masked_mean(x: torch.Tensor, valid_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+def _masked_mean(x: torch.Tensor, valid_mask: torch.Tensor | None = None) -> torch.Tensor:
     """Computes mean over valid non-padded tokens."""
     if valid_mask is not None:
         m = valid_mask.unsqueeze(-1).to(x.dtype)
@@ -68,8 +68,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Applies rotary position embeddings safely handling even or odd dimensions."""
     if cos is None or sin is None:
         return q, k
@@ -122,8 +122,8 @@ class VariationalSpectralGate(nn.Module):
         nn.init.constant_(self.net[-1].bias[rank:], -3.0)  # log_sigma -> low variance
 
     def forward(
-        self, x: torch.Tensor, valid_mask: Optional[torch.Tensor] = None
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        self, x: torch.Tensor, valid_mask: torch.Tensor | None = None
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         net_dtype = next(self.net.parameters()).dtype
         pooled = _masked_mean(x, valid_mask).to(net_dtype)
         stats = self.net(pooled)
@@ -150,7 +150,7 @@ class HeadGate(nn.Module):
         nn.init.zeros_(self.net[-1].weight)
         nn.init.constant_(self.net[-1].bias, 3.0)
 
-    def forward(self, x: torch.Tensor, valid_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, valid_mask: torch.Tensor | None = None) -> torch.Tensor:
         net_dtype = next(self.net.parameters()).dtype
         pooled = _masked_mean(x, valid_mask).to(net_dtype)
         return torch.sigmoid(self.net(pooled)).to(x.dtype)
@@ -170,9 +170,9 @@ class TokenRouter(nn.Module):
     def forward(
         self,
         x: torch.Tensor,
-        valid_mask: Optional[torch.Tensor] = None,
+        valid_mask: torch.Tensor | None = None,
         is_decoder: bool = False,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         B, N, D = x.shape
         net_dtype = next(self.net.parameters()).dtype
         scores = torch.sigmoid(self.net(x.to(net_dtype)).squeeze(-1))  # (B, N)
@@ -191,7 +191,7 @@ class TokenRouter(nn.Module):
             max(
                 1,
                 min(self.min_tokens, N)
-                if N <= self.min_tokens
+                if self.min_tokens >= N
                 else max(self.min_tokens, int(N * self.keep_ratio)),
             ),
         )
@@ -215,8 +215,8 @@ class DynamicLowRankProjector(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = True,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -259,7 +259,7 @@ class DynamicLowRankProjector(nn.Module):
             if self.lora_B is not None:
                 self.lora_B.requires_grad = True
 
-    def set_weight(self, weight: torch.Tensor, bias: Optional[torch.Tensor] = None) -> None:
+    def set_weight(self, weight: torch.Tensor, bias: torch.Tensor | None = None) -> None:
         with torch.no_grad():
             W = weight.float()
             U, S, Vh = torch.linalg.svd(W, full_matrices=False)
@@ -340,18 +340,18 @@ class VSpecAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
+        config: Any | None = None,
         rank: int = 64,
-        pretrained_attn: Optional[nn.Module] = None,
+        pretrained_attn: nn.Module | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        src_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn", None)
+        src_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn")
 
-        cfg_head_dim = _cfg_get(config, "head_dim", kwargs.get("head_dim", None))
+        cfg_head_dim = _cfg_get(config, "head_dim", kwargs.get("head_dim"))
         if cfg_head_dim is None and src_attn is not None:
             for attr in ("q_proj", "query", "q_lin"):
                 mod = getattr(src_attn, attr, None)
@@ -420,7 +420,7 @@ class VSpecAttention(BaseAttention):
         self.lora_rank = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
         self.lora_alpha = kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
 
-        target_dtype = kwargs.get("dtype", None)
+        target_dtype = kwargs.get("dtype")
         if target_dtype is None and src_attn is not None:
             target_dtype = next(src_attn.parameters(), torch.tensor([])).dtype
             if not isinstance(target_dtype, torch.dtype):
@@ -490,7 +490,7 @@ class VSpecAttention(BaseAttention):
     def c_proj(self): return self.Po
 
     def copy_weights(self, src: Any) -> None:
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -555,7 +555,7 @@ class VSpecAttention(BaseAttention):
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None):
-            s = getattr(src, "self")
+            s = src.self
             if hasattr(s, "query"):
                 extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
             if hasattr(s, "key"):
@@ -563,7 +563,7 @@ class VSpecAttention(BaseAttention):
             if hasattr(s, "value"):
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and extracted["o"][0] is None:
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -642,18 +642,18 @@ class VSpecAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args: Any,
         **kwargs: Any,
-    ) -> Union[Tuple[torch.Tensor, Optional[torch.Tensor]], torch.Tensor]:
-        if encoder_hidden_states is not None or kwargs.get("encoder_hidden_states", None) is not None:
+    ) -> tuple[torch.Tensor, torch.Tensor | None] | torch.Tensor:
+        if encoder_hidden_states is not None or kwargs.get("encoder_hidden_states") is not None:
             raise NotImplementedError("Cross-attention is not implemented for VSpecAttention")
 
         B, N, D = hidden_states.shape
@@ -661,7 +661,7 @@ class VSpecAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         # Mask handling
-        mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
+        mask = attention_mask if attention_mask is not None else kwargs.get("mask")
         valid = get_token_valid_mask(mask, B, N, device) if mask is not None else None
 
         is_decoder = (
@@ -703,7 +703,7 @@ class VSpecAttention(BaseAttention):
         V = V.view(B, k_len, H_kv, Dh).transpose(1, 2).contiguous()
 
         # Rotary position embeddings
-        pos_emb = kwargs.get("position_embeddings", None)
+        pos_emb = kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
             cos_b = cos.expand(B, -1, -1) if cos.size(0) == 1 else cos
@@ -791,9 +791,9 @@ def inject_vspec_attn(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
-) -> Optional[Union[VSpecAttention, nn.Module]]:
+) -> VSpecAttention | nn.Module | None:
     """Safe injection hook for VSpecAttention across diverse transformer architectures."""
     target = layer if layer is not None else model
     if target is None:
@@ -861,9 +861,9 @@ def inject_vspec_attn(
                 return None
             if "VSpec" in src.__class__.__name__:
                 return None
-            if hasattr(src, "inner") and isinstance(getattr(src, "inner"), VSpecAttention):
+            if hasattr(src, "inner") and isinstance(src.inner, VSpecAttention):
                 return None
-            if hasattr(src, "_wrapped_attention") and isinstance(getattr(src, "_wrapped_attention"), VSpecAttention):
+            if hasattr(src, "_wrapped_attention") and isinstance(src._wrapped_attention, VSpecAttention):
                 return None
 
         if target is not None:
@@ -875,9 +875,9 @@ def inject_vspec_attn(
                     return None
                 if "VSpec" in cand.__class__.__name__:
                     return None
-                if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), VSpecAttention):
+                if hasattr(cand, "inner") and isinstance(cand.inner, VSpecAttention):
                     return None
-                if hasattr(cand, "_wrapped_attention") and isinstance(getattr(cand, "_wrapped_attention"), VSpecAttention):
+                if hasattr(cand, "_wrapped_attention") and isinstance(cand._wrapped_attention, VSpecAttention):
                     return None
 
         # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers

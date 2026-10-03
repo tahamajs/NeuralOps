@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -151,8 +151,8 @@ class SVDS6StateSpace(nn.Module):
         d_model: int,
         rank: int = 16,
         bottleneck_dim: int = 64,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
     ):
         super().__init__()
         self.d_model = d_model
@@ -227,14 +227,14 @@ class MambaSVDFlash(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = 16,
-        d_model: Optional[int] = None,
-        hidden_size: Optional[int] = None,
-        num_heads: Optional[int] = None,
-        comp_config: Optional[Any] = None,
-        pretrained_attn: Optional[nn.Module] = None,
-        old_attn: Optional[nn.Module] = None,
+        config: Any | None = None,
+        rank: int | None = 16,
+        d_model: int | None = None,
+        hidden_size: int | None = None,
+        num_heads: int | None = None,
+        comp_config: Any | None = None,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
         bottleneck_dim: int = 64,
         **kwargs: Any,
     ) -> None:
@@ -439,10 +439,8 @@ class MambaSVDFlash(BaseAttention):
         has_out_proj = any(hasattr(old_attn, a) for a in
                             ("out_proj", "out_lin", "c_proj", "dense", "o_proj"))
         is_nested = False
-        if (hasattr(old_attn, "self") and hasattr(getattr(old_attn, "self"), "query")
-                and hasattr(old_attn, "output") and hasattr(getattr(old_attn, "output"), "dense")):
-            is_nested = True
-        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
+        if (hasattr(old_attn, "self") and hasattr(old_attn.self, "query")
+                and hasattr(old_attn, "output") and hasattr(old_attn.output, "dense")) or (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
                             "XLMRobertaSelfAttention", "ElectraSelfAttention",
                             "DebertaSelfAttention")
               or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())) \
@@ -450,7 +448,7 @@ class MambaSVDFlash(BaseAttention):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
@@ -488,7 +486,7 @@ class MambaSVDFlash(BaseAttention):
                     extracted["o"] = (ow, bo.data.clone() if bo is not None else None)
 
         # Nested (BERT/RoBERTa)
-        elif hasattr(old_attn, "self") and hasattr(getattr(old_attn, "self"), "query"):
+        elif hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
             s = old_attn.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 m = getattr(s, sub, None)
@@ -586,9 +584,9 @@ class MambaSVDFlash(BaseAttention):
 
     def _init_ssm_from_attention(
         self,
-        w_k: Optional[torch.Tensor],
-        w_q: Optional[torch.Tensor],
-        w_v: Optional[torch.Tensor],
+        w_k: torch.Tensor | None,
+        w_q: torch.Tensor | None,
+        w_v: torch.Tensor | None,
     ):
         """
         MSF-FIX-17: use SVD of W_k, W_q to seed the low-rank SSM bases.
@@ -643,7 +641,7 @@ class MambaSVDFlash(BaseAttention):
     # ------------------------------------------------------------------
     @staticmethod
     def _normalize_valid_mask(
-        attention_mask: Optional[torch.Tensor],
+        attention_mask: torch.Tensor | None,
         B: int, L: int, device: torch.device,
     ) -> torch.Tensor:
         if attention_mask is None:
@@ -694,10 +692,10 @@ class MambaSVDFlash(BaseAttention):
         B_seq: torch.Tensor,      # (B, L, D)
         C_seq: torch.Tensor,      # (B, L, D)
         x: torch.Tensor,          # (B, L, D)
-        mask: Optional[torch.Tensor] = None,   # (B, L) bool
-        h0: Optional[torch.Tensor] = None,     # (B, D)
+        mask: torch.Tensor | None = None,   # (B, L) bool
+        h0: torch.Tensor | None = None,     # (B, D)
         reverse: bool = False,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Sequential scan with a chunked loop.
         Returns (outputs, h_final).
@@ -739,16 +737,16 @@ class MambaSVDFlash(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
-        position_ids: Optional[torch.Tensor] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        position_ids: torch.Tensor | None = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -828,9 +826,9 @@ class MambaSVDFlash(BaseAttention):
 
         # MSF-FIX-18: RoPE with offset
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_ids is None:
-            position_ids = kwargs.get("position_ids", None)
+            position_ids = kwargs.get("position_ids")
 
         if position_embeddings is not None:
             cos, sin = position_embeddings
@@ -870,8 +868,8 @@ class MambaSVDFlash(BaseAttention):
             V_a = repeat_kv(V_a, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(max(1, self.head_dim))
-        attn_out: Optional[torch.Tensor] = None
-        probs: Optional[torch.Tensor] = None
+        attn_out: torch.Tensor | None = None
+        probs: torch.Tensor | None = None
 
         # SDPA fast path
         can_sdpa = (
@@ -973,13 +971,13 @@ class MambaSVDFlash(BaseAttention):
         return probs * hm
 
     # ------------------------------------------------------------------
-    def storage_bytes(self) -> Dict[str, int]:
+    def storage_bytes(self) -> dict[str, int]:
         def _sz(p):
             if isinstance(p, (nn.Parameter, torch.Tensor)):
                 return p.numel() * p.element_size()
             return 0
 
-        out: Dict[str, int] = {}
+        out: dict[str, int] = {}
         for name, m in (
             ("q_proj", self.q_proj), ("k_proj", self.k_proj),
             ("v_proj", self.v_proj), ("out_proj", self.out_proj),
@@ -1005,10 +1003,10 @@ def inject_mamba_svd_flash(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
-) -> Optional[Union[MambaSVDFlash, nn.Module]]:
+) -> MambaSVDFlash | nn.Module | None:
     if _depth > 8:
         logger.warning("inject_mamba_svd_flash: max recursion depth exceeded.")
         return None

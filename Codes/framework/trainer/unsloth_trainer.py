@@ -7,7 +7,8 @@ with a transparent, production-ready fallback to HuggingFaceTrainer on standard 
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, Optional
+from typing import Any
+from collections.abc import Callable
 
 from .base_trainer import BaseTrainer
 from .hf_trainer import HuggingFaceTrainer
@@ -28,9 +29,9 @@ class UnslothTrainer(BaseTrainer):
         model: Any,
         train_dataset: Any = None,
         eval_dataset: Any = None,
-        config: Optional[Dict[str, Any]] = None,
-        results_manager: Optional[Any] = None,
-        compute_metrics: Optional[Callable] = None,
+        config: dict[str, Any] | None = None,
+        results_manager: Any | None = None,
+        compute_metrics: Callable | None = None,
         **kwargs: Any,
     ) -> None:
         self.model = model
@@ -41,7 +42,7 @@ class UnslothTrainer(BaseTrainer):
         self.compute_metrics = compute_metrics
         self.kwargs = kwargs
         self._unsloth_available = False
-        self._delegate: Optional[BaseTrainer] = None
+        self._delegate: BaseTrainer | None = None
         self._init_backend()
 
     def _init_backend(self) -> None:
@@ -67,13 +68,13 @@ class UnslothTrainer(BaseTrainer):
             **self.kwargs,
         )
 
-    def train(self) -> Dict[str, Any]:
+    def train(self) -> dict[str, Any]:
         """Fit the model on the provided dataset."""
         if self._delegate is None:
             self._init_backend()
         return self._delegate.train()
 
-    def evaluate(self) -> Dict[str, Any]:
+    def evaluate(self) -> dict[str, Any]:
         """Run evaluate and return results."""
         if self._delegate is None:
             self._init_backend()

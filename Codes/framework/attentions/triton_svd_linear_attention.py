@@ -34,7 +34,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -71,8 +71,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos.dim() == 2:
         cos = cos.unsqueeze(0).unsqueeze(0)
         sin = sin.unsqueeze(0).unsqueeze(0)
@@ -486,7 +486,7 @@ class _TritonLinearAttentionAutogradFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx: Any, grad_out: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None, None]:
+    def backward(ctx: Any, grad_out: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, None, None, None]:
         q, k, v = ctx.saved_tensors
         is_causal = ctx.is_causal
         activation_mode = ctx.activation_mode
@@ -664,7 +664,7 @@ class SVDLinearProjection(nn.Module):
         return triton_dispatch(self.triton_kernel, x, u, v, bias=b)
 
     @classmethod
-    def from_pretrained_linear(cls, linear: nn.Linear, rank: int = 64) -> "SVDLinearProjection":
+    def from_pretrained_linear(cls, linear: nn.Linear, rank: int = 64) -> SVDLinearProjection:
         r"""
         Initializes low-rank factors directly from pretrained weights via Truncated SVD:
         W = U_full @ diag(S) @ V_full^T
@@ -705,14 +705,14 @@ class TritonSVDLinearAttention(BaseAttention):
     def __init__(
         self,
         config: Any = None,
-        embed_dim: Optional[int] = None,
-        num_heads: Optional[int] = None,
-        num_kv_heads: Optional[int] = None,
-        rank: Optional[int] = 64,
+        embed_dim: int | None = None,
+        num_heads: int | None = None,
+        num_kv_heads: int | None = None,
+        rank: int | None = 64,
         is_decoder: bool = False,
         activation_mode: str = "elu",
         eps: float = 1e-6,
-        pretrained_attn: Optional[nn.Module] = None,
+        pretrained_attn: nn.Module | None = None,
         **kwargs: Any,
     ):
         super().__init__()
@@ -804,8 +804,8 @@ class TritonSVDLinearAttention(BaseAttention):
                         self.out_proj.bias.data.copy_(bias_o.data)
 
         # 2. RoBERTa / BERT nested self-attention
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            s = getattr(src, "self")
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
+            s = src.self
             mapping = [("q_proj", "query"), ("k_proj", "key"), ("v_proj", "value")]
             for target_name, sub_name in mapping:
                 target_mod = getattr(self, target_name)
@@ -817,7 +817,7 @@ class TritonSVDLinearAttention(BaseAttention):
                     b_data = b.data if b is not None else None
                     self._copy_single_proj(target_mod, w, b_data)
 
-            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+            if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
                 base_out = getattr(out_mod, "base_layer", out_mod)
                 self.out_proj.weight.data.copy_(base_out.weight.data)
@@ -852,7 +852,7 @@ class TritonSVDLinearAttention(BaseAttention):
                                 self._copy_single_proj(target_mod, w, b_data)
                             break
 
-    def _copy_single_proj(self, target_mod: nn.Module, w: torch.Tensor, b: Optional[torch.Tensor]) -> None:
+    def _copy_single_proj(self, target_mod: nn.Module, w: torch.Tensor, b: torch.Tensor | None) -> None:
         """Decomposes weights into low-rank SVD factors or copies directly."""
         if isinstance(target_mod, SVDLinearProjection):
             with torch.no_grad():
@@ -877,13 +877,13 @@ class TritonSVDLinearAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
-        position_ids: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
+        attention_mask: torch.Tensor | None = None,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        position_ids: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[Any]]:
+    ) -> tuple[torch.Tensor, Any | None]:
         B, N, C = hidden_states.shape
 
         if torch.is_autocast_enabled() and hidden_states.is_cuda:
@@ -891,7 +891,7 @@ class TritonSVDLinearAttention(BaseAttention):
             hidden_states = hidden_states.to(ac_dtype)
 
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
 
         # 1. Project Q, K, V via SVD low-rank factorized projections
         q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
@@ -956,7 +956,7 @@ def inject_triton_svd_linear_attention(
     rank: int = 64,
     copy_weights: bool = True,
     **kwargs: Any,
-) -> Optional[nn.Module]:
+) -> nn.Module | None:
     """Safe factory function to inject TritonSVDLinearAttention into a model."""
     from framework.core.attention_utils import inject_attention
     return inject_attention(model, "triton_svd_linear_attention", rank=rank, copy_weights=copy_weights, **kwargs)

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import math
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -53,8 +53,8 @@ class GreCoDeCLinear(nn.Module):
         bias: bool = True,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -106,7 +106,7 @@ class GreCoDeCLinear(nn.Module):
                 F.linear(x_flat.float(), self.lora_A), self.lora_B
             ).to(out.dtype)
 
-        out = out 
+        out = out
         return out.view(*orig_shape[:-1], self.out_features)
 
     def get_weight(self) -> torch.Tensor:
@@ -116,12 +116,12 @@ class GreCoDeCLinear(nn.Module):
     @classmethod
     def from_linear(
         cls,
-        linear: Union[nn.Linear, Any],
+        linear: nn.Linear | Any,
         rank: int = 16,
         max_iter: int = 15,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-    ) -> "GreCoDeCLinear":
+    ) -> GreCoDeCLinear:
         """Construct GreCoDeCLinear by greedy coordinate descent low-rank factorization."""
         target_mod = getattr(linear, "base_layer", linear)
         cls_name = target_mod.__class__.__name__.lower()
@@ -219,7 +219,7 @@ class GreCoDeCCompressor(BaseCompressor):
 
     def __init__(
         self,
-        model: Optional[nn.Module] = None,
+        model: nn.Module | None = None,
         rank: int = 16,
         max_iter: int = 15,
         lora_r: int = 0,
@@ -228,12 +228,12 @@ class GreCoDeCCompressor(BaseCompressor):
         target_attention_only: bool = False,
         fallback_to_original: bool = True,
         skip_attention_qkv: bool = False,
-        cfg: Optional[Any] = None,
-        target_layers: Optional[List[str]] = None,
+        cfg: Any | None = None,
+        target_layers: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model if model is not None else nn.Identity(), name="grecodec", **kwargs)
-        cfg = cfg or kwargs.get("comp_config", None)
+        cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
         self.rank = int(_cfg_get(cfg, "grecodec_rank", _cfg_get(cfg, "rank", rank)))
@@ -254,10 +254,10 @@ class GreCoDeCCompressor(BaseCompressor):
         self.skip_attention_qkv = bool(_cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv))
         self.target_layers = target_layers or _cfg_get(cfg, "target_layers", None)
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         if not self.skip_attention_qkv:
@@ -297,7 +297,7 @@ class GreCoDeCCompressor(BaseCompressor):
             return any(t in name for t in self.target_layers)
         return True
 
-    def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         """Compress linear layers using GreCoDeC decomposition."""
         if model is not None:
             self.model = model
@@ -452,10 +452,10 @@ class GreCoDeCCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("grecodec_compressor_factory")
 def grecodec_compressor_factory(
     model: nn.Module,
-    comp_config: Optional[Any] = None,
-    rank: Optional[int] = None,
+    comp_config: Any | None = None,
+    rank: int | None = None,
     **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """Factory function for GreCoDeC compressor."""
     effective_rank = rank or _cfg_get(comp_config, "grecodec_rank", _cfg_get(comp_config, "rank", 16))
     max_iter = _cfg_get(comp_config, "grecodec_max_iter", _cfg_get(comp_config, "max_iter", 15))

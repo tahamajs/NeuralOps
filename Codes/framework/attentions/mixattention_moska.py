@@ -6,7 +6,7 @@ Production-Hardened (v2).
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -14,7 +14,7 @@ import torch.nn.functional as F
 
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -151,13 +151,13 @@ class MixAttentionMoSKA(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = 32,
+        config: Any | None = None,
+        rank: int | None = 32,
         fasa_keep_ratio: float = 0.5,
-        pretrained_attn: Optional[nn.Module] = None,
+        pretrained_attn: nn.Module | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         # FASA-FIX-04: config None-safe
@@ -301,7 +301,7 @@ class MixAttentionMoSKA(BaseAttention):
         except Exception:
             pass
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
@@ -366,7 +366,7 @@ class MixAttentionMoSKA(BaseAttention):
                             bias.data if bias is not None else None,
                         )
 
-        if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense") and extracted["o"][0] is None:
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             d = getattr(src.output.dense, "base_layer", src.output.dense)
             if hasattr(d, "weight"):
                 bias = getattr(d, "bias", None)
@@ -402,11 +402,7 @@ class MixAttentionMoSKA(BaseAttention):
         is_nested = False
         if cls_name in ("BertSelfAttention", "RobertaSelfAttention",
                          "XLMRobertaSelfAttention", "ElectraSelfAttention",
-                         "DebertaSelfAttention"):
-            is_nested = True
-        elif hasattr(src, "self") and hasattr(src, "output"):
-            is_nested = True
-        elif hasattr(src, "query") and not has_out:
+                         "DebertaSelfAttention") or hasattr(src, "self") and hasattr(src, "output") or hasattr(src, "query") and not has_out:
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
@@ -499,8 +495,8 @@ class MixAttentionMoSKA(BaseAttention):
         self,
         k: torch.Tensor,
         v: torch.Tensor,
-        mask_2d: Optional[torch.Tensor] = None,
-    ) -> Tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor], Optional[torch.Tensor]]:
+        mask_2d: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor | None, torch.Tensor | None]:
         B, H, L, D_h = k.shape
         if L <= 8:
             return k, v, mask_2d, None
@@ -538,9 +534,9 @@ class MixAttentionMoSKA(BaseAttention):
     # ------------------------------------------------------------------
     @staticmethod
     def _normalize_valid_mask(
-        attention_mask: Optional[torch.Tensor],
+        attention_mask: torch.Tensor | None,
         B: int, L: int, device: torch.device,
-    ) -> Optional[torch.Tensor]:
+    ) -> torch.Tensor | None:
         """Return a bool (B, L) mask where True = valid."""
         if attention_mask is None:
             return None
@@ -580,20 +576,20 @@ class MixAttentionMoSKA(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
     ):
         # FASA-FIX-07: fold `mask` kwarg into attention_mask
-        mask = kwargs.get("mask", None)
+        mask = kwargs.get("mask")
         if attention_mask is None and mask is not None:
             attention_mask = mask
 
@@ -612,7 +608,7 @@ class MixAttentionMoSKA(BaseAttention):
         v = self.W_v(kv_input).view(B, L_kv, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
 
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
@@ -634,7 +630,7 @@ class MixAttentionMoSKA(BaseAttention):
             not is_causal
             and not is_cross
             and past_key_value is None
-            and L == L_kv
+            and L_kv == L
         )
 
         if not use_pruning:
@@ -733,7 +729,7 @@ class MixAttentionMoSKA(BaseAttention):
         return output, final_attn_weights
 
     # ------------------------------------------------------------------
-    def storage_bytes(self) -> Dict[str, int]:
+    def storage_bytes(self) -> dict[str, int]:
         def _sz(p):
             if p is None:
                 return 0
@@ -763,7 +759,7 @@ def inject_mixattention_moska(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):
@@ -773,7 +769,7 @@ def inject_mixattention_moska(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

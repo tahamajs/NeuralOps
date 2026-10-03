@@ -36,7 +36,7 @@ Fixes in v3:
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,6 @@ import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
-from framework.core.triton_kernels import triton_dispatch
 
 try:
     from framework.core.triton_kernels.gla_scan import gla_scan_triton, MAX_REGISTER_DIM
@@ -290,15 +289,15 @@ class GatedLinearAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        d_model: Optional[Union[int, Any]] = None,
-        num_heads: Optional[int] = None,
-        head_dim: Optional[int] = None,
-        num_kv_heads: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = None,
+        d_model: int | Any | None = None,
+        num_heads: int | None = None,
+        head_dim: int | None = None,
+        num_kv_heads: int | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         chunk_size: int = 128,
         **kwargs: Any,
     ) -> None:
@@ -307,7 +306,7 @@ class GatedLinearAttention(BaseAttention):
         except TypeError:
             super().__init__(config)
 
-        src_attn = kwargs.get("pretrained_attn", None) or kwargs.get("old_attn", None)
+        src_attn = kwargs.get("pretrained_attn") or kwargs.get("old_attn")
 
         # Merge explicit args into kwargs for resolver
         _kw = dict(kwargs)
@@ -437,10 +436,8 @@ class GatedLinearAttention(BaseAttention):
 
         cls_name = src.__class__.__name__
         is_nested = False
-        if (hasattr(src, "self") and hasattr(getattr(src, "self"), "query")
-                and hasattr(src, "output") and hasattr(getattr(src, "output"), "dense")):
-            is_nested = True
-        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
+        if (hasattr(src, "self") and hasattr(src.self, "query")
+                and hasattr(src, "output") and hasattr(src.output, "dense")) or (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
                             "XLMRobertaSelfAttention", "ElectraSelfAttention",
                             "DebertaSelfAttention")
               or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())):
@@ -486,7 +483,7 @@ class GatedLinearAttention(BaseAttention):
                     extracted["o"] = (ow, bo.data.clone() if bo is not None else None)
 
         # Nested BERT / RoBERTa
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 m = getattr(s, sub, None)
@@ -744,15 +741,15 @@ class GatedLinearAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -762,7 +759,7 @@ class GatedLinearAttention(BaseAttention):
         B, L, D = hidden_states.shape
 
         # GLA3-FIX-05
-        if D != self.dim:
+        if self.dim != D:
             raise RuntimeError(
                 f"GLA: hidden_states has last dim {D}, but module expects {self.dim}. "
                 f"num_heads={self.num_heads}, head_dim={self.head_dim}."
@@ -798,7 +795,7 @@ class GatedLinearAttention(BaseAttention):
         z = self.z_proj(hidden_states)
 
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
@@ -867,7 +864,7 @@ class GatedLinearAttention(BaseAttention):
         return out, None
 
     # ------------------------------------------------------------------
-    def storage_bytes(self) -> Dict[str, int]:
+    def storage_bytes(self) -> dict[str, int]:
         def _sz(p):
             if isinstance(p, (nn.Parameter, torch.Tensor)):
                 return p.numel() * p.element_size()
@@ -897,7 +894,7 @@ def inject_gated_linear(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):

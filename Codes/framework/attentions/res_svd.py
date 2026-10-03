@@ -8,8 +8,7 @@ where B A is initialized from the top-k residual singular directions of W - W_ba
 from __future__ import annotations
 
 import logging
-import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -17,7 +16,7 @@ import torch.nn.functional as F
 
 from framework.compression_engine.res_svd import ResSVDLinear
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -43,7 +42,7 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -102,15 +101,15 @@ class ResSVDAttention(BaseAttention):
     def __init__(
         self,
         config: Any,
-        base_rank: Optional[int] = None,
-        residual_rank: Optional[int] = None,
-        rank: Optional[int] = 16,
+        base_rank: int | None = None,
+        residual_rank: int | None = None,
+        rank: int | None = 16,
         scaling: float = 1.0,
         factorize_base: bool = True,
         freeze_base: bool = True,
-        dropout: Optional[float] = None,
-        pretrained_attn: Optional[nn.Module] = None,
-        is_decoder: Optional[bool] = None,
+        dropout: float | None = None,
+        pretrained_attn: nn.Module | None = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         effective_rank = int(rank) if rank is not None else 16
@@ -131,7 +130,7 @@ class ResSVDAttention(BaseAttention):
                                       kwargs.get("num_key_value_heads", self.num_heads)))
 
         cfg_head_dim = getattr(config, "head_dim", None)
-        kw_head_dim = kwargs.get("head_dim", None)
+        kw_head_dim = kwargs.get("head_dim")
         inferred = cfg_head_dim or kw_head_dim
         if inferred is None and pretrained_attn is not None:
             for attr in ("q_proj", "query", "q_lin"):
@@ -253,7 +252,7 @@ class ResSVDAttention(BaseAttention):
     # ------------------------------------------------------------------
     def _init_from_weight(
         self, target: ResSVDLinear,
-        w: torch.Tensor, b: Optional[torch.Tensor],
+        w: torch.Tensor, b: torch.Tensor | None,
     ) -> None:
         """Build a fresh ResSVDLinear from (w, b) and copy its state into target."""
         with torch.no_grad():
@@ -290,10 +289,8 @@ class ResSVDAttention(BaseAttention):
         cls_name = src.__class__.__name__
         has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
-        if (hasattr(src, "self") and hasattr(getattr(src, "self"), "query")
-                and hasattr(src, "output") and hasattr(getattr(src, "output"), "dense")):
-            is_nested = True
-        elif (cls_name in ["BertSelfAttention", "RobertaSelfAttention",
+        if (hasattr(src, "self") and hasattr(src.self, "query")
+                and hasattr(src, "output") and hasattr(src.output, "dense")) or (cls_name in ["BertSelfAttention", "RobertaSelfAttention",
                            "XLMRobertaSelfAttention", "ElectraSelfAttention",
                            "DebertaSelfAttention"]
               or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
@@ -302,7 +299,7 @@ class ResSVDAttention(BaseAttention):
         # RES-09: set consistently
         self.is_nested_encoder = bool(is_nested)
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
@@ -348,8 +345,8 @@ class ResSVDAttention(BaseAttention):
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
         # BERT / RoBERTa nested
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            s = getattr(src, "self")
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
+            s = src.self
             for proj_key, sub_name in (("q", "query"), ("k", "key"), ("v", "value")):
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
@@ -357,7 +354,7 @@ class ResSVDAttention(BaseAttention):
                         mod.weight.data.clone(),
                         mod.bias.data.clone() if mod.bias is not None else None,
                     )
-            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+            if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
                 extracted["o"] = (
                     out_mod.weight.data.clone(),
@@ -456,9 +453,9 @@ class ResSVDAttention(BaseAttention):
     # ------------------------------------------------------------------
     @staticmethod
     def _prepare_valid_mask(
-        attention_mask: Optional[torch.Tensor],
+        attention_mask: torch.Tensor | None,
         B: int, N: int, device: torch.device,
-    ) -> Optional[torch.Tensor]:
+    ) -> torch.Tensor | None:
         if attention_mask is None:
             return None
         if attention_mask.dim() == 2:
@@ -489,15 +486,15 @@ class ResSVDAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         layer_idx: int = 0,
         *args: Any,
         **kwargs: Any,
@@ -519,7 +516,7 @@ class ResSVDAttention(BaseAttention):
 
         # RES-05: RoPE with past_len offset
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
             past_len = 0
@@ -597,8 +594,8 @@ def inject_res_svd(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
-    target_layer_idx: Optional[int] = None,
+    old_attn: nn.Module | None = None,
+    target_layer_idx: int | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):
@@ -608,7 +605,7 @@ def inject_res_svd(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

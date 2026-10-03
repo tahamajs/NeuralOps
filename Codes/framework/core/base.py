@@ -4,7 +4,7 @@ Base classes for attention modules and compressors.
 
 import logging
 from abc import abstractmethod
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch.nn as nn
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class BaseAttention(nn.Module):
     """Every custom attention module must inherit from this."""
 
-    def __init__(self, config: Optional[Any] = None, rank: Optional[int] = None, **kwargs: Any) -> None:
+    def __init__(self, config: Any | None = None, rank: int | None = None, **kwargs: Any) -> None:
         super().__init__()
         self.config = config
         self.rank = rank
@@ -39,7 +39,7 @@ class BaseAttention(nn.Module):
         head_mask=None,
         output_attentions=False,
         **kwargs,
-    ) -> Tuple[Any, Optional[Any]]:
+    ) -> tuple[Any, Any | None]:
         """Must return (output, attention_weights_or_None)."""
         raise NotImplementedError("Subclasses of BaseAttention must implement forward()")
 
@@ -50,13 +50,13 @@ class BaseAttention(nn.Module):
         import torch
         from framework.core.adapters import UniversalAdapter
         adapter = UniversalAdapter()
-        
+
         try:
             w_q, b_q = adapter.get_weight_bias(old_attn, "q")
             w_k, b_k = adapter.get_weight_bias(old_attn, "k")
             w_v, b_v = adapter.get_weight_bias(old_attn, "v")
             w_o, b_o = adapter.get_weight_bias(old_attn, "o")
-            
+
             with torch.no_grad():
                 dim = self.hidden_size
                 for q_name in ["W_q", "q_proj", "q_lin", "Wq", "query", "q"]:
@@ -66,7 +66,7 @@ class BaseAttention(nn.Module):
                             mod.weight.copy_(w_q)
                             if b_q is not None and getattr(mod, "bias", None) is not None:
                                 mod.bias.copy_(b_q)
-                                
+
                 for k_name in ["W_k", "k_proj", "k_lin", "Wk", "key", "k"]:
                     if hasattr(self, k_name):
                         mod = getattr(self, k_name)
@@ -90,7 +90,7 @@ class BaseAttention(nn.Module):
                             mod.weight.copy_(w_o)
                             if b_o is not None and getattr(mod, "bias", None) is not None:
                                 mod.bias.copy_(b_o)
-                                
+
                 # Handle fused in_proj
                 if hasattr(self, "in_proj") and hasattr(self.in_proj, "weight"):
                     if self.in_proj.weight.shape == torch.Size([dim * 2, dim]):
@@ -127,7 +127,7 @@ class BaseCompressor:
         return self.model(*args, **kwargs)
 
     @abstractmethod
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Return (compressed_model, statistics)."""
         raise NotImplementedError("Subclasses of BaseCompressor must implement compress()")
 
@@ -135,7 +135,7 @@ class BaseCompressor:
         """ count params."""
         return sum(p.numel() for p in model.parameters())
 
-    def get_compression_stats(self) -> Dict[str, Any]:
+    def get_compression_stats(self) -> dict[str, Any]:
         """Return the compression stats."""
         compressed = self._count_params(self.model)
         orig = self._original_params

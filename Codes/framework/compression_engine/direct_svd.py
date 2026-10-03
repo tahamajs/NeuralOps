@@ -7,7 +7,7 @@ Registered as 'direct_svd'. Production hardened for multi-architecture compatibi
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -16,7 +16,6 @@ from framework.compression_engine.aa_svd_compressor import SVDLinear
 from framework.core.base import BaseCompressor
 from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
-from framework.core.pruning_utils import adaptive_max_error
 from framework.utils.compat import should_compress_linear, get_dynamic_compression_rank
 
 logger = logging.getLogger(__name__)
@@ -64,9 +63,9 @@ class DirectSVDCompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        rank: Optional[int] = 32,
+        rank: int | None = 32,
         min_rank: int = 16,
-        rank_ratio: Optional[float] = None,
+        rank_ratio: float | None = None,
         max_error: float = 0.35,
         fallback_to_original: bool = True,
         protect_critical: bool = True,
@@ -75,12 +74,12 @@ class DirectSVDCompressor(BaseCompressor):
         skip_attention_qkv: bool = True,
         target_attention_only: bool = False,
         max_retries: int = 2,
-        target_modules: Optional[List[str]] = None,
-        cfg: Optional[Any] = None,
+        target_modules: list[str] | None = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="direct_svd", **kwargs)
-        cfg_obj = cfg if cfg is not None else kwargs.get("comp_config", None)
+        cfg_obj = cfg if cfg is not None else kwargs.get("comp_config")
         self.cfg = cfg_obj
 
         rank = _cfg_get(cfg_obj, "direct_svd_rank", _cfg_get(cfg_obj, "svd_rank", _cfg_get(cfg_obj, "rank", rank)))
@@ -117,11 +116,11 @@ class DirectSVDCompressor(BaseCompressor):
         self.max_retries = int(max_retries)
         self.target_modules = target_modules
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_ranks: Dict[str, int] = {}
-        self.layer_errors: Dict[str, float] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_ranks: dict[str, int] = {}
+        self.layer_errors: dict[str, float] = {}
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         if not self.skip_attention_qkv:
@@ -165,7 +164,7 @@ class DirectSVDCompressor(BaseCompressor):
             return any(t in name for t in self.target_modules)
         return True
 
-    def _determine_rank(self, in_f: int, out_f: int, target_r: Optional[int]) -> int:
+    def _determine_rank(self, in_f: int, out_f: int, target_r: int | None) -> int:
         """Compute target rank guaranteeing parameter reduction and strict bounds."""
         max_reduction_r = max(1, (in_f * out_f) // (in_f + out_f) - 1)
         max_r = max(1, min(in_f - 1, out_f - 1, max_reduction_r))
@@ -191,8 +190,8 @@ class DirectSVDCompressor(BaseCompressor):
     def compress_linear(
         self,
         layer: nn.Module,
-        rank: Optional[int] = None,
-    ) -> Tuple[Optional[SVDLinear], float, int]:
+        rank: int | None = None,
+    ) -> tuple[SVDLinear | None, float, int]:
         """
         Decompose a single linear or Conv1D layer via SVD with symmetric factor distribution.
         Returns: (svd_layer, relative_reconstruction_error, chosen_rank)
@@ -223,7 +222,7 @@ class DirectSVDCompressor(BaseCompressor):
             logger.warning("DirectSVD SVD computation failed: %s", e)
             return None, 1.0, 0
 
-        best_svd_layer: Optional[SVDLinear] = None
+        best_svd_layer: SVDLinear | None = None
         best_err = 1.0
         chosen_r = current_r
 
@@ -287,7 +286,7 @@ class DirectSVDCompressor(BaseCompressor):
 
         return best_svd_layer, best_err, chosen_r
 
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         """Compress target linear and Conv1D layers across the model."""
         self.compressed_layers = []
         self.fallback_layers = []

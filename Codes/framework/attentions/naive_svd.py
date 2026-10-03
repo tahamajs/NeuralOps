@@ -8,14 +8,10 @@ Standard truncated SVD approximation W ~ U[:, :r] @ diag(S[:r]) @ V^T[:r, :].
 from __future__ import annotations
 
 import logging
-import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
-import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
-from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.attentions.minimal_svd import MinimalSVDAttention
 
@@ -35,15 +31,15 @@ class NaiveSVDAttention(MinimalSVDAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        model_config: Optional[Any] = None,
+        config: Any | None = None,
+        model_config: Any | None = None,
         energy: float = 1.0,
         dropout: float = 0.1,
-        pretrained_attn: Optional[nn.Module] = None,
-        rank: Optional[int] = None,
+        pretrained_attn: nn.Module | None = None,
+        rank: int | None = None,
         lora_rank: int = 0,  # Zero recovery parameters for naive baseline
         lora_alpha: float = 1.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -65,9 +61,9 @@ class NaiveSVDAttention(MinimalSVDAttention):
 def inject_naive_svd(
     layer: nn.Module,
     comp_config: Any = None,
-    old_attn: Optional[nn.Module] = None,
-    model_config: Optional[Any] = None,
-) -> Optional[nn.Module]:
+    old_attn: nn.Module | None = None,
+    model_config: Any | None = None,
+) -> nn.Module | None:
     """Factory hook to instantiate and inject NaiveSVDAttention into transformer layers."""
     rank = getattr(comp_config, "rank", 64) if comp_config else 64
     new_attn = NaiveSVDAttention(

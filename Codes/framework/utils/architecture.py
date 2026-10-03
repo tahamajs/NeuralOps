@@ -1,7 +1,7 @@
 # framework/utils/architecture.py
-from typing import Any, Dict, List
+from typing import Any
 
-ARCH_PATTERNS: Dict[str, List[str]] = {
+ARCH_PATTERNS: dict[str, list[str]] = {
     "bert": [
         "attention.self.query",
         "attention.self.key",
@@ -89,12 +89,12 @@ def detect_architecture(model_name: str) -> str:
     return "bert"
 
 
-def get_layer_patterns(arch: str) -> List[str]:
+def get_layer_patterns(arch: str) -> list[str]:
     """Return the layer patterns."""
     return ARCH_PATTERNS.get(arch, ARCH_PATTERNS["bert"])
 
 
-def get_compression_targets(model_name: str, include_ffn: bool = True) -> List[str]:
+def get_compression_targets(model_name: str, include_ffn: bool = True) -> list[str]:
     """Return the compression targets."""
     arch = detect_architecture(model_name)
     patterns = get_layer_patterns(arch)
@@ -104,7 +104,7 @@ def get_compression_targets(model_name: str, include_ffn: bool = True) -> List[s
     return patterns
 
 
-def get_model_info(model_name: str) -> Dict[str, Any]:
+def get_model_info(model_name: str) -> dict[str, Any]:
     """Return the model info."""
     arch = detect_architecture(model_name)
     default_configs = {

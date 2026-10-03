@@ -6,10 +6,9 @@ Bonsai: Iterative Magnitude and Taylor Pruning (IMP) with Gradient Descent Recov
 
 from __future__ import annotations
 
-import copy
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -59,8 +58,8 @@ class BonsaiPrunedLoRALinear(nn.Module):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         freeze_base: bool = True,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -130,13 +129,13 @@ class BonsaiPrunedLoRALinear(nn.Module):
     @classmethod
     def from_linear(
         cls,
-        linear: Union[nn.Linear, Any],
+        linear: nn.Linear | Any,
         pruned_weight: torch.Tensor,
         mask: torch.Tensor,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         freeze_base: bool = True,
-    ) -> "BonsaiPrunedLoRALinear":
+    ) -> BonsaiPrunedLoRALinear:
         out_features, in_features = pruned_weight.shape
         has_bias = getattr(linear, "bias", None) is not None and linear.bias is not None
 
@@ -178,7 +177,7 @@ class BonsaiPruner(BaseCompressor):
         recovery_steps: int = 3,
         recovery_lr: float = 1e-3,
         structured_24: bool = False,
-        block_size: Tuple[int, int] = (4, 4),
+        block_size: tuple[int, int] = (4, 4),
         protect_cls: bool = True,
         skip_attention_qkv: bool = True,
         target_attention_only: bool = False,
@@ -187,20 +186,20 @@ class BonsaiPruner(BaseCompressor):
         lora_alpha: float = 1.0,
         adaptive_sparsity: bool = False,
         min_numel: int = 16,
-        max_error: Optional[float] = None,
+        max_error: float | None = None,
         fallback_to_original: bool = True,
         recalibrate_ln: bool = True,
-        tokenizer: Optional[Any] = None,
-        calibration_loader: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
-        device: Optional[Union[str, torch.device]] = None,
-        cfg: Optional[Any] = None,
+        tokenizer: Any | None = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
+        cfg: Any | None = None,
         max_recovery_steps: int = 32,       # BN-FIX-05
         max_step_size: float = 0.01,        # BN-FIX-06
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="bonsai", **kwargs)
-        cfg_obj = cfg or kwargs.get("comp_config", None)
+        cfg_obj = cfg or kwargs.get("comp_config")
 
         self.sparsity = max(0.0, min(float(sparsity or getattr(cfg_obj, "sparsity", 0.5)), 0.95))
         self.steps = max(1, int(steps or getattr(cfg_obj, "steps", 8)))
@@ -224,9 +223,9 @@ class BonsaiPruner(BaseCompressor):
         self.max_step_size = float(max_step_size)
 
         if max_error is not None:
-            self.max_error: Optional[float] = float(max_error)
-        elif hasattr(cfg_obj, "max_error") and getattr(cfg_obj, "max_error") is not None:
-            self.max_error = float(getattr(cfg_obj, "max_error"))
+            self.max_error: float | None = float(max_error)
+        elif hasattr(cfg_obj, "max_error") and cfg_obj.max_error is not None:
+            self.max_error = float(cfg_obj.max_error)
         else:
             self.max_error = adaptive_max_error(int((1.0 - self.sparsity) * 768), 768, 768, "distilbert")
 
@@ -255,13 +254,13 @@ class BonsaiPruner(BaseCompressor):
         else:
             self.target_device = default_dev
 
-        self.pruned_layers: List[str] = []
-        self.protected_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_sparsities: Dict[str, float] = {}
-        self.stats: Dict[str, Any] = {}
+        self.pruned_layers: list[str] = []
+        self.protected_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_sparsities: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
         self._compressed_params: int = 0
 
     # ------------------------------------------------------------------
@@ -285,7 +284,7 @@ class BonsaiPruner(BaseCompressor):
         "c_attn",
     )
 
-    def _is_protected_layer(self, name: str, module: Optional[nn.Module] = None) -> bool:
+    def _is_protected_layer(self, name: str, module: nn.Module | None = None) -> bool:
         """
         A layer is protected if ANY of the following is true:
           (a) protect_cls=True AND name matches protect tokens.
@@ -325,9 +324,9 @@ class BonsaiPruner(BaseCompressor):
         return False
 
     # ------------------------------------------------------------------
-    def _collect_activations(self) -> Dict[str, torch.Tensor]:
+    def _collect_activations(self) -> dict[str, torch.Tensor]:
         self.model.eval()
-        activations: Dict[str, List[torch.Tensor]] = {}
+        activations: dict[str, list[torch.Tensor]] = {}
         hooks = []
 
         def make_hook(name: str):
@@ -397,7 +396,7 @@ class BonsaiPruner(BaseCompressor):
             for h in hooks:
                 h.remove()
 
-        aggregated: Dict[str, torch.Tensor] = {}
+        aggregated: dict[str, torch.Tensor] = {}
         for name, act_list in activations.items():
             if act_list:
                 aggregated[name] = torch.cat(
@@ -406,7 +405,7 @@ class BonsaiPruner(BaseCompressor):
         return aggregated
 
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         try:
             activations_map = self._collect_activations()
         except Exception as e:
@@ -452,7 +451,7 @@ class BonsaiPruner(BaseCompressor):
                 continue
 
             W = W0.clone()
-            act = activations_map.get(name, None)
+            act = activations_map.get(name)
             X = None
             if act is not None and act.numel() > 0:
                 X = act.to(device).float()
@@ -653,7 +652,7 @@ def bonsai_factory(
     return_stats: bool = False,
     return_tuple: bool = False,
     **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """Factory for Bonsai pruner."""
     return_both = kwargs.pop("return_both", False)
 

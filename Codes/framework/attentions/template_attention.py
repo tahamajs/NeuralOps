@@ -7,7 +7,7 @@ GPT-2 (Causal Decoder with Conv1D), Qwen/LLaMA (GQA + RoPE).
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -15,7 +15,7 @@ import torch.nn.functional as F
 
 from framework.core.adapters import UniversalAdapter
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """TA-02/TA-11/TA-12: dtype-safe, past_len-aware RoPE."""
     if cos is None or sin is None:
         return q, k
@@ -110,8 +110,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 0,
         lora_alpha: float = 1.0,
         freeze_base: bool = True,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ):
         super().__init__()
         self.in_features = in_features
@@ -173,12 +173,12 @@ class YourCustomAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        pretrained_attn: Optional[nn.Module] = None,
+        config: Any | None = None,
+        rank: int | None = None,
+        pretrained_attn: nn.Module | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         try:
@@ -186,7 +186,7 @@ class YourCustomAttention(BaseAttention):
         except TypeError:
             super().__init__(config)
 
-        src = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn", None)
+        src = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn")
 
         # -------- hidden_size inference --------
         dim = None
@@ -229,7 +229,7 @@ class YourCustomAttention(BaseAttention):
         if config is not None and not isinstance(config, int):
             head_dim = _cfg_get(config, "head_dim", None)
         if head_dim is None:
-            head_dim = kwargs.get("head_dim", None)
+            head_dim = kwargs.get("head_dim")
         if head_dim is None:
             head_dim = self.hidden_size // self.num_heads
         self.head_dim: int = int(head_dim)
@@ -302,7 +302,7 @@ class YourCustomAttention(BaseAttention):
 
         # TA-06: rank_proj respects device/dtype
         if rank is not None and rank > 0:
-            self.rank_proj: Optional[nn.Linear] = nn.Linear(
+            self.rank_proj: nn.Linear | None = nn.Linear(
                 self.hidden_size, rank, bias=False,
             )
             nn.init.zeros_(self.rank_proj.weight)
@@ -484,15 +484,15 @@ class YourCustomAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         layer_idx: int = 0,
         *args: Any,
         **kwargs: Any,
@@ -512,7 +512,7 @@ class YourCustomAttention(BaseAttention):
 
         # TA-02: RoPE with past_len offset
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
             past_len = 0
@@ -535,7 +535,7 @@ class YourCustomAttention(BaseAttention):
         # TA-05: unify mask
         eff_mask = encoder_attention_mask if encoder_attention_mask is not None else attention_mask
         if eff_mask is None:
-            eff_mask = kwargs.get("attn_mask", None)
+            eff_mask = kwargs.get("attn_mask")
 
         valid_mask_2d = None
         if eff_mask is not None:
@@ -663,7 +663,7 @@ def inject_custom_attn(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):
@@ -673,7 +673,7 @@ def inject_custom_attn(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

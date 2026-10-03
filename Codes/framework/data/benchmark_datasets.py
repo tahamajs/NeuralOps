@@ -7,10 +7,10 @@ tokenized PyTorch DataLoader creation, and offline synthetic fallbacks.
 from __future__ import annotations
 
 import logging
-import os
 import random
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
+from dataclasses import dataclass
+from typing import Any
+from collections.abc import Callable
 
 import torch
 from torch.utils.data import DataLoader, Dataset
@@ -26,13 +26,13 @@ logger = logging.getLogger(__name__)
 class BenchmarkDatasetInfo:
     """Metadata describing a benchmark dataset and its default loading strategy."""
     name: str
-    aliases: List[str]
+    aliases: list[str]
     category: str  # e.g., "language_modeling", "reasoning", "code", "multi_choice", "glue"
     default_hf_path: str
-    default_subset: Optional[str] = None
+    default_subset: str | None = None
     default_split: str = "validation"
-    text_formatter: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None
-    synthetic_generator: Optional[Callable[[int, int], List[Dict[str, Any]]]] = None
+    text_formatter: Callable[[dict[str, Any]], dict[str, Any]] | None = None
+    synthetic_generator: Callable[[int, int], list[dict[str, Any]]] | None = None
     description: str = ""
 
 
@@ -40,7 +40,7 @@ class BenchmarkDatasetInfo:
 # Synthetic Data Generators (Offline Fallback)
 # -----------------------------------------------------------------------------
 
-def _generate_synthetic_wikitext(num_samples: int, seed: int = 42) -> List[Dict[str, Any]]:
+def _generate_synthetic_wikitext(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
     rng = random.Random(seed)
     topics = [
         ("Valkyria Chronicles III", "is a tactical role-playing video game developed by Sega and Media.Vision for the PlayStation Portable."),
@@ -57,7 +57,7 @@ def _generate_synthetic_wikitext(num_samples: int, seed: int = 42) -> List[Dict[
     return samples
 
 
-def _generate_synthetic_c4(num_samples: int, seed: int = 42) -> List[Dict[str, Any]]:
+def _generate_synthetic_c4(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
     rng = random.Random(seed)
     domains = ["news-digest.org", "tech-insights.io", "culinary-arts.net", "travel-chronicles.com"]
     samples = []
@@ -72,7 +72,7 @@ def _generate_synthetic_c4(num_samples: int, seed: int = 42) -> List[Dict[str, A
     return samples
 
 
-def _generate_synthetic_ptb(num_samples: int, seed: int = 42) -> List[Dict[str, Any]]:
+def _generate_synthetic_ptb(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
     templates = [
         "no it was n't black monday <unk> but the stock market did take a sharp dive yesterday",
         "the company said sales rose N % to $ N million from $ N million in the prior year",
@@ -87,7 +87,7 @@ def _generate_synthetic_ptb(num_samples: int, seed: int = 42) -> List[Dict[str, 
     return samples
 
 
-def _generate_synthetic_pg19(num_samples: int, seed: int = 42) -> List[Dict[str, Any]]:
+def _generate_synthetic_pg19(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
     samples = []
     for i in range(num_samples):
         chapters = []
@@ -102,7 +102,7 @@ def _generate_synthetic_pg19(num_samples: int, seed: int = 42) -> List[Dict[str,
     return samples
 
 
-def _generate_synthetic_gsm8k(num_samples: int, seed: int = 42) -> List[Dict[str, Any]]:
+def _generate_synthetic_gsm8k(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
     samples = []
     for i in range(num_samples):
         apples_per_basket = 5 + (i % 6)
@@ -116,7 +116,7 @@ def _generate_synthetic_gsm8k(num_samples: int, seed: int = 42) -> List[Dict[str
     return samples
 
 
-def _generate_synthetic_humaneval(num_samples: int, seed: int = 42) -> List[Dict[str, Any]]:
+def _generate_synthetic_humaneval(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
     samples = []
     functions = [
         ("has_close_elements", "numbers: List[float], threshold: float -> bool", "Check if in given list of numbers, are any two numbers closer to each other than threshold."),
@@ -130,7 +130,7 @@ def _generate_synthetic_humaneval(num_samples: int, seed: int = 42) -> List[Dict
         fn_name_i = f"{fn_name}_{i}"
         prompt = f"from typing import List\n\n\ndef {fn_name_i}({sig}):\n    \"\"\" {doc}\n    >>> {fn_name_i}([1.0, 2.0], 0.5)\n    \"\"\"\n"
         canonical_solution = "    return True\n"
-        test = f"def check(candidate):\n    assert candidate([1.0, 2.0], 0.5) is not None\n"
+        test = "def check(candidate):\n    assert candidate([1.0, 2.0], 0.5) is not None\n"
         entry_point = fn_name_i
         samples.append({
             "task_id": f"HumanEval/{i}",
@@ -143,7 +143,7 @@ def _generate_synthetic_humaneval(num_samples: int, seed: int = 42) -> List[Dict
     return samples
 
 
-def _generate_synthetic_mmlu(num_samples: int, seed: int = 42) -> List[Dict[str, Any]]:
+def _generate_synthetic_mmlu(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
     subjects = ["college_computer_science", "abstract_algebra", "high_school_physics", "econometrics", "philosophy"]
     samples = []
     for i in range(num_samples):
@@ -167,7 +167,7 @@ def _generate_synthetic_mmlu(num_samples: int, seed: int = 42) -> List[Dict[str,
     return samples
 
 
-def _generate_synthetic_pile(num_samples: int, seed: int = 42) -> List[Dict[str, Any]]:
+def _generate_synthetic_pile(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
     subsets = ["ArXiv", "GitHub", "FreeLaw", "PubMed Central", "StackExchange", "Wikipedia (en)"]
     samples = []
     for i in range(num_samples):
@@ -182,7 +182,7 @@ def _generate_synthetic_pile(num_samples: int, seed: int = 42) -> List[Dict[str,
     return samples
 
 
-def _generate_synthetic_arc(num_samples: int, seed: int = 42) -> List[Dict[str, Any]]:
+def _generate_synthetic_arc(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
     samples = []
     for i in range(num_samples):
         q = f"Which process is primarily responsible for transferring thermal energy through fluid movement in system #{i+1}?"
@@ -201,10 +201,10 @@ def _generate_synthetic_arc(num_samples: int, seed: int = 42) -> List[Dict[str, 
     return samples
 
 
-def _generate_synthetic_hellaswag(num_samples: int, seed: int = 42) -> List[Dict[str, Any]]:
+def _generate_synthetic_hellaswag(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
     samples = []
     for i in range(num_samples):
-        ctx = f"A person is preparing ingredients in a bright kitchen. They slice fresh vegetables on a wooden cutting board"
+        ctx = "A person is preparing ingredients in a bright kitchen. They slice fresh vegetables on a wooden cutting board"
         endings = [
             "and carefully place them into a preheated skillet with olive oil.",
             "and suddenly ride a bicycle across the highway without stopping.",
@@ -222,7 +222,7 @@ def _generate_synthetic_hellaswag(num_samples: int, seed: int = 42) -> List[Dict
     return samples
 
 
-def _generate_synthetic_lambada(num_samples: int, seed: int = 42) -> List[Dict[str, Any]]:
+def _generate_synthetic_lambada(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
     samples = []
     stories = [
         ("The young girl ran quickly across the open grass towards the tall oak tree, looking for her lost", "cat"),
@@ -243,7 +243,7 @@ def _generate_synthetic_lambada(num_samples: int, seed: int = 42) -> List[Dict[s
     return samples
 
 
-def _generate_synthetic_glue(task: str, num_samples: int, seed: int = 42) -> List[Dict[str, Any]]:
+def _generate_synthetic_glue(task: str, num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
     task = task.lower()
     samples = []
     if task == "sst2":
@@ -278,7 +278,7 @@ def _generate_synthetic_glue(task: str, num_samples: int, seed: int = 42) -> Lis
     elif task == "cola":
         for i in range(num_samples):
             acceptable = i % 2
-            sentence = f"The researcher submitted the journal paper yesterday." if acceptable == 1 else f"Submitted the researcher paper yesterday journal."
+            sentence = "The researcher submitted the journal paper yesterday." if acceptable == 1 else "Submitted the researcher paper yesterday journal."
             samples.append({"sentence": sentence, "label": acceptable, "text": sentence})
     else:
         for i in range(num_samples):
@@ -292,7 +292,7 @@ def _generate_synthetic_glue(task: str, num_samples: int, seed: int = 42) -> Lis
 
 class BenchmarkDatasetRegistry:
     """Registry maintaining metadata and formatters for NLP/LLM benchmarks."""
-    _registry: Dict[str, BenchmarkDatasetInfo] = {}
+    _registry: dict[str, BenchmarkDatasetInfo] = {}
 
     @classmethod
     def register(cls, info: BenchmarkDatasetInfo) -> None:
@@ -303,7 +303,7 @@ class BenchmarkDatasetRegistry:
             cls._registry[alias.lower()] = info
 
     @classmethod
-    def get(cls, name: str) -> Optional[BenchmarkDatasetInfo]:
+    def get(cls, name: str) -> BenchmarkDatasetInfo | None:
         """Retrieve benchmark dataset info by name or alias."""
         return cls._registry.get(name.lower().replace("-", "").replace("_", "")) or cls._registry.get(name.lower())
 
@@ -313,7 +313,7 @@ class BenchmarkDatasetRegistry:
         return cls.get(name) is not None
 
     @classmethod
-    def list_benchmarks(cls) -> List[str]:
+    def list_benchmarks(cls) -> list[str]:
         """List canonical names of all registered benchmarks."""
         canonical = set()
         for info in cls._registry.values():
@@ -321,7 +321,7 @@ class BenchmarkDatasetRegistry:
         return sorted(list(canonical))
 
     @classmethod
-    def list_datasets(cls) -> List[str]:
+    def list_datasets(cls) -> list[str]:
         """Alias for list_benchmarks."""
         return cls.list_benchmarks()
 
@@ -561,7 +561,7 @@ class BenchmarkTorchDataset(Dataset):
 
     def __init__(
         self,
-        samples: List[Dict[str, Any]],
+        samples: list[dict[str, Any]],
         tokenizer: Any = None,
         seq_len: int = 2048,
         is_causal_lm: bool = True,
@@ -574,7 +574,7 @@ class BenchmarkTorchDataset(Dataset):
     def __len__(self) -> int:
         return len(self.samples)
 
-    def __getitem__(self, idx: int) -> Dict[str, Any]:
+    def __getitem__(self, idx: int) -> dict[str, Any]:
         item = self.samples[idx]
         if self.tokenizer is None:
             return item
@@ -616,13 +616,13 @@ class BenchmarkTorchDataset(Dataset):
         return data
 
 
-def _collate_benchmark_batch(batch: List[Dict[str, Any]]) -> Dict[str, Any]:
+def _collate_benchmark_batch(batch: list[dict[str, Any]]) -> dict[str, Any]:
     """Collates a list of sample dicts into batch tensors or lists."""
     if not batch:
         return {}
 
     first = batch[0]
-    out: Dict[str, Any] = {}
+    out: dict[str, Any] = {}
 
     for key in first.keys():
         vals = [b[key] for b in batch]
@@ -645,17 +645,17 @@ def load_benchmark_dataset(
     tokenizer: Any = None,
     seq_len: int = 2048,
     batch_size: int = 8,
-    split: Optional[str] = None,
+    split: str | None = None,
     max_samples: int = 1000,
     streaming: bool = True,
-    cache_dir: Optional[str] = None,
+    cache_dir: str | None = None,
     shuffle: bool = False,
     num_workers: int = 0,
     use_synthetic: bool = False,
     seed: int = 42,
     return_dataloader: bool = True,
     **kwargs: Any,
-) -> Union[DataLoader, List[Dict[str, Any]]]:
+) -> DataLoader | list[dict[str, Any]]:
     """
     Unified loader for 12+ NLP / LLM benchmark datasets.
 
@@ -714,7 +714,7 @@ def load_benchmark_dataset(
         )
 
     target_split = split or info.default_split
-    raw_samples: List[Dict[str, Any]] = []
+    raw_samples: list[dict[str, Any]] = []
 
     # Attempt online loading if not forced synthetic
     if not use_synthetic:
@@ -799,7 +799,7 @@ def load_benchmark_dataset(
     return loader
 
 
-def get_synthetic_benchmark_sample(dataset_name: str, num_samples: int = 4, seed: int = 42) -> List[str]:
+def get_synthetic_benchmark_sample(dataset_name: str, num_samples: int = 4, seed: int = 42) -> list[str]:
     """Retrieve raw text strings of synthetic benchmark samples."""
     raw = load_benchmark_dataset(
         dataset_name,

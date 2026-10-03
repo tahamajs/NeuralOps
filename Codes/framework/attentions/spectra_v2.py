@@ -30,15 +30,15 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.core.attention_mask import apply_attention_mask, get_token_valid_mask
+from framework.core.attention_mask import apply_attention_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
     if module is None:
         return None, None
     base = getattr(module, "base_layer", module)
@@ -84,8 +84,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -114,8 +114,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -188,19 +188,19 @@ class SpectraV2Attention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        model_config: Optional[Any] = None,
+        config: Any | None = None,
+        model_config: Any | None = None,
         layer_idx: int = 0,
         total_layers: int = 12,
         bert_mode: bool = False,
-        pretrained_attn: Optional[nn.Module] = None,
-        rank: Optional[int] = 64,
+        pretrained_attn: nn.Module | None = None,
+        rank: int | None = 64,
         **kwargs: Any,
     ) -> None:
-        cfg = config or model_config or kwargs.get("config", None)
+        cfg = config or model_config or kwargs.get("config")
         super().__init__(cfg, rank or 64)
         self.config = cfg
-        comp_config = _cfg_get(cfg, "compression_config", kwargs.get("comp_config", None))
+        comp_config = _cfg_get(cfg, "compression_config", kwargs.get("comp_config"))
 
         self.hidden_size = kwargs.get(
             "hidden_size",
@@ -260,7 +260,7 @@ class SpectraV2Attention(BaseAttention):
         dropout_p = _cfg_get(cfg, "dropout", _cfg_get(cfg, "attention_probs_dropout_prob", 0.1))
         self.dropout = nn.Dropout(dropout_p)
 
-        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -273,19 +273,17 @@ class SpectraV2Attention(BaseAttention):
         is_nested = False
         if (
             hasattr(src, "self")
-            and hasattr(getattr(src, "self"), "query")
+            and hasattr(src.self, "query")
             and hasattr(src, "output")
-            and hasattr(getattr(src, "output"), "dense")
-        ):
-            is_nested = True
-        elif (
+            and hasattr(src.output, "dense")
+        ) or (
             cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
             or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
         ) and not has_out_proj:
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -326,13 +324,13 @@ class SpectraV2Attention(BaseAttention):
             extracted["o"] = _unpack_weight_bias(getattr(src, "dense", getattr(src, "out_proj", None)))
 
         # 4. Nested structures (RoBERTa / BERT container objects)
-        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query") and extracted["q"][0] is None:
-            s = getattr(src, "self")
+        if hasattr(src, "self") and hasattr(src.self, "query") and extracted["q"][0] is None:
+            s = src.self
             extracted["q"] = _unpack_weight_bias(getattr(s, "query", None))
             extracted["k"] = _unpack_weight_bias(getattr(s, "key", None))
             extracted["v"] = _unpack_weight_bias(getattr(s, "value", None))
-            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
-                extracted["o"] = _unpack_weight_bias(getattr(getattr(src, "output"), "dense", None))
+            if hasattr(src, "output") and hasattr(src.output, "dense"):
+                extracted["o"] = _unpack_weight_bias(getattr(src.output, "dense", None))
 
         # 5. Qwen / LLaMA / HF Attention style: q_proj, k_proj, v_proj, o_proj
         if hasattr(src, "q_proj") and src.q_proj is not None and extracted["q"][0] is None:
@@ -427,25 +425,25 @@ class SpectraV2Attention(BaseAttention):
 
     @classmethod
     def from_distilbert_pretrained(
-        cls, old_attn: nn.Module, model_config: Optional[Any] = None, **kwargs: Any
-    ) -> "SpectraV2Attention":
+        cls, old_attn: nn.Module, model_config: Any | None = None, **kwargs: Any
+    ) -> SpectraV2Attention:
         return cls(model_config=model_config, pretrained_attn=old_attn, **kwargs)
 
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, N, D = hidden_states.shape
 
         is_cross = encoder_hidden_states is not None
@@ -460,7 +458,7 @@ class SpectraV2Attention(BaseAttention):
 
         # Apply RoPE if provided
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
@@ -593,10 +591,10 @@ def inject_spectra_v2(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
-    target_layer_idx: Optional[int] = None,
+    old_attn: nn.Module | None = None,
+    target_layer_idx: int | None = None,
     **kwargs: Any,
-) -> Optional[Any]:
+) -> Any | None:
     """Safely replace attention in model or layer with SpectraV2Attention (mha_sdpa)."""
     target = layer if layer is not None else model
     cfg = model_config or getattr(target, "config", None)

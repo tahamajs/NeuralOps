@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -63,11 +63,11 @@ class OptimalSubspaceLoRALinear(nn.Module):
         in_features: int,
         out_features: int,
         weight: torch.Tensor,
-        bias: Optional[torch.Tensor] = None,
+        bias: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -120,7 +120,7 @@ class OptimalSubspaceLoRALinear(nn.Module):
         weight: torch.Tensor,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-    ) -> "OptimalSubspaceLoRALinear":
+    ) -> OptimalSubspaceLoRALinear:
         base_layer = getattr(linear, "base_layer", linear)
         bias = (
             base_layer.bias.detach()
@@ -192,16 +192,16 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        calibration_loader: Optional[Any] = None,
+        calibration_loader: Any | None = None,
         rank_ratio: float = 0.5,
         power_iters: int = 2,
-        tokenizer: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
-        device: Optional[Union[str, torch.device]] = None,
+        tokenizer: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
         max_error: float = 0.50,
         fallback_to_original: bool = True,
         target_attention_only: bool = False,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         skip_attention_qkv: bool = True,
@@ -209,7 +209,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="optimal_subspace_projection", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
 
         if cfg is not None:
             rank_ratio = _cfg_get(cfg, "optimal_subspace_rank_ratio",
@@ -246,12 +246,12 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
             torch.device(device) if device is not None
             else next(model.parameters(), torch.tensor(0.0)).device
         )
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+        self.stats: dict[str, Any] = {}
 
     # ------------------------------------------------------------------
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
@@ -310,15 +310,15 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         return rank
 
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         # --------------------------------------------------------------
         # 1. Collect activation covariances (dedup by base weight id).
         # --------------------------------------------------------------
-        act_covs: Dict[int, torch.Tensor] = {}
-        weight_id_to_scan_id: Dict[int, int] = {}   # base weight id → cov key
+        act_covs: dict[int, torch.Tensor] = {}
+        weight_id_to_scan_id: dict[int, int] = {}   # base weight id → cov key
         hooks = []
 
-        def hook_fn(module: nn.Module, inputs: Tuple[torch.Tensor, ...], output: Any) -> None:
+        def hook_fn(module: nn.Module, inputs: tuple[torch.Tensor, ...], output: Any) -> None:
             if not inputs or not isinstance(inputs[0], torch.Tensor):
                 return
             base = getattr(module, "base_layer", module)
@@ -337,7 +337,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
                 act_covs[key] = act_covs[key] + cov.cpu()
 
         # OSP-FIX-06: register one hook per unique base weight.
-        registered_ids: Set[int] = set()
+        registered_ids: set[int] = set()
         for name, module in self.model.named_modules():
             if not self._is_target_module(name, module):
                 continue
@@ -382,7 +382,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         self.skipped_layers = []
         self.layer_errors = {}
         self.layer_ranks = {}
-        seen_weights: Set[int] = set()
+        seen_weights: set[int] = set()
         total_orig_params = 0
         total_comp_params = 0
 
@@ -418,7 +418,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
             dtype = raw_w.dtype
 
             # ---------------- Cholesky preconditioner ----------------
-            C = act_covs.get(w_id, None)
+            C = act_covs.get(w_id)
             L = torch.eye(d_in, device=device)
             L_inv = torch.eye(d_in, device=device)
 
@@ -528,7 +528,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
                 except Exception:
                     try:
                         self.model(dummy)
-                    except Exception as e2:
+                    except Exception:
                         # Try embedding-level call as last resort.
                         cfg = getattr(self.model, "config", None)
                         hidden = getattr(cfg, "hidden_size", None) if cfg else None

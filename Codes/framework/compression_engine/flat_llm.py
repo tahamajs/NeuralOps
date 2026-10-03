@@ -8,8 +8,7 @@ Registered as 'flat_llm', 'flat_llm_compressor'.
 from __future__ import annotations
 
 import logging
-import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -68,7 +67,7 @@ class PrunedChannelLinear(nn.Module):
         original_out_features: int,
         kept_idx: torch.Tensor,             # (k,) int64
         W_kept: torch.Tensor,               # (k, in_features)
-        bias_kept: Optional[torch.Tensor] = None,
+        bias_kept: torch.Tensor | None = None,
     ) -> None:
         super().__init__()
         self.in_features = int(in_features)
@@ -84,7 +83,7 @@ class PrunedChannelLinear(nn.Module):
         else:
             self.register_parameter("bias_kept", None)
 
-        self._cached_weight: Optional[torch.Tensor] = None
+        self._cached_weight: torch.Tensor | None = None
 
     @property
     def weight(self) -> torch.Tensor:
@@ -138,23 +137,23 @@ class FLATLLMCompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        tokenizer: Optional[Any] = None,
+        tokenizer: Any | None = None,
         keep_ratio: float = 0.7,
         damping: float = 1e-4,
         max_error: float = 0.35,
         target_attention_only: bool = False,
         fallback_to_original: bool = True,
-        calibration_loader: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
-        device: Optional[Union[str, torch.device]] = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
         structured_24: bool = False,
-        target_modules: Optional[List[str]] = None,
-        cfg: Optional[Any] = None,
+        target_modules: list[str] | None = None,
+        cfg: Any | None = None,
         num_calibration_batches: int = 8,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="flat_llm", **kwargs)
-        cfg = cfg or kwargs.get("comp_config", None)
+        cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
@@ -191,11 +190,11 @@ class FLATLLMCompressor(BaseCompressor):
             _cfg_get(cfg, "num_calibration_batches", num_calibration_batches)
         ))
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_keep_ratios: Dict[str, float] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_keep_ratios: dict[str, float] = {}
         self._compressed_params: int = 0
 
     # ------------------------------------------------------------------
@@ -237,7 +236,7 @@ class FLATLLMCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     # Calibration: per-output-channel energy (FLT-FIX-05)
     # ------------------------------------------------------------------
-    def _normalize_calibration_batches(self, calib_inputs: Any) -> List[Any]:
+    def _normalize_calibration_batches(self, calib_inputs: Any) -> list[Any]:
         if calib_inputs is None:
             return []
         if isinstance(calib_inputs, (torch.Tensor, dict)):
@@ -251,7 +250,7 @@ class FLATLLMCompressor(BaseCompressor):
             return [calib_inputs]
         return [calib_inputs]
 
-    def _collect_layer_outputs(self) -> Dict[str, torch.Tensor]:
+    def _collect_layer_outputs(self) -> dict[str, torch.Tensor]:
         """
         Capture per-output-channel energy across calibration batches.
 
@@ -260,8 +259,8 @@ class FLATLLMCompressor(BaseCompressor):
         transposed accordingly.
         """
         self.model.eval()
-        energy_sum: Dict[str, torch.Tensor] = {}
-        batch_count: Dict[str, int] = {}
+        energy_sum: dict[str, torch.Tensor] = {}
+        batch_count: dict[str, int] = {}
         hooks = []
 
         def make_hook(layer_name: str):
@@ -322,13 +321,13 @@ class FLATLLMCompressor(BaseCompressor):
             for h in hooks:
                 h.remove()
 
-        aggregated: Dict[str, torch.Tensor] = {}
+        aggregated: dict[str, torch.Tensor] = {}
         for name, esum in energy_sum.items():
             aggregated[name] = (esum / max(1, batch_count[name])).to(self.target_device)
         return aggregated
 
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         from framework.core.model_utils import replace_module
 
         outputs_map = self._collect_layer_outputs()

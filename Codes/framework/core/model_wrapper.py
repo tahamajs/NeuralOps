@@ -10,7 +10,7 @@ Usage:
     loaded = UnifiedTransformerModel.from_pretrained("./compressed_model")
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 import torch.nn as nn
 from huggingface_hub import PyTorchModelHubMixin
@@ -29,8 +29,8 @@ class UnifiedTransformerConfig:
     def __init__(
         self,
         attention_type: str = None,
-        attention_rank: Optional[int] = None,
-        attention_kwargs: Optional[Dict[str, Any]] = None,
+        attention_rank: int | None = None,
+        attention_kwargs: dict[str, Any] | None = None,
         **kwargs,
     ) -> None:
         self.attention_type = attention_type
@@ -40,7 +40,7 @@ class UnifiedTransformerConfig:
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialise to a JSON‑compatible dict."""
         return {
             "attention_type": self.attention_type,
@@ -49,7 +49,7 @@ class UnifiedTransformerConfig:
         }
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "UnifiedTransformerConfig":
+    def from_dict(cls, d: dict[str, Any]) -> "UnifiedTransformerConfig":
         """From dict."""
         return cls(**d)
 
@@ -64,7 +64,7 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
     """
 
     def __init__(
-        self, model: nn.Module, custom_config: Optional[UnifiedTransformerConfig] = None
+        self, model: nn.Module, custom_config: UnifiedTransformerConfig | None = None
     ) -> None:
         super().__init__()
         self.model = model
@@ -78,7 +78,7 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
     def replace_attention(
         self,
         attention_type: str,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         copy_weights: bool = True,
         **kwargs,
     ) -> Any:
@@ -113,7 +113,7 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
             param.requires_grad = True
         return self
 
-    def get_parameter_count(self) -> Dict[str, int]:
+    def get_parameter_count(self) -> dict[str, int]:
         """Return the parameter count."""
         total = sum(p.numel() for p in self.model.parameters())
         trainable = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
@@ -155,7 +155,7 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
                 repo_id=model_id, filename="unified_attention_config.json"
             )
 
-        with open(cfg_path, "r") as f:
+        with open(cfg_path) as f:
             custom_cfg_dict = json.load(f)
         custom_cfg = UnifiedTransformerConfig.from_dict(custom_cfg_dict)
 
@@ -189,7 +189,7 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
         cls,
         model_id: str,
         task: str = "sequence_classification",
-        num_labels: Optional[int] = None,
+        num_labels: int | None = None,
         **kwargs,
     ) -> "UnifiedTransformerModel":
         """

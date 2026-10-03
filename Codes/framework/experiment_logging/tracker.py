@@ -2,17 +2,17 @@
 
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class MetricsTracker:
     """Collects metrics during training and saves them as JSON."""
 
-    def __init__(self, save_path: Optional[str] = None) -> None:
+    def __init__(self, save_path: str | None = None) -> None:
         self.save_path = save_path
-        self.records: List[Dict[str, Any]] = []
+        self.records: list[dict[str, Any]] = []
 
-    def log(self, metrics: Dict[str, Any], step: int = None) -> None:
+    def log(self, metrics: dict[str, Any], step: int = None) -> None:
         """Log."""
         entry = dict(metrics)
         if step is not None:
@@ -25,7 +25,7 @@ class MetricsTracker:
 
         return pd.DataFrame(self.records)
 
-    def save(self, path: Optional[str] = None) -> None:
+    def save(self, path: str | None = None) -> None:
         """Save."""
         p = path or self.save_path
         if p:

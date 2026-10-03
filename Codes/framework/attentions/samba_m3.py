@@ -7,15 +7,14 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from framework.core.adapters import UniversalAdapter
-from framework.core.attention_mask import apply_attention_mask
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 try:
@@ -60,9 +59,9 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
+    position_ids: torch.Tensor | None = None,
     unsqueeze_dim: int = 1,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -186,7 +185,7 @@ class LoRALinear(nn.Module):
 
 
 class SpectralMamba(nn.Module):
-    def __init__(self, d_model: int = 768, config: Optional[Any] = None, **kwargs: Any) -> None:
+    def __init__(self, d_model: int = 768, config: Any | None = None, **kwargs: Any) -> None:
         super().__init__()
         if config is not None:
             d_model = _cfg_get(config, "hidden_size", _cfg_get(config, "d_model", d_model))
@@ -207,7 +206,7 @@ class SpectralMamba(nn.Module):
         # SM3-FIX-12: bounded per-channel gate (0..1)
         self.dt_scale = nn.Parameter(torch.full((self.d_model,), 0.5))
 
-    def forward(self, x: torch.Tensor, **kwargs: Any) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    def forward(self, x: torch.Tensor, **kwargs: Any) -> tuple[torch.Tensor, torch.Tensor | None]:
         out = self.mamba(x, **kwargs)
         if isinstance(out, tuple):
             out = out[0]
@@ -228,15 +227,15 @@ class SAMBAM3Block(nn.Module):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        d_model: Optional[int] = None,
-        n_heads: Optional[int] = None,
+        config: Any | None = None,
+        d_model: int | None = None,
+        n_heads: int | None = None,
         window: int = 128,
-        rank: Optional[int] = None,
-        pretrained_attn: Optional[nn.Module] = None,
+        rank: int | None = None,
+        pretrained_attn: nn.Module | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__()
@@ -515,8 +514,8 @@ class SAMBAM3Block(nn.Module):
         q: torch.Tensor,
         k: torch.Tensor,
         v: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
         past_len: int = 0,
     ) -> torch.Tensor:
         B, H, L, d = q.shape
@@ -591,15 +590,15 @@ class SAMBAM3Block(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -627,7 +626,7 @@ class SAMBAM3Block(nn.Module):
         v = self.v_lin(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # ---- SM3-FIX-06: RoPE with offset ----
-        pos_emb = position_embeddings or kwargs.get("position_embeddings", None)
+        pos_emb = position_embeddings or kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, tuple) and len(pos_emb) == 2:
             cos, sin = pos_emb
             if cos.shape[-2] >= past_len + L:
@@ -692,7 +691,7 @@ def inject_samba_m3(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):
@@ -702,7 +701,7 @@ def inject_samba_m3(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

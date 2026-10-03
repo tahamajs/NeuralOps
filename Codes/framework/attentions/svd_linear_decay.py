@@ -4,7 +4,7 @@ Maps to `framework.attentions.svd_linear_attention.SVDLinearAttention`.
 
 """
 
-from typing import Any, Optional
+from typing import Any
 import logging
 
 import torch
@@ -38,12 +38,12 @@ def inject_svd_linear_decay(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
 ):
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 
@@ -91,7 +91,7 @@ def inject_svd_linear_decay(
     # FIX-1: Discover source attention across all architecture variants
     # ============================================================
     src_attn = old_attn
-    src_attr_name: Optional[str] = None
+    src_attr_name: str | None = None
     src_is_nested: bool = False
 
     if src_attn is None:

@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -26,7 +26,7 @@ import torch.nn.functional as F
 
 from framework.core.attention_mask import apply_attention_mask, get_token_valid_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
     if module is None:
         return None, None
     base = getattr(module, "base_layer", module)
@@ -66,8 +66,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -116,8 +116,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -188,10 +188,10 @@ class HALOReGLAAttention(BaseAttention):
     is_custom_attention: bool = True
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
+        config: Any | None = None,
+        rank: int | None = None,
         hybrid_ratio: int = 4,
-        pretrained_attn: Optional[nn.Module] = None,
+        pretrained_attn: nn.Module | None = None,
         gate_init_bias: float = 1.8,
         **kwargs: Any,
     ) -> None:
@@ -259,7 +259,7 @@ class HALOReGLAAttention(BaseAttention):
         dropout_p = _cfg_get(config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1))
         self.dropout = nn.Dropout(dropout_p)
 
-        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -272,19 +272,17 @@ class HALOReGLAAttention(BaseAttention):
         is_nested = False
         if (
             hasattr(src, "self")
-            and hasattr(getattr(src, "self"), "query")
+            and hasattr(src.self, "query")
             and hasattr(src, "output")
-            and hasattr(getattr(src, "output"), "dense")
-        ):
-            is_nested = True
-        elif (
+            and hasattr(src.output, "dense")
+        ) or (
             cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
             or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
         ) and not has_out_lin:
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -310,12 +308,12 @@ class HALOReGLAAttention(BaseAttention):
                     extracted["o"] = (o_w, o_b)
 
         # 2. RoBERTa nested
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            s = getattr(src, "self")
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
+            s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 extracted[proj_key] = _unpack_weight_bias(mod)
-            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+            if hasattr(src, "output") and hasattr(src.output, "dense"):
                 extracted["o"] = _unpack_weight_bias(src.output.dense)
 
         # 3. Flat modules
@@ -406,25 +404,25 @@ class HALOReGLAAttention(BaseAttention):
 
     @classmethod
     def from_distilbert_pretrained(
-        cls, old_attn: nn.Module, model_config: Optional[Any] = None, **kwargs: Any
-    ) -> "HALOReGLAAttention":
+        cls, old_attn: nn.Module, model_config: Any | None = None, **kwargs: Any
+    ) -> HALOReGLAAttention:
         return cls(config=model_config, pretrained_attn=old_attn, **kwargs)
 
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         if encoder_hidden_states is not None:
             return hidden_states, None
 
@@ -438,7 +436,7 @@ class HALOReGLAAttention(BaseAttention):
 
         # Apply RoPE if provided
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
@@ -531,13 +529,13 @@ def inject_halo_regla(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     lora_rank: int = 16,
     **kwargs: Any,
-) -> Optional[Any]:
+) -> Any | None:
     r"""Injection hook for HALOReGLAAttention supporting single layers and whole models."""
     target = layer if layer is not None else model
-    cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
+    cfg = model_config or getattr(target, "config", None) or kwargs.get("config")
 
     # 1. Whole model traversal support
     if target is not None and (

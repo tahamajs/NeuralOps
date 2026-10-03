@@ -12,7 +12,7 @@ Mathematical formulation:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import logging
 
@@ -46,8 +46,8 @@ class DeltaKVStore:
         self.topk = int(topk)
         self.compression_ratio = float(compression_ratio)
         self.residual_threshold = float(residual_threshold)
-        self.ref_k: Optional[torch.Tensor] = None
-        self.ref_v: Optional[torch.Tensor] = None
+        self.ref_k: torch.Tensor | None = None
+        self.ref_v: torch.Tensor | None = None
 
     def reset(self) -> None:
         self.ref_k = None
@@ -90,7 +90,7 @@ class DeltaKVStore:
     @torch.no_grad()
     def compress(
         self, k: torch.Tensor, v: torch.Tensor,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         orig_shape = k.shape
         if self.ref_k is None or self.ref_k.size(2) == 0:
             self.update(k, v)
@@ -190,7 +190,7 @@ class DeltaKVCompressor(BaseCompressor):
         fallback_to_original: bool = True,
         min_layer_dim: int = 8,
         skip_should_compress_filter: bool = False,
-        cfg: Optional[Any] = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="delta_kv", **kwargs)
@@ -215,12 +215,12 @@ class DeltaKVCompressor(BaseCompressor):
             cfg, "skip_should_compress_filter", skip_should_compress_filter,
         ))
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, int] = {}
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int] = {}
+        self.stats: dict[str, Any] = {}
         self._compressed_params: int = 0
 
     # ------------------------------------------------------------------
@@ -296,7 +296,7 @@ class DeltaKVCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     # Main compress
     # ------------------------------------------------------------------
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         # DKV-FIX-09: idempotence
         if getattr(self.model, "_delta_kv_compressed", False):
             logger.warning("DeltaKV: model already compressed; skipping.")

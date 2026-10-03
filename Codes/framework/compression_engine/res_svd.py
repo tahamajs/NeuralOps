@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -47,7 +47,7 @@ class ResSVDLinear(nn.Module):
         factorize_base: bool = True,
         bias: bool = True,
         dtype: torch.dtype = torch.float32,
-        device: Optional[torch.device] = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -285,7 +285,7 @@ class ResSVDLinear(nn.Module):
         return merged_linear
 
     def get_residual_error_norm(
-        self, original_weight: Optional[torch.Tensor] = None
+        self, original_weight: torch.Tensor | None = None
     ) -> float:
         """
         Calculate relative Frobenius norm reconstruction error:
@@ -335,11 +335,11 @@ class ResSVDCompressor(BaseCompressor):
         scaling: float = 1.0,
         factorize_base: bool = True,
         freeze_base: bool = True,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="res_svd", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
             base_rank = getattr(cfg, "base_rank", getattr(cfg, "rank", base_rank))
             residual_rank = getattr(cfg, "residual_rank", residual_rank)
@@ -356,7 +356,7 @@ class ResSVDCompressor(BaseCompressor):
         self.factorize_base = factorize_base
         self.freeze_base = freeze_base
         self.target_modules = target_modules
-        self.replaced_layers: List[str] = []
+        self.replaced_layers: list[str] = []
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         """Check whether module is an eligible nn.Linear layer matching filter."""
@@ -370,7 +370,7 @@ class ResSVDCompressor(BaseCompressor):
             return True
         return any(t in name for t in self.target_modules)
 
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """
         Compress target linear layers into ResSVDLinear modules.
 

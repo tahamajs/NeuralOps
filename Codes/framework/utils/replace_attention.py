@@ -1,5 +1,4 @@
-from typing import Any, List, Optional, Tuple
-import inspect
+from typing import Any
 import torch
 import torch.nn as nn
 from framework.core.registry import ATTENTION_REGISTRY
@@ -16,7 +15,7 @@ class UniversalAttentionWrapper(nn.Module):
       - GPT-2: forward(x, layer_past, ...) -> tuple (out, present)
     """
 
-    def __init__(self, inner_attn: nn.Module, layer_name: str = "", return_tuple: Optional[bool] = None) -> None:
+    def __init__(self, inner_attn: nn.Module, layer_name: str = "", return_tuple: bool | None = None) -> None:
         super().__init__()
         self._wrapped_attention = inner_attn
         self.layer_name = layer_name
@@ -30,9 +29,9 @@ class UniversalAttentionWrapper(nn.Module):
     def inner(self, module: nn.Module) -> None:
         self._wrapped_attention = module
 
-    def forward(self, *args: Any, **kwargs: Any) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    def forward(self, *args: Any, **kwargs: Any) -> tuple[torch.Tensor, torch.Tensor | None]:
         # 1. Extract hidden states / input tensor
-        hidden_states: Optional[torch.Tensor] = None
+        hidden_states: torch.Tensor | None = None
         if len(args) > 0 and isinstance(args[0], tuple):
             # Unwrap tuple-wrapped hidden_states (e.g. BERT layer output passed through).
             # The first element of the tuple is always the hidden tensor.
@@ -48,7 +47,7 @@ class UniversalAttentionWrapper(nn.Module):
             hidden_states = kwargs.pop("x")
 
         # 2. Extract attention mask
-        attention_mask: Optional[torch.Tensor] = None
+        attention_mask: torch.Tensor | None = None
         if len(args) > 0 and (isinstance(args[0], torch.Tensor) or args[0] is None):
             attention_mask = args[0]
             args = args[1:]
@@ -150,11 +149,11 @@ class UniversalAttentionWrapper(nn.Module):
     def _forward_t5(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        key_value_states: Optional[torch.Tensor] = None,
-        position_bias: Optional[torch.Tensor] = None,
+        attention_mask: torch.Tensor | None = None,
+        key_value_states: torch.Tensor | None = None,
+        position_bias: torch.Tensor | None = None,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """T5 forward pass executing relative position bias and cross/self attention correctly."""
         # 1. If inner module implements custom forward_t5, call it
         if hasattr(self._wrapped_attention, "forward_t5") and callable(self._wrapped_attention.forward_t5):
@@ -201,7 +200,7 @@ class UniversalAttentionWrapper(nn.Module):
 
         if q_mod is not None and k_mod is not None and v_mod is not None:
             Q = q_mod(hidden_states).view(B, N_q, H, d).transpose(1, 2)
-            
+
             k_out = k_mod(kv_input)
             H_kv = k_out.shape[-1] // d if d > 0 else H
             K = k_out.view(B, N_k, H_kv, d).transpose(1, 2)
@@ -395,7 +394,7 @@ def replace_attention(model, attention_key, layer_indices=None, **kwargs) -> Any
     total_layers = getattr(config, "num_hidden_layers", 12)
 
     # Collect top-level attention module targets (avoiding submodules)
-    targets: List[Tuple[str, nn.Module, int]] = []
+    targets: list[tuple[str, nn.Module, int]] = []
     for name, module in model.named_modules():
         parts = name.split(".")
         if not parts or not parts[-1]:
@@ -454,8 +453,8 @@ def replace_attention(model, attention_key, layer_indices=None, **kwargs) -> Any
                     setattr(new_attn, attr, val)
                     setattr(wrapped_attn, attr, val)
             if hasattr(old_module, "compute_bias"):
-                setattr(new_attn, "compute_bias", old_module.compute_bias)
-                setattr(wrapped_attn, "compute_bias", old_module.compute_bias)
+                new_attn.compute_bias = old_module.compute_bias
+                wrapped_attn.compute_bias = old_module.compute_bias
 
         parts = name.split(".")
         parent_name = ".".join(parts[:-1])

@@ -32,7 +32,7 @@ Fixes (v2):
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -119,8 +119,8 @@ class FactorisedLoRALinear(nn.Module):
         lora_rank: int = 0,
         lora_alpha: float = 32.0,
         bias: bool = True,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
     ):
         super().__init__()
         self.in_features = int(in_features)
@@ -161,7 +161,7 @@ class FactorisedLoRALinear(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
-    def set_svd_factors(self, W: torch.Tensor, bias: Optional[torch.Tensor] = None) -> None:
+    def set_svd_factors(self, W: torch.Tensor, bias: torch.Tensor | None = None) -> None:
         with torch.no_grad():
             W_f = W.float()
             if W_f.shape != (self.out_features, self.in_features):
@@ -228,7 +228,7 @@ class UnifiedMoE(nn.Module):
         dim: int,
         num_experts: int = 2,
         top_k: int = 1,
-        output_dim: Optional[int] = None,
+        output_dim: int | None = None,
         noise_std: float = 0.1,
         expert_hidden_mult: float = 0.25,
         gate_init: float = -3.0,  # BAM-FIX-11
@@ -264,7 +264,7 @@ class UnifiedMoE(nn.Module):
         self.gate_bias = nn.Parameter(torch.tensor([float(gate_init)]))
 
         # BAM-FIX-04: aux loss is an attribute, not a tensor
-        self._aux_loss: Optional[torch.Tensor] = None
+        self._aux_loss: torch.Tensor | None = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, L, D = x.shape
@@ -316,16 +316,16 @@ class BAMUMoEBlock(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
+        config: Any | None = None,
         rank: int = 64,
         num_experts: int = 2,
         top_k: int = 1,
-        layer_id: Optional[int] = None,
-        num_layers: Optional[int] = None,
-        old_attn: Optional[nn.Module] = None,
-        comp_config: Optional[Any] = None,
+        layer_id: int | None = None,
+        num_layers: int | None = None,
+        old_attn: nn.Module | None = None,
+        comp_config: Any | None = None,
         moe_enabled: bool = False,          # BAM-FIX-02
-        svd_rank: Optional[int] = None,     # BAM-FIX-03
+        svd_rank: int | None = None,     # BAM-FIX-03
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         **kwargs: Any,
@@ -429,7 +429,7 @@ class BAMUMoEBlock(BaseAttention):
 
         # ---- Optional MoE ----
         if self.moe_enabled:
-            self.qkv_moe: Optional[UnifiedMoE] = UnifiedMoE(
+            self.qkv_moe: UnifiedMoE | None = UnifiedMoE(
                 self.dim,
                 num_experts=self.num_experts,
                 top_k=self.top_k,
@@ -493,11 +493,9 @@ class BAMUMoEBlock(BaseAttention):
                           ("out_lin", "c_proj", "o_proj", "out_proj", "dense"))
         is_nested = False
         if (hasattr(pretrained_attn, "self")
-                and hasattr(getattr(pretrained_attn, "self"), "query")
+                and hasattr(pretrained_attn.self, "query")
                 and hasattr(pretrained_attn, "output")
-                and hasattr(getattr(pretrained_attn, "output"), "dense")):
-            is_nested = True
-        elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
+                and hasattr(pretrained_attn.output, "dense")) or (cls_name in ("BertSelfAttention", "RobertaSelfAttention",
                             "XLMRobertaSelfAttention", "ElectraSelfAttention",
                             "DebertaSelfAttention")
               or (cls_name.endswith("SelfAttention")
@@ -546,7 +544,7 @@ class BAMUMoEBlock(BaseAttention):
 
         # Nested BERT / RoBERTa
         elif hasattr(pretrained_attn, "self") \
-                and hasattr(getattr(pretrained_attn, "self"), "query"):
+                and hasattr(pretrained_attn.self, "query"):
             s = pretrained_attn.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
                 m = getattr(s, sub, None)
@@ -671,14 +669,14 @@ class BAMUMoEBlock(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
         *args: Any,
         **kwargs: Any,
     ):
@@ -694,14 +692,14 @@ class BAMUMoEBlock(BaseAttention):
         v = self.v_lin(kv_input).view(B, S, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # ---- RoPE ----
-        cos = kwargs.get("cos", None)
-        sin = kwargs.get("sin", None)
-        pos_emb = kwargs.get("position_embeddings", None)
+        cos = kwargs.get("cos")
+        sin = kwargs.get("sin")
+        pos_emb = kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) == 2:
             cos, sin = pos_emb[0], pos_emb[1]
 
         if cos is not None and sin is not None and not is_cross:
-            q, k = apply_rotary_pos_emb(q, k, cos, sin, kwargs.get("position_ids", None))
+            q, k = apply_rotary_pos_emb(q, k, cos, sin, kwargs.get("position_ids"))
 
         # ---- GQA ----
         if self.kv_repeat > 1:
@@ -784,7 +782,7 @@ def inject_bam_umoe(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):
@@ -794,7 +792,7 @@ def inject_bam_umoe(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

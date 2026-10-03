@@ -31,15 +31,14 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.utils.model_family import ModelAdapter
 
@@ -60,8 +59,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -119,8 +118,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         fk = {"device": device, "dtype": dtype}
@@ -221,13 +220,13 @@ class LoRAAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        model_config: Optional[Any] = None,
-        rank: Optional[int] = None,           # accepted for compat, ignored
+        config: Any | None = None,
+        model_config: Any | None = None,
+        rank: int | None = None,           # accepted for compat, ignored
         lora_rank: int = 16,
         alpha: float = 32.0,
         dropout: float = 0.1,
-        pretrained_attn: Optional[nn.Module] = None,
+        pretrained_attn: nn.Module | None = None,
         **kwargs: Any,
     ) -> None:
         cfg = config if config is not None else model_config
@@ -320,7 +319,7 @@ class LoRAAttention(BaseAttention):
         except Exception:
             pass
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None), "k": (None, None),
             "v": (None, None), "o": (None, None),
         }
@@ -369,7 +368,7 @@ class LoRAAttention(BaseAttention):
 
         # 3. Nested BERT / RoBERTa
         if hasattr(src, "self") and any(extracted[p][0] is None for p in ("q", "k", "v")):
-            s = getattr(src, "self")
+            s = src.self
             if hasattr(s, "query") and extracted["q"][0] is None:
                 m = s.query
                 extracted["q"] = (m.weight.data, m.bias.data if m.bias is not None else None)
@@ -380,7 +379,7 @@ class LoRAAttention(BaseAttention):
                 m = s.value
                 extracted["v"] = (m.weight.data, m.bias.data if m.bias is not None else None)
 
-        if (hasattr(src, "output") and hasattr(getattr(src, "output"), "dense")
+        if (hasattr(src, "output") and hasattr(src.output, "dense")
                 and extracted["o"][0] is None):
             d = src.output.dense
             extracted["o"] = (d.weight.data, d.bias.data if d.bias is not None else None)
@@ -411,9 +410,7 @@ class LoRAAttention(BaseAttention):
                            ("dense", "out_proj", "c_proj", "out_lin",
                             "o_proj", "wo", "o", "proj"))
         is_nested = False
-        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            is_nested = True
-        elif (
+        if hasattr(src, "self") and hasattr(src.self, "query") or (
             cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
         ) and not has_out_proj:
@@ -534,18 +531,18 @@ class LoRAAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         key_value_states = kwargs.get("key_value_states", encoder_hidden_states)
         is_cross = key_value_states is not None
         kv_input = key_value_states if is_cross else hidden_states
@@ -562,7 +559,7 @@ class LoRAAttention(BaseAttention):
 
         # RoPE
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if (position_embeddings is not None and not is_cross
                 and isinstance(position_embeddings, (tuple, list))
                 and len(position_embeddings) >= 2):
@@ -578,7 +575,7 @@ class LoRAAttention(BaseAttention):
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         # Attention mask
-        mask = attention_mask if attention_mask is not None else kwargs.get("mask", None)
+        mask = attention_mask if attention_mask is not None else kwargs.get("mask")
         valid_m = self._normalize_valid_mask(mask, B, N_k, device)
         if valid_m is not None:
             scores = scores.masked_fill(~valid_m[:, None, None, :], -1e4)
@@ -633,7 +630,7 @@ def inject_lora_attention(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     _depth: int = 0,
     **kwargs: Any,
 ):
@@ -643,7 +640,7 @@ def inject_lora_attention(
 
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

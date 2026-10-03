@@ -36,7 +36,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -45,7 +45,7 @@ import torch.nn.functional as F
 from framework.core.adapters import UniversalAdapter
 from framework.core.attention_mask import apply_attention_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 try:
@@ -76,7 +76,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-def _unpack_weight_bias(module: Any) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
     if module is None:
         return None, None
     base = getattr(module, "base_layer", module)
@@ -105,9 +105,9 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
+    position_ids: torch.Tensor | None = None,
     unsqueeze_dim: int = 1,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -161,11 +161,11 @@ def compute_exponential_decay(
 
 
 def _normalize_mask(
-    mask: Optional[torch.Tensor],
+    mask: torch.Tensor | None,
     B: int, H: int, N: int,
     dtype: torch.dtype,
     device: torch.device,
-) -> Optional[torch.Tensor]:
+) -> torch.Tensor | None:
     """
     SVDLA-FIX-10: single mask normalizer.
     Returns a (B, 1, N, 1) float mask where 1.0 = valid, 0.0 = masked.
@@ -249,13 +249,13 @@ class SVDLinear(nn.Module):
         rank: int,
         bias: bool = True,
         freeze_svd: bool = False,
-        lora_rank: Optional[int] = 16,
+        lora_rank: int | None = 16,
         lora_alpha: float = 32.0,
         use_fused_kernel: bool = False,
         use_rms_norm: bool = False,
         eps: float = 1e-6,
         dtype: torch.dtype = torch.float32,
-        device: Optional[torch.device] = None,
+        device: torch.device | None = None,
     ) -> None:
         super().__init__()
         self.in_features = int(in_features)
@@ -426,14 +426,14 @@ class SVDLinearAttention(BaseAttention):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        old_attn: Optional[nn.Module] = None,
-        rank: Optional[int] = None,
+        config: Any | None = None,
+        old_attn: nn.Module | None = None,
+        rank: int | None = None,
         mode: str = "exact",
         freeze_svd: bool = False,
-        lora_rank: Optional[int] = 16,
+        lora_rank: int | None = 16,
         lora_alpha: float = 32.0,
-        is_decoder: Optional[bool] = None,
+        is_decoder: bool | None = None,
         use_decay_gating: bool = False,
         decay_activation: str = "softplus",
         decay_channel_wise: bool = False,
@@ -624,7 +624,7 @@ class SVDLinearAttention(BaseAttention):
     # ------------------------------------------------------------------
     def _factorize_and_set(
         self, target_linear: SVDLinear, weight: torch.Tensor,
-        bias: Optional[torch.Tensor] = None,
+        bias: torch.Tensor | None = None,
     ) -> None:
         with torch.no_grad():
             dev = weight.device
@@ -857,9 +857,9 @@ class SVDLinearAttention(BaseAttention):
         k: torch.Tensor,
         v: torch.Tensor,
         hidden_states: torch.Tensor,
-        mask: Optional[torch.Tensor] = None,
-        past_state: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
-    ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        mask: torch.Tensor | None = None,
+        past_state: tuple[torch.Tensor, torch.Tensor] | None = None,
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
         B, H, N, D_k = q.shape
         D_v = v.shape[-1]
 
@@ -989,7 +989,7 @@ class SVDLinearAttention(BaseAttention):
 
     def _forward_linear_kernel(
         self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor,
-        mask: Optional[torch.Tensor],
+        mask: torch.Tensor | None,
     ) -> torch.Tensor:
         if mask is None and _HAS_TRITON and triton_dispatch is not None:
             try:
@@ -1068,10 +1068,10 @@ class SVDLinearAttention(BaseAttention):
         q: torch.Tensor,
         k: torch.Tensor,
         v: torch.Tensor,
-        mask: Optional[torch.Tensor],
+        mask: torch.Tensor | None,
         is_cross: bool = False,
         output_attentions: bool = False,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         is_causal_attn = self.is_decoder and not is_cross and q.shape[-2] > 1
 
         if not output_attentions:
@@ -1127,23 +1127,23 @@ class SVDLinearAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
     ):
-        query = kwargs.get("query", None)
-        key = kwargs.get("key", None)
-        mask = kwargs.get("mask", None)
+        query = kwargs.get("query")
+        key = kwargs.get("key")
+        mask = kwargs.get("mask")
         return_state = kwargs.get("return_state", False)
-        past_state = kwargs.get("past_state", None)
+        past_state = kwargs.get("past_state")
 
         if return_state and (not self.use_decay_gating
                               and self.mode not in ("decay_linear", "linear_decay",
@@ -1176,7 +1176,7 @@ class SVDLinearAttention(BaseAttention):
 
         # 2. RoPE
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None and not is_cross:
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
@@ -1187,7 +1187,7 @@ class SVDLinearAttention(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
-        updated_state: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
+        updated_state: tuple[torch.Tensor, torch.Tensor] | None = None
 
         # 4. dispatch
         if self.mode == "exact":
@@ -1249,8 +1249,8 @@ class SVDLinearAttention(BaseAttention):
     def step_recurrent(
         self,
         x_t: torch.Tensor,
-        past_state: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
-    ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        past_state: tuple[torch.Tensor, torch.Tensor] | None = None,
+    ) -> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
         if x_t.dim() == 2:
             x_t = x_t.unsqueeze(1)
 
@@ -1341,19 +1341,19 @@ def inject_svd_linear_attention(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     lora_rank: int = 16,
-    rank: Optional[int] = 192,
+    rank: int | None = 192,
     mode: str = "exact",
     _depth: int = 0,
     **kwargs: Any,
-) -> Optional[Any]:
+) -> Any | None:
     if _depth > 8:
         logger.warning("inject_svd_linear_attention: max recursion depth exceeded.")
         return None
 
     target = layer if layer is not None else model
-    cfg = model_config or getattr(target, "config", None) or kwargs.get("config", None)
+    cfg = model_config or getattr(target, "config", None) or kwargs.get("config")
 
     # ---- whole-model traversal ----
     if target is not None and (

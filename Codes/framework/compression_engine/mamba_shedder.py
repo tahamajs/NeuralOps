@@ -22,11 +22,10 @@ the module signature is preserved; the true storage savings are reported in
 
 from __future__ import annotations
 
-import copy
 import logging
 import math
 import random
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -89,7 +88,7 @@ class MambaShedderPrunedLinear(nn.Module):
         original_out_features: int,
         W_kept: torch.Tensor,
         keep_idx: torch.Tensor,
-        bias_kept: Optional[torch.Tensor] = None,
+        bias_kept: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> None:
@@ -169,18 +168,18 @@ class MambaShedderCompressor(BaseCompressor):
     def __init__(
         self,
         model: nn.Module,
-        tokenizer: Optional[Any] = None,
+        tokenizer: Any | None = None,
         sparsity: float = 0.2,
         shed_layers: int = 0,
         max_error: float = 0.20,
         fallback_to_original: bool = True,
         validate_after_shed: bool = True,
-        calibration_loader: Optional[Any] = None,
-        calibration_texts: Optional[List[str]] = None,
-        device: Optional[Union[str, torch.device]] = None,
+        calibration_loader: Any | None = None,
+        calibration_texts: list[str] | None = None,
+        device: str | torch.device | None = None,
         structured_24: bool = False,
         target_attention_only: bool = False,
-        target_modules: Optional[List[str]] = None,
+        target_modules: list[str] | None = None,
         max_calibration_batches: int = 8,
         min_layer_dim: int = 8,
         skip_should_compress_filter: bool = False,
@@ -189,7 +188,7 @@ class MambaShedderCompressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="mamba_shedder", **kwargs)
-        cfg = kwargs.get("comp_config", kwargs.get("cfg", None))
+        cfg = kwargs.get("comp_config", kwargs.get("cfg"))
 
         if cfg is not None:
             sparsity = _cfg_get(cfg, "mamba_shedder_sparsity",
@@ -241,8 +240,8 @@ class MambaShedderCompressor(BaseCompressor):
                 else torch.device("cpu")
             )
 
-        self.layer_errors: Dict[str, float] = {}
-        self.stats: Dict[str, Any] = {}
+        self.layer_errors: dict[str, float] = {}
+        self.stats: dict[str, Any] = {}
         self._compressed_params: int = 0
 
     # ------------------------------------------------------------------
@@ -306,9 +305,9 @@ class MambaShedderCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     # Activation collection
     # ------------------------------------------------------------------
-    def _collect_activations(self, target_names: List[str]) -> Dict[str, torch.Tensor]:
+    def _collect_activations(self, target_names: list[str]) -> dict[str, torch.Tensor]:
         self.model.eval()
-        accum: Dict[str, List[torch.Tensor]] = {}
+        accum: dict[str, list[torch.Tensor]] = {}
         hooks = []
 
         def make_hook(layer_name: str):
@@ -352,7 +351,7 @@ class MambaShedderCompressor(BaseCompressor):
             for h in hooks:
                 h.remove()
 
-        aggregated: Dict[str, torch.Tensor] = {}
+        aggregated: dict[str, torch.Tensor] = {}
         for name, act_list in accum.items():
             if act_list:
                 try:
@@ -362,7 +361,7 @@ class MambaShedderCompressor(BaseCompressor):
         return aggregated
 
     @staticmethod
-    def _normalize_calibration_batches(calib_inputs: Any) -> List[Any]:
+    def _normalize_calibration_batches(calib_inputs: Any) -> list[Any]:
         if calib_inputs is None:
             return []
         if isinstance(calib_inputs, (list, tuple)):
@@ -495,7 +494,7 @@ class MambaShedderCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     # Main compress
     # ------------------------------------------------------------------
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         from framework.core.model_utils import replace_module
 
         shed_done = self._apply_layer_shedding()
@@ -519,11 +518,11 @@ class MambaShedderCompressor(BaseCompressor):
 
         pruned_layers_count = 0
         self.layer_errors = {}
-        layer_details: Dict[str, Any] = {}
+        layer_details: dict[str, Any] = {}
 
         total_orig_bytes = 0
         total_comp_bytes = 0
-        seen_weight_ids: Set[int] = set()
+        seen_weight_ids: set[int] = set()
 
         for name, module in targets:
             base_mod = getattr(module, "base_layer", module)

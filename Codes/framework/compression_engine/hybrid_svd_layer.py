@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 import math
 import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -75,7 +75,7 @@ class SVDSingleHead(nn.Module):
             SVDSingleHead._warned = True
         self.hidden_size = hidden_size
         self.svd_rank = int(svd_rank)
-        self._pos_encoding: Optional[torch.Tensor] = None
+        self._pos_encoding: torch.Tensor | None = None
 
     def _get_pos_encoding(self, seq_len: int, device: torch.device, dtype: torch.dtype) -> torch.Tensor:
         if (self._pos_encoding is None
@@ -117,10 +117,10 @@ class DirectSVDEncoderLayer(nn.Module):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        hidden_size: Optional[int] = None,
-        intermediate_size: Optional[int] = None,
-        num_attention_heads: Optional[int] = None,
+        config: Any | None = None,
+        hidden_size: int | None = None,
+        intermediate_size: int | None = None,
+        num_attention_heads: int | None = None,
         svd_rank: int = 20,
         layer_norm_eps: float = 1e-12,
         hidden_dropout_prob: float = 0.1,
@@ -156,12 +156,12 @@ class DirectSVDEncoderLayer(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
         output_attentions: bool = False,
         *args: Any,
         **kwargs: Any,
-    ) -> Union[torch.Tensor, Tuple[torch.Tensor, ...]]:
+    ) -> torch.Tensor | tuple[torch.Tensor, ...]:
         attn_out = self.svd_attention(hidden_states)
         attn_proj = self.dropout_attn(self.dense_attn(attn_out))
         h = self.LayerNorm_attn(hidden_states + attn_proj)
@@ -197,12 +197,12 @@ class HybridSVDCompressor(BaseCompressor):
         max_error: float = 0.85,
         target_attention_only: bool = False,
         fallback_to_original: bool = True,
-        cfg: Optional[Any] = None,
-        target_modules: Optional[List[str]] = None,
+        cfg: Any | None = None,
+        target_modules: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="hybrid_svd", **kwargs)
-        cfg = cfg or kwargs.get("comp_config", None)
+        cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
         self.svd_rank = int(_cfg_get(cfg, "hybrid_svd_rank",
@@ -225,10 +225,10 @@ class HybridSVDCompressor(BaseCompressor):
         )
         self.target_modules = target_modules or _cfg_get(cfg, "target_modules", None)
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
         self._compressed_params: int = 0
 
     # ------------------------------------------------------------------
@@ -257,7 +257,7 @@ class HybridSVDCompressor(BaseCompressor):
         return True
 
     # ------------------------------------------------------------------
-    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Decompose linear layers via SVD and replace with SVDLinear."""
         replaced_count = 0
         self.compressed_layers = []

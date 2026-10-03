@@ -8,7 +8,7 @@ Registered as 'kronecker_class', 'kronecker_compressor_class', and (factory)
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import math
 import torch
@@ -20,7 +20,7 @@ from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.utils.compat import should_compress_linear
 
-def factorize_dim(dim: int) -> Tuple[int, int]:
+def factorize_dim(dim: int) -> tuple[int, int]:
     """
     Factorize a dimension into two balanced factors (a, b) with a * b = dim,
     minimizing |a - b|. Returns (1, dim) for prime dimensions.
@@ -52,13 +52,13 @@ class KroneckerLinear(nn.Module):
         in_features: int,
         out_features: int,
         bias: bool = True,
-        rank: Optional[int] = None,
-        m1: Optional[int] = None,
-        n1: Optional[int] = None,
-        m2: Optional[int] = None,
-        n2: Optional[int] = None,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
+        rank: int | None = None,
+        m1: int | None = None,
+        n1: int | None = None,
+        m2: int | None = None,
+        n2: int | None = None,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> None:
@@ -122,10 +122,10 @@ class KroneckerLinear(nn.Module):
     def _init_base_parameters(
         self,
         bias: bool,
-        dtype: Optional[torch.dtype],
-        device: Optional[torch.device],
+        dtype: torch.dtype | None,
+        device: torch.device | None,
         requires_grad: bool,
-        rank: Optional[int],
+        rank: int | None,
     ) -> None:
         if self.can_decompose:
             # Kronecker factors A (m1, n1), B (m2, n2)
@@ -259,8 +259,8 @@ class KroneckerLinear(nn.Module):
     def _fit_svd(
         self,
         weight: torch.Tensor,
-        bias: Optional[torch.Tensor] = None,
-        rank: Optional[int] = None,
+        bias: torch.Tensor | None = None,
+        rank: int | None = None,
         max_error: float = 0.20,
     ) -> None:
         """Fit low-rank SVD factors ensuring parameter reduction."""
@@ -331,15 +331,15 @@ class KroneckerLinear(nn.Module):
     def from_linear(
         cls,
         linear: nn.Module,
-        rank: Optional[int] = None,
+        rank: int | None = None,
         max_error: float = 0.20,
-        m1: Optional[int] = None,
-        n1: Optional[int] = None,
-        m2: Optional[int] = None,
-        n2: Optional[int] = None,
+        m1: int | None = None,
+        n1: int | None = None,
+        m2: int | None = None,
+        n2: int | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-    ) -> "KroneckerLinear":
+    ) -> KroneckerLinear:
         """Build a KroneckerLinear from a pretrained Linear/Conv1D/LoRA wrapper."""
         target_mod = getattr(linear, "base_layer", linear)
         cls_lower = target_mod.__class__.__name__.lower()
@@ -492,8 +492,8 @@ class KroneckerCompressor(BaseCompressor):
 
     def __init__(
         self,
-        model: Optional[nn.Module] = None,
-        rank: Optional[int] = None,
+        model: nn.Module | None = None,
+        rank: int | None = None,
         max_error: float = 0.80,
         fallback_to_original: bool = True,
         lora_r: int = 0,
@@ -502,15 +502,15 @@ class KroneckerCompressor(BaseCompressor):
         skip_attention_qkv: bool = False,
         skip_should_compress_filter: bool = False,
         min_layer_dim: int = 8,
-        cfg: Optional[Any] = None,
-        target_layers: Optional[List[str]] = None,
+        cfg: Any | None = None,
+        target_layers: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
             model if model is not None else nn.Identity(),
             name="kronecker", **kwargs,
         )
-        conf = cfg or kwargs.get("comp_config", None)
+        conf = cfg or kwargs.get("comp_config")
 
         rank = _cfg_get(conf, "kronecker_rank", _cfg_get(conf, "rank", rank))
         max_error = _cfg_get(conf, "kronecker_max_error",
@@ -544,13 +544,13 @@ class KroneckerCompressor(BaseCompressor):
         self.target_layers = target_layers
         self.cfg = conf
 
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.layer_errors: Dict[str, float] = {}
-        self.layer_ranks: Dict[str, Optional[int]] = {}
-        self.layer_modes: Dict[str, str] = {}
-        self.stats: Dict[str, Any] = {}
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.layer_errors: dict[str, float] = {}
+        self.layer_ranks: dict[str, int | None] = {}
+        self.layer_modes: dict[str, str] = {}
+        self.stats: dict[str, Any] = {}
         self._compressed_params: int = 0
 
     # ------------------------------------------------------------------
@@ -640,7 +640,7 @@ class KroneckerCompressor(BaseCompressor):
         return True
 
     # ------------------------------------------------------------------
-    def compress(self, model: Optional[nn.Module] = None) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         # KC-FIX-09: idempotence.
         if getattr(self.model, "_kronecker_compressed", False):
             logger.warning("KroneckerCompressor: model already compressed; skipping.")
@@ -662,7 +662,7 @@ class KroneckerCompressor(BaseCompressor):
         self.layer_errors = {}
         self.layer_ranks = {}
         self.layer_modes = {}
-        seen_weights: Set[int] = set()
+        seen_weights: set[int] = set()
 
         total_orig_params = 0
         total_comp_params = 0
@@ -725,7 +725,7 @@ class KroneckerCompressor(BaseCompressor):
             W_target = raw_w.t().float() if is_conv1d else raw_w.float()
             W_norm = torch.norm(W_target, p="fro").item()
 
-            new_layer: Optional[KroneckerLinear] = None
+            new_layer: KroneckerLinear | None = None
             err = 1.0
             try:
                 new_layer = KroneckerLinear.from_linear(
@@ -883,10 +883,10 @@ class KroneckerCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("kronecker_factory")
 def kronecker_factory(
     model: nn.Module,
-    comp_config: Optional[Any] = None,
-    rank: Optional[int] = None,
+    comp_config: Any | None = None,
+    rank: int | None = None,
     **kwargs: Any,
-) -> Union[nn.Module, Tuple[nn.Module, Dict[str, Any]]]:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """Kronecker compressor factory."""
     rank = rank or _cfg_get(comp_config, "kronecker_rank",
                             _cfg_get(comp_config, "rank", 128))

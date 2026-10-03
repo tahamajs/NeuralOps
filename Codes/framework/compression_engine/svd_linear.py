@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -179,12 +179,12 @@ class SVDLinearCompressor(BaseCompressor):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         skip_attention_qkv: bool = False,
-        target_modules: Optional[List[str]] = None,
-        cfg: Optional[Any] = None,
+        target_modules: list[str] | None = None,
+        cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="svd_linear", **kwargs)
-        conf = cfg or kwargs.get("comp_config", None)
+        conf = cfg or kwargs.get("comp_config")
         if conf is not None:
             rank = _cfg_get(conf, "svd_rank", _cfg_get(conf, "rank", rank))
             max_error = _cfg_get(conf, "max_error", max_error)
@@ -204,12 +204,12 @@ class SVDLinearCompressor(BaseCompressor):
         self.lora_alpha = float(lora_alpha)
         self.skip_attention_qkv = bool(skip_attention_qkv)
         self.target_modules = target_modules
-        self.layer_errors: Dict[str, float] = {}
-        self.replaced_layers: List[Dict[str, Any]] = []
-        self.compressed_layers: List[str] = []
-        self.fallback_layers: List[str] = []
-        self.skipped_layers: List[str] = []
-        self.stats: Dict[str, Any] = {}
+        self.layer_errors: dict[str, float] = {}
+        self.replaced_layers: list[dict[str, Any]] = []
+        self.compressed_layers: list[str] = []
+        self.fallback_layers: list[str] = []
+        self.skipped_layers: list[str] = []
+        self.stats: dict[str, Any] = {}
 
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         if not self.skip_attention_qkv:
@@ -250,7 +250,7 @@ class SVDLinearCompressor(BaseCompressor):
             return any(t in name for t in self.target_modules)
         return True
 
-    def compress(self, **kwargs: Any) -> Tuple[nn.Module, Dict[str, Any]]:
+    def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         """Compress linear layers with SVD factorization."""
         self.layer_errors = {}
         self.replaced_layers = []

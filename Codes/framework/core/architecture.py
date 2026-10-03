@@ -5,7 +5,6 @@ across all common HuggingFace architectures.
 """
 
 import logging
-from typing import List, Optional, Tuple
 
 import torch.nn as nn
 
@@ -40,7 +39,7 @@ def detect_architecture(model: nn.Module) -> str:
     return "unknown"
 
 
-def get_transformer_layers(model: nn.Module) -> List[nn.Module]:
+def get_transformer_layers(model: nn.Module) -> list[nn.Module]:
     """Return a flat list of transformer blocks."""
     # Llama / Gemma / Phi / Mistral / Falcon
     if hasattr(model, "model") and hasattr(model.model, "layers"):
@@ -65,14 +64,14 @@ def get_transformer_layers(model: nn.Module) -> List[nn.Module]:
     raise ValueError("Could not locate transformer layers automatically.")
 
 
-def get_attention_modules(model: nn.Module) -> List[Tuple[str, nn.Module]]:
+def get_attention_modules(model: nn.Module) -> list[tuple[str, nn.Module]]:
     """Return (name, module) for all leaf attention sub-modules across any transformer architecture.
     
     Applies strict path-prefix deduplication so parent composite containers are never
     returned alongside their inner leaf attention blocks, preventing accidental deletion
     of LayerNorm, output projections, and residual streams.
     """
-    raw_candidates: List[Tuple[str, nn.Module]] = []
+    raw_candidates: list[tuple[str, nn.Module]] = []
     seen_names = set()
 
     for name, module in model.named_modules():
@@ -114,7 +113,7 @@ def get_attention_modules(model: nn.Module) -> List[Tuple[str, nn.Module]]:
     # If module A's path is a strict prefix of module B's path (e.g. A="...attention", B="...attention.self"),
     # A is an outer container holding B. We keep only the deepest/leaf modules (B) and drop A.
     all_cand_names = [name for name, _ in raw_candidates]
-    leaf_modules: List[Tuple[str, nn.Module]] = []
+    leaf_modules: list[tuple[str, nn.Module]] = []
 
     for name, module in raw_candidates:
         is_parent = any(other != name and other.startswith(name + ".") for other in all_cand_names)
@@ -141,7 +140,7 @@ def get_attention_modules(model: nn.Module) -> List[Tuple[str, nn.Module]]:
     return leaf_modules
 
 
-def get_ffn_modules(model: nn.Module) -> List[Tuple[str, nn.Module]]:
+def get_ffn_modules(model: nn.Module) -> list[tuple[str, nn.Module]]:
     """Return (name, module) for all feed‑forward blocks."""
     ffn_modules = []
     for name, module in model.named_modules():
@@ -158,7 +157,7 @@ def get_ffn_modules(model: nn.Module) -> List[Tuple[str, nn.Module]]:
     return ffn_modules
 
 
-def get_embedding_module(model: nn.Module) -> Optional[nn.Module]:
+def get_embedding_module(model: nn.Module) -> nn.Module | None:
     """Return the input word embedding module."""
     if hasattr(model, "get_input_embeddings"):
         return model.get_input_embeddings()
@@ -172,7 +171,7 @@ def get_embedding_module(model: nn.Module) -> Optional[nn.Module]:
     return None
 
 
-def get_classifier_head(model: nn.Module) -> Optional[nn.Module]:
+def get_classifier_head(model: nn.Module) -> nn.Module | None:
     """Return the final classification layer."""
     if hasattr(model, "classifier"):
         return model.classifier

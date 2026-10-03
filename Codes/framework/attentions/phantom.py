@@ -19,7 +19,7 @@ from __future__ import annotations
 import logging
 import math
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -27,7 +27,7 @@ import torch.nn.functional as F
 
 from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
-from framework.core.gqa_utils import get_qkv_projection_dims, repeat_kv
+from framework.core.gqa_utils import repeat_kv
 from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -54,8 +54,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
 
@@ -108,8 +108,8 @@ class FactorisedLinear_CUR(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -159,7 +159,7 @@ class FactorisedLinear_CUR(nn.Module):
             if self.lora_B is not None:
                 self.lora_B.requires_grad = True
 
-    def copy_cur(self, weight: torch.Tensor, bias: Optional[torch.Tensor] = None) -> None:
+    def copy_cur(self, weight: torch.Tensor, bias: torch.Tensor | None = None) -> None:
         with torch.no_grad():
             W = weight.float()
             out_dim, in_dim = W.shape
@@ -214,7 +214,7 @@ class FactorisedLinear_CUR(nn.Module):
         return torch.matmul(self.up.weight, self.down.weight)
 
     @property
-    def bias(self) -> Optional[torch.Tensor]:
+    def bias(self) -> torch.Tensor | None:
         return self.up.bias
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -232,8 +232,8 @@ def lsh_attention(
     rounds: int,
     bucket_size: int,
     softpick_temp: float = 1.0,
-    dropout: Optional[nn.Module] = None,
-    token_valid: Optional[torch.Tensor] = None,
+    dropout: nn.Module | None = None,
+    token_valid: torch.Tensor | None = None,
     is_causal: bool = False,
 ) -> torch.Tensor:
     B, H, N, D = Q.shape
@@ -288,10 +288,10 @@ class PHANTOMAttention(BaseAttention):
     is_custom_attention: bool = True
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = 16,
-        phantom_cfg: Optional[PHANTOMConfig] = None,
-        pretrained_attn: Optional[Any] = None,
+        config: Any | None = None,
+        rank: int | None = 16,
+        phantom_cfg: PHANTOMConfig | None = None,
+        pretrained_attn: Any | None = None,
         bert_mode: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -306,7 +306,7 @@ class PHANTOMAttention(BaseAttention):
             phantom_cfg.cur_rank = rank
         self.cfg: PHANTOMConfig = phantom_cfg
 
-        model_config = config or kwargs.get("model_config", None)
+        model_config = config or kwargs.get("model_config")
         self.hidden_size: int = getattr(model_config, "hidden_size", kwargs.get("hidden_size", 768))
         self.dim: int = self.hidden_size
         self.num_heads: int = getattr(model_config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
@@ -336,8 +336,8 @@ class PHANTOMAttention(BaseAttention):
         self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))) if config else 32.0
         self.freeze_base = (self.lora_rank > 0)
 
-        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn", None)
-        target_dtype = kwargs.get("dtype", None)
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
+        target_dtype = kwargs.get("dtype")
         if target_dtype is None and source_attn is not None:
             target_dtype = next(source_attn.parameters(), torch.tensor([])).dtype
             if not isinstance(target_dtype, torch.dtype):
@@ -368,16 +368,14 @@ class PHANTOMAttention(BaseAttention):
         cls_name = src.__class__.__name__
         has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
-        if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            is_nested = True
-        elif (
+        if hasattr(src, "self") and hasattr(src.self, "query") or (
             cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
             or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
         ) and not has_out_lin:
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -412,13 +410,13 @@ class PHANTOMAttention(BaseAttention):
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
         # 2. RoBERTa nested
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            s = getattr(src, "self")
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
+            s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
                     extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
-            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+            if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
                 extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
 
@@ -501,18 +499,18 @@ class PHANTOMAttention(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
 
@@ -522,7 +520,7 @@ class PHANTOMAttention(BaseAttention):
 
         # Apply RoPE if provided
         if position_embeddings is None:
-            position_embeddings = kwargs.get("position_embeddings", None)
+            position_embeddings = kwargs.get("position_embeddings")
         if position_embeddings is not None:
             cos, sin = position_embeddings
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
@@ -569,15 +567,15 @@ class PHANTOMAttention(BaseAttention):
 
 
 def inject_phantom(
-    model: Optional[nn.Module] = None,
-    layer: Optional[nn.Module] = None,
+    model: nn.Module | None = None,
+    layer: nn.Module | None = None,
     model_config: Any = None,
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
-) -> Optional[Union[PHANTOMAttention, nn.Module]]:
+) -> PHANTOMAttention | nn.Module | None:
     """Safe injection hook for PHANTOMAttention across diverse transformer architectures."""
     target = layer if layer is not None else model
     if target is None:
@@ -645,9 +643,9 @@ def inject_phantom(
                 return None
             if "PHANTOM" in src_attn.__class__.__name__:
                 return None
-            if hasattr(src_attn, "inner") and isinstance(getattr(src_attn, "inner"), PHANTOMAttention):
+            if hasattr(src_attn, "inner") and isinstance(src_attn.inner, PHANTOMAttention):
                 return None
-            if hasattr(src_attn, "_wrapped_attention") and isinstance(getattr(src_attn, "_wrapped_attention"), PHANTOMAttention):
+            if hasattr(src_attn, "_wrapped_attention") and isinstance(src_attn._wrapped_attention, PHANTOMAttention):
                 return None
 
         if target is not None:
@@ -659,9 +657,9 @@ def inject_phantom(
                     return None
                 if "PHANTOM" in cand.__class__.__name__:
                     return None
-                if hasattr(cand, "inner") and isinstance(getattr(cand, "inner"), PHANTOMAttention):
+                if hasattr(cand, "inner") and isinstance(cand.inner, PHANTOMAttention):
                     return None
-                if hasattr(cand, "_wrapped_attention") and isinstance(getattr(cand, "_wrapped_attention"), PHANTOMAttention):
+                if hasattr(cand, "_wrapped_attention") and isinstance(cand._wrapped_attention, PHANTOMAttention):
                     return None
 
         # Skip Qwen3.5 hybrid DeltaNet/LinearAttention layers
@@ -725,5 +723,5 @@ def inject_phantom(
 
 # Aliases and Registry
 @ATTENTION_REGISTRY.register("phantom_inject")
-def inject_phantom_attention(*args: Any, **kwargs: Any) -> Optional[Union[PHANTOMAttention, nn.Module]]:
+def inject_phantom_attention(*args: Any, **kwargs: Any) -> PHANTOMAttention | nn.Module | None:
     return inject_phantom(*args, **kwargs)

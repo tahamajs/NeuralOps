@@ -32,7 +32,7 @@ CODES = HERE.parent
 ROOT = CODES.parent
 sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "Codes")]
 
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
 from framework.eval_all_models_datasets import apply_module_to_model
 from framework.run_quality_sweep import prepare_eval_batches, evaluate_comprehensive
 

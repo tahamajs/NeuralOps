@@ -29,7 +29,7 @@ from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.core.attention_mask import get_token_valid_mask
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
@@ -80,8 +79,8 @@ def apply_rotary_pos_emb(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: Optional[torch.Tensor] = None,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
     r"""Applies rotary position embeddings with partial-RoPE dimension slicing."""
     if cos is None or sin is None:
         return q, k
@@ -121,8 +120,8 @@ class LoRALinear(nn.Module):
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
         freeze_base: bool = False,
-        device: Optional[torch.device] = None,
-        dtype: Optional[torch.dtype] = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
     ) -> None:
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
@@ -205,16 +204,16 @@ class FlashAttention3FP8(BaseAttention):
     is_custom_attention: bool = True
     def __init__(
         self,
-        config: Optional[Any] = None,
-        rank: Optional[int] = None,
-        d_model: Union[int, Any] = 768,
+        config: Any | None = None,
+        rank: int | None = None,
+        d_model: int | Any = 768,
         n_heads: int = 12,
         use_fp8: bool = False,
-        pretrained_attn: Optional[nn.Module] = None,
-        old_attn: Optional[nn.Module] = None,
-        comp_config: Optional[Any] = None,
-        layer_id: Optional[int] = None,
-        layer_idx: Optional[int] = None,
+        pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
+        comp_config: Any | None = None,
+        layer_id: int | None = None,
+        layer_idx: int | None = None,
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
@@ -282,7 +281,7 @@ class FlashAttention3FP8(BaseAttention):
 
         # Decoder & nested encoder detection
         _mt = str(getattr(config, "model_type", "") or "").lower() if config is not None else ""
-        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi", 
+        _decoder_prefixes = ("gpt", "qwen", "llama", "mistral", "gemma", "phi",
                              "opt", "bloom", "falcon", "olmo", "mpt", "stablelm")
         is_dec = (
             getattr(config, "is_decoder", False)
@@ -296,7 +295,7 @@ class FlashAttention3FP8(BaseAttention):
         self.is_decoder: bool = bool(is_dec)
         self.is_causal: bool = bool(is_dec)
 
-        is_nested = kwargs.get("is_nested_encoder", None)
+        is_nested = kwargs.get("is_nested_encoder")
         if is_nested is None and source_attn is not None:
             src_cls = source_attn.__class__.__name__
             if (
@@ -322,7 +321,7 @@ class FlashAttention3FP8(BaseAttention):
         self.dropout = nn.Dropout(dropout_p)
 
         self.rotary_emb = None
-        self.comp_config: Optional[Any] = comp_config
+        self.comp_config: Any | None = comp_config
 
         if source_attn is not None:
             self.copy_weights(source_attn)
@@ -367,12 +366,10 @@ class FlashAttention3FP8(BaseAttention):
             is_nested = False
         elif (
             hasattr(src, "self")
-            and hasattr(getattr(src, "self"), "query")
+            and hasattr(src.self, "query")
             and hasattr(src, "output")
-            and hasattr(getattr(src, "output"), "dense")
-        ):
-            is_nested = True
-        elif (
+            and hasattr(src.output, "dense")
+        ) or (
             cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
             or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
         ):
@@ -384,7 +381,7 @@ class FlashAttention3FP8(BaseAttention):
         if hasattr(src, "rotary_emb") and src.rotary_emb is not None:
             self.rotary_emb = src.rotary_emb
 
-        extracted: Dict[str, Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]] = {
+        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -428,13 +425,13 @@ class FlashAttention3FP8(BaseAttention):
                     extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
         # 2. RoBERTa / BERT nested self-attention
-        elif hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-            s = getattr(src, "self")
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
+            s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
                     extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
-            if hasattr(src, "output") and hasattr(getattr(src, "output"), "dense"):
+            if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
                 extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
 
@@ -518,19 +515,19 @@ class FlashAttention3FP8(BaseAttention):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Any] = None,
-        output_attentions: Optional[bool] = False,
-        output_hidden_states: Optional[bool] = False,
-        return_dict: Optional[bool] = True,
-        position_ids: Optional[torch.Tensor] = None,
-        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_ids: torch.Tensor | None = None,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, L, D = hidden_states.shape
         H, Dh = self.num_heads, self.head_dim
         device = hidden_states.device
@@ -563,7 +560,7 @@ class FlashAttention3FP8(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        causal_flag = bool(self.is_decoder and not is_cross_attention and L == kv_len)
+        causal_flag = bool(self.is_decoder and not is_cross_attention and kv_len == L)
 
         # 4. FlashAttention-3 FP8 hardware acceleration path
         # Requires Hopper architecture (SM 9.0+), flash_attn, and CUDA tensor
@@ -676,12 +673,12 @@ def inject_flash3_fp8(
     comp_config: Any = None,
     layer_idx: int = 0,
     total_layers: int = 12,
-    old_attn: Optional[nn.Module] = None,
+    old_attn: nn.Module | None = None,
     **kwargs: Any,
 ):
     target = layer if layer is not None else model
     if target is None:
-        target = kwargs.get("model", kwargs.get("layer", None))
+        target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
 

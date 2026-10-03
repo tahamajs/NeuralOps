@@ -1,6 +1,6 @@
 """Utility functions for analysis."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -8,10 +8,10 @@ import pandas as pd
 
 def filter_results(
     df: pd.DataFrame,
-    models: Optional[List[str]] = None,
-    tasks: Optional[List[str]] = None,
-    ranks: Optional[List[int]] = None,
-    min_accuracy: Optional[float] = None,
+    models: list[str] | None = None,
+    tasks: list[str] | None = None,
+    ranks: list[int] | None = None,
+    min_accuracy: float | None = None,
 ) -> pd.DataFrame:
     """Filter results."""
     result = df.copy()
@@ -36,14 +36,14 @@ def get_best_configurations(df: pd.DataFrame, metric: str = "accuracy") -> pd.Da
     return pd.DataFrame(best_rows)
 
 
-def correlation_matrix(df: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
+def correlation_matrix(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
     """Correlation matrix."""
     return df[columns].corr()
 
 
 def statistical_tests(
     df: pd.DataFrame, group_col: str, value_col: str
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Statistical tests."""
     from scipy import stats
 
@@ -59,8 +59,8 @@ def statistical_tests(
 
 
 def detect_least_compressible_layers(
-    model, tokenizer, calibration_texts: List[str], k: int = 5
-) -> List[int]:
+    model, tokenizer, calibration_texts: list[str], k: int = 5
+) -> list[int]:
     """Detect least compressible layers."""
     from .layerwise_analyzer import LayerwiseAnalyzer
 

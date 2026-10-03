@@ -1,6 +1,5 @@
-from typing import Any, List
+from typing import Any
 import logging
-from typing import Dict, Type
 
 from .base_trainer import BaseTrainer
 
@@ -10,12 +9,12 @@ logger = logging.getLogger(__name__)
 class TrainerRegistry:
     """Registry for trainer classes."""
 
-    _registry: Dict[str, Type[BaseTrainer]] = {}
+    _registry: dict[str, type[BaseTrainer]] = {}
 
     @classmethod
     def register(cls, name: str) -> Any:
         """Register."""
-        def decorator(klass: Type[BaseTrainer]) -> Type[BaseTrainer]:
+        def decorator(klass: type[BaseTrainer]) -> type[BaseTrainer]:
             """Decorator."""
             if not issubclass(klass, BaseTrainer):
                 raise TypeError(f"{klass.__name__} must inherit from BaseTrainer")
@@ -26,7 +25,7 @@ class TrainerRegistry:
         return decorator
 
     @classmethod
-    def get(cls, name: str) -> Type[BaseTrainer]:
+    def get(cls, name: str) -> type[BaseTrainer]:
         """Get."""
         if name not in cls._registry:
             raise ValueError(
