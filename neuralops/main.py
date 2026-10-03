@@ -112,7 +112,7 @@ def _import_framework():
         set_seed,
     )
     from neuralops.experiment_utils.config import ExperimentConfig
-    from neuralops.pipeline.result_writer import ResultWriter
+    from neuralops.results_saver.pipeline.result_writer import ResultWriter
     from neuralops.trainer.callbacks import (
         MemoryCallback,
         SVDAttentionCallback,
