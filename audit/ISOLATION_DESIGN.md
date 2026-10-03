@@ -1,7 +1,7 @@
 # Isolation Pipeline Verification & Design
 
 ## 1. Process Model
-**Decision**: Use `subprocess.Popen` spawning `Codes/framework/run_one_module_isolated.py`.
+**Decision**: Use `subprocess.Popen` spawning `neuralops/run_one_module_isolated.py`.
 **Rationale**: `multiprocessing` spawn on Windows often fails with PyTorch CUDA tensors in memory, and `ProcessPoolExecutor` holds persistent workers that accumulate VRAM fragmentation. A pure CLI sub-process ensures 100% memory reclamation upon exit by the OS. It also allows hard killing via Windows `taskkill` when Python-level `terminate()` hangs.
 
 ## 2. Communication Protocol

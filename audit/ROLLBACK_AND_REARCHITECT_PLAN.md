@@ -119,39 +119,39 @@ A pure AST parser has been built at `scripts/ast_extractor.py`. It inspects:
 ============================================================
 Module: mamba.py (Equations Count: 5)
   * Linear Projection Forward Mapping: y = W x + b
-    <!-- source: Codes/framework/attentions/mamba.py line 102 -->
+    <!-- source: neuralops/attentions/mamba.py line 102 -->
   * Low-Rank Adaptation Step: y = W_{\text{base}} x + \frac{\alpha}{r_L} (B A) x
-    <!-- source: Codes/framework/attentions/mamba.py line 104 -->
+    <!-- source: neuralops/attentions/mamba.py line 104 -->
   * Continuous-to-Discrete State Space Decay Parameterization: \gamma = \sigma\left(-\exp(A_{\text{log}})\right), \quad A = -\exp(A_{\text{log}})
-    <!-- source: Codes/framework/attentions/mamba.py line 505 -->
+    <!-- source: neuralops/attentions/mamba.py line 505 -->
   * Recurrent Sequence Aggregation Kernel: h_t = \sum_{s \le t} \gamma^{t-s} x_s \odot W_{\text{proj}}
-    <!-- source: Codes/framework/attentions/mamba.py line 468 -->
+    <!-- source: neuralops/attentions/mamba.py line 468 -->
   * Attention Probability Distribution: A = \operatorname{softmax}\left(\frac{Q K^\top}{\sqrt{d_k}} + M\right)
-    <!-- source: Codes/framework/attentions/mamba.py line 466 -->
+    <!-- source: neuralops/attentions/mamba.py line 466 -->
 
 ============================================================
 Module: lora_attention.py (Equations Count: 3)
   * Linear Projection Forward Mapping: y = W x + b
-    <!-- source: Codes/framework/attentions/lora_attention.py line 139 -->
+    <!-- source: neuralops/attentions/lora_attention.py line 139 -->
   * Low-Rank Adaptation Step: y = W_{\text{base}} x + \frac{\alpha}{r_L} (B A) x
-    <!-- source: Codes/framework/attentions/lora_attention.py line 141 -->
+    <!-- source: neuralops/attentions/lora_attention.py line 141 -->
   * Attention Probability Distribution: A = \operatorname{softmax}\left(\frac{Q K^\top}{\sqrt{d_k}} + M\right)
-    <!-- source: Codes/framework/attentions/lora_attention.py line 401 -->
+    <!-- source: neuralops/attentions/lora_attention.py line 401 -->
 
 ============================================================
 Module: slicegpt.py (Equations Count: 6)
   * Formulation from Source Specification (1): W_{\ell} X_{\ell} = (W_{\ell} Q_{\ell}) (Q_{\ell}^\top X_{\ell})
-    <!-- source: Codes/framework/compression_engine/slicegpt.py line 1 -->
+    <!-- source: neuralops/compression_engine/slicegpt.py line 1 -->
   * Formulation from Source Specification (2): C = X X^\top = Q \Lambda Q^\top
-    <!-- source: Codes/framework/compression_engine/slicegpt.py line 1 -->
+    <!-- source: neuralops/compression_engine/slicegpt.py line 1 -->
   * Formulation from Source Specification (3): W_{\text{sliced}} = W Q P_r, \quad P_r = [I_r, 0]^\top
-    <!-- source: Codes/framework/compression_engine/slicegpt.py line 1 -->
+    <!-- source: neuralops/compression_engine/slicegpt.py line 1 -->
   * Random Haar Orthogonal Matrix via QR: Q, R = \operatorname{qr}(Z), \quad Z \sim \mathcal{N}(0, I)
-    <!-- source: Codes/framework/compression_engine/slicegpt.py line 188 -->
+    <!-- source: neuralops/compression_engine/slicegpt.py line 188 -->
   * Activation Covariance Eigen-Decomposition: C = \frac{1}{N} X^\top X, \quad C = Q \Lambda Q^\top
-    <!-- source: Codes/framework/compression_engine/slicegpt.py line 177 -->
+    <!-- source: neuralops/compression_engine/slicegpt.py line 177 -->
   * Orthogonal Coordinate Rotation: \tilde{W} = W Q, \quad \tilde{X} = Q^\top X
-    <!-- source: Codes/framework/compression_engine/slicegpt.py line 223 -->
+    <!-- source: neuralops/compression_engine/slicegpt.py line 223 -->
 ```
 
 ---
@@ -167,7 +167,7 @@ The newly discovered documentation files in `Codes/frontend/dist/Docs/content/at
 
 ### Re-Architecting Rule:
 The new paper generator will ingest:
-1. The **Python Source Code AST** (`Codes/framework/attentions/` or `Codes/framework/compression_engine/`).
+1. The **Python Source Code AST** (`neuralops/attentions/` or `neuralops/compression_engine/`).
 2. The **Curated Mathematical Documentation** (`Codes/frontend/dist/Docs/content/`).
 3. The **Real Mined Benchmark Results** (`results/unified_<mod>/.../summary.csv`).
 

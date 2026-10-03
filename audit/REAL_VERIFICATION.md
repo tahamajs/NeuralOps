@@ -21,7 +21,7 @@
 ## ۲. چه کارهایی واقعاً انجام شده است؟ (شواهد قطعی)
 
 1. **تمام ۱۹۱ ماژول منبع پایتون (`115 Attention` + `76 Compression`) فایل متناظر دارند:**
-   - تمام فایل‌های پایتون موجود در `Codes/framework/attentions/` و `Codes/framework/compression_engine/` یک فایل `.tex` در پوشه `thesis_final/attentions_latex/individual_modules/` دارند و همگی در `chapter_attentions.tex` با دستور `\input` فراخوانی شده‌اند (مجموعاً ۲۰۲ فراخوانی شامل ۱۹۱ ماژول اصلی به علاوه ۱۱ ماژول نام مستعار/نسخه‌های قبلی).
+   - تمام فایل‌های پایتون موجود در `neuralops/attentions/` و `neuralops/compression_engine/` یک فایل `.tex` در پوشه `thesis_final/attentions_latex/individual_modules/` دارند و همگی در `chapter_attentions.tex` با دستور `\input` فراخوانی شده‌اند (مجموعاً ۲۰۲ فراخوانی شامل ۱۹۱ ماژول اصلی به علاوه ۱۱ ماژول نام مستعار/نسخه‌های قبلی).
 2. **صفحات PDF رساله واقعاً به ۷۶۱ صفحه رسیده است:**
    - فایل [master_thesis_lite.pdf](thesis_final/master_thesis_lite.pdf) دقیقاً ۷۶۱ صفحه است و کامپایل XeLaTeX روی مک بدون خطای متوقف‌کننده (`Exit Code: 0`) انجام شد.
 3. **۲۳ ماژول ساختگی و جعلی پاکسازی شدند:**

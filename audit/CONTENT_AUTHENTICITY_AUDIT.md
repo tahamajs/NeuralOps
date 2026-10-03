@@ -59,9 +59,9 @@
   ```
 - **Variance:** **0.0% variance** across `mamba`, `proxsparse_pruner`, and `slicegpt`. All 129 regenerated modules have exactly 1,221 words in `04_method.md`.
 
-### V6. Source Code Comparison (`Codes/framework/attentions/mamba.py`)
+### V6. Source Code Comparison (`neuralops/attentions/mamba.py`)
 - **Source Inspection:**
-  - `Codes/framework/attentions/mamba.py` implements:
+  - `neuralops/attentions/mamba.py` implements:
     - Selective SSM parameter `A_log = Parameter(log(arange(1, D+1)))`
     - Learned decay factor $\text{decay} = \sigma(-\exp(A_{\text{log}}))$
     - Causal distance matrix `dist = (pos[1] - pos[0]).clamp(min=0)`
@@ -69,7 +69,7 @@
     - Gated activation $F.\text{silu}(p_1) \odot p_2$
 - **Paper Method Section:**
   - Describes Eckart-Young-Mirsky SVD truncation, proximal $\ell_1$ shrinkage, and NVIDIA 2:4 sparse masks.
-- **Conclusion:** The generated paper does not describe what `Codes/framework/attentions/mamba.py` actually does.
+- **Conclusion:** The generated paper does not describe what `neuralops/attentions/mamba.py` actually does.
 
 ### V7. Manual PDF Inspection (`paper/PerModulePaper/mamba/main.pdf`)
 - **Section 4.1 Title:** "Algorithmic Overview" with generic phases ("Phase 2: Factorization / Sparsification Transformation — SVD: W -> U Sigma V^T OR Proximal: W -> S_lambda(W)").
@@ -108,7 +108,7 @@ Manual inspection of the `lora_attention` paper files uncovered extensive synthe
 
 ### D. Code Block Inconsistencies & Duplication
 - **Section 5.2 vs Section 4.3**: Section 5.2 contains verbatim duplications of Section 4.3 weight transfer logic.
-- Synthetic pseudo-code inserted without full AST verification against `Codes/framework/attentions/lora_attention.py`.
+- Synthetic pseudo-code inserted without full AST verification against `neuralops/attentions/lora_attention.py`.
 
 ### E. Contradictory Results Across Sections
 - Table 7.1 reports DistilBERT LoRA = **89.91%**.
@@ -118,7 +118,7 @@ Manual inspection of the `lora_attention` paper files uncovered extensive synthe
 
 ### F. Complete Absence of Equation Source Citations
 - `grep -c "source:" paper/PerModulePaper/lora_attention/04_method.md` yields **0**.
-- Not a single mathematical derivation is grounded to a specific line in `Codes/framework/attentions/lora_attention.py`.
+- Not a single mathematical derivation is grounded to a specific line in `neuralops/attentions/lora_attention.py`.
 
 ### G. Malformed Repository / Metadata Links
 - Section 12 references `"efficiency-lab/svd-linear-attention--lora attention"`, containing literal double dashes and unescaped whitespace instead of standard repository slugs.

@@ -1,7 +1,7 @@
 {
   "aegis_v1": {
     "module_name": "aegis_v1",
-    "source_file": "Codes/framework/attentions/aegis_v1.py",
+    "source_file": "neuralops/attentions/aegis_v1.py",
     "source_lines_count": 814,
     "architecture": {
       "class_name": "FactorisedLinear",
@@ -763,7 +763,7 @@
   },
   "aegis_v2": {
     "module_name": "aegis_v2",
-    "source_file": "Codes/framework/attentions/aegis_v2.py",
+    "source_file": "neuralops/attentions/aegis_v2.py",
     "source_lines_count": 772,
     "architecture": {
       "class_name": "FactorisedLinear",
@@ -1369,7 +1369,7 @@
   },
   "aegis_v3": {
     "module_name": "aegis_v3",
-    "source_file": "Codes/framework/attentions/aegis_v3.py",
+    "source_file": "neuralops/attentions/aegis_v3.py",
     "source_lines_count": 789,
     "architecture": {
       "class_name": "FactorisedLinear",
@@ -1992,7 +1992,7 @@
   },
   "aegis_v4": {
     "module_name": "aegis_v4",
-    "source_file": "Codes/framework/attentions/aegis_v4.py",
+    "source_file": "neuralops/attentions/aegis_v4.py",
     "source_lines_count": 794,
     "architecture": {
       "class_name": "FactorisedLinear",
@@ -2615,7 +2615,7 @@
   },
   "aegis_v6": {
     "module_name": "aegis_v6",
-    "source_file": "Codes/framework/attentions/aegis_v6.py",
+    "source_file": "neuralops/attentions/aegis_v6.py",
     "source_lines_count": 891,
     "architecture": {
       "class_name": "FactorisedLowRankProjection",

@@ -1,7 +1,7 @@
 {
   "kda_attention": {
     "module_name": "kda_attention",
-    "source_file": "Codes/framework/attentions/kda_attention.py",
+    "source_file": "neuralops/attentions/kda_attention.py",
     "source_lines_count": 720,
     "architecture": {
       "class_name": "LoRALinear",
@@ -471,7 +471,7 @@
   },
   "kmeans_quantize": {
     "module_name": "kmeans_quantize",
-    "source_file": "Codes/framework/compression_engine/kmeans_quantize.py",
+    "source_file": "neuralops/compression_engine/kmeans_quantize.py",
     "source_lines_count": 495,
     "architecture": {
       "class_name": "KMeansLinear",
@@ -520,7 +520,7 @@
   },
   "kronecker_compressor": {
     "module_name": "kronecker_compressor",
-    "source_file": "Codes/framework/compression_engine/kronecker_compressor.py",
+    "source_file": "neuralops/compression_engine/kronecker_compressor.py",
     "source_lines_count": 349,
     "architecture": {
       "class_name": "KroneckerCompressor",
@@ -1133,7 +1133,7 @@
   },
   "kronecker_linear": {
     "module_name": "kronecker_linear",
-    "source_file": "Codes/framework/compression_engine/kronecker_linear.py",
+    "source_file": "neuralops/compression_engine/kronecker_linear.py",
     "source_lines_count": 350,
     "architecture": {
       "class_name": "KroneckerLinear",
@@ -1514,7 +1514,7 @@
   },
   "kronecker_tt_lora": {
     "module_name": "kronecker_tt_lora",
-    "source_file": "Codes/framework/compression_engine/kronecker_tt_lora.py",
+    "source_file": "neuralops/compression_engine/kronecker_tt_lora.py",
     "source_lines_count": 624,
     "architecture": {
       "class_name": "KroneckerTTLoRALayer",

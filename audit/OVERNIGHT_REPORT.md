@@ -67,7 +67,7 @@ The overnight autonomous test matrix is actively running on the GPU server. All 
 ## 3. Auto-Recovery & Engineering Fixes Applied
 
 1. **Subprocess `PYTHONPATH` Resolution in Isolated Worker**:
-   * *Problem*: In `Codes/framework/run_one_module_isolated.py`, subprocesses spawned without `Codes` explicitly prepended to `sys.path` failed with `ModuleNotFoundError: No module named 'framework'`.
+   * *Problem*: In `neuralops/run_one_module_isolated.py`, subprocesses spawned without `Codes` explicitly prepended to `sys.path` failed with `ModuleNotFoundError: No module named 'framework'`.
    * *Fix*: Applied path bootstrapping directly at the head of `run_one_module_isolated.py` before module imports (`sys.path.insert(0, str(ROOT / 'Codes'))`). Deployed and verified on GPU.
 2. **Crash Dummy Cleanup**:
    * 12 empty `summary.csv` placeholders generated during the initial 0.1s import failure were purged from the sweep directories so that the respective rank configurations auto-re-evaluate cleanly.

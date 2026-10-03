@@ -1,7 +1,7 @@
 {
   "cur_compressor": {
     "module_name": "cur_compressor",
-    "source_file": "Codes/framework/compression_engine/cur_compressor.py",
+    "source_file": "neuralops/compression_engine/cur_compressor.py",
     "source_lines_count": 405,
     "architecture": {
       "class_name": "CURCompressor",
@@ -298,7 +298,7 @@
   },
   "cur_linear": {
     "module_name": "cur_linear",
-    "source_file": "Codes/framework/compression_engine/cur_linear.py",
+    "source_file": "neuralops/compression_engine/cur_linear.py",
     "source_lines_count": 249,
     "architecture": {
       "class_name": "CURLinear",
@@ -663,7 +663,7 @@
   },
   "cur_moe": {
     "module_name": "cur_moe",
-    "source_file": "Codes/framework/compression_engine/cur_moe.py",
+    "source_file": "neuralops/compression_engine/cur_moe.py",
     "source_lines_count": 20,
     "architecture": {
       "class_name": null,
@@ -1018,7 +1018,7 @@
   },
   "cure": {
     "module_name": "cure",
-    "source_file": "Codes/framework/compression_engine/cure.py",
+    "source_file": "neuralops/compression_engine/cure.py",
     "source_lines_count": 27,
     "architecture": {
       "class_name": null,
@@ -1355,7 +1355,7 @@
   },
   "delta_kv": {
     "module_name": "delta_kv",
-    "source_file": "Codes/framework/compression_engine/delta_kv.py",
+    "source_file": "neuralops/compression_engine/delta_kv.py",
     "source_lines_count": 420,
     "architecture": {
       "class_name": "DeltaKVCompressor",

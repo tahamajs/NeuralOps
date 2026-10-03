@@ -48,13 +48,13 @@ The complete suite of 265 modules in [`audit/module_test_log.jsonl`](audit/modul
   2. Unbound local variable references (`config`, `rank`) in layer injection loops.
   3. Missing default positional arguments in model injection helpers.
 - **Remediated Files & Commits:**
-  - [`samba_moe.py`](Codes/framework/attentions/samba_moe.py): Added `model=None` and full model traversal. (`7db899a21`)
-  - [`spectron.py`](Codes/framework/attentions/spectron.py): Resolved `config` scope and direct delegation to `inject_spectron_layer`. (`9118624df`)
-  - [`squeezing_heads_distill.py`](Codes/framework/attentions/squeezing_heads_distill.py): Resolved unbound `config` and `rank` variables. (`248009f2c`)
-  - [`svd_attention.py`](Codes/framework/attentions/svd_attention.py): Fixed unbound `config` and `rank` scope in `inject_svd_linear_attention`. (`aacd2536c`)
-  - [`svd_compressed.py`](Codes/framework/attentions/svd_compressed.py): Added safe default arguments and fallback in `inject_all_layers`. (`befeb43fe`)
-  - [`nli_softmax.py`](Codes/framework/compression_engine/nli_softmax.py): Added whole-model recursive traversal and `model=None` polymorphism. (`df75bd318`)
-  - [`padre_attention.py`](Codes/framework/compression_engine/padre_attention.py): Fixed `proj_candidates` scope and implemented full recursive model traversal with layer attachment. (`fa539579d`)
+  - [`samba_moe.py`](neuralops/attentions/samba_moe.py): Added `model=None` and full model traversal. (`7db899a21`)
+  - [`spectron.py`](neuralops/attentions/spectron.py): Resolved `config` scope and direct delegation to `inject_spectron_layer`. (`9118624df`)
+  - [`squeezing_heads_distill.py`](neuralops/attentions/squeezing_heads_distill.py): Resolved unbound `config` and `rank` variables. (`248009f2c`)
+  - [`svd_attention.py`](neuralops/attentions/svd_attention.py): Fixed unbound `config` and `rank` scope in `inject_svd_linear_attention`. (`aacd2536c`)
+  - [`svd_compressed.py`](neuralops/attentions/svd_compressed.py): Added safe default arguments and fallback in `inject_all_layers`. (`befeb43fe`)
+  - [`nli_softmax.py`](neuralops/compression_engine/nli_softmax.py): Added whole-model recursive traversal and `model=None` polymorphism. (`df75bd318`)
+  - [`padre_attention.py`](neuralops/compression_engine/padre_attention.py): Fixed `proj_candidates` scope and implemented full recursive model traversal with layer attachment. (`fa539579d`)
 - **Verification Results Across All 3 Backbones:**
   - `aegis_v1` - `aegis_v5`: All passed (`status: OK`)
   - `compressed_attention`: DistilBERT `0.168`, RoBERTa `0.073`, GPT-2 `1.312` (`status: OK`)

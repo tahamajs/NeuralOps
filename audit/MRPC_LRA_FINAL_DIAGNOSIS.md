@@ -91,12 +91,12 @@ By applying `batch_size=1`, `seq_len=64`, and `gradient_checkpointing=True`, pea
 
 ## 4. Issue 3: Long-Range Arena (LRA) Overhaul
 
-<!-- source: Codes/framework/train_lra.py -->
+<!-- source: neuralops/train_lra.py -->
 
 ### 4.1 Architecture Rectification
 Previous runs utilized a toy 4-layer model ($H=128$, $A=4$, intermediate $512$) trained for only 10–40 epochs without warmup, leading to degenerate representations (~10% random guessing on 10-class ListOps).
 
-The LRA trainer in `Codes/framework/train_lra.py` has been completely re-engineered:
+The LRA trainer in `neuralops/train_lra.py` has been completely re-engineered:
 - **Depth:** 6 Transformer Layers (Tay et al., 2020 LRA standard)
 - **Hidden Dimension ($H$):** 256
 - **Attention Heads ($A$):** 8 (Head dimension = 32)
@@ -108,7 +108,7 @@ The LRA trainer in `Codes/framework/train_lra.py` has been completely re-enginee
 ### 4.2 Benchmark Execution: `cosformer` on ListOps
 - **Command:**
   ```bash
-  python Codes/framework/train_lra.py \
+  python neuralops/train_lra.py \
     --task listops --module cosformer \
     --num_layers 6 --hidden_size 256 --num_heads 8 \
     --intermediate_size 1024 \

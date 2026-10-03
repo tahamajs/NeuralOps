@@ -1,7 +1,7 @@
 {
   "aa_svd_compressor": {
     "module_name": "aa_svd_compressor",
-    "source_file": "Codes/framework/compression_engine/aa_svd_compressor.py",
+    "source_file": "neuralops/compression_engine/aa_svd_compressor.py",
     "source_lines_count": 656,
     "architecture": {
       "class_name": "SVDLinear",
@@ -51,7 +51,7 @@
   },
   "adaptive_compressor": {
     "module_name": "adaptive_compressor",
-    "source_file": "Codes/framework/compression_engine/adaptive_compressor.py",
+    "source_file": "neuralops/compression_engine/adaptive_compressor.py",
     "source_lines_count": 58,
     "architecture": {
       "class_name": "AdaptiveTransformerCompressor",
@@ -540,7 +540,7 @@
   },
   "adaptive_ranks": {
     "module_name": "adaptive_ranks",
-    "source_file": "Codes/framework/compression_engine/adaptive_ranks.py",
+    "source_file": "neuralops/compression_engine/adaptive_ranks.py",
     "source_lines_count": 640,
     "architecture": {
       "class_name": "AdaptiveRanksCompressor",
@@ -949,7 +949,7 @@
   },
   "adaptive_span_attention": {
     "module_name": "adaptive_span_attention",
-    "source_file": "Codes/framework/attentions/adaptive_span_attention.py",
+    "source_file": "neuralops/attentions/adaptive_span_attention.py",
     "source_lines_count": 821,
     "architecture": {
       "class_name": "LoRALinear",
@@ -2202,7 +2202,7 @@
   },
   "adaptive_sparse_attention": {
     "module_name": "adaptive_sparse_attention",
-    "source_file": "Codes/framework/attentions/adaptive_sparse_attention.py",
+    "source_file": "neuralops/attentions/adaptive_sparse_attention.py",
     "source_lines_count": 836,
     "architecture": {
       "class_name": "LoRALinear",

@@ -1,7 +1,7 @@
 {
   "direct_svd": {
     "module_name": "direct_svd",
-    "source_file": "Codes/framework/compression_engine/direct_svd.py",
+    "source_file": "neuralops/compression_engine/direct_svd.py",
     "source_lines_count": 462,
     "architecture": {
       "class_name": "DirectSVDCompressor",
@@ -616,7 +616,7 @@
   },
   "dobi": {
     "module_name": "dobi",
-    "source_file": "Codes/framework/compression_engine/dobi.py",
+    "source_file": "neuralops/compression_engine/dobi.py",
     "source_lines_count": 24,
     "architecture": {
       "class_name": null,
@@ -1189,7 +1189,7 @@
   },
   "dynamic_entropy": {
     "module_name": "dynamic_entropy",
-    "source_file": "Codes/framework/compression_engine/dynamic_entropy.py",
+    "source_file": "neuralops/compression_engine/dynamic_entropy.py",
     "source_lines_count": 32,
     "architecture": {
       "class_name": null,
@@ -1668,7 +1668,7 @@
   },
   "dynamic_rank": {
     "module_name": "dynamic_rank",
-    "source_file": "Codes/framework/compression_engine/dynamic_rank.py",
+    "source_file": "neuralops/compression_engine/dynamic_rank.py",
     "source_lines_count": 933,
     "architecture": {
       "class_name": "DynamicSVDLinear",
@@ -1705,7 +1705,7 @@
   },
   "enlighten_compressor": {
     "module_name": "enlighten_compressor",
-    "source_file": "Codes/framework/compression_engine/enlighten_compressor.py",
+    "source_file": "neuralops/compression_engine/enlighten_compressor.py",
     "source_lines_count": 378,
     "architecture": {
       "class_name": "ENLightenCompressor",

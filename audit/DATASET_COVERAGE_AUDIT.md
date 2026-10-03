@@ -26,14 +26,14 @@
 - **Model Checkpoint**: The primary DistilBERT model loaded is `models\distilbert_sst2` (fine-tuned on SST-2).
 
 ### Evaluation & Benchmark Drivers
-- **Multi-Mode Benchmark (`Codes/framework/core/multi_mode_benchmark.py` line 111)**:
+- **Multi-Mode Benchmark (`neuralops/core/multi_mode_benchmark.py` line 111)**:
   ```python
   SUPPORTED_DATASETS = [
       "sst2", "mrpc", "cola", "qqp", "mnli", "qnli", "rte", "stsb", "wnli",
       "wikitext2", "c4", "ptb", "synthetic", "custom", "arc", "hellaswag"
   ]
   ```
-- **Evaluation Runner (`Codes/framework/eval_all_models_datasets.py`)**:
+- **Evaluation Runner (`neuralops/eval_all_models_datasets.py`)**:
   - Implements dynamic caching via `_PREPARED_DATASET_CACHE` supporting SST-2, MNLI, AG News, and MRPC.
 
 ---
@@ -91,4 +91,4 @@
 - SST-2 universal coverage: <!-- source: results/unified_svd_compressed/distilbert/summary.csv line 2 -->
 - AG News 69-module pilot run: <!-- source: results/agnews_unified_lora_attention/distilbert/finetune_metadata.json line 1 -->
 - MNLI 83-module pilot run: <!-- source: results/mnli_unified_leka_v1/distilbert/finetune_metadata.json line 1 -->
-- Multi-dataset architecture registry: <!-- source: Codes/framework/core/multi_mode_benchmark.py line 111 -->
+- Multi-dataset architecture registry: <!-- source: neuralops/core/multi_mode_benchmark.py line 111 -->

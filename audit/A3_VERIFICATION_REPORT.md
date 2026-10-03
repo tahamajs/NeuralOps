@@ -9,7 +9,7 @@
 
 | Table in Paper | Paper Subsection | Description | Status | Exact Source File / Methodology |
 |:---|:---|:---|:---|:---|
-| **Table 1** (`tab:architecture_support`) | §5, Page 7 | Cross-architecture linear/Conv1D support | **REAL / SPEC** | Hardware/framework inspection in `Codes/framework/compression_engine/a3_compressor.py` |
+| **Table 1** (`tab:architecture_support`) | §5, Page 7 | Cross-architecture linear/Conv1D support | **REAL / SPEC** | Hardware/framework inspection in `neuralops/compression_engine/a3_compressor.py` |
 | **Table 2** (`tab:notation_summary`) | §3.6, Page 5 | Mathematical symbols and tensor dimensions | **DEFINITION** | Mathematical formulation in Section 3 & 4 |
 | **Table 3** (`tab:a3_hyperparameters`) | §6, Page 8 | Production compression hyperparameters | **REAL / CONFIG** | Production CLI parameters in `run_all_4_a3.py` |
 | **Table 4** (`tab:main_sst2`) | §7.1, Page 8 | SST-2 validation accuracy, F1, latency, VRAM | **REAL** | `results/a3_tests/fixed_v4/distilbert_sst2_a3_full_metrics.json` (DistilBERT)<br>`results/unified_a3/roberta/roberta-base_a3_full_metrics.json` (RoBERTa)<br>`results/unified_a3/gpt2/gpt2_a3_full_metrics.json` (GPT-2) |
@@ -17,7 +17,7 @@
 | **Table 6** (`tab:published_comparison`) | §9.3, Page 11 | Comparison to published distillation/SVD baselines | **LITERATURE** | Literature values cited from ALBERT (Lan et al., 2020), DistilBERT (Sanh et al., 2019), TinyBERT (Jiao et al., 2020), FWSVD (Hsu et al., 2022), DRONE (Chen et al., 2021) |
 | **Table 7** (`tab:complexity_analysis`) | §A.6, Page 16 | Asymptotic time & auxiliary memory complexity | **DERIVED** | Eckart-Young / BLAS complexity derivations in Appendix A.6 |
 | **Table 8** (`tab:parameter_counting_formulation`) | §A.7, Page 16 | Dimension formulas & break-even ranks | **DERIVED** | Exact rank counting algebra: $r(d_\text{in}+d_\text{out}) < d_\text{in}d_\text{out}$ |
-| **Table 9** (`tab:app_failure_responses`) | §B.9, Page 20 | Defensive exception handling taxonomy | **REAL / CODE** | Defensive assertions in `Codes/framework/compression_engine/a3_compressor.py` |
+| **Table 9** (`tab:app_failure_responses`) | §B.9, Page 20 | Defensive exception handling taxonomy | **REAL / CODE** | Defensive assertions in `neuralops/compression_engine/a3_compressor.py` |
 | **Table 10** (`tab:app_dependencies`) | §B.10, Page 20 | Pinned software runtime versions | **ENVIRONMENT** | Python environment inspection (`torch==2.4.0`, `transformers==4.44.0`) |
 | **Table 11** (`tab:app_repro_expected`) | §B.10, Page 20 | Expected replication targets & tolerance | **REAL** | Grounded in Table 4 benchmark outcomes |
 | **Table 12** (`tab:c_distilbert_sst2`) | §C.1, Page 21 | DistilBERT comprehensive metrics | **REAL** | `results/a3_tests/fixed_v4/distilbert_sst2_a3_full_metrics.json` |

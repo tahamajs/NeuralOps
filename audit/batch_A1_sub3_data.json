@@ -1,7 +1,7 @@
 {
   "entropy_budget_allocation": {
     "module_name": "entropy_budget_allocation",
-    "source_file": "Codes/framework/compression_engine/entropy_budget_allocation.py",
+    "source_file": "neuralops/compression_engine/entropy_budget_allocation.py",
     "source_lines_count": 467,
     "architecture": {
       "class_name": "EntropyBudgetCompressor",
@@ -21,7 +21,7 @@
   },
   "erc_svd": {
     "module_name": "erc_svd",
-    "source_file": "Codes/framework/compression_engine/erc_svd.py",
+    "source_file": "neuralops/compression_engine/erc_svd.py",
     "source_lines_count": 389,
     "architecture": {
       "class_name": "ERCCompressor",
@@ -42,7 +42,7 @@
   },
   "factorised_matrix_state": {
     "module_name": "factorised_matrix_state",
-    "source_file": "Codes/framework/attentions/factorised_matrix_state.py",
+    "source_file": "neuralops/attentions/factorised_matrix_state.py",
     "source_lines_count": 681,
     "architecture": {
       "class_name": "LoRALinear",
@@ -542,7 +542,7 @@
   },
   "faq_quantizer": {
     "module_name": "faq_quantizer",
-    "source_file": "Codes/framework/compression_engine/faq_quantizer.py",
+    "source_file": "neuralops/compression_engine/faq_quantizer.py",
     "source_lines_count": 595,
     "architecture": {
       "class_name": "FAQLinear",
@@ -837,7 +837,7 @@
   },
   "flap": {
     "module_name": "flap",
-    "source_file": "Codes/framework/compression_engine/flap.py",
+    "source_file": "neuralops/compression_engine/flap.py",
     "source_lines_count": 416,
     "architecture": {
       "class_name": "FLAPCompressor",

@@ -1,7 +1,7 @@
 {
   "hla_attention": {
     "module_name": "hla_attention",
-    "source_file": "Codes/framework/attentions/hla_attention.py",
+    "source_file": "neuralops/attentions/hla_attention.py",
     "source_lines_count": 594,
     "architecture": {
       "class_name": "LoRALinear",
@@ -724,7 +724,7 @@
   },
   "huffman_coder": {
     "module_name": "huffman_coder",
-    "source_file": "Codes/framework/compression_engine/huffman_coder.py",
+    "source_file": "neuralops/compression_engine/huffman_coder.py",
     "source_lines_count": 540,
     "architecture": {
       "class_name": "HuffmanCompressor",
@@ -1062,7 +1062,7 @@
   },
   "hybrid_svd_layer": {
     "module_name": "hybrid_svd_layer",
-    "source_file": "Codes/framework/compression_engine/hybrid_svd_layer.py",
+    "source_file": "neuralops/compression_engine/hybrid_svd_layer.py",
     "source_lines_count": 483,
     "architecture": {
       "class_name": "SVDSingleHead",
@@ -1739,7 +1739,7 @@
   },
   "hybridkv": {
     "module_name": "hybridkv",
-    "source_file": "Codes/framework/compression_engine/hybridkv.py",
+    "source_file": "neuralops/compression_engine/hybridkv.py",
     "source_lines_count": 18,
     "architecture": {
       "class_name": null,
@@ -2030,7 +2030,7 @@
   },
   "jamba": {
     "module_name": "jamba",
-    "source_file": "Codes/framework/attentions/jamba.py",
+    "source_file": "neuralops/attentions/jamba.py",
     "source_lines_count": 653,
     "architecture": {
       "class_name": "LoRALinear",

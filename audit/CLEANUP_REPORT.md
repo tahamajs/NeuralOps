@@ -5,7 +5,7 @@
 ---
 
 ## ۱. نتایج حذف ماژول‌های جعلی (فقدان کد سورس پایتون)
-تمامی ۲۳ فایل لاتک زیر که فاقد هرگونه پیاده‌سازی متناظر در پوشه‌های `Codes/framework/` بودند، از مسیر `thesis_final/attentions_latex/individual_modules/` حذف گردیدند:
+تمامی ۲۳ فایل لاتک زیر که فاقد هرگونه پیاده‌سازی متناظر در پوشه‌های `neuralops/` بودند، از مسیر `thesis_final/attentions_latex/individual_modules/` حذف گردیدند:
 
 - `async_spec_attention.tex`
 - `block_sparse_attention.tex`

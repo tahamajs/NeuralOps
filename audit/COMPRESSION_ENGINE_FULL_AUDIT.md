@@ -1,6 +1,6 @@
 # Comprehensive Audit of Real Compressors in `compression_engine`
 
-This audit explores the entirety of `Codes/framework/compression_engine/` (102 files, 302 registered compression factories) and cross-references them against all benchmark runs across DistilBERT, RoBERTa-base, GPT-2, and Qwen.
+This audit explores the entirety of `neuralops/compression_engine/` (102 files, 302 registered compression factories) and cross-references them against all benchmark runs across DistilBERT, RoBERTa-base, GPT-2, and Qwen.
 
 ---
 
@@ -61,7 +61,7 @@ This audit explores the entirety of `Codes/framework/compression_engine/` (102 f
 ---
 
 ## 2. Key Findings
-1. **The Registry is Huge:** `Codes/framework/compression_engine/` contains 102 implementation files registering **302 compressor variants** in `COMPRESSOR_REGISTRY`.
+1. **The Registry is Huge:** `neuralops/compression_engine/` contains 102 implementation files registering **302 compressor variants** in `COMPRESSOR_REGISTRY`.
 2. **True Compression Champions:**
    - **`kmeans`:** Unprecedented parameter reduction: **-84.9M** on RoBERTa (83.37% acc) and **-42.5M** on DistilBERT (90.48% acc).
    - **`hybrid_svd_layer`:** Massive SVD decomposition saving **-63M to -66M** parameters on RoBERTa and GPT-2.

@@ -1,7 +1,7 @@
 {
   "galerkin_attention": {
     "module_name": "galerkin_attention",
-    "source_file": "Codes/framework/attentions/galerkin_attention.py",
+    "source_file": "neuralops/attentions/galerkin_attention.py",
     "source_lines_count": 736,
     "architecture": {
       "class_name": "LoRALinear",
@@ -923,7 +923,7 @@
   },
   "gated_linear_attention": {
     "module_name": "gated_linear_attention",
-    "source_file": "Codes/framework/attentions/gated_linear_attention.py",
+    "source_file": "neuralops/attentions/gated_linear_attention.py",
     "source_lines_count": 674,
     "architecture": {
       "class_name": "LoRALinear",
@@ -1318,7 +1318,7 @@
   },
   "gfws_d_compressor": {
     "module_name": "gfws_d_compressor",
-    "source_file": "Codes/framework/compression_engine/gfws_d_compressor.py",
+    "source_file": "neuralops/compression_engine/gfws_d_compressor.py",
     "source_lines_count": 519,
     "architecture": {
       "class_name": "GFWSLoRALinear",
@@ -1339,7 +1339,7 @@
   },
   "granite_hybrid": {
     "module_name": "granite_hybrid",
-    "source_file": "Codes/framework/attentions/granite_hybrid.py",
+    "source_file": "neuralops/attentions/granite_hybrid.py",
     "source_lines_count": 626,
     "architecture": {
       "class_name": "Mamba2",
@@ -1719,7 +1719,7 @@
   },
   "grecodec": {
     "module_name": "grecodec",
-    "source_file": "Codes/framework/compression_engine/grecodec.py",
+    "source_file": "neuralops/compression_engine/grecodec.py",
     "source_lines_count": 16,
     "architecture": {
       "class_name": null,

@@ -1,7 +1,7 @@
 {
   "armor_pruner": {
     "module_name": "armor_pruner",
-    "source_file": "Codes/framework/compression_engine/armor_pruner.py",
+    "source_file": "neuralops/compression_engine/armor_pruner.py",
     "source_lines_count": 698,
     "architecture": {
       "class_name": "ARMORLinear",
@@ -41,7 +41,7 @@
   },
   "ast_pruner": {
     "module_name": "ast_pruner",
-    "source_file": "Codes/framework/compression_engine/ast_pruner.py",
+    "source_file": "neuralops/compression_engine/ast_pruner.py",
     "source_lines_count": 552,
     "architecture": {
       "class_name": "ASTPrunedLoRALinear",
@@ -63,7 +63,7 @@
   },
   "astro_quantizer": {
     "module_name": "astro_quantizer",
-    "source_file": "Codes/framework/compression_engine/astro_quantizer.py",
+    "source_file": "neuralops/compression_engine/astro_quantizer.py",
     "source_lines_count": 757,
     "architecture": {
       "class_name": "AstroLinear",
@@ -96,7 +96,7 @@
   },
   "bonsai_pruner": {
     "module_name": "bonsai_pruner",
-    "source_file": "Codes/framework/compression_engine/bonsai_pruner.py",
+    "source_file": "neuralops/compression_engine/bonsai_pruner.py",
     "source_lines_count": 618,
     "architecture": {
       "class_name": "BonsaiPrunedLoRALinear",
@@ -139,7 +139,7 @@
   },
   "cachenotes_compressor": {
     "module_name": "cachenotes_compressor",
-    "source_file": "Codes/framework/compression_engine/cachenotes_compressor.py",
+    "source_file": "neuralops/compression_engine/cachenotes_compressor.py",
     "source_lines_count": 900,
     "architecture": {
       "class_name": "CacheNotesLoRALinear",

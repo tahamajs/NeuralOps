@@ -12,7 +12,7 @@
 | 6 | samba_m3 diff=13.85 | High diff expected due to M3 State-Space block formulation; 50 recovery steps recover accuracy from 52.50% to **81.61%** (`PASS_AFTER_RECOVERY`). | `audit/verification_2026_09_18/B2_high_diff_recovery/samba_m3_gpt2_recovery.json` |
 | 7 | unified_rope diff=12.10 | High diff expected due to non-standard rotary parameterization on causal GPT-2; 50 recovery steps recover accuracy from 52.50% to **82.39%** (`PASS_AFTER_RECOVERY`). | `audit/verification_2026_09_18/B2_high_diff_recovery/unified_rope_gpt2_recovery.json` |
 | 8 | test_direct in results | Removed `test_direct` (module #43 in Category 1) as it was an internal harness sanity test, reducing Category 1 count from 44 to 43. | `audit/verification_2026_09_18/C2_test_direct_removal.log` |
-| 9 | alias duplication | Analyzed 20 module pairs across `Codes/framework/attentions/` and `Codes/framework/compression_engine/`. Verified SHA256 differences and normalized catalog policy. | `audit/verification_2026_09_18/C1_alias_normalization.csv` |
+| 9 | alias duplication | Analyzed 20 module pairs across `neuralops/attentions/` and `neuralops/compression_engine/`. Verified SHA256 differences and normalized catalog policy. | `audit/verification_2026_09_18/C1_alias_normalization.csv` |
 
 ---
 

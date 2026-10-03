@@ -36,7 +36,7 @@ Raw Output:
 ### Baseline Accuracy (No Module)
 Command:
 ```bash
-ssh gpu "cd /d D:\SVD_Project && python Codes/framework/run_quality_sweep.py \
+ssh gpu "cd /d D:\SVD_Project && python neuralops/run_quality_sweep.py \
     --modules full \
     --model models/roberta_sst2 \
     --model_family roberta \
@@ -70,7 +70,7 @@ full,PASS,94.5,0.9458,0.9449,0.9449,0.945,0.2279,3.03,361.17,59303.25,124647170,
 Command:
 ```bash
 python3 -c "
-with open('Codes/framework/run_quality_sweep.py') as f:
+with open('neuralops/run_quality_sweep.py') as f:
     lines = f.readlines()
     for i in range(3606, 3623):
         print(f'{i+1}: {lines[i]}', end='')
@@ -95,7 +95,7 @@ Raw Output:
 3621:                     err = f"note: evaluated accuracy ({acc:.2f}%) below chance threshold ({pass_threshold_pct:.2f}%)"
 ```
 
-And lines 3724-3737 in `Codes/framework/run_quality_sweep.py`:
+And lines 3724-3737 in `neuralops/run_quality_sweep.py`:
 ```python
 3724:             is_successful_run = (status == "PASS") and (acc >= pass_threshold_pct)
 ...
@@ -121,7 +121,7 @@ And lines 3724-3737 in `Codes/framework/run_quality_sweep.py`:
 Command:
 ```bash
 ssh gpu "cd /d D:\SVD_Project && python -c \"
-content = open('Codes/framework/auto_pipeline.py').read()
+content = open('neuralops/auto_pipeline.py').read()
 for line in content.splitlines():
     if 'HEAVY_THRESHOLD_GB' in line:
         print(line)
@@ -168,7 +168,7 @@ Recent: Completed 25 jobs across 47.0 mins = 31.9 jobs/hour
 - Impact:
   Lowering the heavy threshold from 4.0 to 3.5 GB restricts concurrency from 3 workers down to 2 workers for any module profiled between 3.5 and 4.0 GB without empirical proof of danger on an 8 GB GPU card.
 - Action:
-  **REVERT** `HEAVY_THRESHOLD_GB` from 3.5 back to **4.0** in `Codes/framework/auto_pipeline.py` (executed and verified on both local and GPU server).
+  **REVERT** `HEAVY_THRESHOLD_GB` from 3.5 back to **4.0** in `neuralops/auto_pipeline.py` (executed and verified on both local and GPU server).
 
 ---
 

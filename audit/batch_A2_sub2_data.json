@@ -1,7 +1,7 @@
 {
   "halo_regla": {
     "module_name": "halo_regla",
-    "source_file": "Codes/framework/attentions/halo_regla.py",
+    "source_file": "neuralops/attentions/halo_regla.py",
     "source_lines_count": 615,
     "architecture": {
       "class_name": "LoRALinear",
@@ -460,7 +460,7 @@
   },
   "hamming_attention": {
     "module_name": "hamming_attention",
-    "source_file": "Codes/framework/attentions/hamming_attention.py",
+    "source_file": "neuralops/attentions/hamming_attention.py",
     "source_lines_count": 600,
     "architecture": {
       "class_name": "LoRALinear",
@@ -825,7 +825,7 @@
   },
   "hashed_linear": {
     "module_name": "hashed_linear",
-    "source_file": "Codes/framework/compression_engine/hashed_linear.py",
+    "source_file": "neuralops/compression_engine/hashed_linear.py",
     "source_lines_count": 295,
     "architecture": {
       "class_name": "HashedLinear",
@@ -1176,7 +1176,7 @@
   },
   "hashed_net_compressor": {
     "module_name": "hashed_net_compressor",
-    "source_file": "Codes/framework/compression_engine/hashed_net_compressor.py",
+    "source_file": "neuralops/compression_engine/hashed_net_compressor.py",
     "source_lines_count": 450,
     "architecture": {
       "class_name": "HashedNetCompressor",
@@ -1203,7 +1203,7 @@
   },
   "hgrn2_outer": {
     "module_name": "hgrn2_outer",
-    "source_file": "Codes/framework/attentions/hgrn2_outer.py",
+    "source_file": "neuralops/attentions/hgrn2_outer.py",
     "source_lines_count": 692,
     "architecture": {
       "class_name": "LoRALinear",

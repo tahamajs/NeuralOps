@@ -51,7 +51,7 @@ To demonstrate task generalizability, A3 was evaluated on multi-class language u
 
 ## 2. Algorithmic Fixes & Quality Assurance
 
-1. **Rank Ceiling Enforced (`Codes/framework/compression_engine/a3_compressor.py`):**
+1. **Rank Ceiling Enforced (`neuralops/compression_engine/a3_compressor.py`):**
    ```python
    r_ceiling = min(int(0.5 * min(in_f, out_f)), 256)
    current_r = min(r, r_ceiling)

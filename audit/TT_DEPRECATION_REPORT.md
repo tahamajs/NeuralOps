@@ -19,7 +19,7 @@ In addition, targeted bug fixes and safeguards were applied across the 4 problem
   - `lillama_compressor`
   - `mamba_svd_flash`
 - Updated [`scripts/run_autonomous_48h_pipeline.py`](scripts/run_autonomous_48h_pipeline.py) to dynamically parse `audit/deprecated_modules.txt` and filter pending jobs before dispatch.
-- Updated [`Codes/framework/run_quality_sweep.py`](Codes/framework/run_quality_sweep.py):
+- Updated [`neuralops/run_quality_sweep.py`](neuralops/run_quality_sweep.py):
   - Added module-level `DEPRECATED_MODULES` dictionary with descriptive reasons.
   - Added early exit guard in `run_single_module_main()` returning `status: "SKIP_DEPRECATED"`.
   - Pruned active queue on GPU server (`D:\SVD_Project\paper\_PIPELINE_QUEUE.json`), removing all 12 deprecated job entries (0 remaining).

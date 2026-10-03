@@ -1,7 +1,7 @@
 {
   "come": {
     "module_name": "come",
-    "source_file": "Codes/framework/compression_engine/come.py",
+    "source_file": "neuralops/compression_engine/come.py",
     "source_lines_count": 716,
     "architecture": {
       "class_name": "CoMeBridge",
@@ -355,7 +355,7 @@
   },
   "compot_compressor": {
     "module_name": "compot_compressor",
-    "source_file": "Codes/framework/compression_engine/compot_compressor.py",
+    "source_file": "neuralops/compression_engine/compot_compressor.py",
     "source_lines_count": 453,
     "architecture": {
       "class_name": "COMPOTLinear",
@@ -393,7 +393,7 @@
   },
   "compressed_attention": {
     "module_name": "compressed_attention",
-    "source_file": "Codes/framework/attentions/compressed_attention.py",
+    "source_file": "neuralops/attentions/compressed_attention.py",
     "source_lines_count": 568,
     "architecture": {
       "class_name": "CompressedAttentionLayer",
@@ -829,7 +829,7 @@
   },
   "coopq_quantizer": {
     "module_name": "coopq_quantizer",
-    "source_file": "Codes/framework/compression_engine/coopq_quantizer.py",
+    "source_file": "neuralops/compression_engine/coopq_quantizer.py",
     "source_lines_count": 609,
     "architecture": {
       "class_name": "CoopQLinear",
@@ -870,7 +870,7 @@
   },
   "cr_compressor": {
     "module_name": "cr_compressor",
-    "source_file": "Codes/framework/compression_engine/cr_compressor.py",
+    "source_file": "neuralops/compression_engine/cr_compressor.py",
     "source_lines_count": 459,
     "architecture": {
       "class_name": "CRLinear",

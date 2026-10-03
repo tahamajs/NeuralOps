@@ -47,7 +47,7 @@ All 10 critical experimental and narrative inconsistencies identified prior to a
 ### Fix 4 — High Fallback Rates Acknowledged Honestly
 - **Problem:** $75.0\%$ of layers in DistilBERT and $91.7\%$ in RoBERTa and GPT-2 fell back to dense weights under $\tau = 0.40, r_{\mathrm{ceiling}}=256$.
 - **Files Modified:**
-  - `Codes/framework/compression_engine/a3_compressor.py`: Hardened $r_{\mathrm{ceiling}} = 320$ and escalation steps.
+  - `neuralops/compression_engine/a3_compressor.py`: Hardened $r_{\mathrm{ceiling}} = 320$ and escalation steps.
   - `paper/PerModulePaper/a3/10_limitations.tex`: Added dedicated limitation (4) noting the conservative fallback rate ($75.0\%$--$91.7\%$) required to maintain accuracy bounds.
 
 ### Fix 5 — Error Threshold $\tau$ Harmonization

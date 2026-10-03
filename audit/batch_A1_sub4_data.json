@@ -1,7 +1,7 @@
 {
   "flat_llm": {
     "module_name": "flat_llm",
-    "source_file": "Codes/framework/compression_engine/flat_llm.py",
+    "source_file": "neuralops/compression_engine/flat_llm.py",
     "source_lines_count": 394,
     "architecture": {
       "class_name": "FLATLLMCompressor",
@@ -455,7 +455,7 @@
   },
   "frandi": {
     "module_name": "frandi",
-    "source_file": "Codes/framework/compression_engine/frandi.py",
+    "source_file": "neuralops/compression_engine/frandi.py",
     "source_lines_count": 16,
     "architecture": {
       "class_name": null,
@@ -746,7 +746,7 @@
   },
   "full_attention": {
     "module_name": "full_attention",
-    "source_file": "Codes/framework/attentions/full_attention.py",
+    "source_file": "neuralops/attentions/full_attention.py",
     "source_lines_count": 511,
     "architecture": {
       "class_name": "LoRALinear",
@@ -1056,7 +1056,7 @@
   },
   "fused_svd_kernel": {
     "module_name": "fused_svd_kernel",
-    "source_file": "Codes/framework/attentions/fused_svd_kernel.py",
+    "source_file": "neuralops/attentions/fused_svd_kernel.py",
     "source_lines_count": 1040,
     "architecture": {
       "class_name": "FusedSVDLinear",
@@ -1964,7 +1964,7 @@
   },
   "fusion_attn": {
     "module_name": "fusion_attn",
-    "source_file": "Codes/framework/attentions/fusion_attn.py",
+    "source_file": "neuralops/attentions/fusion_attn.py",
     "source_lines_count": 684,
     "architecture": {
       "class_name": "LoRALinear",
