@@ -108,7 +108,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     p.add_argument(
         "--output_base",
-        default="results/04_rank_sweeps/mixed/rank_sweep",
+        default="results/02_rank_sweeps/mixed/rank_sweep",
         help="Base output directory",
     )
     p.add_argument(

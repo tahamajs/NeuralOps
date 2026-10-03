@@ -11,7 +11,7 @@ Runs each measurement 3 times and reports the median.
 Handles OOM gracefully.
 Outputs:
   - results/seqlen_scaling/<MODULE>/summary.csv
-  - results/SEQLEN_SCALING_MASTER.csv
+  - results/06_adhoc_experiments/SEQLEN_SCALING_MASTER.csv
 """
 
 import argparse
@@ -421,13 +421,13 @@ def main():
     parser.add_argument(
         "--output_dir",
         type=str,
-        default="results/05_perplexity_seqlen/seqlen_scaling",
+        default="results/06_adhoc_experiments/perplexity_seqlen/seqlen_scaling",
         help="Output directory",
     )
     parser.add_argument(
         "--master_csv",
         type=str,
-        default="results/SEQLEN_SCALING_MASTER.csv",
+        default="results/06_adhoc_experiments/SEQLEN_SCALING_MASTER.csv",
         help="Master CSV path",
     )
     args = parser.parse_args()

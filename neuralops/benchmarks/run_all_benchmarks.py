@@ -122,26 +122,26 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--output_dir",
         type=str,
-        default="results/master_benchmarks",
-        help="Directory to save aggregate results (default: results/master_benchmarks)",
+        default="results/07_misc_tests/master_benchmarks",
+        help="Directory to save aggregate results (default: results/07_misc_tests/master_benchmarks)",
     )
     parser.add_argument(
         "--ppl_dir",
         type=str,
-        default="results/05_perplexity_seqlen",
-        help="Directory where PPL sweep results reside (default: results/05_perplexity_seqlen)",
+        default="results/06_adhoc_experiments/perplexity_seqlen",
+        help="Directory where PPL sweep results reside (default: results/06_adhoc_experiments/perplexity_seqlen)",
     )
     parser.add_argument(
         "--lmeval_dir",
         type=str,
-        default="results/06_lm_eval_harness",
-        help="Directory where LM Eval Harness results reside (default: results/06_lm_eval_harness)",
+        default="results/03_zeroshot_evals",
+        help="Directory where LM Eval Harness results reside (default: results/03_zeroshot_evals)",
     )
     parser.add_argument(
         "--ruler_dir",
         type=str,
-        default="results/07_ruler_benchmark",
-        help="Directory where RULER NIAH results reside (default: results/07_ruler_benchmark)",
+        default="results/06_adhoc_experiments/ruler_benchmark",
+        help="Directory where RULER NIAH results reside (default: results/06_adhoc_experiments/ruler_benchmark)",
     )
     parser.add_argument(
         "--skip_ppl",

@@ -6,9 +6,9 @@ Runs recovery fine-tuning (50 steps) across 3 deterministic random seeds [42, 12
 for key candidate compressors and attention architectures on DistilBERT and RoBERTa (SST-2).
 
 Produces:
-  - results/06_multiseed/multiseed_rigor_{model}/{module}/seed_{seed}/summary.csv
-  - results/06_multiseed/multiseed_rigor_summary.csv (Aggregated mean ± std)
-  - results/06_multiseed/multiseed_rigor_report.md (Publication-ready markdown table)
+  - results/05_glue_finetuning/multiseed/multiseed_rigor_{model}/{module}/seed_{seed}/summary.csv
+  - results/05_glue_finetuning/multiseed/multiseed_rigor_summary.csv (Aggregated mean ± std)
+  - results/05_glue_finetuning/multiseed/multiseed_rigor_report.md (Publication-ready markdown table)
 """
 
 from __future__ import annotations
@@ -115,7 +115,7 @@ def parse_args():
     parser.add_argument(
         "--output_root",
         type=str,
-        default="results/06_multiseed",
+        default="results/05_glue_finetuning/multiseed",
         help="Root directory for multi-seed outputs",
     )
     parser.add_argument(

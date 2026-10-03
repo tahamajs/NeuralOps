@@ -70,7 +70,7 @@ def parse_args():
     parser.add_argument(
         "--output_dir",
         type=str,
-        default="results/05_perplexity_seqlen/seqlen_scaling",
+        default="results/06_adhoc_experiments/perplexity_seqlen/seqlen_scaling",
         help="Directory to save scaling outputs",
     )
     parser.add_argument(

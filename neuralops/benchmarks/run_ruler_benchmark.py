@@ -144,8 +144,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--output_dir",
         type=str,
-        default="results/07_ruler_benchmark",
-        help="Directory to save evaluation results (default: results/07_ruler_benchmark)",
+        default="results/06_adhoc_experiments/ruler_benchmark",
+        help="Directory to save evaluation results (default: results/06_adhoc_experiments/ruler_benchmark)",
     )
     parser.add_argument(
         "--seed",
