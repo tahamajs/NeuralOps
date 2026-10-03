@@ -16,16 +16,21 @@ Hardware Targets & Safeguards:
   - Auto-Commit & Auto-Push: Triggers every 10 completed tasks across all streams
   - 5-Minute Telemetry Monitor: Logs GPU util, VRAM, temp, power, and active workers
 """
-import os
-import sys
-import time
-import threading
-import subprocess
-from pathlib import Path
-from datetime import datetime, timezone
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
-BASE_DIR = Path("D:/SVD_Project") if Path("D:/SVD_Project").exists() else Path(__file__).resolve().parent.parent
+import os
+import subprocess
+import sys
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
+from pathlib import Path
+
+BASE_DIR = (
+    Path("D:/SVD_Project")
+    if Path("D:/SVD_Project").exists()
+    else Path(__file__).resolve().parent.parent
+)
 LOGS_DIR = BASE_DIR / "logs"
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 MASTER_LOG = LOGS_DIR / "autonomous_48h_master.log"
@@ -39,15 +44,23 @@ max_allowed_workers = [4]  # Dynamic worker limit governed by VRAM usage (min 2,
 DEPRECATED_FILE = BASE_DIR / "audit" / "deprecated_modules.txt"
 if DEPRECATED_FILE.exists():
     DEPRECATED_MODULES = set(
-        line.strip() for line in DEPRECATED_FILE.read_text(encoding="utf-8").splitlines()
+        line.strip()
+        for line in DEPRECATED_FILE.read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.startswith("#")
     )
 else:
     DEPRECATED_MODULES = {
-        "tt", "tt_linear", "tt_compressor", "tt_linear_compressor",
-        "tt_factory", "tt_compressor_factory", "tt_linear_factory",
-        "lillama_compressor", "mamba_svd_flash"
+        "tt",
+        "tt_linear",
+        "tt_compressor",
+        "tt_linear_compressor",
+        "tt_factory",
+        "tt_compressor_factory",
+        "tt_linear_factory",
+        "lillama_compressor",
+        "mamba_svd_flash",
     }
+
 
 def log(msg: str):
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -62,23 +75,29 @@ def log(msg: str):
     except Exception:
         pass
 
+
 def auto_commit_and_push(msg: str):
     try:
-        subprocess.run(["git", "add", "results", "MASTER_PROJECT_RESULTS.md"], cwd=str(BASE_DIR), check=False)
+        subprocess.run(
+            ["git", "add", "results", "MASTER_PROJECT_RESULTS.md"], cwd=str(BASE_DIR), check=False
+        )
         commit_res = subprocess.run(
             ["git", "commit", "-m", f"auto(48h-pipeline): {msg}"],
             cwd=str(BASE_DIR),
             capture_output=True,
-            text=True
+            text=True,
         )
-        if "nothing to commit" not in commit_res.stdout.lower() and "clean" not in commit_res.stdout.lower():
+        if (
+            "nothing to commit" not in commit_res.stdout.lower()
+            and "clean" not in commit_res.stdout.lower()
+        ):
             log(f"[AUTO-COMMIT] {msg}")
             push_res = subprocess.run(
                 ["git", "push", "origin", "main"],
                 cwd=str(BASE_DIR),
                 capture_output=True,
                 text=True,
-                timeout=60
+                timeout=60,
             )
             if push_res.returncode == 0:
                 log(f"[AUTO-PUSH] Synced with origin/main")
@@ -87,12 +106,17 @@ def auto_commit_and_push(msg: str):
     except Exception as e:
         log(f"[AUTO-COMMIT EXCEPTION] {e}")
 
+
 def get_vram_and_util():
     try:
         out = subprocess.check_output(
-            ["nvidia-smi", "--query-gpu=memory.used,memory.total,utilization.gpu,temperature.gpu,power.draw", "--format=csv,noheader,nounits"],
+            [
+                "nvidia-smi",
+                "--query-gpu=memory.used,memory.total,utilization.gpu,temperature.gpu,power.draw",
+                "--format=csv,noheader,nounits",
+            ],
             text=True,
-            timeout=5
+            timeout=5,
         )
         parts = [p.strip() for p in out.strip().split(",")]
         return {
@@ -104,6 +128,7 @@ def get_vram_and_util():
         }
     except Exception:
         return {"used_mb": 0, "total_mb": 8188, "util_pct": 0, "temp_c": 0, "power_w": 0.0}
+
 
 def vram_governor_loop():
     """
@@ -133,12 +158,16 @@ def vram_governor_loop():
                 new_limit = min(6, cur_limit + 1)
                 if new_limit > cur_limit:
                     max_allowed_workers[0] = new_limit
-                    log(f"[VRAM GOVERNOR] VRAM below 50% ({vram_pct:.1f}%) -> increasing max workers to {new_limit}")
+                    log(
+                        f"[VRAM GOVERNOR] VRAM below 50% ({vram_pct:.1f}%) -> increasing max workers to {new_limit}"
+                    )
             elif vram_pct > 90.0:
                 new_limit = max(2, cur_limit - 1)
                 if new_limit < cur_limit:
                     max_allowed_workers[0] = new_limit
-                    log(f"[VRAM GOVERNOR] VRAM above 90% ({vram_pct:.1f}%) -> decreasing max workers to {new_limit}")
+                    log(
+                        f"[VRAM GOVERNOR] VRAM above 90% ({vram_pct:.1f}%) -> decreasing max workers to {new_limit}"
+                    )
 
             cur_limit = max_allowed_workers[0]
 
@@ -159,6 +188,7 @@ def vram_governor_loop():
                     f.write(t_line + "\n")
         except Exception:
             pass
+
 
 def run_single_task(task):
     summary_path = Path(task["summary_file"])
@@ -191,16 +221,26 @@ def run_single_task(task):
     cmd = [
         sys.executable,
         task.get("runner", "neuralops/benchmarks/run_quality_sweep.py"),
-        "--modules", task["module"],
-        "--model", task["model"],
-        "--model_family", task["model_family"],
-        "--dataset", task["dataset"],
-        "--batch_size", str(task.get("batch_size", 64)),
-        "--max_vram_fraction", "0.45",
-        "--recovery_steps", str(task.get("recovery_steps", 50)),
-        "--learning_rate", str(task.get("lr", "2e-4")),
-        "--seed", str(task.get("seed", 42)),
-        "--output_dir", task["out_dir"],
+        "--modules",
+        task["module"],
+        "--model",
+        task["model"],
+        "--model_family",
+        task["model_family"],
+        "--dataset",
+        task["dataset"],
+        "--batch_size",
+        str(task.get("batch_size", 64)),
+        "--max_vram_fraction",
+        "0.45",
+        "--recovery_steps",
+        str(task.get("recovery_steps", 50)),
+        "--learning_rate",
+        str(task.get("lr", "2e-4")),
+        "--seed",
+        str(task.get("seed", 42)),
+        "--output_dir",
+        task["out_dir"],
     ]
 
     if "rank" in task:
@@ -211,7 +251,9 @@ def run_single_task(task):
         cmd.extend(["--dataset_dir", task["dataset_dir"]])
 
     env = os.environ.copy()
-    env["PYTHONPATH"] = f".;{env.get('PYTHONPATH', '')}" if os.name == "nt" else f".:{env.get('PYTHONPATH', '')}"
+    env["PYTHONPATH"] = (
+        f".;{env.get('PYTHONPATH', '')}" if os.name == "nt" else f".:{env.get('PYTHONPATH', '')}"
+    )
     env["TORCH_ALLOW_TF32_CUBLAS_OVERRIDE"] = "1"
     env["CUDA_LAUNCH_BLOCKING"] = "0"
     env["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
@@ -228,7 +270,7 @@ def run_single_task(task):
             timeout=task.get("timeout", 1800),
         )
         elapsed = time.time() - t0
-        success = (proc.returncode == 0)
+        success = proc.returncode == 0
         if success:
             log(f"[PASS] {task['name']} completed in {elapsed:.1f}s")
         else:
@@ -247,6 +289,7 @@ def run_single_task(task):
         with global_lock:
             active_workers_counter[0] -= 1
 
+
 def run_task_worker(task, total_pending, task_idx):
     """Executes a single task in the shared worker pool, updating global accounting."""
     res = run_single_task(task)
@@ -254,9 +297,14 @@ def run_task_worker(task, total_pending, task_idx):
         global_completed_counter[0] += 1
         cur_global = global_completed_counter[0]
         if cur_global % 10 == 0:
-            auto_commit_and_push(f"Global 8-Worker Dynamic Checkpoint ({cur_global} tasks completed)")
-    log(f"[Dynamic Worker Progress]: Task {task_idx+1}/{total_pending} finished | Global Tasks Recorded: {cur_global}")
+            auto_commit_and_push(
+                f"Global 8-Worker Dynamic Checkpoint ({cur_global} tasks completed)"
+            )
+    log(
+        f"[Dynamic Worker Progress]: Task {task_idx + 1}/{total_pending} finished | Global Tasks Recorded: {cur_global}"
+    )
     return res
+
 
 def run_stream_worker(stream_name, task_list):
     """Legacy stream worker kept for modular compatibility."""
@@ -277,26 +325,69 @@ def run_stream_worker(stream_name, task_list):
             if cur_global % 10 == 0:
                 auto_commit_and_push(f"Global 6-Stream Checkpoint ({cur_global} tasks completed)")
 
-        log(f"[{stream_name} Stream Progress]: {completed}/{len(task_list)} completed ({failed} failed)")
+        log(
+            f"[{stream_name} Stream Progress]: {completed}/{len(task_list)} completed ({failed} failed)"
+        )
 
     log(f"### [STREAM FINISHED] {stream_name} finished all {len(task_list)} tasks.")
     auto_commit_and_push(f"{stream_name} stream complete ({completed} passed, {failed} failed)")
     return completed, failed
 
+
 def build_all_streams():
     """Builds 6 concurrent task streams covering the entire repository."""
     cat5a_all = [
-        "a3_compressor", "aa_svd_compressor", "aasvd", "adaptive_compressor", "adaptive_ranks",
-        "adasvd_compressor", "admm_compressor", "come", "compot_compressor", "cr_compressor",
-        "cur_compressor", "cur_linear", "cure", "direct_svd", "dobi_svd", "erc_svd", "frandi",
-        "frandi_compressor", "gfws_d_compressor", "grecodec", "grecodec_compressor",
-        "hybrid_svd_layer", "kronecker_compressor", "kronecker_linear", "kronecker_tt_lora",
-        "lsc_compressor", "mgie_svd", "mgie_svd_compressor", "mlorq_compressor", "modegpt",
-        "modegpt_compressor", "nmf_compressor", "oats", "oats_compressor",
-        "rotational_slicegpt_int4", "rpca", "rpca_compressor", "saes_svd", "saes_svd_compressor",
-        "saes_svd_v2", "salr", "slicegpt", "slicegpt_compressor", "slicegpt_pca",
-        "subspace_projection", "svd_linear", "swift_svd_act", "swift_svd_compressor",
-        "tt_compressor", "tt_linear", "uniql_compressor"
+        "a3_compressor",
+        "aa_svd_compressor",
+        "aasvd",
+        "adaptive_compressor",
+        "adaptive_ranks",
+        "adasvd_compressor",
+        "admm_compressor",
+        "come",
+        "compot_compressor",
+        "cr_compressor",
+        "cur_compressor",
+        "cur_linear",
+        "cure",
+        "direct_svd",
+        "dobi_svd",
+        "erc_svd",
+        "frandi",
+        "frandi_compressor",
+        "gfws_d_compressor",
+        "grecodec",
+        "grecodec_compressor",
+        "hybrid_svd_layer",
+        "kronecker_compressor",
+        "kronecker_linear",
+        "kronecker_tt_lora",
+        "lsc_compressor",
+        "mgie_svd",
+        "mgie_svd_compressor",
+        "mlorq_compressor",
+        "modegpt",
+        "modegpt_compressor",
+        "nmf_compressor",
+        "oats",
+        "oats_compressor",
+        "rotational_slicegpt_int4",
+        "rpca",
+        "rpca_compressor",
+        "saes_svd",
+        "saes_svd_compressor",
+        "saes_svd_v2",
+        "salr",
+        "slicegpt",
+        "slicegpt_compressor",
+        "slicegpt_pca",
+        "subspace_projection",
+        "svd_linear",
+        "swift_svd_act",
+        "swift_svd_compressor",
+        "tt_compressor",
+        "tt_linear",
+        "uniql_compressor",
     ]
 
     streams = {}
@@ -305,34 +396,74 @@ def build_all_streams():
     s1_tasks = []
     for m in cat5a_all:
         for r in [64, 128, 256, 384]:
-            out = str(BASE_DIR / "results" / "02_rank_sweeps" / "deep_rank_distilbert" / m / f"rank_{r}")
-            s1_tasks.append({
-                "name": f"Stream 1 (Cat 5A r={r}) | DISTILBERT | {m}",
-                "module": m, "model": "models/distilbert_sst2", "model_family": "bert",
-                "dataset": "sst2", "rank": r, "batch_size": 128, "lr": "2e-4",
-                "out_dir": out, "summary_file": f"{out}/summary.csv",
-            })
+            out = str(
+                BASE_DIR / "results" / "02_rank_sweeps" / "deep_rank_distilbert" / m / f"rank_{r}"
+            )
+            s1_tasks.append(
+                {
+                    "name": f"Stream 1 (Cat 5A r={r}) | DISTILBERT | {m}",
+                    "module": m,
+                    "model": "models/distilbert_sst2",
+                    "model_family": "bert",
+                    "dataset": "sst2",
+                    "rank": r,
+                    "batch_size": 128,
+                    "lr": "2e-4",
+                    "out_dir": out,
+                    "summary_file": f"{out}/summary.csv",
+                }
+            )
     streams["STREAM_1_DISTILBERT_SVD"] = s1_tasks
 
     # STREAM 2: Stage 2B — Category 5A SVD Multi-Rank Sweeps on RoBERTa-base (Batch 96)
     s2_tasks = []
     for m in cat5a_all:
         for r in [64, 128, 256, 384]:
-            out = str(BASE_DIR / "results" / "02_rank_sweeps" / "deep_rank_roberta" / m / f"rank_{r}")
-            s2_tasks.append({
-                "name": f"Stream 2 (Cat 5A r={r}) | ROBERTA | {m}",
-                "module": m, "model": "models/roberta_sst2", "model_family": "roberta",
-                "dataset": "sst2", "rank": r, "batch_size": 96, "lr": "5e-5",
-                "out_dir": out, "summary_file": f"{out}/summary.csv",
-            })
+            out = str(
+                BASE_DIR / "results" / "02_rank_sweeps" / "deep_rank_roberta" / m / f"rank_{r}"
+            )
+            s2_tasks.append(
+                {
+                    "name": f"Stream 2 (Cat 5A r={r}) | ROBERTA | {m}",
+                    "module": m,
+                    "model": "models/roberta_sst2",
+                    "model_family": "roberta",
+                    "dataset": "sst2",
+                    "rank": r,
+                    "batch_size": 96,
+                    "lr": "5e-5",
+                    "out_dir": out,
+                    "summary_file": f"{out}/summary.csv",
+                }
+            )
     streams["STREAM_2_ROBERTA_SVD"] = s2_tasks
 
     # STREAM 3: Stage 3 — Full Attention & Linear/SSM Architectures (Batch 64)
     key_attentions = [
-        "cosformer", "performer", "linformer_attention", "hgrn2_layer", "gated_deltanet_block",
-        "simple_ssm", "samba_m3", "mamba_svd_flash", "infini_attention", "flash3", "nystrom",
-        "rala", "spectron", "aegis_v1", "aegis_v2", "aegis_v6", "chela_slay", "nexus", "moba",
-        "fused_linear_attention", "rwkv_attention", "retention", "longformer_local", "bigbird"
+        "cosformer",
+        "performer",
+        "linformer_attention",
+        "hgrn2_layer",
+        "gated_deltanet_block",
+        "simple_ssm",
+        "samba_m3",
+        "mamba_svd_flash",
+        "infini_attention",
+        "flash3",
+        "nystrom",
+        "rala",
+        "spectron",
+        "aegis_v1",
+        "aegis_v2",
+        "aegis_v6",
+        "chela_slay",
+        "nexus",
+        "moba",
+        "fused_linear_attention",
+        "rwkv_attention",
+        "retention",
+        "longformer_local",
+        "bigbird",
     ]
     s3_tasks = []
     for m in key_attentions:
@@ -342,50 +473,98 @@ def build_all_streams():
         ]:
             out = str(BASE_DIR / "results" / "06_adhoc_experiments" / f"attn_{model_tag}" / m)
             timeout_val = 180 if m == "mamba_svd_flash" else 300
-            s3_tasks.append({
-                "name": f"Stream 3 (Attn) | {model_tag.upper()} | {m}",
-                "module": m, "model": m_path, "model_family": fam, "dataset": "sst2",
-                "batch_size": 64, "lr": lr, "out_dir": out, "summary_file": f"{out}/summary.csv",
-                "timeout": timeout_val,
-            })
+            s3_tasks.append(
+                {
+                    "name": f"Stream 3 (Attn) | {model_tag.upper()} | {m}",
+                    "module": m,
+                    "model": m_path,
+                    "model_family": fam,
+                    "dataset": "sst2",
+                    "batch_size": 64,
+                    "lr": lr,
+                    "out_dir": out,
+                    "summary_file": f"{out}/summary.csv",
+                    "timeout": timeout_val,
+                }
+            )
     streams["STREAM_3_ATTENTIONS"] = s3_tasks
 
     # STREAM 4: Stage 4 — Cross-Domain Transfer Sweeps: MNLI & AG News (Batch 64)
     transfer_mods = [
-        "adasvd_compressor", "a3_compressor", "saes_svd_v2", "direct_svd", "rpca_compressor",
-        "kronecker_compressor", "mlorq_compressor", "salr", "oats_compressor", "cure", "admm_compressor"
+        "adasvd_compressor",
+        "a3_compressor",
+        "saes_svd_v2",
+        "direct_svd",
+        "rpca_compressor",
+        "kronecker_compressor",
+        "mlorq_compressor",
+        "salr",
+        "oats_compressor",
+        "cure",
+        "admm_compressor",
     ]
     s4_tasks = []
     for m in transfer_mods:
         out_mnli = str(BASE_DIR / "results" / "06_adhoc_experiments" / "mnli_deep_sweep" / m)
-        s4_tasks.append({
-            "name": f"Stream 4 (MNLI) | {m}",
-            "module": m, "model": "models/distilbert_mnli_full", "model_family": "bert",
-            "dataset": "mnli", "batch_size": 64, "lr": "2e-4", "out_dir": out_mnli,
-            "summary_file": f"{out_mnli}/summary.csv",
-        })
+        s4_tasks.append(
+            {
+                "name": f"Stream 4 (MNLI) | {m}",
+                "module": m,
+                "model": "models/distilbert_mnli_full",
+                "model_family": "bert",
+                "dataset": "mnli",
+                "batch_size": 64,
+                "lr": "2e-4",
+                "out_dir": out_mnli,
+                "summary_file": f"{out_mnli}/summary.csv",
+            }
+        )
         out_ag = str(BASE_DIR / "results" / "06_adhoc_experiments" / "agnews_deep_sweep" / m)
-        s4_tasks.append({
-            "name": f"Stream 4 (AGNews) | {m}",
-            "module": m, "model": "models/distilbert_agnews_full", "model_family": "bert",
-            "dataset": "agnews", "batch_size": 64, "lr": "2e-4", "out_dir": out_ag,
-            "summary_file": f"{out_ag}/summary.csv",
-        })
+        s4_tasks.append(
+            {
+                "name": f"Stream 4 (AGNews) | {m}",
+                "module": m,
+                "model": "models/distilbert_agnews_full",
+                "model_family": "bert",
+                "dataset": "agnews",
+                "batch_size": 64,
+                "lr": "2e-4",
+                "out_dir": out_ag,
+                "summary_file": f"{out_ag}/summary.csv",
+            }
+        )
     streams["STREAM_4_TRANSFER"] = s4_tasks
 
     # STREAM 5: Stage 5 — Long-Context Sequence Length Scaling: N=128..1024 (Batch 32-64)
-    seq_mods = ["linformer_attention", "cosformer", "performer", "simple_ssm", "hgrn2_layer", "gated_deltanet_block"]
+    seq_mods = [
+        "linformer_attention",
+        "cosformer",
+        "performer",
+        "simple_ssm",
+        "hgrn2_layer",
+        "gated_deltanet_block",
+    ]
     s5_tasks = []
     for m in seq_mods:
         for seq_len in [128, 256, 512]:
             bs = 64 if seq_len <= 256 else 32
-            out = str(BASE_DIR / "results" / "06_adhoc_experiments" / "seqlen_48h" / m / f"seq_{seq_len}")
-            s5_tasks.append({
-                "name": f"Stream 5 (SeqLen {seq_len}) | {m}",
-                "module": m, "model": "models/distilbert_sst2", "model_family": "bert",
-                "dataset": "sst2", "seq_len": seq_len, "batch_size": bs, "lr": "2e-4",
-                "out_dir": out, "summary_file": f"{out}/summary.csv",
-            })
+            out = str(
+                BASE_DIR / "results" / "06_adhoc_experiments" / "seqlen_48h" / m / f"seq_{seq_len}"
+            )
+            s5_tasks.append(
+                {
+                    "name": f"Stream 5 (SeqLen {seq_len}) | {m}",
+                    "module": m,
+                    "model": "models/distilbert_sst2",
+                    "model_family": "bert",
+                    "dataset": "sst2",
+                    "seq_len": seq_len,
+                    "batch_size": bs,
+                    "lr": "2e-4",
+                    "out_dir": out,
+                    "summary_file": f"{out}/summary.csv",
+                }
+            )
     streams["STREAM_5_SEQLEN_SCALING"] = s5_tasks
 
     # STREAM 6: Stage 6 — Multi-Seed Robustness Sweeps: Seeds 123 & 456 (Batch 64)
@@ -396,16 +575,32 @@ def build_all_streams():
                 ("distilbert", "models/distilbert_sst2", "bert", "2e-4"),
                 ("roberta", "models/roberta_sst2", "roberta", "5e-5"),
             ]:
-                out = str(BASE_DIR / "results" / "05_glue_finetuning" / f"multiseed_rigor_{model_tag}" / m / f"seed_{seed}")
-                s6_tasks.append({
-                    "name": f"Stream 6 (Seed {seed}) | {model_tag.upper()} | {m}",
-                    "module": m, "model": m_path, "model_family": fam, "dataset": "sst2",
-                    "batch_size": 64, "seed": seed, "lr": lr, "out_dir": out,
-                    "summary_file": f"{out}/summary.csv",
-                })
+                out = str(
+                    BASE_DIR
+                    / "results"
+                    / "05_glue_finetuning"
+                    / f"multiseed_rigor_{model_tag}"
+                    / m
+                    / f"seed_{seed}"
+                )
+                s6_tasks.append(
+                    {
+                        "name": f"Stream 6 (Seed {seed}) | {model_tag.upper()} | {m}",
+                        "module": m,
+                        "model": m_path,
+                        "model_family": fam,
+                        "dataset": "sst2",
+                        "batch_size": 64,
+                        "seed": seed,
+                        "lr": lr,
+                        "out_dir": out,
+                        "summary_file": f"{out}/summary.csv",
+                    }
+                )
     streams["STREAM_6_MULTISEED"] = s6_tasks
 
     return streams
+
 
 def main():
     log("============================================================")
@@ -449,7 +644,9 @@ def main():
 
     total_tasks = len(combined_tasks)
     total_pending = len(pending_tasks)
-    log(f"Total Framework Tasks: {total_tasks} | Already Done: {total_tasks - total_pending} | Remaining Pending: {total_pending}")
+    log(
+        f"Total Framework Tasks: {total_tasks} | Already Done: {total_tasks - total_pending} | Remaining Pending: {total_pending}"
+    )
 
     if total_pending == 0:
         log("ALL TASKS ACROSS ALL STREAMS ARE COMPLETE!")
@@ -474,6 +671,7 @@ def main():
     log("============================================================")
     log(f"ALL {total_tasks} PIPELINE TASKS COMPLETED IN {total_time_h:.2f} HOURS!")
     log("============================================================")
+
 
 if __name__ == "__main__":
     main()
