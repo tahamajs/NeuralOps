@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unified Orchestrator Backend.
+Unified Orchestrator Backend for NeuralOps.
 """
 
 import csv
@@ -14,9 +14,10 @@ from pathlib import Path
 
 # Paths
 HERE = Path(__file__).resolve().parent
-CODES = HERE.parent.parent
-PROJECT_ROOT = CODES.parent
-TRAINER_SCRIPT = CODES / "neuralops" / "trainer" / "train_lra.py"
+# HERE is neuralops/runners
+NEURALOPS_DIR = HERE.parent
+PROJECT_ROOT = NEURALOPS_DIR.parent
+TRAINER_SCRIPT = NEURALOPS_DIR / "trainer" / "train_lra.py"
 
 MODELS = [
     {"name": "GPT-2 Base", "slug": "gpt2", "family": "gpt2"},
@@ -29,8 +30,15 @@ PASS_THRESHOLD = 75.0
 logger = logging.getLogger("UnifiedOrchestrator")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
-def run_orchestrator(module_key: str, extra_args: list):
-    RESULTS_BASE = PROJECT_ROOT / "results" / "03_unified_runs" / f"unified_{module_key}"
+def run_orchestrator(module_key: str, default_args: list = None):
+    # Merge default arguments with any user-provided sys.argv
+    extra_args = list(default_args) if default_args else []
+    
+    # If the user passed arguments to the wrapper (e.g. --batch_size 32), append them!
+    if len(sys.argv) > 1:
+        extra_args.extend(sys.argv[1:])
+        
+    RESULTS_BASE = PROJECT_ROOT / "results" / "01_unified_runs" / f"unified_{module_key}"
     print("=" * 90, flush=True)
     print(f"UNIFIED 4-MODEL BENCHMARK  —  {module_key.upper()}", flush=True)
     print(f"Output : {RESULTS_BASE}", flush=True)
@@ -94,7 +102,7 @@ def run_orchestrator(module_key: str, extra_args: list):
     print("\n" + "=" * W, flush=True)
     print(f"4-MODEL BENCHMARK — {module_key.upper()}", flush=True)
     print("=" * W, flush=True)
-    print(f"{"Model":<14} | {"Status":<10} | {"Accuracy":>8} | {"Elapsed":>7} | {"Comp Rate":<10} | {"Layers":<6}", flush=True)
+    print(f"{'Model':<14} | {'Status':<10} | {'Accuracy':>8} | {'Elapsed':>7} | {'Comp Rate':<10} | {'Layers':<6}", flush=True)
     print("-" * W, flush=True)
     for r in results:
         row = r["row_data"]
@@ -109,7 +117,7 @@ def run_orchestrator(module_key: str, extra_args: list):
         row = dict(r["row_data"])
         row.update({
             "model_name": r["name"], "model_slug": r["slug"], "status": r["status"],
-            "accuracy_pct": r['accuracy_pct"], "elapsed_s": r['elapsed_s"],
+            "accuracy_pct": r["accuracy_pct"], "elapsed_s": r["elapsed_s"],
         })
         rows.append(row)
     csv_path = RESULTS_BASE / "4models_summary.csv"
@@ -125,15 +133,15 @@ def run_orchestrator(module_key: str, extra_args: list):
     logger.info("Consolidated results saved → %s", RESULTS_BASE)
 
     try:
-        from Codes.framework.utils.hf_git_exporter import (
+        from neuralops.utils.hf_git_exporter import (
             find_documentation_file, update_documentation_table,
             upload_to_huggingface)
-        hf_org = "Hooshaai"
+        hf_org = "NeuralOps"
         doc_path = find_documentation_file(module_key)
         pass_count = 0
         hf_urls = []
         for r in results:
-            if r["status"] != "PASS" or r['accuracy_pct"] < PASS_THRESHOLD:
+            if r["status"] != "PASS" or r["accuracy_pct"] < PASS_THRESHOLD:
                 weights_dir = r["out_dir"] / "checkpoints" / module_key
                 if weights_dir.exists(): shutil.rmtree(weights_dir, ignore_errors=True)
                 continue
@@ -143,13 +151,21 @@ def run_orchestrator(module_key: str, extra_args: list):
             hf_dir = out_dir / "checkpoints" / module_key / "hf_export"
             if not hf_dir.exists(): continue
             for big in hf_dir.glob("pytorch_model.bin"): big.unlink(missing_ok=True)
-            perf = {"accuracy_pct": r['accuracy_pct"], "f1_score": row.get("f1_score", "N/A"), "val_loss": row.get("val_loss", "N/A"), "peak_vram_mb": row.get("peak_vram_mb", "N/A"), "tokens_per_sec": row.get("tokens_per_sec", "N/A"), "status": r["status"]}
+            perf = {"accuracy_pct": r["accuracy_pct"], "f1_score": row.get("f1_score", "N/A"), "val_loss": row.get("val_loss", "N/A"), "peak_vram_mb": row.get("peak_vram_mb", "N/A"), "tokens_per_sec": row.get("tokens_per_sec", "N/A"), "status": r["status"]}
             comp = {"compression_rate": row.get("compression_rate", "1.0"), "compression_ratio_pct": row.get("compression_ratio_pct", "0.0"), "num_compressed_layers": row.get("num_compressed_layers", "N/A")}
             url = upload_to_huggingface(export_dir=hf_dir, repo_id=repo_id, model_name=slug, module_name=module_key, dataset_name="sst2", perf_metrics=perf, comp_metrics=comp)
             if url: hf_urls.append(url)
             if doc_path and doc_path.exists():
-                update_documentation_table(doc_path=doc_path, model_name=slug, module_name=module_key, dataset_name="sst2", status=r["status"], baseline_acc=None, acc=r['accuracy_pct"], f1=row.get("f1_score", "N/A"), comp_rate=row.get("compression_rate", "1.00"), num_compressed=row.get("num_compressed_layers", "N/A"), hf_repo_url=url or f"https://huggingface.co/{repo_id}")
+                update_documentation_table(doc_path=doc_path, model_name=slug, module_name=module_key, dataset_name="sst2", status=r["status"], baseline_acc=None, acc=r["accuracy_pct"], f1=row.get("f1_score", "N/A"), comp_rate=row.get("compression_rate", "1.00"), num_compressed=row.get("num_compressed_layers", "N/A"), hf_repo_url=url or f"https://huggingface.co/{repo_id}")
     except ImportError:
         pass
     print("\nAll tasks completed.", flush=True)
 
+def main():
+    if len(sys.argv) < 2:
+        print("Error: Missing module_key. Provide it as the first argument.")
+        sys.exit(1)
+    run_orchestrator(sys.argv[1], sys.argv[2:])
+
+if __name__ == "__main__":
+    main()
