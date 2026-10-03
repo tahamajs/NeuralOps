@@ -39,10 +39,22 @@
 
 Standard Multi-Head Attention (MHA) incurs quadratic computational $O(N^2)$ and memory footprint scaling with sequence length $N$. NeuralOps provides a unified, pip-installable Python package that solves and benchmarks subquadratic alternatives through:
 
-1. **Universal Zero-Shot Module Injection**: Dynamically replace transformer self-attention blocks across diverse model families (`distilbert`, `bert`, `roberta`, `t5`, `gpt2`, `qwen2.5`, `llama`) with exact parameter extraction, projection weight slicing, and geometric preservation (Rotary Position Embeddings, Grouped Query Attention, and fused $QKV$ Conv1D projections).
-2. **In-Place Structured Compression Engines**: Evaluate truncated SVD, Fisher-weighted low-rank adaptation, dynamic entropy allocations, and KV-cache compression without altering model forward interfaces.
-3. **Data-Aware Activation Calibration**: Feed real token activations through pretrained models to calculate empirical Hessian covariances ($X^T X$) and Fisher information matrices for optimal SVD subspace alignment.
-4. **Hardware-Resident Kernel Execution**: Keep intermediate bottleneck representations ($Z \in \mathbb{R}^{B \times L \times r}$) strictly inside GPU Shared Memory (SRAM) registers via fused Triton kernels, bypassing DRAM/HBM roundtrip bottlenecks.
+```mermaid
+graph TD
+    A[Pretrained Models] --> B[Universal Zero-Shot Injection]
+    B --> C{NeuralOps Engines}
+    C -->|SVD & Low-Rank| D[Structured Compression]
+    C -->|Subquadratic| E[Linear Attention & SSMs]
+    D --> F[Data-Aware Activation Calibration]
+    E --> G[Fused Triton Hardware Kernels]
+    F --> H[Optimized Inference]
+    G --> H
+```
+
+1. 🎯 **Universal Zero-Shot Module Injection**: Dynamically replace transformer self-attention blocks across diverse model families (`distilbert`, `bert`, `roberta`, `t5`, `gpt2`, `qwen2.5`, `llama`) with exact parameter extraction, projection weight slicing, and geometric preservation (Rotary Position Embeddings, Grouped Query Attention, and fused $QKV$ Conv1D projections).
+2. 🗜️ **In-Place Structured Compression Engines**: Evaluate truncated SVD, Fisher-weighted low-rank adaptation, dynamic entropy allocations, and KV-cache compression without altering model forward interfaces.
+3. 📉 **Data-Aware Activation Calibration**: Feed real token activations through pretrained models to calculate empirical Hessian covariances ($X^T X$) and Fisher information matrices for optimal SVD subspace alignment.
+4. ⚡ **Hardware-Resident Kernel Execution**: Keep intermediate bottleneck representations ($Z \in \mathbb{R}^{B \times L \times r}$) strictly inside GPU Shared Memory (SRAM) registers via fused Triton kernels, bypassing DRAM/HBM roundtrip bottlenecks.
 
 ---
 
