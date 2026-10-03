@@ -3255,3 +3255,203 @@ body.present-mode #inspector-panel {
 }
 
 
+
+
+/* ============================
+   COMPREHENSIVE UI ENHANCEMENTS
+   ============================ */
+
+/* Keyboard shortcut overlay */
+#shortcut-hint {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(6, 10, 18, 0.92);
+    border: 1px solid rgba(83, 236, 217, 0.3);
+    border-radius: 8px;
+    padding: 10px 16px;
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 9999;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-faint);
+    max-width: 500px;
+}
+#shortcut-hint.visible {
+    opacity: 1;
+}
+.shortcut-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+kbd {
+    display: inline-block;
+    padding: 1px 5px;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 3px;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    background: rgba(255,255,255,0.08);
+    color: #e2e8f0;
+    line-height: 1.5;
+}
+
+/* Active step highlight in lifecycle */
+.lifecycle-step-item.active-step {
+    border-left: 3px solid var(--col-svd) !important;
+    background: rgba(83, 236, 217, 0.06) !important;
+}
+
+/* Component pipeline item highlighted state */
+.component-pipe-item.cpi-highlighted {
+    border: 1px solid rgba(83, 236, 217, 0.8) !important;
+    box-shadow: 0 0 12px rgba(83, 236, 217, 0.4) !important;
+    transform: scale(1.01);
+}
+
+/* Formula copy button */
+.formula-copy-btn {
+    display: block;
+    margin: 8px auto 0;
+    padding: 4px 12px;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    background: rgba(83, 236, 217, 0.1);
+    border: 1px solid rgba(83, 236, 217, 0.35);
+    color: var(--col-svd);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+}
+.formula-copy-btn:hover {
+    background: rgba(83, 236, 217, 0.2);
+    border-color: var(--col-svd);
+}
+
+/* Enhanced control dock */
+.control-dock {
+    backdrop-filter: blur(16px) saturate(1.5) !important;
+    border-top: 1px solid rgba(83, 236, 217, 0.25) !important;
+}
+
+/* Play button paused state */
+#btn-play-pause.paused {
+    background: rgba(244, 63, 94, 0.15);
+    border-color: rgba(244, 63, 94, 0.5);
+    color: #f87171;
+}
+
+/* Model matrix cards — active glow */
+.model-matrix-card.active {
+    border: 1px solid rgba(83, 236, 217, 0.8) !important;
+    box-shadow: 0 0 16px rgba(83, 236, 217, 0.25) !important;
+    background: rgba(83, 236, 217, 0.06) !important;
+}
+
+/* Benchmark pass/fail badges */
+.mmc-bench-badge.status-pass {
+    background: rgba(16, 185, 129, 0.25);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.5);
+}
+.mmc-bench-badge.status-pass-low {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+}
+.mmc-bench-badge.status-skip {
+    background: rgba(100, 116, 139, 0.2);
+    color: #94a3b8;
+    border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+/* Lifecycle step clickable glow */
+.lifecycle-step-item {
+    cursor: pointer !important;
+    transition: border-left-color 0.2s, background 0.2s, transform 0.15s !important;
+}
+.lifecycle-step-item:hover {
+    transform: translateX(2px);
+    background: rgba(83, 236, 217, 0.04) !important;
+}
+
+/* Tooltip for shortcut key display */
+[title]:not(canvas):not([title=""]) {
+    cursor: help;
+}
+
+/* Permalink indicator */
+.permalink-copied {
+    position: fixed;
+    top: 60px;
+    right: 20px;
+    background: rgba(16, 185, 129, 0.9);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    z-index: 9999;
+    animation: fadeInOut 2s forwards;
+}
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(-10px); }
+    15% { opacity: 1; transform: translateY(0); }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* Hud active module badge */
+#hud-active-module-badge {
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    opacity: 0;
+    transition: opacity 0.4s;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Pipeline parallel branching — improved */
+.pipeline-parallel-group {
+    border-left: 2px dashed rgba(83, 236, 217, 0.5) !important;
+    padding: 4px 4px 4px 12px !important;
+    margin: 4px 0 4px 12px !important;
+    position: relative;
+    background: rgba(83, 236, 217, 0.03);
+    border-radius: 0 6px 6px 0;
+}
+.pipeline-parallel-group::before {
+    content: '⟨ PARALLEL BRANCH ⟩';
+    position: absolute;
+    top: -10px;
+    left: 8px;
+    font-size: 7px;
+    color: var(--amber);
+    letter-spacing: 1px;
+    background: var(--bg-surface);
+    padding: 0 4px;
+}
+
+/* Lifecycle math display */
+.lsi-math {
+    font-size: 10px;
+    margin-top: 4px;
+    padding: 4px 6px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+    overflow-x: auto;
+    max-width: 100%;
+}
