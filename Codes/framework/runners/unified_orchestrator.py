@@ -108,7 +108,7 @@ def run_orchestrator(module_key: str, extra_args: list):
     for r in results:
         row = dict(r["row_data"])
         row.update({
-            "model_name": r['name"], "model_slug": r["slug"], "status": r['status"],
+            "model_name": r["name"], "model_slug": r["slug"], "status": r["status"],
             "accuracy_pct": r['accuracy_pct"], "elapsed_s": r['elapsed_s"],
         })
         rows.append(row)
@@ -133,7 +133,7 @@ def run_orchestrator(module_key: str, extra_args: list):
         pass_count = 0
         hf_urls = []
         for r in results:
-            if r['status"] != "PASS" or r['accuracy_pct"] < PASS_THRESHOLD:
+            if r["status"] != "PASS" or r['accuracy_pct"] < PASS_THRESHOLD:
                 weights_dir = r["out_dir"] / "checkpoints" / module_key
                 if weights_dir.exists(): shutil.rmtree(weights_dir, ignore_errors=True)
                 continue
@@ -143,12 +143,12 @@ def run_orchestrator(module_key: str, extra_args: list):
             hf_dir = out_dir / "checkpoints" / module_key / "hf_export"
             if not hf_dir.exists(): continue
             for big in hf_dir.glob("pytorch_model.bin"): big.unlink(missing_ok=True)
-            perf = {"accuracy_pct": r['accuracy_pct"], "f1_score": row.get("f1_score", "N/A"), "val_loss": row.get("val_loss", "N/A"), "peak_vram_mb": row.get("peak_vram_mb", "N/A"), "tokens_per_sec": row.get("tokens_per_sec", "N/A"), "status": r['status"]}
+            perf = {"accuracy_pct": r['accuracy_pct"], "f1_score": row.get("f1_score", "N/A"), "val_loss": row.get("val_loss", "N/A"), "peak_vram_mb": row.get("peak_vram_mb", "N/A"), "tokens_per_sec": row.get("tokens_per_sec", "N/A"), "status": r["status"]}
             comp = {"compression_rate": row.get("compression_rate", "1.0"), "compression_ratio_pct": row.get("compression_ratio_pct", "0.0"), "num_compressed_layers": row.get("num_compressed_layers", "N/A")}
             url = upload_to_huggingface(export_dir=hf_dir, repo_id=repo_id, model_name=slug, module_name=module_key, dataset_name="sst2", perf_metrics=perf, comp_metrics=comp)
             if url: hf_urls.append(url)
             if doc_path and doc_path.exists():
-                update_documentation_table(doc_path=doc_path, model_name=slug, module_name=module_key, dataset_name="sst2", status=r['status"], baseline_acc=None, acc=r['accuracy_pct"], f1=row.get("f1_score", "N/A"), comp_rate=row.get("compression_rate", "1.00"), num_compressed=row.get("num_compressed_layers", "N/A"), hf_repo_url=url or f"https://huggingface.co/{repo_id}")
+                update_documentation_table(doc_path=doc_path, model_name=slug, module_name=module_key, dataset_name="sst2", status=r["status"], baseline_acc=None, acc=r['accuracy_pct"], f1=row.get("f1_score", "N/A"), comp_rate=row.get("compression_rate", "1.00"), num_compressed=row.get("num_compressed_layers", "N/A"), hf_repo_url=url or f"https://huggingface.co/{repo_id}")
     except ImportError:
         pass
     print("\nAll tasks completed.", flush=True)
