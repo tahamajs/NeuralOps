@@ -1,0 +1,25 @@
+# Core Deep Learning & NLP
+torch>=2.2.0
+transformers>=4.40.0
+datasets>=2.18.0
+huggingface-hub>=0.20.0
+accelerate>=0.28.0
+
+# Scientific Computing & Mathematics
+numpy>=1.24.0
+scipy>=1.10.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+
+# Experiment Tracking, Utilities & Visualization
+tqdm>=4.66.0
+pyyaml>=6.0
+psutil>=5.9.0
+filelock>=3.12.0
+packaging>=23.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.15.0
+
+# Testing & Quality
+pytest>=7.4.0
