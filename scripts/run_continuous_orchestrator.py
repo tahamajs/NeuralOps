@@ -84,7 +84,7 @@ def main():
     log("[LAUNCH] Starting run_autonomous_48h_pipeline.py...")
     cmd = [sys.executable, "-u", "scripts/run_autonomous_48h_pipeline.py"]
     env = os.environ.copy()
-    env["PYTHONPATH"] = f"Codes;{env.get('PYTHONPATH', '')}" if os.name == "nt" else f"Codes:{env.get('PYTHONPATH', '')}"
+    env["PYTHONPATH"] = f"neuralops;{env.get('PYTHONPATH', '')}" if os.name == "nt" else f"neuralops:{env.get('PYTHONPATH', '')}"
 
     proc = subprocess.Popen(
         cmd,
