@@ -192,7 +192,7 @@ def load_deprecated_modules() -> set[str]:
     candidates = [
         ROOT / "audit" / "deprecated_modules.txt",
         ROOT / "deprecated_modules.txt",
-        CODES / "neuralops" / "deprecated_modules.txt",
+        CODES / "deprecated_modules.txt",
         HERE / "deprecated_modules.txt",
         HERE / "config" / "deprecated_modules.txt",
     ]

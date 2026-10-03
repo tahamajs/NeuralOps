@@ -270,7 +270,7 @@ def main(argv: list[str] | None = None) -> int:
             if need_ppl:
                 ppl_cmd = [
                     sys.executable,
-                    str(CODES / "neuralops" / "benchmarks" / "run_gpt2_sweep.py"),
+                    str(CODES / "benchmarks" / "run_gpt2_sweep.py"),
                     "--modules",
                     mod,
                     "--model_path",
@@ -305,7 +305,7 @@ def main(argv: list[str] | None = None) -> int:
             if need_lmeval:
                 lmeval_cmd = [
                     sys.executable,
-                    str(CODES / "neuralops" / "evaluation" / "run_lm_eval_harness.py"),
+                    str(CODES / "evaluation" / "run_lm_eval_harness.py"),
                     "--module",
                     mod,
                     "--model_path",
@@ -351,7 +351,7 @@ def main(argv: list[str] | None = None) -> int:
             if need_ruler:
                 ruler_cmd = [
                     sys.executable,
-                    str(CODES / "neuralops" / "benchmarks" / "run_ruler_benchmark.py"),
+                    str(CODES / "benchmarks" / "run_ruler_benchmark.py"),
                     "--module",
                     mod,
                     "--model_path",
