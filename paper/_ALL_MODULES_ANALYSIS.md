@@ -32,10 +32,10 @@ This document provides the exhaustive audit and empirical validation across all 
 
 ### P0 Action Items (Immediate Fixes)
 
-- `adasvd_compressor`: /Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/adasvd_compressor.py (Status: PASS, 88.76% acc, 1.161x comp, verified 2026-09-21)
-- `compot_compressor`: /Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/compot_compressor.py (Category: BROKEN, Sub: Compression-Failed)
-- `cur_linear`: /Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/cur_linear.py (Category: BROKEN, Sub: Compression-Failed)
-- `cure`: /Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/cure.py (Category: BROKEN, Sub: Compression-Failed)
+- `adasvd_compressor`: Codes/framework/compression_engine/adasvd_compressor.py (Status: PASS, 88.76% acc, 1.161x comp, verified 2026-09-21)
+- `compot_compressor`: Codes/framework/compression_engine/compot_compressor.py (Category: BROKEN, Sub: Compression-Failed)
+- `cur_linear`: Codes/framework/compression_engine/cur_linear.py (Category: BROKEN, Sub: Compression-Failed)
+- `cure`: Codes/framework/compression_engine/cure.py (Category: BROKEN, Sub: Compression-Failed)
 
 ## 4. Complete 217-Module Master Table
 

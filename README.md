@@ -199,7 +199,7 @@ results/
 
 ## 📊 Automated Artifacts & Dashboard Telemetry
 
-- **Live Evaluation Monitor**: Open [zeroshot_live_monitor.md](file:///Users/tahamajs/.gemini/antigravity-cli/brain/154e5c28-a619-4387-be97-a33f27392ecf/zeroshot_live_monitor.md) for live 20-minute inspection cycles, ranked Pareto tables, and comparative analysis.
+- **Live Evaluation Monitor**: Open [zeroshot_live_monitor.md](Docs/zeroshot_live_monitor.md) for live 20-minute inspection cycles, ranked Pareto tables, and comparative analysis.
 - **Web Analytics Studio**:
   ```bash
   python Codes/framework/live_monitor.py --port 8080 --host 0.0.0.0
@@ -214,7 +214,7 @@ results/
 
 ## ⚖️ Citation & License
 
-Distributed under the MIT License. See [LICENSE](file:///Users/tahamajs/Documents/uni/Project/LICENSE) for full details. If you use NeuralOps in academic research, please cite:
+Distributed under the MIT License. See [LICENSE](LICENSE) for full details. If you use NeuralOps in academic research, please cite:
 
 ```bibtex
 @inproceedings{neuralops2026,

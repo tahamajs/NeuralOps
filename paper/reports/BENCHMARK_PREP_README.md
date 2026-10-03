@@ -3,26 +3,26 @@
 ## Files Prepared
 
 ### Decoder Evaluation
-- [`Codes/framework/finetune_gpt2_wikitext.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/finetune_gpt2_wikitext.py) (READY)
-- [`Codes/framework/run_gpt2_sweep.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/run_gpt2_sweep.py) (READY)
-- Modified: [`Codes/framework/run_one_module_isolated.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/run_one_module_isolated.py) (`--perplexity` flag added)
+- [`Codes/framework/finetune_gpt2_wikitext.py`](Codes/framework/finetune_gpt2_wikitext.py) (READY)
+- [`Codes/framework/run_gpt2_sweep.py`](Codes/framework/run_gpt2_sweep.py) (READY)
+- Modified: [`Codes/framework/run_one_module_isolated.py`](Codes/framework/run_one_module_isolated.py) (`--perplexity` flag added)
 
 ### Long-Context Evaluation
-- [`Codes/framework/data_utils/load_byte_imdb.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/data_utils/load_byte_imdb.py) (READY)
-- [`Codes/framework/run_long_context_sweep.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/run_long_context_sweep.py) (READY)
-- Modified: [`Codes/framework/run_one_module_isolated.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/run_one_module_isolated.py) (`--long_context` flag added)
+- [`Codes/framework/data_utils/load_byte_imdb.py`](Codes/framework/data_utils/load_byte_imdb.py) (READY)
+- [`Codes/framework/run_long_context_sweep.py`](Codes/framework/run_long_context_sweep.py) (READY)
+- Modified: [`Codes/framework/run_one_module_isolated.py`](Codes/framework/run_one_module_isolated.py) (`--long_context` flag added)
 
 ### Pareto Metrics
-- Modified: [`Codes/framework/run_one_module_isolated.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/run_one_module_isolated.py) (VRAM / latency / throughput telemetry)
-- Modified: [`Codes/framework/run_quality_sweep.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/run_quality_sweep.py) CSV schema (5 new columns: `latency_ms_per_token`, `throughput_tok_per_sec`, `perplexity`, `long_context_accuracy`)
+- Modified: [`Codes/framework/run_one_module_isolated.py`](Codes/framework/run_one_module_isolated.py) (VRAM / latency / throughput telemetry)
+- Modified: [`Codes/framework/run_quality_sweep.py`](Codes/framework/run_quality_sweep.py) CSV schema (5 new columns: `latency_ms_per_token`, `throughput_tok_per_sec`, `perplexity`, `long_context_accuracy`)
 
 ### Plotting
-- [`Codes/framework/plot_pareto.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/plot_pareto.py) (READY)
+- [`Codes/framework/plot_pareto.py`](Codes/framework/plot_pareto.py) (READY)
 
 ### LaTeX Tables
-- [`paper/iclr2027-submission/tables/table6_decoder.tex`](file:///Users/tahamajs/Documents/uni/Project/paper/iclr2027-submission/tables/table6_decoder.tex) (TEMPLATE)
-- [`paper/iclr2027-submission/tables/table7_long_context.tex`](file:///Users/tahamajs/Documents/uni/Project/paper/iclr2027-submission/tables/table7_long_context.tex) (TEMPLATE)
-- [`paper/iclr2027-submission/tables/table8_pareto.tex`](file:///Users/tahamajs/Documents/uni/Project/paper/iclr2027-submission/tables/table8_pareto.tex) (TEMPLATE)
+- [`paper/iclr2027-submission/tables/table6_decoder.tex`](paper/iclr2027-submission/tables/table6_decoder.tex) (TEMPLATE)
+- [`paper/iclr2027-submission/tables/table7_long_context.tex`](paper/iclr2027-submission/tables/table7_long_context.tex) (TEMPLATE)
+- [`paper/iclr2027-submission/tables/table8_pareto.tex`](paper/iclr2027-submission/tables/table8_pareto.tex) (TEMPLATE)
 
 ## What to Review
 

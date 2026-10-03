@@ -21,8 +21,8 @@ This initially appeared to contradict the central claim that full activation cov
 Detailed investigation of the codebase revealed three critical factors:
 
 1. **Unequal Fallback Thresholds in Legacy Code:**
-   - In [`fwsvd_compressor.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/fwsvd_compressor.py), `max_error` was configured to **`0.85`**.
-   - In [`aa_svd_compressor.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/aa_svd_compressor.py), `max_error` was strictly capped at **`0.50`**.
+   - In [`fwsvd_compressor.py`](Codes/framework/compression_engine/fwsvd_compressor.py), `max_error` was configured to **`0.85`**.
+   - In [`aa_svd_compressor.py`](Codes/framework/compression_engine/aa_svd_compressor.py), `max_error` was strictly capped at **`0.50`**.
    - At $r=128$, several sensitive layers in AASVD had reconstruction errors between $0.51$ and $0.65$, triggering fallback to dense uncompressed layers, while FWSVD retained compressed representation with higher error allowance.
 
 2. **Covariance Conditioning & Regularization:**

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 
-out_path = '/Users/tahamajs/Documents/uni/Project/thesis_final/attentions_latex/part4.tex'
+out_path = 'thesis_final/attentions_latex/part4.tex'
 os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
 sections = []

@@ -3,7 +3,7 @@
 > [!WARNING]
 > **DEPRECATED & EXCLUDED FROM BENCHMARK QUEUE**
 > Tensor-Train linear layers have been deprecated and excluded from the production benchmark queue (`run_all_benchmarks_queue.py`). For 2D linear weight matrices in transformers, Tensor-Train decomposition creates artificial mode entanglement and flattens singular value decay, making it empirically and theoretically inferior to SVD.
-> Full mathematical proof and empirical profiling are available at [`Docs/content/compressions/tt.md`](file:///Users/tahamajs/Documents/uni/Project/Docs/content/compressions/tt.md).
+> Full mathematical proof and empirical profiling are available at [`Docs/content/compressions/tt.md`](Docs/content/compressions/tt.md).
 
 ## 1. Executive Abstract & Theoretical Motivation
 As neural network dimensions scale to thousands of hidden units ($d_{\text{in}}, d_{\text{out}} \ge 4096$), standard matrix factorizations (such as 2D SVD or Low-Rank Adaptation) hit parameter compression ceilings: parameter count scales linearly with dimension $O(r (d_{\text{in}} + d_{\text{out}}))$. To break this linear scaling wall, high-dimensional tensor network decompositions represent weight matrices as multi-dimensional tensor grids.

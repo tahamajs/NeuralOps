@@ -39,8 +39,8 @@ All pending experimental stages and sweeps across all module groups have success
 
 ## 3. Dataset Artifacts Generated
 
-- [`summary_v4.csv`](file:///Users/tahamajs/Documents/uni/Project/results/distilbert_mnli_full_mnli_sweep/summary_v4.csv): Publication-ready master table with all 12 standardized columns across 203 evaluated modules.
-- [`summary_full_mnli.csv`](file:///Users/tahamajs/Documents/uni/Project/results/distilbert_mnli_full_mnli_sweep/summary_full_mnli.csv): 132 PASS modules evaluated on $N=9,815$ samples with 95% Wilson confidence intervals.
+- [`summary_v4.csv`](results/distilbert_mnli_full_mnli_sweep/summary_v4.csv): Publication-ready master table with all 12 standardized columns across 203 evaluated modules.
+- [`summary_full_mnli.csv`](results/distilbert_mnli_full_mnli_sweep/summary_full_mnli.csv): 132 PASS modules evaluated on $N=9,815$ samples with 95% Wilson confidence intervals.
 - Snapshots archived:
   - `summary_snapshot_post_group7.csv`
   - `summary_snapshot_post_group2.csv`

@@ -11,7 +11,7 @@
 
 ### What was wrong
 
-[`run_quality_sweep.py:2597-2599`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/run_quality_sweep.py#L2597-L2599) contained a hardcoded MNLI threshold:
+[`run_quality_sweep.py:2597-2599`](Codes/framework/run_quality_sweep.py#L2597-L2599) contained a hardcoded MNLI threshold:
 
 ```python
 elif getattr(args, "dataset", "") == "mnli":
@@ -90,7 +90,7 @@ All sweep results under `results/*/summary.csv` used the **hardcoded 36.90%** th
 
 ## 4. Full-MNLI Validation (PASS_STRICT Modules)
 
-**Script**: [`Codes/framework/full_mnli_validation.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/full_mnli_validation.py)  
+**Script**: [`Codes/framework/full_mnli_validation.py`](Codes/framework/full_mnli_validation.py)  
 **Status**: Script written and deployed to `hadi-windows`. Pending execution (Group 4 in `_PENDING_RUNS.md`).
 
 **Threshold for full MNLI** (N=9,815):
@@ -111,7 +111,7 @@ All 77 PASS_STRICT modules (acc ≥ 70% on local split) are expected to pass the
 
 ## 5. Per-Class Collapse Audit
 
-**Script**: [`Codes/framework/per_class_collapse_audit.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/per_class_collapse_audit.py)  
+**Script**: [`Codes/framework/per_class_collapse_audit.py`](Codes/framework/per_class_collapse_audit.py)  
 **Status**: Launched on `hadi-windows` at 19:09 UTC+3:30. Output: `results/.../collapse_audit.csv`
 
 ### Suspected modules and evidence

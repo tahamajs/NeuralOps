@@ -244,7 +244,7 @@ python Codes\framework\run_quality_sweep.py `
 
 ### Option B — Parallel scan optimization (DOCUMENTED_LIMITATION)
 
-The current implementation in [`hgrn2_outer.py:434`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/hgrn2_outer.py#L434) is:
+The current implementation in [`hgrn2_outer.py:434`](Codes/framework/attentions/hgrn2_outer.py#L434) is:
 ```python
 for t in range(L):  # sequential — O(L) Python interpreter overhead per step
     kv = kt.contiguous().unsqueeze(-1) @ vt.contiguous().unsqueeze(-2)
@@ -268,7 +268,7 @@ A vectorized implementation using `torch.linalg.solve_triangular` or the "prefix
 
 **Root cause**: Mamba's SSM state decays to zero for MNLI 3-class due to missing adaptation of the state expansion dimension (`d_state`) to the number of output classes. The model predicts class 0 for all inputs.
 
-**Required fix** in [`Codes/framework/attentions/mamba.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/mamba.py):
+**Required fix** in [`Codes/framework/attentions/mamba.py`](Codes/framework/attentions/mamba.py):
 ```python
 # Find the classifier head initialization after injection and add:
 # Ensure d_model matches hidden_size for classification output projection

@@ -118,4 +118,4 @@ All 10 mathematical, dimensional, and formula issues across `paper/A3/` have bee
 | **Check 1: Dimensionality** | All equations dimensionally consistent | Fully verified across (3.2), (3.9), (4.5), (4.13), (A.10)-(A.12) | **PASS** |
 | **Check 2: Section $\leftrightarrow$ Appendix** | Equations in text match derivations | Eq (4.13) $\equiv$ Eq (A.11); Eq (4.14) $\equiv$ Eq (A.8) | **PASS** |
 | **Check 3: Compilation** | `pdflatex main.tex` 0 errors | 2 passes cleanly compiled; exactly 30 pages | **PASS** |
-| **Check 4: Report Generated** | [A3_MATH_FIX_REPORT.md](file:///Users/tahamajs/Documents/uni/Project/audit/A3_MATH_FIX_REPORT.md) | Created with comprehensive documentation | **PASS** |
+| **Check 4: Report Generated** | [A3_MATH_FIX_REPORT.md](audit/A3_MATH_FIX_REPORT.md) | Created with comprehensive documentation | **PASS** |

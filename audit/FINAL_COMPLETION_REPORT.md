@@ -10,7 +10,7 @@
 
 All **25 actionable errors** identified during the exhaustive repository audit across 265 modules have been resolved, verified via live inference tests across three transformer backbone architectures (**DistilBERT**, **RoBERTa-base**, **GPT-2**), committed, and synchronized.
 
-The complete suite of 265 modules in [`audit/module_test_log.jsonl`](file:///Users/tahamajs/Documents/uni/Project/audit/module_test_log.jsonl) is fully clean with **0 failing modules**.
+The complete suite of 265 modules in [`audit/module_test_log.jsonl`](audit/module_test_log.jsonl) is fully clean with **0 failing modules**.
 
 ```
 +-------------------------------------------------------------------------------+
@@ -35,7 +35,7 @@ The complete suite of 265 modules in [`audit/module_test_log.jsonl`](file:///Use
 
 ### Super-Batch 1: Category C (Harness Pad Token & File Path Errors)
 - **Root Cause:** Causal decoder tokenizers (GPT-2) lacking explicit `pad_token = eos_token` initialization, triggering HuggingFace batching assertions; Windows file path argument handling in offline mode.
-- **Remediation:** Hardened [`run_one_module.py`](file:///Users/tahamajs/Documents/uni/Project/run_one_module.py) with tokenizer fallback safeguards (`pad_token = eos_token`, `pad_token_id = eos_token_id`) and safe local config defaults.
+- **Remediation:** Hardened [`run_one_module.py`](run_one_module.py) with tokenizer fallback safeguards (`pad_token = eos_token`, `pad_token_id = eos_token_id`) and safe local config defaults.
 - **Affected Modules Fixed & Verified:**
   - `SOAFusedAttention` (DistilBERT: `0.657`, RoBERTa: `0.019`, GPT-2: `3.971`) -> **PASS**
   - `adaptive_span_attention` (DistilBERT: `0.099`, RoBERTa: `0.013`, GPT-2: `1.136`) -> **PASS**
@@ -48,13 +48,13 @@ The complete suite of 265 modules in [`audit/module_test_log.jsonl`](file:///Use
   2. Unbound local variable references (`config`, `rank`) in layer injection loops.
   3. Missing default positional arguments in model injection helpers.
 - **Remediated Files & Commits:**
-  - [`samba_moe.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/samba_moe.py): Added `model=None` and full model traversal. (`7db899a21`)
-  - [`spectron.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/spectron.py): Resolved `config` scope and direct delegation to `inject_spectron_layer`. (`9118624df`)
-  - [`squeezing_heads_distill.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/squeezing_heads_distill.py): Resolved unbound `config` and `rank` variables. (`248009f2c`)
-  - [`svd_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/svd_attention.py): Fixed unbound `config` and `rank` scope in `inject_svd_linear_attention`. (`aacd2536c`)
-  - [`svd_compressed.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/svd_compressed.py): Added safe default arguments and fallback in `inject_all_layers`. (`befeb43fe`)
-  - [`nli_softmax.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/nli_softmax.py): Added whole-model recursive traversal and `model=None` polymorphism. (`df75bd318`)
-  - [`padre_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/padre_attention.py): Fixed `proj_candidates` scope and implemented full recursive model traversal with layer attachment. (`fa539579d`)
+  - [`samba_moe.py`](Codes/framework/attentions/samba_moe.py): Added `model=None` and full model traversal. (`7db899a21`)
+  - [`spectron.py`](Codes/framework/attentions/spectron.py): Resolved `config` scope and direct delegation to `inject_spectron_layer`. (`9118624df`)
+  - [`squeezing_heads_distill.py`](Codes/framework/attentions/squeezing_heads_distill.py): Resolved unbound `config` and `rank` variables. (`248009f2c`)
+  - [`svd_attention.py`](Codes/framework/attentions/svd_attention.py): Fixed unbound `config` and `rank` scope in `inject_svd_linear_attention`. (`aacd2536c`)
+  - [`svd_compressed.py`](Codes/framework/attentions/svd_compressed.py): Added safe default arguments and fallback in `inject_all_layers`. (`befeb43fe`)
+  - [`nli_softmax.py`](Codes/framework/compression_engine/nli_softmax.py): Added whole-model recursive traversal and `model=None` polymorphism. (`df75bd318`)
+  - [`padre_attention.py`](Codes/framework/compression_engine/padre_attention.py): Fixed `proj_candidates` scope and implemented full recursive model traversal with layer attachment. (`fa539579d`)
 - **Verification Results Across All 3 Backbones:**
   - `aegis_v1` - `aegis_v5`: All passed (`status: OK`)
   - `compressed_attention`: DistilBERT `0.168`, RoBERTa `0.073`, GPT-2 `1.312` (`status: OK`)
@@ -72,7 +72,7 @@ The complete suite of 265 modules in [`audit/module_test_log.jsonl`](file:///Use
 
 ### Super-Batch 3: Unknown / Direct Harness Verification & System Daemons
 - **Module `test_direct`:** Identified as the initial audit harness sanity test entry. Updated and verified as clean.
-- **Log Integrity:** Verified that [`audit/module_test_log.jsonl`](file:///Users/tahamajs/Documents/uni/Project/audit/module_test_log.jsonl) has exactly **265 lines**, each corresponding to a distinct audited module.
+- **Log Integrity:** Verified that [`audit/module_test_log.jsonl`](audit/module_test_log.jsonl) has exactly **265 lines**, each corresponding to a distinct audited module.
 - **Background Daemons:** Confirmed active on GPU server:
   - `auto_upload_hf_results.py` (PID: `11004`)
   - `auto_git_sync.py` (PID: `25160`)

@@ -2,34 +2,34 @@
 
 ## Block 1: Baseline Comparison
 Files:
-  - [`Codes/framework/attentions/naive_svd.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/naive_svd.py) (READY)
-  - [`Codes/framework/run_baseline_comparison.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/run_baseline_comparison.py) (READY)
-  - [`paper/iclr2027-submission/tables/table_baselines.tex`](file:///Users/tahamajs/Documents/uni/Project/paper/iclr2027-submission/tables/table_baselines.tex) (TEMPLATE)
+  - [`Codes/framework/attentions/naive_svd.py`](Codes/framework/attentions/naive_svd.py) (READY)
+  - [`Codes/framework/run_baseline_comparison.py`](Codes/framework/run_baseline_comparison.py) (READY)
+  - [`paper/iclr2027-submission/tables/table_baselines.tex`](paper/iclr2027-submission/tables/table_baselines.tex) (TEMPLATE)
 Baselines: `dense`, `naive_svd`, `asvd`, `gfws_d` (FWSVD), `svd_llm_v2`, `a3`
 Datasets: SST-2, MNLI, AG News
 Estimated run time: ~2 hours
 
 ## Block 2: Ablation Study
 Files:
-  - [`Codes/framework/config/ablation_pipeline.yaml`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/config/ablation_pipeline.yaml) (READY)
-  - [`Codes/framework/run_ablation.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/run_ablation.py) (READY)
-  - [`paper/iclr2027-submission/tables/table_ablation.tex`](file:///Users/tahamajs/Documents/uni/Project/paper/iclr2027-submission/tables/table_ablation.tex) (TEMPLATE)
+  - [`Codes/framework/config/ablation_pipeline.yaml`](Codes/framework/config/ablation_pipeline.yaml) (READY)
+  - [`Codes/framework/run_ablation.py`](Codes/framework/run_ablation.py) (READY)
+  - [`paper/iclr2027-submission/tables/table_ablation.tex`](paper/iclr2027-submission/tables/table_ablation.tex) (TEMPLATE)
 Stages: 5 (`naive_svd` -> `aasvd` [Cholesky] -> `dynamic_entropy` -> `fusion_attn` [Mamba] -> `res_svd` [Full])
 Estimated run time: ~3 hours
 
 ## Block 3: Statistical Rigor
 Files:
-  - [`Codes/framework/run_multiseed.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/run_multiseed.py) (READY)
-  - [`Codes/framework/run_seqlen_scaling.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/run_seqlen_scaling.py) (READY)
-  - [`Codes/framework/plot_seqlen_scaling.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/plot_seqlen_scaling.py) (READY)
-  - [`paper/iclr2027-submission/tables/table_multiseed.tex`](file:///Users/tahamajs/Documents/uni/Project/paper/iclr2027-submission/tables/table_multiseed.tex) (TEMPLATE)
-  - [`paper/iclr2027-submission/figures/seqlen_scaling.png`](file:///Users/tahamajs/Documents/uni/Project/paper/iclr2027-submission/figures/seqlen_scaling.png) (TEMPLATE / PLACEHOLDER)
+  - [`Codes/framework/run_multiseed.py`](Codes/framework/run_multiseed.py) (READY)
+  - [`Codes/framework/run_seqlen_scaling.py`](Codes/framework/run_seqlen_scaling.py) (READY)
+  - [`Codes/framework/plot_seqlen_scaling.py`](Codes/framework/plot_seqlen_scaling.py) (READY)
+  - [`paper/iclr2027-submission/tables/table_multiseed.tex`](paper/iclr2027-submission/tables/table_multiseed.tex) (TEMPLATE)
+  - [`paper/iclr2027-submission/figures/seqlen_scaling.png`](paper/iclr2027-submission/figures/seqlen_scaling.png) (TEMPLATE / PLACEHOLDER)
 Seeds: 42, 123, 456
 Seq lengths: 128, 512, 1024, 2048, 4096
 Estimated run time: ~4 hours
 
 ## Master Orchestrator
-- [`Codes/framework/run_all_new_benchmarks.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/run_all_new_benchmarks.py) (READY)
+- [`Codes/framework/run_all_new_benchmarks.py`](Codes/framework/run_all_new_benchmarks.py) (READY)
 Supports flags: `--baselines`, `--ablation`, `--multiseed`, `--seqlen`, `--all`, and `--dry_run`.
 
 ## What to Review

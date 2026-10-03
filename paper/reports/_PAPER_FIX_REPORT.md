@@ -1,9 +1,9 @@
 # AdaSVD Compressor Paper (v2) Fix Report
 
 **Date:** 2026-09-21  
-**Target Paper:** [`paper/adasvd_compressor_paper_v2.tex`](file:///Users/tahamajs/Documents/uni/Project/paper/adasvd_compressor_paper_v2.tex)  
-**PDF Output:** [`paper/adasvd_compressor_paper_v2.pdf`](file:///Users/tahamajs/Documents/uni/Project/paper/adasvd_compressor_paper_v2.pdf)  
-**Extracted Numbers File:** [`paper/_PAPER_NUMBERS.csv`](file:///Users/tahamajs/Documents/uni/Project/paper/_PAPER_NUMBERS.csv)  
+**Target Paper:** [`paper/adasvd_compressor_paper_v2.tex`](paper/adasvd_compressor_paper_v2.tex)  
+**PDF Output:** [`paper/adasvd_compressor_paper_v2.pdf`](paper/adasvd_compressor_paper_v2.pdf)  
+**Extracted Numbers File:** [`paper/_PAPER_NUMBERS.csv`](paper/_PAPER_NUMBERS.csv)  
 
 ---
 

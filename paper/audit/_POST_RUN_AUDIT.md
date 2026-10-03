@@ -54,7 +54,7 @@ Latest JSON output on remote disk:
 
 ## 4. Threshold Implementation Verification
 
-In [`Codes/framework/run_quality_sweep.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/run_quality_sweep.py#L2591-L2640):
+In [`Codes/framework/run_quality_sweep.py`](Codes/framework/run_quality_sweep.py#L2591-L2640):
 - Threshold is **dynamically computed** from the validation split labels:
   ```python
   p0 = majority_count / total_val_samples  # 341 / 1000 = 34.10% for MNLI local

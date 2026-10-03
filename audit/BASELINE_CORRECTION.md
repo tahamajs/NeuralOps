@@ -43,27 +43,27 @@ A repository-wide audit for references to `"78.56"` or `"78.5"` identified 38 di
 
 | File Category | File Path | Count | Action Taken |
 | :--- | :--- | :---: | :--- |
-| **Master Summary** | [`MASTER_PROJECT_RESULTS.md`](file:///Users/tahamajs/Documents/uni/Project/MASTER_PROJECT_RESULTS.md) | 2 | **Updated**: Baseline corrected to 94.50%, rank-sweep delta updated. |
-| **Documentation** | [`docs/content/attentions/full_attention.md`](file:///Users/tahamajs/Documents/uni/Project/docs/content/attentions/full_attention.md) | 1 | **Updated**: Baseline corrected to 94.50%. |
-| **Documentation** | [`docs/content/compressions/aasvd.md`](file:///Users/tahamajs/Documents/uni/Project/docs/content/compressions/aasvd.md) | 1 | **Annotated**: Marked as archived run against un-finetuned roberta-base. |
-| **Documentation** | [`docs/content/compressions/armor_pruner.md`](file:///Users/tahamajs/Documents/uni/Project/docs/content/compressions/armor_pruner.md) | 1 | **Annotated**: Marked as archived run against un-finetuned roberta-base. |
-| **Documentation** | [`docs/content/attentions/adaptive_sparse_attention.md`](file:///Users/tahamajs/Documents/uni/Project/docs/content/attentions/adaptive_sparse_attention.md) | 1 | **Annotated**: Active result delta recomputed against 94.50%. |
-| **Documentation** | [`docs/content/attentions/adaptive_sparse_inject.md`](file:///Users/tahamajs/Documents/uni/Project/docs/content/attentions/adaptive_sparse_inject.md) | 1 | **Annotated**: Active result delta recomputed against 94.50%. |
-| **Documentation** | [`docs/content/compressions/dobi.md`](file:///Users/tahamajs/Documents/uni/Project/docs/content/compressions/dobi.md) | 2 | **Updated**: Baseline corrected to 94.50%. |
-| **Documentation** | [`docs/content/compressions/dobi_svd.md`](file:///Users/tahamajs/Documents/uni/Project/docs/content/compressions/dobi_svd.md) | 2 | **Updated**: Baseline corrected to 94.50%. |
-| **Documentation** | [`docs/content/compressions/a3_compressor.md`](file:///Users/tahamajs/Documents/uni/Project/docs/content/compressions/a3_compressor.md) | 2 | **Annotated**: Added note clarifying 78.56% was un-finetuned baseline. |
-| **Documentation** | [`docs/content/compressions/nmf_compressor.md`](file:///Users/tahamajs/Documents/uni/Project/docs/content/compressions/nmf_compressor.md) | 1 | **Updated**: Baseline corrected to 94.50%. |
-| **Documentation** | [`docs/content/compressions/frandi_compressor.md`](file:///Users/tahamajs/Documents/uni/Project/docs/content/compressions/frandi_compressor.md) | 1 | **Updated**: Baseline corrected to 94.50%. |
-| **Documentation** | [`docs/content/compressions/flap.md`](file:///Users/tahamajs/Documents/uni/Project/docs/content/compressions/flap.md) | 1 | **Updated**: Baseline corrected to 94.50%. |
-| **Documentation** | [`docs/content/compressions/flat_llm.md`](file:///Users/tahamajs/Documents/uni/Project/docs/content/compressions/flat_llm.md) | 1 | **Updated**: Baseline corrected to 94.50%. |
-| **Documentation** | [`docs/content/compressions/faq_quantizer.md`](file:///Users/tahamajs/Documents/uni/Project/docs/content/compressions/faq_quantizer.md) | 1 | **Updated**: Baseline corrected to 94.50%. |
-| **Audit Reports** | [`audit/SCHEDULER_VERIFICATION.md`](file:///Users/tahamajs/Documents/uni/Project/audit/SCHEDULER_VERIFICATION.md) | 4 | **Verified**: Contradiction resolved and documented. |
-| **Audit Reports** | [`audit/A3_FINAL_CONSISTENCY_REPORT.md`](file:///Users/tahamajs/Documents/uni/Project/audit/A3_FINAL_CONSISTENCY_REPORT.md) | 2 | **Archived**: Explains historical 78.56% artifact. |
-| **Audit Reports** | [`audit/A3_VERIFICATION_REPORT.md`](file:///Users/tahamajs/Documents/uni/Project/audit/A3_VERIFICATION_REPORT.md) | 1 | **Archived**: Historical audit record. |
-| **Audit Reports** | [`audit/A3_PAPER_COMPLETION_REPORT.md`](file:///Users/tahamajs/Documents/uni/Project/audit/A3_PAPER_COMPLETION_REPORT.md) | 1 | **Archived**: Historical audit record. |
-| **Audit Reports** | [`audit/RUN_DIAGNOSTIC_2026_09_18.md`](file:///Users/tahamajs/Documents/uni/Project/audit/RUN_DIAGNOSTIC_2026_09_18.md) | 1 | **Archived**: Historical diagnostic log. |
-| **Audit Reports** | [`audit/verification_2026_09_18/FINAL_CONTRADICTION_RESOLUTION_REPORT.md`](file:///Users/tahamajs/Documents/uni/Project/audit/verification_2026_09_18/FINAL_CONTRADICTION_RESOLUTION_REPORT.md) | 2 | **Archived**: Historical resolution record. |
-| **Audit Reports** | [`audit/paper_completion_report.md`](file:///Users/tahamajs/Documents/uni/Project/audit/paper_completion_report.md) | 1 | **Archived**: Historical completion report. |
+| **Master Summary** | [`MASTER_PROJECT_RESULTS.md`](MASTER_PROJECT_RESULTS.md) | 2 | **Updated**: Baseline corrected to 94.50%, rank-sweep delta updated. |
+| **Documentation** | [`docs/content/attentions/full_attention.md`](docs/content/attentions/full_attention.md) | 1 | **Updated**: Baseline corrected to 94.50%. |
+| **Documentation** | [`docs/content/compressions/aasvd.md`](docs/content/compressions/aasvd.md) | 1 | **Annotated**: Marked as archived run against un-finetuned roberta-base. |
+| **Documentation** | [`docs/content/compressions/armor_pruner.md`](docs/content/compressions/armor_pruner.md) | 1 | **Annotated**: Marked as archived run against un-finetuned roberta-base. |
+| **Documentation** | [`docs/content/attentions/adaptive_sparse_attention.md`](docs/content/attentions/adaptive_sparse_attention.md) | 1 | **Annotated**: Active result delta recomputed against 94.50%. |
+| **Documentation** | [`docs/content/attentions/adaptive_sparse_inject.md`](docs/content/attentions/adaptive_sparse_inject.md) | 1 | **Annotated**: Active result delta recomputed against 94.50%. |
+| **Documentation** | [`docs/content/compressions/dobi.md`](docs/content/compressions/dobi.md) | 2 | **Updated**: Baseline corrected to 94.50%. |
+| **Documentation** | [`docs/content/compressions/dobi_svd.md`](docs/content/compressions/dobi_svd.md) | 2 | **Updated**: Baseline corrected to 94.50%. |
+| **Documentation** | [`docs/content/compressions/a3_compressor.md`](docs/content/compressions/a3_compressor.md) | 2 | **Annotated**: Added note clarifying 78.56% was un-finetuned baseline. |
+| **Documentation** | [`docs/content/compressions/nmf_compressor.md`](docs/content/compressions/nmf_compressor.md) | 1 | **Updated**: Baseline corrected to 94.50%. |
+| **Documentation** | [`docs/content/compressions/frandi_compressor.md`](docs/content/compressions/frandi_compressor.md) | 1 | **Updated**: Baseline corrected to 94.50%. |
+| **Documentation** | [`docs/content/compressions/flap.md`](docs/content/compressions/flap.md) | 1 | **Updated**: Baseline corrected to 94.50%. |
+| **Documentation** | [`docs/content/compressions/flat_llm.md`](docs/content/compressions/flat_llm.md) | 1 | **Updated**: Baseline corrected to 94.50%. |
+| **Documentation** | [`docs/content/compressions/faq_quantizer.md`](docs/content/compressions/faq_quantizer.md) | 1 | **Updated**: Baseline corrected to 94.50%. |
+| **Audit Reports** | [`audit/SCHEDULER_VERIFICATION.md`](audit/SCHEDULER_VERIFICATION.md) | 4 | **Verified**: Contradiction resolved and documented. |
+| **Audit Reports** | [`audit/A3_FINAL_CONSISTENCY_REPORT.md`](audit/A3_FINAL_CONSISTENCY_REPORT.md) | 2 | **Archived**: Explains historical 78.56% artifact. |
+| **Audit Reports** | [`audit/A3_VERIFICATION_REPORT.md`](audit/A3_VERIFICATION_REPORT.md) | 1 | **Archived**: Historical audit record. |
+| **Audit Reports** | [`audit/A3_PAPER_COMPLETION_REPORT.md`](audit/A3_PAPER_COMPLETION_REPORT.md) | 1 | **Archived**: Historical audit record. |
+| **Audit Reports** | [`audit/RUN_DIAGNOSTIC_2026_09_18.md`](audit/RUN_DIAGNOSTIC_2026_09_18.md) | 1 | **Archived**: Historical diagnostic log. |
+| **Audit Reports** | [`audit/verification_2026_09_18/FINAL_CONTRADICTION_RESOLUTION_REPORT.md`](audit/verification_2026_09_18/FINAL_CONTRADICTION_RESOLUTION_REPORT.md) | 2 | **Archived**: Historical resolution record. |
+| **Audit Reports** | [`audit/paper_completion_report.md`](audit/paper_completion_report.md) | 1 | **Archived**: Historical completion report. |
 | **Historical CSV** | `results/rank_sweep/roberta_test_lr5e5/summary.csv` | 1 | **Archived**: Raw historical run on un-finetuned checkpoint. |
 | **Historical CSV** | `results/run_quality_all_screening_summary.csv` | 4 | **Archived**: Screening sweep record. |
 

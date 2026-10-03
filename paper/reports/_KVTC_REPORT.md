@@ -2,8 +2,8 @@
 
 **Author / Evaluator:** Antigravity AI  
 **Date:** 2026-09-21  
-**Target Module:** [`Codes/framework/compression_engine/kvtc_compressor.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/kvtc_compressor.py)  
-**Test Suite:** [`Codes/framework/tests/test_kvtc_hardened.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/tests/test_kvtc_hardened.py)  
+**Target Module:** [`Codes/framework/compression_engine/kvtc_compressor.py`](Codes/framework/compression_engine/kvtc_compressor.py)  
+**Test Suite:** [`Codes/framework/tests/test_kvtc_hardened.py`](Codes/framework/tests/test_kvtc_hardened.py)  
 
 ---
 
@@ -14,7 +14,7 @@
 - **Architectural Truth:** Inspection of the implementation demonstrates that this compressor operates exclusively as an **offline static weight-matrix compressor** combining **Principal Component Analysis (PCA) projection** with **integer scalar quantization** (with optional rank-1 LoRA residual recovery and theoretical entropy coding estimates).
 - **Hardening & Alias Resolution:**
   - To prevent misleading scientific framing while preserving backward compatibility, the class has been clearly documented with `IS_DYNAMIC_KV_CACHE = False`.
-  - Registered aliases in [`Codes/framework/compression_engine/kvtc_compressor.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/kvtc_compressor.py):
+  - Registered aliases in [`Codes/framework/compression_engine/kvtc_compressor.py`](Codes/framework/compression_engine/kvtc_compressor.py):
     - Original keys: `"kvtc"`, `"kvtc_quantizer"`, `"kvtc_factory"`
     - Honest aliases: `"pca_quant"`, `"pca_quant_compressor"`, `"pca_quant_factory"`
 
@@ -46,13 +46,13 @@
      `"Theoretical lower bound; actual bitstream not implemented."`
 
 7. **VRAM Protection (`--max_vram_fraction`):**
-   - Added GPU memory ceiling parameter in [`run_quality_sweep.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/run_quality_sweep.py) via `torch.cuda.set_per_process_memory_fraction`, ensuring non-disruptive execution alongside the background daemon `auto_pipeline.py`.
+   - Added GPU memory ceiling parameter in [`run_quality_sweep.py`](Codes/framework/run_quality_sweep.py) via `torch.cuda.set_per_process_memory_fraction`, ensuring non-disruptive execution alongside the background daemon `auto_pipeline.py`.
 
 ---
 
 ## 3. Unit Test Verification
 
-The hardened test suite [`Codes/framework/tests/test_kvtc_hardened.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/tests/test_kvtc_hardened.py) tests 8 critical invariants:
+The hardened test suite [`Codes/framework/tests/test_kvtc_hardened.py`](Codes/framework/tests/test_kvtc_hardened.py) tests 8 critical invariants:
 
 | Test Name | Description | Status |
 |---|---|:---:|

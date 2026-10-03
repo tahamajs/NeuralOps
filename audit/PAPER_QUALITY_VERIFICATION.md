@@ -142,11 +142,11 @@ A comprehensive scan across all 217 directories in `paper/PerModulePaper/` yield
 
 The classification script was previously reporting 217 "complete" papers because its stub detector checked strictly for an obsolete phrase (`"Formal architectural specifications for"`), while the A4 generator had output `"This paper presents a formal derivation..."`.
 
-[`scripts/audit_paper_modules.py`](file:///Users/tahamajs/Documents/uni/Project/scripts/audit_paper_modules.py) has been updated to:
+[`scripts/audit_paper_modules.py`](scripts/audit_paper_modules.py) has been updated to:
 1. Verify template variables using robust regex `\{\{[A-Z0-9_]{3,}\}\}` (avoiding false positives from bibtex titles like `{{MoBA}}`).
 2. Read the compiled `main.pdf` page count via `pypdf`.
 3. Classify papers with $\le 5$ pages or stub text as `"stub"`, missing PDFs as `"unknown"`, and papers $>5$ pages as `"complete"`.
-4. Output the updated summary and dictionary directly to [`audit/paper_audit.json`](file:///Users/tahamajs/Documents/uni/Project/audit/paper_audit.json).
+4. Output the updated summary and dictionary directly to [`audit/paper_audit.json`](audit/paper_audit.json).
 
 ---
 

@@ -26,7 +26,7 @@
   # Exit code 1 (No matches)
   ```
 - The module exists solely as an attention layer in:
-  - [`Codes/framework/attentions/svd_llm_v2_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/svd_llm_v2_attention.py)
+  - [`Codes/framework/attentions/svd_llm_v2_attention.py`](Codes/framework/attentions/svd_llm_v2_attention.py)
   - Registered under `@ATTENTION_REGISTRY.register("svd_llm_v2")` and `inject_svd_llm_v2`.
 - It is evaluated by replacing standard Multi-Head Attention (`c_attn`, `q_lin`, etc.) with `SVDLLMV2Attention`, rather than applying model-wide layer compression across MLP and attention blocks.
 

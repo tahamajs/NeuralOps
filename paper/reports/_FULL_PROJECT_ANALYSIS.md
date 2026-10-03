@@ -439,7 +439,7 @@ Seeds 42/123/456 → 40.3% (near-chance on MNLI 3-class = 33.3%), but seeds 789/
 
 ## 9. Anomaly Report Reference
 
-Full anomaly analysis: [`paper/_ANOMALY_REPORT.md`](file:///Users/tahamajs/Documents/uni/Project/paper/_ANOMALY_REPORT.md)
+Full anomaly analysis: [`paper/_ANOMALY_REPORT.md`](paper/_ANOMALY_REPORT.md)
 
 **Key anomaly**: FWSVD outperforms AASVD at r=128 on SST-2 (verified across 4 seeds). At r=64, AASVD wins by +2.98%. Crossover point is between r=64 and r=128.
 
@@ -453,9 +453,9 @@ Full anomaly analysis: [`paper/_ANOMALY_REPORT.md`](file:///Users/tahamajs/Docum
 | [`results/distilbert_sst2_sst2_sweep/summary_*.csv`](ssh://hadi-windows/D:/svd_project/results/distilbert_sst2_sst2_sweep/) | SST-2 compressor baselines + ablations |
 | [`results/unified_sweep/distilbert/summary.csv`](ssh://hadi-windows/D:/svd_project/results/unified_sweep/distilbert/) | Largest SST-2 sweep (247 modules) |
 | [`results/multiseed/summary.csv`](ssh://hadi-windows/D:/svd_project/results/multiseed/summary.csv) | Multi-seed stability |
-| [`Codes/framework/auto_pipeline.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/auto_pipeline.py) | Autonomous daemon |
-| [`Codes/framework/watchdog.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/watchdog.py) | Daemon watchdog |
-| [`paper/_PENDING_RUNS.md`](file:///Users/tahamajs/Documents/uni/Project/paper/_PENDING_RUNS.md) | Detailed pending commands |
-| [`paper/_ANOMALY_REPORT.md`](file:///Users/tahamajs/Documents/uni/Project/paper/_ANOMALY_REPORT.md) | FWSVD vs AASVD anomaly |
-| [`Codes/framework/compression_engine/fwsvd_compressor.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/fwsvd_compressor.py) | Fisher-Weighted SVD |
-| [`Codes/framework/compression_engine/drone_compressor.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/drone_compressor.py) | DRONE (standard SVD) |
+| [`Codes/framework/auto_pipeline.py`](Codes/framework/auto_pipeline.py) | Autonomous daemon |
+| [`Codes/framework/watchdog.py`](Codes/framework/watchdog.py) | Daemon watchdog |
+| [`paper/_PENDING_RUNS.md`](paper/_PENDING_RUNS.md) | Detailed pending commands |
+| [`paper/_ANOMALY_REPORT.md`](paper/_ANOMALY_REPORT.md) | FWSVD vs AASVD anomaly |
+| [`Codes/framework/compression_engine/fwsvd_compressor.py`](Codes/framework/compression_engine/fwsvd_compressor.py) | Fisher-Weighted SVD |
+| [`Codes/framework/compression_engine/drone_compressor.py`](Codes/framework/compression_engine/drone_compressor.py) | DRONE (standard SVD) |

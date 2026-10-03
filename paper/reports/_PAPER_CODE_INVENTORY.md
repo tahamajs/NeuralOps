@@ -7,13 +7,13 @@
 
 ## 1. Primary Source Artifact Paths
 
-* **Paper TeX Root:** `/Users/tahamajs/Documents/uni/Project/paper/PerModulePaper/a3/main.tex`
-* **Paper Modular Sections:** `/Users/tahamajs/Documents/uni/Project/paper/PerModulePaper/a3/00_meta.tex` through `13_references.tex`, `A_math.tex` through `E_ethics.tex`
-* **Consolidated Paper TeX:** `/Users/tahamajs/Documents/uni/Project/paper/PerModulePaper/a3/paper_full.tex`
-* **Primary Compression Engine Code:** `/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/a3_compressor.py`
-* **Supporting Utility Code:** `/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/pruning_utils.py`
-* **Standalone A3 Module Script:** `/Users/tahamajs/Documents/uni/Project/paper/PerModulePaper/a3/Codes/a3.py`
-* **Unified Runner / Benchmark Driver:** `/Users/tahamajs/Documents/uni/Project/Codes/framework/run_all_4_a3.py`
+* **Paper TeX Root:** `paper/PerModulePaper/a3/main.tex`
+* **Paper Modular Sections:** `paper/PerModulePaper/a3/00_meta.tex` through `13_references.tex`, `A_math.tex` through `E_ethics.tex`
+* **Consolidated Paper TeX:** `paper/PerModulePaper/a3/paper_full.tex`
+* **Primary Compression Engine Code:** `Codes/framework/compression_engine/a3_compressor.py`
+* **Supporting Utility Code:** `Codes/framework/compression_engine/pruning_utils.py`
+* **Standalone A3 Module Script:** `paper/PerModulePaper/a3/Codes/a3.py`
+* **Unified Runner / Benchmark Driver:** `Codes/framework/run_all_4_a3.py`
 
 ---
 

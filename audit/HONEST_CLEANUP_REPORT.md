@@ -61,5 +61,5 @@ $ grep -ci "warning" thesis_final/master_thesis_lite.log
 $ python3 -c "import pypdf; print(len(pypdf.PdfReader('thesis_final/master_thesis_lite.pdf').pages))"
 803
 ```
-- رساله نهایی [master_thesis_lite.pdf](file:///Users/tahamajs/Documents/uni/Project/thesis_final/master_thesis_lite.pdf) دقیقاً **۸۰۳ صفحه** است که کاملاً پاکسازی‌شده، بدون مراجع ساختگی، بدون پاراگراف‌های کپی-پیست و بدون فایل یتیم می‌باشد.
+- رساله نهایی [master_thesis_lite.pdf](thesis_final/master_thesis_lite.pdf) دقیقاً **۸۰۳ صفحه** است که کاملاً پاکسازی‌شده، بدون مراجع ساختگی، بدون پاراگراف‌های کپی-پیست و بدون فایل یتیم می‌باشد.
 - تمامی تغییرات در گیت با کامیت `c8435d64` ثبت شد.

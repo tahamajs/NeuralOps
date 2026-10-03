@@ -29,13 +29,13 @@ validation 1000
 
 ### 1b. How does `run_quality_sweep.py` determine N?
 
-The code at [run_quality_sweep.py:2236](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/run_quality_sweep.py#L2236) does:
+The code at [run_quality_sweep.py:2236](Codes/framework/run_quality_sweep.py#L2236) does:
 
 ```python
 train, val = ds["train"], ds["validation"]
 ```
 
-Then at [run_quality_sweep.py:2581–2584](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/run_quality_sweep.py#L2581-L2584):
+Then at [run_quality_sweep.py:2581–2584](Codes/framework/run_quality_sweep.py#L2581-L2584):
 
 ```python
 val_labels = val["label"] if "label" in val.features else [x["label"] for x in val]

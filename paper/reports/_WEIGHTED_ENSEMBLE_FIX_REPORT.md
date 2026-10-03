@@ -13,13 +13,13 @@ The previous monolithic file `weighted_ensemble.py` conflated two unrelated conc
 2. **Hybrid Attention** (`WeightedEnsembleAttention`), combining softmax attention with kernelized linear attention via per-head learned gating.
 
 In this work, the two components have been separated into distinct modules with backward-compatible re-exports, and all known bugs across both modules have been resolved:
-- Deprecated multi-model ensemble code was relocated to [`legacy_ensemble.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/legacy_ensemble.py) with formal `DeprecationWarning`s.
-- `HybridAttention` in [`hybrid_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/hybrid_attention.py) was repaired:
+- Deprecated multi-model ensemble code was relocated to [`legacy_ensemble.py`](Codes/framework/attentions/legacy_ensemble.py) with formal `DeprecationWarning`s.
+- `HybridAttention` in [`hybrid_attention.py`](Codes/framework/attentions/hybrid_attention.py) was repaired:
   - **Gate initialization fixed:** Bias changed from $1.0$ ($\sigma \approx 0.73$, degrading baseline quality) to $10.0$ ($\sigma \approx 0.99995$, ensuring initialization identical to standard attention).
   - **Memory bounded:** Causal linear branch was refactored from full sequence materialization $O(N \cdot D^2)$ to chunked scan ($128$-token blocks), preventing OOM on long sequences ($L \ge 1024$).
   - **UniversalAdapter:** Multi-architecture weight extraction was simplified from >150 lines of brittle code to ~70 lines.
   - **Mask handling:** Implemented robust `_extract_valid_mask` supporting 2D/3D/4D masks in boolean and additive float representations.
-- Both unit test suites ([`test_hybrid_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/tests/test_hybrid_attention.py) and [`test_legacy_ensemble.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/tests/test_legacy_ensemble.py)) pass 100% (16/16 tests).
+- Both unit test suites ([`test_hybrid_attention.py`](Codes/framework/tests/test_hybrid_attention.py) and [`test_legacy_ensemble.py`](Codes/framework/tests/test_legacy_ensemble.py)) pass 100% (16/16 tests).
 
 ---
 

@@ -14,12 +14,12 @@ In addition, targeted bug fixes and safeguards were applied across the 4 problem
 ## 1. Codebase Changes & Deprecation Implementation
 
 ### 1.1 Canonical Skip List & Pipeline Guards
-- Created [`audit/deprecated_modules.txt`](file:///Users/tahamajs/Documents/uni/Project/audit/deprecated_modules.txt) containing all alias variants:
+- Created [`audit/deprecated_modules.txt`](audit/deprecated_modules.txt) containing all alias variants:
   - `tt`, `tt_linear`, `tt_compressor`, `tt_linear_compressor`, `tt_factory`, `tt_compressor_factory`, `tt_linear_factory`
   - `lillama_compressor`
   - `mamba_svd_flash`
-- Updated [`scripts/run_autonomous_48h_pipeline.py`](file:///Users/tahamajs/Documents/uni/Project/scripts/run_autonomous_48h_pipeline.py) to dynamically parse `audit/deprecated_modules.txt` and filter pending jobs before dispatch.
-- Updated [`Codes/framework/run_quality_sweep.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/run_quality_sweep.py):
+- Updated [`scripts/run_autonomous_48h_pipeline.py`](scripts/run_autonomous_48h_pipeline.py) to dynamically parse `audit/deprecated_modules.txt` and filter pending jobs before dispatch.
+- Updated [`Codes/framework/run_quality_sweep.py`](Codes/framework/run_quality_sweep.py):
   - Added module-level `DEPRECATED_MODULES` dictionary with descriptive reasons.
   - Added early exit guard in `run_single_module_main()` returning `status: "SKIP_DEPRECATED"`.
   - Pruned active queue on GPU server (`D:\SVD_Project\paper\_PIPELINE_QUEUE.json`), removing all 12 deprecated job entries (0 remaining).

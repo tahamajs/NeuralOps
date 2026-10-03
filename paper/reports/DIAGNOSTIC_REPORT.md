@@ -40,7 +40,7 @@ Across the unified quality sweeps evaluating 271 module configurations on Distil
   RuntimeError: CUDA error: CUBLAS_STATUS_NOT_SUPPORTED when calling cublasLtMatmulAlgoGetHeuristic(...)
   ```
 - **Root Cause (with Code Evidence)**:
-  - In [Codes/framework/attentions/primal_attention.py](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/primal_attention.py#L408-L422):
+  - In [Codes/framework/attentions/primal_attention.py](Codes/framework/attentions/primal_attention.py#L408-L422):
     ```python
     F1 = torch.matmul(Q.float(), K_land.float().transpose(-2, -1).contiguous()) * scale
     F2 = torch.matmul(Q_land.float(), K_land.float().transpose(-2, -1).contiguous()) * scale
@@ -69,7 +69,7 @@ Across the unified quality sweeps evaluating 271 module configurations on Distil
   AttributeError: 'SDRMCompressor' object has no attribute 'protect_output_proj'
   ```
 - **Root Cause (with Code Evidence)**:
-  - In [Codes/framework/compression_engine/sdrm_compressor.py](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/sdrm_compressor.py#L76):
+  - In [Codes/framework/compression_engine/sdrm_compressor.py](Codes/framework/compression_engine/sdrm_compressor.py#L76):
     The initialization line `self.protect_output_proj: bool = bool(_cfg_get(cfg_obj, 'protect_output_proj', True))` was added in commit `de50add9d` after SST-2 and MNLI sweeps were executed. During the initial SST-2 and MNLI runs, `_is_target_module` referenced `self.protect_output_proj` without it being initialized in `__init__`. When AG News was run later, the attribute existed, allowing it to achieve a pristine **91.30% PASS**.
 - **Is it Fixable?**: **YES (ALREADY FIXED IN REPO)**.
   - The attribute is present on line 76 of `sdrm_compressor.py`.
@@ -94,7 +94,7 @@ Across the unified quality sweeps evaluating 271 module configurations on Distil
   ValueError: SpectralMambaAttention forward requires hidden_states
   ```
 - **Root Cause (with Code Evidence)**:
-  - In [Codes/framework/attentions/spectral_mamba.py](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/spectral_mamba.py#L465-L486):
+  - In [Codes/framework/attentions/spectral_mamba.py](Codes/framework/attentions/spectral_mamba.py#L465-L486):
     ```python
     def forward(
         self,
@@ -143,7 +143,7 @@ Across the unified quality sweeps evaluating 271 module configurations on Distil
 - **Observed Error**:
   - Exactly identical to `spectral_mamba`: `ValueError: SpectralMambaAttention forward requires hidden_states` / `RuntimeError: Boolean value of Tensor with more than one value is ambiguous`.
 - **Root Cause**:
-  - In [Codes/framework/attentions/spectral_mamba.py](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/spectral_mamba.py#L731):
+  - In [Codes/framework/attentions/spectral_mamba.py](Codes/framework/attentions/spectral_mamba.py#L731):
     `spectraformer` is an alias / factory hook sharing the exact same `SpectralMambaAttention` class. It encounters the identical boolean tensor evaluation bug in line 481.
 - **Is it Fixable?**: **YES**.
   - The fix to `spectral_mamba` resolves `spectraformer` simultaneously.
@@ -177,7 +177,7 @@ Across the unified quality sweeps evaluating 271 module configurations on Distil
   RuntimeError: CUDA error: CUBLAS_STATUS_EXECUTION_FAILED when calling cublasGemmStridedBatchedEx(...)
   ```
 - **Root Cause (with Code Evidence)**:
-  - In [Codes/framework/attentions/hgrn2_outer.py](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/hgrn2_outer.py#L447-L480):
+  - In [Codes/framework/attentions/hgrn2_outer.py](Codes/framework/attentions/hgrn2_outer.py#L447-L480):
     During MNLI evaluation with batch size 8 and sequence length 128, `kt` and `vt` are sliced per step: `kt = k_f[:, :, t, :]`. When passed into batched matmul `@` on CUDA, strided memory layouts from non-contiguous view operations cause `cublasGemmStridedBatchedEx` to execute an illegal strided read under half-precision operations. In addition, the sequential step-by-step outer loop across sequence length $L$ causes severe CUDA driver overhead (over 2963 seconds on AG News!).
 - **Is it Fixable?**: **YES**.
   - Add explicit `.contiguous()` on the sliced tensors:
@@ -204,7 +204,7 @@ Across the unified quality sweeps evaluating 271 module configurations on Distil
   RuntimeError: CUDA error: CUBLAS_STATUS_ALLOC_FAILED when calling cublasCreate(handle)
   ```
 - **Root Cause (with Code Evidence)**:
-  - In [Codes/framework/attentions/mamba_svd_flash.py](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/mamba_svd_flash.py#L237-L239):
+  - In [Codes/framework/attentions/mamba_svd_flash.py](Codes/framework/attentions/mamba_svd_flash.py#L237-L239):
     ```python
     self.proj_u = nn.Linear(self.d_model, self.d_model * self.rank, bias=False)
     self.proj_v = nn.Linear(self.d_model, self.rank * self.d_model, bias=False)

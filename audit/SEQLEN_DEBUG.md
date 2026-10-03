@@ -39,7 +39,7 @@ Theoretical $O(N)$ linear attention in pure Python/PyTorch is strangled by **ten
 ### Q1 — What is the Actual Implementation in Code?
 
 #### `performer_attention.py`
-In [`Codes/framework/attentions/performer_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/performer_attention.py#L946-L995):
+In [`Codes/framework/attentions/performer_attention.py`](Codes/framework/attentions/performer_attention.py#L946-L995):
 ```python
 def _forward_causal(self, Q_feat, K_feat, V, B, H, d, N, device, dtype):
     """Exact causal FAVOR+ prefix scan."""
@@ -82,7 +82,7 @@ def _forward_causal(self, Q_feat, K_feat, V, B, H, d, N, device, dtype):
 - **Why it is slow**: It uses an intra-chunk local attention ($64 \times 64$) combined with inter-chunk state accumulation. In a 12-layer model at $N=1024$, this loop executes $12 \times 16 = 192$ times per forward pass, launching over 10 separate CUDA operations per iteration.
 
 #### `cosformer.py`
-In [`Codes/framework/attentions/cosformer.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/cosformer.py#L812-L895):
+In [`Codes/framework/attentions/cosformer.py`](Codes/framework/attentions/cosformer.py#L812-L895):
 ```python
 def _forward_causal(self, Q_cos, Q_sin, K_cos, K_sin, V, B, H, d, N, device, dtype):
     chunk_size = max(16, min(64, N // 8))
@@ -100,7 +100,7 @@ def _forward_causal(self, Q_cos, Q_sin, K_cos, K_sin, V, B, H, d, N, device, dty
 - **Why it is slow**: 4 separate matmuls, 2 state additions, and slicing per chunk in a Python loop. At $N=1024$, it executes over 236,000 kernel dispatches.
 
 #### `linformer_attention.py`
-In [`Codes/framework/attentions/linformer_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/linformer_attention.py#L768-L775):
+In [`Codes/framework/attentions/linformer_attention.py`](Codes/framework/attentions/linformer_attention.py#L768-L775):
 ```python
 # Project key/value sequence dimension: (B, H, k_eff, d)
 K_proj = torch.matmul(E_act.to(k.dtype), k)
@@ -202,7 +202,7 @@ Self CUDA time total: 18.020s
 
 ### Q4 — Test with `batch_size=16` (Fix 1 Execution Results)
 
-Source: [`results/seqlen_scaling_v2/`](file:///Users/tahamajs/Documents/uni/Project/results/seqlen_scaling_v2/) (50 iterations, 3 trials median).
+Source: [`results/seqlen_scaling_v2/`](results/seqlen_scaling_v2/) (50 iterations, 3 trials median).
 
 #### Comparison Table: Forward Time (ms) & Throughput (tok/s)
 
@@ -310,7 +310,7 @@ Self CUDA time total: 757.178ms (2 iterations)
 
 ## 6. Linformer Confirmation at `batch_size=16`
 
-Source: [`results/seqlen_scaling_v2_linformer/linformer_attention/summary.csv`](file:///Users/tahamajs/Documents/uni/Project/results/seqlen_scaling_v2_linformer/linformer_attention/summary.csv) (3 trials, 50 iterations each, RTX 4070):
+Source: [`results/seqlen_scaling_v2_linformer/linformer_attention/summary.csv`](results/seqlen_scaling_v2_linformer/linformer_attention/summary.csv) (3 trials, 50 iterations each, RTX 4070):
 
 | Sequence Length $N$ | Forward Time (ms, Mean ± Std) | Throughput (tok/s, Mean ± Std) | Latency (ms/tok) | Peak VRAM (MB) | Status |
 | :---: | :---: | :---: | :---: | :---: | :---: |
