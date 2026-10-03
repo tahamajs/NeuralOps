@@ -1,5 +1,0 @@
-[1] zeroshot_summary.csv: 184 modules
-[2] zeroshot_per_class.csv: 1148 rows
-[3] zeroshot_per_sample.parquet: 179500 rows
-[4] zeroshot_missing.csv: 691 missing
-[DONE]
