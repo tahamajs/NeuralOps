@@ -61,6 +61,7 @@ visualization = [
 where = ["."]
 
 [tool.pytest.ini_options]
+pythonpath = ["."]
 testpaths = ["neuralops/tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
