@@ -49,7 +49,7 @@ except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, OSError, 
 # Bootstrap: add framework root to sys.path and configure HF mirror/cache
 # ---------------------------------------------------------------------------
 _HERE = Path(__file__).resolve().parent
-_CODES = _HERE.parent  # /Users/tahamajs/Documents/uni/Project/Codes
+_CODES = _HERE.parent
 if str(_CODES) not in sys.path:
     sys.path.insert(0, str(_CODES))
 if str(_HERE) not in sys.path:

@@ -19,12 +19,8 @@ import pandas as pd
 
 PORT = 8080
 
-if os.path.exists(r"D:\SVD_Project"):
-    PROJECT_DIR = r"D:\SVD_Project"
-    IS_LOCAL_GPU = True
-else:
-    PROJECT_DIR = "/Users/tahamajs/Documents/uni/Project"
-    IS_LOCAL_GPU = False
+PROJECT_DIR = os.environ.get("PROJECT_DIR", str(Path(__file__).resolve().parent.parent))
+IS_LOCAL_GPU = os.path.exists(r"D:\SVD_Project")
 
 # Ensure scripts dir is in path
 if os.path.join(PROJECT_DIR, "scripts") not in sys.path:
