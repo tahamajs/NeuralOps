@@ -14,8 +14,11 @@ Production-hardened implementation supporting:
 9. Static, stable layer indexing across forward passes.
 """
 
+import logging
 import math
 from typing import Any, Dict, List, Optional, Tuple, Union
+
+logger = logging.getLogger(__name__)
 
 import torch
 import torch.nn as nn

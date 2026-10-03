@@ -81,8 +81,9 @@ def get_cached_tokenized_dataset(
                 data["val_labels"],
             ),
         }
-        _IN_MEMORY_CACHE[key] = result
-        logger.info(f"Loaded {len(result["train"])} train and {len(result["val"])} val samples in {time.time()-t0:.3f}s")
+        n_tr = len(result['train'])
+        n_va = len(result['val'])
+        logger.info(f"Loaded {n_tr} train and {n_va} val samples in {time.time()-t0:.3f}s")
         return result
 
     # Build cache

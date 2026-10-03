@@ -414,7 +414,7 @@ class CompressedAttentionLayer(BaseAttention):
         try:
             # PyTorch 2.0+ Flash Attention / Memory Efficient Attention
             # This handles Causal masking automatically and saves massive VRAM
-            is_causal = self.is_decoder and (mask is None or mask.dim() != 4)
+            is_causal = self.is_decoder and (attention_mask is None or attention_mask.dim() != 4)
             attn_out = F.scaled_dot_product_attention(
                 q, k, v, 
                 attn_mask=attention_mask, 
