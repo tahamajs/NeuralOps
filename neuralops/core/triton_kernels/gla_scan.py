@@ -17,8 +17,14 @@ Supports head_dim D <= 64.
 from __future__ import annotations
 
 import torch
-import triton
-import triton.language as tl
+try:
+    import triton
+    import triton.language as tl
+    HAS_TRITON = True
+except ImportError:
+    HAS_TRITON = False
+    triton = type("triton", (), {"jit": lambda f: f, "heuristics": lambda *a, **kw: lambda f: f, "autotune": lambda *a, **kw: lambda f: f})
+    tl = None
 
 MAX_REGISTER_DIM = 64
 
