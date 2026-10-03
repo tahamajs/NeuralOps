@@ -3,7 +3,7 @@
 Wrapper for orchestrating vig.
 """
 
-from .unified_orchestrator import run_orchestrator
+from ..unified_orchestrator import run_orchestrator
 
 if __name__ == "__main__":
     run_orchestrator("vig", ["--lora_rank", "16", "--rank", "32"])
