@@ -6,11 +6,11 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "MGIE-SVD: Maximum Information Entropy SVD Rank Selection. Registered as 'mgie' and 'mgie_svd'.",
+  "description": "MGIE-SVD: Maximum Information Entropy SVD Rank Selection.  Registered as 'mgie', 'mgie_svd', 'mgie_factory', 'mgie_svd_factory'.",
   "classes": [
     "MGIECompressor"
   ],
-  "methods_count": 8,
+  "methods_count": 7,
   "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
   "components": [
     {

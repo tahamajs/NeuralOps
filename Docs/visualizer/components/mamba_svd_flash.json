@@ -1,17 +1,18 @@
 {
   "id": "mamba_svd_flash",
-  "name": "MambaSVD-Flash: Hybrid Bidirectional SSM-FlashAttention Module (Production-",
+  "name": "MambaSVD-Flash v3: Hybrid Bidirectional SSM-FlashAttention Module.",
   "file": "Codes/framework/attentions/mamba_svd_flash.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "MambaSVD-Flash: Hybrid Bidirectional SSM-FlashAttention Module (Production-Hardened).  Fuses bidirectional selective state-space recurrent dynamics with online Singular Value Decomposition  of state transitions, coupled with a Multi-Head / GQA FlashAttention execution path, pretrained weight transfer, LoRA adapters, RoPE rotary embeddings, and causal/bidirectional masking.",
+  "description": "MambaSVD-Flash v3: Hybrid Bidirectional SSM-FlashAttention Module.  Fuses bidirectional selective state-space dynamics with per-chunk online low-rank SVD of state transitions, coupled with a Multi-Head / GQA attention path and per-head gating.",
   "classes": [
     "LoRALinear",
+    "SVDS6StateSpace",
     "MambaSVDFlash"
   ],
-  "methods_count": 22,
+  "methods_count": 30,
   "math_latex": "U_t = \\text{proj}_u(x_t) \\in \\mathbb{R}^{D \\times r}, \\quad V_t = \\text{proj}_v(x_t) \\in \\mathbb{R}^{r \\times D}",
   "components": [
     {

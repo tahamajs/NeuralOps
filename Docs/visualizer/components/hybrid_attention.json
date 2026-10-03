@@ -1,0 +1,87 @@
+{
+  "id": "hybrid_attention",
+  "name": "Hybrid softmax + linear attention with per-head gated fusion.",
+  "file": "Codes/framework/attentions/hybrid_attention.py",
+  "type": "Attention Module",
+  "category": "Mixture of Experts & Routing",
+  "paradigm": "moe",
+  "icon": "\ud83d\udd00",
+  "description": "Hybrid softmax + linear attention with per-head gated fusion.  Valid attention REPLACEMENT (not a compressor). Adds a small number of parameters (the gate) but reduces attention computation at long sequence lengths by routing some heads to linear attention.  NOVELTY STATEMENT:     Hybrid softmax + linear attention is NOT novel by itself     (cf. MEGA 2023, BiGS 2024, Zipformer 2024). Our specific",
+  "classes": [
+    "HybridAttention"
+  ],
+  "methods_count": 20,
+  "math_latex": "Y = G \\odot \\text{Softmax}\\left(\\frac{Q K^T}{\\sqrt{d}}\\right) V + (1 - G) \\odot \\phi(Q) (\\phi(K)^T V)",
+  "components": [
+    {
+      "id": "router",
+      "name": "Top-K Gating Router",
+      "role": "Sparse Token Dispatch",
+      "shape_transform": "[K \u00d7 d_in] Softmax",
+      "color": "#b57ee0",
+      "math_latex": "G(x) = \\text{Softmax}(\\text{TopK}(x W_g, K=2))"
+    },
+    {
+      "id": "expert_0",
+      "name": "Specialized Feed-Forward Expert 0",
+      "role": "Semantic Representation Subspace",
+      "shape_transform": "[d_ffn // 2 \u00d7 d_in]",
+      "color": "#c084fc",
+      "math_latex": "E_0(x) = \\text{GELU}(x W_{0,1} + b_{0,1}) W_{0,2} + b_{0,2}"
+    },
+    {
+      "id": "expert_1",
+      "name": "Specialized Feed-Forward Expert 1",
+      "role": "Semantic Representation Subspace",
+      "shape_transform": "[d_ffn // 2 \u00d7 d_in]",
+      "color": "#a855f7",
+      "math_latex": "E_1(x) = \\text{GELU}(x W_{1,1} + b_{1,1}) W_{1,2} + b_{1,2}"
+    },
+    {
+      "id": "expert_2",
+      "name": "Specialized Feed-Forward Expert 2",
+      "role": "Semantic Representation Subspace",
+      "shape_transform": "[d_ffn // 2 \u00d7 d_in]",
+      "color": "#9333ea",
+      "math_latex": "E_2(x) = \\text{GELU}(x W_{2,1} + b_{2,1}) W_{2,2} + b_{2,2}"
+    },
+    {
+      "id": "expert_3",
+      "name": "Specialized Feed-Forward Expert 3",
+      "role": "Semantic Representation Subspace",
+      "shape_transform": "[d_ffn // 2 \u00d7 d_in]",
+      "color": "#7e22ce",
+      "math_latex": "E_3(x) = \\text{GELU}(x W_{3,1} + b_{3,1}) W_{3,2} + b_{3,2}"
+    }
+  ],
+  "model_projections": {
+    "distilbert": {
+      "hidden_size": 768,
+      "intermediate_size": 3072,
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 11206656,
+      "savings_ratio": 0.58
+    },
+    "roberta": {
+      "hidden_size": 768,
+      "intermediate_size": 3072,
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 11206656,
+      "savings_ratio": 0.58
+    },
+    "gpt2": {
+      "hidden_size": 768,
+      "intermediate_size": 3072,
+      "baseline_layer_params": 6488064,
+      "compressed_layer_params": 11206656,
+      "savings_ratio": 0.58
+    },
+    "qwen": {
+      "hidden_size": 896,
+      "intermediate_size": 4864,
+      "baseline_layer_params": 11124736,
+      "compressed_layer_params": 19841024,
+      "savings_ratio": 0.56
+    }
+  }
+}

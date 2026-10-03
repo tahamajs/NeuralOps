@@ -1,12 +1,12 @@
 {
   "id": "svd_attention",
-  "name": "Low-Rank SVD-Compressed Sequence Attention Mechanism.",
+  "name": "SVD-Compressed Sequence Attention.",
   "file": "Codes/framework/attentions/svd_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Low-Rank SVD-Compressed Sequence Attention Mechanism. Reduces quadratic sequence complexity O(N^2) to linear in sequence length O(N * r) by projecting Key and Value sequence dimensions into the top-r left-singular subspace of the sequence representation.  Hardened for production use across diverse transformer architectures: - DistilBERT (Flat MHA) - RoBERTa / BERT (Nested Encoder Self-Attention) -",
+  "description": "SVD-Compressed Sequence Attention.  This module reduces attention complexity from O(N\u00b2) to O(N\u00b7r)  by projecting K and V onto a rank-r subspace along the  sequence dimension.  CRITICAL LIMITATION \u2014 Read This:      The projection basis is precomputed ONCE from the SVD of      the key weight matrix W_K in copy_weights(). This means      the projection does NOT depend on the input sequence \u2014      it",
   "classes": [
     "LoRALinear",
     "SVDLinearAttention"

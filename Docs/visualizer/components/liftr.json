@@ -3,41 +3,41 @@
   "name": "LIFTR \u2013 Linearized Function Trick Compressor.",
   "file": "Codes/framework/compression_engine/liftr.py",
   "type": "Compression Engine",
-  "category": "Structured Pruning & Channel Slicing",
-  "paradigm": "pruning",
-  "icon": "\u2702\ufe0f",
-  "description": "LIFTR \u2013 Linearized Function Trick Compressor. Registered in COMPRESSOR_REGISTRY as 'liftr' and 'liftr_compressor'.  Mathematical Formulation: 1. Activation Function Linearization:    - $\\operatorname{ReLU}(x) \\to \\operatorname{Identity}(x)$    - $\\operatorname{GELU}(x) \\approx \\alpha \\cdot x$ (default $\\alpha = 0.8$)    - $\\operatorname{SiLU}(x) \\approx \\alpha \\cdot x$ (default $\\alpha = 0.8$) 2.",
+  "category": "Dynamic & Efficient Attention",
+  "paradigm": "sparse",
+  "icon": "\ud83c\udf1f",
+  "description": "LIFTR \u2013 Linearized Function Trick Compressor. Registered as 'liftr', 'liftr_compressor', 'liftr_class'.  Mathematical Formulation:   Activation:    ReLU(x) \u2192 Identity(x), GELU(x) / SiLU(x) \u2248 \u03b1\u00b7x   Attention:     Softmax(QK^T/\u221ad)V \u2192 (1/N) \u03a3 V_i",
   "classes": [
     "_LinearizedGELU",
     "_LinearizedAttentionWrapper",
     "LIFTRCompressor"
   ],
-  "methods_count": 11,
+  "methods_count": 16,
   "math_latex": "Y = W \\Omega, \\quad Q = \\text{qr}(Y)",
   "components": [
     {
-      "id": "orthogonal_rot",
-      "name": "Orthogonal Transformation Matrix (Q)",
-      "role": "Energy Concentration",
-      "shape_transform": "[d_{in} \u00d7 d_{in}] Orthogonal",
+      "id": "sparse_mask",
+      "name": "Dynamic Top-K Attention Sparsity Mask",
+      "role": "O(N sqrt{N}) Token Filtering",
+      "shape_transform": "[Seq \u00d7 Seq] Sparse",
       "color": "#38bdf8",
-      "math_latex": "X' = X Q, \\quad Q^\\top Q = I"
+      "math_latex": "M_{ij} = \\mathbb{I}(|S_{ij}| \\ge \\tau), \\quad S_{ij} = \\frac{q_i k_j^\\top}{\\sqrt{d}}"
     },
     {
-      "id": "sliced_linear",
-      "name": "Channel-Sliced Dense Linear Operator",
-      "role": "45% Channel Elimination",
-      "shape_transform": "[0.55 \\cdot d_{out} \u00d7 0.55 \\cdot d_{in}]",
-      "color": "#0ea5e9",
-      "math_latex": "W_{sliced} = (Q_2^\\top W Q_1)_{[:d'_1, :d'_2]}"
+      "id": "kernel_attn",
+      "name": "Linearized Positive Kernel Projection",
+      "role": "Softmax Approximation",
+      "shape_transform": "[\\phi(Q) \\cdot \\phi(K)^T]",
+      "color": "#7dd3fc",
+      "math_latex": "\\text{Attn}(Q,K,V) = \\frac{\\phi(Q) (\\phi(K)^\\top V)}{\\phi(Q) \\sum_j \\phi(K_j)^\\top}"
     },
     {
-      "id": "bias_correct",
-      "name": "Mean Bias Correction Vector",
-      "role": "Representation Recalibration",
-      "shape_transform": "[0.55 \\cdot d_{out}]",
-      "color": "#0284c7",
-      "math_latex": "\\mu_{err} = \\mathbb{E}[W X] - \\mathbb{E}[W_{sliced} X']"
+      "id": "out_norm",
+      "name": "Output Layer Normalization",
+      "role": "Attention Scale Stabilization",
+      "shape_transform": "[d_{in}]",
+      "color": "#bae6fd",
+      "math_latex": "\\text{LN}(y) = \\frac{y - \\mu}{\\sqrt{\\sigma^2 + \\epsilon}} \\odot \\gamma + \\beta"
     }
   ],
   "model_projections": {
@@ -45,29 +45,29 @@
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 1946419,
-      "savings_ratio": 3.33
+      "compressed_layer_params": 3568435,
+      "savings_ratio": 1.82
     },
     "roberta": {
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 1946419,
-      "savings_ratio": 3.33
+      "compressed_layer_params": 3568435,
+      "savings_ratio": 1.82
     },
     "gpt2": {
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 1946419,
-      "savings_ratio": 3.33
+      "compressed_layer_params": 3568435,
+      "savings_ratio": 1.82
     },
     "qwen": {
       "hidden_size": 896,
       "intermediate_size": 4864,
       "baseline_layer_params": 11124736,
-      "compressed_layer_params": 3337420,
-      "savings_ratio": 3.33
+      "compressed_layer_params": 6118604,
+      "savings_ratio": 1.82
     }
   }
 }

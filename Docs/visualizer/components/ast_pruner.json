@@ -1,17 +1,17 @@
 {
   "id": "ast_pruner",
-  "name": "AST: Adaptive Semi-Structured 2:4 and N:M Pruning with Empirical Fisher Cal",
+  "name": "AST: Adaptive Semi-Structured 2:4 and N:M Pruning with Empirical Fisher",
   "file": "Codes/framework/compression_engine/ast_pruner.py",
   "type": "Compression Engine",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "AST: Adaptive Semi-Structured 2:4 and N:M Pruning with Empirical Fisher Calibration and PCA Coordinate Rotation. Registered in COMPRESSOR_REGISTRY as 'ast_pruner' and 'ast'.  Mathematical Formulation: 1. Activation Covariance & PCA Coordinate Rotation:    $$\\Sigma_X = \\frac{1}{N - 1} (X - \\mu)^\\top (X - \\mu) = Q \\Lambda Q^\\top, \\quad Q^\\top Q = I$$    $$\\widetilde{W} = W Q, \\quad \\widetilde{X} = Q",
+  "description": "AST: Adaptive Semi-Structured 2:4 and N:M Pruning with Empirical Fisher Calibration and PCA Coordinate Rotation (Corrected).  Registered in COMPRESSOR_REGISTRY as 'ast_pruner' and 'ast'.  Mathematical Formulation (CORRECTED):   1. Activation Covariance & PCA:        \u03a3_X = (1/(N-1)) (X-\u03bc)^T (X-\u03bc) = Q \u039b Q^T,  Q^T Q = I   2. Empirical Jacobian-weighted saliency:        g = \u2202L/\u2202W,  L = 0.5\u00b7||logits||\u00b2",
   "classes": [
     "ASTPrunedLoRALinear",
     "ASTPruner"
   ],
-  "methods_count": 12,
+  "methods_count": 16,
   "math_latex": "\\Sigma_X = Q \\Lambda Q^\\top, \\quad Q^\\top Q = I_{d_{\\text{in}}}",
   "components": [
     {

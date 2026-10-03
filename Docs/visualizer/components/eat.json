@@ -6,12 +6,12 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "EAT: Efficient Attention Transformer with Progressive Token Pruning.  Implements production-hardened attention-level efficient multi-head self-attention with optional progressive token pruning and zero-shot weight inheritance across DistilBERT, RoBERTa/BERT, GPT-2, and Qwen/LLaMA architectures.",
+  "description": "EAT: Efficient Attention Transformer with Progressive Token Pruning. Production-Hardened (v2).  Fixes (v2):   EAT-FIX-01  Removed output padding/truncation hack.   EAT-FIX-02  RoPE cos/sin broadcast corrected.   EAT-FIX-03  `is_nested_encoder` no longer triggers for DistilBERT.   EAT-FIX-04  Idempotency guard in injector.   EAT-FIX-05  SDPA causal + mask combination corrected (broadcast-safe).   E",
   "classes": [
     "LoRALinear",
     "EATBlock"
   ],
-  "methods_count": 22,
+  "methods_count": 25,
   "math_latex": "O = \\operatorname{Softmax}\\left(\\frac{Q K^T}{\\sqrt{d_h}} + M\\right) V W_O",
   "components": [
     {

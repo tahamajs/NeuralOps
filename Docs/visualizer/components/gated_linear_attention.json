@@ -1,17 +1,17 @@
 {
   "id": "gated_linear_attention",
-  "name": "Gated Linear Attention (GatedLinearAttention).",
+  "name": "Gated Linear Attention (GLA) \u2014 Production-Hardened (v3).",
   "file": "Codes/framework/attentions/gated_linear_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Gated Linear Attention (GatedLinearAttention).  Multi-head linear recurrent attention with data-dependent decay gating, multiplicative SiLU output gating, denominator normalization, and pretrained weight transfer. Hardened for multi-architecture production deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.",
+  "description": "Gated Linear Attention (GLA) \u2014 Production-Hardened (v3).  Multi-head linear recurrent attention with data-dependent decay gating, multiplicative SiLU output gating, denominator normalization, and pretrained weight transfer. Supports DistilBERT, RoBERTa, GPT-2, and Qwen.  Fixes in v3:   GLA3-FIX-01  Explicit shape assertion in `__init__` for num_heads, head_dim,                decay_gate, log_decay",
   "classes": [
     "LoRALinear",
     "GatedLinearAttention"
   ],
-  "methods_count": 22,
+  "methods_count": 28,
   "math_latex": "Q = X W_q, \\quad K = X W_k, \\quad V = X W_v, \\quad Z = X W_z",
   "components": [
     {

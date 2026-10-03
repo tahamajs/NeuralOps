@@ -1,17 +1,17 @@
 {
   "id": "adaptive_svd_attention",
-  "name": "Adaptive SVD Attention with Residual Adapters and Dynamic Energy Thresholdi",
+  "name": "Adaptive SVD Attention \u2014 Production-Hardened (v2).",
   "file": "Codes/framework/attentions/adaptive_svd_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Adaptive SVD Attention with Residual Adapters and Dynamic Energy Thresholding.  This module provides low-rank factorized linear projections for Multi-Head Attention, decomposing full-rank weight matrices via dynamic cumulative energy-thresholded Singular Value Decomposition (SVD): $$\\frac{\\sum_{i=1}^r \\sigma_i^2}{\\sum_{j=1}^d \\sigma_j^2} \\ge \\tau \\quad (\\tau = 0.92)$$ with symmetrical $\\sqrt{\\Sigm",
+  "description": "Adaptive SVD Attention \u2014 Production-Hardened (v2).  Low-rank factorized attention with dynamic cumulative energy-thresholded SVD and trainable residual adapters:      W \u2248 U_r V_r + W_lora_B \u00b7 W_lora_A     where  U_r = U_{:, :r} \u00b7 \u221a\u03a3_r,  V_r = \u221a\u03a3_r \u00b7 V^T_{:r, :}     and    r = argmin_{r} [ \u03a3_{i=1}^r \u03c3_i\u00b2 / \u03a3_j \u03c3_j\u00b2 \u2265 \u03c4 ]  Fixes (v2):   ASVD-FIX-01  **`--rank` now reaches the layer.** Previous prior",
   "classes": [
     "AdaptiveSVDLinear",
     "AdaptiveSVDAttention"
   ],
-  "methods_count": 16,
+  "methods_count": 22,
   "math_latex": "W = U \\Sigma V^\\top = \\sum_{i=1}^{\\min(d_{\\text{out}}, d_{\\text{in}})} \\sigma_i u_i v_i^\\top",
   "components": [
     {

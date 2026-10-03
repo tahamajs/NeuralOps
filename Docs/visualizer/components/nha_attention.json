@@ -1,17 +1,17 @@
 {
   "id": "nha_attention",
-  "name": "Native Hybrid Attention (NHA) \u2013 Production-Hardened.",
+  "name": "Native Hybrid Attention (NHA) \u2013 Production-Hardened (v2).",
   "file": "Codes/framework/attentions/nha_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Native Hybrid Attention (NHA) \u2013 Production-Hardened.  Fuses localized sliding-window attention with global linear Random Fourier Features (RFF) via dynamic token-level gating and exact pretrained weight transfer.  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen base weights - GQA with repeat_kv - RoPE position e",
+  "description": "Native Hybrid Attention (NHA) \u2013 Production-Hardened (v2).  Fuses localized sliding-window attention with global linear Random Fourier Features (RFF) via dynamic token-level gating and exact pretrained weight transfer.  Fixes (v2):   NHA-FIX-01  **Registry keys separated**: class under `nha_class` /               `nha_attention_class`; injector under `nha` / `inject_nha`.   NHA-FIX-02  **Removed `r",
   "classes": [
     "LoRALinear",
     "NativeHybridAttention"
   ],
-  "methods_count": 18,
+  "methods_count": 17,
   "math_latex": "\\mathbf{Y} = \\gamma(\\mathbf{x}) \\mathbf{Y}_{\\text{local}} + (1 - \\gamma(\\mathbf{x})) \\mathbf{Y}_{\\text{global}}",
   "components": [
     {

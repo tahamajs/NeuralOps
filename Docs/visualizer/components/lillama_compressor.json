@@ -1,16 +1,16 @@
 {
   "id": "lillama_compressor",
-  "name": "LiLLaMA: Local Distillation via Activation Cross-Covariance Singular Value ",
+  "name": "LiLLaMA: Local Distillation via Activation Cross-Covariance SVD.",
   "file": "Codes/framework/compression_engine/lillama_compressor.py",
   "type": "Compression Engine",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "LiLLaMA: Local Distillation via Activation Cross-Covariance Singular Value Decomposition. Registered in COMPRESSOR_REGISTRY as 'lillama' and 'lillama_compressor'.  Mathematical Formulation: 1. Input and Output Activations:    $$X \\in \\mathbb{R}^{N \\times d_{in}}, \\quad Y \\in \\mathbb{R}^{N \\times d_{out}}$$ 2. Empirical Cross-Covariance Matrix:    $$C_{YX} = \\frac{1}{N} Y^\\top X \\in \\mathbb{R}^{d_{",
+  "description": "LiLLaMA: Local Distillation via Activation Cross-Covariance SVD. Registered as 'lillama_class', 'lillama_compressor_class', 'lillama_factory' and 'lillama' / 'lillama_compressor' as factory aliases.  Formulation:   C_YX = (1/N) Y^T X                 (cross-covariance)   C_YX \u2248 U_r \u03a3_r V_r^T               (truncated SVD)   W_distill = U_r \u03a3_r V_r^T          (distilled weight)",
   "classes": [
-    "LiLLaMACompressor"
+    "LiLLaMADistiller"
   ],
-  "methods_count": 8,
+  "methods_count": 13,
   "math_latex": "C_{YX} = \\frac{1}{N} Y^\\top X = \\frac{1}{N} \\left( X W^\\top + \\mathbf{1}_N b^\\top \\right)^\\top X = W \\left( \\frac{1}{N} X^\\top X \\right) + b \\left( \\frac{1}{N} \\mathbf{1}_N^\\top X \\right)",
   "components": [
     {

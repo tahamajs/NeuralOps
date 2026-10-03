@@ -6,7 +6,7 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "ENLighten: Low-Rank SVD + 2:4 Structured Sparsity (Photonic-Aligned). Registered as 'enlighten'. Production hardened for multi-architecture compatibility (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with vectorization, error validation, and safe fallback.",
+  "description": "ENLighten: Low-Rank SVD + 2:4 Structured Sparsity (Photonic-Aligned). Registered as 'enlighten' and 'enlighten_compressor'. Production hardened for multi-architecture compatibility (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with vectorization, error validation, and safe fallback.",
   "classes": [
     "ENLightenCompressor"
   ],

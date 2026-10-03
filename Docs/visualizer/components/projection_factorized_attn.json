@@ -1,17 +1,17 @@
 {
   "id": "projection_factorized_attn",
-  "name": "Projection Factorized Attn",
+  "name": "Projection Factorized SVD Linear Attention \u2014 Production-Hardened (v2).",
   "file": "Codes/framework/attentions/projection_factorized_attn.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Production-grade Low-Rank SVD & Factorization module.",
+  "description": "Projection Factorized SVD Linear Attention \u2014 Production-Hardened (v2).  Delegates to `inject_svd_linear_attention` with a pre-discovered source attention and robust attribute-level replacement for all supported architectures (GPT-2, RoBERTa/BERT, DistilBERT, T5, generic).",
   "classes": [
     "ProjectionFactorizedAttention"
   ],
-  "methods_count": 1,
-  "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
+  "methods_count": 4,
+  "math_latex": "\\mathbf{W} = \\mathbf{U} \\mathbf{\\Sigma} \\mathbf{V}^T \\approx \\mathbf{A} \\mathbf{B}",
   "components": [
     {
       "id": "v_factor",

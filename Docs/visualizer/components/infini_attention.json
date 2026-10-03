@@ -1,17 +1,17 @@
 {
   "id": "infini_attention",
-  "name": "Infini-Attention with Compressive Memory and Sliding Window (Production-Har",
+  "name": "Infini-Attention with Compressive Memory and Sliding Window \u2014 Fixed (v3).",
   "file": "Codes/framework/attentions/infini_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Infini-Attention with Compressive Memory and Sliding Window (Production-Hardened).  Combines local sliding-window attention with learned compressive memory.  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen base weights - GQA with repeat_kv - RoPE position embeddings - Causal sliding window masking for decoders -",
+  "description": "Infini-Attention with Compressive Memory and Sliding Window \u2014 Fixed (v3).  Reference: Munkhdalai et al., \"Leave No Context Behind: Efficient Infinite Context Transformers with Infini-attention\", 2024.  Core mechanism:     A_local = sliding-window softmax attention (with causal mask for decoder)     M_t     = M_{t-1} + g_t \u00b7 \u03c3(K_t)^T V_t         (compressive memory update)     z_t     = z_{t-1} + g",
   "classes": [
     "LoRALinear",
     "InfiniAttention"
   ],
-  "methods_count": 21,
+  "methods_count": 30,
   "math_latex": "\\mathbf{Y} = \\mathbf{Y}_{\\text{local}} + \\sigma(\\beta) \\mathbf{Y}_{\\text{mem}}",
   "components": [
     {

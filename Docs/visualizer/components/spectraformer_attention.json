@@ -1,8 +1,8 @@
 {
   "id": "spectraformer_attention",
   "name": "Spectraformer: Random Feature Linear Attention with Flexible Kernel Approxi",
-  "file": "Codes/framework/compression_engine/spectraformer_attention.py",
-  "type": "Compression Engine",
+  "file": "Codes/framework/attentions/spectraformer_attention.py",
+  "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",

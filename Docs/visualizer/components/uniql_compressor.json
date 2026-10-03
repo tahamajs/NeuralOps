@@ -1,16 +1,17 @@
 {
   "id": "uniql_compressor",
-  "name": "UniQL: Joint low\u2011rank + quantisation using SVD and uniform quant. Registere",
+  "name": "UniQL: Joint low-rank + uniform quantization compressor.",
   "file": "Codes/framework/compression_engine/uniql_compressor.py",
   "type": "Compression Engine",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "UniQL: Joint low\u2011rank + quantisation using SVD and uniform quant. Registered as 'uniql'. Production-hardened with: - Relative Frobenius reconstruction error validation (err <= max_error) - Adaptive bit and rank retries - Conv1D support (GPT-2) - Critical layer protection (classifier, score, lm_head, pooler, embedding) - Safe fallback preserving original weights - Detailed per-layer error stats log",
+  "description": "UniQL: Joint low-rank + uniform quantization compressor.  Registered as 'uniql', 'uniql_compressor', 'uniql_factory'.",
   "classes": [
+    "UniQLinear",
     "UniQLCompressor"
   ],
-  "methods_count": 6,
+  "methods_count": 13,
   "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
   "components": [
     {

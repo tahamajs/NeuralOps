@@ -6,12 +6,12 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Bonsai: Iterative Magnitude and Taylor Pruning (IMP) with Gradient Descent Recovery & [CLS] Routing Protection. Registered in COMPRESSOR_REGISTRY as 'bonsai' and 'bonsai_pruner'.  Production-hardened with: - Multi-architecture support: DistilBERT, RoBERTa, GPT-2 (Conv1D), Qwen3.5 (GQA) - Robust activation collection & calibration forward handling (never crashes on malformed inputs) - Safe LayerNor",
+  "description": "Bonsai: Iterative Magnitude and Taylor Pruning (IMP) with Gradient Descent Recovery & [CLS] Routing Protection. Registered in COMPRESSOR_REGISTRY as 'bonsai' and 'bonsai_pruner'.",
   "classes": [
     "BonsaiPrunedLoRALinear",
     "BonsaiPruner"
   ],
-  "methods_count": 12,
+  "methods_count": 13,
   "math_latex": "s_t = s_{\\text{target}} \\cdot \\left( 1 - \\left( 1 - \\frac{t}{T} \\right)^3 \\right)",
   "components": [
     {

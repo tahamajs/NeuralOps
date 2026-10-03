@@ -1,18 +1,18 @@
 {
   "id": "samba_m3",
-  "name": "SAMBA-M3: Hybrid Sliding-Window Attention and Spectral Mamba Block (Hardene",
+  "name": "SAMBA-M3 v2: Hybrid Sliding-Window Attention and Spectral Mamba Block (Hard",
   "file": "Codes/framework/attentions/samba_m3.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "SAMBA-M3: Hybrid Sliding-Window Attention and Spectral Mamba Block (Hardened). Supports: - DistilBERT (Flat MHA) - RoBERTa / BERT (Nested Encoder Self-Attention) - GPT-2 (Causal Decoder with Conv1D) - Qwen / LLaMA (GQA with Rotary Position Embeddings) - True chunked local sliding-window attention (O(L \u00b7 W)) - No double-residual or double LayerNorm - Safe injection returning None on failure",
+  "description": "SAMBA-M3 v2: Hybrid Sliding-Window Attention and Spectral Mamba Block (Hardened).",
   "classes": [
     "LoRALinear",
     "SpectralMamba",
     "SAMBAM3Block"
   ],
-  "methods_count": 19,
+  "methods_count": 23,
   "math_latex": "\\mathbf{M}^{\\text{window}}_{i, j} = \\begin{cases} 0 & \\text{if } 0 \\le i - j < W \\\\ -\\infty & \\text{otherwise} \\end{cases}",
   "components": [
     {

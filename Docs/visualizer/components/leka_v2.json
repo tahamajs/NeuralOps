@@ -1,17 +1,17 @@
 {
   "id": "leka_v2",
-  "name": "LEKAv2: Linear-time Efficient Kernel Attention with Landmark Distillation (",
+  "name": "LEKAv2: Linear-time Efficient Kernel Attention with Landmark Distillation.",
   "file": "Codes/framework/attentions/leka_v2.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "LEKAv2: Linear-time Efficient Kernel Attention with Landmark Distillation (Hardened).  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen base weights - GQA with repeat_kv - RoPE position embeddings - Exact causal masking for decoders - Nested encoder bypass - Frobenius norm verification (>= 1e-4) - Safe injection",
+  "description": "LEKAv2: Linear-time Efficient Kernel Attention with Landmark Distillation.  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - FactorizedLoRALinear (parameter-reducing) with frozen base weights - GQA with repeat_kv - RoPE position embeddings - Exact causal masking for decoders - Chunk-wise Landmark Selection (Solves Causal Starvation) - Block-wise Sl",
   "classes": [
-    "LoRALinear",
+    "FactorizedLoRALinear",
     "LEKAv2Attention"
   ],
-  "methods_count": 16,
+  "methods_count": 23,
   "math_latex": "\\phi_1(\\mathbf{x}) = \\frac{\\left[\\cos(\\mathbf{x} \\mathbf{W}_1), \\; \\sin(\\mathbf{x} \\mathbf{W}_1)\\right]}{\\sqrt{F_1}}, \\quad \\phi_2(\\mathbf{x}) = \\frac{\\left[\\cos(\\mathbf{x} \\mathbf{W}_2), \\; \\sin(\\mathbf{x} \\mathbf{W}_2)\\right]}{\\sqrt{F_2}}",
   "components": [
     {

@@ -3,10 +3,10 @@
   "name": "ADMM Compressor: Alternating Direction Method of Multipliers for Joint Prun",
   "file": "Codes/framework/compression_engine/admm_compressor.py",
   "type": "Compression Engine",
-  "category": "Low-Rank SVD & Factorization",
-  "paradigm": "svd",
-  "icon": "\u26a1",
-  "description": "ADMM Compressor: Alternating Direction Method of Multipliers for Joint Pruning and Quantization. Registered in COMPRESSOR_REGISTRY as 'admm' and 'admm_compressor'. Production hardened with reconstruction validation, Conv1D support, FP32 numerical stability, safe fallback, LoRALinear preservation, and attention-only targeting.",
+  "category": "Structured Pruning & Channel Slicing",
+  "paradigm": "pruning",
+  "icon": "\u2702\ufe0f",
+  "description": "ADMM Compressor: Alternating Direction Method of Multipliers for Joint Pruning and Quantization. Registered in COMPRESSOR_REGISTRY as 'admm' and 'admm_compressor'.",
   "classes": [
     "ADMMCompressor"
   ],
@@ -14,28 +14,28 @@
   "math_latex": "\\tau = \\text{TopK}_{k} \\left( \\{ |W_{i,j}| \\}_{i=1, j=1}^{N, M} \\right)",
   "components": [
     {
-      "id": "v_factor",
-      "name": "Factor V (Low-Rank Subspace Projection)",
-      "role": "Projection to Rank r",
-      "shape_transform": "[r \u00d7 d_in]",
-      "color": "#3acbb8",
-      "math_latex": "z_t = x_t V_r^\\top, \\quad V_r \\in \\mathbb{R}^{r \\times d_{in}}"
+      "id": "orthogonal_rot",
+      "name": "Orthogonal Transformation Matrix (Q)",
+      "role": "Energy Concentration",
+      "shape_transform": "[d_{in} \u00d7 d_{in}] Orthogonal",
+      "color": "#38bdf8",
+      "math_latex": "X' = X Q, \\quad Q^\\top Q = I"
     },
     {
-      "id": "u_factor",
-      "name": "Factor U (Full-Rank Expansion Projection)",
-      "role": "Expansion to Output Space",
-      "shape_transform": "[d_out \u00d7 r]",
-      "color": "#2dd4bf",
-      "math_latex": "y_t = z_t (\\Sigma_r U_r^\\top) + b, \\quad U_r \\in \\mathbb{R}^{d_{out} \\times r}"
+      "id": "sliced_linear",
+      "name": "Channel-Sliced Dense Linear Operator",
+      "role": "45% Channel Elimination",
+      "shape_transform": "[0.55 \\cdot d_{out} \u00d7 0.55 \\cdot d_{in}]",
+      "color": "#0ea5e9",
+      "math_latex": "W_{sliced} = (Q_2^\\top W Q_1)_{[:d'_1, :d'_2]}"
     },
     {
-      "id": "adapter",
-      "name": "Residual LoRA / Norm Calibration",
-      "role": "Fidelity Compensation",
-      "shape_transform": "[d_out \u00d7 d_in] Residual",
-      "color": "#5eead4",
-      "math_latex": "\\Delta y_t = x_t (B A)^\\top \\cdot \\frac{\\alpha}{r}, \\quad A \\in \\mathbb{R}^{r \\times d_{in}}, \\; B \\in \\mathbb{R}^{d_{out} \\times r}"
+      "id": "bias_correct",
+      "name": "Mean Bias Correction Vector",
+      "role": "Representation Recalibration",
+      "shape_transform": "[0.55 \\cdot d_{out}]",
+      "color": "#0284c7",
+      "math_latex": "\\mu_{err} = \\mathbb{E}[W X] - \\mathbb{E}[W_{sliced} X']"
     }
   ],
   "model_projections": {
@@ -43,29 +43,29 @@
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 786432,
-      "savings_ratio": 8.25
+      "compressed_layer_params": 1946419,
+      "savings_ratio": 3.33
     },
     "roberta": {
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 786432,
-      "savings_ratio": 8.25
+      "compressed_layer_params": 1946419,
+      "savings_ratio": 3.33
     },
     "gpt2": {
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 786432,
-      "savings_ratio": 8.25
+      "compressed_layer_params": 1946419,
+      "savings_ratio": 3.33
     },
     "qwen": {
       "hidden_size": 896,
       "intermediate_size": 4864,
       "baseline_layer_params": 11124736,
-      "compressed_layer_params": 1081344,
-      "savings_ratio": 10.29
+      "compressed_layer_params": 3337420,
+      "savings_ratio": 3.33
     }
   }
 }

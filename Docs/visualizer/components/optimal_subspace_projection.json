@@ -6,12 +6,12 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Optimal Subspace Projection: Activation-Aware Subspace Projection via Randomized SVD. Registered in COMPRESSOR_REGISTRY as 'optimal_subspace_projection'.  Mathematical Formulation: 1. Activation Covariance:    $$C = \\frac{1}{N} X^\\top X + \\epsilon I$$ 2. Cholesky Preconditioning Factor:    $$C = L L^\\top \\implies M = W L$$ 3. Randomized Subspace Iteration:    $$Y = M \\Omega, \\quad Y \\leftarrow M (",
+  "description": "Optimal Subspace Projection: Activation-Aware Subspace Projection via Randomized SVD.  Registered in COMPRESSOR_REGISTRY as 'optimal_subspace_projection'.  Mathematical Formulation:   1. Activation Covariance:      C = (1/N) X^T X + eps * I   2. Cholesky Preconditioning:   C = L L^T,   M = W L   3. Randomized Subspace Iter.:  Y = M Omega,  Y <- M (M^T Y),  Q = qr(Y)   4. Low-Rank Projection:",
   "classes": [
     "OptimalSubspaceLoRALinear",
     "OptimalSubspaceProjectionCompressor"
   ],
-  "methods_count": 11,
+  "methods_count": 12,
   "math_latex": "C = \\\\frac{1}{N} X^\\\\top X + \\\\epsilon I",
   "components": [
     {

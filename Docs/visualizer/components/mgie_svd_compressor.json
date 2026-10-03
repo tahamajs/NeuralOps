@@ -6,7 +6,7 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "MGIE-SVD with Total Rank Budget: Global Entropy-Proportional Rank Allocation. Registered as 'mgie_budget'.",
+  "description": "MGIE-SVD with Total Rank Budget: Global Entropy-Proportional Rank Allocation.  Registered as 'mgie_budget', 'mgie_budget_factory', 'mgie_svd_budget_factory'.",
   "classes": [
     "MGIESVDBudgetCompressor"
   ],

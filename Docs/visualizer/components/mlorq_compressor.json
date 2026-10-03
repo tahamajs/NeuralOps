@@ -6,12 +6,12 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "MLoRQ: Multi-Layer Optimal Rank & Quantisation under a Total Memory Budget. Registered as 'mlorq' and 'mlorq_compressor'.",
+  "description": "MLoRQ: Multi-Layer Optimal Rank & Quantisation under a Total Memory Budget.  Registered as 'mlorq', 'mlorq_compressor', 'mlorq_factory'.  This version stores U, S, Vt as PACKED INT tensors (bits \u2208 {2,4,8}), so the memory budget formula `(out*r + r*in + r) * bits` is exact. The forward pass dequantizes on the fly and never materializes the dense weight.",
   "classes": [
     "MLoRQLoRALinear",
     "MLoRQCompressor"
   ],
-  "methods_count": 10,
+  "methods_count": 16,
   "math_latex": "W \\approx \\text{Quant}(A) \\cdot B^\\top + S \\cdot \\text{scale}, \\quad A \\in \\mathbb{R}^{d_{out} \\times r}",
   "components": [
     {

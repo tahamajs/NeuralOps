@@ -1,17 +1,17 @@
 {
   "id": "token_compressed_attention",
-  "name": "Token-Compressed Attention.",
+  "name": "Token-Compressed Attention \u2014 Production-Hardened (v2).",
   "file": "Codes/framework/attentions/token_compressed_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Token-Compressed Attention. Hardened for production use across diverse transformer architectures: - DistilBERT (Flat MHA) - RoBERTa / BERT (Nested Encoder Self-Attention) - GPT-2 (Causal Decoder with Conv1D) - Qwen / LLaMA (GQA with Rotary Position Embeddings)",
+  "description": "Token-Compressed Attention \u2014 Production-Hardened (v2).  Compresses Key and Value sequence tokens using energy/norm + learned saliency scoring, while always preserving token 0 ([CLS] / first token).",
   "classes": [
     "LoRALinear",
     "TokenCompressedAttention"
   ],
-  "methods_count": 12,
+  "methods_count": 18,
   "math_latex": "\\text{energy}_i = \\|x_i\\|_2, \\quad \\text{score}_i = \\text{ScoreNet}(x_i)",
   "components": [
     {

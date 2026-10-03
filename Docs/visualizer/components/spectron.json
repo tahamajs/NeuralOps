@@ -1,18 +1,18 @@
 {
   "id": "spectron",
-  "name": "SpectronAttention: Importance-Aware Low-Rank + Sparse Attention.",
+  "name": "SpectronAttention: Importance-Aware Low-Rank + Sparse Attention (Activation",
   "file": "Codes/framework/attentions/spectron.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "SpectronAttention: Importance-Aware Low-Rank + Sparse Attention.  Dynamically allocates non-uniform low-rank capacities across attention projection matrices under a global parameter budget via Lagrangian spectral entropy optimization, optionally augmented by trainable magnitude-pruned sparse residuals.  Mathematical Mechanism:     For projection matrices $\\{W_i\\}_{i=1}^M$ with singular values $\\{\\",
+  "description": "SpectronAttention: Importance-Aware Low-Rank + Sparse Attention (Activation-Aware v2).  Dynamically allocates non-uniform low-rank capacities across attention projection matrices under a global parameter budget via Lagrangian spectral entropy optimization, augmented by trainable magnitude-pruned sparse residuals.  Mathematical Mechanism:     For projection matrices {W_i} with singular values {\u03c3_ik",
   "classes": [
     "LowRankSparseLinear",
     "SpectronAttention",
     "SparsePruningCallback"
   ],
-  "methods_count": 28,
+  "methods_count": 30,
   "math_latex": "\\min_{\\{r_i\\}} \\sum_{i=1}^M \\left(1 - \\frac{\\sum_{k=1}^{r_i} \\sigma_{i, k}^2}{\\sum_k \\sigma_{i, k}^2}\\right) \\quad \\text{s.t.} \\quad \\sum_{i=1}^M r_i (d_{i, \\text{in}} + d_{i, \\text{out}}) \\le B_{\\text{target}}",
   "components": [
     {

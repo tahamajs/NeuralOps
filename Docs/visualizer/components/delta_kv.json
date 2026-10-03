@@ -3,48 +3,40 @@
   "name": "DeltaKV: Residual-Based KV Cache Compression via Long-Range Similarity.",
   "file": "Codes/framework/compression_engine/delta_kv.py",
   "type": "Compression Engine",
-  "category": "Latent & KV-Cache Compression",
-  "paradigm": "mla",
-  "icon": "\ud83e\udde0",
-  "description": "DeltaKV: Residual-Based KV Cache Compression via Long-Range Similarity.  Encodes semantic residuals relative to retrieved historical references, preserving attention fidelity while drastically compressing dynamic KV caches.  Paper: \"DeltaKV: Residual-Based KV Cache Compression via Long-Range Similarity\"        Hao et al., arXiv:2602.08005. Registered as 'delta_kv'.",
+  "category": "Low-Rank SVD & Factorization",
+  "paradigm": "svd",
+  "icon": "\u26a1",
+  "description": "DeltaKV: Residual-Based KV Cache Compression via Long-Range Similarity. Registered as 'delta_kv', 'delta_kv_class', 'delta_kv_compressor', 'delta_kv_factory'.  Mathematical formulation:   W \u2248 L + R   L = U_r \u03a3_r V_r^T                     (low-rank, rank = r)   R = sparse(|W - L|; 1 - sparsity)     (top-k residual magnitudes)   W_compressed = L + R",
   "classes": [
     "DeltaKVStore",
     "DeltaKVCompressor"
   ],
-  "methods_count": 9,
+  "methods_count": 10,
   "math_latex": "R_K \\in \\mathbb{R}^{B \\times H \\times 1 \\times M \\times D}, \\quad R_V \\in \\mathbb{R}^{B \\times H \\times 1 \\times M \\times D}",
   "components": [
     {
-      "id": "down_proj_kv",
-      "name": "Latent KV Compression Projection",
-      "role": "KV Cache Reduction",
-      "shape_transform": "[d_c \u00d7 d_{in}]",
-      "color": "#f59e0b",
-      "math_latex": "c^{KV}_t = W^{DKV} x_t, \\quad c^{KV}_t \\in \\mathbb{R}^{d_c}, \\; d_c \\ll d_{in}"
+      "id": "v_factor",
+      "name": "Factor V (Low-Rank Subspace Projection)",
+      "role": "Projection to Rank r",
+      "shape_transform": "[r \u00d7 d_in]",
+      "color": "#3acbb8",
+      "math_latex": "z_t = x_t V_r^\\top, \\quad V_r \\in \\mathbb{R}^{r \\times d_{in}}"
     },
     {
-      "id": "up_proj_k",
-      "name": "Key Dequantize / Unpack",
-      "role": "Head Expansion",
-      "shape_transform": "[n_h \\cdot d_h \u00d7 d_c]",
-      "color": "#d97706",
-      "math_latex": "k^C_t = W^{UK} c^{KV}_t, \\quad W^{UK} \\in \\mathbb{R}^{n_h d_h \\times d_c}"
+      "id": "u_factor",
+      "name": "Factor U (Full-Rank Expansion Projection)",
+      "role": "Expansion to Output Space",
+      "shape_transform": "[d_out \u00d7 r]",
+      "color": "#2dd4bf",
+      "math_latex": "y_t = z_t (\\Sigma_r U_r^\\top) + b, \\quad U_r \\in \\mathbb{R}^{d_{out} \\times r}"
     },
     {
-      "id": "up_proj_v",
-      "name": "Value Dequantize / Unpack",
-      "role": "Head Expansion",
-      "shape_transform": "[n_h \\cdot d_h \u00d7 d_c]",
-      "color": "#b45309",
-      "math_latex": "v^C_t = W^{UV} c^{KV}_t, \\quad W^{UV} \\in \\mathbb{R}^{n_h d_h \\times d_c}"
-    },
-    {
-      "id": "q_rope",
-      "name": "Decoupled RoPE Position Matrix",
-      "role": "Rotary Geometry Injection",
-      "shape_transform": "[d_R \u00d7 d_{in}]",
-      "color": "#fbbf24",
-      "math_latex": "q^{rot}_t = \\mathcal{R}_{\\Theta}(q^{pe}_t), \\quad k^{rot}_t = \\mathcal{R}_{\\Theta}(k^{pe}_t)"
+      "id": "adapter",
+      "name": "Residual LoRA / Norm Calibration",
+      "role": "Fidelity Compensation",
+      "shape_transform": "[d_out \u00d7 d_in] Residual",
+      "color": "#5eead4",
+      "math_latex": "\\Delta y_t = x_t (B A)^\\top \\cdot \\frac{\\alpha}{r}, \\quad A \\in \\mathbb{R}^{r \\times d_{in}}, \\; B \\in \\mathbb{R}^{d_{out} \\times r}"
     }
   ],
   "model_projections": {
@@ -52,29 +44,29 @@
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 5505024,
-      "savings_ratio": 1.18
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "roberta": {
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 5505024,
-      "savings_ratio": 1.18
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "gpt2": {
       "hidden_size": 768,
       "intermediate_size": 3072,
       "baseline_layer_params": 6488064,
-      "compressed_layer_params": 5505024,
-      "savings_ratio": 1.18
+      "compressed_layer_params": 786432,
+      "savings_ratio": 8.25
     },
     "qwen": {
       "hidden_size": 896,
       "intermediate_size": 4864,
       "baseline_layer_params": 11124736,
-      "compressed_layer_params": 9748480,
-      "savings_ratio": 1.14
+      "compressed_layer_params": 1081344,
+      "savings_ratio": 10.29
     }
   }
 }

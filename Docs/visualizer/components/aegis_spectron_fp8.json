@@ -1,20 +1,19 @@
 {
   "id": "aegis_spectron_fp8",
-  "name": "Aegis-Spectron-FP8 Hybrid Attention Module.",
+  "name": "Aegis-Spectron-FP8 Hybrid Attention (Final Corrected).",
   "file": "Codes/framework/attentions/aegis_spectron_fp8.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Aegis-Spectron-FP8 Hybrid Attention Module.  Integrates Aegis multi-branch local/global feature fusion with Spectron Lagrangian spectral entropy routing. Dynamic routing measures singular value entropy per token to distribute token representation across: 1. Local Sliding-Window Attention (O(N * W) with strict causal masking for decoders) 2. Global Low-Rank SVD Attention (True O(N * r * D) Linear A",
+  "description": "Aegis-Spectron-FP8 Hybrid Attention (Final Corrected).  Three-branch attention with spectral entropy routing:   1. Local sliding-window attention  (O(N*W))   2. Global low-rank ELU+1 linear attention (O(N*r*D))   3. Linear state recurrence (O(N*D), chunked, numerically stable)",
   "classes": [
     "AegisSpectronFP8Config",
     "FactorizedLinear",
     "SpectronSpectralEntropyRouter",
-    "AegisSpectronFP8Attention",
-    "DummyConfig"
+    "AegisSpectronFP8Attention"
   ],
-  "methods_count": 33,
+  "methods_count": 41,
   "math_latex": "p_{t, d} = \\frac{x_{t, d}^2}{\\sum_{k=1}^D x_{t, k}^2 + \\epsilon}, \\quad d \\in \\{1, \\dots, D\\}",
   "components": [
     {

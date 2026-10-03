@@ -1,12 +1,12 @@
 {
   "id": "hamming_attention",
-  "name": "Hamming Attention Distillation (HAD) Module.",
+  "name": "Hamming Attention Distillation (HAD) Module (Corrected).",
   "file": "Codes/framework/attentions/hamming_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Hamming Attention Distillation (HAD) Module.  Approximates dense inner products with differentiable continuous relaxations of Hamming distances over sign-binarized representations with calibrated temperature scaling, multi-architecture weight transfer, trainable LoRA residual adapters, GQA, RoPE, and causal decoding.  NOTE: This module is LoRA-only. The rank argument is accepted but not used for",
+  "description": "Hamming Attention Distillation (HAD) Module (Corrected).  Approximates dense inner products with differentiable continuous relaxations of Hamming distances over sign-binarized representations with calibrated temperature scaling, multi-architecture weight transfer, trainable LoRA residual adapters, GQA, RoPE, and causal decoding.   NOTE: This module is LoRA-only. The `rank` argument is accepted for",
   "classes": [
     "LoRALinear",
     "HammingAttention"

@@ -6,12 +6,12 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Linformer Attention \u2013 Production-hardened with full multi-architecture support.  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen base weights - GQA with repeat_kv - RoPE position embeddings - Causal masking for decoders - Nested encoder bypass - Frobenius norm verification (>= 1e-4) - Safe injection returning No",
+  "description": "Linformer Attention \u2013 Production-hardened with full multi-architecture support.",
   "classes": [
-    "LoRALinear",
+    "FactorizedLoRALinear",
     "LinformerAttention"
   ],
-  "methods_count": 21,
+  "methods_count": 31,
   "math_latex": "W \\approx U_r \\Sigma_r V_r^\\top = A B^\\top, \\quad r \\ll \\min(d_{in}, d_{out})",
   "components": [
     {

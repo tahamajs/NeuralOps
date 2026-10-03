@@ -6,12 +6,13 @@
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention (FASA). Hardened for multi-architecture production deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.",
+  "description": "MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention (FASA). Production-Hardened (v2).",
   "classes": [
     "LoRALinear",
-    "MixAttentionMoSKA"
+    "MixAttentionMoSKA",
+    "_Cfg"
   ],
-  "methods_count": 25,
+  "methods_count": 29,
   "math_latex": "\\operatorname{Var}(\\mathbf{K}_{b, h, t}) = \\frac{1}{d_k} \\sum_{c=1}^{d_k} \\left(K_{b, h, t, c} - \\bar{K}_{b, h, t}\\right)^2",
   "components": [
     {

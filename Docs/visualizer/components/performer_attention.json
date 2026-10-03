@@ -11,7 +11,7 @@
     "LoRALinear",
     "PerformerAttention"
   ],
-  "methods_count": 14,
+  "methods_count": 21,
   "math_latex": "\\text{Attn}(Q, K, V) = D^{-1} (\\phi(Q) (\\phi(K)^\\top V)), \\quad \\phi(x) = \\frac{h(x)}{\\sqrt{m}} \\exp\\left(\\omega^\\top x - \\frac{\\|x\\|^2}{2}\\right)",
   "components": [
     {

@@ -1,17 +1,17 @@
 {
   "id": "template_attention",
-  "name": "Template Attention Mechanism (YourCustomAttention).",
+  "name": "Template Attention Mechanism (YourCustomAttention) \u2013 Production-Hardened.",
   "file": "Codes/framework/attentions/template_attention.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Template Attention Mechanism (YourCustomAttention). Hardened for production use across diverse transformer architectures: - DistilBERT (Flat MHA) - RoBERTa / BERT (Nested Encoder Self-Attention) - GPT-2 (Causal Decoder with Conv1D) - Qwen / LLaMA (GQA with Rotary Position Embeddings)",
+  "description": "Template Attention Mechanism (YourCustomAttention) \u2013 Production-Hardened. Supports: DistilBERT (Flat MHA), RoBERTa/BERT (Nested Encoder), GPT-2 (Causal Decoder with Conv1D), Qwen/LLaMA (GQA + RoPE).",
   "classes": [
     "LoRALinear",
     "YourCustomAttention"
   ],
-  "methods_count": 10,
+  "methods_count": 17,
   "math_latex": "Q = X W_Q, \\quad K = X W_K, \\quad V = X W_V",
   "components": [
     {

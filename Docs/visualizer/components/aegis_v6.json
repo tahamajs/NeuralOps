@@ -1,22 +1,22 @@
 {
   "id": "aegis_v6",
-  "name": "AEGIS-Attention V6: Unified Hybrid Transformer Attention Module.",
+  "name": "AEGIS-Attention V6 (Final-Final Corrected).",
   "file": "Codes/framework/attentions/aegis_v6.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "AEGIS-Attention V6: Unified Hybrid Transformer Attention Module.  Combines SVD low-rank factorized projections with LoRA adapters, sliding window attention, global linear kernel attention with adaptive spectral gating, and context fusion initialized to prioritize high-fidelity local attention. Hardened for multi-architecture deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.",
+  "description": "AEGIS-Attention V6 (Final-Final Corrected).",
   "classes": [
     "AegisConfigV3",
-    "FactorisedLowRankProjection",
+    "FactorisedLinear",
     "KernelFeatureConfig",
     "StableKernelFeatureMap",
     "GatingModule",
     "ContextFusionGate",
     "AegisAttentionV3"
   ],
-  "methods_count": 39,
+  "methods_count": 44,
   "math_latex": "y = x (V \\Sigma U^\\top) + x (B^\\top A^\\top) + b",
   "components": [
     {

@@ -1,18 +1,18 @@
 {
   "id": "hybrid_svd_layer",
-  "name": "Hybrid SVD Layer: single-head SVD attention replacement with positional enc",
+  "name": "Hybrid SVD Layer: weight-based SVD compression for attention/linear layers.",
   "file": "Codes/framework/compression_engine/hybrid_svd_layer.py",
   "type": "Compression Engine",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Hybrid SVD Layer: single-head SVD attention replacement with positional encoding, plus full encoder layer and compression engine. Registered as 'hybrid_svd' and 'direct_svd_encoder'.",
+  "description": "Hybrid SVD Layer: weight-based SVD compression for attention/linear layers.  Registered under:   - 'hybrid_svd'   - 'hybrid_svd_layer'   - 'direct_svd_encoder'  The deprecated SVDSingleHead (which performed SVD on live activations) is retained only for backward compatibility and emits a warning on use.",
   "classes": [
     "SVDSingleHead",
     "DirectSVDEncoderLayer",
     "HybridSVDCompressor"
   ],
-  "methods_count": 9,
+  "methods_count": 10,
   "math_latex": "W = U_r \\Sigma_r V_r^\\top + M_{\\text{sparse}}, \\quad \\|M_{\\text{sparse}}\\|_0 \\le k",
   "components": [
     {

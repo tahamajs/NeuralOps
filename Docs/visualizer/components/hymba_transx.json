@@ -1,18 +1,18 @@
 {
   "id": "hymba_transx",
-  "name": "HymbaTransX: Hybrid Differential Transformer & State Space Model Block (Pro",
+  "name": "HymbaTransX: Hybrid Differential Transformer & State Space Model Block (Cor",
   "file": "Codes/framework/attentions/hymba_transx.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "HymbaTransX: Hybrid Differential Transformer & State Space Model Block (Production-Hardened).  Differential attention with rotary embeddings coupled with a State Space Model branch.  Supports: - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT) - Trainable LoRA adapters with frozen base weights - GQA with repeat_kv - RoPE position embeddings (both external positi",
+  "description": "HymbaTransX: Hybrid Differential Transformer & State Space Model Block (Corrected).  Differential attention with rotary embeddings coupled with a State Space Model branch.",
   "classes": [
     "HeadRoPE",
     "LoRALinear",
     "HymbaTransXBlock"
   ],
-  "methods_count": 20,
+  "methods_count": 27,
   "math_latex": "\\mathbf{R}_{\\Theta, m}^{d_k} \\mathbf{x}_m = \\begin{pmatrix} x_{m, 0} \\cos(m \\theta_0) - x_{m, 1} \\sin(m \\theta_0) \\\\ x_{m, 0} \\sin(m \\theta_0) + x_{m, 1} \\cos(m \\theta_0) \\\\ \\vdots \\end{pmatrix}",
   "components": [
     {

@@ -1,19 +1,19 @@
 {
   "id": "aegis_v2",
-  "name": "Aegis-Attention V2 Module.",
+  "name": "Aegis-Attention V2 (Corrected).",
   "file": "Codes/framework/attentions/aegis_v2.py",
   "type": "Attention Module",
   "category": "Low-Rank SVD & Factorization",
   "paradigm": "svd",
   "icon": "\u26a1",
-  "description": "Aegis-Attention V2 Module.  Implements hybrid low-rank factorized attention with local sliding window attention, global linear kernel attention with adaptive soft-pruning gating, and dynamic multi-head fusion. Hardened for multi-architecture deployment across DistilBERT, RoBERTa, GPT-2, and Qwen3.5.",
+  "description": "Aegis-Attention V2 (Corrected).  Hybrid low-rank factorized attention with:   * SVD + LoRA projections (FactorisedLinear)   * Local sliding-window attention over all heads   * Global ELU+1 linear kernel attention with adaptive soft-pruning gate   * Data-dependent multi-head fusion gate",
   "classes": [
     "AegisAttentionConfigV2",
     "FactorisedLinear",
     "AegisAttentionV2",
     "DummyConfig"
   ],
-  "methods_count": 36,
+  "methods_count": 40,
   "math_latex": "Q = X W_{Q1} W_{Q2}, \\quad K = X W_{K1} W_{K2}, \\quad V = X W_{V1} W_{V2}",
   "components": [
     {
