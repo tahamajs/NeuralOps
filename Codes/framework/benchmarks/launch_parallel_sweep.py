@@ -15,7 +15,9 @@ from pathlib import Path
 
 def main():
     parser = argparse.ArgumentParser(description="Supervise parallel sweep workers.")
-    parser.add_argument("--total_workers", type=int, default=4, help="Number of parallel workers.")
+    parser.add_argument(
+        "--total_workers", type=int, default=4, help="Number of parallel workers."
+    )
     parser.add_argument(
         "--output_dir",
         type=str,
@@ -47,7 +49,7 @@ def main():
         cmd = [
             sys.executable,
             "-u",
-            str(project_root / "Codes" / "framework" / "run_gpt2_sweep.py"),
+            str(project_root / "Codes" / "framework" / "benchmarks" / "run_gpt2_sweep.py"),
             "--output_dir",
             args.output_dir,
             "--total_workers",
@@ -76,7 +78,9 @@ def main():
                 print("[Launcher] All workers have completed.")
                 break
             alive_ids = [wid for wid, _ in alive]
-            print(f"[Launcher] Active workers: {alive_ids} ({len(alive)}/{args.total_workers})")
+            print(
+                f"[Launcher] Active workers: {alive_ids} ({len(alive)}/{args.total_workers})"
+            )
             time.sleep(30)
     except KeyboardInterrupt:
         print("\n[Launcher] Interrupted! Terminating child workers...")

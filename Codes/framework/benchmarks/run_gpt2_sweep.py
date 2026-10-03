@@ -42,6 +42,7 @@ Usage:
   python decoder_benchmark.py --modules mla,svd_llm --only_failed
   python decoder_benchmark.py --total_workers 4 --worker_id 0
 """
+
 from __future__ import annotations
 
 import argparse
@@ -70,6 +71,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 try:
     from tqdm import tqdm
+
     _HAS_TQDM = True
 except ImportError:
     _HAS_TQDM = False
@@ -91,7 +93,6 @@ from framework.core.registry import (
     is_module_declared_compatible,
 )
 from framework.eval_all_models_datasets import apply_module_to_model
-
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -236,7 +237,9 @@ def get_all_decoder_modules(category: str = "all") -> list[str]:
     canonical = ["full"]
     for aliases in by_factory.values():
         # Prefer shorter / non-`_inject` aliases as canonical names
-        canonical.append(sorted(aliases, key=lambda x: (x.endswith("_inject"), len(x), x))[0])
+        canonical.append(
+            sorted(aliases, key=lambda x: (x.endswith("_inject"), len(x), x))[0]
+        )
 
     # Preserve insertion order but ensure "full" is first
     seen: set[str] = set()
@@ -259,7 +262,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     # Model / data
     p.add_argument("--model_path", type=str, default="models/gpt2_wikitext")
     p.add_argument("--dataset_name", type=str, default="wikitext-2-raw-v1")
-    p.add_argument("--split", type=str, default="test", choices=("test", "validation", "train"))
+    p.add_argument(
+        "--split", type=str, default="test", choices=("test", "validation", "train")
+    )
     p.add_argument("--output_dir", type=str, default="results/gpt2_sweep")
 
     # Modules
@@ -268,14 +273,19 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--seq_len", type=int, default=1024)
     p.add_argument("--max_length", type=int, default=None, help="Alias for --seq_len")
     p.add_argument("--stride", type=int, default=512)
-    p.add_argument("--max_eval_tokens", type=int, default=100_000,
-                   help="Cap total evaluated tokens (None = full split)")
+    p.add_argument(
+        "--max_eval_tokens",
+        type=int,
+        default=100_000,
+        help="Cap total evaluated tokens (None = full split)",
+    )
 
     # Precision / device
     p.add_argument("--fp16", action="store_true", default=True)
     p.add_argument("--no_fp16", dest="fp16", action="store_false")
-    p.add_argument("--device", type=str, default="cuda",
-                   help="cuda, cuda:0, cuda:1, cpu")
+    p.add_argument(
+        "--device", type=str, default="cuda", help="cuda, cuda:0, cuda:1, cpu"
+    )
     p.add_argument("--seed", type=int, default=42)
 
     # Calibration
@@ -284,24 +294,53 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--calib_max_length", type=int, default=128)
 
     # Behavior flags
-    p.add_argument("--no_skip", action="store_true", default=False,
-                   help="Re-evaluate ALL modules, even successful ones")
-    p.add_argument("--force", action="store_true", default=False,
-                   help="Overwrite existing CSV (start fresh)")
-    p.add_argument("--only_failed", action="store_true", default=False,
-                   help="Only evaluate modules whose last status is FAIL/PASS_*_DEGRADED")
-    p.add_argument("--retry_flags", type=str, nargs="*", default=[],
-                   help="Statuses to treat as failed and retry "
-                        "(e.g. --retry_flags PASS_NO_COMPRESSION FAIL_PPL_DIVERGED)")
+    p.add_argument(
+        "--no_skip",
+        action="store_true",
+        default=False,
+        help="Re-evaluate ALL modules, even successful ones",
+    )
+    p.add_argument(
+        "--force",
+        action="store_true",
+        default=False,
+        help="Overwrite existing CSV (start fresh)",
+    )
+    p.add_argument(
+        "--only_failed",
+        action="store_true",
+        default=False,
+        help="Only evaluate modules whose last status is FAIL/PASS_*_DEGRADED",
+    )
+    p.add_argument(
+        "--retry_flags",
+        type=str,
+        nargs="*",
+        default=[],
+        help="Statuses to treat as failed and retry "
+        "(e.g. --retry_flags PASS_NO_COMPRESSION FAIL_PPL_DIVERGED)",
+    )
     p.add_argument("--dry_run", action="store_true", default=False)
-    p.add_argument("--recompute_baseline", action="store_true", default=False,
-                   help="Force recompute baseline PPL (default: reuse cached)")
+    p.add_argument(
+        "--recompute_baseline",
+        action="store_true",
+        default=False,
+        help="Force recompute baseline PPL (default: reuse cached)",
+    )
 
     # KD Recovery
-    p.add_argument("--with_kd_recovery", action="store_true", default=False,
-                   help="Run KD recovery fine-tuning if zero-shot PPL > 2x baseline")
-    p.add_argument("--kd_recovery_steps", type=int, default=100,
-                   help="Number of KD steps to run for recovery")
+    p.add_argument(
+        "--with_kd_recovery",
+        action="store_true",
+        default=False,
+        help="Run KD recovery fine-tuning if zero-shot PPL > 2x baseline",
+    )
+    p.add_argument(
+        "--kd_recovery_steps",
+        type=int,
+        default=100,
+        help="Number of KD steps to run for recovery",
+    )
 
     # Parallelism
     p.add_argument("--worker_id", type=int, default=0)
@@ -309,8 +348,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
     # Reporting
     p.add_argument("--log_file", type=str, default=None)
-    p.add_argument("--save_traceback_locals", action="store_true", default=False,
-                   help="Include stack locals in diag.json (verbose)")
+    p.add_argument(
+        "--save_traceback_locals",
+        action="store_true",
+        default=False,
+        help="Include stack locals in diag.json (verbose)",
+    )
     return p.parse_args(argv)
 
 
@@ -433,10 +476,13 @@ def compute_perplexity_with_metrics(
     prev_end = 0
     tokens_eval = 0
 
-    with torch.no_grad(), torch.amp.autocast(
-        device_type="cuda" if device.startswith("cuda") else "cpu",
-        dtype=torch.float16,
-        enabled=device.startswith("cuda"),
+    with (
+        torch.no_grad(),
+        torch.amp.autocast(
+            device_type="cuda" if device.startswith("cuda") else "cpu",
+            dtype=torch.float16,
+            enabled=device.startswith("cuda"),
+        ),
     ):
         for begin in range(0, total, stride):
             end = min(begin + seq_len, total)
@@ -470,7 +516,7 @@ def compute_perplexity_with_metrics(
         ppl = float(np.exp(total_nll / max(1, prev_end)))
 
     peak_vram_mb = (
-        float(torch.cuda.max_memory_allocated() / (1024 ** 2))
+        float(torch.cuda.max_memory_allocated() / (1024**2))
         if device.startswith("cuda") and torch.cuda.is_available()
         else 0.0
     )
@@ -506,11 +552,26 @@ def run_kd_recovery(
     Lightweight KD recovery (Method A / logits KD) on train_dataset.
     Returns recovery time in seconds.
     """
-    LOG.info("Running KD recovery: %d steps, batch=1, seq_len=%d, lr=%.2e", steps, seq_len, lr)
+    LOG.info(
+        "Running KD recovery: %d steps, batch=1, seq_len=%d, lr=%.2e",
+        steps,
+        seq_len,
+        lr,
+    )
     t0 = time.time()
 
     # Configure trainable parameters: unfreeze low-rank / SVD / injected params
-    trainable_keywords = ("W_u", "W_v", "weight_u", "weight_v", "lora_A", "lora_B", "adapter", "A", "B")
+    trainable_keywords = (
+        "W_u",
+        "W_v",
+        "weight_u",
+        "weight_v",
+        "lora_A",
+        "lora_B",
+        "adapter",
+        "A",
+        "B",
+    )
     trainable_params = []
     for name, p in student.named_parameters():
         if ".attn." not in name:
@@ -519,7 +580,9 @@ def run_kd_recovery(
         sub = name.split(".attn.", 1)[-1]
         if any(kw in name for kw in trainable_keywords):
             p.requires_grad = True
-        elif sub.startswith(("c_attn.weight", "c_proj.weight", "c_attn.bias", "c_proj.bias")) or sub in ("c_attn", "c_proj"):
+        elif sub.startswith(
+            ("c_attn.weight", "c_proj.weight", "c_attn.bias", "c_proj.bias")
+        ) or sub in ("c_attn", "c_proj"):
             p.requires_grad = False
         else:
             p.requires_grad = True
@@ -529,11 +592,15 @@ def run_kd_recovery(
             trainable_params.append(p)
 
     if not trainable_params:
-        LOG.warning("No trainable parameters found for KD recovery; training all parameters with requires_grad.")
+        LOG.warning(
+            "No trainable parameters found for KD recovery; training all parameters with requires_grad."
+        )
         trainable_params = [p for p in student.parameters() if p.requires_grad]
 
     if not trainable_params:
-        LOG.warning("KD recovery: completely 0 trainable parameters, skipping recovery.")
+        LOG.warning(
+            "KD recovery: completely 0 trainable parameters, skipping recovery."
+        )
         return 0.0
 
     optimizer = torch.optim.AdamW(trainable_params, lr=lr, weight_decay=0.01)
@@ -541,7 +608,9 @@ def run_kd_recovery(
     scaler = torch.cuda.amp.GradScaler(enabled=use_scaler)
 
     # Tokenize training chunks
-    texts = [t.strip() for t in train_dataset["text"] if len(t.strip()) > 20][:max(steps * 2, 200)]
+    texts = [t.strip() for t in train_dataset["text"] if len(t.strip()) > 20][
+        : max(steps * 2, 200)
+    ]
     all_ids = []
     for t in texts:
         ids = tokenizer(t, add_special_tokens=False).input_ids
@@ -554,7 +623,7 @@ def run_kd_recovery(
     target_tokens = steps * seq_len
     if len(all_ids) < target_tokens:
         while len(all_ids) < target_tokens:
-            all_ids.extend(all_ids[:max(1, target_tokens - len(all_ids))])
+            all_ids.extend(all_ids[: max(1, target_tokens - len(all_ids))])
     all_ids = all_ids[:target_tokens]
     chunks = torch.tensor(all_ids, dtype=torch.long).view(steps, seq_len)
 
@@ -566,7 +635,10 @@ def run_kd_recovery(
         batch = chunks[step_idx : step_idx + 1].to(device)
         optimizer.zero_grad()
 
-        with torch.no_grad(), torch.cuda.amp.autocast(enabled=device.startswith("cuda")):
+        with (
+            torch.no_grad(),
+            torch.cuda.amp.autocast(enabled=device.startswith("cuda")),
+        ):
             t_out = teacher(batch)
 
         with torch.cuda.amp.autocast(enabled=device.startswith("cuda")):
@@ -579,7 +651,9 @@ def run_kd_recovery(
             # Next token cross-entropy
             shift_logits = s_out.logits[..., :-1, :].contiguous()
             shift_labels = batch[..., 1:].contiguous()
-            loss_ce = F.cross_entropy(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+            loss_ce = F.cross_entropy(
+                shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1)
+            )
             loss = 0.9 * loss_kl + 0.1 * loss_ce
 
         if use_scaler:
@@ -761,8 +835,14 @@ def print_summary_stats(rows: dict[str, dict[str, str]]):
     arr = np.array(ppls)
     LOG.info("=" * 70)
     LOG.info("SUMMARY (excluding 'full'):")
-    LOG.info("  n = %d | min PPL = %.2f | max PPL = %.2f | median = %.2f | mean = %.2f",
-             len(arr), arr.min(), arr.max(), np.median(arr), arr.mean())
+    LOG.info(
+        "  n = %d | min PPL = %.2f | max PPL = %.2f | median = %.2f | mean = %.2f",
+        len(arr),
+        arr.min(),
+        arr.max(),
+        np.median(arr),
+        arr.mean(),
+    )
     # Count by status
     status_counts: dict[str, int] = {}
     for k, r in rows.items():
@@ -779,6 +859,7 @@ def print_summary_stats(rows: dict[str, dict[str, str]]):
 # ---------------------------------------------------------------------------
 _INTERRUPTED = {"flag": False}
 
+
 def _install_signal_handlers():
     def _handler(signum, frame):
         if _INTERRUPTED["flag"]:
@@ -786,6 +867,7 @@ def _install_signal_handlers():
             sys.exit(130)
         _INTERRUPTED["flag"] = True
         LOG.warning("Interrupt received. Finishing current module and exiting...")
+
     signal.signal(signal.SIGINT, _handler)
     try:
         signal.signal(signal.SIGTERM, _handler)
@@ -825,10 +907,17 @@ def main(argv: list[str] | None = None):
     if not parsed or parsed == ["all"]:
         parsed = get_all_decoder_modules("all")
     if args.total_workers > 1:
-        parsed = [m for i, m in enumerate(parsed)
-                  if (i % args.total_workers) == args.worker_id]
-        LOG.info("Worker %d/%d assigned %d modules",
-                 args.worker_id, args.total_workers, len(parsed))
+        parsed = [
+            m
+            for i, m in enumerate(parsed)
+            if (i % args.total_workers) == args.worker_id
+        ]
+        LOG.info(
+            "Worker %d/%d assigned %d modules",
+            args.worker_id,
+            args.total_workers,
+            len(parsed),
+        )
     args.modules = parsed
 
     out_dir = Path(args.output_dir)
@@ -857,8 +946,12 @@ def main(argv: list[str] | None = None):
     LOG.info("  Modules:      %d", len(args.modules))
     LOG.info("  Device:       %s | fp16=%s", args.device, args.fp16)
     LOG.info("  Output dir:   %s", out_dir)
-    LOG.info("  Force:        %s | No-skip: %s | Only-failed: %s",
-             args.force, args.no_skip, args.only_failed)
+    LOG.info(
+        "  Force:        %s | No-skip: %s | Only-failed: %s",
+        args.force,
+        args.no_skip,
+        args.only_failed,
+    )
     LOG.info("=" * 78)
 
     if args.dry_run:
@@ -893,14 +986,21 @@ def main(argv: list[str] | None = None):
         ds_test = load_dataset("wikitext", args.dataset_name, split=args.split)
         ds_train = load_dataset("wikitext", args.dataset_name, split="train")
     except Exception:
-        ds_test = load_dataset("Salesforce/wikitext", args.dataset_name, split=args.split)
+        ds_test = load_dataset(
+            "Salesforce/wikitext", args.dataset_name, split=args.split
+        )
         ds_train = load_dataset("Salesforce/wikitext", args.dataset_name, split="train")
 
     # ---- Calibration loader ----
-    LOG.info("Building calibration loader (%d samples, batch=%d, max_len=%d)...",
-             args.calib_samples, args.calib_batch_size, args.calib_max_length)
+    LOG.info(
+        "Building calibration loader (%d samples, batch=%d, max_len=%d)...",
+        args.calib_samples,
+        args.calib_batch_size,
+        args.calib_max_length,
+    )
     calib_loader = build_calibration_loader(
-        ds_train, tokenizer,
+        ds_train,
+        tokenizer,
         num_samples=args.calib_samples,
         batch_size=args.calib_batch_size,
         max_length=args.calib_max_length,
@@ -911,9 +1011,12 @@ def main(argv: list[str] | None = None):
     cached = _read_csv_rows(main_csv)
     cached_base = cached.get("full")
     baseline_ppl: float | None = None
-    if (not args.recompute_baseline
-            and cached_base is not None
-            and str(cached_base.get("baseline_ppl", "")) not in ("", "0", "0.0", "-1.0", "nan")):
+    if (
+        not args.recompute_baseline
+        and cached_base is not None
+        and str(cached_base.get("baseline_ppl", ""))
+        not in ("", "0", "0.0", "-1.0", "nan")
+    ):
         try:
             baseline_ppl = float(cached_base["baseline_ppl"])
             LOG.info("Reusing cached baseline PPL: %.4f", baseline_ppl)
@@ -933,26 +1036,39 @@ def main(argv: list[str] | None = None):
         base_model.eval()
 
         total_params_baseline = sum(p.numel() for p in base_model.parameters())
-        LOG.info("Baseline params: %d (%.2f M)", total_params_baseline,
-                 total_params_baseline / 1e6)
+        LOG.info(
+            "Baseline params: %d (%.2f M)",
+            total_params_baseline,
+            total_params_baseline / 1e6,
+        )
 
         LOG.info("Computing baseline PPL...")
         base_metrics = compute_perplexity_with_metrics(
-            base_model, tokenizer, ds_test,
-            seq_len=args.seq_len, stride=args.stride,
-            max_eval_tokens=args.max_eval_tokens, device=args.device,
+            base_model,
+            tokenizer,
+            ds_test,
+            seq_len=args.seq_len,
+            stride=args.stride,
+            max_eval_tokens=args.max_eval_tokens,
+            device=args.device,
         )
         baseline_ppl = base_metrics["perplexity"]
-        LOG.info("Baseline PPL: %.4f | VRAM: %.1f MB | %.1f tok/s",
-                 baseline_ppl, base_metrics["peak_vram_mb"],
-                 base_metrics["throughput_tok_per_sec"])
+        LOG.info(
+            "Baseline PPL: %.4f | VRAM: %.1f MB | %.1f tok/s",
+            baseline_ppl,
+            base_metrics["peak_vram_mb"],
+            base_metrics["throughput_tok_per_sec"],
+        )
 
         # Sanity check
         if not np.isfinite(baseline_ppl) or baseline_ppl <= 0:
             LOG.error("Baseline PPL is invalid (%s). Aborting.", baseline_ppl)
             sys.exit(2)
         if baseline_ppl > 100:
-            LOG.warning("Baseline PPL %.2f is unusually high — check model/dataset.", baseline_ppl)
+            LOG.warning(
+                "Baseline PPL %.2f is unusually high — check model/dataset.",
+                baseline_ppl,
+            )
 
         base_row = ResultRow(
             module_name="full",
@@ -1029,7 +1145,9 @@ def main(argv: list[str] | None = None):
 
     # ---- Iterate ----
     module_list = [m for m in args.modules if m != "full"]
-    iterator = tqdm(module_list, desc="Modules", unit="mod") if _HAS_TQDM else module_list
+    iterator = (
+        tqdm(module_list, desc="Modules", unit="mod") if _HAS_TQDM else module_list
+    )
 
     n_done = 0
     t_run_start = time.time()
@@ -1091,7 +1209,9 @@ def main(argv: list[str] | None = None):
 
             t_comp0 = time.time()
             cand, comp_stats = apply_module_to_model(
-                cand, mod, typ,
+                cand,
+                mod,
+                typ,
                 rank=args.rank,
                 device=args.device,
                 calibration_data=first_batch_ids,
@@ -1105,9 +1225,13 @@ def main(argv: list[str] | None = None):
 
             # ---- Evaluate ----
             metrics = compute_perplexity_with_metrics(
-                cand, tokenizer, ds_test,
-                seq_len=args.seq_len, stride=args.stride,
-                max_eval_tokens=args.max_eval_tokens, device=args.device,
+                cand,
+                tokenizer,
+                ds_test,
+                seq_len=args.seq_len,
+                stride=args.stride,
+                max_eval_tokens=args.max_eval_tokens,
+                device=args.device,
             )
             ppl = metrics["perplexity"]
 
@@ -1115,7 +1239,11 @@ def main(argv: list[str] | None = None):
             comp_rate = round(total_params_baseline / max(1, p_after), 4)
             comp_pct = round(100.0 * (1.0 - p_after / max(1, total_params_baseline)), 2)
             delta_ppl = round(ppl - baseline_ppl, 4) if np.isfinite(ppl) else 999.0
-            ppl_ratio = round(ppl / max(1e-9, baseline_ppl), 4) if np.isfinite(ppl) else float("inf")
+            ppl_ratio = (
+                round(ppl / max(1e-9, baseline_ppl), 4)
+                if np.isfinite(ppl)
+                else float("inf")
+            )
 
             # ---- Classify ----
             status = classify_status(ppl_ratio)
@@ -1135,8 +1263,17 @@ def main(argv: list[str] | None = None):
             # ---- Optional KD Recovery ----
             post_kd_ppl = -1.0
             delta_ppl_recovery = 0.0
-            if args.with_kd_recovery and np.isfinite(ppl) and ppl > (2.0 * baseline_ppl):
-                LOG.info("[%s] Zero-shot PPL %.2f > 2x baseline (%.2f); running KD recovery...", mod, ppl, 2.0 * baseline_ppl)
+            if (
+                args.with_kd_recovery
+                and np.isfinite(ppl)
+                and ppl > (2.0 * baseline_ppl)
+            ):
+                LOG.info(
+                    "[%s] Zero-shot PPL %.2f > 2x baseline (%.2f); running KD recovery...",
+                    mod,
+                    ppl,
+                    2.0 * baseline_ppl,
+                )
                 try:
                     kd_rec_time = run_kd_recovery(
                         student=cand,
@@ -1149,14 +1286,23 @@ def main(argv: list[str] | None = None):
                     )
                     # Evaluate post-KD PPL
                     post_metrics = compute_perplexity_with_metrics(
-                        cand, tokenizer, ds_test,
-                        seq_len=args.seq_len, stride=args.stride,
-                        max_eval_tokens=args.max_eval_tokens, device=args.device,
+                        cand,
+                        tokenizer,
+                        ds_test,
+                        seq_len=args.seq_len,
+                        stride=args.stride,
+                        max_eval_tokens=args.max_eval_tokens,
+                        device=args.device,
                     )
                     post_kd_ppl = post_metrics["perplexity"]
                     if np.isfinite(post_kd_ppl):
                         delta_ppl_recovery = round(ppl - post_kd_ppl, 4)
-                        LOG.info("[%s] Post-KD PPL: %.2f | Delta recovery: %.2f", mod, post_kd_ppl, delta_ppl_recovery)
+                        LOG.info(
+                            "[%s] Post-KD PPL: %.2f | Delta recovery: %.2f",
+                            mod,
+                            post_kd_ppl,
+                            delta_ppl_recovery,
+                        )
                 except Exception as ex_kd:
                     LOG.warning("[%s] KD recovery failed: %s", mod, ex_kd)
 
@@ -1175,9 +1321,21 @@ def main(argv: list[str] | None = None):
                 num_injected_attention_layers=n_inj,
                 num_compressed_layers=n_comp,
                 num_fallback_layers=n_fall,
-                lora_params=int(comp_stats.get("lora_params", 0) or 0) if isinstance(comp_stats, dict) else 0,
-                calibration_time_s=float(comp_stats.get("calibration_time_s", comp_wall) or comp_wall) if isinstance(comp_stats, dict) else round(comp_wall, 3),
-                recovery_time_s=float(comp_stats.get("recovery_time_s", 0.0) or 0.0) if isinstance(comp_stats, dict) else 0.0,
+                lora_params=(
+                    int(comp_stats.get("lora_params", 0) or 0)
+                    if isinstance(comp_stats, dict)
+                    else 0
+                ),
+                calibration_time_s=(
+                    float(comp_stats.get("calibration_time_s", comp_wall) or comp_wall)
+                    if isinstance(comp_stats, dict)
+                    else round(comp_wall, 3)
+                ),
+                recovery_time_s=(
+                    float(comp_stats.get("recovery_time_s", 0.0) or 0.0)
+                    if isinstance(comp_stats, dict)
+                    else 0.0
+                ),
                 peak_vram_mb=metrics["peak_vram_mb"],
                 latency_ms_per_token=metrics["latency_ms_per_token"],
                 throughput_tok_per_sec=metrics["throughput_tok_per_sec"],
@@ -1191,8 +1349,16 @@ def main(argv: list[str] | None = None):
             LOG.info(
                 "[%d/%d] %s -> %s | PPL=%.3f (ratio=%.3f) | "
                 "comp=%.3fx | inj=%d comp=%d | %.1fs",
-                idx, len(module_list), mod, status, ppl, ppl_ratio,
-                comp_rate, n_inj, n_comp, wall,
+                idx,
+                len(module_list),
+                mod,
+                status,
+                ppl,
+                ppl_ratio,
+                comp_rate,
+                n_inj,
+                n_comp,
+                wall,
             )
 
             # Also persist to summary_with_kd.csv if KD recovery is enabled
@@ -1210,8 +1376,13 @@ def main(argv: list[str] | None = None):
                 "device": args.device,
                 "fp16": args.fp16,
             }
-            write_diag(diag_json, mod, e, extra=extra,
-                       include_locals=args.save_traceback_locals)
+            write_diag(
+                diag_json,
+                mod,
+                e,
+                extra=extra,
+                include_locals=args.save_traceback_locals,
+            )
 
             # Try to extract partial PPL if candidate was built
             ppl_partial = -1.0
@@ -1221,8 +1392,11 @@ def main(argv: list[str] | None = None):
             if cand is not None:
                 try:
                     pm = compute_perplexity_with_metrics(
-                        cand, tokenizer, ds_test,
-                        seq_len=args.seq_len, stride=args.stride,
+                        cand,
+                        tokenizer,
+                        ds_test,
+                        seq_len=args.seq_len,
+                        stride=args.stride,
                         max_eval_tokens=min(20_000, args.max_eval_tokens or 20_000),
                         device=args.device,
                     )
@@ -1299,7 +1473,8 @@ def main(argv: list[str] | None = None):
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
         }
         (out_dir / "final_summary.json").write_text(
-            json.dumps(summary_payload, indent=2, default=str), encoding="utf-8",
+            json.dumps(summary_payload, indent=2, default=str),
+            encoding="utf-8",
         )
         LOG.info("Wrote final_summary.json")
     except Exception as e:

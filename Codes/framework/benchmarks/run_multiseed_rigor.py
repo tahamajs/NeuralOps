@@ -10,15 +10,16 @@ Produces:
   - results/06_multiseed/multiseed_rigor_summary.csv (Aggregated mean ± std)
   - results/06_multiseed/multiseed_rigor_report.md (Publication-ready markdown table)
 """
+
 from __future__ import annotations
 
 import argparse
 import csv
 import logging
+import statistics
 import subprocess
 import sys
 import time
-import statistics
 from pathlib import Path
 
 logging.basicConfig(
@@ -166,17 +167,27 @@ def run_single_module_seed(
 
     cmd = [
         sys.executable,
-        str(REPO_ROOT / "Codes" / "framework" / "run_quality_sweep.py"),
-        "--model", model_path,
-        "--model_family", model_family,
-        "--dataset", "sst2",
-        "--output_dir", str(output_dir),
-        "--modules", module_name,
-        "--batch_size", str(batch_size),
-        "--recovery_steps", str(args.recovery_steps),
-        "--precision", args.precision,
-        "--seed", str(seed),
-        "--cached_batches_dir", str(cached_batches_dir),
+        str(REPO_ROOT / "Codes" / "framework" / "benchmarks" / "run_quality_sweep.py"),
+        "--model",
+        model_path,
+        "--model_family",
+        model_family,
+        "--dataset",
+        "sst2",
+        "--output_dir",
+        str(output_dir),
+        "--modules",
+        module_name,
+        "--batch_size",
+        str(batch_size),
+        "--recovery_steps",
+        str(args.recovery_steps),
+        "--precision",
+        args.precision,
+        "--seed",
+        str(seed),
+        "--cached_batches_dir",
+        str(cached_batches_dir),
         "--defer_export",
     ]
 
@@ -195,19 +206,28 @@ def run_single_module_seed(
             f1 = row.get("f1_score", "N/A")
             LOG.info(
                 "SUCCESS [%s | %s | Seed %d]: Acc=%s%%, F1=%s (Elapsed: %.1fs)",
-                model_key, module_name, seed, acc, f1, elapsed
+                model_key,
+                module_name,
+                seed,
+                acc,
+                f1,
+                elapsed,
             )
             return True
         else:
             LOG.error(
                 "Run exited with code 0 but status is not PASS: %s",
-                row.get("status") if row else "missing"
+                row.get("status") if row else "missing",
             )
             return False
     else:
         LOG.error(
             "FAILED [%s | %s | Seed %d] with returncode %d (Elapsed: %.1fs)",
-            model_key, module_name, seed, proc.returncode, elapsed
+            model_key,
+            module_name,
+            seed,
+            proc.returncode,
+            elapsed,
         )
         return False
 
@@ -232,7 +252,13 @@ def aggregate_results(
             statuses = []
 
             for s in seeds:
-                seed_csv = output_root / f"multiseed_rigor_{model_key}" / mod / f"seed_{s}" / "summary.csv"
+                seed_csv = (
+                    output_root
+                    / f"multiseed_rigor_{model_key}"
+                    / mod
+                    / f"seed_{s}"
+                    / "summary.csv"
+                )
                 ok, row = is_run_completed(seed_csv)
                 if ok and row:
                     try:
@@ -269,22 +295,28 @@ def aggregate_results(
 
             cat = "compressor" if mod in KEY_COMPRESSORS else "attention"
 
-            summary_rows.append({
-                "model": model_key,
-                "module": mod,
-                "category": cat,
-                "completed_seeds": f"{num_runs}/{len(seeds)}",
-                "seeds": ",".join(str(s) for s in seeds[:num_runs]),
-                "mean_acc": round(mean_acc, 2),
-                "std_acc": round(std_acc, 2),
-                "mean_f1": round(mean_f1, 4),
-                "std_f1": round(std_f1, 4),
-                "mean_vram_mb": round(mean_vram, 1),
-                "mean_time_s": round(mean_time, 1),
-                "compression_rate": f"{mean_crate:.2f}x",
-                "recon_error": f"{mean_recon:.4f}" if mean_recon is not None else "—",
-                "status": "PASS" if all("PASS" in st for st in statuses) else "PARTIAL",
-            })
+            summary_rows.append(
+                {
+                    "model": model_key,
+                    "module": mod,
+                    "category": cat,
+                    "completed_seeds": f"{num_runs}/{len(seeds)}",
+                    "seeds": ",".join(str(s) for s in seeds[:num_runs]),
+                    "mean_acc": round(mean_acc, 2),
+                    "std_acc": round(std_acc, 2),
+                    "mean_f1": round(mean_f1, 4),
+                    "std_f1": round(std_f1, 4),
+                    "mean_vram_mb": round(mean_vram, 1),
+                    "mean_time_s": round(mean_time, 1),
+                    "compression_rate": f"{mean_crate:.2f}x",
+                    "recon_error": (
+                        f"{mean_recon:.4f}" if mean_recon is not None else "—"
+                    ),
+                    "status": (
+                        "PASS" if all("PASS" in st for st in statuses) else "PARTIAL"
+                    ),
+                }
+            )
 
     # Save summary CSV
     out_csv = output_root / "multiseed_rigor_summary.csv"
@@ -294,7 +326,11 @@ def aggregate_results(
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(summary_rows)
-        LOG.info("Saved aggregated summary CSV to %s (%d modules)", out_csv, len(summary_rows))
+        LOG.info(
+            "Saved aggregated summary CSV to %s (%d modules)",
+            out_csv,
+            len(summary_rows),
+        )
 
     # Save Markdown report
     out_md = output_root / "multiseed_rigor_report.md"
@@ -313,9 +349,17 @@ def aggregate_results(
     ]
 
     for r in summary_rows:
-        acc_str = f"**{r['mean_acc']:.2f} ± {r['std_acc']:.2f}%**" if r['completed_seeds'] == f"{len(seeds)}/{len(seeds)}" else f"{r['mean_acc']:.2f}%"
-        f1_str = f"{r['mean_f1']:.4f} ± {r['std_f1']:.4f}" if r['completed_seeds'] == f"{len(seeds)}/{len(seeds)}" else f"{r['mean_f1']:.4f}"
-        badge = f"`{r['status']}`" if r['status'] == "PASS" else f"**`{r['status']}`**"
+        acc_str = (
+            f"**{r['mean_acc']:.2f} ± {r['std_acc']:.2f}%**"
+            if r["completed_seeds"] == f"{len(seeds)}/{len(seeds)}"
+            else f"{r['mean_acc']:.2f}%"
+        )
+        f1_str = (
+            f"{r['mean_f1']:.4f} ± {r['std_f1']:.4f}"
+            if r["completed_seeds"] == f"{len(seeds)}/{len(seeds)}"
+            else f"{r['mean_f1']:.4f}"
+        )
+        badge = f"`{r['status']}`" if r["status"] == "PASS" else f"**`{r['status']}`**"
         md_lines.append(
             f"| `{r['model']}` | `{r['module']}` | {r['category']} | {r['completed_seeds']} | {acc_str} | {f1_str} | {r['compression_rate']} | {r['recon_error']} | {r['mean_vram_mb']} MB | {badge} |"
         )
@@ -356,7 +400,9 @@ def main():
     for model_key in models:
         for mod in target_modules:
             for s in seeds:
-                seed_dir = output_root / f"multiseed_rigor_{model_key}" / mod / f"seed_{s}"
+                seed_dir = (
+                    output_root / f"multiseed_rigor_{model_key}" / mod / f"seed_{s}"
+                )
                 summary_csv = seed_dir / "summary.csv"
                 completed, _ = is_run_completed(summary_csv)
                 if completed:
@@ -386,8 +432,14 @@ def main():
     failure_count = 0
 
     for i, (m_key, mod, s, seed_dir) in enumerate(pending_runs, 1):
-        LOG.info("Progress: [%d / %d pending] Starting %s / %s (seed %d)...",
-                 i, len(pending_runs), m_key, mod, s)
+        LOG.info(
+            "Progress: [%d / %d pending] Starting %s / %s (seed %d)...",
+            i,
+            len(pending_runs),
+            m_key,
+            mod,
+            s,
+        )
         seed_dir.mkdir(parents=True, exist_ok=True)
         ok = run_single_module_seed(m_key, mod, s, args, seed_dir)
         if ok:
@@ -404,7 +456,11 @@ def main():
                 LOG.warning("Intermediate aggregation failed: %s", agg_err)
 
     LOG.info("=" * 80)
-    LOG.info("MULTI-SEED SWEEP COMPLETE: %d Succeeded, %d Failed", success_count, failure_count)
+    LOG.info(
+        "MULTI-SEED SWEEP COMPLETE: %d Succeeded, %d Failed",
+        success_count,
+        failure_count,
+    )
     LOG.info("Performing final statistical aggregation...")
     aggregate_results(models, target_modules, seeds, output_root)
     LOG.info("All done!")

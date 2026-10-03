@@ -1,10 +1,11 @@
 import argparse
 import sys
-import torch
 from pathlib import Path
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
+import torch
 from datasets import load_dataset, load_from_disk
 from torch.utils.data import DataLoader
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 _cur_dir = Path(__file__).resolve().parent
 _codes_dir = _cur_dir.parent
@@ -13,7 +14,7 @@ if str(_codes_dir) not in sys.path:
 if str(_cur_dir) not in sys.path:
     sys.path.insert(0, str(_cur_dir))
 
-from svd_whitened import collect_activations, cholesky_whitened_svd
+from svd_whitened import cholesky_whitened_svd, collect_activations
 
 
 def compress_whitened(model_path, dataset_name, rank, num_samples, output_dir):
@@ -36,8 +37,14 @@ def compress_whitened(model_path, dataset_name, rank, num_samples, output_dir):
             ds = load_dataset("glue", dataset_name, split="train[:2000]")
 
     def tokenize(batch):
-        key = "text" if "text" in batch else ("sentence" if "sentence" in batch else list(batch.keys())[0])
-        return tokenizer(batch[key], padding="max_length", truncation=True, max_length=128)
+        key = (
+            "text"
+            if "text" in batch
+            else ("sentence" if "sentence" in batch else list(batch.keys())[0])
+        )
+        return tokenizer(
+            batch[key], padding="max_length", truncation=True, max_length=128
+        )
 
     ds = ds.map(tokenize, batched=True)
     ds.set_format(type="torch", columns=["input_ids", "attention_mask"])
@@ -47,16 +54,23 @@ def compress_whitened(model_path, dataset_name, rank, num_samples, output_dir):
     print("Collecting activations...", flush=True)
     activations = collect_activations(model, dataloader, num_samples)
 
-    print(f"Compressing Linear layers with Cholesky-whitened SVD (target rank={rank})...", flush=True)
+    print(
+        f"Compressing Linear layers with Cholesky-whitened SVD (target rank={rank})...",
+        flush=True,
+    )
     for name, module in model.named_modules():
         if isinstance(module, torch.nn.Linear) and name in activations:
             # Skip classifier head to preserve classification logits structure
-            if any(h in name.lower() for h in ("classifier", "score", "pre_classifier")):
+            if any(
+                h in name.lower() for h in ("classifier", "score", "pre_classifier")
+            ):
                 continue
             W = module.weight.data.cpu()
             X = activations[name]
             W_compressed = cholesky_whitened_svd(W, X, rank)
-            module.weight.data = W_compressed.to(device=module.weight.device, dtype=module.weight.dtype)
+            module.weight.data = W_compressed.to(
+                device=module.weight.device, dtype=module.weight.dtype
+            )
             print(f"  Compressed {name}: {W.shape} -> rank {rank}", flush=True)
 
     output_dir = Path(output_dir)
@@ -75,4 +89,6 @@ if __name__ == "__main__":
     parser.add_argument("--output_dir", required=True)
     args = parser.parse_args()
 
-    compress_whitened(args.model, args.dataset, args.rank, args.num_samples, args.output_dir)
+    compress_whitened(
+        args.model, args.dataset, args.rank, args.num_samples, args.output_dir
+    )
