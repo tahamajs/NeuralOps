@@ -274,7 +274,6 @@ def run_compression(config, output_dir) -> Any:
 def main() -> None:
     """Main."""
     from neuralops.experiment_logging.logger import LoggingConfig, MetricsTracker, setup_logging
-
     from neuralops.experiment_utils.config import build_config_from_args
 
     cfg = build_config_from_args()
