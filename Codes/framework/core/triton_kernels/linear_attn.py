@@ -9,12 +9,12 @@ Supports:
   - Cosformer-style in-register / pre-applied cosine-sine positional modulation
   - Full autograd integration for training and recovery fine-tuning.
 """
+
 from __future__ import annotations
 
 from typing import Any
 
 import torch
-
 from framework.core.triton_kernels._common import (
     HAS_TRITON,
     check_triton_suitability,
@@ -27,14 +27,22 @@ if HAS_TRITON:
 
     @triton.jit
     def _triton_chunked_causal_linear_attn_fwd_kernel(
-        Q_ptr,              # [B*H, N, D_k]
-        K_ptr,              # [B*H, N, D_k]
-        V_ptr,              # [B*H, N, D_v]
-        Out_ptr,            # [B*H, N, D_v]
-        stride_qbh, stride_qn, stride_qd,
-        stride_kbh, stride_kn, stride_kd,
-        stride_vbh, stride_vn, stride_vd,
-        stride_obh, stride_on, stride_od,
+        Q_ptr,  # [B*H, N, D_k]
+        K_ptr,  # [B*H, N, D_k]
+        V_ptr,  # [B*H, N, D_v]
+        Out_ptr,  # [B*H, N, D_v]
+        stride_qbh,
+        stride_qn,
+        stride_qd,
+        stride_kbh,
+        stride_kn,
+        stride_kd,
+        stride_vbh,
+        stride_vn,
+        stride_vd,
+        stride_obh,
+        stride_on,
+        stride_od,
         N: tl.constexpr,
         D_K: tl.constexpr,
         D_V: tl.constexpr,
@@ -67,9 +75,15 @@ if HAS_TRITON:
             cur_offs_n = start_n + offs_chunk
             mask_n = cur_offs_n < N
 
-            q_ptrs = q_base + (cur_offs_n[:, None] * stride_qn + offs_dk[None, :] * stride_qd)
-            k_ptrs = k_base + (cur_offs_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd)
-            v_ptrs = v_base + (cur_offs_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd)
+            q_ptrs = q_base + (
+                cur_offs_n[:, None] * stride_qn + offs_dk[None, :] * stride_qd
+            )
+            k_ptrs = k_base + (
+                cur_offs_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd
+            )
+            v_ptrs = v_base + (
+                cur_offs_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd
+            )
 
             q_tile = tl.load(q_ptrs, mask=mask_n[:, None], other=0.0)
             k_tile = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0)
@@ -98,7 +112,9 @@ if HAS_TRITON:
             # Intra-Chunk Causal Scores
             scores_intra = tl.dot(phi_q, tl.trans(phi_k))
             causal_mask = offs_chunk[:, None] >= offs_chunk[None, :]
-            scores_causal = tl.where(causal_mask & (mask_n[:, None] & mask_n[None, :]), scores_intra, 0.0)
+            scores_causal = tl.where(
+                causal_mask & (mask_n[:, None] & mask_n[None, :]), scores_intra, 0.0
+            )
 
             num_intra = tl.dot(scores_causal, v_tile.to(tl.float32))
             denom_intra = tl.sum(scores_causal, axis=1)
@@ -112,8 +128,12 @@ if HAS_TRITON:
                 denom_total = tl.maximum(denom_raw, EPS)
             out_tile = num_total / denom_total[:, None]
 
-            out_ptrs = out_base + (cur_offs_n[:, None] * stride_on + offs_dv[None, :] * stride_od)
-            tl.store(out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_n[:, None])
+            out_ptrs = out_base + (
+                cur_offs_n[:, None] * stride_on + offs_dv[None, :] * stride_od
+            )
+            tl.store(
+                out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_n[:, None]
+            )
 
             # Update Running Recurrent State
             state_S += tl.dot(tl.trans(phi_k), v_tile.to(tl.float32))
@@ -121,14 +141,22 @@ if HAS_TRITON:
 
     @triton.jit
     def _triton_bidirectional_linear_attn_fwd_kernel(
-        Q_ptr,              # [B*H, N, D_k]
-        K_ptr,              # [B*H, N, D_k]
-        V_ptr,              # [B*H, N, D_v]
-        Out_ptr,            # [B*H, N, D_v]
-        stride_qbh, stride_qn, stride_qd,
-        stride_kbh, stride_kn, stride_kd,
-        stride_vbh, stride_vn, stride_vd,
-        stride_obh, stride_on, stride_od,
+        Q_ptr,  # [B*H, N, D_k]
+        K_ptr,  # [B*H, N, D_k]
+        V_ptr,  # [B*H, N, D_v]
+        Out_ptr,  # [B*H, N, D_v]
+        stride_qbh,
+        stride_qn,
+        stride_qd,
+        stride_kbh,
+        stride_kn,
+        stride_kd,
+        stride_vbh,
+        stride_vn,
+        stride_vd,
+        stride_obh,
+        stride_on,
+        stride_od,
         N: tl.constexpr,
         D_K: tl.constexpr,
         D_V: tl.constexpr,
@@ -159,8 +187,12 @@ if HAS_TRITON:
             cur_n = n_start + offs_n
             mask_n = cur_n < N
 
-            k_ptrs = k_base + (cur_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd)
-            v_ptrs = v_base + (cur_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd)
+            k_ptrs = k_base + (
+                cur_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd
+            )
+            v_ptrs = v_base + (
+                cur_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd
+            )
 
             k_tile = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0)
             v_tile = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0)
@@ -185,7 +217,9 @@ if HAS_TRITON:
             cur_m = m_start + offs_m
             mask_m = cur_m < N
 
-            q_ptrs = q_base + (cur_m[:, None] * stride_qn + offs_dk[None, :] * stride_qd)
+            q_ptrs = q_base + (
+                cur_m[:, None] * stride_qn + offs_dk[None, :] * stride_qd
+            )
             q_tile = tl.load(q_ptrs, mask=mask_m[:, None], other=0.0)
 
             if ACTIVATION_MODE == 0:
@@ -207,8 +241,12 @@ if HAS_TRITON:
                 denom_total = tl.maximum(denom_raw, EPS)
             out_tile = num / denom_total[:, None]
 
-            out_ptrs = out_base + (cur_m[:, None] * stride_on + offs_dv[None, :] * stride_od)
-            tl.store(out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_m[:, None])
+            out_ptrs = out_base + (
+                cur_m[:, None] * stride_on + offs_dv[None, :] * stride_od
+            )
+            tl.store(
+                out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_m[:, None]
+            )
 
 
 class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
@@ -248,8 +286,14 @@ class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
             ctx.cos_weight = cos_weight
             ctx.sin_weight = sin_weight
             return linear_attn_pytorch_fallback(
-                q, k, v, is_causal=is_causal, phi=phi, eps=eps,
-                cos_weight=cos_weight, sin_weight=sin_weight
+                q,
+                k,
+                v,
+                is_causal=is_causal,
+                phi=phi,
+                eps=eps,
+                cos_weight=cos_weight,
+                sin_weight=sin_weight,
             )
 
         act_mode = 0
@@ -265,12 +309,25 @@ class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
             block_chunk = 64
             grid = (BH,)
             _triton_chunked_causal_linear_attn_fwd_kernel[grid](
-                q_flat, k_flat, v_flat, out,
-                q_flat.stride(0), q_flat.stride(1), q_flat.stride(2),
-                k_flat.stride(0), k_flat.stride(1), k_flat.stride(2),
-                v_flat.stride(0), v_flat.stride(1), v_flat.stride(2),
-                out.stride(0), out.stride(1), out.stride(2),
-                N=N, D_K=D_k, D_V=D_v,
+                q_flat,
+                k_flat,
+                v_flat,
+                out,
+                q_flat.stride(0),
+                q_flat.stride(1),
+                q_flat.stride(2),
+                k_flat.stride(0),
+                k_flat.stride(1),
+                k_flat.stride(2),
+                v_flat.stride(0),
+                v_flat.stride(1),
+                v_flat.stride(2),
+                out.stride(0),
+                out.stride(1),
+                out.stride(2),
+                N=N,
+                D_K=D_k,
+                D_V=D_v,
                 BLOCK_CHUNK=block_chunk,
                 EPS=eps_eff,
                 ACTIVATION_MODE=act_mode,
@@ -280,13 +337,27 @@ class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
             block_n = 64
             grid = (BH,)
             _triton_bidirectional_linear_attn_fwd_kernel[grid](
-                q_flat, k_flat, v_flat, out,
-                q_flat.stride(0), q_flat.stride(1), q_flat.stride(2),
-                k_flat.stride(0), k_flat.stride(1), k_flat.stride(2),
-                v_flat.stride(0), v_flat.stride(1), v_flat.stride(2),
-                out.stride(0), out.stride(1), out.stride(2),
-                N=N, D_K=D_k, D_V=D_v,
-                BLOCK_M=block_m, BLOCK_N=block_n,
+                q_flat,
+                k_flat,
+                v_flat,
+                out,
+                q_flat.stride(0),
+                q_flat.stride(1),
+                q_flat.stride(2),
+                k_flat.stride(0),
+                k_flat.stride(1),
+                k_flat.stride(2),
+                v_flat.stride(0),
+                v_flat.stride(1),
+                v_flat.stride(2),
+                out.stride(0),
+                out.stride(1),
+                out.stride(2),
+                N=N,
+                D_K=D_k,
+                D_V=D_v,
+                BLOCK_M=block_m,
+                BLOCK_N=block_n,
                 EPS=eps_eff,
                 ACTIVATION_MODE=act_mode,
             )
@@ -308,14 +379,18 @@ class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
 
         with torch.enable_grad():
             out = linear_attn_pytorch_fallback(
-                q_req, k_req, v_req,
+                q_req,
+                k_req,
+                v_req,
                 is_causal=ctx.is_causal,
                 phi=ctx.phi,
                 eps=ctx.eps,
                 cos_weight=ctx.cos_weight,
                 sin_weight=ctx.sin_weight,
             )
-            grads = torch.autograd.grad(out, [q_req, k_req, v_req], grad_out, retain_graph=False)
+            grads = torch.autograd.grad(
+                out, [q_req, k_req, v_req], grad_out, retain_graph=False
+            )
 
         def _sanitize(g: torch.Tensor | None) -> torch.Tensor | None:
             if g is None:
@@ -328,11 +403,15 @@ class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
         return g_q, g_k, g_v, None, None, None, None, None
 
 
-def is_supported(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, **kwargs: Any) -> bool:
+def is_supported(
+    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, **kwargs: Any
+) -> bool:
     """Check whether linear attention can run on the Triton kernel."""
     head_dim = q.shape[-1]
     seq_len = q.shape[-2]
-    suitable, _ = check_triton_suitability(q, "linear_attn", head_dim=head_dim, seq_len=seq_len)
+    suitable, _ = check_triton_suitability(
+        q, "linear_attn", head_dim=head_dim, seq_len=seq_len
+    )
     return suitable
 
 
@@ -350,8 +429,15 @@ def fwd(
     """Forward entrypoint for fused Triton linear attention."""
     if not is_supported(q, k, v, **kwargs):
         return linear_attn_pytorch_fallback(
-            q, k, v, is_causal=is_causal, phi=phi, eps=eps,
-            cos_weight=cos_weight, sin_weight=sin_weight, **kwargs
+            q,
+            k,
+            v,
+            is_causal=is_causal,
+            phi=phi,
+            eps=eps,
+            cos_weight=cos_weight,
+            sin_weight=sin_weight,
+            **kwargs,
         )
     return _TritonLinearAttnAutogradFunction.apply(
         q, k, v, is_causal, phi, eps, cos_weight, sin_weight
@@ -376,9 +462,15 @@ def bwd(
     v_req = v.detach().requires_grad_(True)
     with torch.enable_grad():
         out = fwd(
-            q_req, k_req, v_req,
-            is_causal=is_causal, phi=phi, eps=eps,
-            cos_weight=cos_weight, sin_weight=sin_weight, **kwargs
+            q_req,
+            k_req,
+            v_req,
+            is_causal=is_causal,
+            phi=phi,
+            eps=eps,
+            cos_weight=cos_weight,
+            sin_weight=sin_weight,
+            **kwargs,
         )
         g_q, g_k, g_v = torch.autograd.grad(out, [q_req, k_req, v_req], grad_out)
     return g_q, g_k, g_v
