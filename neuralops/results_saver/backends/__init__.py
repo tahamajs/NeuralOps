@@ -1,5 +1,5 @@
 """
-framework.results_saver.backends
+neuralops.results_saver.backends
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Storage-backend package for ResultsSaver.
 
