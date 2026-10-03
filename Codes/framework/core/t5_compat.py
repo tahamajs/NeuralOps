@@ -168,7 +168,6 @@ class T5AttentionMixin:
         N_k = kv_input.shape[1]
         H = getattr(self, "num_heads", 8)
         d = getattr(self, "head_dim", 64)
-        dtype = hidden_states.dtype
         device = hidden_states.device
 
         # 1. Projections

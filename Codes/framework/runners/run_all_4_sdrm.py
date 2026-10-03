@@ -6,4 +6,4 @@ Wrapper for orchestrating sdrm.
 from .unified_orchestrator import run_orchestrator
 
 if __name__ == "__main__":
-    run_orchestrator("sdrm", ['--rank', '128'])
+    run_orchestrator("sdrm", ["--rank", "128"])

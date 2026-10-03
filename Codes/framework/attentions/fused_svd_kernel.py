@@ -274,7 +274,6 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         ctx: Any, grad_output: torch.Tensor
     ) -> tuple[torch.Tensor | None, ...]:
         x_2d, V, U, norm_weight, bias, z, rms, z_hat, z_norm = ctx.saved_tensors
-        eps = ctx.eps
         use_rms_norm = ctx.use_rms_norm
 
         grad_output_2d = grad_output.reshape(-1, U.shape[0]).contiguous()

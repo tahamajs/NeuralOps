@@ -535,7 +535,7 @@ def compute_compression_metrics(
 ) -> dict[str, Any]:
     comp_stats = getattr(model, "compression_stats", {}) or {}
 
-    num_svd_layers = sum(
+    sum(
         1
         for m in model.modules()
         if m.__class__.__name__
@@ -1435,7 +1435,7 @@ def finetune_lora(
 
     curr_batch_size = batch_size
     if device.type == "cuda":
-        total_vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+        torch.cuda.get_device_properties(0).total_memory / (1024**3)
         mod_lower = str(name).lower()
         is_heavy_module = any(
             k in mod_lower

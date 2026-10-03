@@ -937,8 +937,6 @@ class AdaptiveRanksCompressor(BaseCompressor):
         )
 
         # Attempt 0: Jacobian-Gated SVD (JG-SVD) if enabled
-        used_cov = False
-        used_jg = False
         svd_layer: AdaptiveSVDLinear | None = None
         best_err = 1.0
         best_rank = r_floor

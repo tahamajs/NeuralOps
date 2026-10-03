@@ -305,7 +305,7 @@ def apply_24_structured_mask(
         # Apply across columns (groups of 4 input features)
         num_blocks = d_in // 4
         if num_blocks > 0:
-            W_sub = W[:, : num_blocks * 4].reshape(d_out, num_blocks, 4)
+            W[:, : num_blocks * 4].reshape(d_out, num_blocks, 4)
             S_sub = S[:, : num_blocks * 4].reshape(d_out, num_blocks, 4)
             # Find top 2 indices in each block of 4
             _, top_idx = torch.topk(S_sub, k=2, dim=-1, largest=True)
@@ -334,7 +334,7 @@ def apply_24_structured_mask(
         # Apply across rows
         num_blocks = d_out // 4
         if num_blocks > 0:
-            W_sub = W[: num_blocks * 4, :].reshape(num_blocks, 4, d_in)
+            W[: num_blocks * 4, :].reshape(num_blocks, 4, d_in)
             S_sub = S[: num_blocks * 4, :].reshape(num_blocks, 4, d_in)
             _, top_idx = torch.topk(S_sub, k=2, dim=1, largest=True)
             mask_sub = torch.zeros_like(S_sub)
@@ -394,9 +394,7 @@ def apply_block_mask(
         return W, torch.ones_like(W)
 
     # Reshape into blocks
-    W_blocks = (
-        W[: nb_r * br, : nb_c * bc].reshape(nb_r, br, nb_c, bc).permute(0, 2, 1, 3)
-    )
+    (W[: nb_r * br, : nb_c * bc].reshape(nb_r, br, nb_c, bc).permute(0, 2, 1, 3))
     S_blocks = (
         S[: nb_r * br, : nb_c * bc].reshape(nb_r, br, nb_c, bc).permute(0, 2, 1, 3)
     )

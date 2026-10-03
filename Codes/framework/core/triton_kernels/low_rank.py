@@ -164,7 +164,7 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
         orig_shape = x.shape
         D_in = orig_shape[-1]
         x_2d = x.contiguous().view(-1, D_in)
-        M = x_2d.shape[0]
+        x_2d.shape[0]
 
         # V_mat has shape [D_in, Rank]
         V_mat = V.t() if V.shape[-1] == D_in else V

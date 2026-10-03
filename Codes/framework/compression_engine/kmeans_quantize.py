@@ -158,7 +158,7 @@ def fast_kmeans_1d(
         idx = torch.zeros(tensor.shape, dtype=idx_dtype, device=tensor.device)
         return c, idx
 
-    gen = torch.Generator(device=flat.device).manual_seed(int(seed))
+    torch.Generator(device=flat.device).manual_seed(int(seed))
     sorted_vals, _ = torch.sort(flat)
     quantiles = torch.linspace(0, numel - 1, steps=k, device=flat.device).long()
     centroids = sorted_vals[quantiles].clone()
@@ -653,7 +653,7 @@ class KMeansCompressor(BaseCompressor):
             orig_w = target_mod.weight.data
             W_target = orig_w.t().contiguous().float() if is_conv1d else orig_w.float()
             norm_orig = torch.norm(W_target, p="fro").clamp_min(1e-8)
-            out_f, in_f = W_target.shape[0], W_target.shape[1]
+            _out_f, _in_f = W_target.shape[0], W_target.shape[1]
 
             # Original bytes
             orig_bytes = orig_w.numel() * orig_w.element_size()

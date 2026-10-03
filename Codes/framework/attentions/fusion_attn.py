@@ -917,7 +917,7 @@ class FUSIONATTN(BaseAttention):
         FA-FIX-17 / FA-FIX-18 rewritten block-gated attention.
         """
         B, H, N, D = q.shape
-        N_kv = k.shape[2]
+        k.shape[2]
         bs = self.block_size
         device = q.device
 
@@ -971,7 +971,7 @@ class FUSIONATTN(BaseAttention):
             blk_idx = torch.arange(num_blocks, device=device)
             causal_blocks = blk_idx.unsqueeze(0) <= blk_idx.unsqueeze(1)  # (nb, nb)
             # mask future blocks with -inf so top-k never picks them
-            gate_scores_2d = gate_scores.unsqueeze(-1).expand(
+            gate_scores.unsqueeze(-1).expand(
                 -1, -1, -1, num_blocks
             )  # not needed; use simpler form
             # compute per-query-block mask and apply to logits
@@ -1019,11 +1019,7 @@ class FUSIONATTN(BaseAttention):
             )
 
         # gather: (B, H, nb, top_k, bs, D) → reshape to (B, H, nb, top_k*bs, D)
-        idx_k = (
-            top_indices.unsqueeze(-1)
-            .unsqueeze(-1)
-            .expand(B, H, num_blocks, top_k, bs, D)
-        )
+        (top_indices.unsqueeze(-1).unsqueeze(-1).expand(B, H, num_blocks, top_k, bs, D))
         k_sel = torch.gather(
             k_blocks.unsqueeze(3).expand(-1, -1, -1, top_k, -1, -1),
             2,
@@ -1034,7 +1030,7 @@ class FUSIONATTN(BaseAttention):
         # Above gather is awkward; use index_select-free approach:
         # reshape k_blocks to (B,H,nb,bs*D) and gather along dim=2 with flattened indices
         k_flat = k_blocks.reshape(B, H, num_blocks, bs * D)
-        v_flat = v_blocks.reshape(B, H, num_blocks, bs * D)
+        v_blocks.reshape(B, H, num_blocks, bs * D)
 
         # Build absolute gather indices
         idx_flat = top_indices.reshape(B, H, num_blocks, top_k, 1).expand(

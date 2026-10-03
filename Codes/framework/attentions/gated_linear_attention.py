@@ -930,7 +930,6 @@ class GatedLinearAttention(BaseAttention):
             )
 
         H, d = self.num_heads, self.head_dim
-        dtype_in = hidden_states.dtype
 
         is_cross = encoder_hidden_states is not None
         kv_input = encoder_hidden_states if is_cross else hidden_states

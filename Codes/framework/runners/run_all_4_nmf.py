@@ -6,4 +6,4 @@ Wrapper for orchestrating nmf.
 from .unified_orchestrator import run_orchestrator
 
 if __name__ == "__main__":
-    run_orchestrator("nmf", ['--rank', '256'])
+    run_orchestrator("nmf", ["--rank", "256"])

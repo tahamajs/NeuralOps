@@ -497,7 +497,7 @@ class AdaSVDCompressor(BaseCompressor):
 
         target_mod = getattr(module, "base_layer", module)
         cls_name = module.__class__.__name__.lower()
-        target_cls = target_mod.__class__.__name__.lower()
+        target_mod.__class__.__name__.lower()
 
         weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
         if (

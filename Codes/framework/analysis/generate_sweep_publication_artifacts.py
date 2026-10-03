@@ -72,26 +72,6 @@ def classify_module(name: str, path: str = "") -> tuple[str, str]:
         return "Attention", "Full Attention Baseline"
 
     # Compressor checks
-    compressor_keywords = [
-        "svd",
-        "compress",
-        "prun",
-        "quant",
-        "shed",
-        "lora",
-        "kronecker",
-        "tensor_train",
-        "slicegpt",
-        "quik",
-        "awq",
-        "sparse_gpt",
-        "replaceme",
-        "laser",
-        "whiten",
-        "asvd",
-        "aasvd",
-        "a3",
-    ]
     is_compressor = any(
         kw in name_lower
         for kw in [

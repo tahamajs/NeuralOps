@@ -775,12 +775,6 @@ class QCQAAttention(BaseAttention):
         token_valid = self._prepare_valid_mask(eff_mask, B, N_kv, device)
 
         # --- Fast SDPA path (QC-FIX-18) ---
-        use_sdpa = (
-            not output_attentions
-            and head_mask is None
-            and causal_mask is not None
-            or True  # allow when no explicit causality issue
-        )
         # Build additive bias for SDPA
         attn_bias_sdpa = None
         if not output_attentions and head_mask is None:

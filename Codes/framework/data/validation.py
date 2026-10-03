@@ -29,7 +29,7 @@ class DataValidator:
             missing = (
                 np.sum(np.isnan(v))
                 if np.issubdtype(v.dtype, np.floating)
-                else np.sum(v == None)
+                else np.sum(v is None)
             )
             if missing > 0:
                 issues.append(

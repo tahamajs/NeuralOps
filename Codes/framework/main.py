@@ -308,7 +308,7 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
         "mrpc": "f1",
         "qqp": "f1",
     }
-    metric_for_best = f"eval_{metric_map.get(cfg.task, 'accuracy')}"
+    f"eval_{metric_map.get(cfg.task, 'accuracy')}"
 
     training_args = fw["TrainingArguments"](
         output_dir=str(out_dir / "checkpoints"),
@@ -362,7 +362,7 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     logger.info("=" * 60)
     logger.info("Starting training: %s", exp_name)
     t0 = time.time()
-    train_result = trainer.train()
+    trainer.train()
     elapsed = time.time() - t0
     logger.info("Training finished in %.1fs", elapsed)
 

@@ -6,4 +6,4 @@ Wrapper for orchestrating padre.
 from .unified_orchestrator import run_orchestrator
 
 if __name__ == "__main__":
-    run_orchestrator("padre", ['--rank', '128'])
+    run_orchestrator("padre", ["--rank", "128"])

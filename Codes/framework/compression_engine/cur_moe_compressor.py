@@ -113,7 +113,7 @@ class CURMoECompressor(BaseCompressor):
             or hasattr(module, "nf")
             or hasattr(target_mod, "nf")
         )
-        has_lora = (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(
+        (hasattr(module, "lora_A") and module.lora_A is not None) or hasattr(
             module, "base_layer"
         )
 

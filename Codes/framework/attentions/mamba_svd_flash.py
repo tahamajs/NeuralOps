@@ -826,7 +826,6 @@ class MambaSVDFlash(BaseAttention):
                         self.ssm_fwd.bottleneck_dim,
                     ):
                         # up_b is (D, bottleneck_dim); use Vh rows as bottleneck features
-                        bd = self.ssm_fwd.bottleneck_dim
                         Vh_r = Vh[:r, :]  # (r, D)
                         # down projection: (bd, D)  -- we set down.weight rows to Vh_r
                         self.ssm_fwd.down.weight.data[:r, :].copy_(
@@ -908,7 +907,7 @@ class MambaSVDFlash(BaseAttention):
         - For reverse pass, the caller flips before/after.
         """
         B, L, D = x.shape
-        r = Sigma.shape[-1]
+        Sigma.shape[-1]
         device = x.device
 
         # MSF-FIX-08: preallocate output tensor (no list)

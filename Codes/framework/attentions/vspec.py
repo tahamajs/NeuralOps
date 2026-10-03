@@ -1098,7 +1098,7 @@ def inject_vspec_attn(
         if cfg is None and hasattr(src, "config"):
             cfg = src.config
 
-        hidden_size = (
+        (
             _cfg_get(cfg, "hidden_size")
             or _cfg_get(cfg, "d_model")
             or _cfg_get(cfg, "dim")
@@ -1121,7 +1121,7 @@ def inject_vspec_attn(
             )
             or 768
         )
-        num_heads = (
+        (
             _cfg_get(cfg, "num_attention_heads")
             or _cfg_get(cfg, "num_heads")
             or _cfg_get(cfg, "n_heads")

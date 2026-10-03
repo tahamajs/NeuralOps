@@ -317,9 +317,9 @@ class SelectiveMamba(BaseAttention):
     def copy_weights(self, old_attn: Any) -> None:
         """Robust weight copying from DistilBERT, RoBERTa, GPT-2 Conv1D, or Qwen/LLaMA."""
         with torch.no_grad():
-            w_q, b_q = None, None
-            w_k, b_k = None, None
-            w_v, b_v = None, None
+            w_q, _b_q = None, None
+            w_k, _b_k = None, None
+            w_v, _b_v = None, None
             w_o, b_o = None, None
 
             src_cls_name = getattr(old_attn, "__class__", type(old_attn)).__name__
@@ -346,9 +346,7 @@ class SelectiveMamba(BaseAttention):
             # Pattern 1: GPT-2 Fused c_attn
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
-                c_attn_b = (
-                    src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                )
+                (src.c_attn.bias.detach() if src.c_attn.bias is not None else None)
                 if c_attn_w.dim() == 2 and (
                     c_attn_w.shape[0] == self.dim and c_attn_w.shape[1] != self.dim
                 ):
@@ -372,11 +370,11 @@ class SelectiveMamba(BaseAttention):
                 hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value")
             ):
                 w_q = src.query.weight.detach()
-                b_q = src.query.bias.detach() if src.query.bias is not None else None
+                src.query.bias.detach() if src.query.bias is not None else None
                 w_k = src.key.weight.detach()
-                b_k = src.key.bias.detach() if src.key.bias is not None else None
+                src.key.bias.detach() if src.key.bias is not None else None
                 w_v = src.value.weight.detach()
-                b_v = src.value.bias.detach() if src.value.bias is not None else None
+                src.value.bias.detach() if src.value.bias is not None else None
 
                 if w_o is None:
                     for attr in ("dense", "out_proj", "o_proj"):
@@ -393,11 +391,11 @@ class SelectiveMamba(BaseAttention):
                 and hasattr(src, "v_proj")
             ):
                 w_q = src.q_proj.weight.detach()
-                b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
+                src.q_proj.bias.detach() if src.q_proj.bias is not None else None
                 w_k = src.k_proj.weight.detach()
-                b_k = src.k_proj.bias.detach() if src.k_proj.bias is not None else None
+                src.k_proj.bias.detach() if src.k_proj.bias is not None else None
                 w_v = src.v_proj.weight.detach()
-                b_v = src.v_proj.bias.detach() if src.v_proj.bias is not None else None
+                src.v_proj.bias.detach() if src.v_proj.bias is not None else None
 
                 if hasattr(src, "o_proj"):
                     w_o = src.o_proj.weight.detach()
@@ -414,11 +412,11 @@ class SelectiveMamba(BaseAttention):
                 and hasattr(src, "v_lin")
             ):
                 w_q = src.q_lin.weight.detach()
-                b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
+                src.q_lin.bias.detach() if src.q_lin.bias is not None else None
                 w_k = src.k_lin.weight.detach()
-                b_k = src.k_lin.bias.detach() if src.k_lin.bias is not None else None
+                src.k_lin.bias.detach() if src.k_lin.bias is not None else None
                 w_v = src.v_lin.weight.detach()
-                b_v = src.v_lin.bias.detach() if src.v_lin.bias is not None else None
+                src.v_lin.bias.detach() if src.v_lin.bias is not None else None
 
                 if hasattr(src, "out_lin"):
                     w_o = src.out_lin.weight.detach()
@@ -439,11 +437,11 @@ class SelectiveMamba(BaseAttention):
                         w, b = UniversalAdapter.get_weight_bias(old_attn, proj)
                         if w is not None:
                             if proj == "q" and w_q is None:
-                                w_q, b_q = w, b
+                                w_q, _b_q = w, b
                             elif proj == "k" and w_k is None:
-                                w_k, b_k = w, b
+                                w_k, _b_k = w, b
                             elif proj == "v" and w_v is None:
-                                w_v, b_v = w, b
+                                w_v, _b_v = w, b
                             elif proj == "o" and w_o is None:
                                 w_o, b_o = w, b
                     except Exception as e:
