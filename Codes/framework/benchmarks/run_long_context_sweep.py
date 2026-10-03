@@ -23,6 +23,7 @@ import time
 from pathlib import Path
 
 import torch
+import torch.nn as nn
 from transformers import AutoModelForSequenceClassification
 
 # Framework import paths
