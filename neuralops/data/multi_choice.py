@@ -35,9 +35,7 @@ class MultiChoiceDataset(Dataset):
             choices = self._extract_choices(row, c_col)
             label = self._extract_label(row, a_col, len(choices))
             if len(choices) >= 2 and 0 <= label < len(choices):
-                self.samples.append(
-                    {"question": question, "choices": choices, "label": label}
-                )
+                self.samples.append({"question": question, "choices": choices, "label": label})
                 valid += 1
         print(f"Multi‑choice dataset: {valid} valid samples")
 

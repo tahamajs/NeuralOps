@@ -25,6 +25,7 @@ from typing import Any
 import numpy as np
 import torch
 import torch.nn as nn
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import get_calibration_tensors
@@ -63,9 +64,7 @@ class AstroQuantizer:
         mid = (self.num_centroids - 1.0) / 2.0
         # Gaussian-shaped centroid grid (still spread over [-1, 1] before scaling).
         denom = max(mid, 1e-6)
-        self.centroids_base = torch.sign(k - mid) * torch.pow(
-            torch.abs(k - mid) / denom, 1.4
-        )
+        self.centroids_base = torch.sign(k - mid) * torch.pow(torch.abs(k - mid) / denom, 1.4)
 
     def quantize(self, w: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
@@ -136,9 +135,7 @@ class RotationalSliceGPTINT4Linear(nn.Module):
             self.register_parameter("bias", None)
 
     def _dequantize_W(self) -> torch.Tensor:
-        return AstroQuantizer.dequantize(self.W_indices, self.W_centroids).to(
-            self.Q_P_r.dtype
-        )
+        return AstroQuantizer.dequantize(self.W_indices, self.W_centroids).to(self.Q_P_r.dtype)
 
     @property
     def weight(self) -> torch.Tensor:
@@ -200,15 +197,11 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         super().__init__(target_model, name="rotational_slicegpt_int4", **kwargs)
 
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
-        r_ratio = _cfg_get(
-            cfg, "rotational_slicegpt_r_ratio", _cfg_get(cfg, "r_ratio", r_ratio)
-        )
+        r_ratio = _cfg_get(cfg, "rotational_slicegpt_r_ratio", _cfg_get(cfg, "r_ratio", r_ratio))
         lambda_reg = _cfg_get(cfg, "lambda_reg", lambda_reg)
         quant_bits = _cfg_get(cfg, "quant_bits", quant_bits)
         max_error = _cfg_get(cfg, "max_error", max_error)
-        fallback_to_original = _cfg_get(
-            cfg, "fallback_to_original", fallback_to_original
-        )
+        fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
         target_attention_only = bool(
             target_attention_only or _cfg_get(cfg, "target_attention_only", False)
         )
@@ -297,9 +290,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__.lower()
         is_linear_like = (
-            isinstance(base_mod, nn.Linear)
-            or "conv1d" in cls_name
-            or hasattr(base_mod, "nf")
+            isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
         )
         if not is_linear_like:
             return False
@@ -362,9 +353,9 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         X_sliced = P_r.T @ X_tilde  # (r, N)
 
         # 3. Second-order Hessian-based INT4 quantization
-        H = 2.0 * (X_sliced @ X_sliced.T) / max(
-            X_sliced.shape[1], 1
-        ) + self.lambda_reg * torch.eye(r, device=device)
+        H = 2.0 * (X_sliced @ X_sliced.T) / max(X_sliced.shape[1], 1) + self.lambda_reg * torch.eye(
+            r, device=device
+        )
         try:
             H_inv = torch.linalg.inv(H)
         except Exception:
@@ -487,11 +478,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             W_cents = W_cents.to(device=device, dtype=torch.float32)
             Q_P_r_dev = Q_P_r.to(device=device, dtype=dtype)
 
-            bias = (
-                base_mod.bias.detach()
-                if getattr(base_mod, "bias", None) is not None
-                else None
-            )
+            bias = base_mod.bias.detach() if getattr(base_mod, "bias", None) is not None else None
 
             new_linear = RotationalSliceGPTINT4Linear(
                 W_indices=W_idx,
@@ -547,14 +534,8 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
         stats = self.get_compression_stats()
-        avg_err = (
-            float(np.mean(list(self.layer_errors.values())))
-            if self.layer_errors
-            else 0.0
-        )
-        storage_ratio = (
-            self._orig_bytes / self._comp_bytes if self._comp_bytes > 0 else 1.0
-        )
+        avg_err = float(np.mean(list(self.layer_errors.values()))) if self.layer_errors else 0.0
+        storage_ratio = self._orig_bytes / self._comp_bytes if self._comp_bytes > 0 else 1.0
 
         stats.update(
             {
@@ -644,9 +625,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         aggregated: dict[str, torch.Tensor] = {}
         for name, lst in activations.items():
             if lst:
-                aggregated[name] = torch.stack([t.float() for t in lst], dim=0).mean(
-                    dim=0
-                )
+                aggregated[name] = torch.stack([t.float() for t in lst], dim=0).mean(dim=0)
         return aggregated
 
     # ------------------------------------------------------------------
@@ -665,11 +644,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         elif X.dim() == 2 and X.shape[0] != W.shape[1]:
             X = X.T
         W_idx, W_cents, Q_P_r, _ = self.compress_matrix(W, X)
-        bias = (
-            linear_layer.bias.data
-            if getattr(linear_layer, "bias", None) is not None
-            else None
-        )
+        bias = linear_layer.bias.data if getattr(linear_layer, "bias", None) is not None else None
         return RotationalSliceGPTINT4Linear(
             W_indices=W_idx.to(device),
             W_centroids=W_cents.to(device),

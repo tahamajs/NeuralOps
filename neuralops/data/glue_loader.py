@@ -93,12 +93,8 @@ def load_glue_split(
             tokenizer.pad_token_id = tokenizer.eos_token_id
 
         def tokenize_fn(examples):
-            args = (
-                (examples[key1],) if key2 is None else (examples[key1], examples[key2])
-            )
-            return tokenizer(
-                *args, padding="max_length", truncation=True, max_length=max_seq_len
-            )
+            args = (examples[key1],) if key2 is None else (examples[key1], examples[key2])
+            return tokenizer(*args, padding="max_length", truncation=True, max_length=max_seq_len)
 
         remove_cols = [c for c in dataset.column_names if c not in {"label", "labels"}]
         dataset = dataset.map(tokenize_fn, batched=True, remove_columns=remove_cols)
@@ -203,18 +199,13 @@ def get_calibration_dataloader(
                 if key2 is None or key2 not in examples
                 else (examples[key1], examples[key2])
             )
-            return tokenizer(
-                *args, padding="max_length", truncation=True, max_length=seq_len
-            )
+            return tokenizer(*args, padding="max_length", truncation=True, max_length=seq_len)
 
         remove_cols = [c for c in ds.column_names if c not in ("label", "labels")]
         ds = ds.map(tokenize_fn, batched=True, remove_columns=remove_cols)
         keep = [
-            c
-            for c in ["input_ids", "attention_mask", "token_type_ids"]
-            if c in ds.column_names
+            c for c in ["input_ids", "attention_mask", "token_type_ids"] if c in ds.column_names
         ]
         ds.set_format(type="torch", columns=keep)
 
     return DataLoader(ds, batch_size=batch_size, shuffle=False)
-

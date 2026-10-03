@@ -4,6 +4,12 @@ import os
 from dataclasses import dataclass, field
 from typing import Any
 
+from transformers import (
+    AutoModelForSequenceClassification,
+    DataCollatorWithPadding,
+    TrainingArguments,
+)
+
 from neuralops.callbacks import CALLBACK_REGISTRY
 
 # Core registry and utilities
@@ -20,6 +26,7 @@ from neuralops.distributed import (
 from neuralops.experiment_utils.config import ExperimentConfig
 from neuralops.experiment_utils.data import load_and_preprocess_data
 from neuralops.experiment_utils.model import apply_attention_to_model
+from neuralops.experiment_utils.runner import DjangoCallback
 
 # High‑level services
 from neuralops.hyperopt import HyperOptimizer
@@ -30,13 +37,6 @@ from neuralops.trainer.losses import LOSS_REGISTRY
 # Extended registries
 from neuralops.trainer.methods.registry import METHOD_REGISTRY
 from neuralops.trainer.optimizers import OPTIMIZER_REGISTRY
-from transformers import (
-    AutoModelForSequenceClassification,
-    DataCollatorWithPadding,
-    TrainingArguments,
-)
-
-from neuralops.experiment_utils.runner import DjangoCallback
 
 logger = logging.getLogger(__name__)
 
@@ -122,9 +122,7 @@ class ExperimentManager:
             manager = ExperimentManager(trial_cfg)
             result = manager._run_single()
             # Return the metric to maximize (e.g., eval_accuracy)
-            return result["metrics"].get(
-                self.config.hpo_config.get("metric", "eval_accuracy"), 0.0
-            )
+            return result["metrics"].get(self.config.hpo_config.get("metric", "eval_accuracy"), 0.0)
 
         best_params = optimizer.optimize(objective)
         # Merge best params into the original config
@@ -162,9 +160,7 @@ class ExperimentManager:
 
         # ---- Distributed training (optional) ----
         dist_config = (
-            DistributedConfig(**cfg.distributed_config)
-            if cfg.distributed_config
-            else None
+            DistributedConfig(**cfg.distributed_config) if cfg.distributed_config else None
         )
         if dist_config:
             model = wrap_model_with_distributed(model, dist_config)

@@ -14,6 +14,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error
@@ -49,23 +50,15 @@ class DobiSVDLinearLayer(nn.Module):
         self.out_features = out_features
         self.rank = max(1, min(rank, in_features, out_features))
 
-        self.V = nn.Parameter(
-            torch.empty(self.rank, in_features, dtype=dtype, device=device)
-        )
-        self.U = nn.Parameter(
-            torch.empty(out_features, self.rank, dtype=dtype, device=device)
-        )
+        self.V = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
+        self.U = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
         # Learnable spectral gate parameter initialized to +2.5 so sigma(alpha) ~ 0.92
         self.gate = nn.Parameter(
-            torch.full(
-                (self.rank,), fill_value=init_gate_val, dtype=dtype, device=device
-            )
+            torch.full((self.rank,), fill_value=init_gate_val, dtype=dtype, device=device)
         )
 
         if bias:
-            self.bias = nn.Parameter(
-                torch.empty(out_features, dtype=dtype, device=device)
-            )
+            self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device))
         else:
             self.register_parameter("bias", None)
 
@@ -90,9 +83,7 @@ class DobiSVDLinearLayer(nn.Module):
             if self.bias is not None:
                 nn.init.zeros_(self.bias)
 
-    def set_low_rank_factors(
-        self, U_factor: torch.Tensor, V_factor: torch.Tensor
-    ) -> None:
+    def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
         """Initialize U and V parameters directly from SVD factors."""
         with torch.no_grad():
             self.U.copy_(U_factor)
@@ -200,9 +191,7 @@ class DobiSVDCompressor(BaseCompressor):
         )
         rank = _cfg_get(cfg_obj, "dobi_rank", _cfg_get(cfg_obj, "rank", rank))
         init_gate_val = _cfg_get(cfg_obj, "init_gate_val", init_gate_val)
-        max_error = _cfg_get(
-            cfg_obj, "dobi_max_error", _cfg_get(cfg_obj, "max_error", max_error)
-        )
+        max_error = _cfg_get(cfg_obj, "dobi_max_error", _cfg_get(cfg_obj, "max_error", max_error))
         fallback_to_original = _cfg_get(
             cfg_obj,
             "dobi_fallback_to_original",
@@ -259,9 +248,7 @@ class DobiSVDCompressor(BaseCompressor):
         is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
         if not (is_linear or is_conv1d):
             return False
-        if isinstance(target_mod, DobiSVDLinearLayer) or isinstance(
-            module, DobiSVDLinearLayer
-        ):
+        if isinstance(target_mod, DobiSVDLinearLayer) or isinstance(module, DobiSVDLinearLayer):
             return False
         if not should_compress_linear(self.model, name):
             return False
@@ -317,15 +304,11 @@ class DobiSVDCompressor(BaseCompressor):
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
 
         if in_f is None or out_f is None:
-            if hasattr(target_mod, "in_features") and hasattr(
-                target_mod, "out_features"
-            ):
+            if hasattr(target_mod, "in_features") and hasattr(target_mod, "out_features"):
                 in_f, out_f = target_mod.in_features, target_mod.out_features
             elif hasattr(target_mod, "nf") and hasattr(target_mod, "nx"):
                 in_f, out_f = target_mod.nx, target_mod.nf
-            elif "conv1d" in cls_name or (
-                raw_w.ndim == 2 and raw_w.shape[0] < raw_w.shape[1]
-            ):
+            elif "conv1d" in cls_name or (raw_w.ndim == 2 and raw_w.shape[0] < raw_w.shape[1]):
                 in_f, out_f = raw_w.shape[0], raw_w.shape[1]
             else:
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
@@ -377,9 +360,7 @@ class DobiSVDCompressor(BaseCompressor):
             sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
             U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
             # Pre-scale V by 1/sigma(alpha) so initial gated output matches SVD reconstruction
-            V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :] * init_gate_scale).to(
-                dtype=dtype, device=device
-            )
+            V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :] * init_gate_scale).to(dtype=dtype, device=device)
 
             dobi_layer = DobiSVDLinearLayer(
                 in_features=in_f,
@@ -490,15 +471,11 @@ class DobiSVDCompressor(BaseCompressor):
                     out_f, in_f = raw_w.shape[0], raw_w.shape[1]
 
             if in_f is None or out_f is None:
-                if hasattr(target_mod, "in_features") and hasattr(
-                    target_mod, "out_features"
-                ):
+                if hasattr(target_mod, "in_features") and hasattr(target_mod, "out_features"):
                     in_f, out_f = target_mod.in_features, target_mod.out_features
                 elif hasattr(target_mod, "nf") and hasattr(target_mod, "nx"):
                     in_f, out_f = target_mod.nx, target_mod.nf
-                elif "conv1d" in cls_name or (
-                    raw_w.ndim == 2 and raw_w.shape[0] < raw_w.shape[1]
-                ):
+                elif "conv1d" in cls_name or (raw_w.ndim == 2 and raw_w.shape[0] < raw_w.shape[1]):
                     in_f, out_f = raw_w.shape[0], raw_w.shape[1]
                 else:
                     out_f, in_f = raw_w.shape[0], raw_w.shape[1]
@@ -530,23 +507,18 @@ class DobiSVDCompressor(BaseCompressor):
 
             # If wrapped in LoRALinear, replace the inner base_layer or linear
             has_base_layer = hasattr(module, "base_layer") or (
-                hasattr(module, "linear")
-                and (hasattr(module, "lora_A") or hasattr(module, "r"))
+                hasattr(module, "linear") and (hasattr(module, "lora_A") or hasattr(module, "r"))
             )
             if hasattr(module, "base_layer"):
                 module.base_layer = new_layer
-            elif hasattr(module, "linear") and (
-                hasattr(module, "lora_A") or hasattr(module, "r")
-            ):
+            elif hasattr(module, "linear") and (hasattr(module, "lora_A") or hasattr(module, "r")):
                 module.linear = new_layer
             else:
                 replace_module(self.model, name, new_layer)
 
             if has_base_layer:
                 for p_name, p in module.named_parameters():
-                    if any(
-                        t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")
-                    ):
+                    if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
                         p.requires_grad = True
 
             self.compressed_layers.append(name)
@@ -621,14 +593,10 @@ def dobi_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
             "rank",
             _cfg_get(comp_config, "dobi_rank", _cfg_get(comp_config, "rank", None)),
         )
-        init_gate_val = kwargs.pop(
-            "init_gate_val", _cfg_get(comp_config, "init_gate_val", 2.5)
-        )
+        init_gate_val = kwargs.pop("init_gate_val", _cfg_get(comp_config, "init_gate_val", 2.5))
         max_error = kwargs.pop(
             "max_error",
-            _cfg_get(
-                comp_config, "dobi_max_error", _cfg_get(comp_config, "max_error", 0.35)
-            ),
+            _cfg_get(comp_config, "dobi_max_error", _cfg_get(comp_config, "max_error", 0.35)),
         )
         fallback = kwargs.pop(
             "fallback_to_original",

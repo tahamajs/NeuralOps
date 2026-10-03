@@ -52,8 +52,7 @@ class CustomLoopTrainer(BaseTrainer):
                 if torch.cuda.is_available()
                 else (
                     "mps"
-                    if hasattr(torch.backends, "mps")
-                    and torch.backends.mps.is_available()
+                    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
                     else "cpu"
                 )
             )
@@ -68,18 +67,14 @@ class CustomLoopTrainer(BaseTrainer):
     def _make_loader(self, dataset: Any, shuffle: bool = False) -> DataLoader:
         """Make DataLoader optimized for high-throughput GPU training."""
         pin = self.device.type in ["cuda", "mps"]
-        num_workers = int(
-            self.config.get("num_workers", 4 if self.device.type == "cuda" else 0)
-        )
+        num_workers = int(self.config.get("num_workers", 4 if self.device.type == "cuda" else 0))
         batch_size = int(self.config.get("batch_size", 128))
         loader_kwargs = {
             "batch_size": batch_size,
             "shuffle": shuffle,
             "pin_memory": pin,
             "num_workers": num_workers,
-            "collate_fn": (
-                dataset.collate_fn if hasattr(dataset, "collate_fn") else None
-            ),
+            "collate_fn": (dataset.collate_fn if hasattr(dataset, "collate_fn") else None),
         }
         if num_workers > 0:
             loader_kwargs["prefetch_factor"] = 2
@@ -131,49 +126,29 @@ class CustomLoopTrainer(BaseTrainer):
                     enabled=(use_amp and self.device.type in ["cuda", "mps"]),
                 ):
                     if self.is_multichoice:
-                        input_ids = batch["input_ids"].to(
-                            self.device, non_blocking=True
-                        )
-                        attention_mask = batch["attention_mask"].to(
-                            self.device, non_blocking=True
-                        )
+                        input_ids = batch["input_ids"].to(self.device, non_blocking=True)
+                        attention_mask = batch["attention_mask"].to(self.device, non_blocking=True)
                         true_labels = batch["labels"].to(self.device, non_blocking=True)
                         bs, nc, sl = input_ids.shape
                         flat_ids = input_ids.view(-1, sl)
                         flat_mask = attention_mask.view(-1, sl)
-                        outputs = self.model(
-                            input_ids=flat_ids, attention_mask=flat_mask
-                        )
+                        outputs = self.model(input_ids=flat_ids, attention_mask=flat_mask)
                         logits = (
                             outputs["logits"]
                             if isinstance(outputs, dict)
-                            else (
-                                outputs.logits
-                                if hasattr(outputs, "logits")
-                                else outputs
-                            )
+                            else (outputs.logits if hasattr(outputs, "logits") else outputs)
                         )
                         combined_labels = true_labels.repeat_interleave(nc)
                         loss = nn.functional.cross_entropy(logits, combined_labels)
                     else:
-                        input_ids = batch["input_ids"].to(
-                            self.device, non_blocking=True
-                        )
-                        attention_mask = batch["attention_mask"].to(
-                            self.device, non_blocking=True
-                        )
+                        input_ids = batch["input_ids"].to(self.device, non_blocking=True)
+                        attention_mask = batch["attention_mask"].to(self.device, non_blocking=True)
                         labels = batch["labels"].to(self.device, non_blocking=True)
-                        outputs = self.model(
-                            input_ids=input_ids, attention_mask=attention_mask
-                        )
+                        outputs = self.model(input_ids=input_ids, attention_mask=attention_mask)
                         logits = (
                             outputs["logits"]
                             if isinstance(outputs, dict)
-                            else (
-                                outputs.logits
-                                if hasattr(outputs, "logits")
-                                else outputs
-                            )
+                            else (outputs.logits if hasattr(outputs, "logits") else outputs)
                         )
                         loss = nn.functional.cross_entropy(logits, labels)
 
@@ -226,9 +201,7 @@ class CustomLoopTrainer(BaseTrainer):
         cfg.learning_rate = float(self.config.get("learning_rate", 2e-5))
         cfg.epochs = int(self.config.get("epochs", 3))
         cfg.max_grad_norm = float(self.config.get("max_grad_norm", 1.0))
-        cfg.gradient_accumulation_steps = int(
-            self.config.get("gradient_accumulation_steps", 1)
-        )
+        cfg.gradient_accumulation_steps = int(self.config.get("gradient_accumulation_steps", 1))
         cfg.fp16 = bool(self.config.get("fp16", False))
         cfg.amp = bool(self.config.get("amp", True))
         cfg.logging_steps = int(self.config.get("logging_steps", 10))

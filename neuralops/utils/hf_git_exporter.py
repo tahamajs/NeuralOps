@@ -28,18 +28,10 @@ warnings.filterwarnings("ignore", category=FutureWarning, module="huggingface_hu
 
 def sanitize_slug(text: str) -> str:
     """Sanitize strings for repo naming and identifiers."""
-    return (
-        text.lower()
-        .replace("/", "_")
-        .replace("\\", "_")
-        .replace(" ", "-")
-        .replace("_", "-")
-    )
+    return text.lower().replace("/", "_").replace("\\", "_").replace(" ", "-").replace("_", "-")
 
 
-def find_documentation_file(
-    module_name: str, docs_dir: Path | None = None
-) -> Path | None:
+def find_documentation_file(module_name: str, docs_dir: Path | None = None) -> Path | None:
     """Locate the corresponding Markdown documentation file in Docs/content/."""
     if docs_dir is None:
         docs_dir = Path(__file__).resolve().parents[3] / "Docs" / "content"
@@ -136,8 +128,8 @@ This repository hosts a validated factorized/compressed checkpoint of **{model_n
 - **Date**: `{date_str}`
 
 ## Efficiency & Compression Profile
-- **Original Parameters**: `{comp_metrics.get('total_params_before', 'N/A')}`
-- **Compressed Parameters**: `{comp_metrics.get('total_params_after', 'N/A')}`
+- **Original Parameters**: `{comp_metrics.get("total_params_before", "N/A")}`
+- **Compressed Parameters**: `{comp_metrics.get("total_params_after", "N/A")}`
 - **Compression Rate**: `{comp_rate}x`
 - **Compression Ratio**: `{comp_ratio}%`
 - **FLOPs Reduction**: `{flops_red}%`
@@ -185,18 +177,12 @@ def update_documentation_table(
         content = doc_path.read_text(encoding="utf-8")
         date_str = datetime.now().strftime("%Y-%m-%d")
         base_str = f"{baseline_acc:.2f}%" if baseline_acc is not None else "N/A"
-        delta_str = (
-            f"{(acc - baseline_acc):+.2f}%" if baseline_acc is not None else "N/A"
-        )
+        delta_str = f"{(acc - baseline_acc):+.2f}%" if baseline_acc is not None else "N/A"
         f1_str = f"{float(f1):.4f}" if f1 not in (None, "N/A", "") else "N/A"
         comp_rate_str = (
-            f"{float(comp_rate):.2f}x"
-            if comp_rate not in (None, "N/A", "")
-            else "1.00x"
+            f"{float(comp_rate):.2f}x" if comp_rate not in (None, "N/A", "") else "1.00x"
         )
-        hf_link = (
-            f"[{hf_repo_url.split('/')[-1]}]({hf_repo_url})" if hf_repo_url else "N/A"
-        )
+        hf_link = f"[{hf_repo_url.split('/')[-1]}]({hf_repo_url})" if hf_repo_url else "N/A"
 
         row = f"| **{model_name}** | {dataset_name} | `{status}` | {base_str} | **{acc:.2f}%** | {delta_str} | {f1_str} | {comp_rate_str} | {num_compressed} | {hf_link} | {date_str} |\n"
 
@@ -206,10 +192,7 @@ def update_documentation_table(
             replaced = False
             new_lines = []
             for line in lines:
-                if (
-                    line.startswith(f"| **{model_name}**")
-                    and f"| {dataset_name} |" in line
-                ):
+                if line.startswith(f"| **{model_name}**") and f"| {dataset_name} |" in line:
                     new_lines.append(row.strip())
                     replaced = True
                 else:
@@ -225,17 +208,13 @@ def update_documentation_table(
                     # skip header and divider line
                     insert_idx = header_idx + 2
                     # find the end of the table
-                    while insert_idx < len(new_lines) and new_lines[
-                        insert_idx
-                    ].startswith("|"):
+                    while insert_idx < len(new_lines) and new_lines[insert_idx].startswith("|"):
                         insert_idx += 1
                     new_lines.insert(insert_idx, row.strip())
                 else:
                     new_lines.append(row.strip())
             content = "\n".join(new_lines)
-        elif any(
-            "Empirical Benchmark Results" in line for line in content.splitlines()
-        ):
+        elif any("Empirical Benchmark Results" in line for line in content.splitlines()):
             # Insert table right after the section header
             lines = content.splitlines()
             header_idx = -1
@@ -322,9 +301,7 @@ def upload_to_huggingface(
         # 4. Upload to private repo (robust against CAS/XetHub network restrictions)
         acc = float(perf_metrics.get("accuracy_pct", 0.0))
         f1 = perf_metrics.get("f1_score", "N/A")
-        commit_msg = (
-            f"feat: upload {module_name} on {model_name} (Acc: {acc:.2f}%, F1: {f1})"
-        )
+        commit_msg = f"feat: upload {module_name} on {model_name} (Acc: {acc:.2f}%, F1: {f1})"
         try:
             api.upload_folder(
                 folder_path=str(export_dir),
@@ -411,9 +388,7 @@ def commit_and_push_git(
             if check.returncode == 0:
                 subprocess.run(["git", "checkout", target_branch], cwd=cwd, check=True)
             else:
-                subprocess.run(
-                    ["git", "checkout", "-b", target_branch], cwd=cwd, check=True
-                )
+                subprocess.run(["git", "checkout", "-b", target_branch], cwd=cwd, check=True)
             switched = True
 
         subprocess.run(["git", "commit", "-m", commit_message], cwd=cwd, check=True)

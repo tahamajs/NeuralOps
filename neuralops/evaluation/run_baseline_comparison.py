@@ -39,14 +39,13 @@ ROOT = CODES.parent
 sys.path[:0] = [str(CODES), str(ROOT)]
 
 from datasets import load_dataset, load_from_disk
+
+from neuralops.benchmarks.run_quality_sweep import evaluate_comprehensive, prepare_eval_batches
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.eval_all_models_datasets import apply_module_to_model
-from neuralops.benchmarks.run_quality_sweep import evaluate_comprehensive, prepare_eval_batches
 
 LOG = logging.getLogger("BaselineComparison")
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 BASELINES = [
     ("dense", "Original uncompressed full-rank baseline"),
@@ -112,9 +111,7 @@ def parse_args():
     parser.add_argument(
         "--datasets", nargs="*", default=DATASETS, help="List of datasets to evaluate"
     )
-    parser.add_argument(
-        "--batch_size", type=int, default=16, help="Evaluation batch size"
-    )
+    parser.add_argument("--batch_size", type=int, default=16, help="Evaluation batch size")
     parser.add_argument(
         "--fp16", action="store_true", default=True, help="Evaluate in FP16 precision"
     )
@@ -243,9 +240,7 @@ def main():
                     torch.cuda.empty_cache()
 
             except Exception as e:
-                LOG.exception(
-                    "Baseline %s on %s encountered error: %s", b_name, ds_name, e
-                )
+                LOG.exception("Baseline %s on %s encountered error: %s", b_name, ds_name, e)
                 row = {
                     "dataset": ds_name,
                     "method": b_name,

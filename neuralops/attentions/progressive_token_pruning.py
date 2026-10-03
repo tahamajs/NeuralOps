@@ -51,6 +51,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -96,9 +97,7 @@ def apply_rotary_pos_emb(
         sin = sin.unsqueeze(0)
 
     if cos.shape[-2] != q.shape[-2]:
-        raise ValueError(
-            f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}"
-        )
+        raise ValueError(f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}")
 
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
@@ -106,12 +105,8 @@ def apply_rotary_pos_emb(
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot = (q_rot * cos.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q_rot.dtype)
-        )
-        k_rot = (k_rot * cos.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k_rot.dtype)
-        )
+        q_rot = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
         q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot
         k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot
     else:
@@ -198,9 +193,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = (
-                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            )
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -267,16 +260,11 @@ class ProgressiveTokenPruning(BaseAttention):
 
         # PTP-FIX-12: dimension resolution.
         self.d_model = int(
-            getattr(config, "hidden_size", None)
-            or d_model
-            or kwargs.get("hidden_size")
-            or 768
+            getattr(config, "hidden_size", None) or d_model or kwargs.get("hidden_size") or 768
         )
         self.dim = self.d_model
         self.num_heads = int(
-            getattr(
-                config, "num_attention_heads", kwargs.get("num_attention_heads", 12)
-            )
+            getattr(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
         )
         self.num_kv_heads = int(
             getattr(
@@ -415,9 +403,7 @@ class ProgressiveTokenPruning(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
             (
@@ -435,10 +421,7 @@ class ProgressiveTokenPruning(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 )
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -668,16 +651,8 @@ class ProgressiveTokenPruning(BaseAttention):
 
         # Projections
         q = self.q_lin(x).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        k_new = (
-            self.k_lin(x)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
-        v_new = (
-            self.v_lin(x)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
+        k_new = self.k_lin(x).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        v_new = self.v_lin(x).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
 
         # ---------------- KV-cache (PTP-FIX-01) ----------------
         past_k = past_v = None
@@ -708,9 +683,7 @@ class ProgressiveTokenPruning(BaseAttention):
         # Note: PTP prunes tokens ONLY for the current chunk (new tokens).
         # With KV-cache, past tokens are always used in full.
         top_idx_exp = (
-            top_indices.unsqueeze(1)
-            .unsqueeze(-1)
-            .expand(-1, self.num_kv_heads, -1, self.head_dim)
+            top_indices.unsqueeze(1).unsqueeze(-1).expand(-1, self.num_kv_heads, -1, self.head_dim)
         )
         k_pruned = torch.gather(k_new, 2, top_idx_exp)  # (B, H_kv, k_tokens, d)
         v_pruned = torch.gather(v_new, 2, top_idx_exp)
@@ -747,8 +720,7 @@ class ProgressiveTokenPruning(BaseAttention):
         # ---------------- Attention scores ----------------
         scale = 1.0 / math.sqrt(self.head_dim)
         attn_scores = (
-            torch.matmul(q.float(), k_all.float().transpose(-2, -1).contiguous())
-            * scale
+            torch.matmul(q.float(), k_all.float().transpose(-2, -1).contiguous()) * scale
         )  # (B, H, L, past_len + k_tokens)
 
         # ---------------- Causal mask ----------------
@@ -771,9 +743,7 @@ class ProgressiveTokenPruning(BaseAttention):
             )  # (B, past_len + k_tokens)
         else:
             all_valid = current_valid
-        attn_scores = attn_scores.masked_fill(
-            ~all_valid.unsqueeze(1).unsqueeze(2), -1e4
-        )
+        attn_scores = attn_scores.masked_fill(~all_valid.unsqueeze(1).unsqueeze(2), -1e4)
 
         probs = F.softmax(attn_scores, dim=-1).to(x.dtype)
         probs = torch.nan_to_num(probs, nan=0.0)
@@ -784,9 +754,9 @@ class ProgressiveTokenPruning(BaseAttention):
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                 probs = probs * head_mask.view(1, self.num_heads, 1, 1).to(probs.dtype)
             elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                probs = probs * head_mask.view(
-                    head_mask.size(0), self.num_heads, 1, 1
-                ).to(probs.dtype)
+                probs = probs * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(
+                    probs.dtype
+                )
             elif head_mask.dim() == 4:
                 probs = probs * head_mask.to(probs.dtype)
 
@@ -877,9 +847,9 @@ def inject_progressive_token_pruning(
         tot = len(layer_list)
         # If shared_scorer requested, create it once.
         if shared_scorer is None and kwargs.get("share_scorer", False):
-            dim = getattr(
-                getattr(model, "config", None), "hidden_size", None
-            ) or kwargs.get("hidden_size", 768)
+            dim = getattr(getattr(model, "config", None), "hidden_size", None) or kwargs.get(
+                "hidden_size", 768
+            )
             shared_scorer = SharedTokenScorer(int(dim), hidden=64)
 
         for idx, lyr in enumerate(layer_list):

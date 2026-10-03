@@ -34,9 +34,7 @@ def push(
     str | None
         Hugging Face repo URL on success, None if upload is skipped or fails.
     """
-    hf_opts: dict[str, Any] = (
-        config.get("hf_options", {}) if isinstance(config, dict) else {}
-    )
+    hf_opts: dict[str, Any] = config.get("hf_options", {}) if isinstance(config, dict) else {}
     repo_id: str | None = hf_opts.get("repo_id")
 
     if not repo_id:
@@ -44,8 +42,10 @@ def push(
         return None
 
     try:
-        from huggingface_hub import HfApi  # type: ignore[import]
-        from huggingface_hub import upload_folder
+        from huggingface_hub import (
+            HfApi,  # type: ignore[import]
+            upload_folder,
+        )
     except ImportError:
         logger.warning(
             "huggingface_hub not installed — skipping HF upload for run '%s'. "

@@ -180,16 +180,12 @@ def create_trainer(
         "optimizers",
     }
     trainer_kwargs = {k: v for k, v in kwargs.items() if k in trainer_kwarg_names}
-    training_args_kwargs = {
-        k: v for k, v in kwargs.items() if k not in trainer_kwarg_names
-    }
+    training_args_kwargs = {k: v for k, v in kwargs.items() if k not in trainer_kwarg_names}
 
     per_device_train_batch_size = training_args_kwargs.pop(
         "per_device_train_batch_size", batch_size
     )
-    per_device_eval_batch_size = training_args_kwargs.pop(
-        "per_device_eval_batch_size", batch_size
-    )
+    per_device_eval_batch_size = training_args_kwargs.pop("per_device_eval_batch_size", batch_size)
     learning_rate = training_args_kwargs.pop("learning_rate", learning_rate)
     num_train_epochs = training_args_kwargs.pop("num_train_epochs", epochs)
     warmup_ratio = training_args_kwargs.pop("warmup_ratio", warmup_ratio)
@@ -200,9 +196,7 @@ def create_trainer(
     load_best_model_at_end = training_args_kwargs.pop(
         "load_best_model_at_end", load_best_model_at_end
     )
-    metric_for_best_model = training_args_kwargs.pop(
-        "metric_for_best_model", metric_for_best_model
-    )
+    metric_for_best_model = training_args_kwargs.pop("metric_for_best_model", metric_for_best_model)
     if compute_metrics is None:
         metric_for_best_model = "eval_loss"
     greater_is_better = training_args_kwargs.pop("greater_is_better", None)
@@ -247,9 +241,7 @@ def create_trainer(
         save_strategy=save_strategy,
         save_total_limit=save_total_limit,
         load_best_model_at_end=load_best_model_at_end,
-        metric_for_best_model=(
-            metric_for_best_model if eval_dataset is not None else None
-        ),
+        metric_for_best_model=(metric_for_best_model if eval_dataset is not None else None),
         greater_is_better=greater_is_better if eval_dataset is not None else None,
         logging_steps=training_args_kwargs.pop("logging_steps", 10),
         disable_tqdm=False,

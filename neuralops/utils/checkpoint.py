@@ -63,6 +63,4 @@ class CheckpointManager:
     def get_latest_checkpoint(self) -> Path | None:
         """Return the latest checkpoint."""
         checkpoints = self.list_checkpoints()
-        return (
-            max(checkpoints, key=lambda p: p.stat().st_mtime) if checkpoints else None
-        )
+        return max(checkpoints, key=lambda p: p.stat().st_mtime) if checkpoints else None

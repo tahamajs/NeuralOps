@@ -26,9 +26,7 @@ def compute_spearman(preds: np.ndarray, labels: np.ndarray) -> float:
     return spearmanr(preds, labels)[0]
 
 
-def compute_f1(
-    preds: np.ndarray, labels: np.ndarray, average: str = "weighted"
-) -> float:
+def compute_f1(preds: np.ndarray, labels: np.ndarray, average: str = "weighted") -> float:
     """Compute and return f1."""
     from sklearn.metrics import f1_score
 

@@ -165,9 +165,7 @@ def selective_scan_chunked(
         # SC-FIX-05: avoid 5D einsum; use exp of differences masked by tril.
         log_decay = dA_cum.unsqueeze(3) - dA_cum.unsqueeze(2)  # (B, D, C_len, C_len, N)
         tril = torch.tril(torch.ones(C_len, C_len, dtype=torch.bool, device=device))
-        log_decay = log_decay.masked_fill(
-            ~tril.view(1, 1, C_len, C_len, 1), float("-inf")
-        )
+        log_decay = log_decay.masked_fill(~tril.view(1, 1, C_len, C_len, 1), float("-inf"))
         # SC-FIX-04: exp(-inf) = 0 exactly; no nan_to_num needed.
         decay = torch.exp(log_decay)  # (B, D, C_len, C_len, N)
 

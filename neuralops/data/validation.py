@@ -27,14 +27,10 @@ class DataValidator:
             v = np.array(values)
             # Missing values
             missing = (
-                np.sum(np.isnan(v))
-                if np.issubdtype(v.dtype, np.floating)
-                else np.sum(v is None)
+                np.sum(np.isnan(v)) if np.issubdtype(v.dtype, np.floating) else np.sum(v is None)
             )
             if missing > 0:
-                issues.append(
-                    {"column": col, "issue": "missing_values", "count": int(missing)}
-                )
+                issues.append({"column": col, "issue": "missing_values", "count": int(missing)})
             # Infinite values
             if v.dtype in [np.float32, np.float64]:
                 inf_count = np.sum(np.isinf(v))

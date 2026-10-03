@@ -16,9 +16,7 @@ for file in os.listdir(_curr_dir):
     if file.endswith(".py") and not file.startswith(".") and not file.startswith("_"):
         module_name = file[:-3]
         try:
-            mod = __import__(
-                f"neuralops.compression_engine.{module_name}", fromlist=[module_name]
-            )
+            mod = __import__(f"neuralops.compression_engine.{module_name}", fromlist=[module_name])
             __all__.append(module_name)
             for attr in dir(mod):
                 if not attr.startswith("_"):
@@ -27,9 +25,7 @@ for file in os.listdir(_curr_dir):
                         globals()[attr] = val
                         __all__.append(attr)
         except Exception as e:
-            logger.warning(
-                f"Skipping compression_engine module '{module_name}' due to: {e}"
-            )
+            logger.warning(f"Skipping compression_engine module '{module_name}' due to: {e}")
 
 import importlib
 import sys

@@ -86,9 +86,7 @@ def get_attention_modules(model: nn.Module) -> list[tuple[str, nn.Module]]:
         if name.endswith(".inner") or name.endswith("._wrapped_attention"):
             continue
         is_output_submodule = (
-            name.endswith(".output")
-            or name.endswith("_output")
-            or "selfoutput" in class_name
+            name.endswith(".output") or name.endswith("_output") or "selfoutput" in class_name
         )
         if is_output_submodule:
             continue
@@ -120,9 +118,7 @@ def get_attention_modules(model: nn.Module) -> list[tuple[str, nn.Module]]:
             or hasattr(module, "qk_proj")
         ):
             # Avoid leaf nn.Linear layers that might happen to match attributes
-            if not isinstance(
-                module, (nn.Linear, nn.LayerNorm, nn.Dropout, nn.Embedding)
-            ):
+            if not isinstance(module, (nn.Linear, nn.LayerNorm, nn.Dropout, nn.Embedding)):
                 raw_candidates.append((name, module))
                 seen_names.add(name)
 
@@ -133,9 +129,7 @@ def get_attention_modules(model: nn.Module) -> list[tuple[str, nn.Module]]:
     leaf_modules: list[tuple[str, nn.Module]] = []
 
     for name, module in raw_candidates:
-        is_parent = any(
-            other != name and other.startswith(name + ".") for other in all_cand_names
-        )
+        is_parent = any(other != name and other.startswith(name + ".") for other in all_cand_names)
         if not is_parent:
             leaf_modules.append((name, module))
 

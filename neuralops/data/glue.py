@@ -47,9 +47,7 @@ def load_glue_dataset(
         for f in os.listdir(base):
             if f.endswith(".parquet"):
                 s = f.split("-")[0]
-                splits[s] = load_dataset("parquet", data_files=os.path.join(base, f))[
-                    "train"
-                ]
+                splits[s] = load_dataset("parquet", data_files=os.path.join(base, f))["train"]
         ds = DatasetDict(splits)
     else:
         ds = load_dataset("glue", task_name)

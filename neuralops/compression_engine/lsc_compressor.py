@@ -19,6 +19,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error
@@ -137,9 +138,7 @@ class LSCPrunedLoRALinear(nn.Module):
         if self.lora_r > 0:
             # LSC-FIX-03: LoRA parameters in base weight's dtype for forward consistency.
             self.lora_A = nn.Parameter(
-                torch.empty(
-                    (self.lora_r, in_features), dtype=target_dtype, device=target_device
-                )
+                torch.empty((self.lora_r, in_features), dtype=target_dtype, device=target_device)
             )
             self.lora_B = nn.Parameter(
                 torch.zeros(
@@ -172,9 +171,7 @@ class LSCPrunedLoRALinear(nn.Module):
 
         existing_lora_r = _detect_lora_rank(linear)
         eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
-        eff_lora_alpha = (
-            _detect_lora_alpha(linear) if existing_lora_r > 0 else lora_alpha
-        )
+        eff_lora_alpha = _detect_lora_alpha(linear) if existing_lora_r > 0 else lora_alpha
 
         layer = cls(
             in_features=in_features,
@@ -197,20 +194,10 @@ class LSCPrunedLoRALinear(nn.Module):
             with torch.no_grad():
                 src_A = getattr(linear.lora_A, "weight", linear.lora_A)
                 src_B = getattr(linear.lora_B, "weight", linear.lora_B)
-                if (
-                    isinstance(src_A, torch.Tensor)
-                    and src_A.shape == layer.lora_A.shape
-                ):
-                    layer.lora_A.data.copy_(
-                        src_A.to(layer.lora_A.device, dtype=layer.lora_A.dtype)
-                    )
-                if (
-                    isinstance(src_B, torch.Tensor)
-                    and src_B.shape == layer.lora_B.shape
-                ):
-                    layer.lora_B.data.copy_(
-                        src_B.to(layer.lora_B.device, dtype=layer.lora_B.dtype)
-                    )
+                if isinstance(src_A, torch.Tensor) and src_A.shape == layer.lora_A.shape:
+                    layer.lora_A.data.copy_(src_A.to(layer.lora_A.device, dtype=layer.lora_A.dtype))
+                if isinstance(src_B, torch.Tensor) and src_B.shape == layer.lora_B.shape:
+                    layer.lora_B.data.copy_(src_B.to(layer.lora_B.device, dtype=layer.lora_B.dtype))
 
         if layer.lora_A is not None:
             layer.lora_A.requires_grad = True
@@ -263,9 +250,7 @@ class LSCCompressor(BaseCompressor):
             energy_ratio = _cfg_get(
                 cfg, "lsc_energy_ratio", _cfg_get(cfg, "energy_ratio", energy_ratio)
             )
-            max_error = _cfg_get(
-                cfg, "lsc_max_error", _cfg_get(cfg, "max_error", max_error)
-            )
+            max_error = _cfg_get(cfg, "lsc_max_error", _cfg_get(cfg, "max_error", max_error))
             fallback_to_original = _cfg_get(
                 cfg,
                 "lsc_fallback_to_original",
@@ -274,9 +259,7 @@ class LSCCompressor(BaseCompressor):
             lora_r = _cfg_get(cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
             skip_attention_qkv = _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
-            target_attention_only = _cfg_get(
-                cfg, "target_attention_only", target_attention_only
-            )
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
             min_layer_dim = _cfg_get(cfg, "min_layer_dim", min_layer_dim)
             skip_should_compress_filter = _cfg_get(
                 cfg,
@@ -309,11 +292,7 @@ class LSCCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if (
-            num_heads is not None
-            and num_kv_heads is not None
-            and num_kv_heads < num_heads
-        ):
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
             if any(
                 p in name.lower()
                 for p in [
@@ -332,9 +311,7 @@ class LSCCompressor(BaseCompressor):
     # ------------------------------------------------------------------
     # Target check with debug
     # ------------------------------------------------------------------
-    def _is_target_module(
-        self, name: str, module: nn.Module, _debug: bool = False
-    ) -> bool:
+    def _is_target_module(self, name: str, module: nn.Module, _debug: bool = False) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
             if _debug:
@@ -355,9 +332,7 @@ class LSCCompressor(BaseCompressor):
         base_mod = getattr(module, "base_layer", module)
         cls_lower = base_mod.__class__.__name__.lower()
         is_linear_like = (
-            isinstance(base_mod, nn.Linear)
-            or "conv1d" in cls_lower
-            or hasattr(base_mod, "nf")
+            isinstance(base_mod, nn.Linear) or "conv1d" in cls_lower or hasattr(base_mod, "nf")
         )
         if not is_linear_like:
             if _debug:
@@ -591,11 +566,7 @@ class LSCCompressor(BaseCompressor):
         try:
             with torch.no_grad():
                 first_param = next(iter(self.model.parameters()), None)
-                dev = (
-                    first_param.device
-                    if first_param is not None
-                    else torch.device("cpu")
-                )
+                dev = first_param.device if first_param is not None else torch.device("cpu")
                 dummy_ids = torch.randint(0, 100, (1, 8), device=dev, dtype=torch.long)
                 dummy_mask = torch.ones_like(dummy_ids)
                 try:
@@ -660,10 +631,7 @@ class LSCCompressor(BaseCompressor):
 
         # LSC-FIX-13: write stats onto the model for framework visibility.
         try:
-            if (
-                not hasattr(self.model, "compression_stats")
-                or self.model.compression_stats is None
-            ):
+            if not hasattr(self.model, "compression_stats") or self.model.compression_stats is None:
                 self.model.compression_stats = {}
             self.model.compression_stats.update(
                 {
@@ -706,9 +674,7 @@ class LSCCompressor(BaseCompressor):
 @COMPRESSOR_REGISTRY.register("lsc_factory")
 def lsc_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """LSC Fourier spectral compressor factory."""
-    rank = _cfg_get(
-        comp_config, "lsc_rank", _cfg_get(comp_config, "rank", kwargs.pop("rank", 32))
-    )
+    rank = _cfg_get(comp_config, "lsc_rank", _cfg_get(comp_config, "rank", kwargs.pop("rank", 32)))
     energy_ratio = _cfg_get(
         comp_config,
         "lsc_energy_ratio",

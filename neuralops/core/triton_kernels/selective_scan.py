@@ -14,13 +14,23 @@ Stores full h_t trajectory in forward so backward can access h_{t-1}.
 from __future__ import annotations
 
 import torch
+
 try:
     import triton
     import triton.language as tl
+
     HAS_TRITON = True
 except ImportError:
     HAS_TRITON = False
-    triton = type("triton", (), {"jit": lambda f: f, "heuristics": lambda *a, **kw: lambda f: f, "autotune": lambda *a, **kw: lambda f: f})
+    triton = type(
+        "triton",
+        (),
+        {
+            "jit": lambda f: f,
+            "heuristics": lambda *a, **kw: lambda f: f,
+            "autotune": lambda *a, **kw: lambda f: f,
+        },
+    )
     tl = None
 from neuralops.core.triton_kernels.softplus import softplus
 
@@ -84,12 +94,7 @@ def _selective_scan_fwd_kernel(
         u_p = u_ptr + pid_b * stride_ub + l * stride_ul + pid_d * stride_ud
         u_val = tl.load(u_p).to(tl.float32)
 
-        delta_p = (
-            delta_ptr
-            + pid_b * stride_deltab
-            + l * stride_deltal
-            + pid_d * stride_deltad
-        )
+        delta_p = delta_ptr + pid_b * stride_deltab + l * stride_deltal + pid_d * stride_deltad
         delta_val = tl.load(delta_p).to(tl.float32)
         if DELTA_SOFTPLUS:
             delta_val = softplus(delta_val)
@@ -190,12 +195,7 @@ def _selective_scan_bwd_kernel(
         u_p = u_ptr + pid_b * stride_ub + l * stride_ul + pid_d * stride_ud
         u_val = tl.load(u_p).to(tl.float32)
 
-        delta_p = (
-            delta_ptr
-            + pid_b * stride_deltab
-            + l * stride_deltal
-            + pid_d * stride_deltad
-        )
+        delta_p = delta_ptr + pid_b * stride_deltab + l * stride_deltal + pid_d * stride_deltad
         raw_delta = tl.load(delta_p).to(tl.float32)
         delta_val = softplus(raw_delta) if DELTA_SOFTPLUS else raw_delta
 
@@ -261,12 +261,7 @@ def _selective_scan_bwd_kernel(
             sig = tl.sigmoid(raw_delta)
             ddelta_val = ddelta_val * sig
 
-        ddelta_p = (
-            ddelta_ptr
-            + pid_b * stride_deltab
-            + l * stride_deltal
-            + pid_d * stride_deltad
-        )
+        ddelta_p = ddelta_ptr + pid_b * stride_deltab + l * stride_deltal + pid_d * stride_deltad
         tl.store(ddelta_p, ddelta_val)
 
         # === dD accumulation ===

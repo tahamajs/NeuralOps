@@ -61,14 +61,10 @@ def get_llrd_param_groups(model, base_lr, weight_decay, decay) -> Any:
                 }
             )
         if layer_nodecay[layer]:
-            groups.append(
-                {"params": layer_nodecay[layer], "lr": lr_layer, "weight_decay": 0.0}
-            )
+            groups.append({"params": layer_nodecay[layer], "lr": lr_layer, "weight_decay": 0.0})
 
     if head_decay:
-        groups.append(
-            {"params": head_decay, "lr": base_lr, "weight_decay": weight_decay}
-        )
+        groups.append({"params": head_decay, "lr": base_lr, "weight_decay": weight_decay})
     if head_nodecay:
         groups.append({"params": head_nodecay, "lr": base_lr, "weight_decay": 0.0})
     return groups
@@ -77,6 +73,4 @@ def get_llrd_param_groups(model, base_lr, weight_decay, decay) -> Any:
 @register_method("llrd")
 def apply_llrd(model, config) -> None:
     """Apply llrd."""
-    logger.info(
-        "LLRD registered. Use --method llrd to enable layer‑wise learning rates."
-    )
+    logger.info("LLRD registered. Use --method llrd to enable layer‑wise learning rates.")

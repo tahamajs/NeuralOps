@@ -14,6 +14,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -122,9 +123,7 @@ class KMeansSTEFunction(torch.autograd.Function):
 
             grad_centroids = torch.zeros_like(centroids)
             flat_idx = idx_long.reshape(-1)
-            flat_grad = grad_W.reshape(-1).to(
-                dtype=centroids.dtype, device=centroids.device
-            )
+            flat_grad = grad_W.reshape(-1).to(dtype=centroids.dtype, device=centroids.device)
             grad_centroids.scatter_add_(0, flat_idx, flat_grad)
 
         return grad_centroids, None, grad_x, grad_bias
@@ -327,13 +326,9 @@ class KMeansLinear(nn.Module):
 
             if src_A is not None and src_B is not None:
                 if src_A.shape == self.lora_A.shape:
-                    self.lora_A.data.copy_(
-                        src_A.to(self.lora_A.device, dtype=self.lora_A.dtype)
-                    )
+                    self.lora_A.data.copy_(src_A.to(self.lora_A.device, dtype=self.lora_A.dtype))
                 if src_B.shape == self.lora_B.shape:
-                    self.lora_B.data.copy_(
-                        src_B.to(self.lora_B.device, dtype=self.lora_B.dtype)
-                    )
+                    self.lora_B.data.copy_(src_B.to(self.lora_B.device, dtype=self.lora_B.dtype))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -347,9 +342,7 @@ class KMeansLinear(nn.Module):
         if not self.training and self._cached_weight is not None:
             return self._cached_weight
         idx_long = self.indices.long().reshape(-1)
-        W = self.centroids.index_select(0, idx_long).reshape(
-            self.out_features, self.in_features
-        )
+        W = self.centroids.index_select(0, idx_long).reshape(self.out_features, self.in_features)
         if not self.training:
             self._cached_weight = W
         return W
@@ -430,9 +423,7 @@ class KMeansCompressor(BaseCompressor):
         cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(
-            model if model is not None else nn.Identity(), name="kmeans", **kwargs
-        )
+        super().__init__(model if model is not None else nn.Identity(), name="kmeans", **kwargs)
         cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
@@ -441,9 +432,7 @@ class KMeansCompressor(BaseCompressor):
             self.n_clusters = 2 ** int(parsed_bits)
         else:
             self.n_clusters = int(
-                _cfg_get(
-                    cfg, "kmeans_clusters", _cfg_get(cfg, "n_clusters", n_clusters)
-                )
+                _cfg_get(cfg, "kmeans_clusters", _cfg_get(cfg, "n_clusters", n_clusters))
             )
         self.bits = int(math.ceil(math.log2(max(self.n_clusters, 2))))
 
@@ -466,9 +455,7 @@ class KMeansCompressor(BaseCompressor):
         )
         self.lora_r = int(_cfg_get(cfg, "lora_r", _cfg_get(cfg, "lora_rank", lora_r)))
         self.lora_alpha = float(_cfg_get(cfg, "lora_alpha", lora_alpha))
-        self.skip_attention_qkv = bool(
-            _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
-        )
+        self.skip_attention_qkv = bool(_cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv))
         self.skip_should_compress_filter = bool(
             _cfg_get(
                 cfg,
@@ -493,11 +480,7 @@ class KMeansCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if (
-            num_heads is not None
-            and num_kv_heads is not None
-            and num_kv_heads < num_heads
-        ):
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
             if any(
                 p in name.lower()
                 for p in (
@@ -513,9 +496,7 @@ class KMeansCompressor(BaseCompressor):
                 return True
         return False
 
-    def _is_target_module(
-        self, name: str, module: nn.Module, _debug: bool = False
-    ) -> bool:
+    def _is_target_module(self, name: str, module: nn.Module, _debug: bool = False) -> bool:
         name_lower = name.lower()
         if any(part in name.split(".") for part in ("lora_A", "lora_B", "base_layer")):
             if _debug:
@@ -587,9 +568,7 @@ class KMeansCompressor(BaseCompressor):
         return True
 
     # ------------------------------------------------------------------
-    def compress(
-        self, model: nn.Module | None = None
-    ) -> tuple[nn.Module, dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         # Idempotence
         if getattr(self.model, "_kmeans_compressed", False):
             logger.warning("KMeansCompressor: model already compressed; skipping.")
@@ -627,9 +606,7 @@ class KMeansCompressor(BaseCompressor):
             for name, module in self.model.named_modules():
                 n += 1
                 self._is_target_module(name, module, _debug=True)
-            logger.warning(
-                "KMeansCompressor diagnostic: %d modules scanned, 0 targets.", n
-            )
+            logger.warning("KMeansCompressor diagnostic: %d modules scanned, 0 targets.", n)
             try:
                 return self.model, self.get_compression_stats()
             except Exception:
@@ -673,9 +650,7 @@ class KMeansCompressor(BaseCompressor):
                     kmeans_seed=self.kmeans_seed,
                 )
                 recon_w = new_layer.get_weight().float()
-                err = float(
-                    torch.norm(W_target - recon_w, p="fro").item() / norm_orig.item()
-                )
+                err = float(torch.norm(W_target - recon_w, p="fro").item() / norm_orig.item())
             except Exception as ex:
                 logger.warning("KMeansCompressor: failed on %s: %s", name, ex)
                 new_layer = None
@@ -689,11 +664,7 @@ class KMeansCompressor(BaseCompressor):
                     err,
                     name,
                     self.max_error,
-                    (
-                        "Falling back."
-                        if self.fallback_to_original
-                        else "Using compressed."
-                    ),
+                    ("Falling back." if self.fallback_to_original else "Using compressed."),
                 )
                 self.fallback_layers.append(name)
                 for p in module.parameters():
@@ -713,9 +684,7 @@ class KMeansCompressor(BaseCompressor):
                     replace_module(self.model, name, new_layer)
                 self.compressed_layers.append(name)
             except Exception as e:
-                logger.warning(
-                    "KMeansCompressor: replacement failed on %s: %s", name, e
-                )
+                logger.warning("KMeansCompressor: replacement failed on %s: %s", name, e)
                 self.fallback_layers.append(name)
                 total_comp_bytes += orig_bytes
                 continue
@@ -748,12 +717,8 @@ class KMeansCompressor(BaseCompressor):
         except Exception:
             self._compressed_params = sum(p.numel() for p in self.model.parameters())
 
-        storage_ratio = (
-            total_orig_bytes / total_comp_bytes if total_comp_bytes > 0 else 1.0
-        )
-        effective_ratio = (
-            total_comp_bytes / total_orig_bytes if total_orig_bytes > 0 else 1.0
-        )
+        storage_ratio = total_orig_bytes / total_comp_bytes if total_comp_bytes > 0 else 1.0
+        effective_ratio = total_comp_bytes / total_orig_bytes if total_orig_bytes > 0 else 1.0
         avg_err = (
             sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
             if self.layer_errors
@@ -805,10 +770,7 @@ class KMeansCompressor(BaseCompressor):
         self.stats = stats
 
         try:
-            if (
-                not hasattr(self.model, "compression_stats")
-                or self.model.compression_stats is None
-            ):
+            if not hasattr(self.model, "compression_stats") or self.model.compression_stats is None:
                 self.model.compression_stats = {}
             self.model.compression_stats.update(
                 {
@@ -852,9 +814,7 @@ def kmeans_factory(
 
     n_clusters = kwargs.pop(
         "n_clusters",
-        _cfg_get(
-            comp_config, "kmeans_clusters", _cfg_get(comp_config, "n_clusters", 256)
-        ),
+        _cfg_get(comp_config, "kmeans_clusters", _cfg_get(comp_config, "n_clusters", 256)),
     )
     bits = kwargs.pop(
         "bits",
@@ -862,9 +822,7 @@ def kmeans_factory(
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(
-            comp_config, "kmeans_max_error", _cfg_get(comp_config, "max_error", 0.35)
-        ),
+        _cfg_get(comp_config, "kmeans_max_error", _cfg_get(comp_config, "max_error", 0.35)),
     )
     target_attention_only = kwargs.pop(
         "target_attention_only",
@@ -894,9 +852,7 @@ def kmeans_factory(
         "min_layer_dim",
         _cfg_get(comp_config, "min_layer_dim", 8),
     )
-    kmeans_seed = kwargs.pop(
-        "kmeans_seed", _cfg_get(comp_config, "kmeans_seed", 0xCAFE)
-    )
+    kmeans_seed = kwargs.pop("kmeans_seed", _cfg_get(comp_config, "kmeans_seed", 0xCAFE))
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 
     compressor = KMeansCompressor(

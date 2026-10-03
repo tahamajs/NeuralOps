@@ -14,6 +14,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.pruning_utils import adaptive_max_error
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -100,9 +101,7 @@ class FRanDILinear(nn.Module):
         )
         nn.init.xavier_uniform_(self.B.float())
         with torch.no_grad():
-            self.B.data = (
-                self.B.data.to(dtype=dtype) if dtype is not None else self.B.data
-            )
+            self.B.data = self.B.data.to(dtype=dtype) if dtype is not None else self.B.data
 
         if bias:
             self.bias = nn.Parameter(
@@ -123,9 +122,7 @@ class FRanDILinear(nn.Module):
             with torch.no_grad():
                 tmp = self.lora_A.data.float()
                 nn.init.kaiming_uniform_(tmp, a=math.sqrt(5))
-                self.lora_A.data.copy_(
-                    tmp.to(dtype=dtype) if dtype is not None else tmp
-                )
+                self.lora_A.data.copy_(tmp.to(dtype=dtype) if dtype is not None else tmp)
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -248,8 +245,7 @@ class FRanDILinear(nn.Module):
 
         bias = (
             target_mod.bias.data
-            if getattr(target_mod, "bias", None) is not None
-            and target_mod.bias is not None
+            if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None
             else None
         )
 
@@ -292,9 +288,7 @@ class FRanDILinear(nn.Module):
                 )
                 A_data = A_solved.t().contiguous()  # (r, in)
             except Exception as e:
-                logger.debug(
-                    "FRanDI whitening failed: %s; falling back to plain SVD", e
-                )
+                logger.debug("FRanDI whitening failed: %s; falling back to plain SVD", e)
                 B_data = None
                 A_data = None
 
@@ -327,17 +321,11 @@ class FRanDILinear(nn.Module):
         )
 
         with torch.no_grad():
-            frandi_layer.A.data.copy_(
-                A_data[:r, :].to(dtype=raw_w.dtype, device=raw_w.device)
-            )
-            frandi_layer.B.data.copy_(
-                B_data[:, :r].to(dtype=raw_w.dtype, device=raw_w.device)
-            )
+            frandi_layer.A.data.copy_(A_data[:r, :].to(dtype=raw_w.dtype, device=raw_w.device))
+            frandi_layer.B.data.copy_(B_data[:, :r].to(dtype=raw_w.dtype, device=raw_w.device))
 
             if bias is not None and frandi_layer.bias is not None:
-                frandi_layer.bias.data.copy_(
-                    bias.to(dtype=raw_w.dtype, device=raw_w.device)
-                )
+                frandi_layer.bias.data.copy_(bias.to(dtype=raw_w.dtype, device=raw_w.device))
 
             if (
                 existing_lora_A is not None
@@ -388,9 +376,7 @@ class FRanDICompressor(BaseCompressor):
         num_calibration_batches: int = 16,
         **kwargs: Any,
     ) -> None:
-        super().__init__(
-            model if model is not None else nn.Identity(), name="frandi", **kwargs
-        )
+        super().__init__(model if model is not None else nn.Identity(), name="frandi", **kwargs)
         cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
@@ -400,14 +386,10 @@ class FRanDICompressor(BaseCompressor):
             "frandi_energy_threshold",
             _cfg_get(cfg, "energy_threshold", energy_threshold),
         )
-        self.calibration_loader = calibration_loader or _cfg_get(
-            cfg, "calibration_loader", None
-        )
+        self.calibration_loader = calibration_loader or _cfg_get(cfg, "calibration_loader", None)
         self.lora_r = int(_cfg_get(cfg, "lora_r", _cfg_get(cfg, "lora_rank", lora_r)))
         self.lora_alpha = float(_cfg_get(cfg, "lora_alpha", lora_alpha))
-        c_max_error = _cfg_get(
-            cfg, "frandi_max_error", _cfg_get(cfg, "max_error", max_error)
-        )
+        c_max_error = _cfg_get(cfg, "frandi_max_error", _cfg_get(cfg, "max_error", max_error))
         if c_max_error is None or c_max_error == 0.5:
             c_max_error = adaptive_max_error(self.rank, 768, 768, "distilbert")
 
@@ -426,9 +408,7 @@ class FRanDICompressor(BaseCompressor):
                 _cfg_get(cfg, "fallback_to_original", fallback_to_original),
             )
         )
-        self.skip_attention_qkv = bool(
-            _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
-        )
+        self.skip_attention_qkv = bool(_cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv))
 
         # FR-FIX-12: treat empty list as None.
         tl = target_layers or _cfg_get(cfg, "target_layers", None)
@@ -524,11 +504,7 @@ class FRanDICompressor(BaseCompressor):
                     target_mod = getattr(module, "base_layer", module)
                     cls_name = target_mod.__class__.__name__.lower()
                     is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-                    in_f = (
-                        target_mod.weight.shape[0]
-                        if is_conv1d
-                        else target_mod.weight.shape[1]
-                    )
+                    in_f = target_mod.weight.shape[0] if is_conv1d else target_mod.weight.shape[1]
                     if x.shape[-1] != in_f:
                         return
                     x_flat = x.reshape(-1, in_f)
@@ -582,9 +558,7 @@ class FRanDICompressor(BaseCompressor):
         return covariances
 
     # ------------------------------------------------------------------
-    def compress(
-        self, model: nn.Module | None = None
-    ) -> tuple[nn.Module, dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         from neuralops.core.model_utils import replace_module
 
         if model is not None:
@@ -711,9 +685,7 @@ class FRanDICompressor(BaseCompressor):
             logger.debug("FRanDI forward sanity check failed: %s", e)
             forward_check_success = False
 
-        effective_ratio = (
-            total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
-        )
+        effective_ratio = total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
 
         try:
             self._compressed_params = self._count_params(self.model)
@@ -726,9 +698,7 @@ class FRanDICompressor(BaseCompressor):
             stats = {}
 
         avg_err = (
-            sum(self.layer_errors.values()) / len(self.layer_errors)
-            if self.layer_errors
-            else 0.0
+            sum(self.layer_errors.values()) / len(self.layer_errors) if self.layer_errors else 0.0
         )
         stats.update(
             {
@@ -777,9 +747,7 @@ def frandi_factory(
     **kwargs: Any,
 ) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """Factory function for FRanDI compressor."""
-    effective_rank = rank or _cfg_get(
-        comp_config, "frandi_rank", _cfg_get(comp_config, "rank", 8)
-    )
+    effective_rank = rank or _cfg_get(comp_config, "frandi_rank", _cfg_get(comp_config, "rank", 8))
     energy = _cfg_get(
         comp_config,
         "frandi_energy_threshold",
@@ -789,9 +757,7 @@ def frandi_factory(
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(
-            comp_config, "frandi_max_error", _cfg_get(comp_config, "max_error", 0.5)
-        ),
+        _cfg_get(comp_config, "frandi_max_error", _cfg_get(comp_config, "max_error", 0.5)),
     )
     target_attention_only = kwargs.pop(
         "target_attention_only",

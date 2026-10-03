@@ -25,7 +25,7 @@ def train_model(
     steps_per_epoch = len(train_loader)
     for epoch in range(config.epochs):
         epoch_loss = 0.0
-        pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{config.epochs}", leave=False)
+        pbar = tqdm(train_loader, desc=f"Epoch {epoch + 1}/{config.epochs}", leave=False)
         for batch_idx, batch in enumerate(pbar):
             optimizer.zero_grad(set_to_none=True)
             if is_multichoice:
@@ -35,9 +35,7 @@ def train_model(
                 batch_size, num_choices, seq_len = input_ids.shape
                 input_ids_flat = input_ids.view(-1, seq_len)
                 attention_mask_flat = attention_mask.view(-1, seq_len)
-                outputs = model(
-                    input_ids=input_ids_flat, attention_mask=attention_mask_flat
-                )
+                outputs = model(input_ids=input_ids_flat, attention_mask=attention_mask_flat)
                 logits = outputs["logits"]
                 combined_labels = true_labels.repeat_interleave(num_choices)
                 loss = nn.functional.cross_entropy(logits, combined_labels)
@@ -74,9 +72,7 @@ def evaluate_model(model, data_loader, device, num_labels, is_multichoice=False)
                 batch_size, num_choices, _ = input_ids.shape
                 input_ids_flat = input_ids.view(-1, input_ids.shape[-1])
                 attention_mask_flat = attention_mask.view(-1, input_ids.shape[-1])
-                outputs = model(
-                    input_ids=input_ids_flat, attention_mask=attention_mask_flat
-                )
+                outputs = model(input_ids=input_ids_flat, attention_mask=attention_mask_flat)
                 logits = outputs["logits"]
                 logits_reshaped = logits.view(batch_size, num_choices, -1)
                 avg_logits = logits_reshaped.mean(dim=1)
@@ -95,9 +91,7 @@ def evaluate_model(model, data_loader, device, num_labels, is_multichoice=False)
     return accuracy_score(all_labels, all_preds)
 
 
-def benchmark_model(
-    model: nn.Module, data_loader: DataLoader, device: torch.device
-) -> dict:
+def benchmark_model(model: nn.Module, data_loader: DataLoader, device: torch.device) -> dict:
     """Benchmark model."""
     model.eval()
     memory_before = psutil.Process().memory_info().rss / 1024 / 1024
@@ -126,9 +120,7 @@ def benchmark_model(
     return {
         "total_time": total_time,
         "avg_batch_time": np.mean(batch_times) if batch_times else 0,
-        "samples_per_second": (
-            len(data_loader.dataset) / total_time if total_time > 0 else 0
-        ),
+        "samples_per_second": (len(data_loader.dataset) / total_time if total_time > 0 else 0),
         "memory_usage_mb": memory_after - memory_before,
         "peak_memory_mb": memory_after,
         "throughput": len(data_loader.dataset) / total_time if total_time > 0 else 0,

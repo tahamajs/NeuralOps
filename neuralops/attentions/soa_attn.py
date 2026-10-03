@@ -14,6 +14,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import apply_attention_mask
 from neuralops.core.base import BaseAttention
@@ -289,11 +290,7 @@ class SOAAttention(BaseAttention):
         if not head_dim and src_attn is not None:
             for attr in ("q_proj", "query", "q_lin"):
                 mod = getattr(src_attn, attr, None)
-                if (
-                    mod is not None
-                    and hasattr(mod, "weight")
-                    and mod.weight is not None
-                ):
+                if mod is not None and hasattr(mod, "weight") and mod.weight is not None:
                     if mod.weight.ndim == 2:
                         head_dim = mod.weight.shape[0] // max(1, self.num_heads)
                         break
@@ -319,9 +316,7 @@ class SOAAttention(BaseAttention):
             else kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads"))
         )
         self.num_kv_heads: int = int(cfg_kv) if cfg_kv is not None else self.num_heads
-        self.num_key_value_groups: int = max(
-            1, self.num_heads // max(1, self.num_kv_heads)
-        )
+        self.num_key_value_groups: int = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.kv_repeat: int = self.num_key_value_groups
 
         self.q_head_size: int = self.num_heads * self.head_dim
@@ -415,9 +410,7 @@ class SOAAttention(BaseAttention):
         )
 
         dropout_p = (
-            getattr(
-                cfg, "dropout", getattr(cfg, "attention_probs_dropout_prob", dropout)
-            )
+            getattr(cfg, "dropout", getattr(cfg, "attention_probs_dropout_prob", dropout))
             if cfg is not None
             else dropout
         )
@@ -497,9 +490,7 @@ class SOAAttention(BaseAttention):
 
                 c_attn_mod = src.c_attn
                 base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
-                c_attn_w = getattr(
-                    base_c, "weight", getattr(c_attn_mod, "weight", None)
-                ).detach()
+                c_attn_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None)).detach()
                 c_attn_b = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_attn_b = c_attn_b.detach() if c_attn_b is not None else None
 
@@ -507,10 +498,7 @@ class SOAAttention(BaseAttention):
                 if (
                     ("Conv1D" in c_cls)
                     or hasattr(base_c, "nf")
-                    or (
-                        "Conv1D"
-                        in getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__
-                    )
+                    or ("Conv1D" in getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__)
                     or hasattr(c_attn_mod, "nf")
                     or (c_attn_w.dim() == 2 and c_attn_w.shape[0] < c_attn_w.shape[1])
                 ):
@@ -531,9 +519,7 @@ class SOAAttention(BaseAttention):
 
                 c_proj_mod = src.c_proj
                 base_p = getattr(c_proj_mod, "base_layer", c_proj_mod)
-                out_w = getattr(
-                    base_p, "weight", getattr(c_proj_mod, "weight", None)
-                ).detach()
+                out_w = getattr(base_p, "weight", getattr(c_proj_mod, "weight", None)).detach()
                 b_o = getattr(base_p, "bias", getattr(c_proj_mod, "bias", None))
                 b_o = b_o.detach() if b_o is not None else None
 
@@ -541,10 +527,7 @@ class SOAAttention(BaseAttention):
                 if (
                     ("Conv1D" in p_cls)
                     or hasattr(base_p, "nf")
-                    or (
-                        "Conv1D"
-                        in getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__
-                    )
+                    or ("Conv1D" in getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__)
                     or hasattr(c_proj_mod, "nf")
                     or (out_w.dim() == 2 and out_w.shape[0] < out_w.shape[1])
                 ):
@@ -552,9 +535,7 @@ class SOAAttention(BaseAttention):
                 w_o = out_w
 
             # Pattern 2: RoBERTa / BERT separate query, key, value
-            elif (
-                hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value")
-            ):
+            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.detach()
                 b_q = src.query.bias.detach() if src.query.bias is not None else None
                 w_k = src.key.weight.detach()
@@ -571,11 +552,7 @@ class SOAAttention(BaseAttention):
                             break
 
             # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
-            elif (
-                hasattr(src, "q_proj")
-                and hasattr(src, "k_proj")
-                and hasattr(src, "v_proj")
-            ):
+            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q = src.q_proj.weight.detach()
                 b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
                 w_k = src.k_proj.weight.detach()
@@ -585,18 +562,10 @@ class SOAAttention(BaseAttention):
 
                 if hasattr(src, "o_proj"):
                     w_o = src.o_proj.weight.detach()
-                    b_o = (
-                        src.o_proj.bias.detach()
-                        if src.o_proj.bias is not None
-                        else None
-                    )
+                    b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
 
             # Pattern 4: DistilBERT (q_lin, k_lin, v_lin, out_lin)
-            elif (
-                hasattr(src, "q_lin")
-                and hasattr(src, "k_lin")
-                and hasattr(src, "v_lin")
-            ):
+            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q = src.q_lin.weight.detach()
                 b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
                 w_k = src.k_lin.weight.detach()
@@ -606,11 +575,7 @@ class SOAAttention(BaseAttention):
 
                 if hasattr(src, "out_lin"):
                     w_o = src.out_lin.weight.detach()
-                    b_o = (
-                        src.out_lin.bias.detach()
-                        if src.out_lin.bias is not None
-                        else None
-                    )
+                    b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
 
             # Pattern 5: UniversalAdapter fallback
             if w_q is None or w_k is None or w_v is None:
@@ -655,9 +620,7 @@ class SOAAttention(BaseAttention):
                 down.weight.zero_()
                 up.weight.zero_()
                 sqrt_s = torch.sqrt(S[:r])
-                down.weight[:r, :].copy_(
-                    (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(down.weight.dtype)
-                )
+                down.weight[:r, :].copy_((sqrt_s.unsqueeze(1) * Vt[:r, :]).to(down.weight.dtype))
                 up.weight[:, :r].copy_((U[:, :r] * sqrt_s).to(up.weight.dtype))
 
                 if bias is not None and up.bias is not None:
@@ -683,9 +646,7 @@ class SOAAttention(BaseAttention):
                     self.out_proj.bias.copy_(b_o.to(self.out_proj.bias.dtype))
                 f_norm_o = float(torch.linalg.norm(self.out_proj.weight))
                 if f_norm_o < 1e-4:
-                    logger.warning(
-                        f"SOAAttention: Out projection norm is near zero: {f_norm_o}"
-                    )
+                    logger.warning(f"SOAAttention: Out projection norm is near zero: {f_norm_o}")
             elif self.is_nested_encoder:
                 if hasattr(self.out_proj, "weight") and self.out_proj.weight.ndim == 2:
                     nn.init.eye_(self.out_proj.weight)
@@ -773,7 +734,6 @@ class SOAAttention(BaseAttention):
         # Memory-efficient: use SDPA to avoid OOM on large seqs
 
         try:
-
             _qs = q.half() if q.dtype == torch.float32 else q
 
             _ks = k.half() if k.dtype == torch.float32 else k
@@ -804,25 +764,18 @@ class SOAAttention(BaseAttention):
             ), None
 
         except Exception:
-
             pass
 
-        scores = (
-            torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
         # Causal mask for decoders
         is_causal = (
-            self.is_decoder
-            or getattr(self, "is_causal", False)
-            or kwargs.get("is_causal", False)
+            self.is_decoder or getattr(self, "is_causal", False) or kwargs.get("is_causal", False)
         ) and (encoder_hidden_states is None)
         if is_causal and N > 1:
             causal_mask = (
                 torch.triu(
-                    torch.full(
-                        (N, N), float("-inf"), device=scores.device, dtype=torch.float32
-                    ),
+                    torch.full((N, N), float("-inf"), device=scores.device, dtype=torch.float32),
                     diagonal=1,
                 )
                 .unsqueeze(0)

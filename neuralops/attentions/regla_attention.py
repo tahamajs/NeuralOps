@@ -7,6 +7,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -57,9 +58,7 @@ def apply_rotary_pos_emb(
         sin = sin.unsqueeze(0)
 
     if cos.shape[-2] != q.shape[-2]:
-        raise ValueError(
-            f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}"
-        )
+        raise ValueError(f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}")
 
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
@@ -73,16 +72,8 @@ def apply_rotary_pos_emb(
         sin_k = sin.to(k_rot.dtype)
         q_rot_embed = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
         k_rot_embed = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
-        q = (
-            torch.cat([q_rot_embed, q_pass], dim=-1)
-            if q_pass.numel() > 0
-            else q_rot_embed
-        )
-        k = (
-            torch.cat([k_rot_embed, k_pass], dim=-1)
-            if k_pass.numel() > 0
-            else k_rot_embed
-        )
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     else:
         cos_cut = cos[..., :head_dim].to(q.dtype)
         sin_cut = sin[..., :head_dim].to(q.dtype)
@@ -115,23 +106,17 @@ class LoRALinear(nn.Module):
         self.out_features = int(out_features)
         self.lora_rank = int(lora_rank) if lora_rank and lora_rank > 0 else 0
         self.lora_alpha = float(lora_alpha)
-        self.lora_scaling = (
-            (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
-        )
+        self.lora_scaling = (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((self.lora_rank, in_features), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((self.lora_rank, in_features), **factory_kwargs))
             self.lora_B = nn.Parameter(
                 torch.empty((out_features, self.lora_rank), **factory_kwargs)
             )
@@ -168,11 +153,7 @@ class LoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         target_dtype = x.dtype
-        w = (
-            self.weight.to(target_dtype)
-            if self.weight.dtype != target_dtype
-            else self.weight
-        )
+        w = self.weight.to(target_dtype) if self.weight.dtype != target_dtype else self.weight
         b = (
             self.bias.to(target_dtype)
             if (self.bias is not None and self.bias.dtype != target_dtype)
@@ -180,16 +161,8 @@ class LoRALinear(nn.Module):
         )
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            a = (
-                self.lora_A.to(target_dtype)
-                if self.lora_A.dtype != target_dtype
-                else self.lora_A
-            )
-            bb = (
-                self.lora_B.to(target_dtype)
-                if self.lora_B.dtype != target_dtype
-                else self.lora_B
-            )
+            a = self.lora_A.to(target_dtype) if self.lora_A.dtype != target_dtype else self.lora_A
+            bb = self.lora_B.to(target_dtype) if self.lora_B.dtype != target_dtype else self.lora_B
             lora_out = F.linear(F.linear(x, a), bb) * self.lora_scaling
             out = out + lora_out
         return out.to(target_dtype)
@@ -221,11 +194,7 @@ class ReGLAAttention(BaseAttention):
             super().__init__(config)
 
         comp_config = getattr(config, "compression_config", None) if config else None
-        src = (
-            pretrained_attn
-            if pretrained_attn is not None
-            else kwargs.get("source_attn")
-        )
+        src = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
 
         # -------- hidden_size --------
         dim = hidden_size
@@ -236,9 +205,7 @@ class ReGLAAttention(BaseAttention):
         # -------- num_heads --------
         n_heads = num_heads
         if n_heads is None:
-            n_heads = _cfg_get(
-                config, "num_attention_heads", kwargs.get("num_attention_heads", 12)
-            )
+            n_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_attention_heads", 12))
         if n_heads is None and src is not None:
             n_heads = getattr(
                 src,
@@ -433,9 +400,7 @@ class ReGLAAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
             (
@@ -453,10 +418,7 @@ class ReGLAAttention(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -476,11 +438,7 @@ class ReGLAAttention(BaseAttention):
         # GPT-2 fused
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = _unwrap_linear(src.c_attn)
-            c_w = (
-                c_attn_mod.weight.data.clone()
-                if hasattr(c_attn_mod, "weight")
-                else None
-            )
+            c_w = c_attn_mod.weight.data.clone() if hasattr(c_attn_mod, "weight") else None
             if c_w is not None:
                 if (
                     c_attn_mod.__class__.__name__ == "Conv1D"
@@ -506,11 +464,7 @@ class ReGLAAttention(BaseAttention):
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = _unwrap_linear(src.c_proj)
-                o_w = (
-                    c_proj_mod.weight.data.clone()
-                    if hasattr(c_proj_mod, "weight")
-                    else None
-                )
+                o_w = c_proj_mod.weight.data.clone() if hasattr(c_proj_mod, "weight") else None
                 if o_w is not None:
                     if (
                         c_proj_mod.__class__.__name__ == "Conv1D"
@@ -625,9 +579,7 @@ class ReGLAAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
                     target_mod.bias.data[:min_b].copy_(
-                        b[:min_b].to(
-                            device=target_mod.bias.device, dtype=target_mod.bias.dtype
-                        )
+                        b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype)
                     )
                 elif target_mod.bias is not None:
                     target_mod.bias.data.zero_()
@@ -697,10 +649,7 @@ class ReGLAAttention(BaseAttention):
             cos, sin = position_embeddings
             past_len = 0
             if past_key_value is not None:
-                if (
-                    isinstance(past_key_value, (tuple, list))
-                    and len(past_key_value) >= 1
-                ):
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
                     past_len = past_key_value[0].shape[-2]
                 elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
                     past_len = past_key_value.key_cache[0].shape[-2]
@@ -753,9 +702,7 @@ class ReGLAAttention(BaseAttention):
                 device=device,
                 dtype=q_act.dtype,
             )
-            Z = torch.zeros(
-                B, self.num_heads, self.head_dim, device=device, dtype=q_act.dtype
-            )
+            Z = torch.zeros(B, self.num_heads, self.head_dim, device=device, dtype=q_act.dtype)
             out_list = []
 
             for start in range(0, L, chunk):
@@ -770,11 +717,7 @@ class ReGLAAttention(BaseAttention):
                 num = num_intra + num_inter
 
                 z_intra = torch.cumsum(k_c, dim=2)
-                den = (
-                    (q_c * (z_intra + Z.unsqueeze(2)))
-                    .sum(-1, keepdim=True)
-                    .clamp(min=1e-4)
-                )
+                den = (q_c * (z_intra + Z.unsqueeze(2))).sum(-1, keepdim=True).clamp(min=1e-4)
                 out_list.append(num / den)
 
                 S = S + (k_c.unsqueeze(-1) * v_c.unsqueeze(-2)).sum(dim=2)
@@ -801,12 +744,7 @@ class ReGLAAttention(BaseAttention):
                 hm = head_mask
             out = out * hm.to(out.dtype)
 
-        out = (
-            out.permute(0, 2, 1, 3)
-            .contiguous()
-            .view(B, L, self.all_head_size)
-            .to(dtype)
-        )
+        out = out.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size).to(dtype)
 
         # Depthwise 1D conv branch
         x_in = (x * valid_mask.unsqueeze(-1).to(dtype)).permute(0, 2, 1)
@@ -850,9 +788,7 @@ class ReGLAAttention(BaseAttention):
             output = self.out_proj(fused)
 
         if output.shape[-1] != D:
-            raise RuntimeError(
-                f"ReGLAAttention: output dim {output.shape[-1]} != input {D}"
-            )
+            raise RuntimeError(f"ReGLAAttention: output dim {output.shape[-1]} != input {D}")
 
         return output.to(dtype), None
 
@@ -942,10 +878,7 @@ def inject_regla(
         if src_attn is None:
             src_attn = target
 
-        if (
-            isinstance(src_attn, ReGLAAttention)
-            or "ReGLA" in src_attn.__class__.__name__
-        ):
+        if isinstance(src_attn, ReGLAAttention) or "ReGLA" in src_attn.__class__.__name__:
             return None
 
         c_name = src_attn.__class__.__name__
@@ -961,8 +894,7 @@ def inject_regla(
             or getattr(src_attn, "embed_dim", None)
             or (
                 src_attn.q_proj.in_features
-                if hasattr(src_attn, "q_proj")
-                and hasattr(src_attn.q_proj, "in_features")
+                if hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features")
                 else None
             )
             or (

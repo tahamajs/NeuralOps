@@ -94,11 +94,7 @@ class Registry:
             final_key = key if key is not None else obj.__name__
             k = final_key.lower()
             # If key already exists and maps to a class, do not let a plain function overwrite it
-            if (
-                k in self._dict
-                and isinstance(self._dict[k], type)
-                and not isinstance(obj, type)
-            ):
+            if k in self._dict and isinstance(self._dict[k], type) and not isinstance(obj, type):
                 logger.debug(
                     "Registry '%s': Skipping overwrite of class %s by function %s for key '%s'",
                     self.name,
@@ -125,11 +121,7 @@ class Registry:
                 "supports_cross_attention": getattr(
                     obj,
                     "supports_cross_attention",
-                    (
-                        True
-                        if supports_cross_attention is None
-                        else supports_cross_attention
-                    ),
+                    (True if supports_cross_attention is None else supports_cross_attention),
                 ),
                 "supports_gqa": getattr(
                     obj, "supports_gqa", False if supports_gqa is None else supports_gqa
@@ -152,9 +144,7 @@ class Registry:
             return {
                 "supports_causal": getattr(obj, "supports_causal", True),
                 "supports_bidirectional": getattr(obj, "supports_bidirectional", True),
-                "supports_cross_attention": getattr(
-                    obj, "supports_cross_attention", True
-                ),
+                "supports_cross_attention": getattr(obj, "supports_cross_attention", True),
                 "supports_gqa": getattr(obj, "supports_gqa", False),
             }
         return {}
@@ -181,9 +171,7 @@ class Registry:
 
                 if os.environ.get("SVD_DEBUG") == "1":
                     raise
-                logger.warning(
-                    "Error during lazy loading of compressor '%s': %s", key, e
-                )
+                logger.warning("Error during lazy loading of compressor '%s': %s", key, e)
         elif self.name == "attentions":
             canonical = _ATTENTION_FILE_MAP.get(k, k)
             try:
@@ -201,9 +189,7 @@ class Registry:
 
                 if os.environ.get("SVD_DEBUG") == "1":
                     raise
-                logger.warning(
-                    "Error during lazy loading of attention '%s': %s", key, e
-                )
+                logger.warning("Error during lazy loading of attention '%s': %s", key, e)
 
     def get(self, key: str) -> Callable | None:
         """Safely retrieve a registered component, or None if not found."""
@@ -216,8 +202,7 @@ class Registry:
         k = key.lower()
         if k not in self._dict:
             raise KeyError(
-                f"Unknown {self.name.rstrip('s')} '{key}'. "
-                f"Available: {list(self._dict.keys())}"
+                f"Unknown {self.name.rstrip('s')} '{key}'. Available: {list(self._dict.keys())}"
             )
         return self._dict[k]
 
@@ -288,9 +273,7 @@ class Registry:
 ATTENTION_REGISTRY = Registry("attentions")  # attention modules (Nexus, LEKA, ...)
 COMPRESSOR_REGISTRY = Registry("compressors")  # compression strategies (SVD, TT, ...)
 METHOD_REGISTRY = Registry("methods")  # training methods (LoRA, R-Drop, ...)
-AUX_REGISTRY = Registry(
-    "auxiliary"
-)  # auxiliary modules (RoPE, SSM, token pruning, ...)
+AUX_REGISTRY = Registry("auxiliary")  # auxiliary modules (RoPE, SSM, token pruning, ...)
 
 # Optional registries (if needed)
 MODEL_REGISTRY = Registry("models")  # different base models

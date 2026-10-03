@@ -18,6 +18,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -29,9 +30,7 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # Bit packing helpers
 # ===========================================================================
-def _quantize_packed(
-    t: torch.Tensor, bits: int
-) -> tuple[torch.Tensor, torch.Tensor, torch.Size]:
+def _quantize_packed(t: torch.Tensor, bits: int) -> tuple[torch.Tensor, torch.Tensor, torch.Size]:
     """
     Symmetric per-tensor quantization with bit packing.
 
@@ -73,9 +72,7 @@ def _quantize_packed(
         )
     q_unsigned = q_unsigned.view(-1, per_byte)
 
-    packed = torch.zeros(
-        q_unsigned.shape[0], dtype=torch.int8, device=q_unsigned.device
-    )
+    packed = torch.zeros(q_unsigned.shape[0], dtype=torch.int8, device=q_unsigned.device)
     for i in range(per_byte):
         packed = (packed << bits) | q_unsigned[:, i].to(torch.int8)
     return packed, scale, orig_shape
@@ -90,9 +87,7 @@ def _dequantize_packed(
     dtype: torch.dtype,
 ) -> torch.Tensor:
     if bits >= 8:
-        return (
-            (packed.float() * scale).to(device=device, dtype=dtype).reshape(orig_shape)
-        )
+        return (packed.float() * scale).to(device=device, dtype=dtype).reshape(orig_shape)
 
     per_byte = 8 // bits
     n = packed.numel() * per_byte
@@ -206,12 +201,8 @@ class MLoRQLoRALinear(nn.Module):
 
     # ------------------------------------------------------------------
     def _dequantize(self, dtype: torch.dtype, device: torch.device):
-        U = _dequantize_packed(
-            self.U_packed, self.bits, self.U_scale, self.U_shape, device, dtype
-        )
-        S = _dequantize_packed(
-            self.S_packed, self.bits, self.S_scale, self.S_shape, device, dtype
-        )
+        U = _dequantize_packed(self.U_packed, self.bits, self.U_scale, self.U_shape, device, dtype)
+        S = _dequantize_packed(self.S_packed, self.bits, self.S_scale, self.S_shape, device, dtype)
         Vt = _dequantize_packed(
             self.Vt_packed, self.bits, self.Vt_scale, self.Vt_shape, device, dtype
         )
@@ -233,9 +224,9 @@ class MLoRQLoRALinear(nn.Module):
         if self.bias is not None:
             out = out + self.bias.to(dtype=x.dtype, device=x.device)
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = out + self.scaling * F.linear(
-                F.linear(x.float(), self.lora_A), self.lora_B
-            ).to(out.dtype)
+            out = out + self.scaling * F.linear(F.linear(x.float(), self.lora_A), self.lora_B).to(
+                out.dtype
+            )
         return out
 
     def storage_bytes(self) -> int:
@@ -263,11 +254,7 @@ class MLoRQLoRALinear(nn.Module):
         lora_alpha: float = 1.0,
     ) -> MLoRQLoRALinear:
         base_layer = getattr(linear, "base_layer", linear)
-        bias = (
-            base_layer.bias.detach()
-            if getattr(base_layer, "bias", None) is not None
-            else None
-        )
+        bias = base_layer.bias.detach() if getattr(base_layer, "bias", None) is not None else None
         in_features = int(getattr(base_layer, "in_features", Vt.shape[1]))
         out_features = int(getattr(base_layer, "out_features", U.shape[0]))
         rank = int(min(U.shape[1], Vt.shape[0], S.numel()))
@@ -279,9 +266,7 @@ class MLoRQLoRALinear(nn.Module):
 
         existing_lora_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
         eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
-        eff_lora_alpha = getattr(
-            linear, "lora_alpha", getattr(linear, "alpha", lora_alpha)
-        )
+        eff_lora_alpha = getattr(linear, "lora_alpha", getattr(linear, "alpha", lora_alpha))
 
         layer = cls(
             in_features=in_features,
@@ -322,16 +307,9 @@ class MLoRQLoRALinear(nn.Module):
                     if hasattr(linear.lora_B, "weight")
                     else linear.lora_B.data
                 )
-                if (
-                    src_A.shape == layer.lora_A.shape
-                    and src_B.shape == layer.lora_B.shape
-                ):
-                    layer.lora_A.copy_(
-                        src_A.to(layer.lora_A.device, dtype=layer.lora_A.dtype)
-                    )
-                    layer.lora_B.copy_(
-                        src_B.to(layer.lora_B.device, dtype=layer.lora_B.dtype)
-                    )
+                if src_A.shape == layer.lora_A.shape and src_B.shape == layer.lora_B.shape:
+                    layer.lora_A.copy_(src_A.to(layer.lora_A.device, dtype=layer.lora_A.dtype))
+                    layer.lora_B.copy_(src_B.to(layer.lora_B.device, dtype=layer.lora_B.dtype))
             layer.lora_A.requires_grad = True
             layer.lora_B.requires_grad = True
 
@@ -409,9 +387,7 @@ class MLoRQCompressor(BaseCompressor):
                 "mlorq_bits_candidates",
                 _cfg_get(cfg, "bits_candidates", bits_candidates),
             )
-            max_error = _cfg_get(
-                cfg, "mlorq_max_error", _cfg_get(cfg, "max_error", max_error)
-            )
+            max_error = _cfg_get(cfg, "mlorq_max_error", _cfg_get(cfg, "max_error", max_error))
             fallback_to_original = _cfg_get(
                 cfg,
                 "mlorq_fallback_to_original",
@@ -420,9 +396,7 @@ class MLoRQCompressor(BaseCompressor):
             lora_r = _cfg_get(cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
             skip_attention_qkv = _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
-            target_attention_only = _cfg_get(
-                cfg, "target_attention_only", target_attention_only
-            )
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
             min_rank = _cfg_get(cfg, "min_rank", min_rank)
 
         self.total_budget_bits = float(total_memory_budget_mb) * 8 * 1024 * 1024  # bits
@@ -451,11 +425,7 @@ class MLoRQCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if (
-            num_heads is not None
-            and num_kv_heads is not None
-            and num_kv_heads < num_heads
-        ):
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
             name_lower = name.lower()
             if any(
                 p in name_lower
@@ -488,9 +458,7 @@ class MLoRQCompressor(BaseCompressor):
             )
         ):
             return False
-        if isinstance(
-            module, (nn.LayerNorm, nn.RMSNorm, nn.Embedding, MLoRQLoRALinear)
-        ):
+        if isinstance(module, (nn.LayerNorm, nn.RMSNorm, nn.Embedding, MLoRQLoRALinear)):
             return False
 
         cls_name = module.__class__.__name__.lower()
@@ -628,11 +596,7 @@ class MLoRQCompressor(BaseCompressor):
 
             cls_name = base.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(base, "nf")
-            W = (
-                raw_w.t().contiguous().clone().float()
-                if is_conv1d
-                else raw_w.clone().float()
-            )
+            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
 
             layer_infos.append(
                 {
@@ -685,11 +649,7 @@ class MLoRQCompressor(BaseCompressor):
                 if info["chosen"] is None:
                     continue
                 # find cheaper candidate than current
-                cheaper = [
-                    c
-                    for c in info["candidates"]
-                    if c["cost_bits"] < info["current_cost"]
-                ]
+                cheaper = [c for c in info["candidates"] if c["cost_bits"] < info["current_cost"]]
                 if not cheaper:
                     continue
                 # choose the cheapest cheaper candidate? Actually we want the one with smallest error increase per bit saved.
@@ -721,11 +681,7 @@ class MLoRQCompressor(BaseCompressor):
                 if info["chosen"] is None:
                     continue
                 # find more expensive candidate
-                more = [
-                    c
-                    for c in info["candidates"]
-                    if c["cost_bits"] > info["current_cost"]
-                ]
+                more = [c for c in info["candidates"] if c["cost_bits"] > info["current_cost"]]
                 if not more:
                     continue
                 next_more = min(more, key=lambda c: c["cost_bits"])
@@ -802,11 +758,7 @@ class MLoRQCompressor(BaseCompressor):
                         hidden = getattr(cfg, "hidden_size", None) if cfg else None
                         if hidden is None:
                             first_lin = next(
-                                (
-                                    m
-                                    for m in self.model.modules()
-                                    if isinstance(m, nn.Linear)
-                                ),
+                                (m for m in self.model.modules() if isinstance(m, nn.Linear)),
                                 None,
                             )
                             hidden = getattr(first_lin, "in_features", 8)
@@ -829,9 +781,7 @@ class MLoRQCompressor(BaseCompressor):
             else 0.0
         )
         storage_ratio = (
-            total_orig_bits / 8 / max(1, total_comp_bytes)
-            if total_comp_bytes > 0
-            else 1.0
+            total_orig_bits / 8 / max(1, total_comp_bytes) if total_comp_bytes > 0 else 1.0
         )
         stats = self.get_compression_stats()
         stats.update(
@@ -882,9 +832,7 @@ def mlorq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(
-            comp_config, "mlorq_max_error", _cfg_get(comp_config, "max_error", 0.50)
-        ),
+        _cfg_get(comp_config, "mlorq_max_error", _cfg_get(comp_config, "max_error", 0.50)),
     )
     fallback = kwargs.pop(
         "fallback_to_original",

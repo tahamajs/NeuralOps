@@ -14,9 +14,7 @@ logger = logging.getLogger(__name__)
 class BaseAttention(nn.Module):
     """Every custom attention module must inherit from this."""
 
-    def __init__(
-        self, config: Any | None = None, rank: int | None = None, **kwargs: Any
-    ) -> None:
+    def __init__(self, config: Any | None = None, rank: int | None = None, **kwargs: Any) -> None:
         super().__init__()
         self.config = config
         self.rank = rank
@@ -67,15 +65,14 @@ class BaseAttention(nn.Module):
         **kwargs,
     ) -> tuple[Any, Any | None]:
         """Must return (output, attention_weights_or_None)."""
-        raise NotImplementedError(
-            "Subclasses of BaseAttention must implement forward()"
-        )
+        raise NotImplementedError("Subclasses of BaseAttention must implement forward()")
 
     def copy_weights(self, old_attn: Any) -> None:
         """Universal fallback: copy pretrained weights from old attention layer."""
         if old_attn is None:
             return
         import torch
+
         from neuralops.core.adapters import UniversalAdapter
 
         adapter = UniversalAdapter()
@@ -93,10 +90,7 @@ class BaseAttention(nn.Module):
                         mod = getattr(self, q_name)
                         if hasattr(mod, "weight") and mod.weight.shape == w_q.shape:
                             mod.weight.copy_(w_q)
-                            if (
-                                b_q is not None
-                                and getattr(mod, "bias", None) is not None
-                            ):
+                            if b_q is not None and getattr(mod, "bias", None) is not None:
                                 mod.bias.copy_(b_q)
 
                 for k_name in ["W_k", "k_proj", "k_lin", "Wk", "key", "k"]:
@@ -104,10 +98,7 @@ class BaseAttention(nn.Module):
                         mod = getattr(self, k_name)
                         if hasattr(mod, "weight") and mod.weight.shape == w_k.shape:
                             mod.weight.copy_(w_k)
-                            if (
-                                b_k is not None
-                                and getattr(mod, "bias", None) is not None
-                            ):
+                            if b_k is not None and getattr(mod, "bias", None) is not None:
                                 mod.bias.copy_(b_k)
 
                 for v_name in ["W_v", "v_proj", "v_lin", "Wv", "value", "v"]:
@@ -115,10 +106,7 @@ class BaseAttention(nn.Module):
                         mod = getattr(self, v_name)
                         if hasattr(mod, "weight") and mod.weight.shape == w_v.shape:
                             mod.weight.copy_(w_v)
-                            if (
-                                b_v is not None
-                                and getattr(mod, "bias", None) is not None
-                            ):
+                            if b_v is not None and getattr(mod, "bias", None) is not None:
                                 mod.bias.copy_(b_v)
 
                 for o_name in ["out", "out_proj", "o_proj", "out_lin", "proj", "dense"]:
@@ -126,10 +114,7 @@ class BaseAttention(nn.Module):
                         mod = getattr(self, o_name)
                         if hasattr(mod, "weight") and mod.weight.shape == w_o.shape:
                             mod.weight.copy_(w_o)
-                            if (
-                                b_o is not None
-                                and getattr(mod, "bias", None) is not None
-                            ):
+                            if b_o is not None and getattr(mod, "bias", None) is not None:
                                 mod.bias.copy_(b_o)
 
                 # Handle fused in_proj
@@ -170,9 +155,7 @@ class BaseCompressor:
     @abstractmethod
     def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Return (compressed_model, statistics)."""
-        raise NotImplementedError(
-            "Subclasses of BaseCompressor must implement compress()"
-        )
+        raise NotImplementedError("Subclasses of BaseCompressor must implement compress()")
 
     def _count_params(self, model: nn.Module) -> int:
         """count params."""
@@ -188,9 +171,7 @@ class BaseCompressor:
             "compressed_parameters": compressed,
             "saved_parameters": orig - compressed,
             "compression_ratio": compressed / orig if orig > 0 else 1.0,
-            "reduction_percentage": (
-                (orig - compressed) / orig * 100 if orig > 0 else 0.0
-            ),
+            "reduction_percentage": ((orig - compressed) / orig * 100 if orig > 0 else 0.0),
         }
 
     def summary(self) -> str:

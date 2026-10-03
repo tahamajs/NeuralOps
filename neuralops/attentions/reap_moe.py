@@ -138,21 +138,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -187,11 +181,7 @@ class LoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         target_dtype = x.dtype
-        w = (
-            self.weight.to(target_dtype)
-            if self.weight.dtype != target_dtype
-            else self.weight
-        )
+        w = self.weight.to(target_dtype) if self.weight.dtype != target_dtype else self.weight
         b = (
             self.bias.to(target_dtype)
             if (self.bias is not None and self.bias.dtype != target_dtype)
@@ -199,16 +189,8 @@ class LoRALinear(nn.Module):
         )
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            a = (
-                self.lora_A.to(target_dtype)
-                if self.lora_A.dtype != target_dtype
-                else self.lora_A
-            )
-            bb = (
-                self.lora_B.to(target_dtype)
-                if self.lora_B.dtype != target_dtype
-                else self.lora_B
-            )
+            a = self.lora_A.to(target_dtype) if self.lora_A.dtype != target_dtype else self.lora_A
+            bb = self.lora_B.to(target_dtype) if self.lora_B.dtype != target_dtype else self.lora_B
             lora_out = F.linear(F.linear(x, a), bb) * self.lora_scaling
             out = out + lora_out
         return out.to(target_dtype)
@@ -235,13 +217,9 @@ class SVDLinear(nn.Module):
         self.out_features = out_features
         self.rank = rank or max(1, min(in_features, out_features) // 4)
 
-        self.U = nn.Parameter(
-            torch.randn((out_features, self.rank), **factory_kwargs) * 0.02
-        )
+        self.U = nn.Parameter(torch.randn((out_features, self.rank), **factory_kwargs) * 0.02)
         self.S = nn.Parameter(torch.ones(self.rank, **factory_kwargs))
-        self.V = nn.Parameter(
-            torch.randn((in_features, self.rank), **factory_kwargs) * 0.02
-        )
+        self.V = nn.Parameter(torch.randn((in_features, self.rank), **factory_kwargs) * 0.02)
         self.bias = nn.Parameter(torch.zeros(out_features, **factory_kwargs))
 
         if freeze:
@@ -289,12 +267,8 @@ class REAPMoE(nn.Module):
         super().__init__()
         factory_kwargs = {"device": device, "dtype": dtype}
         if config is not None:
-            d_model = getattr(
-                config, "hidden_size", getattr(config, "d_model", d_model)
-            )
-            n_experts = getattr(
-                config, "num_experts", getattr(config, "n_experts", n_experts)
-            )
+            d_model = getattr(config, "hidden_size", getattr(config, "d_model", d_model))
+            n_experts = getattr(config, "num_experts", getattr(config, "n_experts", n_experts))
             top_k = getattr(config, "top_k", top_k)
 
         self.d_model = d_model
@@ -312,13 +286,9 @@ class REAPMoE(nn.Module):
 
             def expert_layer():
                 return nn.Sequential(
-                    SVDLinear(
-                        d_model, d_model, rank=max(1, d_model // 8), **factory_kwargs
-                    ),
+                    SVDLinear(d_model, d_model, rank=max(1, d_model // 8), **factory_kwargs),
                     nn.GELU(),
-                    SVDLinear(
-                        d_model, d_model, rank=max(1, d_model // 8), **factory_kwargs
-                    ),
+                    SVDLinear(d_model, d_model, rank=max(1, d_model // 8), **factory_kwargs),
                 )
 
         else:
@@ -371,9 +341,9 @@ class REAPMoE(nn.Module):
 
         full_probs = F.softmax(scores.float(), dim=-1).to(target_dtype)
         topk_weights, topk_indices = torch.topk(full_probs, self.top_k, dim=-1)
-        topk_weights = (
-            topk_weights / topk_weights.sum(dim=-1, keepdim=True).clamp(min=1e-9)
-        ).to(target_dtype)
+        topk_weights = (topk_weights / topk_weights.sum(dim=-1, keepdim=True).clamp(min=1e-9)).to(
+            target_dtype
+        )
 
         router_probs = F.softmax(logits.float(), dim=-1).view(-1, self.n_experts)
         expert_mask = F.one_hot(topk_indices, num_classes=self.n_experts).float()
@@ -383,9 +353,7 @@ class REAPMoE(nn.Module):
         aux_loss = self.n_experts * torch.sum(density * prob_mean)
         self._aux_loss = aux_loss.detach()
 
-        experts_stack = torch.stack(
-            [exp(x).to(target_dtype) for exp in self.experts], dim=2
-        )
+        experts_stack = torch.stack([exp(x).to(target_dtype) for exp in self.experts], dim=2)
         topk_expanded = topk_indices.unsqueeze(-1).expand(-1, -1, -1, D)
         gathered = torch.gather(experts_stack, 2, topk_expanded)
         out = torch.sum(gathered * topk_weights.unsqueeze(-1), dim=2).to(target_dtype)
@@ -498,11 +466,7 @@ class REAPMoEAttention(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
 
-        source_attn = (
-            pretrained_attn
-            if pretrained_attn is not None
-            else kwargs.get("source_attn")
-        )
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
         target_dtype = kwargs.get("dtype")
         if target_dtype is None and source_attn is not None:
             p = next(source_attn.parameters(), None)
@@ -569,9 +533,7 @@ class REAPMoEAttention(BaseAttention):
         self.norm2 = nn.LayerNorm(self.dim, dtype=target_dtype)
 
         dropout_p = (
-            getattr(
-                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
-            )
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
             if config
             else 0.1
         )
@@ -595,9 +557,7 @@ class REAPMoEAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
             (
@@ -615,10 +575,7 @@ class REAPMoEAttention(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -759,9 +716,7 @@ class REAPMoEAttention(BaseAttention):
                         # For nested, out_lin will be Identity (set below).
                         continue
                     else:
-                        raise RuntimeError(
-                            f"REAPMoEAttention: missing weight for {proj_key}."
-                        )
+                        raise RuntimeError(f"REAPMoEAttention: missing weight for {proj_key}.")
 
                 if w.shape == target_mod.weight.shape:
                     target_mod.weight.copy_(w)
@@ -799,8 +754,7 @@ class REAPMoEAttention(BaseAttention):
                 norm = float(torch.linalg.norm(target_mod.weight.float()).item())
                 if norm < 1e-4:
                     logger.warning(
-                        "REAPMoEAttention: weight for '%s' has near-zero "
-                        "Frobenius norm (%.2e).",
+                        "REAPMoEAttention: weight for '%s' has near-zero Frobenius norm (%.2e).",
                         proj_key,
                         norm,
                     )
@@ -876,9 +830,7 @@ class REAPMoEAttention(BaseAttention):
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         # RP-FIX-24
         if encoder_hidden_states is not None:
-            raise NotImplementedError(
-                "REAPMoEAttention does not support cross-attention."
-            )
+            raise NotImplementedError("REAPMoEAttention does not support cross-attention.")
 
         B, L, _ = hidden_states.shape
         device = hidden_states.device
@@ -900,20 +852,12 @@ class REAPMoEAttention(BaseAttention):
             residual = hidden_states
 
         # Projections on attn_input
-        q = (
-            self.q_lin(attn_input)
-            .view(B, L, self.num_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
+        q = self.q_lin(attn_input).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
         k_new = (
-            self.k_lin(attn_input)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
+            self.k_lin(attn_input).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
         )
         v_new = (
-            self.v_lin(attn_input)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
+            self.v_lin(attn_input).view(B, L, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
         )
 
         # RoPE with past_len
@@ -923,10 +867,7 @@ class REAPMoEAttention(BaseAttention):
             cos, sin = position_embeddings
             past_len_rope = 0
             if past_key_value is not None:
-                if (
-                    isinstance(past_key_value, (tuple, list))
-                    and len(past_key_value) >= 1
-                ):
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
                     past_len_rope = past_key_value[0].shape[-2]
                 elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
                     # RP-FIX-19: use layer_idx
@@ -970,32 +911,24 @@ class REAPMoEAttention(BaseAttention):
 
         # RP-FIX-18: disable SDPA if causal and past_len > 0
         use_sdpa = (
-            not output_attentions
-            and head_mask is None
-            and not (self.is_decoder and past_len > 0)
+            not output_attentions and head_mask is None and not (self.is_decoder and past_len > 0)
         )
 
         if use_sdpa:
             q_sdp = q.to(torch.float16) if q.dtype == torch.float32 else q
-            k_sdp = (
-                K_full.to(torch.float16) if K_full.dtype == torch.float32 else K_full
-            )
-            v_sdp = (
-                V_full.to(torch.float16) if V_full.dtype == torch.float32 else V_full
-            )
+            k_sdp = K_full.to(torch.float16) if K_full.dtype == torch.float32 else K_full
+            v_sdp = V_full.to(torch.float16) if V_full.dtype == torch.float32 else V_full
 
             attn_bias_sdp = None
             if attention_mask is not None:
                 if attention_mask.dim() == 4:
                     attn_bias_sdp = attention_mask.to(q_sdp.dtype)
                 else:
-                    token_valid = self._prepare_valid_mask(
-                        attention_mask, B, N_kv, device
-                    )
+                    token_valid = self._prepare_valid_mask(attention_mask, B, N_kv, device)
                     if token_valid is not None:
-                        attn_bias_sdp = (
-                            (token_valid[:, None, None, :].float() - 1.0) * 1e4
-                        ).to(q_sdp.dtype)
+                        attn_bias_sdp = ((token_valid[:, None, None, :].float() - 1.0) * 1e4).to(
+                            q_sdp.dtype
+                        )
 
             is_causal_sdp = self.is_decoder and L > 1 and past_len == 0
 
@@ -1017,10 +950,7 @@ class REAPMoEAttention(BaseAttention):
             attn_ret = None
         else:
             scale = 1.0 / math.sqrt(self.head_dim)
-            scores = (
-                torch.matmul(q.float(), K_full.float().transpose(-2, -1).contiguous())
-                * scale
-            )
+            scores = torch.matmul(q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale
 
             token_valid = self._prepare_valid_mask(attention_mask, B, N_kv, device)
 

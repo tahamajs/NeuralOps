@@ -81,9 +81,7 @@ def get_cached_tokenized_dataset(
         cache_dir = Path(cache_dir)
     cache_dir.mkdir(parents=True, exist_ok=True)
 
-    cache_file = (
-        cache_dir / f"{dataset_name.lower()}_{model_family.lower()}_len{seq_len}.pt"
-    )
+    cache_file = cache_dir / f"{dataset_name.lower()}_{model_family.lower()}_len{seq_len}.pt"
 
     if cache_file.exists():
         t0 = time.time()
@@ -103,9 +101,7 @@ def get_cached_tokenized_dataset(
         }
         n_tr = len(result["train"])
         n_va = len(result["val"])
-        logger.info(
-            f"Loaded {n_tr} train and {n_va} val samples in {time.time()-t0:.3f}s"
-        )
+        logger.info(f"Loaded {n_tr} train and {n_va} val samples in {time.time() - t0:.3f}s")
         return result
 
     # Build cache
@@ -117,9 +113,7 @@ def get_cached_tokenized_dataset(
     from datasets import load_dataset
     from transformers import AutoTokenizer
 
-    tok_name = MODEL_TOKENIZER_MAPPING.get(
-        model_family.lower(), "distilbert-base-uncased"
-    )
+    tok_name = MODEL_TOKENIZER_MAPPING.get(model_family.lower(), "distilbert-base-uncased")
     tokenizer = AutoTokenizer.from_pretrained(tok_name)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token or tokenizer.sep_token or "[PAD]"
@@ -137,13 +131,9 @@ def get_cached_tokenized_dataset(
 
         def tok_fn(ex):
             args = (ex[k1],) if k2 is None else (ex[k1], ex[k2])
-            return tokenizer(
-                *args, padding="max_length", truncation=True, max_length=seq_len
-            )
+            return tokenizer(*args, padding="max_length", truncation=True, max_length=seq_len)
 
-        tokenized = raw_ds.map(
-            tok_fn, batched=True, desc=f"Tokenizing {dataset_name} {split_name}"
-        )
+        tokenized = raw_ds.map(tok_fn, batched=True, desc=f"Tokenizing {dataset_name} {split_name}")
 
         input_ids = torch.tensor(tokenized["input_ids"], dtype=torch.long)
         attention_mask = torch.tensor(tokenized["attention_mask"], dtype=torch.long)
@@ -167,7 +157,7 @@ def get_cached_tokenized_dataset(
     }
     torch.save(save_dict, cache_file)
     logger.info(
-        f"Generated and saved pre-tokenized cache ({cache_file.stat().st_size / 1e6:.1f} MB) in {time.time()-t0:.2f}s"
+        f"Generated and saved pre-tokenized cache ({cache_file.stat().st_size / 1e6:.1f} MB) in {time.time() - t0:.2f}s"
     )
 
     result = {

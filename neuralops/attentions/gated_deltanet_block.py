@@ -10,6 +10,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.attentions.gated_delta_net import GatedDeltaNet
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.base import BaseAttention
@@ -74,9 +75,7 @@ class GatedDeltaNetBlock(BaseAttention):
             **kwargs,
         )
         self.norm = nn.LayerNorm(self.d_model)
-        self.is_nested_encoder: bool = getattr(
-            self.deltanet, "is_nested_encoder", False
-        )
+        self.is_nested_encoder: bool = getattr(self.deltanet, "is_nested_encoder", False)
 
     # Compatibility properties
     @property
@@ -177,9 +176,7 @@ class GatedDeltaNetBlock(BaseAttention):
         else:
             if hasattr(self.deltanet, "copy_weights"):
                 self.deltanet.copy_weights(old_attn)
-                self.is_nested_encoder = getattr(
-                    self.deltanet, "is_nested_encoder", False
-                )
+                self.is_nested_encoder = getattr(self.deltanet, "is_nested_encoder", False)
 
     def forward(
         self,
@@ -284,9 +281,7 @@ def inject_gated_deltanet_block(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -297,9 +292,7 @@ def inject_gated_deltanet_block(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=(
-                    comp_config
-                    if "comp_config" in locals() or "comp_config" in kwargs
-                    else None
+                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
                 ),
                 layer_idx=idx,
                 total_layers=tot,
@@ -333,11 +326,7 @@ def inject_gated_deltanet_block(
             "hidden_size",
             getattr(src_attn, "embed_dim", getattr(src_attn, "all_head_size", None)),
         )
-        if (
-            cand is None
-            and hasattr(src_attn, "q_proj")
-            and hasattr(src_attn.q_proj, "in_features")
-        ):
+        if cand is None and hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features"):
             cand = src_attn.q_proj.in_features
         if cand is not None:
             d_model = cand
@@ -347,18 +336,14 @@ def inject_gated_deltanet_block(
     elif model_config is None and hasattr(layer, "config"):
         model_config = layer.config
     if model_config is not None:
-        d_model = getattr(
-            model_config, "hidden_size", getattr(model_config, "dim", d_model)
-        )
+        d_model = getattr(model_config, "hidden_size", getattr(model_config, "dim", d_model))
         num_heads = getattr(model_config, "num_attention_heads", num_heads)
     elif hasattr(layer, "config"):
         d_model = getattr(layer.config, "hidden_size", d_model)
         num_heads = getattr(layer.config, "num_attention_heads", num_heads)
 
     try:
-        use_full = (
-            getattr(comp_config, "use_full_attention", False) if comp_config else False
-        )
+        use_full = getattr(comp_config, "use_full_attention", False) if comp_config else False
         new_block = GatedDeltaNetBlock(
             config=model_config,
             comp_config=comp_config,
@@ -393,9 +378,9 @@ def inject_gated_deltanet_block(
             new_block.is_nested_encoder = False
             new_block.deltanet.is_nested_encoder = False
             layer.self_attn = new_block
-        assert (
-            new_block.is_nested_encoder == new_block.deltanet.is_nested_encoder
-        ), "GatedDeltaNetBlock nested flag desynced"
+        assert new_block.is_nested_encoder == new_block.deltanet.is_nested_encoder, (
+            "GatedDeltaNetBlock nested flag desynced"
+        )
 
         return new_block
     except Exception as e:

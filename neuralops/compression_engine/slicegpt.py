@@ -31,6 +31,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import get_calibration_tensors
@@ -90,17 +91,11 @@ class SliceGPTCompressor(BaseCompressor):
         super().__init__(model, name="slicegpt", **kwargs)
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
         if cfg is not None:
-            sparsity = _cfg_get(
-                cfg, "slicegpt_sparsity", _cfg_get(cfg, "sparsity", sparsity)
-            )
+            sparsity = _cfg_get(cfg, "slicegpt_sparsity", _cfg_get(cfg, "sparsity", sparsity))
             non_uniform = _cfg_get(cfg, "non_uniform", non_uniform)
             max_error = _cfg_get(cfg, "max_error", max_error)
-            fallback_to_original = _cfg_get(
-                cfg, "fallback_to_original", fallback_to_original
-            )
-            target_attention_only = _cfg_get(
-                cfg, "target_attention_only", target_attention_only
-            )
+            fallback_to_original = _cfg_get(cfg, "fallback_to_original", fallback_to_original)
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
             use_lora = _cfg_get(cfg, "use_lora", use_lora)
             lora_r = _cfg_get(cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
@@ -158,9 +153,7 @@ class SliceGPTCompressor(BaseCompressor):
         base_mod = getattr(module, "base_layer", module)
         cls_name = base_mod.__class__.__name__.lower()
         is_linear_like = (
-            isinstance(base_mod, nn.Linear)
-            or "conv1d" in cls_name
-            or hasattr(base_mod, "nf")
+            isinstance(base_mod, nn.Linear) or "conv1d" in cls_name or hasattr(base_mod, "nf")
         )
         if not is_linear_like:
             return False
@@ -330,9 +323,7 @@ class SliceGPTCompressor(BaseCompressor):
             W_pca = torch.matmul(W, Q)
 
             # Determine number of principal coordinates to retain
-            if self.non_uniform and any(
-                k in name for k in ("query", "key", "q_lin", "k_lin")
-            ):
+            if self.non_uniform and any(k in name for k in ("query", "key", "q_lin", "k_lin")):
                 head_sparsity = max(0.0, self.sparsity * 0.75)
                 keep = max(1, int(d_in * (1.0 - head_sparsity)))
             elif self.non_uniform and any(k in name for k in ("mlp", "ffn", "dense")):
@@ -383,12 +374,8 @@ class SliceGPTCompressor(BaseCompressor):
             # Factor:
             #   U_factor  = W_pca[:, :keep]           shape (d_out, keep)
             #   Vt_factor = Q[:, :keep].T             shape (keep, d_in)
-            U_factor = (
-                W_pca[:, :effective_keep].contiguous().to(dtype=dtype, device=device)
-            )
-            Vt_factor = (
-                Q[:, :effective_keep].T.contiguous().to(dtype=dtype, device=device)
-            )
+            U_factor = W_pca[:, :effective_keep].contiguous().to(dtype=dtype, device=device)
+            Vt_factor = Q[:, :effective_keep].T.contiguous().to(dtype=dtype, device=device)
 
             # Parameter count of the SVDLinear factorization
             factorized_params = effective_keep * (d_out + d_in)
@@ -419,10 +406,7 @@ class SliceGPTCompressor(BaseCompressor):
                 in_features=d_in,
                 out_features=d_out,
                 rank=effective_keep,
-                bias=(
-                    getattr(base_mod, "bias", None) is not None
-                    and base_mod.bias is not None
-                ),
+                bias=(getattr(base_mod, "bias", None) is not None and base_mod.bias is not None),
                 dtype=dtype,
                 device=device,
                 lora_r=used_lora_r,
@@ -458,9 +442,7 @@ class SliceGPTCompressor(BaseCompressor):
                     ):
                         lb_target.data.copy_(src_lb.data)
                 except Exception as e_lora:
-                    logger.debug(
-                        "SliceGPT LoRA adapter copy skipped on %s: %s", name, e_lora
-                    )
+                    logger.debug("SliceGPT LoRA adapter copy skipped on %s: %s", name, e_lora)
 
             # Replace the module
             is_wrapped = hasattr(module, "base_layer")
@@ -485,14 +467,10 @@ class SliceGPTCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         avg_err = (
-            sum(self.layer_errors.values()) / len(self.layer_errors)
-            if self.layer_errors
-            else 0.0
+            sum(self.layer_errors.values()) / len(self.layer_errors) if self.layer_errors else 0.0
         )
         compression_rate = (
-            total_params_before / max(1, total_params_after)
-            if total_params_after > 0
-            else 1.0
+            total_params_before / max(1, total_params_after) if total_params_after > 0 else 1.0
         )
 
         stats = self.get_compression_stats()
@@ -548,9 +526,7 @@ def slicegpt_factory(
     """Factory function for SliceGPT compressor."""
     sparsity = kwargs.pop(
         "sparsity",
-        _cfg_get(
-            comp_config, "slicegpt_sparsity", _cfg_get(comp_config, "sparsity", 0.60)
-        ),
+        _cfg_get(comp_config, "slicegpt_sparsity", _cfg_get(comp_config, "sparsity", 0.60)),
     )
     non_uniform = kwargs.pop("non_uniform", _cfg_get(comp_config, "non_uniform", False))
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.60))

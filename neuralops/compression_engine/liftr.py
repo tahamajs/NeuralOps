@@ -15,6 +15,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
@@ -185,11 +186,7 @@ class _LinearizedAttentionWrapper(nn.Module):
                 return self._format_output(output, output_attentions)
 
             # ---- 2. DistilBERT (q_lin, v_lin, out_lin) ----
-            if (
-                hasattr(attn, "q_lin")
-                and hasattr(attn, "v_lin")
-                and hasattr(attn, "out_lin")
-            ):
+            if hasattr(attn, "q_lin") and hasattr(attn, "v_lin") and hasattr(attn, "out_lin"):
                 v = attn.v_lin(x)
                 o_in = getattr(attn.out_lin, "in_features", v.shape[-1])
                 if v.shape[-1] != o_in:
@@ -221,9 +218,7 @@ class _LinearizedAttentionWrapper(nn.Module):
                 return self._format_output(output, output_attentions)
 
         except Exception as e:
-            logger.debug(
-                "LIFTR wrapper: mean-attention path failed (%s); delegating.", e
-            )
+            logger.debug("LIFTR wrapper: mean-attention path failed (%s); delegating.", e)
 
         # ---- LIFTR-FIX-04: fallback to original ----
         return self._delegate(
@@ -414,19 +409,13 @@ class LIFTRCompressor(BaseCompressor):
                 continue
 
             if self._is_already_compressed(child):
-                if (
-                    hasattr(child, "lora_A")
-                    or child.__class__.__name__.lower() == "loralinear"
-                ):
+                if hasattr(child, "lora_A") or child.__class__.__name__.lower() == "loralinear":
                     continue
                 if isinstance(child, _LinearizedAttentionWrapper):
                     continue
 
             # Skip LoRA-wrapped modules.
-            if (
-                hasattr(child, "lora_A")
-                or child.__class__.__name__.lower() == "loralinear"
-            ):
+            if hasattr(child, "lora_A") or child.__class__.__name__.lower() == "loralinear":
                 continue
 
             is_attn_layer = any(k in full_name.lower() for k in _ATTN_NAMES)
@@ -455,9 +444,7 @@ class LIFTRCompressor(BaseCompressor):
                 if "norm" in name.lower():
                     self._linearize_module(child, prefix=full_name, _depth=_depth + 1)
                     continue
-                if isinstance(
-                    child, (nn.Linear, nn.LayerNorm, nn.RMSNorm, nn.Embedding)
-                ):
+                if isinstance(child, (nn.Linear, nn.LayerNorm, nn.RMSNorm, nn.Embedding)):
                     self._linearize_module(child, prefix=full_name, _depth=_depth + 1)
                     continue
 
@@ -473,9 +460,7 @@ class LIFTRCompressor(BaseCompressor):
                     child, _LinearizedAttentionWrapper
                 ):
                     try:
-                        wrapped = _LinearizedAttentionWrapper(
-                            child, layer_name=full_name
-                        )
+                        wrapped = _LinearizedAttentionWrapper(child, layer_name=full_name)
                         setattr(module, name, wrapped)
                         self.linearized_attentions_count += 1
                         self.replaced_modules.append(full_name)
@@ -508,9 +493,7 @@ class LIFTRCompressor(BaseCompressor):
         if self.validation_calibration:
             try:
                 self.model.eval()
-                dummy_in = torch.randint(
-                    0, 100, (1, 8), device=device, dtype=torch.long
-                )
+                dummy_in = torch.randint(0, 100, (1, 8), device=device, dtype=torch.long)
                 with torch.no_grad():
                     res = self.model(dummy_in)
                     if hasattr(res, "logits"):
@@ -538,11 +521,7 @@ class LIFTRCompressor(BaseCompressor):
         # Post-linearization validation.
         validation_passed = True
         rel_diff = 0.0
-        if (
-            self.validation_calibration
-            and orig_out is not None
-            and dummy_in is not None
-        ):
+        if self.validation_calibration and orig_out is not None and dummy_in is not None:
             try:
                 with torch.no_grad():
                     res_new = self.model(dummy_in)
@@ -626,9 +605,7 @@ def liftr_compressor_entry(
     replace_attention = _cfg_get(
         comp_config,
         "liftr_replace_attention",
-        _cfg_get(
-            comp_config, "replace_attention", kwargs.pop("replace_attention", False)
-        ),
+        _cfg_get(comp_config, "replace_attention", kwargs.pop("replace_attention", False)),
     )
     gelu_coefficient = _cfg_get(
         comp_config,

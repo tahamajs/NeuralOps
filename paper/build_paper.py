@@ -6,6 +6,7 @@ Usage:
     python paper/build_paper.py --module vspec
     python paper/build_paper.py --all
 """
+
 from __future__ import annotations
 
 import argparse
@@ -13,12 +14,25 @@ import subprocess
 from pathlib import Path
 
 SECTIONS = [
-    "00_meta.md", "01_intro.md", "02_related.md", "03_background.md",
-    "04_method.md", "05_architecture.md", "06_setup.md", "07_results.md",
-    "08_analysis.md", "09_discussion.md", "10_limitations.md",
-    "11_conclusion.md", "12_reproducibility.md", "13_references.md",
-    "A_math.md", "B_implementation.md", "C_data.md",
-    "D_negative_results.md", "E_ethics.md",
+    "00_meta.md",
+    "01_intro.md",
+    "02_related.md",
+    "03_background.md",
+    "04_method.md",
+    "05_architecture.md",
+    "06_setup.md",
+    "07_results.md",
+    "08_analysis.md",
+    "09_discussion.md",
+    "10_limitations.md",
+    "11_conclusion.md",
+    "12_reproducibility.md",
+    "13_references.md",
+    "A_math.md",
+    "B_implementation.md",
+    "C_data.md",
+    "D_negative_results.md",
+    "E_ethics.md",
 ]
 
 
@@ -46,12 +60,18 @@ def build_module(module_dir: Path, output_file: Path | None = None, to_pdf: bool
     if to_pdf:
         try:
             pdf_path = output.with_suffix(".pdf")
-            subprocess.run([
-                "pandoc", str(output),
-                "-o", str(pdf_path),
-                "--pdf-engine=xelatex",
-                "-V", "geometry:margin=1in",
-            ], check=True)
+            subprocess.run(
+                [
+                    "pandoc",
+                    str(output),
+                    "-o",
+                    str(pdf_path),
+                    "--pdf-engine=xelatex",
+                    "-V",
+                    "geometry:margin=1in",
+                ],
+                check=True,
+            )
             print(f"[{module_dir.name}] Generated PDF: {pdf_path}")
         except Exception as e:
             print(f"[{module_dir.name}] PDF build skipped: {e}")
@@ -60,8 +80,12 @@ def build_module(module_dir: Path, output_file: Path | None = None, to_pdf: bool
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build unified papers from modular sections.")
-    parser.add_argument("--module", type=str, default=None, help="Module folder name inside PerModulePaper")
-    parser.add_argument("--all", action="store_true", help="Build all modules inside PerModulePaper")
+    parser.add_argument(
+        "--module", type=str, default=None, help="Module folder name inside PerModulePaper"
+    )
+    parser.add_argument(
+        "--all", action="store_true", help="Build all modules inside PerModulePaper"
+    )
     parser.add_argument("--output", type=str, default=None, help="Explicit output path")
     parser.add_argument("--pdf", action="store_true", help="Compile to PDF via pandoc")
     args = parser.parse_args()

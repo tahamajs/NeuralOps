@@ -41,6 +41,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 
@@ -184,12 +185,8 @@ def apply_rotary_pos_emb(
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_e = (q_rot * cos.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q_rot.dtype)
-        )
-        k_rot_e = (k_rot * cos.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k_rot.dtype)
-        )
+        q_rot_e = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_e = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
         q = torch.cat([q_rot_e, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_e
         k = torch.cat([k_rot_e, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_e
     else:
@@ -277,9 +274,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = (
-                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            )
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -287,9 +282,7 @@ class LoRALinear(nn.Module):
 # ===========================================================================
 # Main attention
 # ===========================================================================
-@ATTENTION_REGISTRY.register(
-    "moe_deltakv_paged", supports_causal=True, supports_gqa=True
-)
+@ATTENTION_REGISTRY.register("moe_deltakv_paged", supports_causal=True, supports_gqa=True)
 class MoEDeltaKVPagedAttention(nn.Module):
     """
     MoE-DeltaKV-Paged Hybrid Attention.
@@ -353,9 +346,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
             )
         )
 
-        cfg_kv = getattr(
-            config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
-        )
+        cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -555,9 +546,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
                 pass
 
         # --- 2. GPT-2 fused c_attn ---
-        if hasattr(src, "c_attn") and any(
-            extracted[k][0] is None for k in ("q", "k", "v")
-        ):
+        if hasattr(src, "c_attn") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             try:
                 mod_c = src.c_attn
                 base_c = getattr(mod_c, "base_layer", mod_c)
@@ -618,9 +607,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
                 logger.debug("GPT-2 c_proj extraction failed: %s", e)
 
         # --- 3. BERT / RoBERTa nested ---
-        if hasattr(src, "self") and any(
-            extracted[k][0] is None for k in ("q", "k", "v")
-        ):
+        if hasattr(src, "self") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             try:
                 s = src.self
                 if hasattr(s, "query") and extracted["q"][0] is None:
@@ -641,11 +628,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
             except Exception as e:
                 logger.debug("Nested self extraction failed: %s", e)
 
-        if (
-            hasattr(src, "output")
-            and hasattr(src.output, "dense")
-            and extracted["o"][0] is None
-        ):
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             try:
                 dense = src.output.dense
                 extracted["o"] = (
@@ -774,9 +757,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
                 if b is not None and target.bias is not None:
                     mb = min(target.bias.numel(), b.numel())
                     target.bias.data.zero_()
-                    target.bias.data[:mb].copy_(
-                        b[:mb].to(target.bias.device, target.bias.dtype)
-                    )
+                    target.bias.data[:mb].copy_(b[:mb].to(target.bias.device, target.bias.dtype))
 
             # Output projection
             w_o, b_o = extracted["o"]
@@ -865,12 +846,8 @@ class MoEDeltaKVPagedAttention(nn.Module):
         ) / math.sqrt(d)
 
         # Page validity: at least one valid token in the page
-        page_valid = valid_pad.view(B, 1, num_pages, page_size).any(
-            dim=-1
-        )  # (B,1,num_pages)
-        router_logits = router_logits.masked_fill(
-            ~page_valid.unsqueeze(2), float("-inf")
-        )
+        page_valid = valid_pad.view(B, 1, num_pages, page_size).any(dim=-1)  # (B,1,num_pages)
+        router_logits = router_logits.masked_fill(~page_valid.unsqueeze(2), float("-inf"))
 
         # Causal masking of pages
         if self.is_causal:
@@ -879,21 +856,15 @@ class MoEDeltaKVPagedAttention(nn.Module):
             )
             router_logits = router_logits.masked_fill(~causal_pages, float("-inf"))
 
-        router_logits = torch.nan_to_num(
-            router_logits, nan=-1e4, posinf=1e4, neginf=-1e4
-        )
+        router_logits = torch.nan_to_num(router_logits, nan=-1e4, posinf=1e4, neginf=-1e4)
 
         # Ensure page 0 always selected (attention sink / CLS protection)
         router_logits_for_topk = router_logits.clone()
         if self.is_causal:
             # Only bias page 0 for queries whose page index >= 0 (always true)
-            router_logits_for_topk[:, :, :, 0] = (
-                router_logits_for_topk[:, :, :, 0] + 1e4
-            )
+            router_logits_for_topk[:, :, :, 0] = router_logits_for_topk[:, :, :, 0] + 1e4
         else:
-            router_logits_for_topk[:, :, :, 0] = (
-                router_logits_for_topk[:, :, :, 0] + 1e4
-            )
+            router_logits_for_topk[:, :, :, 0] = router_logits_for_topk[:, :, :, 0] + 1e4
 
         k_experts = min(self.k_experts, num_pages)
         _, topk_indices = torch.topk(router_logits_for_topk, k_experts, dim=-1)
@@ -911,11 +882,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
             self.aux_loss.copy_(num_pages * torch.sum(density * prob_mean).detach())
 
         # ---- Gather selected pages ----
-        expanded_idx = (
-            topk_indices.unsqueeze(-1)
-            .unsqueeze(-1)
-            .expand(-1, -1, -1, -1, page_size, d)
-        )
+        expanded_idx = topk_indices.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, -1, page_size, d)
         k_blocks_exp = k_blocks.unsqueeze(2).expand(-1, -1, num_pages, -1, -1, -1)
         v_blocks_exp = v_blocks.unsqueeze(2).expand(-1, -1, num_pages, -1, -1, -1)
         k_gathered = torch.gather(
@@ -933,24 +900,18 @@ class MoEDeltaKVPagedAttention(nn.Module):
 
         # ---- Per-expert attention ----
         q_exp = q_blocks.unsqueeze(3)  # (B,H,num_pages,1,page_size,d)
-        attn_scores = torch.matmul(
-            q_exp, k_gathered.transpose(-1, -2).contiguous()
-        ) / math.sqrt(d)
+        attn_scores = torch.matmul(q_exp, k_gathered.transpose(-1, -2).contiguous()) / math.sqrt(d)
         attn_scores = attn_scores.masked_fill(~k_valid.unsqueeze(-2), -1e4)
         attn_scores = torch.nan_to_num(attn_scores, nan=-1e4, posinf=1e4, neginf=-1e4)
 
         attn_probs = F.softmax(attn_scores, dim=-1)
         attn_probs = self.dropout(attn_probs)
 
-        context_per_expert = torch.matmul(
-            attn_probs, v_gathered
-        )  # (B,H,num_pages,k,page_size,d)
+        context_per_expert = torch.matmul(attn_probs, v_gathered)  # (B,H,num_pages,k,page_size,d)
 
         # ---- Mix experts with gate weights ----
         g_j_exp = g_j.unsqueeze(-1).unsqueeze(-1)  # (B,H,num_pages,k,1,1)
-        context = (context_per_expert * g_j_exp).sum(
-            dim=3
-        )  # (B,H,num_pages,page_size,d)
+        context = (context_per_expert * g_j_exp).sum(dim=3)  # (B,H,num_pages,page_size,d)
 
         # ---- Reshape to (B,H,padded_N,d) ----
         context = context.reshape(B, H, padded_N, d)
@@ -1033,9 +994,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
                     valid_mask = attention_mask > 0
             elif attention_mask.dim() == 3:
                 m = attention_mask
-                valid_mask = (
-                    (m > -1e4).squeeze(1) if m.dtype.is_floating_point else m.squeeze(1)
-                )
+                valid_mask = (m > -1e4).squeeze(1) if m.dtype.is_floating_point else m.squeeze(1)
             elif attention_mask.dim() == 4:
                 m = attention_mask
                 v_bool = (
@@ -1059,10 +1018,7 @@ class MoEDeltaKVPagedAttention(nn.Module):
         else:
             # ---- Dense path ----
             scale = 1.0 / math.sqrt(d)
-            scores = (
-                torch.matmul(q.float(), k_hat.float().transpose(-2, -1).contiguous())
-                * scale
-            )
+            scores = torch.matmul(q.float(), k_hat.float().transpose(-2, -1).contiguous()) * scale
 
             if self.is_causal and not is_cross and N > 1:
                 diag = 1 + max(0, kv_len - N)
@@ -1212,23 +1168,15 @@ def inject_moe_deltakv_paged(
         cfg = src_attn.config
 
     page_size = int(
-        kwargs.pop(
-            "page_size", getattr(comp_config, "page_size", 16) if comp_config else 16
-        )
+        kwargs.pop("page_size", getattr(comp_config, "page_size", 16) if comp_config else 16)
     )
     k_experts = int(
-        kwargs.pop(
-            "k_experts", getattr(comp_config, "k_experts", 4) if comp_config else 4
-        )
+        kwargs.pop("k_experts", getattr(comp_config, "k_experts", 4) if comp_config else 4)
     )
     svd_rank = int(
-        kwargs.pop(
-            "svd_rank", getattr(comp_config, "svd_rank", 32) if comp_config else 32
-        )
+        kwargs.pop("svd_rank", getattr(comp_config, "svd_rank", 32) if comp_config else 32)
     )
-    q_bits = int(
-        kwargs.pop("q_bits", getattr(comp_config, "q_bits", 4) if comp_config else 4)
-    )
+    q_bits = int(kwargs.pop("q_bits", getattr(comp_config, "q_bits", 4) if comp_config else 4))
     max_delta_error = float(
         kwargs.pop(
             "max_delta_error",
@@ -1236,9 +1184,7 @@ def inject_moe_deltakv_paged(
         )
     )
     lora_rank = int(
-        kwargs.pop(
-            "lora_rank", getattr(comp_config, "lora_rank", 16) if comp_config else 16
-        )
+        kwargs.pop("lora_rank", getattr(comp_config, "lora_rank", 16) if comp_config else 16)
     )
     enable_moe = bool(kwargs.pop("enable_moe", True))
     enable_deltakv = bool(kwargs.pop("enable_deltakv", True))

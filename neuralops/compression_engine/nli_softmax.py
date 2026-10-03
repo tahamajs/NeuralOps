@@ -11,6 +11,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention, BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
@@ -36,9 +37,7 @@ class NLISoftmaxFunction(torch.autograd.Function):
         return y
 
     @staticmethod
-    def backward(
-        ctx: Any, grad_output: torch.Tensor
-    ) -> tuple[torch.Tensor | None, None]:
+    def backward(ctx: Any, grad_output: torch.Tensor) -> tuple[torch.Tensor | None, None]:
         (y,) = ctx.saved_tensors
         dot = (grad_output * y).sum(dim=-1, keepdim=True)
         grad_input = y * (grad_output - dot)
@@ -147,21 +146,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -200,9 +193,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
         return out
 
@@ -443,9 +434,7 @@ class NLISoftmaxAttention(BaseAttention):
                 w_o, b_o = _unpack(src.out_lin)
 
         # Pattern 4: Qwen/LLaMA
-        elif (
-            hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj")
-        ):
+        elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
             w_q, b_q = _unpack(src.q_proj)
             w_k, b_k = _unpack(src.k_proj)
             w_v, b_v = _unpack(src.v_proj)
@@ -507,9 +496,7 @@ class NLISoftmaxAttention(BaseAttention):
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         if encoder_hidden_states is not None:
-            raise NotImplementedError(
-                "NLISoftmaxAttention does not support cross-attention"
-            )
+            raise NotImplementedError("NLISoftmaxAttention does not support cross-attention")
 
         B, N, D = hidden_states.shape
         q = (
@@ -531,16 +518,12 @@ class NLISoftmaxAttention(BaseAttention):
             .contiguous()
         )
 
-        scores = torch.matmul(q, k.transpose(-1, -2).contiguous()) / math.sqrt(
-            self.head_dim
-        )
+        scores = torch.matmul(q, k.transpose(-1, -2).contiguous()) / math.sqrt(self.head_dim)
 
         if self.is_decoder and N > 1:
             causal_mask = (
                 torch.triu(
-                    torch.full(
-                        (N, N), -10000.0, device=scores.device, dtype=scores.dtype
-                    ),
+                    torch.full((N, N), -10000.0, device=scores.device, dtype=scores.dtype),
                     diagonal=1,
                 )
                 .unsqueeze(0)
@@ -550,10 +533,7 @@ class NLISoftmaxAttention(BaseAttention):
 
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                scores = (
-                    scores
-                    + (attention_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
-                )
+                scores = scores + (attention_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
             elif attention_mask.dim() == 3:
                 scores = scores + (attention_mask.unsqueeze(1).float() - 1.0) * 10000.0
             elif attention_mask.dim() == 4:
@@ -573,9 +553,7 @@ class NLISoftmaxAttention(BaseAttention):
             attn_probs = attn_probs * head_mask.to(attn_probs.dtype)
 
         context = torch.matmul(attn_probs, v)
-        context = (
-            context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
-        )
+        context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
         # NLI-FIX-04: out_proj only for non-nested.
         if self.is_nested_encoder or self.out_proj is None:
@@ -632,9 +610,7 @@ def inject_nli_softmax(
             layer_list = target.model.layers
         elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
             layer_list = target.encoder.layer
-        elif hasattr(target, "layers") and isinstance(
-            target.layers, (nn.ModuleList, list)
-        ):
+        elif hasattr(target, "layers") and isinstance(target.layers, (nn.ModuleList, list)):
             layer_list = target.layers
 
         if layer_list is not None:
@@ -682,11 +658,7 @@ def inject_nli_softmax(
             **kwargs,
         )
 
-        if (
-            is_nested
-            and hasattr(layer, "attention")
-            and hasattr(layer.attention, "self")
-        ):
+        if is_nested and hasattr(layer, "attention") and hasattr(layer.attention, "self"):
             layer.attention.self = new_attn
         elif hasattr(layer, "attention"):
             layer.attention = new_attn
@@ -731,9 +703,7 @@ class NLISoftmaxCompressor(BaseCompressor):
         conf = cfg or kwargs.get("comp_config")
 
         if conf is not None:
-            max_error = _cfg_get(
-                conf, "nli_max_error", _cfg_get(conf, "max_error", max_error)
-            )
+            max_error = _cfg_get(conf, "nli_max_error", _cfg_get(conf, "max_error", max_error))
             fallback_to_original = _cfg_get(
                 conf,
                 "nli_fallback_to_original",
@@ -978,10 +948,7 @@ class NLISoftmaxCompressor(BaseCompressor):
 
         # Write stats onto the model.
         try:
-            if (
-                not hasattr(self.model, "compression_stats")
-                or self.model.compression_stats is None
-            ):
+            if not hasattr(self.model, "compression_stats") or self.model.compression_stats is None:
                 self.model.compression_stats = {}
             self.model.compression_stats.update(
                 {
@@ -1014,9 +981,7 @@ class NLISoftmaxCompressor(BaseCompressor):
 def nli_softmax_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(
-            comp_config, "nli_max_error", _cfg_get(comp_config, "max_error", 0.20)
-        ),
+        _cfg_get(comp_config, "nli_max_error", _cfg_get(comp_config, "max_error", 0.20)),
     )
     fallback = kwargs.pop(
         "fallback_to_original",

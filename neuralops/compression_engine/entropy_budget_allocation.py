@@ -10,6 +10,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.compression_engine.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
@@ -80,9 +81,7 @@ class EntropyBudgetCompressor(BaseCompressor):
         cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
-        self.calibration_loader = calibration_loader or _cfg_get(
-            cfg, "calibration_loader", None
-        )
+        self.calibration_loader = calibration_loader or _cfg_get(cfg, "calibration_loader", None)
         self.total_budget_ratio = float(
             _cfg_get(
                 cfg,
@@ -235,10 +234,7 @@ class EntropyBudgetCompressor(BaseCompressor):
                         }
                         self.model(**batch)
                     elif isinstance(batch, (list, tuple)):
-                        batch = [
-                            v.to(device) if isinstance(v, torch.Tensor) else v
-                            for v in batch
-                        ]
+                        batch = [v.to(device) if isinstance(v, torch.Tensor) else v for v in batch]
                         self.model(*batch)
                     elif isinstance(batch, torch.Tensor):
                         self.model(batch.to(device))
@@ -272,18 +268,13 @@ class EntropyBudgetCompressor(BaseCompressor):
         # Freeze skipped layers if target_attention_only is enabled
         if self.target_attention_only:
             for name, module in self.model.named_modules():
-                if any(
-                    part in name.split(".")
-                    for part in ["lora_A", "lora_B", "base_layer"]
-                ):
+                if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
                     continue
                 target_mod = getattr(module, "base_layer", module)
                 cls_name = target_mod.__class__.__name__.lower()
                 is_linear = isinstance(target_mod, nn.Linear)
                 is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-                if (is_linear or is_conv1d) and not self._is_target_module(
-                    name, module
-                ):
+                if (is_linear or is_conv1d) and not self._is_target_module(name, module):
                     for p in module.parameters():
                         p.requires_grad = False
                     self.skipped_layers.append(name)
@@ -329,13 +320,9 @@ class EntropyBudgetCompressor(BaseCompressor):
                         cov + 1e-4 * torch.eye(in_f, device=W.device)
                     )
                     eigvals_clamped = torch.clamp(eigvals, min=1e-4)
-                    cov_sqrt = (
-                        eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
-                    )
+                    cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
                     cov_inv_sqrt = (
-                        eigvecs
-                        @ torch.diag(1.0 / torch.sqrt(eigvals_clamped))
-                        @ eigvecs.T
+                        eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.T
                     )
                     M = W @ cov_sqrt
                 except Exception:
@@ -378,13 +365,9 @@ class EntropyBudgetCompressor(BaseCompressor):
                 for name, _ in target_layers
             }
         else:
-            allocated_ranks = {
-                name: layer_decomp_info[name][5] for name, _ in target_layers
-            }
+            allocated_ranks = {name: layer_decomp_info[name][5] for name, _ in target_layers}
             base_allocated = sum(allocated_ranks.values())
-            total_possible = sum(
-                layer_decomp_info[name][4] for name, _ in target_layers
-            )
+            total_possible = sum(layer_decomp_info[name][4] for name, _ in target_layers)
             target_total = max(
                 base_allocated,
                 min(total_possible, int(total_possible * self.total_budget_ratio)),
@@ -448,16 +431,13 @@ class EntropyBudgetCompressor(BaseCompressor):
             V_r = V_r.to(dtype=dtype, device=device)
 
             lora_r = getattr(module, "r", 0) if hasattr(module, "lora_A") else 0
-            lora_alpha = (
-                getattr(module, "lora_alpha", 1.0) if hasattr(module, "lora_A") else 1.0
-            )
+            lora_alpha = getattr(module, "lora_alpha", 1.0) if hasattr(module, "lora_A") else 1.0
 
             svd_layer = SVDLinear(
                 in_features=in_f,
                 out_features=out_f,
                 rank=r,
-                bias=getattr(target_mod, "bias", None) is not None
-                and target_mod.bias is not None,
+                bias=getattr(target_mod, "bias", None) is not None and target_mod.bias is not None,
                 dtype=dtype,
                 device=device,
                 lora_r=lora_r,
@@ -478,17 +458,11 @@ class EntropyBudgetCompressor(BaseCompressor):
                 and svd_layer.lora_A is not None
                 and svd_layer.lora_B is not None
             ):
-                if (
-                    hasattr(module.lora_A, "weight")
-                    and module.lora_A.weight is not None
-                ):
+                if hasattr(module.lora_A, "weight") and module.lora_A.weight is not None:
                     svd_layer.lora_A.data.copy_(module.lora_A.weight.data)
                 elif isinstance(module.lora_A, nn.Parameter):
                     svd_layer.lora_A.data.copy_(module.lora_A.data)
-                if (
-                    hasattr(module.lora_B, "weight")
-                    and module.lora_B.weight is not None
-                ):
+                if hasattr(module.lora_B, "weight") and module.lora_B.weight is not None:
                     svd_layer.lora_B.data.copy_(module.lora_B.weight.data)
                 elif isinstance(module.lora_B, nn.Parameter):
                     svd_layer.lora_B.data.copy_(module.lora_B.data)
@@ -511,9 +485,7 @@ class EntropyBudgetCompressor(BaseCompressor):
         except Exception:
             forward_check_success = False
 
-        effective_ratio = (
-            total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
-        )
+        effective_ratio = total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
         avg_err = (
             sum(self.layer_errors[k] for k in self.compressed_layers)
             / max(1, len(self.compressed_layers))
@@ -554,15 +526,11 @@ class EntropyBudgetCompressor(BaseCompressor):
         return self.model, stats
 
 
-def entropy_budget_factory(
-    model: Any, comp_config: Any = None, **kwargs: Any
-) -> nn.Module:
+def entropy_budget_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Entropy budget factory function."""
     rank = kwargs.pop(
         "rank",
-        _cfg_get(
-            comp_config, "entropy_budget_rank", _cfg_get(comp_config, "rank", None)
-        ),
+        _cfg_get(comp_config, "entropy_budget_rank", _cfg_get(comp_config, "rank", None)),
     )
     budget_ratio = kwargs.pop(
         "total_budget_ratio",

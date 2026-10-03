@@ -11,6 +11,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -49,9 +50,7 @@ def vectorized_24_prune(residual: torch.Tensor) -> torch.Tensor:
     rem = in_f % 4
     if rem != 0:
         pad = 4 - rem
-        res_padded = torch.nn.functional.pad(
-            residual, (0, pad), mode="constant", value=0.0
-        )
+        res_padded = torch.nn.functional.pad(residual, (0, pad), mode="constant", value=0.0)
     else:
         pad = 0
         res_padded = residual
@@ -203,9 +202,7 @@ class ENLightenCompressor(BaseCompressor):
 
         return True
 
-    def _decompose_and_prune(
-        self, W: torch.Tensor, rank: int
-    ) -> tuple[torch.Tensor, float]:
+    def _decompose_and_prune(self, W: torch.Tensor, rank: int) -> tuple[torch.Tensor, float]:
         """Perform FP32 SVD, compute residual, apply 2:4 / unstructured pruning, and scale."""
         out_f, in_f = W.shape
         r = max(1, min(rank, out_f, in_f))
@@ -260,9 +257,7 @@ class ENLightenCompressor(BaseCompressor):
             ):
                 continue
 
-            if any(
-                part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]
-            ):
+            if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
                 continue
 
             target_mod = getattr(module, "base_layer", module)
@@ -279,8 +274,7 @@ class ENLightenCompressor(BaseCompressor):
             if not self._is_target_module(name, module):
                 if self.target_attention_only:
                     if not any(
-                        part in name.split(".")
-                        for part in ["lora_A", "lora_B", "base_layer"]
+                        part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]
                     ):
                         for p in module.parameters():
                             p.requires_grad = False
@@ -364,22 +358,14 @@ class ENLightenCompressor(BaseCompressor):
                 )
             else:
                 target_mod.weight.data.copy_(
-                    best_w_new.to(
-                        dtype=target_mod.weight.dtype, device=target_mod.weight.device
-                    )
+                    best_w_new.to(dtype=target_mod.weight.dtype, device=target_mod.weight.device)
                 )
 
             # Preserve LoRA adapter trainability if layer is a LoRALinear wrapper
             if hasattr(module, "lora_A") and hasattr(module, "lora_B"):
-                if (
-                    hasattr(module.lora_A, "weight")
-                    and module.lora_A.weight is not None
-                ):
+                if hasattr(module.lora_A, "weight") and module.lora_A.weight is not None:
                     module.lora_A.weight.requires_grad = True
-                if (
-                    hasattr(module.lora_B, "weight")
-                    and module.lora_B.weight is not None
-                ):
+                if hasattr(module.lora_B, "weight") and module.lora_B.weight is not None:
                     module.lora_B.weight.requires_grad = True
 
             self.compressed_layers.append(name)
@@ -392,9 +378,7 @@ class ENLightenCompressor(BaseCompressor):
             total_comp_params += comp_layer_params
 
         self._compressed_params = self._count_params(self.model)
-        effective_ratio = (
-            total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
-        )
+        effective_ratio = total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
         avg_err = (
             sum(self.layer_errors[k] for k in self.compressed_layers)
             / max(1, len(self.compressed_layers))
@@ -434,10 +418,7 @@ class ENLightenCompressor(BaseCompressor):
         # num_compressed_layers. ENLighten is a weight-rewriting compressor (no
         # module replacement), so the framework cannot discover compression via
         # module-type inspection — we expose it explicitly here.
-        if (
-            not hasattr(self.model, "compression_stats")
-            or self.model.compression_stats is None
-        ):
+        if not hasattr(self.model, "compression_stats") or self.model.compression_stats is None:
             self.model.compression_stats = {}
         self.model.compression_stats.update(
             {
@@ -470,9 +451,7 @@ def enlighten_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any
     )
     sparsity = kwargs.pop(
         "sparsity",
-        _cfg_get(
-            comp_config, "enlighten_sparsity", _cfg_get(comp_config, "sparsity", 0.5)
-        ),
+        _cfg_get(comp_config, "enlighten_sparsity", _cfg_get(comp_config, "sparsity", 0.5)),
     )
     structured_24 = kwargs.pop(
         "structured_24",
@@ -484,9 +463,7 @@ def enlighten_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(
-            comp_config, "enlighten_max_error", _cfg_get(comp_config, "max_error", 0.45)
-        ),
+        _cfg_get(comp_config, "enlighten_max_error", _cfg_get(comp_config, "max_error", 0.45)),
     )
     target_attention_only = kwargs.pop(
         "target_attention_only",

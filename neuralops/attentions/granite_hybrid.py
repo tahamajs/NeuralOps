@@ -14,6 +14,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.attentions.gated_delta_net import LoRALinear
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.base import BaseAttention
@@ -97,22 +98,10 @@ def apply_rotary_pos_emb(
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q_rot.dtype)
-        )
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k_rot.dtype)
-        )
-        q = (
-            torch.cat([q_rot_embed, q_pass], dim=-1)
-            if q_pass.numel() > 0
-            else q_rot_embed
-        )
-        k = (
-            torch.cat([k_rot_embed, k_pass], dim=-1)
-            if k_pass.numel() > 0
-            else k_rot_embed
-        )
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     else:
         cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
         q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
@@ -143,9 +132,7 @@ class Mamba2(nn.Module):
             inner_dim, inner_dim, d_conv, groups=inner_dim, padding=d_conv - 1
         )
         self.dt_proj: nn.Linear = nn.Linear(inner_dim, inner_dim)
-        self.A_log: nn.Parameter = nn.Parameter(
-            torch.log(torch.rand(inner_dim, d_state) * 0.1)
-        )
+        self.A_log: nn.Parameter = nn.Parameter(torch.log(torch.rand(inner_dim, d_state) * 0.1))
         self.D: nn.Parameter = nn.Parameter(torch.ones(inner_dim))
         self.out_proj: nn.Linear = nn.Linear(inner_dim, d_model)
 
@@ -155,18 +142,12 @@ class Mamba2(nn.Module):
         x_proj = self.in_proj(x)
         x_ssm, z = x_proj.chunk(2, dim=-1)
         x_ssm = (
-            self.conv1d(x_ssm.transpose(1, 2).contiguous())[..., :L]
-            .transpose(1, 2)
-            .contiguous()
+            self.conv1d(x_ssm.transpose(1, 2).contiguous())[..., :L].transpose(1, 2).contiguous()
         )
         dt = F.softplus(self.dt_proj(x_ssm))
-        A = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(
-            dtype=x.dtype
-        )
+        A = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(dtype=x.dtype)
 
-        dA_exp_arg = torch.clamp(
-            torch.einsum("bli,in->blin", dt, A), min=-20.0, max=0.0
-        )
+        dA_exp_arg = torch.clamp(torch.einsum("bli,in->blin", dt, A), min=-20.0, max=0.0)
         dA = torch.exp(dA_exp_arg)
         dBX = torch.einsum("bli,blin->blin", x_ssm, dt.unsqueeze(-1))
 
@@ -221,13 +202,9 @@ class MixtureOfExperts(nn.Module):
         for e in range(self.num_experts):
             mask = (indices == e).any(dim=-1)  # (B, L)
             if mask.any():
-                selected_weights = (weights * (indices == e).float()).sum(
-                    dim=-1, keepdim=True
-                )
+                selected_weights = (weights * (indices == e).float()).sum(dim=-1, keepdim=True)
                 out += (
-                    mask.unsqueeze(-1)
-                    * selected_weights
-                    * self.experts[e](x * mask.unsqueeze(-1))
+                    mask.unsqueeze(-1) * selected_weights * self.experts[e](x * mask.unsqueeze(-1))
                 )
         return out
 
@@ -271,9 +248,7 @@ class GraniteHybridBlock(BaseAttention):
             return kwargs.get(k, default)
 
         if dim is None:
-            dim = _get(
-                "hidden_size", _get("d_model", _get("n_embd", _get("dim", None)))
-            )
+            dim = _get("hidden_size", _get("d_model", _get("n_embd", _get("dim", None))))
         if dim is None and src_attn is not None:
             dim = getattr(src_attn, "hidden_size", getattr(src_attn, "embed_dim", None))
             if dim is None:
@@ -282,9 +257,7 @@ class GraniteHybridBlock(BaseAttention):
                     if m is not None and hasattr(m, "in_features"):
                         dim = m.in_features
                         break
-        dim = dim or kwargs.get(
-            "hidden_size", kwargs.get("d_model", kwargs.get("dim", 768))
-        )
+        dim = dim or kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
 
         if num_heads is None:
             num_heads = _get("num_attention_heads", _get("num_heads", None))
@@ -292,9 +265,7 @@ class GraniteHybridBlock(BaseAttention):
             num_heads = getattr(
                 src_attn, "num_heads", getattr(src_attn, "num_attention_heads", None)
             )
-        num_heads = num_heads or kwargs.get(
-            "num_attention_heads", kwargs.get("num_heads", 8)
-        )
+        num_heads = num_heads or kwargs.get("num_attention_heads", kwargs.get("num_heads", 8))
 
         self.dim: int = int(dim)
         self.num_heads: int = int(num_heads)
@@ -311,9 +282,7 @@ class GraniteHybridBlock(BaseAttention):
             kv_heads = getattr(
                 src_attn,
                 "num_key_value_heads",
-                getattr(
-                    src_attn, "num_kv_heads", getattr(src_attn, "n_kv_heads", None)
-                ),
+                getattr(src_attn, "num_kv_heads", getattr(src_attn, "n_kv_heads", None)),
             )
             if (
                 kv_heads is None
@@ -322,9 +291,7 @@ class GraniteHybridBlock(BaseAttention):
                 and self.head_dim > 0
             ):
                 kv_heads = src_attn.k_proj.out_features // self.head_dim
-        self.num_kv_heads: int = int(
-            kv_heads if kv_heads is not None else self.num_heads
-        )
+        self.num_kv_heads: int = int(kv_heads if kv_heads is not None else self.num_heads)
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
         self.all_head_size: int = self.num_heads * self.head_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
@@ -356,9 +323,7 @@ class GraniteHybridBlock(BaseAttention):
 
         # LoRA setup
         self.lora_rank: int = int(_get("lora_rank", kwargs.get("lora_rank", lora_rank)))
-        self.lora_alpha: float = float(
-            _get("lora_alpha", kwargs.get("lora_alpha", lora_alpha))
-        )
+        self.lora_alpha: float = float(_get("lora_alpha", kwargs.get("lora_alpha", lora_alpha)))
         self.freeze_base: bool = self.lora_rank > 0
 
         self.mamba: Mamba2 = Mamba2(d_model=self.dim)
@@ -399,17 +364,13 @@ class GraniteHybridBlock(BaseAttention):
         num_exp = int(_get("num_experts", kwargs.get("num_experts", num_experts)))
         tk = int(_get("top_k", kwargs.get("top_k", top_k)))
         int(_get("ratio", kwargs.get("ratio", ratio)))
-        self.moe: MixtureOfExperts = MixtureOfExperts(
-            self.dim, self.dim * 4, num_exp, tk
-        )
+        self.moe: MixtureOfExperts = MixtureOfExperts(self.dim, self.dim * 4, num_exp, tk)
         self.alpha = nn.Parameter(torch.tensor(3.0))
         self.moe_scale = nn.Parameter(torch.zeros(1))
         self.is_nested_encoder = False
         self.output_scale = nn.Parameter(torch.ones(1))
 
-        self.rotary_emb = (
-            getattr(src_attn, "rotary_emb", None) if src_attn is not None else None
-        )
+        self.rotary_emb = getattr(src_attn, "rotary_emb", None) if src_attn is not None else None
         self.comp_config = comp_config
 
         if src_attn is not None:
@@ -458,11 +419,7 @@ class GraniteHybridBlock(BaseAttention):
             if hasattr(old_attn, "c_proj") and extracted["o"][0] is None:
                 o_w, o_b = _unpack_weight_bias(old_attn.c_proj)
                 if o_w is not None:
-                    if (
-                        o_w.dim() == 2
-                        and o_w.shape[0] != self.dim
-                        and o_w.shape[1] == self.dim
-                    ):
+                    if o_w.dim() == 2 and o_w.shape[0] != self.dim and o_w.shape[1] == self.dim:
                         o_w = o_w.t().contiguous()
                     extracted["o"] = (o_w, o_b)
 
@@ -562,9 +519,7 @@ class GraniteHybridBlock(BaseAttention):
         elif self.rotary_emb is not None:
             rotary_mod = self.rotary_emb
             if pos_ids is None:
-                pos_ids = (
-                    torch.arange(L_q, device=q_in.device).unsqueeze(0).expand(B, -1)
-                )
+                pos_ids = torch.arange(L_q, device=q_in.device).unsqueeze(0).expand(B, -1)
             try:
                 cos, sin = rotary_mod(q, seq_len=L_k)
             except Exception:
@@ -586,9 +541,7 @@ class GraniteHybridBlock(BaseAttention):
         scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder and L_q == L_k:
-            causal_mask = torch.triu(
-                torch.full((L_q, L_k), -1e4, device=q_in.device), diagonal=1
-            )
+            causal_mask = torch.triu(torch.full((L_q, L_k), -1e4, device=q_in.device), diagonal=1)
             scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
 
         if attention_mask is not None:

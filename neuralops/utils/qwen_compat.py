@@ -49,9 +49,7 @@ def is_qwen_attention(module: nn.Module) -> bool:
     return str(getattr(cfg, "model_type", "")).lower().startswith("qwen") or (
         hasattr(module, "q_proj")
         and hasattr(module, "o_proj")
-        and (
-            "qwen" in module.__class__.__name__.lower() or hasattr(module, "rotary_emb")
-        )
+        and ("qwen" in module.__class__.__name__.lower() or hasattr(module, "rotary_emb"))
     )
 
 
@@ -154,16 +152,11 @@ def bypass_qwen_rope(kwargs: dict[str, Any], module: Any) -> dict[str, Any]:
 def fp32_linalg(fn, *tensors: torch.Tensor, **kwargs: Any):
     """Run QR/SVD/eigh-style operations in fp32 and restore output dtype."""
     dtype = next(
-        (
-            t.dtype
-            for t in tensors
-            if isinstance(t, torch.Tensor) and t.is_floating_point()
-        ),
+        (t.dtype for t in tensors if isinstance(t, torch.Tensor) and t.is_floating_point()),
         torch.float32,
     )
     prepared = [
-        t.float() if isinstance(t, torch.Tensor) and t.is_floating_point() else t
-        for t in tensors
+        t.float() if isinstance(t, torch.Tensor) and t.is_floating_point() else t for t in tensors
     ]
     result = fn(*prepared, **kwargs)
     if isinstance(result, tuple):

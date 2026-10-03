@@ -20,6 +20,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
@@ -126,21 +127,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -176,10 +171,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = (
-                out
-                + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
         return out
 
 
@@ -231,20 +223,14 @@ class WeightedGroupedQueryAttention(BaseAttention):
             self.is_decoder: bool = getattr(config, "is_decoder", False)
         else:
             self.adapter = None
-            self.hidden_size = _cfg_get(
-                config, "hidden_size", kwargs.get("hidden_size", 768)
-            )
-            self.num_heads = _cfg_get(
-                config, "num_attention_heads", kwargs.get("num_heads", 12)
-            )
+            self.hidden_size = _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
+            self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_heads", 12))
             self.num_kv_heads = _cfg_get(config, "num_key_value_heads", self.num_heads)
             self.head_dim = self.hidden_size // max(1, self.num_heads)
             self.all_head_size = self.num_heads * self.head_dim
             self.kv_head_size = self.num_kv_heads * self.head_dim
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
-            self.is_decoder = bool(
-                _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
-            )
+            self.is_decoder = bool(_cfg_get(config, "is_decoder", kwargs.get("is_decoder", False)))
 
         # Prioritize explicit kwargs
         if "hidden_size" in kwargs:
@@ -267,12 +253,8 @@ class WeightedGroupedQueryAttention(BaseAttention):
             self.is_decoder = bool(is_decoder)
 
         self.is_nested_encoder: bool = False
-        self.lora_rank = kwargs.get(
-            "lora_rank", _cfg_get(config, "lora_rank", lora_rank)
-        )
-        self.lora_alpha = kwargs.get(
-            "lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha)
-        )
+        self.lora_rank = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
+        self.lora_alpha = kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
 
         self.q_proj = LoRALinear(
             self.hidden_size,
@@ -402,9 +384,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             c_mod = src.c_attn
             base_c = getattr(c_mod, "base_layer", c_mod)
@@ -427,11 +407,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
                 k_w = weight[split_size : 2 * split_size, :]
                 v_w = weight[2 * split_size :, :]
                 q_b = bias_data[:split_size] if bias_data is not None else None
-                k_b = (
-                    bias_data[split_size : 2 * split_size]
-                    if bias_data is not None
-                    else None
-                )
+                k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
                 v_b = bias_data[2 * split_size :] if bias_data is not None else None
                 extracted["q"] = (q_w, q_b)
                 extracted["k"] = (k_w, k_b)
@@ -457,9 +433,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             s = src.self
             if hasattr(s, "query"):
@@ -469,11 +443,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
             if hasattr(s, "value"):
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if (
-            hasattr(src, "output")
-            and hasattr(src.output, "dense")
-            and extracted["o"][0] is None
-        ):
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -543,9 +513,9 @@ class WeightedGroupedQueryAttention(BaseAttention):
                 )
                 if b_q is not None and self.q_proj.bias is not None:
                     b_val = b_q.data if isinstance(b_q, nn.Parameter) else b_q
-                    self.q_proj.bias.data[
-                        : min(len(self.q_proj.bias), len(b_val))
-                    ].copy_(b_val[: min(len(self.q_proj.bias), len(b_val))])
+                    self.q_proj.bias.data[: min(len(self.q_proj.bias), len(b_val))].copy_(
+                        b_val[: min(len(self.q_proj.bias), len(b_val))]
+                    )
 
             # Copy K with GQA pooling if source heads > kv heads
             w_k, b_k = extracted["k"]
@@ -554,14 +524,14 @@ class WeightedGroupedQueryAttention(BaseAttention):
                 if w_k_or.shape[0] == self.kv_head_size:
                     out_d, in_d = self.k_proj.weight.shape
                     s_out, s_in = w_k_or.shape
-                    self.k_proj.weight.data[
-                        : min(out_d, s_out), : min(in_d, s_in)
-                    ].copy_(w_k_or[: min(out_d, s_out), : min(in_d, s_in)])
+                    self.k_proj.weight.data[: min(out_d, s_out), : min(in_d, s_in)].copy_(
+                        w_k_or[: min(out_d, s_out), : min(in_d, s_in)]
+                    )
                     if b_k is not None and self.k_proj.bias is not None:
                         b_val = b_k.data if isinstance(b_k, nn.Parameter) else b_k
-                        self.k_proj.bias.data[
-                            : min(len(self.k_proj.bias), len(b_val))
-                        ].copy_(b_val[: min(len(self.k_proj.bias), len(b_val))])
+                        self.k_proj.bias.data[: min(len(self.k_proj.bias), len(b_val))].copy_(
+                            b_val[: min(len(self.k_proj.bias), len(b_val))]
+                        )
                 else:
                     rep = max(1, w_k_or.shape[0] // max(1, self.kv_head_size))
                     w_k_pooled = (
@@ -571,19 +541,15 @@ class WeightedGroupedQueryAttention(BaseAttention):
                     )
                     out_d, in_d = self.k_proj.weight.shape
                     s_out, s_in = w_k_pooled.shape
-                    self.k_proj.weight.data[
-                        : min(out_d, s_out), : min(in_d, s_in)
-                    ].copy_(w_k_pooled[: min(out_d, s_out), : min(in_d, s_in)])
+                    self.k_proj.weight.data[: min(out_d, s_out), : min(in_d, s_in)].copy_(
+                        w_k_pooled[: min(out_d, s_out), : min(in_d, s_in)]
+                    )
                     if b_k is not None and self.k_proj.bias is not None:
                         b_val = b_k.data if isinstance(b_k, nn.Parameter) else b_k
                         b_k_pooled = (
-                            b_val.view(self.num_kv_heads, rep, self.head_dim)
-                            .mean(dim=1)
-                            .view(-1)
+                            b_val.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
                         )
-                        self.k_proj.bias.data[
-                            : min(len(self.k_proj.bias), len(b_k_pooled))
-                        ].copy_(
+                        self.k_proj.bias.data[: min(len(self.k_proj.bias), len(b_k_pooled))].copy_(
                             b_k_pooled[: min(len(self.k_proj.bias), len(b_k_pooled))]
                         )
 
@@ -594,14 +560,14 @@ class WeightedGroupedQueryAttention(BaseAttention):
                 if w_v_or.shape[0] == self.kv_head_size:
                     out_d, in_d = self.v_proj.weight.shape
                     s_out, s_in = w_v_or.shape
-                    self.v_proj.weight.data[
-                        : min(out_d, s_out), : min(in_d, s_in)
-                    ].copy_(w_v_or[: min(out_d, s_out), : min(in_d, s_in)])
+                    self.v_proj.weight.data[: min(out_d, s_out), : min(in_d, s_in)].copy_(
+                        w_v_or[: min(out_d, s_out), : min(in_d, s_in)]
+                    )
                     if b_v is not None and self.v_proj.bias is not None:
                         b_val = b_v.data if isinstance(b_v, nn.Parameter) else b_v
-                        self.v_proj.bias.data[
-                            : min(len(self.v_proj.bias), len(b_val))
-                        ].copy_(b_val[: min(len(self.v_proj.bias), len(b_val))])
+                        self.v_proj.bias.data[: min(len(self.v_proj.bias), len(b_val))].copy_(
+                            b_val[: min(len(self.v_proj.bias), len(b_val))]
+                        )
                 else:
                     rep = max(1, w_v_or.shape[0] // max(1, self.kv_head_size))
                     w_v_pooled = (
@@ -611,19 +577,15 @@ class WeightedGroupedQueryAttention(BaseAttention):
                     )
                     out_d, in_d = self.v_proj.weight.shape
                     s_out, s_in = w_v_pooled.shape
-                    self.v_proj.weight.data[
-                        : min(out_d, s_out), : min(in_d, s_in)
-                    ].copy_(w_v_pooled[: min(out_d, s_out), : min(in_d, s_in)])
+                    self.v_proj.weight.data[: min(out_d, s_out), : min(in_d, s_in)].copy_(
+                        w_v_pooled[: min(out_d, s_out), : min(in_d, s_in)]
+                    )
                     if b_v is not None and self.v_proj.bias is not None:
                         b_val = b_v.data if isinstance(b_v, nn.Parameter) else b_v
                         b_v_pooled = (
-                            b_val.view(self.num_kv_heads, rep, self.head_dim)
-                            .mean(dim=1)
-                            .view(-1)
+                            b_val.view(self.num_kv_heads, rep, self.head_dim).mean(dim=1).view(-1)
                         )
-                        self.v_proj.bias.data[
-                            : min(len(self.v_proj.bias), len(b_v_pooled))
-                        ].copy_(
+                        self.v_proj.bias.data[: min(len(self.v_proj.bias), len(b_v_pooled))].copy_(
                             b_v_pooled[: min(len(self.v_proj.bias), len(b_v_pooled))]
                         )
 
@@ -638,13 +600,11 @@ class WeightedGroupedQueryAttention(BaseAttention):
                 )
                 if b_o is not None and self.out_proj.bias is not None:
                     b_val = b_o.data if isinstance(b_o, nn.Parameter) else b_o
-                    self.out_proj.bias.data[
-                        : min(len(self.out_proj.bias), len(b_val))
-                    ].copy_(b_val[: min(len(self.out_proj.bias), len(b_val))])
+                    self.out_proj.bias.data[: min(len(self.out_proj.bias), len(b_val))].copy_(
+                        b_val[: min(len(self.out_proj.bias), len(b_val))]
+                    )
             elif self.is_nested_encoder:
-                min_d = min(
-                    self.out_proj.weight.shape[0], self.out_proj.weight.shape[1]
-                )
+                min_d = min(self.out_proj.weight.shape[0], self.out_proj.weight.shape[1])
                 self.out_proj.weight.data.zero_()
                 self.out_proj.weight.data[:min_d, :min_d].fill_diagonal_(1.0)
                 if self.out_proj.bias is not None:
@@ -732,18 +692,8 @@ class WeightedGroupedQueryAttention(BaseAttention):
 
         # 1. Projections
         Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
-        K = (
-            self.k_proj(kv_input)
-            .view(B, N_k, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V = (
-            self.v_proj(kv_input)
-            .view(B, N_k, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        K = self.k_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V = self.v_proj(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # Apply learnable per-KV-head importance weights
         K = K * self.k_weights.view(1, self.num_kv_heads, 1, 1).to(K.dtype)
@@ -760,14 +710,10 @@ class WeightedGroupedQueryAttention(BaseAttention):
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
         elif getattr(self, "rotary_emb", None) is not None:
             try:
-                rotary_out = self.rotary_emb(
-                    hidden_states, position_ids=kwargs.get("position_ids")
-                )
+                rotary_out = self.rotary_emb(hidden_states, position_ids=kwargs.get("position_ids"))
                 if isinstance(rotary_out, tuple) and len(rotary_out) >= 2:
                     cos, sin = rotary_out[0], rotary_out[1]
-                    Q, K = apply_rotary_pos_emb(
-                        Q, K, cos, sin, kwargs.get("position_ids")
-                    )
+                    Q, K = apply_rotary_pos_emb(Q, K, cos, sin, kwargs.get("position_ids"))
             except Exception:
                 try:
                     from neuralops.utils.compat import maybe_apply_rotary
@@ -818,9 +764,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
                     .contiguous()
                     .view(B, N_q, self.all_head_size)
                 )
-                _sdpa_out = torch.nan_to_num(
-                    _sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4
-                )
+                _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
                 output = (
                     _sdpa_out
                     if getattr(self, "is_nested_encoder", False)
@@ -833,9 +777,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
             except Exception:
                 pass
 
-        scores = (
-            torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         # Causal mask
         if is_decoder:
@@ -854,9 +796,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
             else:
                 valid_m = get_token_valid_mask(mask, B, N_k, device)
                 if valid_m is not None:
-                    scores = scores.masked_fill(
-                        (~valid_m).unsqueeze(1).unsqueeze(2), -10000.0
-                    )
+                    scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
 
         attn = torch.nan_to_num(F.softmax(scores, dim=-1), nan=0.0).to(dtype)
         attn = self.dropout(attn)
@@ -930,9 +870,7 @@ def inject_wgqa(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -943,9 +881,7 @@ def inject_wgqa(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=(
-                    comp_config
-                    if "comp_config" in locals() or "comp_config" in kwargs
-                    else None
+                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
                 ),
                 layer_idx=idx,
                 total_layers=tot,
@@ -1014,9 +950,7 @@ def inject_wgqa(
 
     lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
     rank = kwargs.pop("rank", _cfg_get(comp_config, "rank", 32))
-    num_kv_heads = kwargs.pop(
-        "num_kv_heads", _cfg_get(comp_config, "num_kv_heads", None)
-    )
+    num_kv_heads = kwargs.pop("num_kv_heads", _cfg_get(comp_config, "num_kv_heads", None))
 
     try:
         new_attn = WeightedGroupedQueryAttention(

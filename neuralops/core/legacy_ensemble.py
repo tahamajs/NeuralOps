@@ -68,9 +68,7 @@ class TaskAwareAttention(nn.Module):
         if isinstance(num_tasks, int):
             self.num_tasks = max(1, int(num_tasks))
         else:
-            extracted = getattr(
-                num_tasks, "num_labels", getattr(num_tasks, "num_tasks", 2)
-            )
+            extracted = getattr(num_tasks, "num_labels", getattr(num_tasks, "num_tasks", 2))
             if not isinstance(extracted, int) or extracted <= 0:
                 extracted = 2
             self.num_tasks = max(1, extracted)
@@ -108,9 +106,7 @@ class TaskAwareAttention(nn.Module):
         cur_id = torch.tensor([task_id], dtype=torch.long, device=device)
         cur_emb = self.q_proj(self.task_emb(cur_id))  # (1, H)
 
-        valid_ids = [
-            max(0, min(self.num_tasks - 1, int(tid))) for tid in model_task_ids
-        ]
+        valid_ids = [max(0, min(self.num_tasks - 1, int(tid))) for tid in model_task_ids]
         all_ids = torch.tensor(valid_ids, dtype=torch.long, device=device)
         all_embs = self.k_proj(self.task_emb(all_ids))  # (M, H)
 
@@ -207,9 +203,7 @@ class SmartWeightedEnsemble(nn.Module):
                 if metric == "accuracy":
                     preds = logits.argmax(dim=-1)
                     acc = float((preds == target).float().mean().item())
-                    new_val = (
-                        0.9 * float(self.performance[i, task_id].item()) + 0.1 * acc
-                    )
+                    new_val = 0.9 * float(self.performance[i, task_id].item()) + 0.1 * acc
                     # Clamp to [0, 1] to prevent drift
                     new_val = max(0.0, min(1.0, new_val))
                     self.performance[i, task_id] = new_val
@@ -225,9 +219,7 @@ class SmartWeightedEnsemble(nn.Module):
         """LE-08: robust forward with logits fallback."""
         try:
             if attention_mask is not None:
-                out = model(
-                    input_ids=input_ids, attention_mask=attention_mask, **kwargs
-                )
+                out = model(input_ids=input_ids, attention_mask=attention_mask, **kwargs)
             else:
                 out = model(input_ids=input_ids, **kwargs)
         except TypeError:
@@ -264,9 +256,7 @@ class SmartWeightedEnsemble(nn.Module):
         def _run() -> torch.Tensor:
             weights = []
             for model in self.models:
-                logits = self._forward_single(
-                    model, input_ids, attention_mask, **kwargs
-                ).to(
+                logits = self._forward_single(model, input_ids, attention_mask, **kwargs).to(
                     device
                 )  # LE-10
                 probs = F.softmax(logits.float(), dim=-1)
@@ -305,8 +295,7 @@ class SmartWeightedEnsemble(nn.Module):
         # LE-11: shape validation
         if all_logits.dim() < 2:
             raise ValueError(
-                f"combine_logits expects all_logits with at least 2 dims, "
-                f"got {all_logits.shape}"
+                f"combine_logits expects all_logits with at least 2 dims, got {all_logits.shape}"
             )
 
         device = self.device
@@ -316,8 +305,7 @@ class SmartWeightedEnsemble(nn.Module):
 
         if num_models != self.num_models:
             raise ValueError(
-                f"num_models in logits ({num_models}) != ensemble.num_models "
-                f"({self.num_models})"
+                f"num_models in logits ({num_models}) != ensemble.num_models ({self.num_models})"
             )
 
         # LE-09: validate model_task_ids
@@ -424,10 +412,7 @@ class SmartWeightedEnsemble(nn.Module):
 # ===========================================================================
 def run_smart_ensemble(config: dict, dataset_path: str) -> None:
     """Deprecated stub. Use SmartWeightedEnsemble directly in your script."""
-    print(
-        "Use the class 'SmartWeightedEnsemble' directly in your "
-        "training/evaluation script."
-    )
+    print("Use the class 'SmartWeightedEnsemble' directly in your training/evaluation script.")
 
 
 # LE-06: no module-level warning — only emitted on class instantiation.

@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -60,12 +61,8 @@ def apply_rotary_pos_emb(
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
         # KDA-FIX-04: dtype-safe cast
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q_rot.dtype)
-        )
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k_rot.dtype)
-        )
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
         q = torch.cat([q_rot_embed, q_pass], dim=-1)
         k = torch.cat([k_rot_embed, k_pass], dim=-1)
     else:
@@ -101,21 +98,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -155,9 +146,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
         return out
 
@@ -191,14 +180,10 @@ class KDAAttention(BaseAttention):
 
         # ---- hidden dim discovery ----
         if d_model is None:
-            d_model = (
-                kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
-            )
+            d_model = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
             if d_model is None:
                 if config is not None:
-                    d_model = getattr(
-                        config, "hidden_size", getattr(config, "dim", 768)
-                    )
+                    d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
                 elif source_attn is not None:
                     out_layer = getattr(
                         source_attn,
@@ -234,9 +219,7 @@ class KDAAttention(BaseAttention):
                             ),
                         )
                         d_model = (
-                            getattr(
-                                q_l, "in_features", getattr(q_l, "out_features", 768)
-                            )
+                            getattr(q_l, "in_features", getattr(q_l, "out_features", 768))
                             if q_l is not None
                             else 768
                         )
@@ -334,9 +317,7 @@ class KDAAttention(BaseAttention):
                 getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)),
             )
         elif comp_config is not None:
-            self.lora_rank = getattr(
-                comp_config, "lora_rank", kwargs.get("lora_rank", 16)
-            )
+            self.lora_rank = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
         else:
             self.lora_rank = kwargs.get("lora_rank", 16)
 
@@ -347,17 +328,13 @@ class KDAAttention(BaseAttention):
                 getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
             )
         elif comp_config is not None:
-            self.lora_alpha = getattr(
-                comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)
-            )
+            self.lora_alpha = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
         else:
             self.lora_alpha = kwargs.get("lora_alpha", 32.0)
 
         self.freeze_base = self.lora_rank > 0
         self.rotary_emb = (
-            getattr(source_attn, "rotary_emb", None)
-            if source_attn is not None
-            else None
+            getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
         )
 
         # ---- projections ----
@@ -575,10 +552,7 @@ class KDAAttention(BaseAttention):
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
 
-                if (
-                    w.shape != target_mod.weight.shape
-                    and target_mod.weight.shape == w.t().shape
-                ):
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().shape:
                     w = w.t()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
@@ -592,9 +566,7 @@ class KDAAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
                     target_mod.bias.data[:min_b].copy_(
-                        b[:min_b].to(
-                            device=target_mod.bias.device, dtype=target_mod.bias.dtype
-                        )
+                        b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype)
                     )
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
@@ -656,14 +628,10 @@ class KDAAttention(BaseAttention):
 
             pos = torch.arange(Lc, device=q.device, dtype=torch.float32)
             pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)
-            tril_mask = torch.tril(
-                torch.ones(Lc, Lc, device=q.device, dtype=torch.bool)
-            )
+            tril_mask = torch.tril(torch.ones(Lc, Lc, device=q.device, dtype=torch.bool))
             D_intra = (
                 torch.exp(
-                    (pos_diff.unsqueeze(0).unsqueeze(0) * log_gamma).clamp(
-                        min=-40.0, max=0.0
-                    )
+                    (pos_diff.unsqueeze(0).unsqueeze(0) * log_gamma).clamp(min=-40.0, max=0.0)
                 )
                 * tril_mask.float()
             )
@@ -696,9 +664,9 @@ class KDAAttention(BaseAttention):
             y_fwd_list.append(yc)
 
             decay_to_end = torch.exp(
-                (
-                    (Lc - 1 - pos).unsqueeze(0).unsqueeze(0).unsqueeze(-1) * log_gamma
-                ).clamp(min=-40.0, max=0.0)
+                ((Lc - 1 - pos).unsqueeze(0).unsqueeze(0).unsqueeze(-1) * log_gamma).clamp(
+                    min=-40.0, max=0.0
+                )
             )
             k_decayed = kc * decay_to_end
             chunk_S = k_decayed.transpose(-1, -2) @ vc
@@ -752,11 +720,7 @@ class KDAAttention(BaseAttention):
 
         tril_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
         D_causal = (
-            torch.exp(
-                (pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(
-                    min=-40.0, max=0.0
-                )
-            )
+            torch.exp((pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(min=-40.0, max=0.0))
             * tril_mask.float()
         )
 
@@ -766,9 +730,7 @@ class KDAAttention(BaseAttention):
         if mask is not None:
             valid_m = get_token_valid_mask(mask, B, L, q.device)
             mask_float = valid_m.float()
-            mask_2d = mask_float.unsqueeze(1).unsqueeze(-1) * mask_float.unsqueeze(
-                1
-            ).unsqueeze(-2)
+            mask_2d = mask_float.unsqueeze(1).unsqueeze(-1) * mask_float.unsqueeze(1).unsqueeze(-2)
             D_causal = D_causal * mask_2d
 
         num_fwd = (attn_scores * D_causal) @ v.float()
@@ -783,9 +745,7 @@ class KDAAttention(BaseAttention):
             triu_mask = torch.triu(torch.ones(L, L, device=q.device, dtype=torch.bool))
             D_anti = (
                 torch.exp(
-                    (-pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(
-                        min=-40.0, max=0.0
-                    )
+                    (-pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(min=-40.0, max=0.0)
                 )
                 * triu_mask.float()
             )
@@ -828,17 +788,9 @@ class KDAAttention(BaseAttention):
 
         q_raw = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
         k_raw = (
-            self.k_proj(hidden_states)
-            .view(B, L, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
+            self.k_proj(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
         )
-        v = (
-            self.v_proj(hidden_states)
-            .view(B, L, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # RoPE
         if position_embeddings is not None:
@@ -848,16 +800,10 @@ class KDAAttention(BaseAttention):
             rotary_module = self.rotary_emb
             pos_ids = kwargs.get("position_ids")
             if pos_ids is None:
-                pos_ids = (
-                    torch.arange(L, device=hidden_states.device)
-                    .unsqueeze(0)
-                    .expand(B, -1)
-                )
+                pos_ids = torch.arange(L, device=hidden_states.device).unsqueeze(0).expand(B, -1)
             try:
                 cos, sin = rotary_module(q_raw, pos_ids)
-                q_raw, k_raw = apply_rotary_pos_emb(
-                    q_raw, k_raw, cos, sin, position_ids=pos_ids
-                )
+                q_raw, k_raw = apply_rotary_pos_emb(q_raw, k_raw, cos, sin, position_ids=pos_ids)
             except Exception:
                 try:
                     cos, sin = rotary_module(q_raw, seq_len=L)

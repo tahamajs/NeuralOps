@@ -12,6 +12,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error
@@ -98,14 +99,10 @@ class GreCoDeCLinear(nn.Module):
 
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
-                torch.empty(
-                    (self.lora_r, in_features), dtype=torch.float32, device=device
-                )
+                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device)
             )
             self.lora_B = nn.Parameter(
-                torch.zeros(
-                    (out_features, self.lora_r), dtype=torch.float32, device=device
-                )
+                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device)
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
@@ -166,8 +163,7 @@ class GreCoDeCLinear(nn.Module):
 
         bias = (
             target_mod.bias.data
-            if getattr(target_mod, "bias", None) is not None
-            and target_mod.bias is not None
+            if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None
             else None
         )
         r = max(1, min(rank, out_f, in_f))
@@ -189,9 +185,7 @@ class GreCoDeCLinear(nn.Module):
             VVt_reg = VVt + 1e-6 * torch.eye(r, device=VVt.device, dtype=VVt.dtype)
             try:
                 WV_t = torch.matmul(W_float, V_mat.t().contiguous())
-                U_mat = (
-                    torch.linalg.solve(VVt_reg, WV_t.t().contiguous()).t().contiguous()
-                )
+                U_mat = torch.linalg.solve(VVt_reg, WV_t.t().contiguous()).t().contiguous()
             except Exception:
                 break
 
@@ -230,9 +224,7 @@ class GreCoDeCLinear(nn.Module):
         grecodec_layer.V.data.copy_(V_data.to(dtype=raw_w.dtype, device=raw_w.device))
 
         if bias is not None and grecodec_layer.bias is not None:
-            grecodec_layer.bias.data.copy_(
-                bias.to(dtype=raw_w.dtype, device=raw_w.device)
-            )
+            grecodec_layer.bias.data.copy_(bias.to(dtype=raw_w.dtype, device=raw_w.device))
 
         if (
             existing_lora_A is not None
@@ -272,21 +264,15 @@ class GreCoDeCCompressor(BaseCompressor):
         target_layers: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(
-            model if model is not None else nn.Identity(), name="grecodec", **kwargs
-        )
+        super().__init__(model if model is not None else nn.Identity(), name="grecodec", **kwargs)
         cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
         self.rank = int(_cfg_get(cfg, "grecodec_rank", _cfg_get(cfg, "rank", rank)))
-        self.max_iter = int(
-            _cfg_get(cfg, "grecodec_max_iter", _cfg_get(cfg, "max_iter", max_iter))
-        )
+        self.max_iter = int(_cfg_get(cfg, "grecodec_max_iter", _cfg_get(cfg, "max_iter", max_iter)))
         self.lora_r = int(_cfg_get(cfg, "lora_r", _cfg_get(cfg, "lora_rank", lora_r)))
         self.lora_alpha = float(_cfg_get(cfg, "lora_alpha", lora_alpha))
-        c_max_error = _cfg_get(
-            cfg, "grecodec_max_error", _cfg_get(cfg, "max_error", max_error)
-        )
+        c_max_error = _cfg_get(cfg, "grecodec_max_error", _cfg_get(cfg, "max_error", max_error))
         if c_max_error is None or c_max_error == 0.35:
             c_max_error = adaptive_max_error(self.rank, 768, 768, "distilbert")
 
@@ -305,9 +291,7 @@ class GreCoDeCCompressor(BaseCompressor):
                 _cfg_get(cfg, "fallback_to_original", fallback_to_original),
             )
         )
-        self.skip_attention_qkv = bool(
-            _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
-        )
+        self.skip_attention_qkv = bool(_cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv))
         self.target_layers = target_layers or _cfg_get(cfg, "target_layers", None)
 
         self.compressed_layers: list[str] = []
@@ -321,11 +305,7 @@ class GreCoDeCCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if (
-            num_heads is not None
-            and num_kv_heads is not None
-            and num_kv_heads < num_heads
-        ):
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
             name_lower = name.lower()
             if any(
                 p in name_lower
@@ -379,9 +359,7 @@ class GreCoDeCCompressor(BaseCompressor):
             return any(t in name for t in self.target_layers)
         return True
 
-    def compress(
-        self, model: nn.Module | None = None
-    ) -> tuple[nn.Module, dict[str, Any]]:
+    def compress(self, model: nn.Module | None = None) -> tuple[nn.Module, dict[str, Any]]:
         """Compress linear layers using GreCoDeC decomposition."""
         if model is not None:
             self.model = model
@@ -399,18 +377,13 @@ class GreCoDeCCompressor(BaseCompressor):
         # Freeze skipped non-target layers if target_attention_only is enabled
         if self.target_attention_only:
             for name, module in self.model.named_modules():
-                if any(
-                    part in name.split(".")
-                    for part in ["lora_A", "lora_B", "base_layer"]
-                ):
+                if any(part in name.split(".") for part in ["lora_A", "lora_B", "base_layer"]):
                     continue
                 target_mod = getattr(module, "base_layer", module)
                 cls_name = target_mod.__class__.__name__.lower()
                 is_linear = isinstance(target_mod, nn.Linear)
                 is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-                if (is_linear or is_conv1d) and not self._is_target_module(
-                    name, module
-                ):
+                if (is_linear or is_conv1d) and not self._is_target_module(name, module):
                     for p in module.parameters():
                         p.requires_grad = False
                     self.skipped_layers.append(name)
@@ -503,16 +476,12 @@ class GreCoDeCCompressor(BaseCompressor):
         except Exception:
             forward_check_success = False
 
-        effective_ratio = (
-            total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
-        )
+        effective_ratio = total_comp_params / total_orig_params if total_orig_params > 0 else 1.0
 
         self._compressed_params = self._count_params(self.model)
         stats = self.get_compression_stats()
         avg_err = (
-            (sum(self.layer_errors.values()) / len(self.layer_errors))
-            if self.layer_errors
-            else 0.0
+            (sum(self.layer_errors.values()) / len(self.layer_errors)) if self.layer_errors else 0.0
         )
         stats.update(
             {
@@ -559,16 +528,12 @@ def grecodec_compressor_factory(
     effective_rank = rank or _cfg_get(
         comp_config, "grecodec_rank", _cfg_get(comp_config, "rank", 16)
     )
-    max_iter = _cfg_get(
-        comp_config, "grecodec_max_iter", _cfg_get(comp_config, "max_iter", 15)
-    )
+    max_iter = _cfg_get(comp_config, "grecodec_max_iter", _cfg_get(comp_config, "max_iter", 15))
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(
-            comp_config, "grecodec_max_error", _cfg_get(comp_config, "max_error", 0.35)
-        ),
+        _cfg_get(comp_config, "grecodec_max_error", _cfg_get(comp_config, "max_error", 0.35)),
     )
     target_attention_only = kwargs.pop(
         "target_attention_only",

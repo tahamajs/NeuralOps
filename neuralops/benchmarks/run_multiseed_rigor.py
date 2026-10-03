@@ -253,11 +253,7 @@ def aggregate_results(
 
             for s in seeds:
                 seed_csv = (
-                    output_root
-                    / f"multiseed_rigor_{model_key}"
-                    / mod
-                    / f"seed_{s}"
-                    / "summary.csv"
+                    output_root / f"multiseed_rigor_{model_key}" / mod / f"seed_{s}" / "summary.csv"
                 )
                 ok, row = is_run_completed(seed_csv)
                 if ok and row:
@@ -309,12 +305,8 @@ def aggregate_results(
                     "mean_vram_mb": round(mean_vram, 1),
                     "mean_time_s": round(mean_time, 1),
                     "compression_rate": f"{mean_crate:.2f}x",
-                    "recon_error": (
-                        f"{mean_recon:.4f}" if mean_recon is not None else "—"
-                    ),
-                    "status": (
-                        "PASS" if all("PASS" in st for st in statuses) else "PARTIAL"
-                    ),
+                    "recon_error": (f"{mean_recon:.4f}" if mean_recon is not None else "—"),
+                    "status": ("PASS" if all("PASS" in st for st in statuses) else "PARTIAL"),
                 }
             )
 
@@ -400,9 +392,7 @@ def main():
     for model_key in models:
         for mod in target_modules:
             for s in seeds:
-                seed_dir = (
-                    output_root / f"multiseed_rigor_{model_key}" / mod / f"seed_{s}"
-                )
+                seed_dir = output_root / f"multiseed_rigor_{model_key}" / mod / f"seed_{s}"
                 summary_csv = seed_dir / "summary.csv"
                 completed, _ = is_run_completed(summary_csv)
                 if completed:

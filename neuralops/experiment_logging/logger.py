@@ -154,9 +154,7 @@ def setup_logging(config: LoggingConfig | None = None) -> logging.Logger:
         if cfg.rank_specific_logs:
             fname = f"rank_{rank}.log"
         else:
-            fname = f"{cfg.experiment_name}_{cfg.run_id or ''}_rank_{rank}.log".strip(
-                "_"
-            )
+            fname = f"{cfg.experiment_name}_{cfg.run_id or ''}_rank_{rank}.log".strip("_")
 
         log_file_path = os.path.join(cfg.log_dir, fname)
         fh = RotatingFileHandler(
@@ -174,9 +172,7 @@ def setup_logging(config: LoggingConfig | None = None) -> logging.Logger:
         queue_handler = QueueHandler(log_queue)
         root.addHandler(queue_handler)
 
-        listener = QueueListener(
-            log_queue, *destination_handlers, respect_handler_level=True
-        )
+        listener = QueueListener(log_queue, *destination_handlers, respect_handler_level=True)
         listener.start()
         _ACTIVE_LISTENERS.append(listener)
     else:

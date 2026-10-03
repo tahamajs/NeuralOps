@@ -12,6 +12,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -85,9 +86,7 @@ def apply_rotary_pos_emb(
             cos = cos.narrow(-2, 0, q.shape[-2])
             sin = sin.narrow(-2, 0, q.shape[-2])
         else:
-            raise ValueError(
-                f"RoPE seq len mismatch: cos {cos.shape[-2]} < q {q.shape[-2]}"
-            )
+            raise ValueError(f"RoPE seq len mismatch: cos {cos.shape[-2]} < q {q.shape[-2]}")
 
     q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
     k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
@@ -167,9 +166,7 @@ class LoRALinear(nn.Module):
 
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A if self.lora_A.dtype == x.dtype else self.lora_A.to(x.dtype)
-            bb = (
-                self.lora_B if self.lora_B.dtype == x.dtype else self.lora_B.to(x.dtype)
-            )
+            bb = self.lora_B if self.lora_B.dtype == x.dtype else self.lora_B.to(x.dtype)
             lora_out = F.linear(F.linear(x, a), bb) * self.scaling
             out = out + lora_out
         return out
@@ -186,14 +183,10 @@ class LoRALinear(nn.Module):
 
 
 class SpectralMamba(nn.Module):
-    def __init__(
-        self, d_model: int = 768, config: Any | None = None, **kwargs: Any
-    ) -> None:
+    def __init__(self, d_model: int = 768, config: Any | None = None, **kwargs: Any) -> None:
         super().__init__()
         if config is not None:
-            d_model = _cfg_get(
-                config, "hidden_size", _cfg_get(config, "d_model", d_model)
-            )
+            d_model = _cfg_get(config, "hidden_size", _cfg_get(config, "d_model", d_model))
         elif hasattr(d_model, "hidden_size"):
             d_model = d_model.hidden_size
 
@@ -211,9 +204,7 @@ class SpectralMamba(nn.Module):
         # SM3-FIX-12: bounded per-channel gate (0..1)
         self.dt_scale = nn.Parameter(torch.full((self.d_model,), 0.5))
 
-    def forward(
-        self, x: torch.Tensor, **kwargs: Any
-    ) -> tuple[torch.Tensor, torch.Tensor | None]:
+    def forward(self, x: torch.Tensor, **kwargs: Any) -> tuple[torch.Tensor, torch.Tensor | None]:
         out = self.mamba(x, **kwargs)
         if isinstance(out, tuple):
             out = out[0]
@@ -253,9 +244,7 @@ class SAMBAM3Block(nn.Module):
         # ---- d_model / n_heads ----
         if d_model is None:
             if config is not None:
-                d_model = _cfg_get(
-                    config, "hidden_size", _cfg_get(config, "d_model", 768)
-                )
+                d_model = _cfg_get(config, "hidden_size", _cfg_get(config, "d_model", 768))
             elif pretrained_attn is not None:
                 for attr in ("q_proj", "q_lin", "query"):
                     m = getattr(pretrained_attn, attr, None)
@@ -286,20 +275,14 @@ class SAMBAM3Block(nn.Module):
 
         self.head_dim: int = self.d_model // self.n_heads
         self.window: int = window
-        self.lora_rank: int = int(
-            kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
-        )
+        self.lora_rank: int = int(kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank)))
         self.lora_alpha: float = float(
             kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
         )
 
-        cfg_kv = _cfg_get(
-            config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None)
-        )
+        cfg_kv = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
         self.num_kv_heads: int = int(cfg_kv) if cfg_kv is not None else self.n_heads
-        self.num_key_value_groups: int = max(
-            1, self.n_heads // max(1, self.num_kv_heads)
-        )
+        self.num_key_value_groups: int = max(1, self.n_heads // max(1, self.num_kv_heads))
 
         self.q_head_size: int = self.n_heads * self.head_dim
         self.kv_head_size: int = self.num_kv_heads * self.head_dim
@@ -330,9 +313,7 @@ class SAMBAM3Block(nn.Module):
             )
             if any(model_type.startswith(p) for p in decoder_prefixes):
                 is_dec = True
-            arch = (
-                getattr(config, "architectures", None) if config is not None else None
-            )
+            arch = getattr(config, "architectures", None) if config is not None else None
             if arch and any("GPT" in str(a) or "CausalLM" in str(a) for a in arch):
                 is_dec = True
         self.is_decoder: bool = bool(is_dec)
@@ -383,9 +364,7 @@ class SAMBAM3Block(nn.Module):
         self.gate_fn = nn.Sigmoid()
 
         dropout_p = float(
-            _cfg_get(
-                config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1)
-            )
+            _cfg_get(config, "dropout", _cfg_get(config, "attention_probs_dropout_prob", 0.1))
         )
         self.dropout = nn.Dropout(dropout_p)
 
@@ -435,9 +414,7 @@ class SAMBAM3Block(nn.Module):
         with torch.no_grad():
             w_q = b_q = w_k = b_k = w_v = b_v = w_o = b_o = None
 
-            src_cls_name = getattr(
-                pretrained_attn, "__class__", type(pretrained_attn)
-            ).__name__
+            src_cls_name = getattr(pretrained_attn, "__class__", type(pretrained_attn)).__name__
             if src_cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
                 hasattr(pretrained_attn, "query")
                 and not hasattr(pretrained_attn, "dense")
@@ -457,17 +434,12 @@ class SAMBAM3Block(nn.Module):
             # --- GPT-2 fused ---
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
-                c_attn_b = (
-                    src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                )
+                c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
                 p_cls = getattr(src.c_attn, "__class__", type(src.c_attn)).__name__
                 if (
                     "Conv1D" in p_cls
                     or hasattr(src.c_attn, "nf")
-                    or (
-                        c_attn_w.shape[0] == self.d_model
-                        and c_attn_w.shape[1] != self.d_model
-                    )
+                    or (c_attn_w.shape[0] == self.d_model and c_attn_w.shape[1] != self.d_model)
                 ):
                     c_attn_w = c_attn_w.t().contiguous()
                 q_dim = self.q_head_size
@@ -485,19 +457,14 @@ class SAMBAM3Block(nn.Module):
                 if (
                     "Conv1D" in p_proj_cls
                     or hasattr(src.c_proj, "nf")
-                    or (
-                        out_w.shape[0] == self.d_model
-                        and out_w.shape[1] != self.d_model
-                    )
+                    or (out_w.shape[0] == self.d_model and out_w.shape[1] != self.d_model)
                 ):
                     out_w = out_w.t().contiguous()
                 w_o = out_w
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
             # --- BERT/RoBERTa nested ---
-            elif (
-                hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value")
-            ):
+            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.detach()
                 b_q = src.query.bias.detach() if src.query.bias is not None else None
                 w_k = src.key.weight.detach()
@@ -513,11 +480,7 @@ class SAMBAM3Block(nn.Module):
                             break
 
             # --- Qwen / LLaMA ---
-            elif (
-                hasattr(src, "q_proj")
-                and hasattr(src, "k_proj")
-                and hasattr(src, "v_proj")
-            ):
+            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q = src.q_proj.weight.detach()
                 b_q = (
                     src.q_proj.bias.detach()
@@ -545,11 +508,7 @@ class SAMBAM3Block(nn.Module):
                     )
 
             # --- Flat (DistilBERT) ---
-            elif (
-                hasattr(src, "q_lin")
-                and hasattr(src, "k_lin")
-                and hasattr(src, "v_lin")
-            ):
+            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q = src.q_lin.weight.detach()
                 b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
                 w_k = src.k_lin.weight.detach()
@@ -558,11 +517,7 @@ class SAMBAM3Block(nn.Module):
                 b_v = src.v_lin.bias.detach() if src.v_lin.bias is not None else None
                 if hasattr(src, "out_lin"):
                     w_o = src.out_lin.weight.detach()
-                    b_o = (
-                        src.out_lin.bias.detach()
-                        if src.out_lin.bias is not None
-                        else None
-                    )
+                    b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
 
             # --- Fallback ---
             if w_q is None:
@@ -600,10 +555,7 @@ class SAMBAM3Block(nn.Module):
                 tw = target_mod.weight
                 w_cast = w_src.to(dtype=tw.dtype, device=tw.device)
                 # orient if transposed
-                if (
-                    w_cast.shape != tw.shape
-                    and w_cast.t().contiguous().shape == tw.shape
-                ):
+                if w_cast.shape != tw.shape and w_cast.t().contiguous().shape == tw.shape:
                     w_cast = w_cast.t().contiguous()
                 min_r = min(tw.shape[0], w_cast.shape[0])
                 min_c = min(tw.shape[1], w_cast.shape[1])
@@ -615,9 +567,7 @@ class SAMBAM3Block(nn.Module):
                     tb.data[:mb].copy_(b_cast[:mb])
                 fnorm = float(torch.linalg.norm(tw.data.float()))
                 if fnorm < 1e-4:
-                    logger.warning(
-                        "SAMBAM3Block: %s norm too small (%.2e)", name, fnorm
-                    )
+                    logger.warning("SAMBAM3Block: %s norm too small (%.2e)", name, fnorm)
                 target_mod.freeze_base_weights()
 
     def _chunked_sliding_window_attention(
@@ -655,17 +605,10 @@ class SAMBAM3Block(nn.Module):
             k_c = k[:, :, k_abs_start:k_abs_end]
             v_c = v[:, :, k_abs_start:k_abs_end]
 
-            scores = (
-                torch.matmul(q_c.float(), k_c.transpose(-2, -1).contiguous().float())
-                * scale
-            )
+            scores = torch.matmul(q_c.float(), k_c.transpose(-2, -1).contiguous().float()) * scale
 
-            q_idx = torch.arange(q_abs_start, q_abs_end, device=q.device).view(
-                1, 1, C_q, 1
-            )
-            k_idx = torch.arange(k_abs_start, k_abs_end, device=q.device).view(
-                1, 1, 1, -1
-            )
+            q_idx = torch.arange(q_abs_start, q_abs_end, device=q.device).view(1, 1, C_q, 1)
+            k_idx = torch.arange(k_abs_start, k_abs_end, device=q.device).view(1, 1, 1, -1)
             dist = (q_idx - k_idx).abs()
             valid = dist <= self.window
             if self.is_decoder:
@@ -677,20 +620,16 @@ class SAMBAM3Block(nn.Module):
             if attention_mask is not None:
                 if attention_mask.dim() == 2:
                     # (B, N_total)
-                    pad = (
-                        (attention_mask[:, k_abs_start:k_abs_end] == 0)
-                        .unsqueeze(1)
-                        .unsqueeze(2)
-                    )
+                    pad = (attention_mask[:, k_abs_start:k_abs_end] == 0).unsqueeze(1).unsqueeze(2)
                     scores = scores.masked_fill(pad, -1e4)
                 elif attention_mask.dim() == 3:
-                    scores = scores + attention_mask[
-                        :, start:end, k_abs_start:k_abs_end
-                    ].unsqueeze(1).to(scores.dtype)
+                    scores = scores + attention_mask[:, start:end, k_abs_start:k_abs_end].unsqueeze(
+                        1
+                    ).to(scores.dtype)
                 elif attention_mask.dim() == 4:
-                    scores = scores + attention_mask[
-                        :, :, start:end, k_abs_start:k_abs_end
-                    ].to(scores.dtype)
+                    scores = scores + attention_mask[:, :, start:end, k_abs_start:k_abs_end].to(
+                        scores.dtype
+                    )
 
             probs = F.softmax(scores, dim=-1)
             probs = torch.nan_to_num(probs, nan=0.0)
@@ -802,9 +741,7 @@ class SAMBAM3Block(nn.Module):
         attn_out = attn_out.to(target_dtype)
 
         # ---- Mamba branch ----
-        mamba_out, _ = self.mamba(
-            hidden_states, attention_mask=attention_mask, **kwargs
-        )
+        mamba_out, _ = self.mamba(hidden_states, attention_mask=attention_mask, **kwargs)
         mamba_out = mamba_out.to(target_dtype)
 
         # ---- Fusion (SM3-FIX-04: alpha cast) ----
@@ -820,15 +757,9 @@ class SAMBAM3Block(nn.Module):
 
         # ---- SM3-FIX-11: no silent pad; assert shape ----
         if out.shape[-1] != D:
-            raise RuntimeError(
-                f"SAMBAM3Block: output dim {out.shape[-1]} != expected {D}"
-            )
+            raise RuntimeError(f"SAMBAM3Block: output dim {out.shape[-1]} != expected {D}")
 
-        return out, (
-            present_key_value
-            if output_attentions is False
-            else (out, present_key_value)
-        )
+        return out, (present_key_value if output_attentions is False else (out, present_key_value))
 
 
 @ATTENTION_REGISTRY.register("samba_m3_inject")
@@ -940,9 +871,7 @@ def inject_samba_m3(
         )
     if cfg is not None:
         d_model = _cfg_get(cfg, "hidden_size", _cfg_get(cfg, "dim", d_model))
-        n_heads = _cfg_get(
-            cfg, "num_attention_heads", _cfg_get(cfg, "n_heads", n_heads)
-        )
+        n_heads = _cfg_get(cfg, "num_attention_heads", _cfg_get(cfg, "n_heads", n_heads))
 
     lora_rank = kwargs.pop("lora_rank", _cfg_get(comp_config, "lora_rank", 16))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 32.0))

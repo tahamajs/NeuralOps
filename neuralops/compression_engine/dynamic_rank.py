@@ -17,6 +17,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error
@@ -143,12 +144,8 @@ def allocate_entropy_ranks(
     total_entropy = sum(raw_weights.values())
 
     # Case 1: Parameter Budget Constraint
-    if (
-        total_param_budget is not None or target_param_ratio is not None
-    ) and layer_dims:
-        total_orig_params = sum(
-            layer_dims[name][0] * layer_dims[name][1] for name in layer_names
-        )
+    if (total_param_budget is not None or target_param_ratio is not None) and layer_dims:
+        total_orig_params = sum(layer_dims[name][0] * layer_dims[name][1] for name in layer_names)
         if target_param_ratio is not None:
             effective_param_budget = int(total_orig_params * target_param_ratio)
         else:
@@ -166,9 +163,7 @@ def allocate_entropy_ranks(
                 out_f, in_f = layer_dims[name]
                 param_cost_per_rank = out_f + in_f
                 # Proportional rank candidate
-                target_r = int(
-                    round(mid_scale * (raw_weights[name] / total_entropy) * 100.0)
-                )
+                target_r = int(round(mid_scale * (raw_weights[name] / total_entropy) * 100.0))
                 r_clamped = max(per_layer_min[name], min(per_layer_max[name], target_r))
                 candidate_ranks[name] = r_clamped
                 current_params += r_clamped * param_cost_per_rank
@@ -222,9 +217,7 @@ def allocate_entropy_ranks(
 
     if diff > 0:
         # Greedily allocate remaining ranks to layers with highest entropy that are below per_layer_max
-        sorted_by_entropy = sorted(
-            layer_names, key=lambda n: raw_weights[n], reverse=True
-        )
+        sorted_by_entropy = sorted(layer_names, key=lambda n: raw_weights[n], reverse=True)
         while diff > 0:
             progress = False
             for name in sorted_by_entropy:
@@ -295,17 +288,11 @@ class DynamicSVDLinear(nn.Module):
         self.rank = max(1, min(rank, in_features, out_features))
 
         # Factorized low-rank parameter tensors
-        self.V = nn.Parameter(
-            torch.empty(self.rank, in_features, dtype=dtype, device=device)
-        )
-        self.U = nn.Parameter(
-            torch.empty(out_features, self.rank, dtype=dtype, device=device)
-        )
+        self.V = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
+        self.U = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
 
         if bias:
-            self.bias = nn.Parameter(
-                torch.empty(out_features, dtype=dtype, device=device)
-            )
+            self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device))
         else:
             self.register_parameter("bias", None)
 
@@ -389,11 +376,7 @@ class DynamicSVDLinear(nn.Module):
         # Default to weight-only unless activation-aware is demonstrably better.
         U_r, V_r = U_w, V_w
 
-        if (
-            covariance is not None
-            and covariance.numel() > 0
-            and covariance.shape[0] == in_f
-        ):
+        if covariance is not None and covariance.numel() > 0 and covariance.shape[0] == in_f:
             # RESEARCH FIX: Activation-aware whitening SVD with eigenvalue clamping lambda_i >= 1e-4
             # NOTE: We only accept the activation-aware result if its reconstruction error is
             # strictly lower than the weight-only baseline. This guards against rank-deficient
@@ -402,14 +385,10 @@ class DynamicSVDLinear(nn.Module):
             cov = covariance.to(device=W.device, dtype=torch.float32)
             try:
                 # Eigen-decomposition with regularized eigenvalue clamping >= 1e-4
-                eigvals, eigvecs = torch.linalg.eigh(
-                    cov + 1e-4 * torch.eye(in_f, device=W.device)
-                )
+                eigvals, eigvecs = torch.linalg.eigh(cov + 1e-4 * torch.eye(in_f, device=W.device))
                 eigvals_clamped = torch.clamp(eigvals, min=1e-4)
                 cov_sqrt = (
-                    eigvecs
-                    @ torch.diag(torch.sqrt(eigvals_clamped))
-                    @ eigvecs.t().contiguous()
+                    eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.t().contiguous()
                 )
                 cov_inv_sqrt = (
                     eigvecs
@@ -418,9 +397,7 @@ class DynamicSVDLinear(nn.Module):
                 )
 
                 W_scaled = W @ cov_sqrt
-                U_svd_a, S_svd_a, Vh_svd_a = torch.linalg.svd(
-                    W_scaled, full_matrices=False
-                )
+                U_svd_a, S_svd_a, Vh_svd_a = torch.linalg.svd(W_scaled, full_matrices=False)
 
                 # Truncate and un-whiten right singular factors
                 sqrt_S_a = torch.sqrt(torch.clamp(S_svd_a[:target_rank], min=1e-12))
@@ -455,9 +432,7 @@ class DynamicSVDLinear(nn.Module):
                         err_weight_only,
                     )
             except Exception as e:
-                logger.warning(
-                    "Activation-aware SVD failed (%s); using weight-only SVD.", e
-                )
+                logger.warning("Activation-aware SVD failed (%s); using weight-only SVD.", e)
                 # U_r, V_r already set to weight-only baseline above
 
         new_layer.U.data.copy_(U_r.to(dtype=target_mod.weight.dtype))
@@ -505,15 +480,9 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         cfg_obj = cfg if cfg is not None else kwargs.get("comp_config")
         self.cfg = cfg_obj
 
-        min_rank = _cfg_get(
-            cfg_obj, "dynamic_min_rank", _cfg_get(cfg_obj, "min_rank", min_rank)
-        )
-        max_rank = _cfg_get(
-            cfg_obj, "dynamic_max_rank", _cfg_get(cfg_obj, "max_rank", max_rank)
-        )
-        target_rank = _cfg_get(
-            cfg_obj, "dynamic_rank", _cfg_get(cfg_obj, "rank", target_rank)
-        )
+        min_rank = _cfg_get(cfg_obj, "dynamic_min_rank", _cfg_get(cfg_obj, "min_rank", min_rank))
+        max_rank = _cfg_get(cfg_obj, "dynamic_max_rank", _cfg_get(cfg_obj, "max_rank", max_rank))
+        target_rank = _cfg_get(cfg_obj, "dynamic_rank", _cfg_get(cfg_obj, "rank", target_rank))
         total_rank_budget = _cfg_get(cfg_obj, "total_rank_budget", total_rank_budget)
         target_param_ratio = _cfg_get(cfg_obj, "target_param_ratio", target_param_ratio)
         max_error = _cfg_get(
@@ -541,9 +510,7 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         self.target_param_ratio = (
             float(target_param_ratio) if target_param_ratio is not None else None
         )
-        self.total_rank_budget = (
-            int(total_rank_budget) if total_rank_budget is not None else None
-        )
+        self.total_rank_budget = int(total_rank_budget) if total_rank_budget is not None else None
         self.target_rank = int(target_rank) if target_rank is not None else None
         if max_error is None or max_error == 0.35:
             max_error = adaptive_max_error(
@@ -595,9 +562,7 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
         if not (is_linear or is_conv1d):
             return False
-        if isinstance(target_mod, DynamicSVDLinear) or isinstance(
-            module, DynamicSVDLinear
-        ):
+        if isinstance(target_mod, DynamicSVDLinear) or isinstance(module, DynamicSVDLinear):
             return False
         if not should_compress_linear(self.model, name):
             return False
@@ -684,8 +649,7 @@ class DynamicEntropySVDCompressor(BaseCompressor):
                             self.model(**batch)
                         elif isinstance(batch, (list, tuple)):
                             batch = [
-                                v.to(device) if isinstance(v, torch.Tensor) else v
-                                for v in batch
+                                v.to(device) if isinstance(v, torch.Tensor) else v for v in batch
                             ]
                             self.model(*batch)
                         elif isinstance(batch, torch.Tensor):
@@ -697,10 +661,7 @@ class DynamicEntropySVDCompressor(BaseCompressor):
                             "DynamicEntropySVD: real calibration loader used (%d batches).",
                             batch_count,
                         )
-                elif (
-                    self.calibration_texts is not None
-                    and len(self.calibration_texts) > 0
-                ):
+                elif self.calibration_texts is not None and len(self.calibration_texts) > 0:
                     logger.info(
                         "Running calibration forward on %d provided texts.",
                         len(self.calibration_texts),
@@ -771,9 +732,7 @@ class DynamicEntropySVDCompressor(BaseCompressor):
         )
         return normalized_covs
 
-    def compute_layer_entropies(
-        self, covariances: dict[str, torch.Tensor]
-    ) -> dict[str, float]:
+    def compute_layer_entropies(self, covariances: dict[str, torch.Tensor]) -> dict[str, float]:
         """
         Compute singular entropy for each target layer using activation covariance
         or fallback weight matrix spectrum.
@@ -908,23 +867,18 @@ class DynamicEntropySVDCompressor(BaseCompressor):
 
             # If wrapped in LoRALinear, replace the inner base_layer or linear
             has_base_layer = hasattr(module, "base_layer") or (
-                hasattr(module, "linear")
-                and (hasattr(module, "lora_A") or hasattr(module, "r"))
+                hasattr(module, "linear") and (hasattr(module, "lora_A") or hasattr(module, "r"))
             )
             if hasattr(module, "base_layer"):
                 module.base_layer = factorized_layer
-            elif hasattr(module, "linear") and (
-                hasattr(module, "lora_A") or hasattr(module, "r")
-            ):
+            elif hasattr(module, "linear") and (hasattr(module, "lora_A") or hasattr(module, "r")):
                 module.linear = factorized_layer
             else:
                 replace_module(self.model, name, factorized_layer)
 
             if has_base_layer:
                 for p_name, p in module.named_parameters():
-                    if any(
-                        t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")
-                    ):
+                    if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
                         p.requires_grad = True
 
             self.compressed_layers.append(name)
@@ -1010,23 +964,17 @@ class EntropyRankAllocatorRegistered(DynamicEntropySVDCompressor):
 @COMPRESSOR_REGISTRY.register("dynamic_entropy_svd_compressor")
 @COMPRESSOR_REGISTRY.register("dynamic_rank_compressor")
 @COMPRESSOR_REGISTRY.register("entropy_rank_allocator")
-def dynamic_entropy_svd_factory(
-    model: Any, comp_config: Any = None, **kwargs: Any
-) -> Any:
+def dynamic_entropy_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Dynamic Entropy SVD factory function."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     try:
         min_rank = kwargs.pop(
             "min_rank",
-            _cfg_get(
-                comp_config, "dynamic_min_rank", _cfg_get(comp_config, "min_rank", 16)
-            ),
+            _cfg_get(comp_config, "dynamic_min_rank", _cfg_get(comp_config, "min_rank", 16)),
         )
         max_rank = kwargs.pop(
             "max_rank",
-            _cfg_get(
-                comp_config, "dynamic_max_rank", _cfg_get(comp_config, "max_rank", 128)
-            ),
+            _cfg_get(comp_config, "dynamic_max_rank", _cfg_get(comp_config, "max_rank", 128)),
         )
         target_rank = kwargs.pop(
             "rank",

@@ -17,6 +17,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
@@ -70,14 +71,10 @@ class ReplacementBlock(nn.Module):
             if self.linear.bias is not None:
                 self.linear.bias.requires_grad = False
             self.lora_A = nn.Parameter(
-                torch.empty(
-                    (self.lora_r, hidden_size), dtype=torch.float32, device=device
-                )
+                torch.empty((self.lora_r, hidden_size), dtype=torch.float32, device=device)
             )
             self.lora_B = nn.Parameter(
-                torch.zeros(
-                    (hidden_size, self.lora_r), dtype=torch.float32, device=device
-                )
+                torch.zeros((hidden_size, self.lora_r), dtype=torch.float32, device=device)
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
@@ -101,10 +98,7 @@ class ReplacementBlock(nn.Module):
         normed = self.ln(primary)
         delta = self.linear(normed)
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_delta = (
-                F.linear(F.linear(normed.float(), self.lora_A), self.lora_B)
-                * self.scaling
-            )
+            lora_delta = F.linear(F.linear(normed.float(), self.lora_A), self.lora_B) * self.scaling
             delta = delta + lora_delta.to(delta.dtype)
 
         out = primary + delta
@@ -150,9 +144,7 @@ class ReplaceMeCompressor(BaseCompressor):
                 else _cfg_get(cfg_obj, "remove_layers", 2)
             ),
         )
-        self.use_lora = bool(
-            use_lora or _cfg_get(cfg_obj, "use_lora", False) or (lora_r > 0)
-        )
+        self.use_lora = bool(use_lora or _cfg_get(cfg_obj, "use_lora", False) or (lora_r > 0))
         self.lora_r = int(lora_r or _cfg_get(cfg_obj, "lora_r", 0))
         self.lora_alpha = float(lora_alpha or _cfg_get(cfg_obj, "lora_alpha", 1.0))
         self.fallback_to_original = bool(
@@ -173,9 +165,7 @@ class ReplaceMeCompressor(BaseCompressor):
                 )
         else:
             self.target_device = (
-                next(model.parameters()).device
-                if list(model.parameters())
-                else torch.device("cpu")
+                next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
             )
 
     # ------------------------------------------------------------------
@@ -208,10 +198,7 @@ class ReplaceMeCompressor(BaseCompressor):
         for _, module in self.model.named_modules():
             if isinstance(module, nn.ModuleList) and len(module) >= 2:
                 first_cls = module[0].__class__.__name__.lower()
-                if any(
-                    k in first_cls
-                    for k in ("layer", "block", "decoderlayer", "encoderlayer")
-                ):
+                if any(k in first_cls for k in ("layer", "block", "decoderlayer", "encoderlayer")):
                     return module
         return None
 
@@ -265,9 +252,7 @@ class ReplaceMeCompressor(BaseCompressor):
         n_remove = min(self.remove_layers, num_layers)
 
         target_dtype = (
-            next(self.model.parameters()).dtype
-            if list(self.model.parameters())
-            else torch.float32
+            next(self.model.parameters()).dtype if list(self.model.parameters()) else torch.float32
         )
 
         for i in range(num_layers - n_remove, num_layers):
@@ -357,9 +342,7 @@ def replaceme_factory(
     **kwargs: Any,
 ) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """ReplaceMe compressor factory function."""
-    remove_layers = kwargs.pop(
-        "remove_layers", _cfg_get(comp_config, "remove_layers", 2)
-    )
+    remove_layers = kwargs.pop("remove_layers", _cfg_get(comp_config, "remove_layers", 2))
     use_lora = kwargs.pop("use_lora", _cfg_get(comp_config, "use_lora", False))
     lora_r = kwargs.pop("lora_r", _cfg_get(comp_config, "lora_r", 0))
     lora_alpha = kwargs.pop("lora_alpha", _cfg_get(comp_config, "lora_alpha", 1.0))

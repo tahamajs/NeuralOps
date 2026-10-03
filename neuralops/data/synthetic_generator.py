@@ -64,9 +64,7 @@ def generate_zipfian_tokens(
         probs = np.full(effective_vocab, 1.0 / effective_vocab)
 
     # Sample token indices from power-law distribution
-    flat_tokens = np_rng.choice(
-        effective_vocab, size=(num_samples, seq_len), p=probs, replace=True
-    )
+    flat_tokens = np_rng.choice(effective_vocab, size=(num_samples, seq_len), p=probs, replace=True)
 
     # Shift indices to respect min_token_id (reserving special tokens)
     token_tensor = torch.from_numpy(flat_tokens + min_token_id).long()
@@ -215,9 +213,7 @@ class SyntheticClassificationDataset(Dataset):
 
         # Generate realistic balanced labels
         rng = np.random.default_rng(seed)
-        self.labels = torch.from_numpy(
-            rng.integers(0, num_classes, size=(num_samples,))
-        ).long()
+        self.labels = torch.from_numpy(rng.integers(0, num_classes, size=(num_samples,))).long()
 
         # Inject class-conditional salient tokens to simulate real sentiment / classification signal
         for i in range(num_samples):
@@ -359,9 +355,7 @@ def generate_synthetic_data(
     half = num_samples // 2
     pos = _generate_batch(domain, half, label=1, is_positive=True)
     neg = _generate_batch(domain, half, label=0, is_positive=False)
-    df = (
-        pd.DataFrame(pos + neg).sample(frac=1, random_state=seed).reset_index(drop=True)
-    )
+    df = pd.DataFrame(pos + neg).sample(frac=1, random_state=seed).reset_index(drop=True)
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(output_path, index=False)
     logger.info("Generated %d samples to %s", len(df), output_path)
@@ -385,11 +379,7 @@ def run_universal_generation(
         half = total_samples_per_domain // 2
         pos = _generate_batch(domain_key, half, label=1, is_positive=True)
         neg = _generate_batch(domain_key, half, label=0, is_positive=False)
-        df = (
-            pd.DataFrame(pos + neg)
-            .sample(frac=1, random_state=seed)
-            .reset_index(drop=True)
-        )
+        df = pd.DataFrame(pos + neg).sample(frac=1, random_state=seed).reset_index(drop=True)
         df.to_csv(out_dir / f"data_{domain_key}.csv", index=False)
         all_dfs.append(df)
 

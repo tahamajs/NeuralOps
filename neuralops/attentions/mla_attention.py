@@ -48,6 +48,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -95,22 +96,10 @@ def apply_rotary_pos_emb(
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q_rot.dtype)
-        )
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k_rot.dtype)
-        )
-        q = (
-            torch.cat([q_rot_embed, q_pass], dim=-1)
-            if q_pass.numel() > 0
-            else q_rot_embed
-        )
-        k = (
-            torch.cat([k_rot_embed, k_pass], dim=-1)
-            if k_pass.numel() > 0
-            else k_rot_embed
-        )
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     else:
         cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
         q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
@@ -197,9 +186,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = (
-                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            )
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -282,14 +269,10 @@ class MLAAttention(BaseAttention):
         self.head_dim: int = int(
             getattr(config, "head_dim", self.hidden_size // max(1, self.num_heads))
         )
-        self.q_dim: int = int(
-            getattr(config, "q_proj_out", self.num_heads * self.head_dim)
-        )
+        self.q_dim: int = int(getattr(config, "q_proj_out", self.num_heads * self.head_dim))
         self.all_head_size: int = self.q_dim
 
-        cfg_kv = getattr(
-            config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
-        )
+        cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -301,9 +284,7 @@ class MLAAttention(BaseAttention):
         self.kv_head_size: int = self.kv_dim
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
 
-        self.rank: int = int(
-            getattr(config, "mla_rank", rank if rank is not None else 128)
-        )
+        self.rank: int = int(getattr(config, "mla_rank", rank if rank is not None else 128))
         self.lora_rank: int = int(lora_rank)
         self.lora_alpha: float = float(lora_alpha)
         self.max_error: float = float(max_error)
@@ -358,9 +339,7 @@ class MLAAttention(BaseAttention):
         )
 
         dropout_p = float(
-            getattr(
-                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
-            )
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
         )
         self.dropout = nn.Dropout(dropout_p)
 
@@ -447,9 +426,7 @@ class MLAAttention(BaseAttention):
 
         # GPT-2 fused c_attn
         if hasattr(src, "c_attn") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             c_attn = src.c_attn
             base_c = getattr(c_attn, "base_layer", c_attn)
@@ -496,9 +473,7 @@ class MLAAttention(BaseAttention):
 
         # BERT / RoBERTa nested
         if hasattr(src, "self") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             s = src.self
             if hasattr(s, "query") and extracted["q"][0] is None:
@@ -508,11 +483,7 @@ class MLAAttention(BaseAttention):
             if hasattr(s, "value") and extracted["v"][0] is None:
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if (
-            hasattr(src, "output")
-            and hasattr(src.output, "dense")
-            and extracted["o"][0] is None
-        ):
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -554,8 +525,7 @@ class MLAAttention(BaseAttention):
         if (
             hasattr(src, "self")
             and hasattr(src.self, "query")
-            or cls_name
-            in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
+            or cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
             or cls_name.endswith("SelfAttention")
             and not has_out_proj
             or cls_name.endswith("Attention")
@@ -592,9 +562,7 @@ class MLAAttention(BaseAttention):
             in_q = min(self.hidden_size, w_q_oriented.shape[1])
             self.q_proj.weight.data.zero_()
             self.q_proj.weight.data[:out_q, :in_q].copy_(
-                w_q_oriented[:out_q, :in_q].to(
-                    self.q_proj.weight.device, self.q_proj.weight.dtype
-                )
+                w_q_oriented[:out_q, :in_q].to(self.q_proj.weight.device, self.q_proj.weight.dtype)
             )
             if b_q is not None and self.q_proj.bias is not None:
                 mb = min(self.q_proj.bias.numel(), b_q.numel())
@@ -624,9 +592,7 @@ class MLAAttention(BaseAttention):
                     )
             elif self.is_nested_encoder:
                 # Identity init for nested encoders
-                min_d = min(
-                    self.out_proj.weight.shape[0], self.out_proj.weight.shape[1]
-                )
+                min_d = min(self.out_proj.weight.shape[0], self.out_proj.weight.shape[1])
                 self.out_proj.weight.data.zero_()
                 self.out_proj.weight.data[:min_d, :min_d].fill_diagonal_(1.0)
                 if self.out_proj.bias is not None:
@@ -691,9 +657,7 @@ class MLAAttention(BaseAttention):
             d_v = min(self.kv_dim, self.v_up.weight.shape[0])
             # K rows come first, V rows next
             self.k_up.weight.data[:d_k, :r].copy_(up[:d_k, :r])
-            self.v_up.weight.data[:d_v, :r].copy_(
-                up[self.kv_dim : self.kv_dim + d_v, :r]
-            )
+            self.v_up.weight.data[:d_v, :r].copy_(up[self.kv_dim : self.kv_dim + d_v, :r])
 
             self.kv_down.weight.requires_grad = False
             self.k_up.weight.requires_grad = False
@@ -796,22 +760,10 @@ class MLAAttention(BaseAttention):
             .transpose(1, 2)
             .contiguous()
         )
-        k_raw = triton_dispatch(
-            self.triton_kernel, kv_input, self.k_up.weight, self.kv_down.weight
-        )
-        v_raw = triton_dispatch(
-            self.triton_kernel, kv_input, self.v_up.weight, self.kv_down.weight
-        )
-        k = (
-            k_raw.view(B, kv_len, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            v_raw.view(B, kv_len, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        k_raw = triton_dispatch(self.triton_kernel, kv_input, self.k_up.weight, self.kv_down.weight)
+        v_raw = triton_dispatch(self.triton_kernel, kv_input, self.v_up.weight, self.kv_down.weight)
+        k = k_raw.view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = v_raw.view(B, kv_len, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # ---- RoPE ----
         if position_embeddings is None:
@@ -842,12 +794,7 @@ class MLAAttention(BaseAttention):
                     is_causal=_is_causal,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
-                out = (
-                    out.to(dtype)
-                    .transpose(1, 2)
-                    .contiguous()
-                    .view(B, N, self.all_head_size)
-                )
+                out = out.to(dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
                 out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
                 if self.is_nested_encoder:
                     return out, None
@@ -856,17 +803,13 @@ class MLAAttention(BaseAttention):
                 pass
 
         # ---- Manual path ----
-        scores = (
-            torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder and not is_cross and N > 1:
             diag = 1 + max(0, kv_len - N)
             causal = (
                 torch.triu(
-                    torch.full(
-                        (N, kv_len), float("-inf"), device=device, dtype=torch.float32
-                    ),
+                    torch.full((N, kv_len), float("-inf"), device=device, dtype=torch.float32),
                     diagonal=diag,
                 )
                 .unsqueeze(0)
@@ -876,10 +819,7 @@ class MLAAttention(BaseAttention):
 
         if eff_mask is not None:
             if eff_mask.dim() == 2:
-                scores = (
-                    scores
-                    + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
-                )
+                scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
             elif eff_mask.dim() == 3:
                 scores = scores + eff_mask.unsqueeze(1).float()
             elif eff_mask.dim() == 4:
@@ -979,10 +919,7 @@ def inject_mla(
             candidate = getattr(target, attr, None)
             if candidate is None:
                 continue
-            if (
-                isinstance(candidate, MLAAttention)
-                or "MLA" in candidate.__class__.__name__
-            ):
+            if isinstance(candidate, MLAAttention) or "MLA" in candidate.__class__.__name__:
                 return None  # idempotency
             if hasattr(candidate, "self") and hasattr(candidate.self, "query"):
                 src_attn = candidate.self
@@ -1041,9 +978,7 @@ def inject_mla(
         new_attn.is_nested_encoder = False
         replaced = True
     elif hasattr(target, "attention"):
-        if hasattr(target.attention, "self") and hasattr(
-            target.attention.self, "query"
-        ):
+        if hasattr(target.attention, "self") and hasattr(target.attention.self, "query"):
             new_attn.is_nested_encoder = True
             target.attention.self = new_attn
         else:

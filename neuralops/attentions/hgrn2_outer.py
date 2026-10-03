@@ -30,6 +30,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -139,9 +140,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = (
-                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            )
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
             out = out + F.linear(F.linear(x, a), bb) * self.scaling
         return out
 
@@ -220,9 +219,7 @@ class HGRN2OuterBlock(BaseAttention):
 
         cfg_kv = None
         if config is not None and not isinstance(config, int):
-            cfg_kv = getattr(
-                config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
-            )
+            cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
         self.num_kv_heads = int(cfg_kv) if cfg_kv is not None else self.num_heads
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
         self.num_key_value_groups = max(1, self.num_heads // max(1, self.num_kv_heads))
@@ -380,9 +377,7 @@ class HGRN2OuterBlock(BaseAttention):
             # GPT-2 fused c_attn
             if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
                 c_attn_w = src.c_attn.weight.detach()
-                c_attn_b = (
-                    src.c_attn.bias.detach() if src.c_attn.bias is not None else None
-                )
+                c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
                 cls_c = src.c_attn.__class__.__name__
                 if (
                     hasattr(src.c_attn, "nf")
@@ -415,9 +410,7 @@ class HGRN2OuterBlock(BaseAttention):
                 b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
 
             # BERT / RoBERTa nested
-            elif (
-                hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value")
-            ):
+            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.detach()
                 b_q = src.query.bias.detach() if src.query.bias is not None else None
                 w_k = src.key.weight.detach()
@@ -433,11 +426,7 @@ class HGRN2OuterBlock(BaseAttention):
                             break
 
             # Qwen / LLaMA
-            elif (
-                hasattr(src, "q_proj")
-                and hasattr(src, "k_proj")
-                and hasattr(src, "v_proj")
-            ):
+            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q = src.q_proj.weight.detach()
                 b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
                 w_k = src.k_proj.weight.detach()
@@ -446,18 +435,10 @@ class HGRN2OuterBlock(BaseAttention):
                 b_v = src.v_proj.bias.detach() if src.v_proj.bias is not None else None
                 if hasattr(src, "o_proj"):
                     w_o = src.o_proj.weight.detach()
-                    b_o = (
-                        src.o_proj.bias.detach()
-                        if src.o_proj.bias is not None
-                        else None
-                    )
+                    b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
 
             # DistilBERT
-            elif (
-                hasattr(src, "q_lin")
-                and hasattr(src, "k_lin")
-                and hasattr(src, "v_lin")
-            ):
+            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q = src.q_lin.weight.detach()
                 b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
                 w_k = src.k_lin.weight.detach()
@@ -466,11 +447,7 @@ class HGRN2OuterBlock(BaseAttention):
                 b_v = src.v_lin.bias.detach() if src.v_lin.bias is not None else None
                 if hasattr(src, "out_lin"):
                     w_o = src.out_lin.weight.detach()
-                    b_o = (
-                        src.out_lin.bias.detach()
-                        if src.out_lin.bias is not None
-                        else None
-                    )
+                    b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
 
             # UniversalAdapter fallback
             if w_q is None or w_k is None or w_v is None:
@@ -541,9 +518,7 @@ class HGRN2OuterBlock(BaseAttention):
             ):
                 n = float(torch.linalg.norm(mod.weight.float()))
                 if n < 1e-4:
-                    logger.warning(
-                        "HGRN2OuterBlock: %s weight near-zero norm (%.2e)", name, n
-                    )
+                    logger.warning("HGRN2OuterBlock: %s weight near-zero norm (%.2e)", name, n)
 
             try:
                 for m in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
@@ -610,9 +585,7 @@ class HGRN2OuterBlock(BaseAttention):
             # log_decay[i, j] = log_F_c[j] - log_F_prev[i]
             # i = 0 → previous-chunk state
             # i >= 1 → position i-1 in chunk
-            log_decay = log_F_c.unsqueeze(-2) - log_F_prev.unsqueeze(
-                -1
-            )  # (B, H, C+1, C)
+            log_decay = log_F_c.unsqueeze(-2) - log_F_prev.unsqueeze(-1)  # (B, H, C+1, C)
 
             # Mask: i=0 always valid; i>=1 valid iff i-1 <= j  (i <= j+1)
             i_idx = torch.arange(C + 1, device=q.device).view(C + 1, 1)
@@ -633,21 +606,15 @@ class HGRN2OuterBlock(BaseAttention):
             combined_kv = torch.cat([S_prev.unsqueeze(2), W_kv], dim=2).to(
                 q.dtype
             )  # (B, H, C+1, d, d)
-            combined_k = torch.cat([z_prev.unsqueeze(2), W_k], dim=2).to(
-                q.dtype
-            )  # (B, H, C+1, d)
+            combined_k = torch.cat([z_prev.unsqueeze(2), W_k], dim=2).to(q.dtype)  # (B, H, C+1, d)
 
             # S_all[j] = sum_i decay[i, j] * combined[i]
-            S_all = torch.einsum(
-                "bhij,bhiae->bhjae", decay, combined_kv
-            )  # (B, H, C, d, d)
+            S_all = torch.einsum("bhij,bhiae->bhjae", decay, combined_kv)  # (B, H, C, d, d)
             z_all = torch.einsum("bhij,bhia->bhja", decay, combined_k)  # (B, H, C, d)
 
             # y_j = (q_j @ S_j) / (q_j @ z_j)
             num = torch.einsum("bhjd,bhjde->bhje", q_c, S_all)  # (B, H, C, d)
-            denom = torch.einsum("bhjd,bhjd->bhj", q_c, z_all).clamp_min(
-                1e-6
-            )  # (B, H, C)
+            denom = torch.einsum("bhjd,bhjd->bhj", q_c, z_all).clamp_min(1e-6)  # (B, H, C)
             y_c = num / denom.unsqueeze(-1)
 
             outputs.append(y_c)
@@ -683,9 +650,7 @@ class HGRN2OuterBlock(BaseAttention):
         **kwargs: Any,
     ):
         if encoder_hidden_states is not None:
-            raise NotImplementedError(
-                "HGRN2OuterBlock does not support cross-attention."
-            )
+            raise NotImplementedError("HGRN2OuterBlock does not support cross-attention.")
 
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
@@ -694,18 +659,8 @@ class HGRN2OuterBlock(BaseAttention):
         H, d = self.num_heads, self.head_dim
 
         q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
-        k = (
-            self.k_proj(hidden_states)
-            .view(B, L, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.v_proj(hidden_states)
-            .view(B, L, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        k = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # ---- RoPE ----
         pos_emb = kwargs.get("position_embeddings")
@@ -723,9 +678,7 @@ class HGRN2OuterBlock(BaseAttention):
         k = (F.elu(k) + 1.0) / math.sqrt(d)
 
         # ---- Bounded forget gate ----
-        f = torch.exp(
-            (-F.softplus(self.W_f(hidden_states))).clamp(min=-3.0, max=-1e-4)
-        ).transpose(
+        f = torch.exp((-F.softplus(self.W_f(hidden_states))).clamp(min=-3.0, max=-1e-4)).transpose(
             1, 2
         )  # (B, H, L)
 
@@ -944,11 +897,7 @@ def inject_hgrn2_outer(
 
         # Splice
         spliced = False
-        if (
-            is_nested_target
-            and hasattr(target, "attention")
-            and hasattr(target.attention, "self")
-        ):
+        if is_nested_target and hasattr(target, "attention") and hasattr(target.attention, "self"):
             new_block.is_nested_encoder = True
             target.attention.self = new_block
             spliced = True
@@ -970,9 +919,7 @@ def inject_hgrn2_outer(
             spliced = True
 
         if not spliced:
-            logger.error(
-                "inject_hgrn2_outer: no writable attribute on %s", type(target).__name__
-            )
+            logger.error("inject_hgrn2_outer: no writable attribute on %s", type(target).__name__)
             return None
 
         # HGRN2-FIX-05: return the injected module

@@ -16,9 +16,7 @@ def load_custom_dataset(
     Supports CSV, JSON, Parquet, text, and HuggingFace hub datasets.
     """
     if path.endswith((".csv", ".json", ".parquet", ".txt")):
-        dataset = load_dataset(
-            path.split(".")[-1], data_files=data_files or path, **kwargs
-        )
+        dataset = load_dataset(path.split(".")[-1], data_files=data_files or path, **kwargs)
     else:
         dataset = load_dataset(path, data_files=data_files, **kwargs)
     if split:

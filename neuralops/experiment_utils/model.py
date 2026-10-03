@@ -37,9 +37,7 @@ class TrainingRun:
 def load_model(cfg: Any, num_labels: int, device: str = "auto") -> Any:
     """Load model using config and num_labels."""
     config = AutoConfig.from_pretrained(cfg.model_name, num_labels=num_labels)
-    model = AutoModelForSequenceClassification.from_pretrained(
-        cfg.model_name, config=config
-    )
+    model = AutoModelForSequenceClassification.from_pretrained(cfg.model_name, config=config)
     fix_layernorm_naming(model)
     if device == "auto":
         device = "cuda" if torch.cuda.is_available() else "cpu"

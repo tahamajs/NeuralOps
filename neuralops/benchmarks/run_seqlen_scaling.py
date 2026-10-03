@@ -37,9 +37,7 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.eval_all_models_datasets import apply_module_to_model
 
 LOG = logging.getLogger("SeqlenScaling")
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 SEQLENS = [128, 512, 1024, 2048, 4096]
 MODULES = ["dense", "a3", "kmeans", "svd-mamba", "primal"]
@@ -214,18 +212,14 @@ def main():
             LOG.info("  SeqLen: %d ...", L)
 
             try:
-                model = AutoModelForSequenceClassification.from_pretrained(
-                    args.model_path
-                )
+                model = AutoModelForSequenceClassification.from_pretrained(args.model_path)
                 if device == "cuda":
                     model.half()
                 model.to(device)
 
                 if mod != "dense":
                     typ = "attention" if mod in ATTENTION_REGISTRY else "compressor"
-                    model, _ = apply_module_to_model(
-                        model, mod, typ, rank=args.rank, device=device
-                    )
+                    model, _ = apply_module_to_model(model, mod, typ, rank=args.rank, device=device)
 
                 metrics = benchmark_forward_scaling(
                     model,
@@ -281,9 +275,7 @@ def main():
                 for r in all_rows:
                     writer.writerow(r)
 
-    print(
-        f"\n[DONE] Sequence length scaling benchmark completed. Results: {summary_csv}"
-    )
+    print(f"\n[DONE] Sequence length scaling benchmark completed. Results: {summary_csv}")
 
 
 if __name__ == "__main__":

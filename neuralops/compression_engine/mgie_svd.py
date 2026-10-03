@@ -13,6 +13,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+
 from neuralops.compression_engine.aa_svd_compressor import SVDLinear
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
@@ -83,9 +84,7 @@ class MGIECompressor(BaseCompressor):
 
         if cfg is not None:
             rank = _cfg_get(cfg, "mgie_rank", _cfg_get(cfg, "rank", rank))
-            max_error = _cfg_get(
-                cfg, "mgie_max_error", _cfg_get(cfg, "max_error", max_error)
-            )
+            max_error = _cfg_get(cfg, "mgie_max_error", _cfg_get(cfg, "max_error", max_error))
             fallback_to_original = _cfg_get(
                 cfg,
                 "mgie_fallback_to_original",
@@ -94,9 +93,7 @@ class MGIECompressor(BaseCompressor):
             lora_r = _cfg_get(cfg, "lora_r", lora_r)
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
             skip_attention_qkv = _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
-            target_attention_only = _cfg_get(
-                cfg, "target_attention_only", target_attention_only
-            )
+            target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
             min_rank = _cfg_get(cfg, "min_rank", min_rank)
 
         if "rank" in kwargs and kwargs["rank"] is not None:
@@ -129,11 +126,7 @@ class MGIECompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if (
-            num_heads is not None
-            and num_kv_heads is not None
-            and num_kv_heads < num_heads
-        ):
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
             name_lower = name.lower()
             if any(
                 p in name_lower
@@ -257,11 +250,7 @@ class MGIECompressor(BaseCompressor):
             cls_name = target_layer.__class__.__name__.lower()
             is_conv1d = "conv1d" in cls_name or hasattr(target_layer, "nf")
 
-            W = (
-                raw_w.t().contiguous().clone().float()
-                if is_conv1d
-                else raw_w.clone().float()
-            )
+            W = raw_w.t().contiguous().clone().float() if is_conv1d else raw_w.clone().float()
             d_out, d_in = W.shape
             max_r = min(d_out, d_in)
             device = raw_w.device
@@ -401,11 +390,7 @@ class MGIECompressor(BaseCompressor):
                         hidden = getattr(cfg, "hidden_size", None) if cfg else None
                         if hidden is None:
                             first_lin = next(
-                                (
-                                    m
-                                    for m in self.model.modules()
-                                    if isinstance(m, nn.Linear)
-                                ),
+                                (m for m in self.model.modules() if isinstance(m, nn.Linear)),
                                 None,
                             )
                             hidden = getattr(first_lin, "in_features", 8)
@@ -481,9 +466,7 @@ def mgie_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(
-            comp_config, "mgie_max_error", _cfg_get(comp_config, "max_error", 0.50)
-        ),
+        _cfg_get(comp_config, "mgie_max_error", _cfg_get(comp_config, "max_error", 0.50)),
     )
     fallback = kwargs.pop(
         "fallback_to_original",

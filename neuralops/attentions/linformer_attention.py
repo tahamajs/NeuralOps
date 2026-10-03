@@ -9,6 +9,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -161,12 +162,8 @@ class FactorizedLoRALinear(nn.Module):
             self.up.bias.requires_grad = False
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty(self.lora_rank, self.in_features, **factory)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty(self.out_features, self.lora_rank, **factory)
-            )
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **factory))
+            self.lora_B = nn.Parameter(torch.empty(self.out_features, self.lora_rank, **factory))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             nn.init.zeros_(self.lora_B)
         else:
@@ -206,10 +203,7 @@ class FactorizedLoRALinear(nn.Module):
             x = x.to(self.down.weight.dtype)
         out = self.up(self.down(x))
         if self.lora_A is not None and self.lora_B is not None:
-            out = (
-                out
-                + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
         return out.to(orig_dtype)
 
 
@@ -219,9 +213,7 @@ class FactorizedLoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("linformer", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register(
-    "linformer_attention", supports_causal=True, supports_gqa=True
-)
+@ATTENTION_REGISTRY.register("linformer_attention", supports_causal=True, supports_gqa=True)
 class LinformerAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
@@ -252,9 +244,7 @@ class LinformerAttention(BaseAttention):
         hidden_size = self._detect_hidden_size(config, source_attn, kwargs)
         num_heads = self._detect_num_heads(config, source_attn, kwargs, hidden_size)
         num_kv_heads = self._detect_num_kv_heads(config, source_attn, kwargs, num_heads)
-        head_dim = self._detect_head_dim(
-            config, source_attn, kwargs, hidden_size, num_heads
-        )
+        head_dim = self._detect_head_dim(config, source_attn, kwargs, hidden_size, num_heads)
 
         self.dim = int(hidden_size)
         self.hidden_size = self.dim
@@ -277,11 +267,7 @@ class LinformerAttention(BaseAttention):
             )
         )
         if k_val is None:
-            k_val = (
-                getattr(config, "linformer_k", getattr(config, "k", 64))
-                if config
-                else 64
-            )
+            k_val = getattr(config, "linformer_k", getattr(config, "k", 64)) if config else 64
         self.k_proj_dim = int(k_val)
 
         pos_emb = getattr(config, "max_position_embeddings", None) if config else None
@@ -384,9 +370,7 @@ class LinformerAttention(BaseAttention):
     # LF-04: dimension detection
     # ------------------------------------------------------------------
     @staticmethod
-    def _detect_hidden_size(
-        config: Any, src: nn.Module | None, kwargs: dict[str, Any]
-    ) -> int:
+    def _detect_hidden_size(config: Any, src: nn.Module | None, kwargs: dict[str, Any]) -> int:
         for k in ("hidden_size", "d_model", "n_embd", "dim"):
             v = kwargs.get(k)
             if isinstance(v, int) and v > 0:
@@ -465,11 +449,7 @@ class LinformerAttention(BaseAttention):
         if src is not None:
             for attr in ("q_proj", "q_lin", "query"):
                 mod = getattr(src, attr, None)
-                if (
-                    mod is not None
-                    and hasattr(mod, "weight")
-                    and mod.weight is not None
-                ):
+                if mod is not None and hasattr(mod, "weight") and mod.weight is not None:
                     try:
                         return int(mod.weight.shape[0] // max(1, num_heads))
                     except Exception:
@@ -523,9 +503,7 @@ class LinformerAttention(BaseAttention):
     # SVD init helper
     # ------------------------------------------------------------------
     @staticmethod
-    def _svd_init(
-        w: torch.Tensor, b: torch.Tensor | None, proj: FactorizedLoRALinear
-    ) -> None:
+    def _svd_init(w: torch.Tensor, b: torch.Tensor | None, proj: FactorizedLoRALinear) -> None:
         with torch.no_grad():
             W = w.detach().float()
             if W.ndim != 2:
@@ -566,9 +544,7 @@ class LinformerAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
             (
@@ -586,10 +562,7 @@ class LinformerAttention(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -830,18 +803,8 @@ class LinformerAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         q = self.q_proj(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
-        k = (
-            self.k_proj(hidden_states)
-            .view(B, N, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.v_proj(hidden_states)
-            .view(B, N, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        k = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # LF-05: RoPE with past_len offset
         pos_emb = (
@@ -849,18 +812,11 @@ class LinformerAttention(BaseAttention):
             if position_embeddings is not None
             else kwargs.get("position_embeddings")
         )
-        if (
-            pos_emb is not None
-            and isinstance(pos_emb, (tuple, list))
-            and len(pos_emb) >= 2
-        ):
+        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
             past_len = 0
             if past_key_value is not None:
-                if (
-                    isinstance(past_key_value, (tuple, list))
-                    and len(past_key_value) >= 1
-                ):
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 1:
                     past_len = past_key_value[0].shape[-2]
                 elif hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
                     past_len = past_key_value.key_cache[0].shape[-2]
@@ -936,25 +892,17 @@ class LinformerAttention(BaseAttention):
         V_proj = torch.matmul(F_act.to(v.dtype), v)
 
         scale = 1.0 / math.sqrt(d)
-        scores = (
-            torch.matmul(q.float(), K_proj.transpose(-2, -1).contiguous().float())
-            * scale
-        )
+        scores = torch.matmul(q.float(), K_proj.transpose(-2, -1).contiguous().float()) * scale
 
         # LF-09: proper causal masking for projected K/V
         if self.is_decoder:
             if self.k_proj_dim >= L:
                 # Exact causal on full sequence — recompute without projection
                 causal_scores = (
-                    torch.matmul(q.float(), k.transpose(-2, -1).contiguous().float())
-                    * scale
+                    torch.matmul(q.float(), k.transpose(-2, -1).contiguous().float()) * scale
                 )
-                causal_mask = torch.tril(
-                    torch.ones(L, L, device=device, dtype=torch.bool)
-                )
-                scores = causal_scores.masked_fill(
-                    ~causal_mask.unsqueeze(0).unsqueeze(0), -1e4
-                )
+                causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
+                scores = causal_scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
                 V_proj = v
             else:
                 # Approximate causal on projected K/V: mask each projected key by its mean position
@@ -1111,10 +1059,7 @@ def inject_linformer(
             return None
 
         # Double-injection guard
-        if (
-            isinstance(src_attn, LinformerAttention)
-            or "Linformer" in src_attn.__class__.__name__
-        ):
+        if isinstance(src_attn, LinformerAttention) or "Linformer" in src_attn.__class__.__name__:
             return None
 
         # Skip Qwen hybrid layers
@@ -1130,9 +1075,7 @@ def inject_linformer(
             if comp_config
             else kwargs.get("linformer_k", 64)
         )
-        max_seq_len = (
-            max(512, getattr(cfg, "max_position_embeddings", 512)) if cfg else 512
-        )
+        max_seq_len = max(512, getattr(cfg, "max_position_embeddings", 512)) if cfg else 512
 
         new_attn = LinformerAttention(
             cfg,

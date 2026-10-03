@@ -9,6 +9,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.pruning_utils import adaptive_max_error, get_calibration_tensors
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -95,11 +96,7 @@ class GFWSLoRALinear(nn.Module):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> GFWSLoRALinear:
-        bias = (
-            linear.bias.detach()
-            if hasattr(linear, "bias") and linear.bias is not None
-            else None
-        )
+        bias = linear.bias.detach() if hasattr(linear, "bias") and linear.bias is not None else None
         in_features = getattr(linear, "in_features", weight.shape[1])
         out_features = getattr(linear, "out_features", weight.shape[0])
         return cls(
@@ -168,9 +165,7 @@ class GFWSCompressor(BaseCompressor):
         if cfg is not None:
             rank = getattr(cfg, "gfws_rank", getattr(cfg, "rank", rank))
             damping = getattr(cfg, "gfws_damping", getattr(cfg, "damping", damping))
-            max_error = getattr(
-                cfg, "gfws_max_error", getattr(cfg, "max_error", max_error)
-            )
+            max_error = getattr(cfg, "gfws_max_error", getattr(cfg, "max_error", max_error))
             fallback_to_original = getattr(
                 cfg,
                 "gfws_fallback_to_original",
@@ -214,11 +209,7 @@ class GFWSCompressor(BaseCompressor):
         cfg = getattr(self.model, "config", None)
         num_heads = getattr(cfg, "num_attention_heads", None)
         num_kv_heads = getattr(cfg, "num_key_value_heads", None)
-        if (
-            num_heads is not None
-            and num_kv_heads is not None
-            and num_kv_heads < num_heads
-        ):
+        if num_heads is not None and num_kv_heads is not None and num_kv_heads < num_heads:
             name_lower = name.lower()
             if any(
                 p in name_lower
@@ -281,9 +272,7 @@ class GFWSCompressor(BaseCompressor):
         hooks = []
 
         def make_hook(layer_name: str) -> Any:
-            def hook(
-                module: nn.Module, inp: tuple[torch.Tensor, ...], outp: Any
-            ) -> None:
+            def hook(module: nn.Module, inp: tuple[torch.Tensor, ...], outp: Any) -> None:
                 if len(inp) > 0 and isinstance(inp[0], torch.Tensor):
                     x = inp[0].detach().float()
                     cls_name = module.__class__.__name__.lower()
@@ -409,13 +398,9 @@ class GFWSCompressor(BaseCompressor):
                     eigvals_clamped = torch.clamp(eigvals, min=1e-6)
 
                     # Cov(X)^{1/2} and Cov(X)^{-1/2}
-                    cov_sqrt = (
-                        eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
-                    )
+                    cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_clamped)) @ eigvecs.T
                     cov_inv_sqrt = (
-                        eigvecs
-                        @ torch.diag(1.0 / torch.sqrt(eigvals_clamped))
-                        @ eigvecs.T
+                        eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_clamped)) @ eigvecs.T
                     )
 
                     # Whiten weights: M = W * Cov(X)^{1/2}
@@ -428,13 +413,8 @@ class GFWSCompressor(BaseCompressor):
                     # De-whiten: candidate = M_r * Cov(X)^{-1/2}
                     candidate = torch.matmul(M_r, cov_inv_sqrt)
 
-                    if not (
-                        torch.isnan(candidate).any() or torch.isinf(candidate).any()
-                    ):
-                        err = float(
-                            torch.norm(W - candidate, p="fro").item()
-                            / max(W_norm, 1e-12)
-                        )
+                    if not (torch.isnan(candidate).any() or torch.isinf(candidate).any()):
+                        err = float(torch.norm(W - candidate, p="fro").item() / max(W_norm, 1e-12))
                         if err <= self.max_error:
                             W_approx = candidate
                             final_err = err
@@ -458,13 +438,8 @@ class GFWSCompressor(BaseCompressor):
                 try:
                     U, S, Vt = torch.linalg.svd(W, full_matrices=False)
                     candidate = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
-                    if not (
-                        torch.isnan(candidate).any() or torch.isinf(candidate).any()
-                    ):
-                        err = float(
-                            torch.norm(W - candidate, p="fro").item()
-                            / max(W_norm, 1e-12)
-                        )
+                    if not (torch.isnan(candidate).any() or torch.isinf(candidate).any()):
+                        err = float(torch.norm(W - candidate, p="fro").item() / max(W_norm, 1e-12))
                         W_approx = candidate
                         final_err = err
                         used_cov = False
@@ -485,9 +460,7 @@ class GFWSCompressor(BaseCompressor):
                     self.max_error,
                 )
                 if self.fallback_to_original:
-                    logger.info(
-                        "Skipping GFWS compression for %s (fallback to original).", name
-                    )
+                    logger.info("Skipping GFWS compression for %s (fallback to original).", name)
                     for p in module.parameters():
                         p.requires_grad = False
                     self.fallback_layers.append(name)
@@ -625,9 +598,7 @@ def gfws_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     max_error = kwargs.pop(
         "max_error",
         (
-            getattr(
-                comp_config, "gfws_max_error", getattr(comp_config, "max_error", 0.20)
-            )
+            getattr(comp_config, "gfws_max_error", getattr(comp_config, "max_error", 0.20))
             if comp_config
             else 0.20
         ),
@@ -644,9 +615,7 @@ def gfws_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
             else True
         ),
     )
-    lora_r = kwargs.pop(
-        "lora_r", getattr(comp_config, "lora_r", 0) if comp_config else 0
-    )
+    lora_r = kwargs.pop("lora_r", getattr(comp_config, "lora_r", 0) if comp_config else 0)
     lora_alpha = kwargs.pop(
         "lora_alpha", getattr(comp_config, "lora_alpha", 1.0) if comp_config else 1.0
     )

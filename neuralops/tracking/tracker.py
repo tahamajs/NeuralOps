@@ -71,13 +71,9 @@ class ExperimentTracker:
 
         # Instantiate the backend
         if backend == LOCAL_BACKEND:
-            self._tracker = LocalTracker(
-                log_dir=log_dir, experiment_name=experiment_name
-            )
+            self._tracker = LocalTracker(log_dir=log_dir, experiment_name=experiment_name)
         elif backend == TENSORBOARD_BACKEND:
-            self._tracker = TensorBoardTracker(
-                log_dir=log_dir, experiment_name=experiment_name
-            )
+            self._tracker = TensorBoardTracker(log_dir=log_dir, experiment_name=experiment_name)
         elif backend == WANDB_BACKEND:
             self._tracker = WandBTracker(
                 project=project or "default",

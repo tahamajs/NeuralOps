@@ -121,9 +121,7 @@ class MegaOrchestrator:
             trainer.train()
             eval_metrics = trainer.evaluate()
             self.final_metrics = eval_metrics
-            self.trainer_state = (
-                trainer.state.log_history if hasattr(trainer, "state") else []
-            )
+            self.trainer_state = trainer.state.log_history if hasattr(trainer, "state") else []
 
             # 6. Save everything
             self._log("Saving results…")
@@ -165,9 +163,7 @@ class MegaOrchestrator:
             s1, s2 = GLUE_TASK_KEYS[task]
         data_cfg = DataConfig(
             task_type=(
-                TaskType.SINGLE_CLASSIFICATION
-                if s2 is None
-                else TaskType.PAIR_CLASSIFICATION
+                TaskType.SINGLE_CLASSIFICATION if s2 is None else TaskType.PAIR_CLASSIFICATION
             ),
             max_length=self.cfg.data.max_seq_length,
             batch_size=self.cfg.training.batch_size,
@@ -183,9 +179,7 @@ class MegaOrchestrator:
         tokenized = dataset.map(
             preprocess, batched=True, remove_columns=dataset["train"].column_names
         )
-        tokenized.set_format(
-            type="torch", columns=["input_ids", "attention_mask", "labels"]
-        )
+        tokenized.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
         return tokenized
 
     def _log(self, msg: str) -> None:

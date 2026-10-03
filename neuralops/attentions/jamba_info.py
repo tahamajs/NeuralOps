@@ -60,12 +60,8 @@ def apply_rotary_pos_emb(
     seq_axis = -2
     if cos.shape[seq_axis] != q.shape[seq_axis]:
         if cos.shape[seq_axis] >= q.shape[seq_axis]:
-            cos = cos.narrow(
-                seq_axis, cos.shape[seq_axis] - q.shape[seq_axis], q.shape[seq_axis]
-            )
-            sin = sin.narrow(
-                seq_axis, sin.shape[seq_axis] - q.shape[seq_axis], q.shape[seq_axis]
-            )
+            cos = cos.narrow(seq_axis, cos.shape[seq_axis] - q.shape[seq_axis], q.shape[seq_axis])
+            sin = sin.narrow(seq_axis, sin.shape[seq_axis] - q.shape[seq_axis], q.shape[seq_axis])
         else:
             raise ValueError(
                 f"apply_rotary_pos_emb: cos seq len {cos.shape[seq_axis]} < q seq len {q.shape[seq_axis]}"
@@ -97,15 +93,11 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     if n_rep == 1:
         return hidden_states
     b, num_kv_heads, slen, head_dim = hidden_states.shape
-    hidden_states = hidden_states[:, :, None, :, :].expand(
-        b, num_kv_heads, n_rep, slen, head_dim
-    )
+    hidden_states = hidden_states[:, :, None, :, :].expand(b, num_kv_heads, n_rep, slen, head_dim)
     return hidden_states.reshape(b, num_kv_heads * n_rep, slen, head_dim)
 
 
-def _detect_decoder(
-    config: Any, is_decoder: bool | None, src_attn: nn.Module | None
-) -> bool:
+def _detect_decoder(config: Any, is_decoder: bool | None, src_attn: nn.Module | None) -> bool:
     if is_decoder is not None:
         return bool(is_decoder)
     if config is not None:
@@ -262,11 +254,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         dt = x.dtype
         w = self.weight.to(dt) if self.weight.dtype != dt else self.weight
-        b = (
-            self.bias.to(dt)
-            if (self.bias is not None and self.bias.dtype != dt)
-            else self.bias
-        )
+        b = self.bias.to(dt) if (self.bias is not None and self.bias.dtype != dt) else self.bias
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(dt) if self.lora_A.dtype != dt else self.lora_A
@@ -320,9 +308,7 @@ class JambaInfoBlock(BaseAttention):
         hidden_size = self._detect_hidden_size(config, source_attn, kwargs)
         num_heads = self._detect_num_heads(config, source_attn, kwargs, hidden_size)
         num_kv_heads = self._detect_num_kv_heads(config, source_attn, kwargs, num_heads)
-        head_dim = self._detect_head_dim(
-            config, source_attn, kwargs, hidden_size, num_heads
-        )
+        head_dim = self._detect_head_dim(config, source_attn, kwargs, hidden_size, num_heads)
 
         self.dim = int(hidden_size)
         self.hidden_size = self.dim
@@ -423,12 +409,8 @@ class JambaInfoBlock(BaseAttention):
             self.alpha_raw = nn.Parameter(torch.tensor(-2.0))
 
         # ---------- Bottleneck + SSM ----------
-        bottleneck_dim = int(
-            getattr(comp_config, "bottleneck_dim", 256) if comp_config else 256
-        )
-        self.bottleneck = InfoMambaConceptBottleneck(
-            self.dim, bottleneck_dim=bottleneck_dim
-        )
+        bottleneck_dim = int(getattr(comp_config, "bottleneck_dim", 256) if comp_config else 256)
+        self.bottleneck = InfoMambaConceptBottleneck(self.dim, bottleneck_dim=bottleneck_dim)
 
         self.ssm_fwd: nn.Module | None = None
         self.ssm_bwd: nn.Module | None = None  # only for encoders (JI-10)
@@ -438,9 +420,7 @@ class JambaInfoBlock(BaseAttention):
                 self.ssm_bwd = self._make_ssm(config)
 
         dropout_p = float(
-            getattr(
-                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
-            )
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
             if config
             else 0.1
         )
@@ -456,9 +436,7 @@ class JambaInfoBlock(BaseAttention):
         if SimpleSSM is None:
             return None
         try:
-            return SimpleSSM(
-                d_model=self.dim, config=config, is_decoder=self.is_decoder
-            )
+            return SimpleSSM(d_model=self.dim, config=config, is_decoder=self.is_decoder)
         except TypeError:
             try:
                 return SimpleSSM(d_model=self.dim, config=config)
@@ -539,11 +517,7 @@ class JambaInfoBlock(BaseAttention):
         if src is not None:
             for attr in ("q_proj", "query", "q_lin", "W_q1"):
                 mod = getattr(src, attr, None)
-                if (
-                    mod is not None
-                    and hasattr(mod, "weight")
-                    and mod.weight is not None
-                ):
+                if mod is not None and hasattr(mod, "weight") and mod.weight is not None:
                     try:
                         return int(mod.weight.shape[0] // max(1, num_heads))
                     except Exception:
@@ -581,9 +555,7 @@ class JambaInfoBlock(BaseAttention):
             return (out, present, attn_weights)
         return (out, attn_weights, present)
 
-    def _normalize_head_mask(
-        self, head_mask: torch.Tensor, attn: torch.Tensor
-    ) -> torch.Tensor:
+    def _normalize_head_mask(self, head_mask: torch.Tensor, attn: torch.Tensor) -> torch.Tensor:
         """JI-03: robust normalisation. attn: (B, H, Lq, Lk)."""
         hm = head_mask.to(attn.dtype)
         H = self.num_heads
@@ -634,10 +606,7 @@ class JambaInfoBlock(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -785,9 +754,7 @@ class JambaInfoBlock(BaseAttention):
             r = min(target_mod.weight.size(0), w.size(0))
             c = min(target_mod.weight.size(1), w.size(1))
             target_mod.weight.data[:r, :c].copy_(
-                w[:r, :c].to(
-                    device=target_mod.weight.device, dtype=target_mod.weight.dtype
-                )
+                w[:r, :c].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype)
             )
             if b is not None and target_mod.bias is not None:
                 n = min(b.numel(), target_mod.bias.numel())
@@ -871,36 +838,11 @@ class JambaInfoBlock(BaseAttention):
         past_k1, past_k2, past_v, past_len = _read_cache(past_key_value)
 
         # --- QKV projections ---
-        q1 = (
-            self.W_q1(x)
-            .view(B, L, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        k1 = (
-            self.W_k1(x)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        q2 = (
-            self.W_q2(x)
-            .view(B, L, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        k2 = (
-            self.W_k2(x)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.W_v(x)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        q1 = self.W_q1(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k1 = self.W_k1(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        q2 = self.W_q2(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k2 = self.W_k2(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.W_v(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         # --- JI-05: position_ids accepted; JI-06: RoPE offset ---
         position_embeddings = position_embeddings or kwargs.get("position_embeddings")
@@ -934,12 +876,8 @@ class JambaInfoBlock(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(self.head_dim)
-        scores1 = (
-            torch.matmul(q1.float(), k1.float().transpose(-2, -1).contiguous()) * scale
-        )
-        scores2 = (
-            torch.matmul(q2.float(), k2.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores1 = torch.matmul(q1.float(), k1.float().transpose(-2, -1).contiguous()) * scale
+        scores2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1).contiguous()) * scale
 
         # --- Causal mask with past_len offset ---
         if self.is_decoder and L > 1:
@@ -956,12 +894,8 @@ class JambaInfoBlock(BaseAttention):
             if attention_mask.dim() == 2:
                 valid = get_token_valid_mask(attention_mask, B, k1.shape[-2], device)
                 if valid is not None:
-                    scores1 = scores1.masked_fill(
-                        ~valid.unsqueeze(1).unsqueeze(2), -1e4
-                    )
-                    scores2 = scores2.masked_fill(
-                        ~valid.unsqueeze(1).unsqueeze(2), -1e4
-                    )
+                    scores1 = scores1.masked_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
+                    scores2 = scores2.masked_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
             elif attention_mask.dim() == 3:
                 # (B, Lq, Lk) broadcast to (B, 1, Lq, Lk)
                 m3 = attention_mask.unsqueeze(1).float()
@@ -989,9 +923,7 @@ class JambaInfoBlock(BaseAttention):
             torch.exp(self.lambda_q1 * self.lambda_k1)
             - torch.exp(self.lambda_q2 * self.lambda_k2)
             + self.lambda_init
-        ).to(
-            attn1.dtype
-        )  # (H,)
+        ).to(attn1.dtype)  # (H,)
         lambda_full = lambda_full.view(1, self.num_heads, 1, 1)
 
         diff = attn1 - lambda_full * attn2
@@ -1005,10 +937,7 @@ class JambaInfoBlock(BaseAttention):
             diff_attn = self._normalize_head_mask(head_mask, diff_attn)
 
         attn_out = (
-            torch.matmul(diff_attn, v)
-            .transpose(1, 2)
-            .contiguous()
-            .view(B, L, self.all_head_size)
+            torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
         )
 
         # --- Bottleneck + SSM ---
@@ -1035,17 +964,15 @@ class JambaInfoBlock(BaseAttention):
             attn_out_h = attn_out_h.transpose(1, 2)  # (B, H, L, Dh)
             ssm_branch_h = ssm_branch.view(B, L, self.num_heads, self.head_dim)
             ssm_branch_h = ssm_branch_h.transpose(1, 2)  # (B, H, L, Dh)
-            combined = (1.0 - alpha) * attn_out_h.to(
+            combined = (1.0 - alpha) * attn_out_h.to(target_dtype) + alpha * ssm_branch_h.to(
                 target_dtype
-            ) + alpha * ssm_branch_h.to(target_dtype)
-            combined = (
-                combined.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
             )
+            combined = combined.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
         else:
             alpha = torch.sigmoid(self.alpha_raw).to(target_dtype)
-            combined = (1.0 - alpha) * attn_out.to(
+            combined = (1.0 - alpha) * attn_out.to(target_dtype) + alpha * ssm_branch.to(
                 target_dtype
-            ) + alpha * ssm_branch.to(target_dtype)
+            )
         combined = torch.nan_to_num(combined, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:
@@ -1135,10 +1062,7 @@ def inject_jamba_info(
                     src_attn = getattr(cand, "self", cand)
                     break
 
-        if (
-            isinstance(src_attn, JambaInfoBlock)
-            or "JambaInfo" in src_attn.__class__.__name__
-        ):
+        if isinstance(src_attn, JambaInfoBlock) or "JambaInfo" in src_attn.__class__.__name__:
             return None
 
         # JI-12: pass old_attn so __init__ calls copy_weights exactly once
@@ -1184,15 +1108,11 @@ def inject_jamba_info(
                 )
                 return None
 
-            new_attn._return_format = _detect_return_format(
-                src_attn, new_attn.is_nested_encoder
-            )
+            new_attn._return_format = _detect_return_format(src_attn, new_attn.is_nested_encoder)
 
         return new_attn
     except Exception as e:
-        logger.error(
-            "inject_jamba_info failed at layer %d: %s", layer_idx, e, exc_info=True
-        )
+        logger.error("inject_jamba_info failed at layer %d: %s", layer_idx, e, exc_info=True)
         return None
 
 

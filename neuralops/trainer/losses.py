@@ -3,6 +3,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.registry import Registry
 
 LOSS_REGISTRY = Registry("loss")

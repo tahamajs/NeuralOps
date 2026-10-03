@@ -12,6 +12,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -162,13 +163,9 @@ class HGRN2Layer(BaseAttention):
 
         # LoRA Adapters
         if self.lora_rank > 0:
-            self.v_lora_A = nn.Parameter(
-                torch.randn(self.lora_rank, self.d_model) * 0.01
-            )
+            self.v_lora_A = nn.Parameter(torch.randn(self.lora_rank, self.d_model) * 0.01)
             self.v_lora_B = nn.Parameter(torch.zeros(self.d_model, self.lora_rank))
-            self.out_lora_A = nn.Parameter(
-                torch.randn(self.lora_rank, self.d_model) * 0.01
-            )
+            self.out_lora_A = nn.Parameter(torch.randn(self.lora_rank, self.d_model) * 0.01)
             self.out_lora_B = nn.Parameter(torch.zeros(self.d_model, self.lora_rank))
         else:
             self.register_parameter("v_lora_A", None)
@@ -263,9 +260,7 @@ class HGRN2Layer(BaseAttention):
                         break
 
         # Pattern 3: Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
-        elif (
-            hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj")
-        ):
+        elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
             w_q, b_q = _unpack_weight_bias(src.q_proj)
             w_k, b_k = _unpack_weight_bias(src.k_proj)
             w_v, b_v = _unpack_weight_bias(src.v_proj)
@@ -298,9 +293,7 @@ class HGRN2Layer(BaseAttention):
             except Exception as ex:
                 logger.debug("UniversalAdapter fallback failed: %s", ex)
 
-        def _copy_param(
-            target_linear: nn.Linear, w: torch.Tensor | None, b: torch.Tensor | None
-        ):
+        def _copy_param(target_linear: nn.Linear, w: torch.Tensor | None, b: torch.Tensor | None):
             if w is None:
                 return
             with torch.no_grad():
@@ -363,9 +356,7 @@ class HGRN2Layer(BaseAttention):
         # --- Triton fast path ---
         if HAS_TRITON_HGRN2 and hgrn2_scan_triton is not None and f.is_cuda:
             try:
-                out = hgrn2_scan_triton(
-                    f.contiguous(), iv.contiguous(), res_clip=self.res_clip
-                )
+                out = hgrn2_scan_triton(f.contiguous(), iv.contiguous(), res_clip=self.res_clip)
                 logger.debug("HGRN2: Triton scan used")
                 return out
             except Exception as e:
@@ -450,9 +441,7 @@ class HGRN2Layer(BaseAttention):
         if self.training:
             import torch.utils.checkpoint as cp
 
-            h_rev = cp.checkpoint(
-                self._scan_direction, f_rev, iv_rev, use_reentrant=False
-            )
+            h_rev = cp.checkpoint(self._scan_direction, f_rev, iv_rev, use_reentrant=False)
         else:
             h_rev = self._scan_direction(f_rev, iv_rev)
         h_bwd = torch.flip(h_rev, dims=[1])
@@ -491,16 +480,10 @@ class HGRN2Layer(BaseAttention):
         i = torch.sigmoid(self.input_gate(hidden_states)).to(target_dtype)
         input_scale = ((1.0 - f) * i).to(target_dtype)
         v = self.v_proj(hidden_states).to(target_dtype)
-        if (
-            self.lora_rank > 0
-            and self.v_lora_A is not None
-            and self.v_lora_B is not None
-        ):
+        if self.lora_rank > 0 and self.v_lora_A is not None and self.v_lora_B is not None:
             v_lora = (
                 torch.matmul(
-                    torch.matmul(
-                        hidden_states, self.v_lora_A.t().contiguous().to(target_dtype)
-                    ),
+                    torch.matmul(hidden_states, self.v_lora_A.t().contiguous().to(target_dtype)),
                     self.v_lora_B.t().contiguous().to(target_dtype),
                 )
                 * self.lora_scaling
@@ -535,16 +518,10 @@ class HGRN2Layer(BaseAttention):
         h_norm = self.state_norm(h_ctx.to(sn_dtype)).to(target_dtype)
         gated = ((0.5 * v + 0.5 * h_norm) * F.silu(z)).to(target_dtype)
         out = self.out_proj(gated).to(target_dtype)
-        if (
-            self.lora_rank > 0
-            and self.out_lora_A is not None
-            and self.out_lora_B is not None
-        ):
+        if self.lora_rank > 0 and self.out_lora_A is not None and self.out_lora_B is not None:
             out_lora = (
                 torch.matmul(
-                    torch.matmul(
-                        gated, self.out_lora_A.t().contiguous().to(target_dtype)
-                    ),
+                    torch.matmul(gated, self.out_lora_A.t().contiguous().to(target_dtype)),
                     self.out_lora_B.t().contiguous().to(target_dtype),
                 )
                 * self.lora_scaling
@@ -659,15 +636,9 @@ def inject_hgrn2_layer(
         return None
 
     if target is not None:
-        if (
-            is_nested_target
-            and hasattr(target, "attention")
-            and hasattr(target.attention, "self")
-        ):
+        if is_nested_target and hasattr(target, "attention") and hasattr(target.attention, "self"):
             target.attention.self = new_layer
-            if hasattr(target.attention, "output") and hasattr(
-                target.attention.output, "dense"
-            ):
+            if hasattr(target.attention, "output") and hasattr(target.attention.output, "dense"):
                 target.attention.output.dense = nn.Identity()
         elif hasattr(target, "attention"):
             target.attention = new_layer

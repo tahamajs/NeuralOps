@@ -29,9 +29,7 @@ class BenchmarkDatasetInfo:
 
     name: str
     aliases: list[str]
-    category: (
-        str  # e.g., "language_modeling", "reasoning", "code", "multi_choice", "glue"
-    )
+    category: str  # e.g., "language_modeling", "reasoning", "code", "multi_choice", "glue"
     default_hf_path: str
     default_subset: str | None = None
     default_split: str = "validation"
@@ -45,9 +43,7 @@ class BenchmarkDatasetInfo:
 # -----------------------------------------------------------------------------
 
 
-def _generate_synthetic_wikitext(
-    num_samples: int, seed: int = 42
-) -> list[dict[str, Any]]:
+def _generate_synthetic_wikitext(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
     random.Random(seed)
     topics = [
         (
@@ -151,15 +147,11 @@ def _generate_synthetic_gsm8k(num_samples: int, seed: int = 42) -> list[dict[str
         remaining = total_apples - eaten
         q = f"Janet has {num_baskets} baskets of apples. Each basket contains {apples_per_basket} apples. If she eats {eaten} apples, how many apples does she have left?"
         a = f"First, calculate the total number of apples: {num_baskets} * {apples_per_basket} = {total_apples}. Next, subtract the eaten apples: {total_apples} - {eaten} = {remaining}.\n#### {remaining}"
-        samples.append(
-            {"question": q, "answer": a, "text": f"Question: {q}\nAnswer: {a}"}
-        )
+        samples.append({"question": q, "answer": a, "text": f"Question: {q}\nAnswer: {a}"})
     return samples
 
 
-def _generate_synthetic_humaneval(
-    num_samples: int, seed: int = 42
-) -> list[dict[str, Any]]:
+def _generate_synthetic_humaneval(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
     samples = []
     functions = [
         (
@@ -193,9 +185,7 @@ def _generate_synthetic_humaneval(
         fn_name_i = f"{fn_name}_{i}"
         prompt = f'from typing import List\n\n\ndef {fn_name_i}({sig}):\n    """ {doc}\n    >>> {fn_name_i}([1.0, 2.0], 0.5)\n    """\n'
         canonical_solution = "    return True\n"
-        test = (
-            "def check(candidate):\n    assert candidate([1.0, 2.0], 0.5) is not None\n"
-        )
+        test = "def check(candidate):\n    assert candidate([1.0, 2.0], 0.5) is not None\n"
         entry_point = fn_name_i
         samples.append(
             {
@@ -221,12 +211,12 @@ def _generate_synthetic_mmlu(num_samples: int, seed: int = 42) -> list[dict[str,
     samples = []
     for i in range(num_samples):
         subject = subjects[i % len(subjects)]
-        q = f"In the context of {subject.replace('_', ' ')}, which statement regarding fundamental principle #{i+1} is strictly valid?"
+        q = f"In the context of {subject.replace('_', ' ')}, which statement regarding fundamental principle #{i + 1} is strictly valid?"
         choices = [
-            f"Option A: Principle {i+1} guarantees monotonic convergence under convexity constraints.",
-            f"Option B: Principle {i+1} always yields an asymptotic upper bound of O(N log N).",
-            f"Option C: Principle {i+1} implies invariance under orthonormal coordinate rotations.",
-            f"Option D: Principle {i+1} requires strict thermodynamic equilibrium.",
+            f"Option A: Principle {i + 1} guarantees monotonic convergence under convexity constraints.",
+            f"Option B: Principle {i + 1} always yields an asymptotic upper bound of O(N log N).",
+            f"Option C: Principle {i + 1} implies invariance under orthonormal coordinate rotations.",
+            f"Option D: Principle {i + 1} requires strict thermodynamic equilibrium.",
         ]
         label = i % 4
         formatted_text = f"Subject: {subject}\nQuestion: {q}\nA. {choices[0]}\nB. {choices[1]}\nC. {choices[2]}\nD. {choices[3]}\nAnswer: {chr(65 + label)}"
@@ -267,7 +257,7 @@ def _generate_synthetic_pile(num_samples: int, seed: int = 42) -> list[dict[str,
 def _generate_synthetic_arc(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
     samples = []
     for i in range(num_samples):
-        q = f"Which process is primarily responsible for transferring thermal energy through fluid movement in system #{i+1}?"
+        q = f"Which process is primarily responsible for transferring thermal energy through fluid movement in system #{i + 1}?"
         choices_text = ["Conduction", "Convection", "Radiation", "Sublimation"]
         choices_labels = ["A", "B", "C", "D"]
         answer_key = "B"
@@ -285,9 +275,7 @@ def _generate_synthetic_arc(num_samples: int, seed: int = 42) -> list[dict[str, 
     return samples
 
 
-def _generate_synthetic_hellaswag(
-    num_samples: int, seed: int = 42
-) -> list[dict[str, Any]]:
+def _generate_synthetic_hellaswag(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
     samples = []
     for i in range(num_samples):
         ctx = "A person is preparing ingredients in a bright kitchen. They slice fresh vegetables on a wooden cutting board"
@@ -310,9 +298,7 @@ def _generate_synthetic_hellaswag(
     return samples
 
 
-def _generate_synthetic_lambada(
-    num_samples: int, seed: int = 42
-) -> list[dict[str, Any]]:
+def _generate_synthetic_lambada(num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
     samples = []
     stories = [
         (
@@ -350,9 +336,7 @@ def _generate_synthetic_lambada(
     return samples
 
 
-def _generate_synthetic_glue(
-    task: str, num_samples: int, seed: int = 42
-) -> list[dict[str, Any]]:
+def _generate_synthetic_glue(task: str, num_samples: int, seed: int = 42) -> list[dict[str, Any]]:
     task = task.lower()
     samples = []
     if task == "sst2":
@@ -363,7 +347,9 @@ def _generate_synthetic_glue(
     elif task == "mrpc":
         for i in range(num_samples):
             equiv = i % 2
-            s1 = f"The technology corporation announced a profit increase of {10 + i}% this quarter."
+            s1 = (
+                f"The technology corporation announced a profit increase of {10 + i}% this quarter."
+            )
             s2 = (
                 f"Profits for the tech firm grew by {10 + i}% during the current quarter."
                 if equiv == 1
@@ -438,9 +424,7 @@ def _generate_synthetic_glue(
                 if acceptable == 1
                 else "Submitted the researcher paper yesterday journal."
             )
-            samples.append(
-                {"sentence": sentence, "label": acceptable, "text": sentence}
-            )
+            samples.append({"sentence": sentence, "label": acceptable, "text": sentence})
     else:
         for i in range(num_samples):
             samples.append(
@@ -756,9 +740,7 @@ def _register_all_benchmarks():
                     "text": r.get("sentence", r.get("sentence1", r.get("text", ""))),
                     "label": r.get("label", 0),
                 },
-                synthetic_generator=lambda n, s=42, t=task: _generate_synthetic_glue(
-                    t, n, s
-                ),
+                synthetic_generator=lambda n, s=42, t=task: _generate_synthetic_glue(t, n, s),
                 description=f"GLUE benchmark task: {task.upper()}.",
             )
         )
@@ -960,23 +942,15 @@ def load_benchmark_dataset(
             if cache_dir:
                 hf_kwargs["cache_dir"] = cache_dir
 
-            logger.info(
-                "Attempting to load benchmark '%s' from HF (%s)...", info.name, args
-            )
+            logger.info("Attempting to load benchmark '%s' from HF (%s)...", info.name, args)
 
             try:
                 # First try streaming if requested
                 if streaming:
-                    hf_ds = hf_load_dataset(
-                        *args, split=target_split, streaming=True, **hf_kwargs
-                    )
+                    hf_ds = hf_load_dataset(*args, split=target_split, streaming=True, **hf_kwargs)
                     count = 0
                     for row in hf_ds:
-                        formatted = (
-                            info.text_formatter(row)
-                            if info.text_formatter
-                            else dict(row)
-                        )
+                        formatted = info.text_formatter(row) if info.text_formatter else dict(row)
                         # Filter out empty text rows (e.g. WikiText empty headers)
                         if (
                             formatted.get("text", "").strip()
@@ -991,11 +965,7 @@ def load_benchmark_dataset(
                     hf_ds = hf_load_dataset(*args, split=target_split, **hf_kwargs)
                     sub_ds = hf_ds.select(range(min(len(hf_ds), max_samples)))
                     for row in sub_ds:
-                        formatted = (
-                            info.text_formatter(row)
-                            if info.text_formatter
-                            else dict(row)
-                        )
+                        formatted = info.text_formatter(row) if info.text_formatter else dict(row)
                         raw_samples.append(formatted)
 
             except Exception as inner_e:
@@ -1005,15 +975,11 @@ def load_benchmark_dataset(
                     inner_e,
                 )
                 hf_ds = hf_load_dataset(*args, **hf_kwargs)
-                actual_split = (
-                    target_split if target_split in hf_ds else list(hf_ds.keys())[0]
-                )
+                actual_split = target_split if target_split in hf_ds else list(hf_ds.keys())[0]
                 ds_split = hf_ds[actual_split]
                 sub_ds = ds_split.select(range(min(len(ds_split), max_samples)))
                 for row in sub_ds:
-                    formatted = (
-                        info.text_formatter(row) if info.text_formatter else dict(row)
-                    )
+                    formatted = info.text_formatter(row) if info.text_formatter else dict(row)
                     raw_samples.append(formatted)
 
         except Exception as e:
@@ -1079,12 +1045,7 @@ def get_synthetic_benchmark_sample(
     results = []
     for item in raw:
         if isinstance(item, dict):
-            text = (
-                item.get("text")
-                or item.get("prompt")
-                or item.get("sentence")
-                or str(item)
-            )
+            text = item.get("text") or item.get("prompt") or item.get("sentence") or str(item)
             results.append(text)
         else:
             results.append(str(item))

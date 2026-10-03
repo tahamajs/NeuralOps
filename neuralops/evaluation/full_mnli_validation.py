@@ -83,9 +83,7 @@ def eval_on_dataset(model, tokenizer, val_ds, seq_len: int, batch_size: int, dev
             batch_texts = texts[i : i + batch_size]
             batch_labels = labels[i : i + batch_size]
             inputs = encode_batch(tokenizer, batch_texts, seq_len, device)
-            with torch.autocast(
-                "cuda", dtype=torch.float16, enabled=device.type == "cuda"
-            ):
+            with torch.autocast("cuda", dtype=torch.float16, enabled=device.type == "cuda"):
                 outputs = model(**inputs)
             preds = outputs.logits.argmax(-1).cpu().tolist()
             all_preds.extend(preds)
@@ -98,18 +96,12 @@ def eval_on_dataset(model, tokenizer, val_ds, seq_len: int, batch_size: int, dev
     acc = round(100.0 * correct / max(n, 1), 4)
     ci_lo, ci_hi = wilson_ci(correct, n)
 
-    f1_mac = round(
-        float(f1_score(all_targets, all_preds, average="macro", zero_division=0)), 4
-    )
+    f1_mac = round(float(f1_score(all_targets, all_preds, average="macro", zero_division=0)), 4)
     prec = round(
-        float(
-            precision_score(all_targets, all_preds, average="macro", zero_division=0)
-        ),
+        float(precision_score(all_targets, all_preds, average="macro", zero_division=0)),
         4,
     )
-    rec = round(
-        float(recall_score(all_targets, all_preds, average="macro", zero_division=0)), 4
-    )
+    rec = round(float(recall_score(all_targets, all_preds, average="macro", zero_division=0)), 4)
 
     class_labels = sorted(set(all_targets))
     per_prec, per_rec, per_f1, per_sup = precision_recall_fscore_support(
@@ -152,12 +144,8 @@ def eval_on_dataset(model, tokenizer, val_ds, seq_len: int, batch_size: int, dev
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True, help="Path to base fine-tuned model dir")
-    ap.add_argument(
-        "--sweep_csv", required=True, help="Path to summary.csv from the sweep"
-    )
-    ap.add_argument(
-        "--dataset_dir", required=True, help="Path to local MNLI dataset dir"
-    )
+    ap.add_argument("--sweep_csv", required=True, help="Path to summary.csv from the sweep")
+    ap.add_argument("--dataset_dir", required=True, help="Path to local MNLI dataset dir")
     ap.add_argument("--out", required=True, help="Output CSV path")
     ap.add_argument("--batch_size", type=int, default=32)
     ap.add_argument("--seq_len", type=int, default=128)
@@ -195,7 +183,7 @@ def main():
     threshold_full = round((majority + 3 * se) * 100, 4)
     majority_pct = round(majority * 100, 4)
     print(
-        f"Full MNLI: majority={majority_pct:.2f}%, SE={se*100:.3f}%, 3σ threshold={threshold_full:.2f}%"
+        f"Full MNLI: majority={majority_pct:.2f}%, SE={se * 100:.3f}%, 3σ threshold={threshold_full:.2f}%"
     )
     print(f"Label distribution: {dict(label_counts)}")
 
@@ -222,15 +210,11 @@ def main():
         mod = r["module_name"]
         local_acc = float(r.get("accuracy_pct", 0))
         local_status = r.get("status", "")
-        print(
-            f"\n[{i}/{len(sweep_rows)}] Evaluating {mod} (local acc={local_acc:.1f}%)..."
-        )
+        print(f"\n[{i}/{len(sweep_rows)}] Evaluating {mod} (local acc={local_acc:.1f}%)...")
 
         # Load base model fresh for each module
         try:
-            model = AutoModelForSequenceClassification.from_pretrained(
-                args.model, num_labels=3
-            )
+            model = AutoModelForSequenceClassification.from_pretrained(args.model, num_labels=3)
         except Exception as e:
             print(f"  ERROR loading base model: {e}")
             results.append(
@@ -256,8 +240,7 @@ def main():
 
         # Load saved module checkpoint if it exists
         checkpoint_path = (
-            Path(args.sweep_csv).parent
-            / f"distilbert_mnli_full_{mod}_full_metrics.json"
+            Path(args.sweep_csv).parent / f"distilbert_mnli_full_{mod}_full_metrics.json"
         )
         if checkpoint_path.exists():
             try:
@@ -353,9 +336,7 @@ def main():
     print(f"  FAIL: {len(fail_full)}/{len(results)}")
     print("\nModules that PASS on full set:")
     for r in sorted(pass_full, key=lambda x: -float(x.get("full_acc", 0))):
-        print(
-            f"  {r['module']:35} {r['full_acc']:.2f}% [{r['ci95_lo']:.2f}%–{r['ci95_hi']:.2f}%]"
-        )
+        print(f"  {r['module']:35} {r['full_acc']:.2f}% [{r['ci95_lo']:.2f}%–{r['ci95_hi']:.2f}%]")
 
 
 if __name__ == "__main__":

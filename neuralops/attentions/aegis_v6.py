@@ -10,6 +10,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.attention_utils import repeat_kv
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -44,30 +45,16 @@ def apply_rotary_pos_emb(q, k, cos, sin):
         cos = cos.unsqueeze(0)
         sin = sin.unsqueeze(0)
     if cos.shape[-2] != q.shape[-2]:
-        raise ValueError(
-            f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}"
-        )
+        raise ValueError(f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}")
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q_rot.dtype)
-        )
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k_rot.dtype)
-        )
-        q = (
-            torch.cat([q_rot_embed, q_pass], dim=-1)
-            if q_pass.numel() > 0
-            else q_rot_embed
-        )
-        k = (
-            torch.cat([k_rot_embed, k_pass], dim=-1)
-            if k_pass.numel() > 0
-            else k_rot_embed
-        )
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     else:
         cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
         q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
@@ -87,16 +74,10 @@ class AegisConfigV3:
         self.num_attention_heads = self.num_heads
         self.num_key_value_heads = kwargs.get("num_key_value_heads", self.num_heads)
         self.head_dim = kwargs.get("head_dim")
-        if (
-            self.head_dim is None
-            and self.hidden_size is not None
-            and self.num_heads is not None
-        ):
+        if self.head_dim is None and self.hidden_size is not None and self.num_heads is not None:
             self.head_dim = self.hidden_size // max(1, self.num_heads)
         self.window_size = kwargs.get("window_size", 64)
-        default_svd = (
-            min(384, self.hidden_size) if self.hidden_size is not None else 384
-        )
+        default_svd = min(384, self.hidden_size) if self.hidden_size is not None else 384
         self.svd_rank = kwargs.get("svd_rank", default_svd)
         self.low_rank_update = kwargs.get("low_rank_update", 16)
         self.kernel_feature_dim = kwargs.get("kernel_feature_dim", 128)
@@ -154,14 +135,8 @@ class FactorisedLinear(nn.Module):
         self.svd_rank = min(svd_rank, in_features, out_features)
         self.lora_rank = lora_rank
 
-        device = (
-            pretrained_weight.device
-            if pretrained_weight is not None
-            else torch.device("cpu")
-        )
-        dtype = (
-            pretrained_weight.dtype if pretrained_weight is not None else torch.float32
-        )
+        device = pretrained_weight.device if pretrained_weight is not None else torch.device("cpu")
+        dtype = pretrained_weight.dtype if pretrained_weight is not None else torch.float32
 
         # FIX 3: store SVD tensors as frozen Parameters so they are counted
         # by model.parameters() (framework uses .parameters(), not buffers).
@@ -260,19 +235,14 @@ class FactorisedLinear(nn.Module):
     @property
     def base_weight(self) -> torch.Tensor:
         return (
-            (self.U.float() * self.S.float().unsqueeze(0))
-            @ self.V.float().t().contiguous()
+            (self.U.float() * self.S.float().unsqueeze(0)) @ self.V.float().t().contiguous()
         ).to(self.U.dtype)
 
     @property
     def weight(self) -> torch.Tensor:
-        svd_w = (
-            self.U.float() * self.S.float().unsqueeze(0)
-        ) @ self.V.float().t().contiguous()
+        svd_w = (self.U.float() * self.S.float().unsqueeze(0)) @ self.V.float().t().contiguous()
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_w = (
-                self.lora_B.float() @ self.lora_A.float()
-            )  # (out,r) @ (r,in) = (out,in)
+            lora_w = self.lora_B.float() @ self.lora_A.float()  # (out,r) @ (r,in) = (out,in)
             return (svd_w + lora_w).to(self.lora_B.dtype)
         return svd_w.to(self.U.dtype)
 
@@ -338,9 +308,7 @@ class StableKernelFeatureMap(nn.Module):
         self.head_dim = config.head_dim
         self.m = config.num_features
         self.scale = (
-            config.scaling
-            if config.scaling is not None
-            else 1.0 / math.sqrt(self.m + config.eps)
+            config.scaling if config.scaling is not None else 1.0 / math.sqrt(self.m + config.eps)
         )
         self.register_buffer("proj", self._build_projection())
 
@@ -393,16 +361,10 @@ class GatingModule(nn.Module):
             self.input_gate = None
 
     def forward(self, hidden_states, Q):
-        q_gate = (
-            torch.sigmoid(self.query_gate(Q)) if self.query_gate is not None else None
-        )
+        q_gate = torch.sigmoid(self.query_gate(Q)) if self.query_gate is not None else None
         in_gate = None
         if self.input_gate is not None:
-            in_gate = (
-                torch.sigmoid(self.input_gate(hidden_states))
-                .permute(0, 2, 1)
-                .unsqueeze(-1)
-            )
+            in_gate = torch.sigmoid(self.input_gate(hidden_states)).permute(0, 2, 1).unsqueeze(-1)
         return q_gate, in_gate
 
 
@@ -419,15 +381,9 @@ class ContextFusionGate(nn.Module):
 
     def forward(self, hidden_states, local_out, global_out):
         B, h, N, d = local_out.shape
-        h_exp = (
-            self.hidden_proj(hidden_states)
-            if self.hidden_proj is not None
-            else hidden_states
-        )
+        h_exp = self.hidden_proj(hidden_states) if self.hidden_proj is not None else hidden_states
         h_per_head = h_exp.view(B, N, h, d).permute(0, 2, 1, 3)
-        return torch.sigmoid(
-            self.proj(torch.cat([h_per_head, local_out, global_out], dim=-1))
-        )
+        return torch.sigmoid(self.proj(torch.cat([h_per_head, local_out, global_out], dim=-1)))
 
 
 # ===========================================================================
@@ -484,9 +440,9 @@ class AegisAttentionV3(BaseAttention):
                     getattr(config, "n_heads", getattr(config, "n_head", None)),
                 ),
             ) or kwargs.get("num_heads", 12)
-            h_dim = getattr(
-                config, "head_dim", getattr(config, "d_kv", None)
-            ) or kwargs.get("head_dim", h_size // max(1, n_heads))
+            h_dim = getattr(config, "head_dim", getattr(config, "d_kv", None)) or kwargs.get(
+                "head_dim", h_size // max(1, n_heads)
+            )
             n_kv_heads = getattr(
                 config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
             ) or kwargs.get("num_key_value_heads", n_heads)
@@ -497,9 +453,7 @@ class AegisAttentionV3(BaseAttention):
                 num_key_value_heads=n_kv_heads,
                 head_dim=h_dim,
                 window_size=getattr(config, "window_size", 64),
-                svd_rank=getattr(
-                    config, "svd_rank", min(128, h_size) if h_size else 128
-                ),
+                svd_rank=getattr(config, "svd_rank", min(128, h_size) if h_size else 128),
                 low_rank_update=getattr(config, "low_rank_update", 16),
                 kernel_feature_dim=getattr(config, "kernel_feature_dim", 128),
                 dropout=getattr(config, "dropout", 0.1),
@@ -574,9 +528,7 @@ class AegisAttentionV3(BaseAttention):
             config.use_query_gate,
             config.use_input_gate,
         )
-        self.fusion = ContextFusionGate(
-            config.hidden_size, self.h, self.d, config.fusion_gate_bias
-        )
+        self.fusion = ContextFusionGate(config.hidden_size, self.h, self.d, config.fusion_gate_bias)
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
@@ -723,9 +675,7 @@ class AegisAttentionV3(BaseAttention):
             # Absolute positions: query i has absolute index (past_len + i).
             # past_len = N_kv - N_q is exact for both prefill and decode-with-cache.
             past_len = N_kv - N_q
-            idx_q = (past_len + torch.arange(N_q, device=device)).unsqueeze(
-                1
-            )  # (N_q, 1)
+            idx_q = (past_len + torch.arange(N_q, device=device)).unsqueeze(1)  # (N_q, 1)
             idx_k = torch.arange(N_kv, device=device).unsqueeze(0)  # (1, N_kv)
 
             # Causal: query q can attend to key k iff abs_k <= abs_q
@@ -877,9 +827,7 @@ class AegisAttentionV3(BaseAttention):
                 KV = torch.matmul(K_feat.transpose(-2, -1).contiguous(), V)
                 Z = K_feat.sum(dim=-2, keepdim=True)
                 num = torch.matmul(Q_feat, KV)
-                den = torch.matmul(Q_feat, Z.transpose(-2, -1).contiguous()).clamp(
-                    min=1e-6
-                )
+                den = torch.matmul(Q_feat, Z.transpose(-2, -1).contiguous()).clamp(min=1e-6)
                 return torch.nan_to_num(num / den, nan=0.0)
             else:
                 # Multi-token decode: use exact sliding-window attention
@@ -930,9 +878,7 @@ class AegisAttentionV3(BaseAttention):
     def _read_past_kv(past_key_value, layer_idx=0):
         if past_key_value is None:
             return None, None
-        if hasattr(past_key_value, "key_cache") and hasattr(
-            past_key_value, "value_cache"
-        ):
+        if hasattr(past_key_value, "key_cache") and hasattr(past_key_value, "value_cache"):
             keys = past_key_value.key_cache
             vals = past_key_value.value_cache
             if len(keys) == 0:
@@ -992,11 +938,7 @@ class AegisAttentionV3(BaseAttention):
             K_cat = K_new
             V_cat = V_new
 
-        if (
-            past_key_value is not None
-            and hasattr(past_key_value, "update")
-            and not is_cross
-        ):
+        if past_key_value is not None and hasattr(past_key_value, "update") and not is_cross:
             past_key_value.update(K_new, V_new, layer_idx)
         else:
             pass
@@ -1014,9 +956,7 @@ class AegisAttentionV3(BaseAttention):
             local_out, local_attn = self._sliding_window_attention(
                 Q, K_full, V_full, valid, is_cross, return_attn=bool(output_attentions)
             )
-            global_out = self._causal_linear_attention(
-                Q, K_full, V_full, valid, q_gate, in_gate
-            )
+            global_out = self._causal_linear_attention(Q, K_full, V_full, valid, q_gate, in_gate)
             fuse_gate = self.fusion(hidden_states, local_out, global_out)
             fused = fuse_gate * local_out + (1.0 - fuse_gate) * global_out
         else:
@@ -1118,9 +1058,7 @@ class AegisAttentionV3(BaseAttention):
             except Exception as e:
                 logger.debug(f"UniversalAdapter failed for {proj}: {e}")
 
-        if hasattr(old_attn, "c_attn") and any(
-            extracted[k][0] is None for k in ("q", "k", "v")
-        ):
+        if hasattr(old_attn, "c_attn") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             c_attn_mod = old_attn.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
             weight = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
@@ -1132,9 +1070,7 @@ class AegisAttentionV3(BaseAttention):
                     or hasattr(c_attn_mod, "nf")
                     or hasattr(base_c, "nf")
                 )
-                if is_conv1d or (
-                    weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size
-                ):
+                if is_conv1d or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size):
                     weight = weight.t().contiguous()
                 bias = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 bd = bias.data if bias is not None else None
@@ -1173,9 +1109,7 @@ class AegisAttentionV3(BaseAttention):
                 b_o = getattr(base_p, "bias", getattr(c_proj_mod, "bias", None))
                 extracted["o"] = (w_o, b_o.data if b_o is not None else None)
 
-        if hasattr(old_attn, "self") and any(
-            extracted[k][0] is None for k in ("q", "k", "v")
-        ):
+        if hasattr(old_attn, "self") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             s = old_attn.self
             if hasattr(s, "query"):
                 extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
@@ -1257,9 +1191,7 @@ class AegisAttentionV3(BaseAttention):
 
         if hasattr(old_attn, "is_decoder"):
             self.is_decoder = bool(old_attn.is_decoder)
-        elif (
-            hasattr(old_attn, "c_attn") or "gpt" in old_attn.__class__.__name__.lower()
-        ):
+        elif hasattr(old_attn, "c_attn") or "gpt" in old_attn.__class__.__name__.lower():
             self.is_decoder = True
 
 
@@ -1311,9 +1243,7 @@ def inject_aegis_v6(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -1336,9 +1266,7 @@ def inject_aegis_v6(
     layer = target
     try:
         if model_config is None:
-            if any(
-                hasattr(layer, a) for a in ("hidden_size", "d_model", "n_embd", "dim")
-            ):
+            if any(hasattr(layer, a) for a in ("hidden_size", "d_model", "n_embd", "dim")):
                 model_config = layer
             elif hasattr(layer, "attention"):
                 old_attn = layer.attention
@@ -1363,9 +1291,7 @@ def inject_aegis_v6(
                 getattr(
                     model_config,
                     "num_heads",
-                    getattr(
-                        model_config, "n_heads", getattr(model_config, "n_head", 12)
-                    ),
+                    getattr(model_config, "n_heads", getattr(model_config, "n_head", 12)),
                 ),
             )
             if model_config is not None
@@ -1393,9 +1319,7 @@ def inject_aegis_v6(
         src_attn = (
             old_attn
             if old_attn is not None
-            else getattr(
-                layer, "attention", getattr(layer, "self", getattr(layer, "attn", None))
-            )
+            else getattr(layer, "attention", getattr(layer, "self", getattr(layer, "attn", None)))
         )
         is_dec = AegisAttentionV3._detect_decoder(model_config, None, src_attn)
 

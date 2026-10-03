@@ -19,6 +19,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -114,17 +115,11 @@ class SVDLinear(nn.Module):
         self.use_fused_kernel = bool(use_fused_kernel)
 
         # Accept both lora_rank and legacy lora_r
-        eff_lora = (
-            int(lora_r)
-            if (lora_r is not None and lora_r > 0)
-            else max(0, int(lora_rank))
-        )
+        eff_lora = int(lora_r) if (lora_r is not None and lora_r > 0) else max(0, int(lora_rank))
         self.lora_rank = eff_lora
         self.lora_r = eff_lora
         self.lora_alpha = float(lora_alpha)
-        self.lora_scaling = (
-            (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
-        )
+        self.lora_scaling = (self.lora_alpha / self.lora_rank) if self.lora_rank > 0 else 1.0
         self.scaling = self.lora_scaling
 
         requires_grad = not (self.lora_rank > 0 or freeze_base)
@@ -145,12 +140,8 @@ class SVDLinear(nn.Module):
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty(self.lora_rank, self.in_features, **fk)
-            )
-            self.lora_B = nn.Parameter(
-                torch.zeros(self.out_features, self.lora_rank, **fk)
-            )
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, self.in_features, **fk))
+            self.lora_B = nn.Parameter(torch.zeros(self.out_features, self.lora_rank, **fk))
             with torch.no_grad():
                 nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
@@ -175,9 +166,7 @@ class SVDLinear(nn.Module):
 
     @property
     def use_lora(self) -> bool:
-        return bool(
-            self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None
-        )
+        return bool(self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None)
 
     def freeze_base_weights(self) -> None:
         if self.V.requires_grad:
@@ -202,11 +191,7 @@ class SVDLinear(nn.Module):
                     _orthogonal_init(param)
             if self.bias is not None:
                 nn.init.zeros_(self.bias)
-            if (
-                self.lora_rank > 0
-                and self.lora_A is not None
-                and self.lora_B is not None
-            ):
+            if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
                 nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
                 nn.init.zeros_(self.lora_B)
 
@@ -218,9 +203,7 @@ class SVDLinear(nn.Module):
             try:
                 from neuralops.attentions.fused_svd_kernel import fused_svd_linear
 
-                return fused_svd_linear(
-                    x=x, V=self.V, U=self.U, bias=self.bias, use_rms_norm=False
-                )
+                return fused_svd_linear(x=x, V=self.V, U=self.U, bias=self.bias, use_rms_norm=False)
             except Exception as e:
                 logger.debug("SVDLinear fused kernel failed (%s); using F.linear.", e)
 
@@ -237,9 +220,7 @@ class SVDLinear(nn.Module):
             out = out + self.bias.to(out.dtype)
         return out
 
-    def set_low_rank_factors(
-        self, U_factor: torch.Tensor, V_factor: torch.Tensor
-    ) -> None:
+    def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
         with torch.no_grad():
             r = min(self.rank, U_factor.size(1), V_factor.size(0))
             self.U.data.zero_()
@@ -297,14 +278,10 @@ class AASVDCompressor(BaseCompressor):
 
         # AASVD-FIX-04: use _cfg_get everywhere
         rank = _cfg_get(cfg, "aasvd_rank", _cfg_get(cfg, "rank", rank))
-        ema_beta = float(
-            _cfg_get(cfg, "aasvd_ema_beta", _cfg_get(cfg, "ema_beta", ema_beta))
-        )
+        ema_beta = float(_cfg_get(cfg, "aasvd_ema_beta", _cfg_get(cfg, "ema_beta", ema_beta)))
         tokenizer = _cfg_get(cfg, "tokenizer", tokenizer)
         calibration_texts = _cfg_get(cfg, "calibration_texts", calibration_texts)
-        max_error = float(
-            _cfg_get(cfg, "aasvd_max_error", _cfg_get(cfg, "max_error", max_error))
-        )
+        max_error = float(_cfg_get(cfg, "aasvd_max_error", _cfg_get(cfg, "max_error", max_error)))
         fallback_to_original = bool(
             _cfg_get(
                 cfg,
@@ -319,9 +296,7 @@ class AASVDCompressor(BaseCompressor):
                 _cfg_get(cfg, "target_attention_only", target_attention_only),
             )
         )
-        lora_rank = int(
-            _cfg_get(cfg, "aasvd_lora_rank", _cfg_get(cfg, "lora_rank", lora_rank))
-        )
+        lora_rank = int(_cfg_get(cfg, "aasvd_lora_rank", _cfg_get(cfg, "lora_rank", lora_rank)))
         lora_alpha = float(
             _cfg_get(cfg, "aasvd_lora_alpha", _cfg_get(cfg, "lora_alpha", lora_alpha))
         )
@@ -379,9 +354,7 @@ class AASVDCompressor(BaseCompressor):
         self.cov_dtype_name = str(cov_dtype).lower()
         if self.cov_dtype_name not in ("float32", "float16"):
             self.cov_dtype_name = "float32"
-        self.cov_dtype = (
-            torch.float32 if self.cov_dtype_name == "float32" else torch.float16
-        )
+        self.cov_dtype = torch.float32 if self.cov_dtype_name == "float32" else torch.float16
 
         # AASVD-FIX-08: single source of truth for device
         self.device = (
@@ -415,8 +388,7 @@ class AASVDCompressor(BaseCompressor):
         if isinstance(module, SVDLinear):
             return False
         if any(
-            name.endswith(sfx)
-            for sfx in (".base_layer", ".lora_A", ".lora_B", ".lora_dropout")
+            name.endswith(sfx) for sfx in (".base_layer", ".lora_A", ".lora_B", ".lora_dropout")
         ):
             return False
 
@@ -535,9 +507,7 @@ class AASVDCompressor(BaseCompressor):
                 or hasattr(layer, "nf")
                 or hasattr(target_mod, "nf")
             )
-            weight_tensor = getattr(
-                target_mod, "weight", getattr(layer, "weight", None)
-            )
+            weight_tensor = getattr(target_mod, "weight", getattr(layer, "weight", None))
             if weight_tensor is None:
                 return None, float("inf"), 0
 
@@ -580,9 +550,7 @@ class AASVDCompressor(BaseCompressor):
                     eps = 1e-6 * torch.max(eigvals).clamp(min=1e-12) + 1e-8
                     eigvals_reg = eigvals.clamp(min=eps)
                     cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_reg)) @ eigvecs.T
-                    cov_inv_sqrt = (
-                        eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_reg)) @ eigvecs.T
-                    )
+                    cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_reg)) @ eigvecs.T
                 except Exception as e:
                     logger.debug("AASVD covariance sqrt failed for %s: %s", e, e)
                     cov_sqrt, cov_inv_sqrt = None, None
@@ -601,8 +569,7 @@ class AASVDCompressor(BaseCompressor):
                 if cov_inv_sqrt is not None:
                     best_Vr = best_Vr @ cov_inv_sqrt
                 best_err = float(
-                    torch.norm(W - best_Ur @ best_Vr, p="fro").item()
-                    / max(W_norm, 1e-12)
+                    torch.norm(W - best_Ur @ best_Vr, p="fro").item() / max(W_norm, 1e-12)
                 )
             else:
                 r_floor = max(1, min(r, max_allowed_rank, len(S)))
@@ -621,9 +588,7 @@ class AASVDCompressor(BaseCompressor):
                     if cov_inv_sqrt is not None:
                         V_cand = V_cand @ cov_inv_sqrt
                     W_cand = U_cand @ V_cand
-                    test_err = float(
-                        torch.norm(W - W_cand, p="fro").item() / max(W_norm, 1e-12)
-                    )
+                    test_err = float(torch.norm(W - W_cand, p="fro").item() / max(W_norm, 1e-12))
                     if test_err < best_err:
                         best_err = test_err
                         selected_r = test_r
@@ -648,8 +613,7 @@ class AASVDCompressor(BaseCompressor):
                     if cov_inv_sqrt is not None:
                         best_Vr = best_Vr @ cov_inv_sqrt
                     best_err = float(
-                        torch.norm(W - best_Ur @ best_Vr, p="fro").item()
-                        / max(W_norm, 1e-12)
+                        torch.norm(W - best_Ur @ best_Vr, p="fro").item() / max(W_norm, 1e-12)
                     )
 
             dtype = weight_tensor.dtype
@@ -717,9 +681,7 @@ class AASVDCompressor(BaseCompressor):
                             or hasattr(module, "nf")
                             or hasattr(target_mod, "nf")
                         )
-                        wt = getattr(
-                            target_mod, "weight", getattr(module, "weight", None)
-                        )
+                        wt = getattr(target_mod, "weight", getattr(module, "weight", None))
                         if wt is None:
                             return
                         in_f = wt.shape[0] if is_conv1d else wt.shape[1]
@@ -743,8 +705,7 @@ class AASVDCompressor(BaseCompressor):
                         else:
                             beta = self.ema_beta
                             covariances[layer_name] = (
-                                beta * covariances[layer_name]
-                                + (1.0 - beta) * batch_cov
+                                beta * covariances[layer_name] + (1.0 - beta) * batch_cov
                             )
                             update_counts[layer_name] += 1
 
@@ -762,9 +723,7 @@ class AASVDCompressor(BaseCompressor):
                     truncation=True,
                     max_length=512,
                 )
-                inputs = {
-                    k: v.to(self.device) for k, v in inputs.items() if hasattr(v, "to")
-                }
+                inputs = {k: v.to(self.device) for k, v in inputs.items() if hasattr(v, "to")}
                 with torch.no_grad():
                     self.model(**inputs)
             except Exception as e:
@@ -783,9 +742,7 @@ class AASVDCompressor(BaseCompressor):
                 eps = 1e-6 * torch.max(eigvals).clamp(min=1e-12) + 1e-8
                 eigvals_reg = eigvals.clamp(min=eps)
                 cov_sqrt = eigvecs @ torch.diag(torch.sqrt(eigvals_reg)) @ eigvecs.T
-                cov_inv_sqrt = (
-                    eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_reg)) @ eigvecs.T
-                )
+                cov_inv_sqrt = eigvecs @ torch.diag(1.0 / torch.sqrt(eigvals_reg)) @ eigvecs.T
                 cov_factor_cache[name] = (cov_sqrt, cov_inv_sqrt)
             except Exception as e:
                 logger.debug("AASVD covariance factor failed for %s: %s", name, e)
@@ -843,9 +800,7 @@ class AASVDCompressor(BaseCompressor):
                     sub = getattr(module, attr, None)
                     if sub is None:
                         continue
-                    params = (
-                        sub.parameters() if hasattr(sub, "parameters") else iter([sub])
-                    )
+                    params = sub.parameters() if hasattr(sub, "parameters") else iter([sub])
                     for p in params:
                         if hasattr(p, "requires_grad"):
                             p.requires_grad = True
@@ -958,9 +913,7 @@ def aasvd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Modu
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(
-            comp_config, "aasvd_max_error", _cfg_get(comp_config, "max_error", 0.20)
-        ),
+        _cfg_get(comp_config, "aasvd_max_error", _cfg_get(comp_config, "max_error", 0.20)),
     )
     fallback = kwargs.pop(
         "fallback_to_original",

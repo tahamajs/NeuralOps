@@ -51,9 +51,7 @@ def compute_fisher_importance(
             )
         labels = [ex["label"] for ex in batch]
         is_reg = task_keys.get("is_regression", False)
-        enc["labels"] = torch.tensor(
-            labels, dtype=torch.float if is_reg else torch.long
-        )
+        enc["labels"] = torch.tensor(labels, dtype=torch.float if is_reg else torch.long)
         return enc
 
     loader = DataLoader(

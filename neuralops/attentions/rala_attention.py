@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -99,21 +100,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -148,9 +143,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
         return out
 
@@ -180,9 +173,7 @@ class RALALinearAttention(BaseAttention):
         self.config = config
         comp_config = getattr(config, "compression_config", None)
 
-        self.hidden_size = getattr(
-            config, "hidden_size", kwargs.get("hidden_size", 768)
-        )
+        self.hidden_size = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
         if (
             (config is None or not hasattr(config, "hidden_size"))
             and "hidden_size" not in kwargs
@@ -219,12 +210,8 @@ class RALALinearAttention(BaseAttention):
         )
 
         # RALA-FIX-01: rename trainable params with `lora_` prefix
-        self.lora_U = nn.Parameter(
-            torch.randn(self.num_heads, self.head_dim, self.rank_r) * 0.01
-        )
-        self.lora_V = nn.Parameter(
-            torch.randn(self.num_heads, self.head_dim, self.rank_r) * 0.01
-        )
+        self.lora_U = nn.Parameter(torch.randn(self.num_heads, self.head_dim, self.rank_r) * 0.01)
+        self.lora_V = nn.Parameter(torch.randn(self.num_heads, self.head_dim, self.rank_r) * 0.01)
         self.lora_rank_alpha = nn.Parameter(torch.tensor(0.0))
 
         # Decoder detection
@@ -264,11 +251,7 @@ class RALALinearAttention(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.supports_gqa = True
 
-        source_attn = (
-            pretrained_attn
-            if pretrained_attn is not None
-            else kwargs.get("source_attn")
-        )
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
         target_dtype = kwargs.get("dtype")
         if target_dtype is None and source_attn is not None:
             p = next(source_attn.parameters(), None)
@@ -336,9 +319,7 @@ class RALALinearAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
             (
@@ -356,10 +337,7 @@ class RALALinearAttention(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -506,8 +484,7 @@ class RALALinearAttention(BaseAttention):
                 src_norm = float(torch.linalg.norm(w.float()).item())
                 if src_norm < 1e-4:
                     logger.warning(
-                        "RALALinearAttention: source weight for %s has "
-                        "near-zero norm %.6f",
+                        "RALALinearAttention: source weight for %s has near-zero norm %.6f",
                         proj_key,
                         src_norm,
                     )
@@ -612,9 +589,7 @@ class RALALinearAttention(BaseAttention):
 
         q_prime = F.softplus(q)
 
-        valid_mask = get_token_valid_mask(
-            attention_mask, batch_size, seq_len, hidden_states.device
-        )
+        valid_mask = get_token_valid_mask(attention_mask, batch_size, seq_len, hidden_states.device)
         mask_4d = valid_mask.unsqueeze(1).unsqueeze(-1).to(k.dtype)
         k_prime = F.softplus(k) * mask_4d
         v_masked = v * mask_4d
@@ -662,23 +637,15 @@ class RALALinearAttention(BaseAttention):
 
             # RALA-FIX-01: use lora_U, lora_V (trainable)
             rank_mat = torch.einsum("hdr,her->hde", self.lora_U, self.lora_V)
-            aug_out = torch.nan_to_num(
-                torch.einsum("bhnd,hde->bhne", q_prime, rank_mat) / denom
-            )
+            aug_out = torch.nan_to_num(torch.einsum("bhnd,hde->bhne", q_prime, rank_mat) / denom)
         else:
             kv = torch.einsum("bhnd,bhne->bhde", k_prime, v_masked)
             z = k_prime.sum(dim=2)
-            denom = (
-                torch.einsum("bhnd,bhd->bhn", q_prime, z).unsqueeze(-1).clamp(min=1e-4)
-            )
-            lin_out = torch.nan_to_num(
-                torch.einsum("bhnd,bhde->bhne", q_prime, kv) / denom
-            )
+            denom = torch.einsum("bhnd,bhd->bhn", q_prime, z).unsqueeze(-1).clamp(min=1e-4)
+            lin_out = torch.nan_to_num(torch.einsum("bhnd,bhde->bhne", q_prime, kv) / denom)
 
             rank_mat = torch.einsum("hdr,her->hde", self.lora_U, self.lora_V)
-            aug_out = torch.nan_to_num(
-                torch.einsum("bhnd,hde->bhne", q_prime, rank_mat) / denom
-            )
+            aug_out = torch.nan_to_num(torch.einsum("bhnd,hde->bhne", q_prime, rank_mat) / denom)
 
         # RALA-FIX-04: removed dead scale_factor=1.0
         # RALA-FIX-01: use lora_rank_alpha (trainable)
@@ -689,17 +656,11 @@ class RALALinearAttention(BaseAttention):
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                 out = out * head_mask.view(1, self.num_heads, 1, 1).to(out.dtype)
             elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                out = out * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(
-                    out.dtype
-                )
+                out = out * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(out.dtype)
             elif head_mask.dim() == 4:
                 out = out * head_mask.to(out.dtype)
 
-        out = (
-            out.permute(0, 2, 1, 3)
-            .contiguous()
-            .view(batch_size, seq_len, self.all_head_size)
-        )
+        out = out.permute(0, 2, 1, 3).contiguous().view(batch_size, seq_len, self.all_head_size)
 
         if self.is_nested_encoder:
             return out, None
@@ -816,8 +777,7 @@ def inject_rala(
             or getattr(src_attn, "embed_dim", None)
             or (
                 src_attn.q_proj.in_features
-                if hasattr(src_attn, "q_proj")
-                and hasattr(src_attn.q_proj, "in_features")
+                if hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features")
                 else None
             )
             or (

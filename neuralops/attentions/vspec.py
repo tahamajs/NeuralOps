@@ -16,6 +16,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
@@ -35,9 +36,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-def _masked_mean(
-    x: torch.Tensor, valid_mask: torch.Tensor | None = None
-) -> torch.Tensor:
+def _masked_mean(x: torch.Tensor, valid_mask: torch.Tensor | None = None) -> torch.Tensor:
     """Computes mean over valid non-padded tokens."""
     if valid_mask is not None:
         m = valid_mask.unsqueeze(-1).to(x.dtype)
@@ -114,9 +113,7 @@ class VariationalSpectralGate(nn.Module):
 
     def __init__(self, hidden_dim: int, rank: int) -> None:
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(hidden_dim, 64), nn.GELU(), nn.Linear(64, rank * 2)
-        )
+        self.net = nn.Sequential(nn.Linear(hidden_dim, 64), nn.GELU(), nn.Linear(64, rank * 2))
         # Initialize gate to neutral (near 1.0) so SVD representations are preserved at step 0
         nn.init.zeros_(self.net[-1].weight)
         nn.init.constant_(self.net[-1].bias[:rank], 3.0)  # mu -> sigmoid(3.0) ≈ 0.95
@@ -144,16 +141,12 @@ class HeadGate(nn.Module):
 
     def __init__(self, hidden_dim: int, n_heads: int) -> None:
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(hidden_dim, 32), nn.GELU(), nn.Linear(32, n_heads)
-        )
+        self.net = nn.Sequential(nn.Linear(hidden_dim, 32), nn.GELU(), nn.Linear(32, n_heads))
         # Initialize head gate to neutral 1.0 (bias=3.0 -> sigmoid(3.0) ≈ 0.95)
         nn.init.zeros_(self.net[-1].weight)
         nn.init.constant_(self.net[-1].bias, 3.0)
 
-    def forward(
-        self, x: torch.Tensor, valid_mask: torch.Tensor | None = None
-    ) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, valid_mask: torch.Tensor | None = None) -> torch.Tensor:
         net_dtype = next(self.net.parameters()).dtype
         pooled = _masked_mean(x, valid_mask).to(net_dtype)
         return torch.sigmoid(self.net(pooled)).to(x.dtype)
@@ -162,9 +155,7 @@ class HeadGate(nn.Module):
 class TokenRouter(nn.Module):
     r"""Top-k token selector based on learned saliency scores with guaranteed [CLS] retention."""
 
-    def __init__(
-        self, hidden_dim: int, keep_ratio: float = 0.75, min_tokens: int = 8
-    ) -> None:
+    def __init__(self, hidden_dim: int, keep_ratio: float = 0.75, min_tokens: int = 8) -> None:
         super().__init__()
         self.net = nn.Sequential(nn.Linear(hidden_dim, 32), nn.GELU(), nn.Linear(32, 1))
         self.keep_ratio = keep_ratio
@@ -183,9 +174,7 @@ class TokenRouter(nn.Module):
             scores = scores.masked_fill(~valid_mask, -10000.0)
 
         if is_decoder and N > 1:
-            causal_mask = torch.tril(
-                torch.ones(N, N, device=x.device, dtype=torch.bool)
-            )
+            causal_mask = torch.tril(torch.ones(N, N, device=x.device, dtype=torch.bool))
             scores = scores.masked_fill(~causal_mask[0], -10000.0)
 
         # Guarantee preservation of first token (index 0)
@@ -243,12 +232,8 @@ class DynamicLowRankProjector(nn.Module):
             self.register_parameter("bias", None)
 
         if lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_dim), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_dim, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_dim), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_dim, lora_rank), **factory_kwargs))
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
             nn.init.zeros_(self.lora_B)
         else:
@@ -270,9 +255,7 @@ class DynamicLowRankProjector(nn.Module):
             if self.lora_B is not None:
                 self.lora_B.requires_grad = True
 
-    def set_weight(
-        self, weight: torch.Tensor, bias: torch.Tensor | None = None
-    ) -> None:
+    def set_weight(self, weight: torch.Tensor, bias: torch.Tensor | None = None) -> None:
         with torch.no_grad():
             W = weight.float()
             U, S, Vh = torch.linalg.svd(W, full_matrices=False)
@@ -378,18 +361,14 @@ class VSpecAttention(BaseAttention):
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
-        src_attn = (
-            pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn")
-        )
+        src_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("old_attn")
 
         cfg_head_dim = _cfg_get(config, "head_dim", kwargs.get("head_dim"))
         if cfg_head_dim is None and src_attn is not None:
             for attr in ("q_proj", "query", "q_lin"):
                 mod = getattr(src_attn, attr, None)
                 if mod is not None and hasattr(mod, "weight"):
-                    num_h = _cfg_get(
-                        config, "num_attention_heads", kwargs.get("num_heads", 12)
-                    )
+                    num_h = _cfg_get(config, "num_attention_heads", kwargs.get("num_heads", 12))
                     cfg_head_dim = mod.weight.shape[0] // max(1, num_h)
                     break
 
@@ -439,12 +418,8 @@ class VSpecAttention(BaseAttention):
             self.is_decoder: bool = is_dec
         else:
             self.adapter = None
-            self.hidden_size = _cfg_get(
-                config, "hidden_size", kwargs.get("hidden_size", 768)
-            )
-            self.num_heads = _cfg_get(
-                config, "num_attention_heads", kwargs.get("num_heads", 12)
-            )
+            self.hidden_size = _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
+            self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_heads", 12))
             self.num_kv_heads = _cfg_get(config, "num_key_value_heads", self.num_heads)
             self.head_dim = (
                 int(cfg_head_dim)
@@ -478,12 +453,8 @@ class VSpecAttention(BaseAttention):
 
         self.is_nested_encoder: bool = False
         self.rank: int = rank
-        self.lora_rank = kwargs.get(
-            "lora_rank", _cfg_get(config, "lora_rank", lora_rank)
-        )
-        self.lora_alpha = kwargs.get(
-            "lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha)
-        )
+        self.lora_rank = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
+        self.lora_alpha = kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha))
 
         target_dtype = kwargs.get("dtype")
         if target_dtype is None and src_attn is not None:
@@ -612,9 +583,7 @@ class VSpecAttention(BaseAttention):
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             c_mod = src.c_attn
             base_c = getattr(c_mod, "base_layer", c_mod)
@@ -637,11 +606,7 @@ class VSpecAttention(BaseAttention):
                 k_w = weight[split_size : 2 * split_size, :]
                 v_w = weight[2 * split_size :, :]
                 q_b = bias_data[:split_size] if bias_data is not None else None
-                k_b = (
-                    bias_data[split_size : 2 * split_size]
-                    if bias_data is not None
-                    else None
-                )
+                k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
                 v_b = bias_data[2 * split_size :] if bias_data is not None else None
                 extracted["q"] = (q_w, q_b)
                 extracted["k"] = (k_w, k_b)
@@ -667,9 +632,7 @@ class VSpecAttention(BaseAttention):
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             s = src.self
             if hasattr(s, "query"):
@@ -679,11 +642,7 @@ class VSpecAttention(BaseAttention):
             if hasattr(s, "value"):
                 extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
 
-        if (
-            hasattr(src, "output")
-            and hasattr(src.output, "dense")
-            and extracted["o"][0] is None
-        ):
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             dense = src.output.dense
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -745,22 +704,14 @@ class VSpecAttention(BaseAttention):
 
         # Copy into projectors
         if extracted["q"][0] is not None:
-            self.Pq.set_weight(
-                _orient(extracted["q"][0], self.hidden_size), extracted["q"][1]
-            )
+            self.Pq.set_weight(_orient(extracted["q"][0], self.hidden_size), extracted["q"][1])
         if extracted["k"][0] is not None:
-            self.Pk.set_weight(
-                _orient(extracted["k"][0], self.hidden_size), extracted["k"][1]
-            )
+            self.Pk.set_weight(_orient(extracted["k"][0], self.hidden_size), extracted["k"][1])
         if extracted["v"][0] is not None:
-            self.Pv.set_weight(
-                _orient(extracted["v"][0], self.hidden_size), extracted["v"][1]
-            )
+            self.Pv.set_weight(_orient(extracted["v"][0], self.hidden_size), extracted["v"][1])
 
         if extracted["o"][0] is not None and not self.is_nested_encoder:
-            self.Po.set_weight(
-                _orient(extracted["o"][0], self.all_head_size), extracted["o"][1]
-            )
+            self.Po.set_weight(_orient(extracted["o"][0], self.all_head_size), extracted["o"][1])
         elif self.is_nested_encoder:
             eye_w = torch.eye(self.all_head_size, self.all_head_size)
             self.Po.set_weight(eye_w, None)
@@ -801,13 +752,8 @@ class VSpecAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor | None] | torch.Tensor:
-        if (
-            encoder_hidden_states is not None
-            or kwargs.get("encoder_hidden_states") is not None
-        ):
-            raise NotImplementedError(
-                "Cross-attention is not implemented for VSpecAttention"
-            )
+        if encoder_hidden_states is not None or kwargs.get("encoder_hidden_states") is not None:
+            raise NotImplementedError("Cross-attention is not implemented for VSpecAttention")
 
         B, N, D = hidden_states.shape
         device = hidden_states.device
@@ -870,20 +816,12 @@ class VSpecAttention(BaseAttention):
 
         # Rotary position embeddings
         pos_emb = kwargs.get("position_embeddings")
-        if (
-            pos_emb is not None
-            and isinstance(pos_emb, (tuple, list))
-            and len(pos_emb) >= 2
-        ):
+        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
             cos_b = cos.expand(B, -1, -1) if cos.size(0) == 1 else cos
             sin_b = sin.expand(B, -1, -1) if sin.size(0) == 1 else sin
-            cos_routed = torch.gather(
-                cos_b, 1, idx.unsqueeze(-1).expand(-1, -1, cos.size(-1))
-            )
-            sin_routed = torch.gather(
-                sin_b, 1, idx.unsqueeze(-1).expand(-1, -1, sin.size(-1))
-            )
+            cos_routed = torch.gather(cos_b, 1, idx.unsqueeze(-1).expand(-1, -1, cos.size(-1)))
+            sin_routed = torch.gather(sin_b, 1, idx.unsqueeze(-1).expand(-1, -1, sin.size(-1)))
             Q, K = apply_rotary_pos_emb(Q, K, cos_routed, sin_routed)
         elif getattr(self, "rotary_emb", None) is not None:
             try:
@@ -908,17 +846,13 @@ class VSpecAttention(BaseAttention):
 
         scale = 1.0 / math.sqrt(Dh)
         scores = (
-            torch.matmul(Q.float(), K.float().transpose(-1, -2).contiguous())
-            * scale
-            * hg.float()
+            torch.matmul(Q.float(), K.float().transpose(-1, -2).contiguous()) * scale * hg.float()
         )
 
         # Check causal decoder
         if is_decoder and k_len > 1:
             causal_mask = torch.triu(
-                torch.full(
-                    (k_len, k_len), float("-inf"), device=device, dtype=scores.dtype
-                ),
+                torch.full((k_len, k_len), float("-inf"), device=device, dtype=scores.dtype),
                 diagonal=1,
             )
             scores = scores + causal_mask.unsqueeze(0).unsqueeze(0)
@@ -926,10 +860,7 @@ class VSpecAttention(BaseAttention):
         # Apply padding mask to attention scores over routed tokens
         if valid_routed is not None:
             pad_mask = (
-                (~valid_routed)
-                .unsqueeze(1)
-                .unsqueeze(2)
-                .expand(-1, self.num_heads, k_len, k_len)
+                (~valid_routed).unsqueeze(1).unsqueeze(2).expand(-1, self.num_heads, k_len, k_len)
             )
             scores = scores.masked_fill(pad_mask, float("-inf"))
 
@@ -954,9 +885,7 @@ class VSpecAttention(BaseAttention):
             attn_weights = attn_weights * head_mask.to(attn_weights.dtype)
 
         context = torch.matmul(attn_weights, V)
-        context = (
-            context.transpose(1, 2).contiguous().view(B, k_len, self.all_head_size)
-        )
+        context = context.transpose(1, 2).contiguous().view(B, k_len, self.all_head_size)
 
         if self.is_nested_encoder:
             return (context, (attn_weights if output_attentions else None))
@@ -964,11 +893,7 @@ class VSpecAttention(BaseAttention):
         out = self.Po(context, gq)
 
         if out.shape[-1] != D:
-            out = (
-                F.pad(out, (0, D - out.shape[-1]))
-                if out.shape[-1] < D
-                else out[..., :D]
-            )
+            out = F.pad(out, (0, D - out.shape[-1])) if out.shape[-1] < D else out[..., :D]
 
         # Scatter back to full sequence length preserving residual:
         # Non-routed tokens have zero attention delta, so outer block residual keeps them unchanged.

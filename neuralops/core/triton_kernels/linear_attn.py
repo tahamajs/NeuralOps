@@ -15,6 +15,7 @@ from __future__ import annotations
 from typing import Any
 
 import torch
+
 from neuralops.core.triton_kernels._common import (
     HAS_TRITON,
     check_triton_suitability,
@@ -75,15 +76,9 @@ if HAS_TRITON:
             cur_offs_n = start_n + offs_chunk
             mask_n = cur_offs_n < N
 
-            q_ptrs = q_base + (
-                cur_offs_n[:, None] * stride_qn + offs_dk[None, :] * stride_qd
-            )
-            k_ptrs = k_base + (
-                cur_offs_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd
-            )
-            v_ptrs = v_base + (
-                cur_offs_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd
-            )
+            q_ptrs = q_base + (cur_offs_n[:, None] * stride_qn + offs_dk[None, :] * stride_qd)
+            k_ptrs = k_base + (cur_offs_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd)
+            v_ptrs = v_base + (cur_offs_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd)
 
             q_tile = tl.load(q_ptrs, mask=mask_n[:, None], other=0.0)
             k_tile = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0)
@@ -128,12 +123,8 @@ if HAS_TRITON:
                 denom_total = tl.maximum(denom_raw, EPS)
             out_tile = num_total / denom_total[:, None]
 
-            out_ptrs = out_base + (
-                cur_offs_n[:, None] * stride_on + offs_dv[None, :] * stride_od
-            )
-            tl.store(
-                out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_n[:, None]
-            )
+            out_ptrs = out_base + (cur_offs_n[:, None] * stride_on + offs_dv[None, :] * stride_od)
+            tl.store(out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_n[:, None])
 
             # Update Running Recurrent State
             state_S += tl.dot(tl.trans(phi_k), v_tile.to(tl.float32))
@@ -187,12 +178,8 @@ if HAS_TRITON:
             cur_n = n_start + offs_n
             mask_n = cur_n < N
 
-            k_ptrs = k_base + (
-                cur_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd
-            )
-            v_ptrs = v_base + (
-                cur_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd
-            )
+            k_ptrs = k_base + (cur_n[:, None] * stride_kn + offs_dk[None, :] * stride_kd)
+            v_ptrs = v_base + (cur_n[:, None] * stride_vn + offs_dv[None, :] * stride_vd)
 
             k_tile = tl.load(k_ptrs, mask=mask_n[:, None], other=0.0)
             v_tile = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0)
@@ -217,9 +204,7 @@ if HAS_TRITON:
             cur_m = m_start + offs_m
             mask_m = cur_m < N
 
-            q_ptrs = q_base + (
-                cur_m[:, None] * stride_qn + offs_dk[None, :] * stride_qd
-            )
+            q_ptrs = q_base + (cur_m[:, None] * stride_qn + offs_dk[None, :] * stride_qd)
             q_tile = tl.load(q_ptrs, mask=mask_m[:, None], other=0.0)
 
             if ACTIVATION_MODE == 0:
@@ -241,12 +226,8 @@ if HAS_TRITON:
                 denom_total = tl.maximum(denom_raw, EPS)
             out_tile = num / denom_total[:, None]
 
-            out_ptrs = out_base + (
-                cur_m[:, None] * stride_on + offs_dv[None, :] * stride_od
-            )
-            tl.store(
-                out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_m[:, None]
-            )
+            out_ptrs = out_base + (cur_m[:, None] * stride_on + offs_dv[None, :] * stride_od)
+            tl.store(out_ptrs, out_tile.to(Out_ptr.dtype.element_ty), mask=mask_m[:, None])
 
 
 class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
@@ -388,9 +369,7 @@ class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
                 cos_weight=ctx.cos_weight,
                 sin_weight=ctx.sin_weight,
             )
-            grads = torch.autograd.grad(
-                out, [q_req, k_req, v_req], grad_out, retain_graph=False
-            )
+            grads = torch.autograd.grad(out, [q_req, k_req, v_req], grad_out, retain_graph=False)
 
         def _sanitize(g: torch.Tensor | None) -> torch.Tensor | None:
             if g is None:
@@ -403,15 +382,11 @@ class _TritonLinearAttnAutogradFunction(torch.autograd.Function):
         return g_q, g_k, g_v, None, None, None, None, None
 
 
-def is_supported(
-    q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, **kwargs: Any
-) -> bool:
+def is_supported(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, **kwargs: Any) -> bool:
     """Check whether linear attention can run on the Triton kernel."""
     head_dim = q.shape[-1]
     seq_len = q.shape[-2]
-    suitable, _ = check_triton_suitability(
-        q, "linear_attn", head_dim=head_dim, seq_len=seq_len
-    )
+    suitable, _ = check_triton_suitability(q, "linear_attn", head_dim=head_dim, seq_len=seq_len)
     return suitable
 
 

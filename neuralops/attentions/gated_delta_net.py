@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 
@@ -33,11 +34,7 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     if n_rep == 1:
         return hidden_states
     b, h, s, d = hidden_states.shape
-    return (
-        hidden_states[:, :, None, :, :]
-        .expand(b, h, n_rep, s, d)
-        .reshape(b, h * n_rep, s, d)
-    )
+    return hidden_states[:, :, None, :, :].expand(b, h, n_rep, s, d).reshape(b, h * n_rep, s, d)
 
 
 def _cfg_get(cfg, key, default=None):
@@ -286,9 +283,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = (
-                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            )
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -322,14 +317,10 @@ class GatedDeltaNet(BaseAttention):
 
         # ---- d_model ----
         if d_model is None:
-            d_model = (
-                kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
-            )
+            d_model = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
             if d_model is None:
                 if config is not None:
-                    d_model = getattr(
-                        config, "hidden_size", getattr(config, "dim", 768)
-                    )
+                    d_model = getattr(config, "hidden_size", getattr(config, "dim", 768))
                 elif source_attn is not None:
                     out_layer = None
                     for attr in ("out_lin", "dense", "c_proj", "o_proj", "out_proj"):
@@ -392,9 +383,7 @@ class GatedDeltaNet(BaseAttention):
         # ---- num_kv_heads ----
         cfg_kv = None
         if config is not None:
-            cfg_kv = getattr(
-                config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
-            )
+            cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
         if cfg_kv is None:
             cfg_kv = kwargs.get("num_kv_heads", self.num_heads)
         self.num_kv_heads = max(1, min(int(cfg_kv), self.num_heads))
@@ -442,9 +431,7 @@ class GatedDeltaNet(BaseAttention):
                 )
             )
         elif comp_config is not None:
-            self.lora_rank = int(
-                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
-            )
+            self.lora_rank = int(getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
             self.lora_alpha = float(
                 getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
             )
@@ -458,8 +445,7 @@ class GatedDeltaNet(BaseAttention):
         is_dec = False
         if config is not None:
             is_dec = bool(
-                getattr(config, "is_decoder", False)
-                or getattr(config, "is_causal", False)
+                getattr(config, "is_decoder", False) or getattr(config, "is_causal", False)
             )
         decoder_prefixes = (
             "gpt",
@@ -481,9 +467,7 @@ class GatedDeltaNet(BaseAttention):
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
         if source_attn is not None:
-            if getattr(source_attn, "is_decoder", False) or hasattr(
-                source_attn, "c_attn"
-            ):
+            if getattr(source_attn, "is_decoder", False) or hasattr(source_attn, "c_attn"):
                 is_dec = True
         self.is_decoder = bool(is_dec)
         self.is_causal = self.is_decoder
@@ -502,10 +486,7 @@ class GatedDeltaNet(BaseAttention):
                         "ElectraSelfAttention",
                         "DebertaSelfAttention",
                     )
-                    or (
-                        src_cls.endswith("SelfAttention")
-                        and "distil" not in src_cls.lower()
-                    )
+                    or (src_cls.endswith("SelfAttention") and "distil" not in src_cls.lower())
                 )
                 or hasattr(source_attn, "self")
                 and hasattr(source_attn, "output")
@@ -577,9 +558,7 @@ class GatedDeltaNet(BaseAttention):
 
         self.source_attn = source_attn
         self.rotary_emb = (
-            getattr(source_attn, "rotary_emb", None)
-            if source_attn is not None
-            else None
+            getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
         )
         self.comp_config = comp_config
 
@@ -696,11 +675,7 @@ class GatedDeltaNet(BaseAttention):
         if hasattr(old_attn, "c_attn") and old_attn.c_attn is not None:
             c = old_attn.c_attn
             # GDN-FIX-12: guarded merge
-            if (
-                hasattr(c, "merge")
-                and callable(c.merge)
-                and not getattr(c, "merged", False)
-            ):
+            if hasattr(c, "merge") and callable(c.merge) and not getattr(c, "merged", False):
                 try:
                     c.merge()
                 except Exception as e:
@@ -848,9 +823,7 @@ class GatedDeltaNet(BaseAttention):
 
                 if b is not None and target.bias is not None:
                     mb = min(target.bias.numel(), b.numel())
-                    target.bias.data[:mb].copy_(
-                        b[:mb].to(target.bias.device, target.bias.dtype)
-                    )
+                    target.bias.data[:mb].copy_(b[:mb].to(target.bias.device, target.bias.dtype))
                 elif target.bias is not None:
                     nn.init.zeros_(target.bias)
 
@@ -867,9 +840,7 @@ class GatedDeltaNet(BaseAttention):
                 out_z = min(self.z_proj.weight.size(0), w_q.size(0))
                 in_z = min(self.z_proj.weight.size(1), w_q.size(1))
                 self.z_proj.weight.data[:out_z, :in_z].copy_(
-                    w_q[:out_z, :in_z].to(
-                        self.z_proj.weight.device, self.z_proj.weight.dtype
-                    )
+                    w_q[:out_z, :in_z].to(self.z_proj.weight.device, self.z_proj.weight.dtype)
                 )
                 if self.freeze_base:
                     self.z_proj.freeze_base_weights()
@@ -953,18 +924,8 @@ class GatedDeltaNet(BaseAttention):
         kv_len = kv_input.shape[1]
 
         q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
-        k = (
-            self.k_proj(kv_input)
-            .view(B, kv_len, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.v_proj(kv_input)
-            .view(B, kv_len, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        k = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
         z = self.z_proj(hidden_states)
 
         # ---- RoPE ----
@@ -975,9 +936,7 @@ class GatedDeltaNet(BaseAttention):
         elif self.rotary_emb is not None and not is_cross:
             if position_ids is None:
                 position_ids = (
-                    torch.arange(kv_len, device=hidden_states.device)
-                    .unsqueeze(0)
-                    .expand(B, -1)
+                    torch.arange(kv_len, device=hidden_states.device).unsqueeze(0).expand(B, -1)
                 )
             try:
                 cos, sin = self.rotary_emb(k, seq_len=kv_len)
@@ -996,17 +955,13 @@ class GatedDeltaNet(BaseAttention):
 
         # ---- Gating ----
         hs_beta = hidden_states.to(self.beta_proj.weight.dtype)
-        beta = (
-            torch.sigmoid(self.beta_proj(hs_beta)).transpose(1, 2).contiguous()
-        )  # (B,H,L)
+        beta = torch.sigmoid(self.beta_proj(hs_beta)).transpose(1, 2).contiguous()  # (B,H,L)
         hs_alpha = hidden_states.to(self.alpha_proj.weight.dtype)
         alpha = torch.sigmoid(self.alpha_proj(hs_alpha)).transpose(1, 2).contiguous()
 
         # ---- Mask ----
         eff_mask = encoder_attention_mask if is_cross else attention_mask
-        mask_bool = self._normalize_valid_mask(
-            eff_mask, B, kv_len, hidden_states.device
-        )
+        mask_bool = self._normalize_valid_mask(eff_mask, B, kv_len, hidden_states.device)
 
         # ---- is_causal (GDN-FIX-08) ----
         bool(self.is_decoder and not is_cross and L > 1 and past_key_value is None)
@@ -1167,8 +1122,7 @@ def inject_gated_delta_net(
 
     # GDN-FIX-06: idempotency guard
     if src_attn is not None and (
-        isinstance(src_attn, GatedDeltaNet)
-        or "GatedDeltaNet" in src_attn.__class__.__name__
+        isinstance(src_attn, GatedDeltaNet) or "GatedDeltaNet" in src_attn.__class__.__name__
     ):
         return None
 
@@ -1179,11 +1133,7 @@ def inject_gated_delta_net(
         getattr(src_attn, "hidden_size", None)
         or getattr(src_attn, "embed_dim", None)
         or getattr(src_attn, "dim", None)
-        or (
-            getattr(src_attn.q_proj, "in_features", None)
-            if hasattr(src_attn, "q_proj")
-            else None
-        )
+        or (getattr(src_attn.q_proj, "in_features", None) if hasattr(src_attn, "q_proj") else None)
         or (getattr(target, "in_features", None) if target is not None else None)
         or getattr(cfg, "hidden_size", getattr(cfg, "dim", 64))
     )

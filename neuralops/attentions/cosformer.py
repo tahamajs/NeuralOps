@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -146,21 +147,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -204,9 +199,7 @@ class LoRALinear(nn.Module):
             x = x.to(self.weight.dtype)
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
         return out
 
@@ -265,15 +258,11 @@ class CosformerAttention(BaseAttention):
                     getattr(
                         source_attn,
                         "dense",
-                        getattr(
-                            source_attn, "c_proj", getattr(source_attn, "o_proj", None)
-                        ),
+                        getattr(source_attn, "c_proj", getattr(source_attn, "o_proj", None)),
                     ),
                 )
                 hidden_size = (
-                    getattr(out_layer, "out_features", 768)
-                    if out_layer is not None
-                    else 768
+                    getattr(out_layer, "out_features", 768) if out_layer is not None else 768
                 )
             elif hidden_size is None:
                 hidden_size = 768
@@ -308,8 +297,7 @@ class CosformerAttention(BaseAttention):
         # Fix 11: even head_dim required for RoPE
         if self.head_dim % 2 != 0:
             raise ValueError(
-                f"CosformerAttention with RoPE requires even head_dim, "
-                f"got head_dim={self.head_dim}"
+                f"CosformerAttention with RoPE requires even head_dim, got head_dim={self.head_dim}"
             )
 
         kv_heads = _cfg_get("num_key_value_heads", None)
@@ -330,9 +318,7 @@ class CosformerAttention(BaseAttention):
                 and self.head_dim > 0
             ):
                 kv_heads = source_attn.k_proj.out_features // self.head_dim
-        self.num_kv_heads: int = int(
-            kv_heads if kv_heads is not None else self.num_heads
-        )
+        self.num_kv_heads: int = int(kv_heads if kv_heads is not None else self.num_heads)
 
         self.all_head_size: int = self.num_heads * self.head_dim
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
@@ -357,18 +343,12 @@ class CosformerAttention(BaseAttention):
 
         # LoRA adaptation configuration
         self.lora_rank: int = int(_cfg_get("lora_rank", kwargs.get("lora_rank", 16)))
-        self.lora_alpha: float = float(
-            _cfg_get("lora_alpha", kwargs.get("lora_alpha", 32.0))
-        )
+        self.lora_alpha: float = float(_cfg_get("lora_alpha", kwargs.get("lora_alpha", 32.0)))
         self.freeze_base: bool = self.lora_rank > 0
 
         # Decoder & nested encoder detection
-        model_type = (
-            getattr(config, "model_type", "").lower() if config is not None else ""
-        )
-        is_dec = _cfg_get(
-            "is_decoder", _cfg_get("is_causal", kwargs.get("is_causal", False))
-        )
+        model_type = getattr(config, "model_type", "").lower() if config is not None else ""
+        is_dec = _cfg_get("is_decoder", _cfg_get("is_causal", kwargs.get("is_causal", False)))
         _decoder_prefixes = (
             "gpt",
             "qwen",
@@ -430,9 +410,7 @@ class CosformerAttention(BaseAttention):
         )
 
         dropout_p = (
-            getattr(
-                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
-            )
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
             if config
             else 0.1
         )
@@ -541,9 +519,7 @@ class CosformerAttention(BaseAttention):
         # 1. GPT-2: Fused c_attn + c_proj
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
-            if hasattr(c_attn_mod, "merge") and not getattr(
-                c_attn_mod, "merged", False
-            ):
+            if hasattr(c_attn_mod, "merge") and not getattr(c_attn_mod, "merged", False):
                 try:
                     c_attn_mod.merge()
                 except Exception as e:
@@ -719,9 +695,7 @@ class CosformerAttention(BaseAttention):
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
                     target_mod.bias.data[:min_b].copy_(
-                        b[:min_b].to(
-                            device=target_mod.bias.device, dtype=target_mod.bias.dtype
-                        )
+                        b[:min_b].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype)
                     )
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
@@ -794,18 +768,8 @@ class CosformerAttention(BaseAttention):
         # 1. Q/K/V projections
         # ------------------------------------------------------------------
         Q = self.q_proj(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
-        K = (
-            self.k_proj(kv_input)
-            .view(B, kv_len, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V = (
-            self.v_proj(kv_input)
-            .view(B, kv_len, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        K = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # ------------------------------------------------------------------
         # 2. RoPE (only for self-attention, not cross-attention)
@@ -826,9 +790,7 @@ class CosformerAttention(BaseAttention):
                 )
         elif self.rotary_emb is not None and not is_cross_attention:
             rotary_mod = self.rotary_emb
-            pos_ids = (
-                position_ids if position_ids is not None else kwargs.get("position_ids")
-            )
+            pos_ids = position_ids if position_ids is not None else kwargs.get("position_ids")
             if pos_ids is None:
                 pos_ids = torch.arange(N, device=device).unsqueeze(0).expand(B, -1)
             cos, sin = None, None
@@ -870,12 +832,8 @@ class CosformerAttention(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
         valid_mask = None
         if eff_mask is not None:
-            valid_mask = get_token_valid_mask(
-                eff_mask, B, kv_len, device
-            )  # [B, kv_len] bool
-            mask_expanded = (
-                valid_mask.unsqueeze(1).unsqueeze(-1).float()
-            )  # [B, 1, kv_len, 1]
+            valid_mask = get_token_valid_mask(eff_mask, B, kv_len, device)  # [B, kv_len] bool
+            mask_expanded = valid_mask.unsqueeze(1).unsqueeze(-1).float()  # [B, 1, kv_len, 1]
             K_k = K_k * mask_expanded
             V_f = V_f * mask_expanded
 
@@ -892,9 +850,7 @@ class CosformerAttention(BaseAttention):
         # ------------------------------------------------------------------
         # 7. Linear attention — try Triton, fallback to stable Python path
         # ------------------------------------------------------------------
-        is_causal_eval = bool(
-            self.is_decoder and not is_cross_attention and kv_len == N
-        )
+        is_causal_eval = bool(self.is_decoder and not is_cross_attention and kv_len == N)
 
         context = None
         triton_ok = False
@@ -914,9 +870,7 @@ class CosformerAttention(BaseAttention):
                     or torch.isinf(Q_t).any()
                     or torch.isinf(K_t).any()
                 ):
-                    raise RuntimeError(
-                        "Non-finite values detected before Triton dispatch"
-                    )
+                    raise RuntimeError("Non-finite values detected before Triton dispatch")
 
                 dispatch_kwargs = dict(self.triton_kwargs)
                 dispatch_kwargs["cos_weight"] = cos_w.half()
@@ -1057,11 +1011,7 @@ class CosformerAttention(BaseAttention):
             score_s = torch.matmul(Q_sin, K_sin.transpose(-1, -2).contiguous())
             scores = (score_c + score_s).masked_fill(~causal_mask, 0.0)
             num = torch.matmul(scores, V)
-            denom = (
-                (score_c + score_s)
-                .masked_fill(~causal_mask, 0.0)
-                .sum(dim=-1, keepdim=True)
-            )
+            denom = (score_c + score_s).masked_fill(~causal_mask, 0.0).sum(dim=-1, keepdim=True)
             return (num / denom.clamp(min=self.eps)).to(dtype)
 
         # Multi-chunk
@@ -1102,12 +1052,8 @@ class CosformerAttention(BaseAttention):
 
         num_list, denom_list = [], []
         for c in range(num_chunks):
-            num_inter = torch.matmul(qc_c[:, :, c], S_cos) + torch.matmul(
-                qs_c[:, :, c], S_sin
-            )
-            denom_inter = torch.matmul(qc_c[:, :, c], Z_cos) + torch.matmul(
-                qs_c[:, :, c], Z_sin
-            )
+            num_inter = torch.matmul(qc_c[:, :, c], S_cos) + torch.matmul(qs_c[:, :, c], S_sin)
+            denom_inter = torch.matmul(qc_c[:, :, c], Z_cos) + torch.matmul(qs_c[:, :, c], Z_sin)
 
             num_list.append(num_intra[:, :, c] + num_inter)
             denom_list.append(denom_intra[:, :, c] + denom_inter)
@@ -1127,12 +1073,8 @@ class CosformerAttention(BaseAttention):
 
             S_cos = S_cos + torch.matmul(kc_curr.transpose(-1, -2).contiguous(), v_curr)
             S_sin = S_sin + torch.matmul(ks_curr.transpose(-1, -2).contiguous(), v_curr)
-            Z_cos = (
-                Z_cos + kc_curr.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
-            )
-            Z_sin = (
-                Z_sin + ks_curr.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
-            )
+            Z_cos = Z_cos + kc_curr.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
+            Z_sin = Z_sin + ks_curr.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
 
         num = torch.cat(num_list, dim=2)[:, :, :N, :]
         denom = torch.cat(denom_list, dim=2)[:, :, :N, :]
@@ -1162,9 +1104,9 @@ class CosformerAttention(BaseAttention):
         Z_sin = K_sin.sum(dim=2, keepdim=True)
 
         num = torch.matmul(Q_cos, KV_cos) + torch.matmul(Q_sin, KV_sin)
-        denom = torch.matmul(
-            Q_cos, Z_cos.transpose(-2, -1).contiguous()
-        ) + torch.matmul(Q_sin, Z_sin.transpose(-2, -1).contiguous())
+        denom = torch.matmul(Q_cos, Z_cos.transpose(-2, -1).contiguous()) + torch.matmul(
+            Q_sin, Z_sin.transpose(-2, -1).contiguous()
+        )
         denom = denom.clamp(min=self.eps)
 
         context = (num / denom).to(dtype)
@@ -1238,9 +1180,7 @@ def inject_cosformer(
     """
     depth = _get_inject_depth()
     if depth >= _MAX_DEPTH:
-        logger.error(
-            "Max injection depth reached in inject_cosformer - possible recursion"
-        )
+        logger.error("Max injection depth reached in inject_cosformer - possible recursion")
         return None
     _set_inject_depth(depth + 1)
 
@@ -1251,11 +1191,7 @@ def inject_cosformer(
         if target is None:
             return None
 
-        cfg = (
-            model_config
-            if model_config is not None
-            else getattr(target, "config", None)
-        )
+        cfg = model_config if model_config is not None else getattr(target, "config", None)
 
         # Fix 16: clean kwargs to avoid conflicts in recursive calls
         kwargs_clean = {
@@ -1270,9 +1206,7 @@ def inject_cosformer(
         layer_list = None
         if _is_single_layer(target):
             pass  # handle below
-        elif hasattr(target, "distilbert") and hasattr(
-            target.distilbert, "transformer"
-        ):
+        elif hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
             layer_list = target.distilbert.transformer.layer
         elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
             layer_list = target.roberta.encoder.layer
@@ -1288,9 +1222,7 @@ def inject_cosformer(
             layer_list = target.model.layers
         elif hasattr(target, "encoder") and hasattr(target.encoder, "layer"):
             layer_list = target.encoder.layer
-        elif hasattr(target, "layers") and isinstance(
-            target.layers, (torch.nn.ModuleList, list)
-        ):
+        elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
             layer_list = target.layers
 
         if layer_list is not None:
@@ -1329,8 +1261,7 @@ def inject_cosformer(
             or getattr(src_attn, "embed_dim", None)
             or (
                 src_attn.q_proj.in_features
-                if hasattr(src_attn, "q_proj")
-                and hasattr(src_attn.q_proj, "in_features")
+                if hasattr(src_attn, "q_proj") and hasattr(src_attn.q_proj, "in_features")
                 else None
             )
             or (layer.in_features if hasattr(layer, "in_features") else None)

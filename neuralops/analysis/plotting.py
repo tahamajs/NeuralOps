@@ -42,9 +42,7 @@ def plot_loss_curve(history, metrics, config, output_dir, opts) -> Any:
     fig, ax = plt.subplots(figsize=opts.get("figsize", [10, 6]))
     ax.plot(steps, train, label="Train Loss", color="#3B528B")
     if eval_steps:
-        ax.plot(
-            eval_steps, eval_l, "o-", label="Eval Loss", color="#21908C", markersize=4
-        )
+        ax.plot(eval_steps, eval_l, "o-", label="Eval Loss", color="#21908C", markersize=4)
     ax.set_xlabel("Step")
     ax.set_ylabel("Loss")
     ax.set_title("Training & Validation Loss")
@@ -98,9 +96,7 @@ def plot_lr_schedule(history, metrics, config, output_dir, opts) -> Any:
 def plot_training_time(history, metrics, config, output_dir, opts) -> Any:
     """Plot training time."""
     times = [
-        h.get("elapsed", i * 0.01)
-        for i, h in enumerate(history)
-        if "elapsed" in h or "step" in h
+        h.get("elapsed", i * 0.01) for i, h in enumerate(history) if "elapsed" in h or "step" in h
     ]
     if not times:
         return []
@@ -249,9 +245,7 @@ def plot_radar_chart(history, metrics, config, output_dir, opts) -> Any:
     angles = np.linspace(0, 2 * np.pi, len(categories), endpoint=False).tolist()
     values = values + values[:1]
     angles += angles[:1]
-    fig, ax = plt.subplots(
-        figsize=opts.get("figsize", [8, 8]), subplot_kw=dict(polar=True)
-    )
+    fig, ax = plt.subplots(figsize=opts.get("figsize", [8, 8]), subplot_kw=dict(polar=True))
     ax.fill(angles, values, alpha=0.25, color="#3B528B")
     ax.plot(angles, values, color="#3B528B", linewidth=2)
     ax.set_xticks(angles[:-1])
@@ -361,9 +355,7 @@ def create_comprehensive_plots(
     if "accuracy_drop" in df.columns:
         drops = df["accuracy_drop"].dropna()
         ax.hist(drops, bins=20, color="lightcoral", edgecolor="darkred", alpha=0.7)
-        ax.axvline(
-            drops.mean(), color="blue", linestyle="-", label=f"Mean: {drops.mean():.3f}"
-        )
+        ax.axvline(drops.mean(), color="blue", linestyle="-", label=f"Mean: {drops.mean():.3f}")
         ax.set_title("Accuracy Drop Distribution")
         ax.legend()
         ax.grid(True, axis="y", alpha=0.3)
@@ -401,20 +393,13 @@ def create_comprehensive_plots(
     ax = axes[2, 0]
     if "task_type" in df.columns:
         for tt in df["task_type"].unique():
-            sub = (
-                df[df["task_type"] == tt]
-                .groupby("rank")["accuracy"]
-                .mean()
-                .reset_index()
-            )
+            sub = df[df["task_type"] == tt].groupby("rank")["accuracy"].mean().reset_index()
             ax.plot(sub["rank"], sub["accuracy"], marker="D", label=tt, linewidth=2)
         ax.set_title("Accuracy by Task Type")
         ax.legend()
         ax.grid(True, alpha=0.3)
     else:
-        ax.text(
-            0.5, 0.5, "No task type", ha="center", va="center", transform=ax.transAxes
-        )
+        ax.text(0.5, 0.5, "No task type", ha="center", va="center", transform=ax.transAxes)
     # 8. Compression ratio heatmap
     ax = axes[2, 1]
     if "compression_ratio" in df.columns:
@@ -429,9 +414,7 @@ def create_comprehensive_plots(
         plt.colorbar(im, ax=ax, label="Compression Ratio")
         ax.set_title("Compression Ratio Heatmap")
     else:
-        ax.text(
-            0.5, 0.5, "No comp ratio", ha="center", va="center", transform=ax.transAxes
-        )
+        ax.text(0.5, 0.5, "No comp ratio", ha="center", va="center", transform=ax.transAxes)
     # 9. Best config per dataset
     ax = axes[2, 2]
     best = []
@@ -449,13 +432,9 @@ def create_comprehensive_plots(
         ):
             ax.text(acc + 0.005, i, f"{model} r={int(rank)}", va="center", fontsize=8)
     else:
-        ax.text(
-            0.5, 0.5, "No best config", ha="center", va="center", transform=ax.transAxes
-        )
+        ax.text(0.5, 0.5, "No best config", ha="center", va="center", transform=ax.transAxes)
     plt.tight_layout()
-    plt.savefig(
-        Path(output_dir) / "comprehensive_analysis.png", dpi=300, bbox_inches="tight"
-    )
+    plt.savefig(Path(output_dir) / "comprehensive_analysis.png", dpi=300, bbox_inches="tight")
     plt.close()
 
 
@@ -476,9 +455,7 @@ def plot_tradeoff(df, output_dir, metric="accuracy") -> None:
     plt.close()
 
 
-def plot_pareto_front(
-    df, output_dir, x_metric="speedup_factor", y_metric="accuracy"
-) -> None:
+def plot_pareto_front(df, output_dir, x_metric="speedup_factor", y_metric="accuracy") -> None:
     """Plot pareto front."""
     set_style()
     points = df[[x_metric, y_metric, "model", "rank"]].dropna().values

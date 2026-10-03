@@ -20,6 +20,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.gqa_utils import repeat_kv
 
 # Check Triton availability
@@ -83,18 +84,12 @@ if HAS_TRITON:
             mask_k_in = offs_k_in < K_in
 
             # Load tile of X: [BLOCK_M, BLOCK_K_IN]
-            x_ptrs = X_ptr + (
-                offs_m[:, None] * stride_xm + offs_k_in[None, :] * stride_xk
-            )
-            x_tile = tl.load(
-                x_ptrs, mask=mask_m[:, None] & mask_k_in[None, :], other=0.0
-            )
+            x_ptrs = X_ptr + (offs_m[:, None] * stride_xm + offs_k_in[None, :] * stride_xk)
+            x_tile = tl.load(x_ptrs, mask=mask_m[:, None] & mask_k_in[None, :], other=0.0)
 
             # Load tile of V: [R, BLOCK_K_IN]
             offs_r = tl.arange(0, R)
-            v_ptrs = V_ptr + (
-                offs_r[:, None] * stride_vr + offs_k_in[None, :] * stride_vk
-            )
+            v_ptrs = V_ptr + (offs_r[:, None] * stride_vr + offs_k_in[None, :] * stride_vk)
             v_tile = tl.load(v_ptrs, mask=mask_k_in[None, :], other=0.0)
 
             # Accumulate partial inner product: [BLOCK_M, BLOCK_K_IN] @ [BLOCK_K_IN, R]
@@ -174,9 +169,7 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
                 y_2d = torch.empty((M, K_out), device=x.device, dtype=x.dtype)
                 BLOCK_M = 32
                 BLOCK_K_IN = (
-                    64
-                    if K_in >= 64 and (K_in % 64 == 0 or K_in > 64)
-                    else min(64, max(16, K_in))
+                    64 if K_in >= 64 and (K_in % 64 == 0 or K_in > 64) else min(64, max(16, K_in))
                 )
                 BLOCK_K_IN = 1 << (BLOCK_K_IN - 1).bit_length()
                 BLOCK_K_OUT = (
@@ -223,20 +216,14 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
                                 torch.mean(z.float() ** 2, dim=-1, keepdim=True) + eps
                             ).to(z.dtype)
                         else:
-                            rms = torch.rsqrt(
-                                torch.mean(z**2, dim=-1, keepdim=True) + eps
-                            )
+                            rms = torch.rsqrt(torch.mean(z**2, dim=-1, keepdim=True) + eps)
                         z_hat = z * rms
-                        z_norm = (
-                            z_hat * norm_weight if norm_weight is not None else z_hat
-                        )
+                        z_norm = z_hat * norm_weight if norm_weight is not None else z_hat
                     else:
                         rms = torch.empty(0, device=x.device, dtype=x.dtype)
                         z_hat = z
                         z_norm = z
-                ctx.save_for_backward(
-                    x_2d, V, U, norm_weight, bias, z, rms, z_hat, z_norm
-                )
+                ctx.save_for_backward(x_2d, V, U, norm_weight, bias, z, rms, z_hat, z_norm)
                 ctx.eps = eps
                 ctx.use_rms_norm = use_rms_norm
                 return y_2d.view(*orig_shape[:-1], K_out)
@@ -248,9 +235,9 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         z = F.linear(x_2d, V.to(x_2d.dtype))  # [M, R]
         if use_rms_norm:
             if z.dtype in (torch.float16, torch.bfloat16):
-                rms = torch.rsqrt(
-                    torch.mean(z.float() ** 2, dim=-1, keepdim=True) + eps
-                ).to(z.dtype)
+                rms = torch.rsqrt(torch.mean(z.float() ** 2, dim=-1, keepdim=True) + eps).to(
+                    z.dtype
+                )
             else:
                 rms = torch.rsqrt(torch.mean(z**2, dim=-1, keepdim=True) + eps)
             z_hat = z * rms
@@ -270,9 +257,7 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         return y_2d.view(*orig_shape[:-1], K_out)
 
     @staticmethod
-    def backward(
-        ctx: Any, grad_output: torch.Tensor
-    ) -> tuple[torch.Tensor | None, ...]:
+    def backward(ctx: Any, grad_output: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
         x_2d, V, U, norm_weight, bias, z, rms, z_hat, z_norm = ctx.saved_tensors
         use_rms_norm = ctx.use_rms_norm
 
@@ -287,9 +272,7 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         rms_c = rms.to(dtype=dtype, device=device)
 
         # 1. Gradient with respect to bias and U
-        grad_bias = (
-            grad_output_2d.sum(dim=0).to(bias.dtype) if bias is not None else None
-        )
+        grad_bias = grad_output_2d.sum(dim=0).to(bias.dtype) if bias is not None else None
         grad_U = torch.matmul(grad_output_2d.T, z_norm_c).to(U.dtype)  # [K_out, R]
 
         # 2. Gradient backpropagated to z_norm
@@ -298,17 +281,14 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         if use_rms_norm:
             if norm_weight is not None:
                 nw_c = norm_weight.to(dtype=dtype, device=device)
-                grad_norm_weight = (
-                    (grad_z_norm * z_hat_c).sum(dim=0).to(norm_weight.dtype)
-                )
+                grad_norm_weight = (grad_z_norm * z_hat_c).sum(dim=0).to(norm_weight.dtype)
                 grad_z_hat = grad_z_norm * nw_c
             else:
                 grad_norm_weight = None
                 grad_z_hat = grad_z_norm
 
             grad_z = rms_c * (
-                grad_z_hat
-                - z_hat_c * torch.mean(grad_z_hat * z_hat_c, dim=-1, keepdim=True)
+                grad_z_hat - z_hat_c * torch.mean(grad_z_hat * z_hat_c, dim=-1, keepdim=True)
             )
         else:
             grad_norm_weight = None
@@ -317,9 +297,7 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         # 5. Gradient with respect to V and input x
         grad_V = torch.matmul(grad_z.T, x_2d_c).to(V.dtype)  # [R, K_in]
         grad_x = (
-            torch.matmul(grad_z, V_c)
-            .view(*grad_output.shape[:-1], x_2d.shape[-1])
-            .to(x_2d.dtype)
+            torch.matmul(grad_z, V_c).view(*grad_output.shape[:-1], x_2d.shape[-1]).to(x_2d.dtype)
         )
 
         return grad_x, grad_V, grad_U, grad_norm_weight, grad_bias, None, None
@@ -349,9 +327,7 @@ def fused_svd_linear(
     Returns:
         Output tensor of shape (..., out_features).
     """
-    return _FusedSVDLinearAutogradFunction.apply(
-        x, V, U, norm_weight, bias, eps, use_rms_norm
-    )
+    return _FusedSVDLinearAutogradFunction.apply(x, V, U, norm_weight, bias, eps, use_rms_norm)
 
 
 class FusedSVDLinear(nn.Module):
@@ -380,24 +356,16 @@ class FusedSVDLinear(nn.Module):
         self.use_rms_norm = use_rms_norm
 
         # Low-rank factorized parameters
-        self.V = nn.Parameter(
-            torch.empty(rank, in_features, dtype=dtype, device=device)
-        )
-        self.U = nn.Parameter(
-            torch.empty(out_features, rank, dtype=dtype, device=device)
-        )
+        self.V = nn.Parameter(torch.empty(rank, in_features, dtype=dtype, device=device))
+        self.U = nn.Parameter(torch.empty(out_features, rank, dtype=dtype, device=device))
 
         if use_rms_norm:
-            self.norm_weight = nn.Parameter(
-                torch.ones(rank, dtype=dtype, device=device)
-            )
+            self.norm_weight = nn.Parameter(torch.ones(rank, dtype=dtype, device=device))
         else:
             self.register_parameter("norm_weight", None)
 
         if bias:
-            self.bias = nn.Parameter(
-                torch.empty(out_features, dtype=dtype, device=device)
-            )
+            self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device))
         else:
             self.register_parameter("bias", None)
 
@@ -429,17 +397,13 @@ class FusedSVDLinear(nn.Module):
             use_rms_norm=self.use_rms_norm,
         )
 
-    def set_low_rank_factors(
-        self, U_factor: torch.Tensor, V_factor: torch.Tensor
-    ) -> None:
+    def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
         """Set precomputed U and V low-rank factors."""
         with torch.no_grad():
             self.U.copy_(U_factor)
             self.V.copy_(V_factor)
 
-    def decompose_from_weight(
-        self, weight: torch.Tensor, bias: torch.Tensor | None = None
-    ) -> None:
+    def decompose_from_weight(self, weight: torch.Tensor, bias: torch.Tensor | None = None) -> None:
         """Decompose dense weight matrix into symmetric SVD factors."""
         with torch.no_grad():
             W = weight.float()
@@ -516,12 +480,8 @@ def apply_rotary_pos_emb(
     if rotary_dim < head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q.dtype)
-        )
-        k_rot_embed = (k_rot * cos.to(k.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k.dtype)
-        )
+        q_rot_embed = (q_rot * cos.to(q.dtype)) + (_rotate_half(q_rot) * sin.to(q.dtype))
+        k_rot_embed = (k_rot * cos.to(k.dtype)) + (_rotate_half(k_rot) * sin.to(k.dtype))
         q = torch.cat([q_rot_embed, q_pass], dim=-1)
         k = torch.cat([k_rot_embed, k_pass], dim=-1)
     else:
@@ -612,9 +572,7 @@ class FusedSVDKernelAttention(BaseAttention):
                 self.hidden_size // self.num_heads if self.num_heads > 0 else 64,
             )
         )
-        cfg_kv = _cfg_get(
-            config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None)
-        )
+        cfg_kv = _cfg_get(config, "num_key_value_heads", _cfg_get(config, "num_kv_heads", None))
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -835,11 +793,7 @@ class FusedSVDKernelAttention(BaseAttention):
                         b_o = out_b.data.clone() if out_b is not None else None
 
             # 2. DistilBERT flat projections (q_lin, k_lin, v_lin, out_lin)
-            elif (
-                hasattr(src, "q_lin")
-                and hasattr(src, "k_lin")
-                and hasattr(src, "v_lin")
-            ):
+            elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
                 w_q = src.q_lin.weight.data.clone()
                 b_q = (
                     src.q_lin.bias.data.clone()
@@ -892,9 +846,7 @@ class FusedSVDKernelAttention(BaseAttention):
                     and hasattr(src.Wqkv, "weight")
                 )
             ):
-                qkv_mod = getattr(
-                    src, "qkv_proj", getattr(src, "qkv", getattr(src, "Wqkv", None))
-                )
+                qkv_mod = getattr(src, "qkv_proj", getattr(src, "qkv", getattr(src, "Wqkv", None)))
                 if qkv_mod is not None:
                     in_w = qkv_mod.weight.data.clone()
                     in_b = (
@@ -950,9 +902,7 @@ class FusedSVDKernelAttention(BaseAttention):
                         break
 
             # 4. RoBERTa / BERT separate query, key, value
-            elif (
-                hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value")
-            ):
+            elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
                 w_q = src.query.weight.data.clone()
                 b_q = (
                     src.query.bias.data.clone()
@@ -988,11 +938,7 @@ class FusedSVDKernelAttention(BaseAttention):
                             break
 
             # 5. Qwen / LLaMA (q_proj, k_proj, v_proj, o_proj)
-            elif (
-                hasattr(src, "q_proj")
-                and hasattr(src, "k_proj")
-                and hasattr(src, "v_proj")
-            ):
+            elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
                 w_q = src.q_proj.weight.data.clone()
                 b_q = (
                     src.q_proj.bias.data.clone()
@@ -1058,14 +1004,10 @@ class FusedSVDKernelAttention(BaseAttention):
             # Frobenius norm verification >= 1e-4 on copied weights
             for name, w in [("w_q", w_q), ("w_k", w_k), ("w_v", w_v)]:
                 if w is not None and torch.linalg.norm(w.float()).item() < 1e-4:
-                    logger.warning(
-                        f"Copied weight {name} failed Frobenius norm check (< 1e-4)"
-                    )
+                    logger.warning(f"Copied weight {name} failed Frobenius norm check (< 1e-4)")
             if w_o is not None and not self.is_nested_encoder:
                 if torch.linalg.norm(w_o.float()).item() < 1e-4:
-                    logger.warning(
-                        "Copied weight w_o failed Frobenius norm check (< 1e-4)"
-                    )
+                    logger.warning("Copied weight w_o failed Frobenius norm check (< 1e-4)")
 
             # SVD decomposition into low-rank factors
             self.q_proj.decompose_from_weight(w_q, b_q)
@@ -1100,15 +1042,9 @@ class FusedSVDKernelAttention(BaseAttention):
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         if encoder_hidden_states is not None:
-            raise NotImplementedError(
-                "Cross-attention is not supported in FusedSVDKernelAttention"
-            )
+            raise NotImplementedError("Cross-attention is not supported in FusedSVDKernelAttention")
 
-        x = (
-            hidden_states
-            if hidden_states is not None
-            else kwargs.get("query", kwargs.get("x"))
-        )
+        x = hidden_states if hidden_states is not None else kwargs.get("query", kwargs.get("x"))
         if x is None and len(args) > 0:
             x = args[0]
         if attention_mask is None:
@@ -1116,24 +1052,9 @@ class FusedSVDKernelAttention(BaseAttention):
 
         B, L, _ = x.shape
 
-        q = (
-            self.q_proj(x)
-            .view(B, L, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        k = (
-            self.k_proj(x)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.v_proj(x)
-            .view(B, L, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        q = self.q_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k = self.k_proj(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.v_proj(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is not None:
             cos, sin = position_embeddings
@@ -1161,10 +1082,7 @@ class FusedSVDKernelAttention(BaseAttention):
                 dropout_p=self.dropout.p if self.training else 0.0,
             )
             _sdpa_out = (
-                _sdpa_out.to(x.dtype)
-                .transpose(1, 2)
-                .contiguous()
-                .view(B, L, self.all_head_size)
+                _sdpa_out.to(x.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
             )
             _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
             return (
@@ -1175,14 +1093,10 @@ class FusedSVDKernelAttention(BaseAttention):
         except Exception:
             pass
 
-        scores = (
-            torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder or self.is_causal:
-            causal_mask = torch.tril(
-                torch.ones(L, L, device=x.device, dtype=torch.bool)
-            )
+            causal_mask = torch.tril(torch.ones(L, L, device=x.device, dtype=torch.bool))
             scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
 
         if attention_mask is not None:
@@ -1200,12 +1114,7 @@ class FusedSVDKernelAttention(BaseAttention):
         if head_mask is not None:
             probs = probs * head_mask
 
-        context = (
-            torch.matmul(probs, v)
-            .transpose(1, 2)
-            .contiguous()
-            .view(B, L, self.q_head_size)
-        )
+        context = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, L, self.q_head_size)
 
         if self.is_nested_encoder:
             out = context
@@ -1260,9 +1169,7 @@ def inject_fused_svd_kernel(
     ):
         try:
             layer_list = None
-            if hasattr(target, "distilbert") and hasattr(
-                target.distilbert, "transformer"
-            ):
+            if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
                 layer_list = target.distilbert.transformer.layer
             elif hasattr(target, "roberta") and hasattr(target.roberta, "encoder"):
                 layer_list = target.roberta.encoder.layer
@@ -1270,9 +1177,7 @@ def inject_fused_svd_kernel(
                 layer_list = target.bert.encoder.layer
             elif hasattr(target, "transformer") and hasattr(target.transformer, "h"):
                 layer_list = target.transformer.h
-            elif hasattr(target, "transformer") and hasattr(
-                target.transformer, "layer"
-            ):
+            elif hasattr(target, "transformer") and hasattr(target.transformer, "layer"):
                 layer_list = target.transformer.layer
             elif hasattr(target, "model") and hasattr(target.model, "layers"):
                 layer_list = target.model.layers
@@ -1321,9 +1226,7 @@ def inject_fused_svd_kernel(
                 ):
                     parent_name = name.rsplit(".", 1)[0] if "." in name else ""
                     child_name = name.rsplit(".", 1)[-1] if "." in name else name
-                    parent = (
-                        target.get_submodule(parent_name) if parent_name else target
-                    )
+                    parent = target.get_submodule(parent_name) if parent_name else target
                     new_attn = inject_fused_svd_kernel(
                         layer=None,
                         model_config=cfg,
@@ -1337,9 +1240,7 @@ def inject_fused_svd_kernel(
             if replaced > 0:
                 return target
         except Exception as e:
-            logger.error(
-                "inject_fused_svd_kernel named_modules replacement failed: %s", e
-            )
+            logger.error("inject_fused_svd_kernel named_modules replacement failed: %s", e)
             return None
 
     try:

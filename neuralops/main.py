@@ -92,6 +92,14 @@ for pc in _potential_caches:
 def _import_framework():
     """Import and return all framework components needed for the pipeline."""
     import torch
+    from transformers import (
+        AutoModelForSequenceClassification,
+        AutoTokenizer,
+        DataCollatorWithPadding,
+        Trainer,
+        TrainingArguments,
+    )
+
     from neuralops.core.registry import (
         ATTENTION_REGISTRY,
         COMPRESSOR_REGISTRY,
@@ -112,13 +120,6 @@ def _import_framework():
     )
     from neuralops.trainer.metrics import get_task_metrics
     from neuralops.utils.replace_attention import replace_attention
-    from transformers import (
-        AutoModelForSequenceClassification,
-        AutoTokenizer,
-        DataCollatorWithPadding,
-        Trainer,
-        TrainingArguments,
-    )
 
     return dict(
         torch=torch,
@@ -204,9 +205,7 @@ def load_data(cfg, tokenizer):
         preprocess_fn = build_preprocess(
             tokenizer, cfg.task, cfg.max_len, sent1_key, sent2_key, is_regression
         )
-        dataset = raw.map(
-            preprocess_fn, batched=True, remove_columns=raw["train"].column_names
-        )
+        dataset = raw.map(preprocess_fn, batched=True, remove_columns=raw["train"].column_names)
 
         # Crop dataset to max_train_samples (e.g. 1000) if requested for fast benchmarking
         max_samples = getattr(cfg, "max_train_samples", None)
@@ -289,8 +288,7 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
             model = fw["replace_attention"](model, cfg.attn_type)
         else:
             logger.warning(
-                "Attention type '%s' not in registry — using default MHA. "
-                "Available: %s",
+                "Attention type '%s' not in registry — using default MHA. Available: %s",
                 cfg.attn_type,
                 fw["ATTENTION_REGISTRY"].keys(),
             )
@@ -310,7 +308,9 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     }
     f"eval_{metric_map.get(cfg.task, 'accuracy')}"
 
-    training_args = fw["TrainingArguments"](
+    training_args = fw[
+        "TrainingArguments"
+    ](
         output_dir=str(out_dir / "checkpoints"),
         num_train_epochs=cfg.epochs,
         per_device_train_batch_size=cfg.batch_size,
@@ -489,9 +489,7 @@ def run_compress(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
         model = fw["AutoModelForSequenceClassification"].from_pretrained(
             cfg.model_name, local_files_only=True
         )
-        tokenizer = fw["AutoTokenizer"].from_pretrained(
-            cfg.model_name, local_files_only=True
-        )
+        tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name, local_files_only=True)
     model.to(device)
     model.tokenizer = tokenizer
 
@@ -519,10 +517,7 @@ def run_compress(cfg, fw: dict, logger: logging.Logger) -> dict[str, Any]:
     else:
         compressed_model = getattr(compressor, "model", model)
 
-    comp_mb = (
-        sum(p.numel() * p.element_size() for p in compressed_model.parameters())
-        / 1024**2
-    )
+    comp_mb = sum(p.numel() * p.element_size() for p in compressed_model.parameters()) / 1024**2
     ratio = orig_mb / comp_mb if comp_mb > 0 else 1.0
 
     # Evaluate compressed model on task validation split
@@ -632,8 +627,7 @@ def run_sweep(args, fw: dict, logger: logging.Logger) -> list[dict[str, Any]]:
 
     # Aggregate across seeds per attn_type
     sweep_out = (
-        Path(args.output_dir)
-        / f"sweep_{args.task}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        Path(args.output_dir) / f"sweep_{args.task}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     )
     sweep_out.mkdir(parents=True, exist_ok=True)
 
@@ -650,10 +644,7 @@ def run_sweep(args, fw: dict, logger: logging.Logger) -> list[dict[str, Any]]:
             continue
         # Collect numeric eval keys
         eval_keys = {
-            k
-            for r in good
-            for k in r.get("eval", {})
-            if isinstance(r["eval"].get(k), float)
+            k for r in good for k in r.get("eval", {}) if isinstance(r["eval"].get(k), float)
         }
         summary[attn_type] = {}
         for k in eval_keys:
@@ -675,9 +666,7 @@ def run_sweep(args, fw: dict, logger: logging.Logger) -> list[dict[str, Any]]:
     return all_results
 
 
-def _write_sweep_markdown(
-    out_dir: Path, task: str, summary: dict, attn_types: list[str]
-) -> None:
+def _write_sweep_markdown(out_dir: Path, task: str, summary: dict, attn_types: list[str]) -> None:
     """Write a human-readable sweep summary to RESULTS.md."""
     lines = [
         f"# Sweep Summary — Task: {task}",
@@ -687,19 +676,9 @@ def _write_sweep_markdown(
 
     # Find all metric keys
     all_keys = sorted(
-        {
-            k
-            for v in summary.values()
-            if isinstance(v, dict)
-            for k in v
-            if k.endswith("_mean")
-        }
+        {k for v in summary.values() if isinstance(v, dict) for k in v if k.endswith("_mean")}
     )
-    header = (
-        "| Attention Type | "
-        + " | ".join(k.replace("_mean", "") for k in all_keys)
-        + " |"
-    )
+    header = "| Attention Type | " + " | ".join(k.replace("_mean", "") for k in all_keys) + " |"
     sep = "|" + "|".join(["---"] * (len(all_keys) + 1)) + "|"
     lines += [header, sep]
     for at in attn_types:
@@ -708,8 +687,7 @@ def _write_sweep_markdown(
             row_vals = ["ERROR"] * len(all_keys)
         else:
             row_vals = [
-                f"{v.get(k, 0):.4f} ± {v.get(k.replace('_mean','_std'), 0):.4f}"
-                for k in all_keys
+                f"{v.get(k, 0):.4f} ± {v.get(k.replace('_mean', '_std'), 0):.4f}" for k in all_keys
             ]
         lines.append(f"| {at} | " + " | ".join(row_vals) + " |")
 
@@ -781,9 +759,7 @@ def build_parser() -> argparse.ArgumentParser:
     train_p.add_argument("--early_stopping_patience", type=int, default=None)
 
     # eval
-    eval_p = sub.add_parser(
-        "eval", parents=[shared], help="Evaluate a saved checkpoint"
-    )
+    eval_p = sub.add_parser("eval", parents=[shared], help="Evaluate a saved checkpoint")
     eval_p.add_argument("--model_path", required=True)
 
     # compress

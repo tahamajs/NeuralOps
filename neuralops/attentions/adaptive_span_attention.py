@@ -40,9 +40,7 @@ def get_total_span_loss(model: nn.Module, lambda_span: float = 0.01) -> torch.Te
     """
     span_modules = getattr(model, "_adaptive_span_modules", None)
     if span_modules is None:
-        span_modules = [
-            m for m in model.modules() if isinstance(m, AdaptiveSpanAttention)
-        ]
+        span_modules = [m for m in model.modules() if isinstance(m, AdaptiveSpanAttention)]
 
     losses: list[torch.Tensor] = []
     for m in span_modules:
@@ -142,22 +140,10 @@ def apply_rotary_pos_emb(
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q_rot.dtype)
-        )
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k_rot.dtype)
-        )
-        q = (
-            torch.cat([q_rot_embed, q_pass], dim=-1)
-            if q_pass.numel() > 0
-            else q_rot_embed
-        )
-        k = (
-            torch.cat([k_rot_embed, k_pass], dim=-1)
-            if k_pass.numel() > 0
-            else k_rot_embed
-        )
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     else:
         cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
         q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
@@ -257,21 +243,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -306,10 +286,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = (
-                out
-                + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
         return out
 
 
@@ -357,13 +334,9 @@ class AdaptiveSpanAttention(BaseAttention):
         super().__init__(config, rank)
 
         # ---------------- Dimensions ----------------
-        hidden_size = (
-            kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
-        )
+        hidden_size = kwargs.get("d_model") or kwargs.get("hidden_size") or kwargs.get("dim")
         num_heads = (
-            kwargs.get("num_heads")
-            or kwargs.get("n_heads")
-            or kwargs.get("num_attention_heads")
+            kwargs.get("num_heads") or kwargs.get("n_heads") or kwargs.get("num_attention_heads")
         )
         num_kv_heads = kwargs.get("num_kv_heads") or kwargs.get("num_key_value_heads")
         head_dim = 0
@@ -392,11 +365,7 @@ class AdaptiveSpanAttention(BaseAttention):
         hidden_size = int(hidden_size or 768)
         num_heads = int(num_heads or 12)
         num_kv_heads = int(num_kv_heads or num_heads)
-        head_dim = (
-            head_dim
-            if head_dim > 0
-            else (hidden_size // num_heads if num_heads > 0 else 64)
-        )
+        head_dim = head_dim if head_dim > 0 else (hidden_size // num_heads if num_heads > 0 else 64)
 
         self.hidden_size: int = hidden_size
         self.d_model: int = hidden_size
@@ -508,9 +477,7 @@ class AdaptiveSpanAttention(BaseAttention):
             resolved_lora_rank = getattr(
                 comp_config, "lora_rank", kwargs.get("lora_rank", lora_rank)
             )
-            resolved_lora_alpha = getattr(
-                comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)
-            )
+            resolved_lora_alpha = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
         else:
             resolved_lora_rank = kwargs.get("lora_rank", lora_rank)
             resolved_lora_alpha = kwargs.get("lora_alpha", 32.0)
@@ -568,9 +535,7 @@ class AdaptiveSpanAttention(BaseAttention):
         # =========================================================================
         # FIX: Initialized to 2.0 to prevent gradient vanishing
         # =========================================================================
-        self.span_logits = nn.Parameter(
-            torch.full((self.num_heads,), 2.0, dtype=torch.float32)
-        )
+        self.span_logits = nn.Parameter(torch.full((self.num_heads,), 2.0, dtype=torch.float32))
 
         dropout_p = (
             getattr(
@@ -588,9 +553,7 @@ class AdaptiveSpanAttention(BaseAttention):
         self.dropout = nn.Dropout(dropout_p)
 
         self.rotary_emb = (
-            getattr(source_attn, "rotary_emb", None)
-            if source_attn is not None
-            else None
+            getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
         )
 
         if source_attn is not None:
@@ -618,9 +581,7 @@ class AdaptiveSpanAttention(BaseAttention):
             relative_buckets += (relative_position > 0).to(torch.long) * num_buckets
             relative_position = torch.abs(relative_position)
         else:
-            relative_position = -torch.min(
-                relative_position, torch.zeros_like(relative_position)
-            )
+            relative_position = -torch.min(relative_position, torch.zeros_like(relative_position))
         max_exact = num_buckets // 2
         is_small = relative_position < max_exact
         rel_large = max_exact + (
@@ -632,13 +593,9 @@ class AdaptiveSpanAttention(BaseAttention):
         relative_buckets += torch.where(is_small, relative_position, rel_large)
         return relative_buckets
 
-    def compute_bias(
-        self, query_length: int, key_length: int, device=None
-    ) -> torch.Tensor:
+    def compute_bias(self, query_length: int, key_length: int, device=None) -> torch.Tensor:
         if self.relative_attention_bias is None:
-            return torch.zeros(
-                (1, self.num_heads, query_length, key_length), device=device
-            )
+            return torch.zeros((1, self.num_heads, query_length, key_length), device=device)
         ctx = torch.arange(query_length, dtype=torch.long, device=device)[:, None]
         mem = torch.arange(key_length, dtype=torch.long, device=device)[None, :]
         rel = mem - ctx
@@ -669,9 +626,7 @@ class AdaptiveSpanAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback for %s: %s", proj, e)
 
-        if hasattr(src, "c_attn") and any(
-            extracted[k][0] is None for k in ("q", "k", "v")
-        ):
+        if hasattr(src, "c_attn") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             c_attn_layer = src.c_attn
             base_c = getattr(c_attn_layer, "base_layer", c_attn_layer)
             weight = getattr(base_c, "weight", getattr(c_attn_layer, "weight", None))
@@ -694,19 +649,11 @@ class AdaptiveSpanAttention(BaseAttention):
                 )
                 extracted["k"] = (
                     weight[split : 2 * split].contiguous(),
-                    (
-                        bias_data[split : 2 * split].contiguous()
-                        if bias_data is not None
-                        else None
-                    ),
+                    (bias_data[split : 2 * split].contiguous() if bias_data is not None else None),
                 )
                 extracted["v"] = (
                     weight[2 * split :].contiguous(),
-                    (
-                        bias_data[2 * split :].contiguous()
-                        if bias_data is not None
-                        else None
-                    ),
+                    (bias_data[2 * split :].contiguous() if bias_data is not None else None),
                 )
 
         if hasattr(src, "c_proj") and extracted["o"][0] is None:
@@ -729,9 +676,7 @@ class AdaptiveSpanAttention(BaseAttention):
                     b_o.data.clone().contiguous() if b_o is not None else None,
                 )
 
-        if hasattr(src, "self") and any(
-            extracted[k][0] is None for k in ("q", "k", "v")
-        ):
+        if hasattr(src, "self") and any(extracted[k][0] is None for k in ("q", "k", "v")):
             s = src.self
             if hasattr(s, "query") and extracted["q"][0] is None:
                 extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
@@ -787,9 +732,7 @@ class AdaptiveSpanAttention(BaseAttention):
         if not self.is_nested_encoder and extracted["o"][0] is None:
             missing.append("o")
         if missing:
-            logger.warning(
-                "AdaptiveSpanAttention missing weights for projections: %s", missing
-            )
+            logger.warning("AdaptiveSpanAttention missing weights for projections: %s", missing)
 
         with torch.no_grad():
             for proj_key, target in (
@@ -851,18 +794,8 @@ class AdaptiveSpanAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
-        K_new = (
-            self.k_proj(kv_input)
-            .view(B, -1, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V_new = (
-            self.v_proj(kv_input)
-            .view(B, -1, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        K_new = self.k_proj(kv_input).view(B, -1, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V_new = self.v_proj(kv_input).view(B, -1, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         position_ids = kwargs.get("position_ids")
         if position_ids is None and not is_cross_attention:
@@ -893,21 +826,13 @@ class AdaptiveSpanAttention(BaseAttention):
             if position_embeddings is not None
             else kwargs.get("position_embeddings")
         )
-        if (
-            pos_emb is not None
-            and isinstance(pos_emb, (tuple, list))
-            and len(pos_emb) >= 2
-        ):
+        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
             cos, sin = pos_emb[0], pos_emb[1]
-            Q, K_new = apply_rotary_pos_emb(
-                Q, K_new, cos, sin, position_ids=position_ids
-            )
+            Q, K_new = apply_rotary_pos_emb(Q, K_new, cos, sin, position_ids=position_ids)
         elif self.rotary_emb is not None:
             if position_ids is None:
                 position_ids = (
-                    torch.arange(N_q, device=device, dtype=torch.long)
-                    .unsqueeze(0)
-                    .expand(B, -1)
+                    torch.arange(N_q, device=device, dtype=torch.long).unsqueeze(0).expand(B, -1)
                 )
             try:
                 cos, sin = self.rotary_emb(K_new, position_ids=position_ids)
@@ -919,9 +844,7 @@ class AdaptiveSpanAttention(BaseAttention):
             except Exception:
                 cos, sin = None, None
             if cos is not None and sin is not None:
-                Q, K_new = apply_rotary_pos_emb(
-                    Q, K_new, cos, sin, position_ids=position_ids
-                )
+                Q, K_new = apply_rotary_pos_emb(Q, K_new, cos, sin, position_ids=position_ids)
 
         new_past_key_value: Any | None = None
         use_cache = kwargs.get("use_cache", False) or past_key_value is not None
@@ -940,10 +863,7 @@ class AdaptiveSpanAttention(BaseAttention):
                         K = torch.cat([past_key_value[0], K_new], dim=-2)
                         V = torch.cat([past_key_value[1], V_new], dim=-2)
                         new_past_key_value = (K, V)
-                elif (
-                    isinstance(past_key_value, (tuple, list))
-                    and len(past_key_value) >= 2
-                ):
+                elif isinstance(past_key_value, (tuple, list)) and len(past_key_value) >= 2:
                     past_k, past_v = past_key_value[0], past_key_value[1]
                     if past_k is not None:
                         K = torch.cat([past_k, K_new], dim=-2)
@@ -959,10 +879,7 @@ class AdaptiveSpanAttention(BaseAttention):
                 if use_cache:
                     new_past_key_value = (K, V)
 
-            if (
-                self.rolling_cache_size is not None
-                and K.shape[-2] > self.rolling_cache_size
-            ):
+            if self.rolling_cache_size is not None and K.shape[-2] > self.rolling_cache_size:
                 K = K[..., -self.rolling_cache_size :, :].contiguous()
                 V = V[..., -self.rolling_cache_size :, :].contiguous()
                 if isinstance(new_past_key_value, tuple):
@@ -1017,9 +934,7 @@ class AdaptiveSpanAttention(BaseAttention):
             span_h = span.view(H, 1, 1).to(torch.float32)
             dist_mat = dist.unsqueeze(0)
 
-            ramp = torch.clamp(
-                (self.ramp_size + span_h - dist_mat) / self.ramp_size, 0.0, 1.0
-            )
+            ramp = torch.clamp((self.ramp_size + span_h - dist_mat) / self.ramp_size, 0.0, 1.0)
             span_mask = torch.log(ramp.clamp(min=1e-9)).to(scores.dtype)
             scores = scores + span_mask.unsqueeze(0)
 
@@ -1031,9 +946,7 @@ class AdaptiveSpanAttention(BaseAttention):
             N_k=N_k,
             is_causal=is_causal,
             attention_mask=attention_mask,
-            encoder_attention_mask=(
-                encoder_attention_mask if is_cross_attention else None
-            ),
+            encoder_attention_mask=(encoder_attention_mask if is_cross_attention else None),
             device=device,
         )
 
@@ -1051,9 +964,7 @@ class AdaptiveSpanAttention(BaseAttention):
             chunk = max(64, min(512, N_q))
             for s in range(0, N_q, chunk):
                 e = min(s + chunk, N_q)
-                attn[:, :, s:e, :] = F.softmax(scores[:, :, s:e, :].float(), dim=-1).to(
-                    dtype
-                )
+                attn[:, :, s:e, :] = F.softmax(scores[:, :, s:e, :].float(), dim=-1).to(dtype)
         else:
             attn = F.softmax(scores.float(), dim=-1).to(dtype)
 
@@ -1257,9 +1168,7 @@ def inject_adaptive_span(
             dropout=dropout,
             max_span=max_span,
             pretrained_attn=src_attn,
-            is_nested_encoder=(
-                True if is_nested_layer else kwargs.get("is_nested_encoder")
-            ),
+            is_nested_encoder=(True if is_nested_layer else kwargs.get("is_nested_encoder")),
             layer_idx=layer_idx,
             **kwargs,
         )

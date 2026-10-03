@@ -25,6 +25,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.attention_mask import apply_attention_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
@@ -101,21 +102,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -151,9 +146,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = (
-                F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
             out = out + lora_out
         return out
 
@@ -178,9 +171,7 @@ class SpanExpandedAttention(BaseAttention):
         self.config = config
         comp_config = getattr(config, "compression_config", None)
 
-        self.hidden_size: int = getattr(
-            config, "hidden_size", kwargs.get("hidden_size", 768)
-        )
+        self.hidden_size: int = getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
         self.dim = self.hidden_size
         self.num_heads: int = getattr(
             config, "num_attention_heads", kwargs.get("num_attention_heads", 12)
@@ -203,9 +194,7 @@ class SpanExpandedAttention(BaseAttention):
         # Number of leading "sink" tokens to always preserve in the cache.
         # StreamingLLM (Xiao et al. 2024) shows the first few tokens act as
         # attention sinks and must be kept for long-context stability.
-        self.num_sink_tokens: int = max(
-            0, min(int(num_sink_tokens), self.expansion_span)
-        )
+        self.num_sink_tokens: int = max(0, min(int(num_sink_tokens), self.expansion_span))
 
         is_dec = getattr(config, "is_decoder", kwargs.get("is_decoder", False))
         if kwargs.get("is_causal", False):
@@ -289,11 +278,7 @@ class SpanExpandedAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(dropout_p)
 
-        source_attn = (
-            pretrained_attn
-            if pretrained_attn is not None
-            else kwargs.get("source_attn")
-        )
+        source_attn = pretrained_attn if pretrained_attn is not None else kwargs.get("source_attn")
         if source_attn is not None:
             self.copy_weights(source_attn)
 
@@ -305,9 +290,7 @@ class SpanExpandedAttention(BaseAttention):
             return
 
         cls_name = src.__class__.__name__
-        has_out_lin = (
-            hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
-        )
+        has_out_lin = hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         is_nested = False
         if (
             (
@@ -325,10 +308,7 @@ class SpanExpandedAttention(BaseAttention):
                     "ElectraSelfAttention",
                     "DebertaSelfAttention",
                 ]
-                or (
-                    cls_name.endswith("SelfAttention")
-                    and "distil" not in cls_name.lower()
-                )
+                or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
         ):
@@ -535,9 +515,7 @@ class SpanExpandedAttention(BaseAttention):
         if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
             past_k = past_key_value.key_cache[0]
             past_v = (
-                past_key_value.value_cache[0]
-                if hasattr(past_key_value, "value_cache")
-                else None
+                past_key_value.value_cache[0] if hasattr(past_key_value, "value_cache") else None
             )
             return past_k, past_v, past_k.shape[-2]
 
@@ -572,9 +550,7 @@ class SpanExpandedAttention(BaseAttention):
         sink_v = v[..., :sink, :]
         recent_k = k[..., -(span - sink) :, :]
         recent_v = v[..., -(span - sink) :, :]
-        return torch.cat([sink_k, recent_k], dim=-2), torch.cat(
-            [sink_v, recent_v], dim=-2
-        )
+        return torch.cat([sink_k, recent_k], dim=-2), torch.cat([sink_v, recent_v], dim=-2)
 
     # ------------------------------------------------------------------
     # Forward
@@ -593,24 +569,14 @@ class SpanExpandedAttention(BaseAttention):
         position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> tuple[
-        torch.Tensor, torch.Tensor | None, tuple[torch.Tensor, torch.Tensor] | None
-    ]:
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor, torch.Tensor] | None]:
         B, L, D = hidden_states.shape
         H, Dh = self.num_heads, self.head_dim
 
         # ---- QKV projections ----
         q = self.q_proj(hidden_states).view(B, L, H, Dh).permute(0, 2, 1, 3)
-        k = (
-            self.k_proj(hidden_states)
-            .view(B, L, self.num_kv_heads, Dh)
-            .permute(0, 2, 1, 3)
-        )
-        v = (
-            self.v_proj(hidden_states)
-            .view(B, L, self.num_kv_heads, Dh)
-            .permute(0, 2, 1, 3)
-        )
+        k = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).permute(0, 2, 1, 3)
+        v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).permute(0, 2, 1, 3)
 
         # ---- Extract past cache ----
         past_k, past_v, past_len = self._get_past_kv(past_key_value)
@@ -621,14 +587,10 @@ class SpanExpandedAttention(BaseAttention):
         if position_embeddings is not None:
             cos, sin = position_embeddings
             cos_curr = (
-                cos[..., past_len : past_len + L, :]
-                if cos.shape[-2] >= past_len + L
-                else cos
+                cos[..., past_len : past_len + L, :] if cos.shape[-2] >= past_len + L else cos
             )
             sin_curr = (
-                sin[..., past_len : past_len + L, :]
-                if sin.shape[-2] >= past_len + L
-                else sin
+                sin[..., past_len : past_len + L, :] if sin.shape[-2] >= past_len + L else sin
             )
             q, k = apply_rotary_pos_emb(q, k, cos_curr, sin_curr)
 
@@ -688,22 +650,14 @@ class SpanExpandedAttention(BaseAttention):
                     .contiguous()
                     .view(B, L, self.all_head_size)
                 )
-                _sdpa_out = torch.nan_to_num(
-                    _sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4
-                )
-                out = (
-                    self.out_proj(_sdpa_out)
-                    if not self.is_nested_encoder
-                    else _sdpa_out
-                )
+                _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
+                out = self.out_proj(_sdpa_out) if not self.is_nested_encoder else _sdpa_out
                 return out, None, present_key_value
             except Exception:
                 pass  # fall through to manual path
 
         # ---- Manual path ----
-        scores = (
-            torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
-        )
+        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
         # Causal masking: query i (position past_len + i) attends to keys 0..(past_len + i)
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
@@ -728,17 +682,12 @@ class SpanExpandedAttention(BaseAttention):
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
                 attn = attn * head_mask.view(1, self.num_heads, 1, 1).to(attn.dtype)
             elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                attn = attn * head_mask.view(
-                    head_mask.size(0), self.num_heads, 1, 1
-                ).to(attn.dtype)
+                attn = attn * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(attn.dtype)
             elif head_mask.dim() == 4:
                 attn = attn * head_mask.to(attn.dtype)
 
         context = (
-            torch.matmul(attn, v)
-            .permute(0, 2, 1, 3)
-            .contiguous()
-            .view(B, L, self.all_head_size)
+            torch.matmul(attn, v).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
         )
 
         if self.is_nested_encoder:
@@ -790,9 +739,7 @@ def inject_span_expanded(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:

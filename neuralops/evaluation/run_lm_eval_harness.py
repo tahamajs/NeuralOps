@@ -145,9 +145,7 @@ def extract_task_metrics(
             # lm_eval metric keys frequently have commas, e.g., 'acc,none'
             clean_k = raw_k.split(",")[0].strip()
             # Prioritize standard metric families
-            if any(
-                term in clean_k for term in ["acc", "exact_match", "f1", "em", "norm"]
-            ):
+            if any(term in clean_k for term in ["acc", "exact_match", "f1", "em", "norm"]):
                 metrics[clean_k] = round(float(val), 4)
 
         if not metrics:
@@ -161,9 +159,7 @@ def extract_task_metrics(
     return extracted
 
 
-def print_summary_table(
-    tasks_metrics: dict[str, dict[str, float]], module_name: str
-) -> None:
+def print_summary_table(tasks_metrics: dict[str, dict[str, float]], module_name: str) -> None:
     """Print a clean Markdown-compatible summary table of results."""
     print("\n" + "=" * 65)
     print(f" LM EVALUATION HARNESS SUMMARY: {module_name}")
@@ -184,7 +180,16 @@ def print_summary_table(
 
 
 def main(argv: list[str] | None = None) -> int:
-    global torch, AutoModelForCausalLM, AutoTokenizer, ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, apply_module_to_model, HFLM, simple_evaluate, _HAS_LM_EVAL
+    global \
+        torch, \
+        AutoModelForCausalLM, \
+        AutoTokenizer, \
+        ATTENTION_REGISTRY, \
+        COMPRESSOR_REGISTRY, \
+        apply_module_to_model, \
+        HFLM, \
+        simple_evaluate, \
+        _HAS_LM_EVAL
     args = parse_args(argv)
 
     try:
@@ -197,21 +202,20 @@ def main(argv: list[str] | None = None) -> int:
         _HAS_LM_EVAL = False
 
     if not _HAS_LM_EVAL:
-        LOG.error(
-            "lm_eval is not installed. Please install it with: pip install lm-eval"
-        )
+        LOG.error("lm_eval is not installed. Please install it with: pip install lm-eval")
         print("pip install lm-eval", file=sys.stderr)
         return 1
 
     try:
         import torch as _torch
+        from transformers import AutoModelForCausalLM as _AutoModelForCausalLM
+        from transformers import AutoTokenizer as _AutoTokenizer
+
         from neuralops.core.registry import ATTENTION_REGISTRY as _ATTENTION_REGISTRY
         from neuralops.core.registry import COMPRESSOR_REGISTRY as _COMPRESSOR_REGISTRY
         from neuralops.eval_all_models_datasets import (
             apply_module_to_model as _apply_module_to_model,
         )
-        from transformers import AutoModelForCausalLM as _AutoModelForCausalLM
-        from transformers import AutoTokenizer as _AutoTokenizer
 
         torch = _torch
         AutoModelForCausalLM = _AutoModelForCausalLM

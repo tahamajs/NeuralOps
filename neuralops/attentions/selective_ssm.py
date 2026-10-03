@@ -17,6 +17,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.selective_scan import selective_scan
@@ -64,9 +65,7 @@ class SelectiveSSM(BaseAttention):
         if d_model is not None:
             self.d_model = int(d_model)
         else:
-            self.d_model = int(
-                _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
-            )
+            self.d_model = int(_cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768)))
 
         self.d_state = int(_cfg_get(config, "d_state", kwargs.get("d_state", d_state)))
         self.d_conv = int(_cfg_get(config, "d_conv", kwargs.get("d_conv", d_conv)))
@@ -74,9 +73,7 @@ class SelectiveSSM(BaseAttention):
         self.d_inner = int(self.expand * self.d_model)
         self.dt_rank = math.ceil(self.d_model / 16) if dt_rank is None else int(dt_rank)
         self.bidirectional = bool(
-            _cfg_get(
-                config, "bidirectional", kwargs.get("bidirectional", bidirectional)
-            )
+            _cfg_get(config, "bidirectional", kwargs.get("bidirectional", bidirectional))
         )
         self.weights_init = weights_init
 
@@ -94,17 +91,13 @@ class SelectiveSSM(BaseAttention):
         )
 
         # Delta, B, C projections from x_ssm
-        self.x_proj = nn.Linear(
-            self.d_inner, self.dt_rank + 2 * self.d_state, bias=False
-        )
+        self.x_proj = nn.Linear(self.d_inner, self.dt_rank + 2 * self.d_state, bias=False)
 
         # Delta projection from dt_rank -> d_inner
         self.dt_proj = nn.Linear(self.dt_rank, self.d_inner, bias=True)
 
         # A parameterization: A = -exp(A_log)
-        A = torch.arange(1, self.d_state + 1, dtype=torch.float32).repeat(
-            self.d_inner, 1
-        )
+        A = torch.arange(1, self.d_state + 1, dtype=torch.float32).repeat(self.d_inner, 1)
         self.A_log = nn.Parameter(torch.log(A))
 
         # D skip connection
@@ -123,13 +116,9 @@ class SelectiveSSM(BaseAttention):
                 padding=self.d_conv - 1,
                 bias=conv_bias,
             )
-            self.x_proj_bwd = nn.Linear(
-                self.d_inner, self.dt_rank + 2 * self.d_state, bias=False
-            )
+            self.x_proj_bwd = nn.Linear(self.d_inner, self.dt_rank + 2 * self.d_state, bias=False)
             self.dt_proj_bwd = nn.Linear(self.dt_rank, self.d_inner, bias=True)
-            A_bwd = torch.arange(1, self.d_state + 1, dtype=torch.float32).repeat(
-                self.d_inner, 1
-            )
+            A_bwd = torch.arange(1, self.d_state + 1, dtype=torch.float32).repeat(self.d_inner, 1)
             self.A_log_bwd = nn.Parameter(torch.log(A_bwd))
             self.D_bwd = nn.Parameter(torch.ones(self.d_inner))
             self.out_proj_bwd = nn.Linear(self.d_inner, self.d_model, bias=bias)
@@ -142,8 +131,7 @@ class SelectiveSSM(BaseAttention):
             # Delta bias init: softplus^-1(Uniform(0.001, 0.1))
             dt_min, dt_max = 0.001, 0.1
             dt_init = torch.exp(
-                torch.rand(self.d_inner) * (math.log(dt_max) - math.log(dt_min))
-                + math.log(dt_min)
+                torch.rand(self.d_inner) * (math.log(dt_max) - math.log(dt_min)) + math.log(dt_min)
             )
             dt_init_inv = dt_init + torch.log(-torch.expm1(-dt_init))
             with torch.no_grad():
@@ -154,8 +142,7 @@ class SelectiveSSM(BaseAttention):
                 if self.bidirectional:
                     self.dt_proj_bwd.bias.copy_(dt_init_inv)
                     self.dt_proj_bwd.weight.copy_(
-                        torch.ones(self.d_inner, self.dt_rank)
-                        * (0.5 / self.dt_rank) ** 0.5
+                        torch.ones(self.d_inner, self.dt_rank) * (0.5 / self.dt_rank) ** 0.5
                     )
         elif self.weights_init == "xavier":
             nn.init.xavier_uniform_(self.in_proj.weight)
@@ -180,9 +167,7 @@ class SelectiveSSM(BaseAttention):
 
         # Selective projections
         x_dbl = x_proj_layer(x_conv)  # (B, L, dt_rank + 2 * d_state)
-        dt, B_ssm, C_ssm = x_dbl.split(
-            [self.dt_rank, self.d_state, self.d_state], dim=-1
-        )
+        dt, B_ssm, C_ssm = x_dbl.split([self.dt_rank, self.d_state, self.d_state], dim=-1)
         dt = dt_proj_layer(dt)  # (B, L, d_inner)
         dt = F.softplus(dt)
 
@@ -265,9 +250,7 @@ ATTENTION_REGISTRY.register("simplessm")(SimpleSSM)
 @ATTENTION_REGISTRY.register("inject_selective_ssm")
 @ATTENTION_REGISTRY.register("inject_simple_ssm")
 @ATTENTION_REGISTRY.register("inject_simple_ssm_attention")
-def inject_selective_ssm(
-    layer=None, model=None, model_config=None, old_attn=None, **kwargs
-):
+def inject_selective_ssm(layer=None, model=None, model_config=None, old_attn=None, **kwargs):
     target = layer if layer is not None else model
     if target is None:
         return None

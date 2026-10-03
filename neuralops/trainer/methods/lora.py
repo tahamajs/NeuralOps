@@ -166,17 +166,13 @@ def _apply_adapters(model, r, alpha, dropout, method_type="lora", **kwargs) -> N
 @register_method("lora")
 def apply_lora(model, config) -> None:
     """Apply lora."""
-    _apply_adapters(
-        model, config.lora_r, config.lora_alpha, config.lora_dropout, "lora"
-    )
+    _apply_adapters(model, config.lora_r, config.lora_alpha, config.lora_dropout, "lora")
 
 
 @register_method("dora")
 def apply_dora(model, config) -> None:
     """Apply dora."""
-    _apply_adapters(
-        model, config.lora_r, config.lora_alpha, config.lora_dropout, "dora"
-    )
+    _apply_adapters(model, config.lora_r, config.lora_alpha, config.lora_dropout, "dora")
 
 
 @register_method("dislora")

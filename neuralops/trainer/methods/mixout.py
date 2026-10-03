@@ -40,9 +40,7 @@ class MixoutLinear(nn.Module):
         return F.linear(x, self.weight, self.bias)
 
 
-def replace_linears_with_mixout(
-    model: nn.Module, p: float, skip_classifier: bool = True
-) -> None:
+def replace_linears_with_mixout(model: nn.Module, p: float, skip_classifier: bool = True) -> None:
     """Replace linears with mixout."""
     for name, module in list(model.named_children()):
         if skip_classifier and "classifier" in name:

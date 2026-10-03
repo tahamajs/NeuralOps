@@ -21,9 +21,7 @@ class ModelProfiler:
         """get layer name."""
         parts = name.split(".")
         filtered = [
-            p
-            for p in parts
-            if p.isdigit() or p in ("attention", "ffn", "mlp", "intermediate")
+            p for p in parts if p.isdigit() or p in ("attention", "ffn", "mlp", "intermediate")
         ]
         return ".".join(filtered) if filtered else name
 
@@ -48,13 +46,8 @@ class ModelProfiler:
                 del self._current_timings[name]
 
         for name, module in self.model.named_modules():
-            if any(
-                layer in name.lower()
-                for layer in ("attention", "ffn", "mlp", "intermediate")
-            ):
-                pre = module.register_forward_pre_hook(
-                    lambda m, i, n=name: pre_hook_fn(m, i, n)
-                )
+            if any(layer in name.lower() for layer in ("attention", "ffn", "mlp", "intermediate")):
+                pre = module.register_forward_pre_hook(lambda m, i, n=name: pre_hook_fn(m, i, n))
                 post = module.register_forward_hook(
                     lambda m, i, o, n=name: post_hook_fn(m, i, o, n)
                 )
@@ -100,14 +93,10 @@ class ModelProfiler:
         print("=" * 60)
         for name, stats in report.items():
             if name == "_total":
-                print(
-                    f"\n📊 TOTAL: {stats['avg_time_ms']:.2f}ms (±{stats['std_time_ms']:.2f})"
-                )
+                print(f"\n📊 TOTAL: {stats['avg_time_ms']:.2f}ms (±{stats['std_time_ms']:.2f})")
             else:
                 print(f"\n🔹 {name}:")
-                print(
-                    f"   Time: {stats['avg_time_ms']:.2f}ms (±{stats['std_time_ms']:.2f})"
-                )
+                print(f"   Time: {stats['avg_time_ms']:.2f}ms (±{stats['std_time_ms']:.2f})")
                 if "avg_memory_mb" in stats:
                     print(f"   Memory: {stats['avg_memory_mb']:.2f} MB")
 
@@ -123,9 +112,7 @@ def measure_inference_latency(
         for i, batch in enumerate(dataloader):
             if i >= warmup + num_samples:
                 break
-            batch = {
-                k: v.to(device) for k, v in batch.items() if isinstance(v, torch.Tensor)
-            }
+            batch = {k: v.to(device) for k, v in batch.items() if isinstance(v, torch.Tensor)}
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
             start = time.perf_counter()
@@ -145,15 +132,11 @@ def measure_inference_latency(
         "p50_latency_ms": np.percentile(latencies, 50),
         "p95_latency_ms": np.percentile(latencies, 95),
         "p99_latency_ms": np.percentile(latencies, 99),
-        "samples_per_second": (
-            1000 / np.mean(latencies) if np.mean(latencies) > 0 else 0
-        ),
+        "samples_per_second": (1000 / np.mean(latencies) if np.mean(latencies) > 0 else 0),
     }
 
 
-def measure_memory_usage(
-    model, dataloader, device, num_samples: int = 10
-) -> dict[str, float]:
+def measure_memory_usage(model, dataloader, device, num_samples: int = 10) -> dict[str, float]:
     """Measure memory usage."""
     model.eval()
     model.to(device)
@@ -164,9 +147,7 @@ def measure_memory_usage(
                 break
             if torch.cuda.is_available():
                 torch.cuda.reset_peak_memory_stats()
-            batch = {
-                k: v.to(device) for k, v in batch.items() if isinstance(v, torch.Tensor)
-            }
+            batch = {k: v.to(device) for k, v in batch.items() if isinstance(v, torch.Tensor)}
             _ = model(**batch)
             if torch.cuda.is_available():
                 peak_memory.append(torch.cuda.max_memory_allocated() / 1024 / 1024)

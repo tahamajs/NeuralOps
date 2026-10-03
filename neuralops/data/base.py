@@ -106,9 +106,7 @@ def preprocess_function(examples, tokenizer, config: DataConfig) -> Any:
 
     if config.task_type == TaskType.LANGUAGE_MODELING:
         result = (
-            tokenizer(text1, **tokenizer_kwargs)
-            if text1
-            else tokenizer(text2, **tokenizer_kwargs)
+            tokenizer(text1, **tokenizer_kwargs) if text1 else tokenizer(text2, **tokenizer_kwargs)
         )
         return result
 
@@ -238,11 +236,7 @@ class ProductionDataCollator:
         # Determine sequence length
         if "input_ids" in first:
             seq_lens = [
-                (
-                    len(f["input_ids"])
-                    if isinstance(f["input_ids"], (list, torch.Tensor))
-                    else 1
-                )
+                (len(f["input_ids"]) if isinstance(f["input_ids"], (list, torch.Tensor)) else 1)
                 for f in features
             ]
             max_len = max(seq_lens)
@@ -267,9 +261,7 @@ class ProductionDataCollator:
                         val = val.long()
                     if max_len is not None:
                         if val.size(0) < max_len:
-                            padd = torch.full(
-                                (max_len - val.size(0),), pad_val, dtype=val.dtype
-                            )
+                            padd = torch.full((max_len - val.size(0),), pad_val, dtype=val.dtype)
                             val = torch.cat([val, padd], dim=0)
                         elif val.size(0) > max_len:
                             val = val[:max_len]
@@ -280,9 +272,7 @@ class ProductionDataCollator:
                 # Handle 1D classification vs 2D LM labels
                 val0 = first[key]
                 is_2d = (isinstance(val0, list) and len(val0) > 1) or (
-                    isinstance(val0, torch.Tensor)
-                    and val0.dim() > 0
-                    and val0.numel() > 1
+                    isinstance(val0, torch.Tensor) and val0.dim() > 0 and val0.numel() > 1
                 )
                 if is_2d and max_len is not None:
                     tensors = []
@@ -314,9 +304,7 @@ class ProductionDataCollator:
                         )
                         for v in vals
                     ):
-                        batch["labels"] = torch.tensor(
-                            [int(v) for v in vals], dtype=torch.long
-                        )
+                        batch["labels"] = torch.tensor([int(v) for v in vals], dtype=torch.long)
                     else:
                         batch["labels"] = torch.tensor(
                             [float(v) for v in vals], dtype=torch.float32
@@ -364,9 +352,7 @@ def create_dataloader(dataset, tokenizer, config: DataConfig, **kwargs) -> DataL
     collate_fn = kwargs.pop("collate_fn", None)
     if collate_fn is None:
         collate_fn = ProductionDataCollator(
-            pad_token_id=(
-                getattr(tokenizer, "pad_token_id", 0) if tokenizer is not None else 0
-            ),
+            pad_token_id=(getattr(tokenizer, "pad_token_id", 0) if tokenizer is not None else 0),
             pad_to_multiple_of=8,
             max_length=config.max_length,
         )

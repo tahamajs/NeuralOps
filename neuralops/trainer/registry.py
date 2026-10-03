@@ -29,9 +29,7 @@ class TrainerRegistry:
     def get(cls, name: str) -> type[BaseTrainer]:
         """Get."""
         if name not in cls._registry:
-            raise ValueError(
-                f"Unknown trainer '{name}'. Available: {list(cls._registry.keys())}"
-            )
+            raise ValueError(f"Unknown trainer '{name}'. Available: {list(cls._registry.keys())}")
         return cls._registry[name]
 
     @classmethod

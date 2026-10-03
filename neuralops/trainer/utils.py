@@ -16,10 +16,11 @@ import numpy as np
 import psutil
 import torch
 import torch.nn as nn
-from neuralops.core.memory import cleanup_gpu_memory
 from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+
+from neuralops.core.memory import cleanup_gpu_memory
 
 logger = logging.getLogger(__name__)
 
@@ -52,9 +53,7 @@ def clip_grad_norm_factorized(
     """
     u_limit = float(u_max_norm) if u_max_norm is not None else float(max_norm)
     v_limit = float(v_max_norm) if v_max_norm is not None else float(max_norm)
-    dense_limit = (
-        float(dense_max_norm) if dense_max_norm is not None else float(max_norm)
-    )
+    dense_limit = float(dense_max_norm) if dense_max_norm is not None else float(max_norm)
 
     u_params: list[torch.Tensor] = []
     v_params: list[torch.Tensor] = []
@@ -128,18 +127,14 @@ def clip_grad_norm_factorized(
 
     # 1. Clip Left Factor U
     if u_params:
-        norm_u = torch.nn.utils.clip_grad_norm_(
-            u_params, max_norm=u_limit, norm_type=norm_type
-        )
+        norm_u = torch.nn.utils.clip_grad_norm_(u_params, max_norm=u_limit, norm_type=norm_type)
         group_norms.append(
             norm_u if isinstance(norm_u, torch.Tensor) else torch.tensor(float(norm_u))
         )
 
     # 2. Clip Right Factor V independently
     if v_params:
-        norm_v = torch.nn.utils.clip_grad_norm_(
-            v_params, max_norm=v_limit, norm_type=norm_type
-        )
+        norm_v = torch.nn.utils.clip_grad_norm_(v_params, max_norm=v_limit, norm_type=norm_type)
         group_norms.append(
             norm_v if isinstance(norm_v, torch.Tensor) else torch.tensor(float(norm_v))
         )
@@ -150,9 +145,7 @@ def clip_grad_norm_factorized(
             dense_params, max_norm=dense_limit, norm_type=norm_type
         )
         group_norms.append(
-            norm_dense
-            if isinstance(norm_dense, torch.Tensor)
-            else torch.tensor(float(norm_dense))
+            norm_dense if isinstance(norm_dense, torch.Tensor) else torch.tensor(float(norm_dense))
         )
 
     if not group_norms:
@@ -204,16 +197,14 @@ def train_model(
 
     epochs = getattr(config, "epochs", 3)
     max_grad_norm = getattr(config, "max_grad_norm", 1.0)
-    gradient_accumulation_steps = max(
-        1, int(getattr(config, "gradient_accumulation_steps", 1))
-    )
+    gradient_accumulation_steps = max(1, int(getattr(config, "gradient_accumulation_steps", 1)))
     steps_per_epoch = max(1, len(train_loader))
     total_loss = 0.0
 
     for epoch in range(epochs):
         epoch_loss = 0.0
         optimizer.zero_grad(set_to_none=True)
-        pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}", leave=True)
+        pbar = tqdm(train_loader, desc=f"Epoch {epoch + 1}/{epochs}", leave=True)
 
         for step, batch in enumerate(pbar):
             # FIX: Determine whether this micro-batch is the synchronization step of the accumulation window
@@ -224,11 +215,7 @@ def train_model(
             # FIX: Wrap non-final micro-batches in model.no_sync() for DDP to eliminate redundant all-reduce synchronization
             sync_context = (
                 contextlib.nullcontext()
-                if (
-                    is_sync_step
-                    or not hasattr(model, "no_sync")
-                    or not callable(model.no_sync)
-                )
+                if (is_sync_step or not hasattr(model, "no_sync") or not callable(model.no_sync))
                 else model.no_sync()
             )
 
@@ -240,9 +227,7 @@ def train_model(
                 ):
                     if is_multichoice:
                         input_ids = batch["input_ids"].to(device, non_blocking=True)
-                        attention_mask = batch["attention_mask"].to(
-                            device, non_blocking=True
-                        )
+                        attention_mask = batch["attention_mask"].to(device, non_blocking=True)
                         true_labels = batch["labels"].to(device, non_blocking=True)
                         bs, nc, sl = input_ids.shape
                         flat_ids = input_ids.view(-1, sl)
@@ -251,31 +236,19 @@ def train_model(
                         logits = (
                             outputs["logits"]
                             if isinstance(outputs, dict)
-                            else (
-                                outputs.logits
-                                if hasattr(outputs, "logits")
-                                else outputs
-                            )
+                            else (outputs.logits if hasattr(outputs, "logits") else outputs)
                         )
                         combined_labels = true_labels.repeat_interleave(nc)
                         loss = nn.functional.cross_entropy(logits, combined_labels)
                     else:
                         input_ids = batch["input_ids"].to(device, non_blocking=True)
-                        attention_mask = batch["attention_mask"].to(
-                            device, non_blocking=True
-                        )
+                        attention_mask = batch["attention_mask"].to(device, non_blocking=True)
                         labels = batch["labels"].to(device, non_blocking=True)
-                        outputs = model(
-                            input_ids=input_ids, attention_mask=attention_mask
-                        )
+                        outputs = model(input_ids=input_ids, attention_mask=attention_mask)
                         logits = (
                             outputs["logits"]
                             if isinstance(outputs, dict)
-                            else (
-                                outputs.logits
-                                if hasattr(outputs, "logits")
-                                else outputs
-                            )
+                            else (outputs.logits if hasattr(outputs, "logits") else outputs)
                         )
                         loss = nn.functional.cross_entropy(logits, labels)
 
@@ -310,9 +283,9 @@ def train_model(
                     optimizer.step()
                 optimizer.zero_grad(set_to_none=True)
 
-            if (step + 1) % max(
-                1, getattr(config, "logging_steps", 10)
-            ) == 0 or step == len(train_loader) - 1:
+            if (step + 1) % max(1, getattr(config, "logging_steps", 10)) == 0 or step == len(
+                train_loader
+            ) - 1:
                 pbar.set_postfix({"loss": f"{curr_loss:.4f}"})
 
             del outputs, logits, loss
@@ -322,9 +295,7 @@ def train_model(
     val_acc = evaluate_model(model, val_loader, device, num_labels, is_multichoice)
     cleanup_gpu_memory(force=True)
     return {
-        "final_accuracy": (
-            val_acc if isinstance(val_acc, float) else val_acc.get("accuracy", 0.0)
-        ),
+        "final_accuracy": (val_acc if isinstance(val_acc, float) else val_acc.get("accuracy", 0.0)),
         "avg_loss": total_loss / (epochs * steps_per_epoch),
     }
 
@@ -352,9 +323,7 @@ def evaluate_model(
                 flat_ids = input_ids.view(-1, sl)
                 flat_mask = attention_mask.view(-1, sl)
                 outputs = model(input_ids=flat_ids, attention_mask=flat_mask)
-                logits = (
-                    outputs["logits"] if isinstance(outputs, dict) else outputs.logits
-                )
+                logits = outputs["logits"] if isinstance(outputs, dict) else outputs.logits
                 avg_logits = logits.view(bs, nc, -1).mean(dim=1)
                 preds = torch.argmax(avg_logits, dim=-1).cpu().numpy()
                 all_preds.extend(preds)
@@ -363,9 +332,7 @@ def evaluate_model(
                 input_ids = batch["input_ids"].to(device, non_blocking=True)
                 attention_mask = batch["attention_mask"].to(device, non_blocking=True)
                 outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-                logits = (
-                    outputs["logits"] if isinstance(outputs, dict) else outputs.logits
-                )
+                logits = outputs["logits"] if isinstance(outputs, dict) else outputs.logits
                 preds = torch.argmax(logits, dim=-1).cpu().numpy()
                 all_preds.extend(preds)
                 all_labels.extend(batch["labels"].numpy())
@@ -381,12 +348,8 @@ def evaluate_model(
 
     return {
         "accuracy": acc,
-        "f1_macro": float(
-            f1_score(all_labels, all_preds, average="macro", zero_division=0)
-        ),
-        "f1_weighted": float(
-            f1_score(all_labels, all_preds, average="weighted", zero_division=0)
-        ),
+        "f1_macro": float(f1_score(all_labels, all_preds, average="macro", zero_division=0)),
+        "f1_weighted": float(f1_score(all_labels, all_preds, average="weighted", zero_division=0)),
         "matthews_corrcoef": float(matthews_corrcoef(all_labels, all_preds)),
     }
 
@@ -401,9 +364,7 @@ def benchmark_model(
             break
         if isinstance(batch, dict) and "input_ids" in batch:
             input_ids = batch["input_ids"].to(device)
-            attention_mask = batch.get("attention_mask", torch.ones_like(input_ids)).to(
-                device
-            )
+            attention_mask = batch.get("attention_mask", torch.ones_like(input_ids)).to(device)
             with torch.no_grad():
                 _ = model(input_ids=input_ids, attention_mask=attention_mask)
 
@@ -416,9 +377,7 @@ def benchmark_model(
             b_start = time.time()
             if isinstance(batch, dict) and "input_ids" in batch:
                 input_ids = batch["input_ids"].to(device)
-                attention_mask = batch.get(
-                    "attention_mask", torch.ones_like(input_ids)
-                ).to(device)
+                attention_mask = batch.get("attention_mask", torch.ones_like(input_ids)).to(device)
                 _ = model(input_ids=input_ids, attention_mask=attention_mask)
             if device.type == "cuda":
                 torch.cuda.synchronize()
@@ -436,9 +395,7 @@ def benchmark_model(
         "total_time": total_time,
         "avg_batch_time": float(np.mean(batch_times)) if batch_times else 0.0,
         "std_batch_time": float(np.std(batch_times)) if batch_times else 0.0,
-        "samples_per_second": (
-            float(num_samples / total_time) if total_time > 0 else 0.0
-        ),
+        "samples_per_second": (float(num_samples / total_time) if total_time > 0 else 0.0),
         "memory_usage_mb": float(memory_after - memory_before),
         "peak_memory_mb": float(memory_after),
         "throughput": float(num_samples / total_time) if total_time > 0 else 0.0,
@@ -462,9 +419,7 @@ def compute_metrics(
     preds = np.argmax(logits, axis=-1)
     metrics = {"accuracy": float(accuracy_score(labels, preds))}
     if task == "classification":
-        metrics["f1_macro"] = float(
-            f1_score(labels, preds, average="macro", zero_division=0)
-        )
+        metrics["f1_macro"] = float(f1_score(labels, preds, average="macro", zero_division=0))
     if len(np.unique(labels)) == 2:
         metrics["matthews_corrcoef"] = float(matthews_corrcoef(labels, preds))
     return metrics
@@ -495,9 +450,7 @@ def plot_training_curves(history: list[dict[str, Any]], save_path: str) -> None:
     axes[0].legend()
     axes[0].grid(True, alpha=0.3)
     if eval_acc:
-        axes[1].plot(
-            range(len(eval_acc)), eval_acc, "g-", marker="o", label="Val Accuracy"
-        )
+        axes[1].plot(range(len(eval_acc)), eval_acc, "g-", marker="o", label="Val Accuracy")
     axes[1].set_xlabel("Epoch")
     axes[1].set_ylabel("Accuracy")
     axes[1].set_title("Accuracy Curves")

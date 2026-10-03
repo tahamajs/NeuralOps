@@ -11,6 +11,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -57,22 +58,10 @@ def apply_rotary_pos_emb(
     if rotary_dim <= head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q_rot.dtype)
-        )
-        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k_rot.dtype)
-        )
-        q = (
-            torch.cat([q_rot_embed, q_pass], dim=-1)
-            if q_pass.numel() > 0
-            else q_rot_embed
-        )
-        k = (
-            torch.cat([k_rot_embed, k_pass], dim=-1)
-            if k_pass.numel() > 0
-            else k_rot_embed
-        )
+        q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
+        q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
+        k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
     else:
         cos_cut, sin_cut = cos[..., :head_dim], sin[..., :head_dim]
         q = (q * cos_cut.to(q.dtype)) + (_rotate_half(q) * sin_cut.to(q.dtype))
@@ -156,9 +145,7 @@ class LoRALinear(nn.Module):
         out = F.linear(x, w, b)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = (
-                self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            )
+            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
             out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
         return out
 
@@ -215,9 +202,7 @@ class MoBAAttention(BaseAttention):
                 getattr(config, "num_heads", kwargs.get("num_attention_heads", 4)),
             )
         )
-        self.hidden_size = int(
-            getattr(config, "hidden_size", kwargs.get("hidden_size", 768))
-        )
+        self.hidden_size = int(getattr(config, "hidden_size", kwargs.get("hidden_size", 768)))
         cfg_hd = getattr(config, "head_dim", None)
         self.head_dim = (
             int(cfg_hd)
@@ -226,9 +211,7 @@ class MoBAAttention(BaseAttention):
         )
         self.all_head_size = self.num_heads * self.head_dim
 
-        cfg_kv = getattr(
-            config, "num_key_value_heads", getattr(config, "num_kv_heads", None)
-        )
+        cfg_kv = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
         if cfg_kv is not None:
             self.num_kv_heads = int(cfg_kv)
         elif kwargs.get("num_kv_heads") is not None:
@@ -276,9 +259,7 @@ class MoBAAttention(BaseAttention):
         self.output_scale = nn.Parameter(torch.ones(1))
 
         dropout_p = float(
-            getattr(
-                config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)
-            )
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
         )
         self.dropout = nn.Dropout(dropout_p)
 
@@ -397,9 +378,7 @@ class MoBAAttention(BaseAttention):
 
         # 2. GPT-2 fused c_attn
         if hasattr(src, "c_attn") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             c_attn = src.c_attn
             base_c = getattr(c_attn, "base_layer", c_attn)
@@ -437,9 +416,7 @@ class MoBAAttention(BaseAttention):
 
         # 3. RoBERTa / BERT nested (MB-FIX-02: pass .data, not module)
         if hasattr(src, "self") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             s = src.self
             if hasattr(s, "query") and extracted["q"][0] is None:
@@ -461,11 +438,7 @@ class MoBAAttention(BaseAttention):
                     v_l.bias.data if getattr(v_l, "bias", None) is not None else None,
                 )
 
-        if (
-            hasattr(src, "output")
-            and hasattr(src.output, "dense")
-            and extracted["o"][0] is None
-        ):
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             d = getattr(src.output.dense, "base_layer", src.output.dense)
             extracted["o"] = (
                 d.weight.data,
@@ -512,8 +485,7 @@ class MoBAAttention(BaseAttention):
         if (
             hasattr(src, "self")
             and hasattr(src.self, "query")
-            or cls_name
-            in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
+            or cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
             or cls_name.endswith("SelfAttention")
             and not has_out_proj
             or cls_name.endswith("Attention")
@@ -571,9 +543,7 @@ class MoBAAttention(BaseAttention):
                                 target.bias.data.copy_(b)
                         elif src_out > out_d and src_out % out_d == 0:
                             rep = src_out // out_d
-                            target_w.data.copy_(
-                                w_oriented.view(out_d, rep, -1).mean(dim=1)
-                            )
+                            target_w.data.copy_(w_oriented.view(out_d, rep, -1).mean(dim=1))
                             if b is not None and target.bias is not None:
                                 target.bias.data.copy_(b.view(out_d, rep).mean(dim=1))
                         elif src_out < out_d and out_d % src_out == 0:
@@ -648,18 +618,8 @@ class MoBAAttention(BaseAttention):
         L_kv = kv_input.shape[1]
 
         Q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
-        K = (
-            self.k_proj(kv_input)
-            .view(B, L_kv, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V = (
-            self.v_proj(kv_input)
-            .view(B, L_kv, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        K = self.k_proj(kv_input).view(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V = self.v_proj(kv_input).view(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -728,9 +688,7 @@ class MoBAAttention(BaseAttention):
                         .contiguous()
                         .view(B, L, self.all_head_size)
                     )
-                    _sdpa_out = torch.nan_to_num(
-                        _sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4
-                    )
+                    _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
                     if self.is_nested_encoder:
                         return _sdpa_out * self.output_scale, None
                     out = self.out_proj(_sdpa_out)
@@ -739,16 +697,11 @@ class MoBAAttention(BaseAttention):
                     pass
 
             # Dense manual
-            scores = (
-                torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous())
-                * scale
-            )
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
             if is_causal:
                 causal_mask = (
                     torch.triu(
-                        torch.full(
-                            (L, L_kv), float("-inf"), device=device, dtype=torch.float32
-                        ),
+                        torch.full((L, L_kv), float("-inf"), device=device, dtype=torch.float32),
                         diagonal=1,
                     )
                     .unsqueeze(0)
@@ -769,9 +722,7 @@ class MoBAAttention(BaseAttention):
                 if head_mask.dim() == 1:
                     head_mask = head_mask.view(1, -1, 1, 1)
                 elif head_mask.dim() == 2:
-                    head_mask = head_mask.view(
-                        head_mask.shape[0], head_mask.shape[1], 1, 1
-                    )
+                    head_mask = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
                 elif head_mask.dim() == 3:
                     head_mask = head_mask.unsqueeze(1)  # interpret as (B, H, 1)
                 attn_probs = attn_probs * head_mask.to(attn_probs.dtype)
@@ -788,17 +739,13 @@ class MoBAAttention(BaseAttention):
                 if valid_mask is not None:
                     valid_mask_padded = F.pad(valid_mask, (0, pad), value=False)
                 else:
-                    valid_mask_padded = torch.ones(
-                        B, L + pad, device=device, dtype=torch.bool
-                    )
+                    valid_mask_padded = torch.ones(B, L + pad, device=device, dtype=torch.bool)
             else:
                 Q_pad, K_pad, V_pad = Q, K, V
                 if valid_mask is not None:
                     valid_mask_padded = valid_mask
                 else:
-                    valid_mask_padded = torch.ones(
-                        B, L, device=device, dtype=torch.bool
-                    )
+                    valid_mask_padded = torch.ones(B, L, device=device, dtype=torch.bool)
 
             Lp = L + pad
             nb = Lp // self.block_size
@@ -812,10 +759,7 @@ class MoBAAttention(BaseAttention):
             Q_mean = Qb.mean(dim=3)
             K_mean = Kb.mean(dim=3)
             block_scores = (
-                torch.matmul(
-                    Q_mean.float(), K_mean.float().transpose(-2, -1).contiguous()
-                )
-                * scale
+                torch.matmul(Q_mean.float(), K_mean.float().transpose(-2, -1).contiguous()) * scale
             )
 
             # MB-FIX-08: block-0 preservation
@@ -825,22 +769,18 @@ class MoBAAttention(BaseAttention):
             #   block 0 through causal masking.
             if not is_causal:
                 block_scores_for_topk = block_scores.clone()
-                block_scores_for_topk[:, :, :, 0] = (
-                    block_scores_for_topk[:, :, :, 0] + 1e4
-                )
+                block_scores_for_topk[:, :, :, 0] = block_scores_for_topk[:, :, :, 0] + 1e4
             else:
                 block_scores_for_topk = block_scores.clone()
                 # For causal: a query in block i can only attend to blocks j ≤ i.
                 # Mask blocks j > i to -inf.
                 causal_block = torch.triu(
-                    torch.full(
-                        (nb, nb), float("-inf"), device=device, dtype=torch.float32
-                    ),
+                    torch.full((nb, nb), float("-inf"), device=device, dtype=torch.float32),
                     diagonal=1,
                 )
-                block_scores_for_topk = block_scores_for_topk + causal_block.unsqueeze(
+                block_scores_for_topk = block_scores_for_topk + causal_block.unsqueeze(0).unsqueeze(
                     0
-                ).unsqueeze(0)
+                )
 
             top_k = min(self.top_k, nb)
             _, top_idx = block_scores_for_topk.topk(top_k, dim=-1)  # (B, H, nb, top_k)
@@ -856,25 +796,20 @@ class MoBAAttention(BaseAttention):
                 V_sel = torch.gather(Vb, 2, idx_exp).view(B, H, top_k * bs, d)
 
                 idx_mask_exp = idx.unsqueeze(-1).expand(-1, -1, -1, bs)
-                k_valid = torch.gather(valid_b_exp, 2, idx_mask_exp).reshape(
-                    B, H, 1, top_k * bs
-                )
+                k_valid = torch.gather(valid_b_exp, 2, idx_mask_exp).reshape(B, H, 1, top_k * bs)
 
                 Q_i = Qb[:, :, i]  # (B, H, bs, d)
                 scores_i = (
-                    torch.matmul(
-                        Q_i.float(), K_sel.float().transpose(-2, -1).contiguous()
-                    )
-                    * scale
+                    torch.matmul(Q_i.float(), K_sel.float().transpose(-2, -1).contiguous()) * scale
                 )
                 scores_i = scores_i.masked_fill(~k_valid, -1e4)
 
                 if is_causal:
                     q_pos = (i * bs + torch.arange(bs, device=device)).view(1, 1, bs, 1)
                     # absolute key positions for each of the top_k blocks
-                    k_offsets = idx.unsqueeze(-1) * bs + torch.arange(
-                        bs, device=device
-                    ).view(1, 1, 1, bs)
+                    k_offsets = idx.unsqueeze(-1) * bs + torch.arange(bs, device=device).view(
+                        1, 1, 1, bs
+                    )
                     k_pos = k_offsets.reshape(B, H, 1, top_k * bs)
                     invalid = k_pos > q_pos
                     scores_i = scores_i.masked_fill(invalid, -1e4)
@@ -886,9 +821,7 @@ class MoBAAttention(BaseAttention):
                 out_blocks[:, :, i] = torch.matmul(attn_i, V_sel)
 
             out_pad = out_blocks.view(B, H, Lp, d)[:, :, :L, :]
-            out = (
-                out_pad.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
-            )
+            out = out_pad.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
 
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
@@ -972,9 +905,7 @@ def inject_moba(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -1010,10 +941,7 @@ def inject_moba(
         # Double-injection guard
         if isinstance(src, MoBAAttention) or "MoBAAttention" in src.__class__.__name__:
             return None
-        if (
-            "DeltaNet" in src.__class__.__name__
-            or "LinearAttention" in src.__class__.__name__
-        ):
+        if "DeltaNet" in src.__class__.__name__ or "LinearAttention" in src.__class__.__name__:
             return None
 
         # MB-FIX-10: single config assignment
@@ -1038,9 +966,7 @@ def inject_moba(
                 getattr(comp_config, "block_size", 64) if comp_config else 64,
             )
         )
-        top_k = int(
-            kwargs.pop("top_k", getattr(comp_config, "top_k", 4) if comp_config else 4)
-        )
+        top_k = int(kwargs.pop("top_k", getattr(comp_config, "top_k", 4) if comp_config else 4))
         lora_rank = int(
             kwargs.pop(
                 "lora_rank",

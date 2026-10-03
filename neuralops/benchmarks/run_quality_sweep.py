@@ -428,9 +428,7 @@ def modules() -> list[str]:
                     LOG.debug("Failed to import %s: %s", p.stem, e)
 
     by_factory: dict[Any, list[str]] = {}
-    for name, factory in list(ATTENTION_REGISTRY.items()) + list(
-        COMPRESSOR_REGISTRY.items()
-    ):
+    for name, factory in list(ATTENTION_REGISTRY.items()) + list(COMPRESSOR_REGISTRY.items()):
         if name != "full" and not is_helper_module(name):
             by_factory.setdefault(factory, []).append(name)
 
@@ -446,11 +444,7 @@ def modules() -> list[str]:
 def fields(name: str) -> tuple[str, str | None]:
     if name in {"sst2", "cola"}:
         return ("sentence", None)
-    if (
-        name in {"ag_news", "agnews", "imdb"}
-        or "wikitext" in name.lower()
-        or name == "c4"
-    ):
+    if name in {"ag_news", "agnews", "imdb"} or "wikitext" in name.lower() or name == "c4":
         return ("text", None)
     if name == "mrpc":
         return ("sentence1", "sentence2")
@@ -510,9 +504,7 @@ def prepare_eval_batches(tokenizer, ds, name, seq_len, batch_size, device):
     return batches
 
 
-def prepare_train_batches(
-    tokenizer, ds, name, seq_len, batch_size, device, max_batches=10
-):
+def prepare_train_batches(tokenizer, ds, name, seq_len, batch_size, device, max_batches=10):
     batches = []
     end_idx = min(len(ds), max_batches * batch_size)
     for i in range(0, end_idx, batch_size):
@@ -584,9 +576,7 @@ def compute_compression_metrics(
             if any(h in m.__class__.__name__.lower() for h in _ATTN_CLASS_HINTS)
             and getattr(m, "is_custom_attention", False)
         )
-    lora_params = sum(
-        p.numel() for n, p in model.named_parameters() if "lora_" in n.lower()
-    )
+    lora_params = sum(p.numel() for n, p in model.named_parameters() if "lora_" in n.lower())
     raw_params_after = total_params_after - lora_params
 
     is_compression = module_type == "compressor" or (
@@ -594,9 +584,7 @@ def compute_compression_metrics(
     )
 
     if total_params_after > 0:
-        compression_rate_net = round(
-            total_params_before / max(1, total_params_after), 4
-        )
+        compression_rate_net = round(total_params_before / max(1, total_params_after), 4)
         compression_rate_raw = round(total_params_before / max(1, raw_params_after), 4)
         compression_rate = compression_rate_net if is_compression else 1.0
         compression_ratio_pct = (
@@ -610,25 +598,17 @@ def compute_compression_metrics(
 
     num_compressed_layers = comp_stats.get(
         "num_compressed",
-        comp_stats.get(
-            "num_compressed_layers", comp_stats.get("compressed_layers_count", 0)
-        ),
+        comp_stats.get("num_compressed_layers", comp_stats.get("compressed_layers_count", 0)),
     )
     if isinstance(comp_stats.get("compressed_layers"), (list, tuple)):
-        num_compressed_layers = max(
-            num_compressed_layers, len(comp_stats["compressed_layers"])
-        )
+        num_compressed_layers = max(num_compressed_layers, len(comp_stats["compressed_layers"]))
 
     num_fallback_layers = comp_stats.get(
         "num_fallback",
-        comp_stats.get(
-            "num_fallback_layers", comp_stats.get("fallback_layer_count", 0)
-        ),
+        comp_stats.get("num_fallback_layers", comp_stats.get("fallback_layer_count", 0)),
     )
     if isinstance(comp_stats.get("fallback_layers"), (list, tuple)):
-        num_fallback_layers = max(
-            num_fallback_layers, len(comp_stats["fallback_layers"])
-        )
+        num_fallback_layers = max(num_fallback_layers, len(comp_stats["fallback_layers"]))
 
     layer_ranks = dict(comp_stats.get("layer_ranks", {}))
     layer_errors = dict(comp_stats.get("layer_errors", {}))
@@ -650,19 +630,13 @@ def compute_compression_metrics(
                 pass
 
     err_values = list(layer_errors.values())
-    avg_reconstruction_error = (
-        round(sum(err_values) / len(err_values), 4) if err_values else None
-    )
+    avg_reconstruction_error = round(sum(err_values) / len(err_values), 4) if err_values else None
 
     if err_values and layer_ranks:
         weighted_sum = sum(
-            layer_errors[k] * layer_ranks.get(k, 1)
-            for k in layer_errors
-            if k in layer_ranks
+            layer_errors[k] * layer_ranks.get(k, 1) for k in layer_errors if k in layer_ranks
         )
-        total_rank = sum(
-            layer_ranks.get(k, 1) for k in layer_errors if k in layer_ranks
-        )
+        total_rank = sum(layer_ranks.get(k, 1) for k in layer_errors if k in layer_ranks)
         weighted_reconstruction_error = (
             round(weighted_sum / max(1, total_rank), 4)
             if total_rank > 0
@@ -687,9 +661,7 @@ def compute_compression_metrics(
                         orig_flops += 2 * in_f * out_f
                         fact_flops += 2 * r * (in_f + out_f)
             flops_reduction_pct = (
-                round((1.0 - (fact_flops / orig_flops)) * 100.0, 2)
-                if orig_flops > 0
-                else 0.0
+                round((1.0 - (fact_flops / orig_flops)) * 100.0, 2) if orig_flops > 0 else 0.0
             )
         else:
             flops_reduction_pct = 0.0
@@ -799,9 +771,7 @@ def collect_and_export_full_metrics(
         sparsity_ratio_pct = 0.0
 
     scalability: dict[str, Any] = {}
-    max_pos = (
-        getattr(getattr(model, "config", None), "max_position_embeddings", 2048) or 2048
-    )
+    max_pos = getattr(getattr(model, "config", None), "max_position_embeddings", 2048) or 2048
     if device_type == "cuda":
         for test_len in [128, 256, 512, 1024]:
             if test_len > max_pos - 2:
@@ -846,15 +816,11 @@ def collect_and_export_full_metrics(
             "flops_reduction_pct": comp.get("flops_reduction_pct", 0.0),
             "num_compressed_layers": comp.get("num_compressed_layers", 0),
             "num_fallback_layers": comp.get("num_fallback_layers", 0),
-            "num_injected_attention_layers": comp.get(
-                "num_injected_attention_layers", 0
-            ),
+            "num_injected_attention_layers": comp.get("num_injected_attention_layers", 0),
             "lora_params": comp.get("lora_params", 0),
             "avg_reconstruction_error": comp.get("avg_reconstruction_error"),
             "weighted_reconstruction_error": comp.get("weighted_reconstruction_error"),
-            "per_layer_reconstruction_errors": comp.get(
-                "per_layer_reconstruction_errors", {}
-            ),
+            "per_layer_reconstruction_errors": comp.get("per_layer_reconstruction_errors", {}),
             "per_layer_ranks": comp.get("per_layer_ranks", {}),
         },
         "hardware": {
@@ -871,9 +837,7 @@ def collect_and_export_full_metrics(
         "git_sha": _get_git_sha(),
         "git_dirty": _get_git_dirty(),
         "torch_version": torch.__version__,
-        "transformers_version": getattr(
-            __import__("transformers"), "__version__", "unknown"
-        ),
+        "transformers_version": getattr(__import__("transformers"), "__version__", "unknown"),
         "cuda_version": torch.version.cuda if torch.cuda.is_available() else None,
         "timestamp": _now_iso(),
     }
@@ -926,12 +890,8 @@ def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=
         batch_trg_lens = trg_lens[b_idx : b_idx + eval_bs]
         max_c_len = max(c.size(0) for c in batch_chunks)
 
-        input_batch = torch.full(
-            (len(batch_chunks), max_c_len), pad_id, dtype=torch.long
-        )
-        target_batch = torch.full(
-            (len(batch_chunks), max_c_len), -100, dtype=torch.long
-        )
+        input_batch = torch.full((len(batch_chunks), max_c_len), pad_id, dtype=torch.long)
+        target_batch = torch.full((len(batch_chunks), max_c_len), -100, dtype=torch.long)
 
         for j, (c, t_len) in enumerate(zip(batch_chunks, batch_trg_lens)):
             c_len = c.size(0)
@@ -953,9 +913,7 @@ def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=
                 enabled=fp16 and device_type == "cuda",
             ):
                 attn_mask = (input_batch != pad_id).long()
-                outputs = model(
-                    input_batch, attention_mask=attn_mask, labels=target_batch
-                )
+                outputs = model(input_batch, attention_mask=attn_mask, labels=target_batch)
 
                 loss = outputs.loss.float()
         except Exception as e:
@@ -997,14 +955,10 @@ def evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=
         "throughput": total_tokens / (t1 - t0) if t1 > t0 else 0.0,
         "tokens_per_sec": total_tokens / (t1 - t0) if t1 > t0 else 0.0,
         "vram_mb": (
-            torch.cuda.max_memory_allocated(device) / (1024**2)
-            if device_type == "cuda"
-            else 0.0
+            torch.cuda.max_memory_allocated(device) / (1024**2) if device_type == "cuda" else 0.0
         ),
         "peak_vram_mb": (
-            torch.cuda.max_memory_allocated(device) / (1024**2)
-            if device_type == "cuda"
-            else 0.0
+            torch.cuda.max_memory_allocated(device) / (1024**2) if device_type == "cuda" else 0.0
         ),
         "latency_ms_per_token": (
             ((t1 - t0) / max(1, total_tokens) * 1000.0) if total_tokens > 0 else 0.0
@@ -1026,9 +980,7 @@ def evaluate_comprehensive(
     precomputed_batches=None,
 ):
     if "wikitext" in name.lower() or name == "c4":
-        return evaluate_perplexity(
-            model, tokenizer, ds, seq_len, batch_size, device, fp16=fp16
-        )
+        return evaluate_perplexity(model, tokenizer, ds, seq_len, batch_size, device, fp16=fp16)
 
     model.eval()
     correct = total = 0
@@ -1091,9 +1043,7 @@ def evaluate_comprehensive(
                     ):
                         sub_out = model(**sub_x)
                         logits_list.append(sub_out.logits)
-                        loss_sum += loss_fn(sub_out.logits, sub_y).item() * sub_y.size(
-                            0
-                        )
+                        loss_sum += loss_fn(sub_out.logits, sub_y).item() * sub_y.size(0)
                 logits = torch.cat(logits_list, dim=0)
                 loss_val = float(loss_sum / b_size)
             else:
@@ -1145,28 +1095,18 @@ def evaluate_comprehensive(
             }
         if n_classes <= 2:
             f1 = float(
-                f1_score(
-                    all_targets_flat, all_preds_flat, average="binary", zero_division=0
-                )
+                f1_score(all_targets_flat, all_preds_flat, average="binary", zero_division=0)
             )
         else:
-            f1 = float(
-                f1_score(
-                    all_targets_flat, all_preds_flat, average="macro", zero_division=0
-                )
-            )
+            f1 = float(f1_score(all_targets_flat, all_preds_flat, average="macro", zero_division=0))
         f1_macro = float(
             f1_score(all_targets_flat, all_preds_flat, average="macro", zero_division=0)
         )
         precision = float(
-            precision_score(
-                all_targets_flat, all_preds_flat, average="macro", zero_division=0
-            )
+            precision_score(all_targets_flat, all_preds_flat, average="macro", zero_division=0)
         )
         recall = float(
-            recall_score(
-                all_targets_flat, all_preds_flat, average="macro", zero_division=0
-            )
+            recall_score(all_targets_flat, all_preds_flat, average="macro", zero_division=0)
         )
 
         class_labels = sorted(unique_classes)
@@ -1240,9 +1180,7 @@ def evaluate(
 # ============================================================================
 # Fine-tuning
 # ============================================================================
-def finetune(
-    model, tokenizer, train, name, steps, seq_len, batch_size, device, fp16, lr=1e-4
-):
+def finetune(model, tokenizer, train, name, steps, seq_len, batch_size, device, fp16, lr=1e-4):
     for p in model.parameters():
         p.requires_grad = False
     head = next(
@@ -1260,11 +1198,7 @@ def finetune(
     )
     if head is None:
         head = next(
-            (
-                sub
-                for name_, sub in model.named_modules()
-                if name_.endswith("classification_head")
-            ),
+            (sub for name_, sub in model.named_modules() if name_.endswith("classification_head")),
             None,
         )
     if head is None:
@@ -1280,9 +1214,7 @@ def finetune(
         i = (step * batch_size) % len(train)
         x, y = encode(tokenizer, train[i : i + batch_size], name, seq_len, device)
         opt.zero_grad(set_to_none=True)
-        with torch.autocast(
-            "cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"
-        ):
+        with torch.autocast("cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"):
             loss = model(**x, labels=y).loss
         scaler.scale(loss).backward()
         scaler.step(opt)
@@ -1332,9 +1264,7 @@ def finetune_with_kd(
             cx, cy = encode(tokenizer, train[i : i + batch_size], name, seq_len, device)
 
         opt.zero_grad(set_to_none=True)
-        with torch.autocast(
-            "cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"
-        ):
+        with torch.autocast("cuda", dtype=torch.float16, enabled=fp16 and device.type == "cuda"):
             student_out = model(**cx, labels=cy)
             student_logits = student_out.logits
             ce_loss = student_out.loss
@@ -1345,9 +1275,9 @@ def finetune_with_kd(
                     teacher_logits = teacher_out.logits.detach()
                 student_log_probs = F.log_softmax(student_logits / temperature, dim=-1)
                 teacher_probs = F.softmax(teacher_logits / temperature, dim=-1)
-                kl_loss = F.kl_div(
-                    student_log_probs, teacher_probs, reduction="batchmean"
-                ) * (temperature**2)
+                kl_loss = F.kl_div(student_log_probs, teacher_probs, reduction="batchmean") * (
+                    temperature**2
+                )
                 loss = (1.0 - alpha) * ce_loss + alpha * kl_loss
             else:
                 loss = ce_loss
@@ -1524,9 +1454,7 @@ def finetune_lora(
                                 get_total_span_loss,
                             )
 
-                            span_reg = get_total_span_loss(
-                                model, lambda_span=span_lambda
-                            )
+                            span_reg = get_total_span_loss(model, lambda_span=span_lambda)
                             loss_chunk = loss_chunk + span_reg * frac
                         except Exception:
                             pass
@@ -1632,9 +1560,7 @@ def _auto_parallel_and_batch(
             parallel = 1
 
     if free_gb < 3.0 and torch.cuda.is_available():
-        LOG.info(
-            "Free VRAM < 3.0 GB (%.2f GB) — sleeping 10s for VRAM to settle...", free_gb
-        )
+        LOG.info("Free VRAM < 3.0 GB (%.2f GB) — sleeping 10s for VRAM to settle...", free_gb)
         time.sleep(10)
 
     return parallel, batch
@@ -1755,13 +1681,13 @@ def parse_args(argv=None):
     ap.add_argument("--aasvd_max_error", type=float, default=0.85)
     ap.add_argument(
         "--aasvd_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--aasvd_ema_beta", type=float, default=0.9)
     ap.add_argument(
         "--aasvd_fallback_to_original",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--group_size", type=int, default=3)
@@ -1777,7 +1703,7 @@ def parse_args(argv=None):
     ap.add_argument("--a3_max_error", type=float, default=None)
     ap.add_argument(
         "--a3_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--span_lambda", type=float, default=0.0)
@@ -1785,13 +1711,13 @@ def parse_args(argv=None):
     ap.add_argument("--adaptive_ranks_energy_threshold", type=float, default=0.92)
     ap.add_argument(
         "--adaptive_ranks_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--adasvd_max_error", type=float, default=0.70)
     ap.add_argument(
         "--adasvd_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--adasvd_min_rank", type=int, default=16)
@@ -1799,13 +1725,13 @@ def parse_args(argv=None):
     ap.add_argument("--admm_quant_bits", type=int, default=4)
     ap.add_argument(
         "--admm_structured_24",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--admm_max_error", type=float, default=0.45)
     ap.add_argument(
         "--admm_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--admm_rho1", type=float, default=0.1)
@@ -1814,13 +1740,13 @@ def parse_args(argv=None):
     ap.add_argument("--admm_pruner_sparsity", type=float, default=0.5)
     ap.add_argument(
         "--admm_pruner_structured_24",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--admm_pruner_max_error", type=float, default=0.45)
     ap.add_argument(
         "--admm_pruner_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--admm_pruner_lambda_distill", type=float, default=0.1)
@@ -1831,51 +1757,51 @@ def parse_args(argv=None):
     ap.add_argument("--armor_sparsity", type=float, default=0.5)
     ap.add_argument(
         "--armor_structured_24",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--armor_max_error", type=float, default=0.35)
     ap.add_argument(
         "--armor_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument(
         "--armor_decouple",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--armor_lora_alpha", type=float, default=1.0)
     ap.add_argument(
         "--armor_skip_attention_qkv",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=False,
     )
     ap.add_argument("--astro_bits", type=int, default=8)
     ap.add_argument(
         "--astro_symmetric",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument(
         "--astro_per_channel",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=False,
     )
     ap.add_argument(
         "--astro_use_ste",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=False,
     )
     ap.add_argument("--astro_max_error", type=float, default=0.20)
     ap.add_argument(
         "--astro_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument(
         "--astro_use_fisher_adaptive_bits",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=False,
     )
     ap.add_argument("--astro_target_avg_bits", type=float, default=6.0)
@@ -1887,14 +1813,14 @@ def parse_args(argv=None):
     ap.add_argument("--cachenotes_max_error", type=float, default=0.35)
     ap.add_argument(
         "--cachenotes_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--cachenotes_lora_r", type=int, default=16)
     ap.add_argument("--cachenotes_lora_alpha", type=float, default=1.0)
     ap.add_argument(
         "--cachenotes_skip_attention_qkv",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--come_target_layers", type=int, default=None)
@@ -1904,12 +1830,12 @@ def parse_args(argv=None):
     ap.add_argument("--come_lora_alpha", type=float, default=1.0)
     ap.add_argument(
         "--come_skip_attention_qkv",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument(
         "--come_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=False,
     )
     ap.add_argument("--coopq_bits", type=int, default=4)
@@ -1917,29 +1843,29 @@ def parse_args(argv=None):
     ap.add_argument("--coopq_max_bits", type=int, default=8)
     ap.add_argument(
         "--coopq_symmetric",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=False,
     )
     ap.add_argument(
         "--coopq_per_channel",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument(
         "--coopq_use_ste",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument(
         "--coopq_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--cr_rank", type=int, default=32)
     ap.add_argument("--cr_max_error", type=float, default=0.35)
     ap.add_argument(
         "--cr_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--cur_rank", type=int, default=32)
@@ -1948,13 +1874,13 @@ def parse_args(argv=None):
     ap.add_argument("--cur_max_error", type=float, default=0.35)
     ap.add_argument(
         "--cur_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--cur_moe_rank", type=int, default=32)
     ap.add_argument(
         "--cur_moe_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--delta_kv_rank", type=int, default=16)
@@ -1962,14 +1888,14 @@ def parse_args(argv=None):
     ap.add_argument("--delta_kv_max_error", type=float, default=0.35)
     ap.add_argument(
         "--delta_kv_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--direct_svd_rank", type=int, default=128)
     ap.add_argument("--direct_svd_max_error", type=float, default=0.35)
     ap.add_argument(
         "--direct_svd_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--dobi_rank", type=int, default=None)
@@ -1978,7 +1904,7 @@ def parse_args(argv=None):
     ap.add_argument("--dobi_max_error", type=float, default=0.35)
     ap.add_argument(
         "--dobi_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--dynamic_min_rank", type=int, default=16)
@@ -1987,20 +1913,20 @@ def parse_args(argv=None):
     ap.add_argument("--dynamic_max_error", type=float, default=0.35)
     ap.add_argument(
         "--dynamic_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--enlighten_rank", type=int, default=128)
     ap.add_argument("--enlighten_sparsity", type=float, default=0.5)
     ap.add_argument(
         "--enlighten_structured_24",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--enlighten_max_error", type=float, default=0.35)
     ap.add_argument(
         "--enlighten_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--entropy_budget_rank", type=int, default=None)
@@ -2008,14 +1934,14 @@ def parse_args(argv=None):
     ap.add_argument("--entropy_budget_max_error", type=float, default=0.35)
     ap.add_argument(
         "--entropy_budget_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--erc_allowed_error", type=float, default=0.20)
     ap.add_argument("--erc_max_error", type=float, default=0.35)
     ap.add_argument(
         "--erc_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--erc_rank", type=int, default=None)
@@ -2023,45 +1949,45 @@ def parse_args(argv=None):
     ap.add_argument("--faq_alpha", type=float, default=0.5)
     ap.add_argument(
         "--faq_symmetric",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument(
         "--faq_use_ste",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--faq_lora_r", type=int, default=16)
     ap.add_argument("--faq_max_error", type=float, default=0.35)
     ap.add_argument(
         "--faq_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--flap_sparsity", type=float, default=0.2)
     ap.add_argument("--flap_metric_type", type=str, default="WIFV")
     ap.add_argument(
         "--flap_structured_24",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=False,
     )
     ap.add_argument("--flap_max_error", type=float, default=0.35)
     ap.add_argument(
         "--flap_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--flat_llm_keep_ratio", type=float, default=0.7)
     ap.add_argument("--flat_llm_damping", type=float, default=1e-4)
     ap.add_argument(
         "--flat_llm_structured_24",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=False,
     )
     ap.add_argument("--flat_llm_max_error", type=float, default=0.35)
     ap.add_argument(
         "--flat_llm_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--frandi_rank", type=int, default=128)
@@ -2070,7 +1996,7 @@ def parse_args(argv=None):
     ap.add_argument("--frandi_max_error", type=float, default=0.35)
     ap.add_argument(
         "--frandi_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--grecodec_rank", type=int, default=128)
@@ -2079,40 +2005,40 @@ def parse_args(argv=None):
     ap.add_argument("--grecodec_max_error", type=float, default=0.35)
     ap.add_argument(
         "--grecodec_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--hashed_net_buckets", type=int, default=65536)
     ap.add_argument(
         "--hashed_net_use_sign",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--hashed_net_lora_r", type=int, default=16)
     ap.add_argument("--hashed_net_max_error", type=float, default=0.35)
     ap.add_argument(
         "--hashed_net_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--huffman_quantize_bits", type=int, default=8)
     ap.add_argument("--huffman_max_error", type=float, default=0.20)
     ap.add_argument(
         "--huffman_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--hybrid_svd_rank", type=int, default=128)
     ap.add_argument(
         "--hybrid_svd_use_full",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=False,
     )
     ap.add_argument("--hybrid_svd_lora_r", type=int, default=16)
     ap.add_argument("--hybrid_svd_max_error", type=float, default=0.55)
     ap.add_argument(
         "--hybrid_svd_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--hybridkv_budget", type=float, default=0.3)
@@ -2122,7 +2048,7 @@ def parse_args(argv=None):
     ap.add_argument("--hybridkv_recent_window", type=int, default=32)
     ap.add_argument(
         "--hybridkv_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--kmeans_clusters", type=int, default=256)
@@ -2130,21 +2056,21 @@ def parse_args(argv=None):
     ap.add_argument("--kmeans_max_error", type=float, default=0.20)
     ap.add_argument(
         "--kmeans_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--kronecker_rank", type=int, default=128)
     ap.add_argument("--kronecker_max_error", type=float, default=0.50)
     ap.add_argument(
         "--kronecker_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--tt_ranks", type=str, default="1,2,2,1")
     ap.add_argument("--kronecker_tt_lora_max_error", type=float, default=0.50)
     ap.add_argument(
         "--kronecker_tt_lora_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--kvtc_bits", type=int, default=4)
@@ -2152,32 +2078,32 @@ def parse_args(argv=None):
     ap.add_argument("--kvtc_max_error", type=float, default=0.20)
     ap.add_argument(
         "--kvtc_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument(
         "--kvtc_fallback_to_original",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--liftr_gelu_coefficient", type=float, default=0.8)
     ap.add_argument(
         "--liftr_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--lillama_rank_ratio", type=float, default=0.5)
     ap.add_argument("--lillama_max_error", type=float, default=0.50)
     ap.add_argument(
         "--lillama_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
     ap.add_argument("--lsc_sparsity", type=float, default=0.3)
     ap.add_argument("--lsc_max_error", type=float, default=0.50)
     ap.add_argument(
         "--lsc_target_attention_only",
-        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        type=lambda x: str(x).lower() in ["true", "1", "yes"],
         default=True,
     )
 
@@ -2196,9 +2122,7 @@ def parse_args(argv=None):
 
     args, unknown_args = ap.parse_known_args(raw_argv)
     args.unknown_args = unknown_args
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-    )
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     extended_args = {}
     if unknown_args:
         LOG.info(
@@ -2211,9 +2135,7 @@ def parse_args(argv=None):
             flag = unknown_args[i]
             if flag.startswith("--"):
                 key = flag[2:].replace("-", "_")
-                if i + 1 < len(unknown_args) and not unknown_args[i + 1].startswith(
-                    "--"
-                ):
+                if i + 1 < len(unknown_args) and not unknown_args[i + 1].startswith("--"):
                     val = unknown_args[i + 1]
                     if val.lower() in ("true", "1", "yes"):
                         parsed_val = True
@@ -2355,8 +2277,7 @@ def _run_candidate_pipeline(
     injected = False
     active_opt = (
         "muon"
-        if getattr(args, "use_muon", False)
-        or getattr(args, "optimizer", "adamw") == "muon"
+        if getattr(args, "use_muon", False) or getattr(args, "optimizer", "adamw") == "muon"
         else "adamw"
     )
     path_name = ""
@@ -2406,40 +2327,30 @@ def _run_candidate_pipeline(
                 model.config.aasvd_max_error = args.aasvd_max_error
                 model.config.max_error = args.aasvd_max_error
             if getattr(args, "aasvd_target_attention_only", None) is not None:
-                model.config.aasvd_target_attention_only = (
-                    args.aasvd_target_attention_only
-                )
+                model.config.aasvd_target_attention_only = args.aasvd_target_attention_only
                 model.config.target_attention_only = args.aasvd_target_attention_only
             if getattr(args, "aasvd_ema_beta", None) is not None:
                 model.config.aasvd_ema_beta = args.aasvd_ema_beta
                 model.config.ema_beta = args.aasvd_ema_beta
             if getattr(args, "aasvd_fallback_to_original", None) is not None:
-                model.config.aasvd_fallback_to_original = (
-                    args.aasvd_fallback_to_original
-                )
+                model.config.aasvd_fallback_to_original = args.aasvd_fallback_to_original
                 model.config.fallback_to_original = args.aasvd_fallback_to_original
             if getattr(args, "adaptive_ranks_max_error", None) is not None:
                 model.config.adaptive_ranks_max_error = args.adaptive_ranks_max_error
                 model.config.max_error = args.adaptive_ranks_max_error
             if getattr(args, "adaptive_ranks_energy_threshold", None) is not None:
-                model.config.adaptive_ranks_energy_threshold = (
-                    args.adaptive_ranks_energy_threshold
-                )
+                model.config.adaptive_ranks_energy_threshold = args.adaptive_ranks_energy_threshold
                 model.config.energy_threshold = args.adaptive_ranks_energy_threshold
             if getattr(args, "adaptive_ranks_target_attention_only", None) is not None:
                 model.config.adaptive_ranks_target_attention_only = (
                     args.adaptive_ranks_target_attention_only
                 )
-                model.config.target_attention_only = (
-                    args.adaptive_ranks_target_attention_only
-                )
+                model.config.target_attention_only = args.adaptive_ranks_target_attention_only
             if getattr(args, "adasvd_max_error", None) is not None:
                 model.config.adasvd_max_error = args.adasvd_max_error
                 model.config.max_error = args.adasvd_max_error
             if getattr(args, "adasvd_target_attention_only", None) is not None:
-                model.config.adasvd_target_attention_only = (
-                    args.adasvd_target_attention_only
-                )
+                model.config.adasvd_target_attention_only = args.adasvd_target_attention_only
                 model.config.target_attention_only = args.adasvd_target_attention_only
             if getattr(args, "adasvd_min_rank", None) is not None:
                 model.config.adasvd_min_rank = args.adasvd_min_rank
@@ -2457,9 +2368,7 @@ def _run_candidate_pipeline(
                 model.config.admm_max_error = args.admm_max_error
                 model.config.max_error = args.admm_max_error
             if getattr(args, "admm_target_attention_only", None) is not None:
-                model.config.admm_target_attention_only = (
-                    args.admm_target_attention_only
-                )
+                model.config.admm_target_attention_only = args.admm_target_attention_only
                 model.config.target_attention_only = args.admm_target_attention_only
             if getattr(args, "admm_rho1", None) is not None:
                 model.config.admm_rho1 = args.admm_rho1
@@ -2480,18 +2389,12 @@ def _run_candidate_pipeline(
                 model.config.admm_pruner_target_attention_only = (
                     args.admm_pruner_target_attention_only
                 )
-                model.config.target_attention_only = (
-                    args.admm_pruner_target_attention_only
-                )
+                model.config.target_attention_only = args.admm_pruner_target_attention_only
             if getattr(args, "admm_pruner_lambda_distill", None) is not None:
-                model.config.admm_pruner_lambda_distill = (
-                    args.admm_pruner_lambda_distill
-                )
+                model.config.admm_pruner_lambda_distill = args.admm_pruner_lambda_distill
                 model.config.lambda_distill = args.admm_pruner_lambda_distill
             if getattr(args, "admm_pruner_distill_batch_size", None) is not None:
-                model.config.admm_pruner_distill_batch_size = (
-                    args.admm_pruner_distill_batch_size
-                )
+                model.config.admm_pruner_distill_batch_size = args.admm_pruner_distill_batch_size
                 model.config.distill_batch_size = args.admm_pruner_distill_batch_size
             if getattr(args, "admm_pruner_rho", None) is not None:
                 model.config.admm_pruner_rho = args.admm_pruner_rho
@@ -2510,9 +2413,7 @@ def _run_candidate_pipeline(
                 model.config.armor_max_error = args.armor_max_error
                 model.config.max_error = args.armor_max_error
             if getattr(args, "armor_target_attention_only", None) is not None:
-                model.config.armor_target_attention_only = (
-                    args.armor_target_attention_only
-                )
+                model.config.armor_target_attention_only = args.armor_target_attention_only
                 model.config.target_attention_only = args.armor_target_attention_only
             if getattr(args, "armor_decouple", None) is not None:
                 model.config.armor_decouple = args.armor_decouple
@@ -2539,17 +2440,11 @@ def _run_candidate_pipeline(
                 model.config.astro_max_error = args.astro_max_error
                 model.config.max_error = args.astro_max_error
             if getattr(args, "astro_target_attention_only", None) is not None:
-                model.config.astro_target_attention_only = (
-                    args.astro_target_attention_only
-                )
+                model.config.astro_target_attention_only = args.astro_target_attention_only
                 model.config.target_attention_only = args.astro_target_attention_only
             if getattr(args, "astro_use_fisher_adaptive_bits", None) is not None:
-                model.config.astro_use_fisher_adaptive_bits = (
-                    args.astro_use_fisher_adaptive_bits
-                )
-                model.config.use_fisher_adaptive_bits = (
-                    args.astro_use_fisher_adaptive_bits
-                )
+                model.config.astro_use_fisher_adaptive_bits = args.astro_use_fisher_adaptive_bits
+                model.config.use_fisher_adaptive_bits = args.astro_use_fisher_adaptive_bits
             if getattr(args, "astro_target_avg_bits", None) is not None:
                 model.config.astro_target_avg_bits = args.astro_target_avg_bits
                 model.config.target_avg_bits = args.astro_target_avg_bits
@@ -2575,9 +2470,7 @@ def _run_candidate_pipeline(
                 model.config.cachenotes_target_attention_only = (
                     args.cachenotes_target_attention_only
                 )
-                model.config.target_attention_only = (
-                    args.cachenotes_target_attention_only
-                )
+                model.config.target_attention_only = args.cachenotes_target_attention_only
             if getattr(args, "cachenotes_lora_r", None) is not None:
                 model.config.cachenotes_lora_r = args.cachenotes_lora_r
                 model.config.lora_r = args.cachenotes_lora_r
@@ -2586,9 +2479,7 @@ def _run_candidate_pipeline(
                 model.config.cachenotes_lora_alpha = args.cachenotes_lora_alpha
                 model.config.lora_alpha = args.cachenotes_lora_alpha
             if getattr(args, "cachenotes_skip_attention_qkv", None) is not None:
-                model.config.cachenotes_skip_attention_qkv = (
-                    args.cachenotes_skip_attention_qkv
-                )
+                model.config.cachenotes_skip_attention_qkv = args.cachenotes_skip_attention_qkv
                 model.config.skip_attention_qkv = args.cachenotes_skip_attention_qkv
             if getattr(args, "come_target_layers", None) is not None:
                 model.config.come_target_layers = args.come_target_layers
@@ -2610,9 +2501,7 @@ def _run_candidate_pipeline(
                 model.config.come_skip_attention_qkv = args.come_skip_attention_qkv
                 model.config.skip_attention_qkv = args.come_skip_attention_qkv
             if getattr(args, "come_target_attention_only", None) is not None:
-                model.config.come_target_attention_only = (
-                    args.come_target_attention_only
-                )
+                model.config.come_target_attention_only = args.come_target_attention_only
                 model.config.target_attention_only = args.come_target_attention_only
             # CoopQ
             if getattr(args, "coopq_bits", None) is not None:
@@ -2634,9 +2523,7 @@ def _run_candidate_pipeline(
                 model.config.coopq_use_ste = args.coopq_use_ste
                 model.config.use_ste = args.coopq_use_ste
             if getattr(args, "coopq_target_attention_only", None) is not None:
-                model.config.coopq_target_attention_only = (
-                    args.coopq_target_attention_only
-                )
+                model.config.coopq_target_attention_only = args.coopq_target_attention_only
                 model.config.target_attention_only = args.coopq_target_attention_only
             # CR
             if getattr(args, "cr_rank", None) is not None:
@@ -2669,9 +2556,7 @@ def _run_candidate_pipeline(
                 model.config.cur_moe_rank = args.cur_moe_rank
                 model.config.rank = args.cur_moe_rank
             if getattr(args, "cur_moe_target_attention_only", None) is not None:
-                model.config.cur_moe_target_attention_only = (
-                    args.cur_moe_target_attention_only
-                )
+                model.config.cur_moe_target_attention_only = args.cur_moe_target_attention_only
                 model.config.target_attention_only = args.cur_moe_target_attention_only
             # DeltaKV
             if getattr(args, "delta_kv_rank", None) is not None:
@@ -2684,9 +2569,7 @@ def _run_candidate_pipeline(
                 model.config.delta_kv_max_error = args.delta_kv_max_error
                 model.config.max_error = args.delta_kv_max_error
             if getattr(args, "delta_kv_target_attention_only", None) is not None:
-                model.config.delta_kv_target_attention_only = (
-                    args.delta_kv_target_attention_only
-                )
+                model.config.delta_kv_target_attention_only = args.delta_kv_target_attention_only
                 model.config.target_attention_only = args.delta_kv_target_attention_only
             # DirectSVD
             if getattr(args, "direct_svd_rank", None) is not None:
@@ -2699,9 +2582,7 @@ def _run_candidate_pipeline(
                 model.config.direct_svd_target_attention_only = (
                     args.direct_svd_target_attention_only
                 )
-                model.config.target_attention_only = (
-                    args.direct_svd_target_attention_only
-                )
+                model.config.target_attention_only = args.direct_svd_target_attention_only
             # Dobi-SVD
             if getattr(args, "dobi_rank", None) is not None:
                 model.config.dobi_rank = args.dobi_rank
@@ -2716,9 +2597,7 @@ def _run_candidate_pipeline(
                 model.config.dobi_max_error = args.dobi_max_error
                 model.config.max_error = args.dobi_max_error
             if getattr(args, "dobi_target_attention_only", None) is not None:
-                model.config.dobi_target_attention_only = (
-                    args.dobi_target_attention_only
-                )
+                model.config.dobi_target_attention_only = args.dobi_target_attention_only
                 model.config.target_attention_only = args.dobi_target_attention_only
             # Dynamic Entropy SVD
             if getattr(args, "dynamic_min_rank", None) is not None:
@@ -2728,17 +2607,13 @@ def _run_candidate_pipeline(
                 model.config.dynamic_max_rank = args.dynamic_max_rank
                 model.config.max_rank = args.dynamic_max_rank
             if getattr(args, "dynamic_target_param_ratio", None) is not None:
-                model.config.dynamic_target_param_ratio = (
-                    args.dynamic_target_param_ratio
-                )
+                model.config.dynamic_target_param_ratio = args.dynamic_target_param_ratio
                 model.config.target_param_ratio = args.dynamic_target_param_ratio
             if getattr(args, "dynamic_max_error", None) is not None:
                 model.config.dynamic_max_error = args.dynamic_max_error
                 model.config.max_error = args.dynamic_max_error
             if getattr(args, "dynamic_target_attention_only", None) is not None:
-                model.config.dynamic_target_attention_only = (
-                    args.dynamic_target_attention_only
-                )
+                model.config.dynamic_target_attention_only = args.dynamic_target_attention_only
                 model.config.target_attention_only = args.dynamic_target_attention_only
             # ENLighten
             if getattr(args, "enlighten_rank", None) is not None:
@@ -2754,12 +2629,8 @@ def _run_candidate_pipeline(
                 model.config.enlighten_max_error = args.enlighten_max_error
                 model.config.max_error = args.enlighten_max_error
             if getattr(args, "enlighten_target_attention_only", None) is not None:
-                model.config.enlighten_target_attention_only = (
-                    args.enlighten_target_attention_only
-                )
-                model.config.target_attention_only = (
-                    args.enlighten_target_attention_only
-                )
+                model.config.enlighten_target_attention_only = args.enlighten_target_attention_only
+                model.config.target_attention_only = args.enlighten_target_attention_only
             # Entropy Budget SVD
             if getattr(args, "entropy_budget_rank", None) is not None:
                 model.config.entropy_budget_rank = args.entropy_budget_rank
@@ -2776,9 +2647,7 @@ def _run_candidate_pipeline(
                 model.config.entropy_budget_target_attention_only = (
                     args.entropy_budget_target_attention_only
                 )
-                model.config.target_attention_only = (
-                    args.entropy_budget_target_attention_only
-                )
+                model.config.target_attention_only = args.entropy_budget_target_attention_only
             # ERC-SVD
             if getattr(args, "erc_allowed_error", None) is not None:
                 model.config.erc_allowed_error = args.erc_allowed_error
@@ -2828,9 +2697,7 @@ def _run_candidate_pipeline(
                 model.config.flap_max_error = args.flap_max_error
                 model.config.max_error = args.flap_max_error
             if getattr(args, "flap_target_attention_only", None) is not None:
-                model.config.flap_target_attention_only = (
-                    args.flap_target_attention_only
-                )
+                model.config.flap_target_attention_only = args.flap_target_attention_only
                 model.config.target_attention_only = args.flap_target_attention_only
             # FLAT-LLM
             if getattr(args, "flat_llm_keep_ratio", None) is not None:
@@ -2846,9 +2713,7 @@ def _run_candidate_pipeline(
                 model.config.flat_llm_max_error = args.flat_llm_max_error
                 model.config.max_error = args.flat_llm_max_error
             if getattr(args, "flat_llm_target_attention_only", None) is not None:
-                model.config.flat_llm_target_attention_only = (
-                    args.flat_llm_target_attention_only
-                )
+                model.config.flat_llm_target_attention_only = args.flat_llm_target_attention_only
                 model.config.target_attention_only = args.flat_llm_target_attention_only
             # FRanDI
             if getattr(args, "frandi_rank", None) is not None:
@@ -2864,9 +2729,7 @@ def _run_candidate_pipeline(
                 model.config.frandi_max_error = args.frandi_max_error
                 model.config.max_error = args.frandi_max_error
             if getattr(args, "frandi_target_attention_only", None) is not None:
-                model.config.frandi_target_attention_only = (
-                    args.frandi_target_attention_only
-                )
+                model.config.frandi_target_attention_only = args.frandi_target_attention_only
                 model.config.target_attention_only = args.frandi_target_attention_only
             # GreCoDeC
             if getattr(args, "grecodec_rank", None) is not None:
@@ -2882,9 +2745,7 @@ def _run_candidate_pipeline(
                 model.config.grecodec_max_error = args.grecodec_max_error
                 model.config.max_error = args.grecodec_max_error
             if getattr(args, "grecodec_target_attention_only", None) is not None:
-                model.config.grecodec_target_attention_only = (
-                    args.grecodec_target_attention_only
-                )
+                model.config.grecodec_target_attention_only = args.grecodec_target_attention_only
                 model.config.target_attention_only = args.grecodec_target_attention_only
             # HashedNets & HashedNet
             if getattr(args, "hashed_net_buckets", None) is not None:
@@ -2903,9 +2764,7 @@ def _run_candidate_pipeline(
                 model.config.hashed_net_target_attention_only = (
                     args.hashed_net_target_attention_only
                 )
-                model.config.target_attention_only = (
-                    args.hashed_net_target_attention_only
-                )
+                model.config.target_attention_only = args.hashed_net_target_attention_only
             # Huffman
             if getattr(args, "huffman_quantize_bits", None) is not None:
                 model.config.huffman_quantize_bits = args.huffman_quantize_bits
@@ -2915,9 +2774,7 @@ def _run_candidate_pipeline(
                 model.config.huffman_max_error = args.huffman_max_error
                 model.config.max_error = args.huffman_max_error
             if getattr(args, "huffman_target_attention_only", None) is not None:
-                model.config.huffman_target_attention_only = (
-                    args.huffman_target_attention_only
-                )
+                model.config.huffman_target_attention_only = args.huffman_target_attention_only
                 model.config.target_attention_only = args.huffman_target_attention_only
             # Hybrid SVD
             if getattr(args, "hybrid_svd_rank", None) is not None:
@@ -2937,9 +2794,7 @@ def _run_candidate_pipeline(
                 model.config.hybrid_svd_target_attention_only = (
                     args.hybrid_svd_target_attention_only
                 )
-                model.config.target_attention_only = (
-                    args.hybrid_svd_target_attention_only
-                )
+                model.config.target_attention_only = args.hybrid_svd_target_attention_only
             # HybridKV
             if getattr(args, "hybridkv_budget", None) is not None:
                 model.config.hybridkv_budget = args.hybridkv_budget
@@ -2957,9 +2812,7 @@ def _run_candidate_pipeline(
                 model.config.hybridkv_recent_window = args.hybridkv_recent_window
                 model.config.recent_window = args.hybridkv_recent_window
             if getattr(args, "hybridkv_target_attention_only", None) is not None:
-                model.config.hybridkv_target_attention_only = (
-                    args.hybridkv_target_attention_only
-                )
+                model.config.hybridkv_target_attention_only = args.hybridkv_target_attention_only
                 model.config.target_attention_only = args.hybridkv_target_attention_only
             # KMeans Quantizer
             if getattr(args, "kmeans_clusters", None) is not None:
@@ -2972,9 +2825,7 @@ def _run_candidate_pipeline(
                 model.config.kmeans_max_error = args.kmeans_max_error
                 model.config.max_error = args.kmeans_max_error
             if getattr(args, "kmeans_target_attention_only", None) is not None:
-                model.config.kmeans_target_attention_only = (
-                    args.kmeans_target_attention_only
-                )
+                model.config.kmeans_target_attention_only = args.kmeans_target_attention_only
                 model.config.target_attention_only = args.kmeans_target_attention_only
             # Kronecker
             if getattr(args, "kronecker_rank", None) is not None:
@@ -2984,30 +2835,19 @@ def _run_candidate_pipeline(
                 model.config.kronecker_max_error = args.kronecker_max_error
                 model.config.max_error = args.kronecker_max_error
             if getattr(args, "kronecker_target_attention_only", None) is not None:
-                model.config.kronecker_target_attention_only = (
-                    args.kronecker_target_attention_only
-                )
-                model.config.target_attention_only = (
-                    args.kronecker_target_attention_only
-                )
+                model.config.kronecker_target_attention_only = args.kronecker_target_attention_only
+                model.config.target_attention_only = args.kronecker_target_attention_only
             # Kronecker TT LoRA
             if getattr(args, "tt_ranks", None) is not None:
                 model.config.tt_ranks = args.tt_ranks
             if getattr(args, "kronecker_tt_lora_max_error", None) is not None:
-                model.config.kronecker_tt_lora_max_error = (
-                    args.kronecker_tt_lora_max_error
-                )
+                model.config.kronecker_tt_lora_max_error = args.kronecker_tt_lora_max_error
                 model.config.max_error = args.kronecker_tt_lora_max_error
-            if (
-                getattr(args, "kronecker_tt_lora_target_attention_only", None)
-                is not None
-            ):
+            if getattr(args, "kronecker_tt_lora_target_attention_only", None) is not None:
                 model.config.kronecker_tt_lora_target_attention_only = (
                     args.kronecker_tt_lora_target_attention_only
                 )
-                model.config.target_attention_only = (
-                    args.kronecker_tt_lora_target_attention_only
-                )
+                model.config.target_attention_only = args.kronecker_tt_lora_target_attention_only
             # KVTC Compressor
             if getattr(args, "kvtc_bits", None) is not None:
                 model.config.kvtc_bits = args.kvtc_bits
@@ -3019,9 +2859,7 @@ def _run_candidate_pipeline(
                 model.config.kvtc_max_error = args.kvtc_max_error
                 model.config.max_error = args.kvtc_max_error
             if getattr(args, "kvtc_target_attention_only", None) is not None:
-                model.config.kvtc_target_attention_only = (
-                    args.kvtc_target_attention_only
-                )
+                model.config.kvtc_target_attention_only = args.kvtc_target_attention_only
                 model.config.target_attention_only = args.kvtc_target_attention_only
             if getattr(args, "kvtc_fallback_to_original", None) is not None:
                 model.config.kvtc_fallback_to_original = args.kvtc_fallback_to_original
@@ -3034,9 +2872,7 @@ def _run_candidate_pipeline(
                 model.config.max_error = args.max_error
 
             if getattr(args, f"{name}_target_attention_only", None) is not None:
-                model.config.target_attention_only = getattr(
-                    args, f"{name}_target_attention_only"
-                )
+                model.config.target_attention_only = getattr(args, f"{name}_target_attention_only")
             elif getattr(args, "target_attention_only", None) is not None:
                 model.config.target_attention_only = args.target_attention_only
 
@@ -3070,9 +2906,7 @@ def _run_candidate_pipeline(
                 )
 
         t_compress_start = time.monotonic()
-        model, _ = apply_module_to_model(
-            model, name, typ, rank=module_rank, device=device
-        )
+        model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
         measured_calib_time = round(time.monotonic() - t_compress_start, 2)
         model = model.to(device)
         injected = True
@@ -3090,8 +2924,7 @@ def _run_candidate_pipeline(
                 "SVDLLMLinear",
             )
             or any(
-                k in m.__class__.__name__
-                for k in ("SVDCompressed", "NEXUS", "ORION", "MoBA", "A3")
+                k in m.__class__.__name__ for k in ("SVDCompressed", "NEXUS", "ORION", "MoBA", "A3")
             )
             or hasattr(m, "q_down")
         )
@@ -3223,13 +3056,10 @@ def _run_candidate_pipeline(
                     with torch.autocast(
                         str(device).split(":")[0],
                         dtype=torch.float16,
-                        enabled=args.precision == "fp16"
-                        and str(device).startswith("cuda"),
+                        enabled=args.precision == "fp16" and str(device).startswith("cuda"),
                     ):
                         t_out = model(**test_x)
-                        t_logits = (
-                            t_out.logits if hasattr(t_out, "logits") else t_out[0]
-                        )
+                        t_logits = t_out.logits if hasattr(t_out, "logits") else t_out[0]
                         if torch.isnan(t_logits).any() or torch.isinf(t_logits).any():
                             raise RuntimeError(
                                 f"Forward pass output logits contain NaN/Inf for module '{name}'"
@@ -3278,9 +3108,7 @@ def _run_candidate_pipeline(
 
         had_nan = False
         recovery_time_s = 0.0
-        recovery_targets = {
-            x.strip() for x in args.recovery_modules.split(",") if x.strip()
-        }
+        recovery_targets = {x.strip() for x in args.recovery_modules.split(",") if x.strip()}
         should_recover = args.recovery_steps > 0 and (
             not recovery_targets
             or "all" in recovery_targets
@@ -3344,18 +3172,14 @@ def _run_candidate_pipeline(
             }
             if name in FROM_SCRATCH_MODULES or name in ("asvd", "asvd_attention"):
                 rec_steps = (
-                    args.recovery_steps
-                    if getattr(args, "recovery_steps", None) is not None
-                    else 50
+                    args.recovery_steps if getattr(args, "recovery_steps", None) is not None else 50
                 )
                 if name in ("asvd", "asvd_attention") and family == "gpt":
                     rec_lr = args.learning_rate if args.learning_rate != 2e-4 else 1e-4
                 else:
                     rec_lr = args.learning_rate if args.learning_rate else 2e-4
             else:
-                hidden_size = getattr(
-                    getattr(model, "config", None), "hidden_size", 768
-                )
+                hidden_size = getattr(getattr(model, "config", None), "hidden_size", 768)
                 rec_lr = (
                     args.learning_rate
                     if args.learning_rate
@@ -3373,15 +3197,10 @@ def _run_candidate_pipeline(
                         m.reset_parameters()
                         m.merged = False
 
-            should_freeze_clf = getattr(args, "freeze_clf", False) or bool(
-                args.parent_checkpoint
-            )
+            should_freeze_clf = getattr(args, "freeze_clf", False) or bool(args.parent_checkpoint)
             if should_freeze_clf:
                 for n, p in model.named_parameters():
-                    if any(
-                        h in n.lower()
-                        for h in ("score", "classifier", "pre_classifier")
-                    ):
+                    if any(h in n.lower() for h in ("score", "classifier", "pre_classifier")):
                         p.requires_grad = False
             from neuralops.utils.compat import get_recovery_params
 
@@ -3390,10 +3209,7 @@ def _run_candidate_pipeline(
                 clf_param_ids = {
                     id(cp)
                     for cn, cp in model.named_parameters()
-                    if any(
-                        h in cn.lower()
-                        for h in ("score", "classifier", "pre_classifier")
-                    )
+                    if any(h in cn.lower() for h in ("score", "classifier", "pre_classifier"))
                 }
                 trainable = [p for p in trainable if id(p) not in clf_param_ids]
             if trainable:
@@ -3502,9 +3318,7 @@ def _run_candidate_pipeline(
                 if (
                     is_svd
                     or is_custom_attn
-                    or any(
-                        k in mod_name for k in [name, "span", "adapter", "compressor"]
-                    )
+                    or any(k in mod_name for k in [name, "span", "adapter", "compressor"])
                 ):
                     for param_name, param in mod.named_parameters(recurse=False):
                         module_state[f"{mod_name}.{param_name}"] = param.detach().cpu()
@@ -3514,9 +3328,7 @@ def _run_candidate_pipeline(
                 for k, v in model.state_dict().items()
                 if "lora_" in k
                 or "span_" in k
-                or any(
-                    h in k for h in ["classifier.", "score.", "classification_head."]
-                )
+                or any(h in k for h in ["classifier.", "score.", "classification_head."])
             }
 
             checkpoint_payload = {
@@ -3569,9 +3381,7 @@ def _run_candidate_pipeline(
                         pass
                 if hasattr(model, "config") and model.config is not None:
                     try:
-                        with open(
-                            hf_export_dir / "config.json", "w", encoding="utf-8"
-                        ) as cf:
+                        with open(hf_export_dir / "config.json", "w", encoding="utf-8") as cf:
                             json.dump(model.config.to_dict(), cf, indent=2)
                     except Exception:
                         pass
@@ -3613,6 +3423,7 @@ def run_single_module_main(args) -> dict:
     import os
 
     import torch
+
     from neuralops.core.registry import ATTENTION_REGISTRY
     from neuralops.core.snapshot_restore import ModelStateSnapshot
 
@@ -3677,15 +3488,12 @@ def run_single_module_main(args) -> dict:
         "cuda"
         if torch.cuda.is_available()
         else (
-            "mps"
-            if hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
-            else "cpu"
+            "mps" if hasattr(torch.backends, "mps") and torch.backends.mps.is_available() else "cpu"
         )
     )
     if args.dataset_dir is None:
         for cand in [
-            Path("PROJECT_ROOT_PLACEHOLDER/neuralops/data/glue_data")
-            / args.dataset,
+            Path("PROJECT_ROOT_PLACEHOLDER/neuralops/data/glue_data") / args.dataset,
             Path("neuralops/data/glue_data") / args.dataset,
             Path(__file__).parent / "data" / "glue_data" / args.dataset,
             Path("PROJECT_ROOT_PLACEHOLDER/neuralops/data/glue_data/sst2"),
@@ -3756,9 +3564,7 @@ def run_single_module_main(args) -> dict:
             args.dataset,
             e,
         )
-        fallback_sst2 = Path(
-            "PROJECT_ROOT_PLACEHOLDER/neuralops/data/glue_data/sst2"
-        )
+        fallback_sst2 = Path("PROJECT_ROOT_PLACEHOLDER/neuralops/data/glue_data/sst2")
         if not fallback_sst2.exists():
             fallback_sst2 = Path(__file__).parent / "data" / "glue_data" / "sst2"
         ds = load_from_disk(str(fallback_sst2))
@@ -3782,9 +3588,7 @@ def run_single_module_main(args) -> dict:
     num_classes = args.num_labels
     if num_classes is None:
         try:
-            if "label" in train.features and hasattr(
-                train.features["label"], "num_classes"
-            ):
+            if "label" in train.features and hasattr(train.features["label"], "num_classes"):
                 num_classes = train.features["label"].num_classes
             elif "label" in train.column_names:
                 num_classes = len(set(train["label"][:500]))
@@ -3823,13 +3627,11 @@ def run_single_module_main(args) -> dict:
                 return {}
 
             try:
-                base = AutoModelForCausalLM.from_pretrained(args.model, dtype=dtype).to(
+                base = AutoModelForCausalLM.from_pretrained(args.model, dtype=dtype).to(device)
+            except TypeError:
+                base = AutoModelForCausalLM.from_pretrained(args.model, torch_dtype=dtype).to(
                     device
                 )
-            except TypeError:
-                base = AutoModelForCausalLM.from_pretrained(
-                    args.model, torch_dtype=dtype
-                ).to(device)
         else:
             try:
                 base = AutoModelForSequenceClassification.from_pretrained(
@@ -3849,9 +3651,7 @@ def run_single_module_main(args) -> dict:
         LOG.critical("CUDA OOM while loading base model: %s", e)
         sys.exit(1)
     base.config.pad_token_id = (
-        tokenizer.pad_token_id
-        if tokenizer.pad_token_id is not None
-        else tokenizer.eos_token_id
+        tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
     )
     install_qwen_aliases(base)
     base.tokenizer = tokenizer
@@ -3924,20 +3724,12 @@ def run_single_module_main(args) -> dict:
                 args.parent_checkpoint,
             )
         candidates = [
-            out.parent
-            / f"{family}_{args.dataset}_lora_baseline"
-            / "finetuned_model.pt",
-            out.parent
-            / f"{family}2_{args.dataset}_lora_baseline"
-            / "finetuned_model.pt",
+            out.parent / f"{family}_{args.dataset}_lora_baseline" / "finetuned_model.pt",
+            out.parent / f"{family}2_{args.dataset}_lora_baseline" / "finetuned_model.pt",
             out.parent / f"{family}_{args.dataset}_full_sweep" / "finetuned_model.pt",
             out.parent / f"{family}_{args.dataset}_baseline" / "finetuned_model.pt",
-            Path("results")
-            / f"{family}_{args.dataset}_lora_baseline"
-            / "finetuned_model.pt",
-            Path("results")
-            / f"{family}_{args.dataset}_baseline"
-            / "finetuned_model.pt",
+            Path("results") / f"{family}_{args.dataset}_lora_baseline" / "finetuned_model.pt",
+            Path("results") / f"{family}_{args.dataset}_baseline" / "finetuned_model.pt",
         ]
         if args.dataset == "sst2":
             candidates.extend(
@@ -3949,10 +3741,7 @@ def run_single_module_main(args) -> dict:
                     out.parent / "unified_rpc" / family / "finetuned_model.pt",
                     out.parent / "unified_res_svd" / family / "finetuned_model.pt",
                     Path("results") / "unified_asvd" / family / "finetuned_model.pt",
-                    Path("results")
-                    / "unified_delta_kv"
-                    / family
-                    / "finetuned_model.pt",
+                    Path("results") / "unified_delta_kv" / family / "finetuned_model.pt",
                 ]
             )
         parent_checkpoint = next(
@@ -3960,11 +3749,7 @@ def run_single_module_main(args) -> dict:
         )
 
     def _safe_load_state(target_model: nn.Module, raw_state: Any) -> None:
-        st = (
-            raw_state.get("state_dict", raw_state)
-            if isinstance(raw_state, dict)
-            else raw_state
-        )
+        st = raw_state.get("state_dict", raw_state) if isinstance(raw_state, dict) else raw_state
         meta = raw_state.get("metadata", {}) if isinstance(raw_state, dict) else {}
         alpha = float(meta.get("alpha", 32.0))
         r = float(meta.get("r", 16.0))
@@ -4100,9 +3885,7 @@ def run_single_module_main(args) -> dict:
         dynamic_targets = find_all_linear_submodule_names(base)
         default_cli_targets = "q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj"
         if args.lora_target_modules != default_cli_targets:
-            target_mods = {
-                x.strip() for x in args.lora_target_modules.split(",") if x.strip()
-            }
+            target_mods = {x.strip() for x in args.lora_target_modules.split(",") if x.strip()}
         else:
             target_mods = dynamic_targets if dynamic_targets else default_cli_targets
         base, num_lora = apply_lora(
@@ -4269,12 +4052,7 @@ def run_single_module_main(args) -> dict:
     train_batches = []
 
     if "wikitext" not in args.dataset.lower() and args.dataset != "c4":
-        if (
-            _eval_cache
-            and _eval_cache.exists()
-            and _train_cache
-            and _train_cache.exists()
-        ):
+        if _eval_cache and _eval_cache.exists() and _train_cache and _train_cache.exists():
             LOG.info(
                 "Loading pre-cached batches from %s (skipping tokenization)",
                 _cached_dir,
@@ -4283,17 +4061,11 @@ def run_single_module_main(args) -> dict:
                 (d, t.to(device))
                 for d, t in [
                     ({k: v.to(device) for k, v in x.items()}, y)
-                    for x, y in torch.load(
-                        str(_eval_cache), map_location="cpu", weights_only=False
-                    )
+                    for x, y in torch.load(str(_eval_cache), map_location="cpu", weights_only=False)
                 ]
             ]
-            _max_train = max(
-                10, min(100, args.recovery_steps if args.recovery_steps > 0 else 10)
-            )
-            all_train = torch.load(
-                str(_train_cache), map_location="cpu", weights_only=False
-            )
+            _max_train = max(10, min(100, args.recovery_steps if args.recovery_steps > 0 else 10))
+            all_train = torch.load(str(_train_cache), map_location="cpu", weights_only=False)
             train_batches = [
                 ({k: v.to(device) for k, v in x.items()}, y.to(device))
                 for x, y in all_train[:_max_train]
@@ -4318,17 +4090,11 @@ def run_single_module_main(args) -> dict:
                 try:
                     _cached_dir.mkdir(parents=True, exist_ok=True)
                     torch.save(
-                        [
-                            ({k: v.cpu() for k, v in x.items()}, y.cpu())
-                            for x, y in eval_batches
-                        ],
+                        [({k: v.cpu() for k, v in x.items()}, y.cpu()) for x, y in eval_batches],
                         str(_eval_cache),
                     )
                     torch.save(
-                        [
-                            ({k: v.cpu() for k, v in x.items()}, y.cpu())
-                            for x, y in train_batches
-                        ],
+                        [({k: v.cpu() for k, v in x.items()}, y.cpu()) for x, y in train_batches],
                         str(_train_cache),
                     )
                     meta_content = {
@@ -4337,9 +4103,7 @@ def run_single_module_main(args) -> dict:
                         "num_eval_batches": len(eval_batches),
                         "num_train_batches": len(train_batches),
                     }
-                    cache_meta.write_text(
-                        json.dumps(meta_content, indent=2), encoding="utf-8"
-                    )
+                    cache_meta.write_text(json.dumps(meta_content, indent=2), encoding="utf-8")
                 except Exception as e:
                     LOG.warning("Failed to save caches to %s: %s", _cached_dir, e)
                 LOG.info(
@@ -4435,9 +4199,7 @@ def run_single_module_main(args) -> dict:
         majority_count = 500
         majority_baseline_ratio = 0.5
     else:
-        val_labels = (
-            val["label"] if "label" in val.features else [x["label"] for x in val]
-        )
+        val_labels = val["label"] if "label" in val.features else [x["label"] for x in val]
         from collections import Counter
 
         label_counts = Counter(val_labels)
@@ -4461,7 +4223,7 @@ def run_single_module_main(args) -> dict:
     pass_threshold_pct = round(majority_baseline_pct + stat_margin_pct, 2)
     threshold_source = (
         f"dynamic: majority={majority_baseline_pct:.2f}% ({majority_count}/{total_val_samples}), "
-        f"SE={se*100:.3f}%, 3*SE={stat_margin_pct:.3f}%"
+        f"SE={se * 100:.3f}%, 3*SE={stat_margin_pct:.3f}%"
     )
 
     LOG.info("=" * 80)
@@ -4523,15 +4285,10 @@ def run_single_module_main(args) -> dict:
         else {
             m
             for m, r in summary_dict.items()
-            if r.get("status") == "PASS"
-            and float(r.get("accuracy_pct", 0.0) or 0.0) > 0.0
+            if r.get("status") == "PASS" and float(r.get("accuracy_pct", 0.0) or 0.0) > 0.0
         }
     )
-    module_rank = (
-        args.rank
-        if args.rank is not None
-        else max(16, getattr(adapter, "head_dim", 16))
-    )
+    module_rank = args.rank if args.rank is not None else max(16, getattr(adapter, "head_dim", 16))
     LOG.info("Initializing ModelStateSnapshot for in-memory module swapping...")
     base_snapshot = ModelStateSnapshot(base)
 
@@ -4541,9 +4298,7 @@ def run_single_module_main(args) -> dict:
             _nh = getattr(base.config, "num_attention_heads", None) or getattr(
                 base.config, "n_heads", 12
             )
-            _hs = getattr(base.config, "hidden_size", None) or getattr(
-                base.config, "d_model", 768
-            )
+            _hs = getattr(base.config, "hidden_size", None) or getattr(base.config, "d_model", 768)
             _hd = getattr(base.config, "head_dim", None) or (_hs // max(1, _nh))
             _optimal = max(1, int(round(_hd**0.5)))
             if module_rank != _optimal:
@@ -4651,9 +4406,7 @@ def run_single_module_main(args) -> dict:
         from neuralops.core.registry import is_module_declared_compatible
 
         is_compat, reason = is_module_declared_compatible(name, family)
-        if name not in ("full", "dense") and (
-            support == "incompatible" or not is_compat
-        ):
+        if name not in ("full", "dense") and (support == "incompatible" or not is_compat):
             LOG.warning(
                 "Module %s declared %s / %s, attempting injection with fallback guard...",
                 name,
@@ -4697,8 +4450,7 @@ def run_single_module_main(args) -> dict:
         injected = False
         active_opt = (
             "muon"
-            if getattr(args, "use_muon", False)
-            or getattr(args, "optimizer", "adamw") == "muon"
+            if getattr(args, "use_muon", False) or getattr(args, "optimizer", "adamw") == "muon"
             else "adamw"
         )
         had_nan = False
@@ -4707,9 +4459,7 @@ def run_single_module_main(args) -> dict:
         # Slow module or configured timeout (default minimum: 1200s = 20 minutes)
         override_to = SLOW_MODULE_TIMEOUT_OVERRIDES.get(name, 0)
         cli_timeout = getattr(args, "timeout", None) or 1200
-        effective_timeout = (
-            max(cli_timeout, override_to) if override_to > 0 else cli_timeout
-        )
+        effective_timeout = max(cli_timeout, override_to) if override_to > 0 else cli_timeout
 
         # Per-module batch_size overrides for VRAM-heavy modules on 8GB GPU
         _OOM_MODULE_BATCH_OVERRIDES = {
@@ -4741,9 +4491,7 @@ def run_single_module_main(args) -> dict:
         }
         # Apply OOM overrides across all models if module has known high memory consumption
         if name in _OOM_MODULE_BATCH_OVERRIDES:
-            effective_batch_size = min(
-                args.batch_size, _OOM_MODULE_BATCH_OVERRIDES[name]
-            )
+            effective_batch_size = min(args.batch_size, _OOM_MODULE_BATCH_OVERRIDES[name])
         else:
             effective_batch_size = args.batch_size
 
@@ -4754,7 +4502,6 @@ def run_single_module_main(args) -> dict:
         recovery_time_s = 0.0
         measured_calib_time = 0.0
         try:
-
             # Pipeline replaced
             (
                 perf_metrics,
@@ -4873,9 +4620,7 @@ def run_single_module_main(args) -> dict:
             comp_metrics = {
                 "total_params_before": total_params_before,
                 "total_params_after": total_params_before,
-                "trainable_recovery_params": getattr(
-                    model, "_trainable_recovery_params", 0
-                ),
+                "trainable_recovery_params": getattr(model, "_trainable_recovery_params", 0),
                 "compression_rate": 1.0,
                 "compression_rate_raw": 1.0,
                 "compression_rate_net": 1.0,
@@ -4900,9 +4645,7 @@ def run_single_module_main(args) -> dict:
                 except (ValueError, TypeError):
                     ppl_num = float("inf")
 
-                if acc >= 100.0 and (
-                    ppl_num <= 0.0 or math.isnan(ppl_num) or math.isinf(ppl_num)
-                ):
+                if acc >= 100.0 and (ppl_num <= 0.0 or math.isnan(ppl_num) or math.isinf(ppl_num)):
                     status = "INVALID"
                     err = "INVALID: evaluated accuracy is 100.0% on language modeling task without valid perplexity"
                 elif math.isnan(ppl_num) or math.isinf(ppl_num):
@@ -4943,11 +4686,7 @@ def run_single_module_main(args) -> dict:
                 if base_params_after > p_before * 1.20:
                     status = "EXTREME_EXPANSION"
                     err = f"base_before={p_before} base_after={base_params_after} delta=+{base_delta_pct:.1f}%"
-                elif (
-                    base_params_after > p_before
-                    and base_delta > 1024
-                    and base_delta_pct > 0.05
-                ):
+                elif base_params_after > p_before and base_delta > 1024 and base_delta_pct > 0.05:
                     status = "MODERATE_EXPANSION"
                     err = f"base_before={p_before} base_after={base_params_after} delta=+{base_delta_pct:.2f}%"
                 elif (
@@ -4961,8 +4700,10 @@ def run_single_module_main(args) -> dict:
                         or status.startswith("EVAL_FAILED")
                         or status.startswith("SKIP")
                     ):
-                        err = f"{status}: zero compressed layers, zero injected layers ({err})".strip(
-                            ": "
+                        err = (
+                            f"{status}: zero compressed layers, zero injected layers ({err})".strip(
+                                ": "
+                            )
                         )
                     else:
                         status = "PASS"
@@ -5010,9 +4751,7 @@ def run_single_module_main(args) -> dict:
             "val_loss": perf_metrics.get("val_loss", 0.0),
             "perplexity": ppl_val_raw,
             "elapsed_s": round(time.monotonic() - t, 2),
-            "eval_time_s": perf_metrics.get(
-                "eval_time_s", round(time.monotonic() - t, 2)
-            ),
+            "eval_time_s": perf_metrics.get("eval_time_s", round(time.monotonic() - t, 2)),
             "calibration_time_s": (
                 comp_metrics.get("calibration_time_s")
                 if comp_metrics.get("calibration_time_s", 0.0) > 0.0
@@ -5026,15 +4765,9 @@ def run_single_module_main(args) -> dict:
                 if perf_metrics.get("tokens_per_sec") is not None
                 else perf_metrics.get("throughput", 0.0)
             ),
-            "total_params_before": comp_metrics.get(
-                "total_params_before", total_params_before
-            ),
-            "total_params_after": comp_metrics.get(
-                "total_params_after", total_params_before
-            ),
-            "trainable_recovery_params": comp_metrics.get(
-                "trainable_recovery_params", 0
-            ),
+            "total_params_before": comp_metrics.get("total_params_before", total_params_before),
+            "total_params_after": comp_metrics.get("total_params_after", total_params_before),
+            "trainable_recovery_params": comp_metrics.get("trainable_recovery_params", 0),
             "compression_rate": comp_metrics.get("compression_rate", 1.0),
             "compression_rate_raw": comp_metrics.get("compression_rate_raw", 1.0),
             "compression_rate_net": comp_metrics.get("compression_rate_net", 1.0),
@@ -5042,15 +4775,9 @@ def run_single_module_main(args) -> dict:
             "flops_reduction_pct": comp_metrics.get("flops_reduction_pct", 0.0),
             "num_compressed_layers": comp_metrics.get("num_compressed_layers", 0),
             "num_fallback_layers": comp_metrics.get("num_fallback_layers", 0),
-            "avg_reconstruction_error": comp_metrics.get(
-                "avg_reconstruction_error", ""
-            ),
-            "weighted_reconstruction_error": comp_metrics.get(
-                "weighted_reconstruction_error", ""
-            ),
-            "num_injected_attention_layers": comp_metrics.get(
-                "num_injected_attention_layers", 0
-            ),
+            "avg_reconstruction_error": comp_metrics.get("avg_reconstruction_error", ""),
+            "weighted_reconstruction_error": comp_metrics.get("weighted_reconstruction_error", ""),
+            "num_injected_attention_layers": comp_metrics.get("num_injected_attention_layers", 0),
             "lora_params": comp_metrics.get("lora_params", 0),
             "collapse_flag": perf_metrics.get("collapse_flag", False),
             "per_class_metrics": json.dumps(perf_metrics.get("per_class_metrics", {})),
@@ -5064,9 +4791,7 @@ def run_single_module_main(args) -> dict:
         _flush_summary_csv()
 
         f1_disp = row["f1_score"] if row.get("f1_score") not in ("", None) else "N/A"
-        vram_disp = (
-            row["peak_vram_mb"] if row.get("peak_vram_mb") not in ("", None) else "N/A"
-        )
+        vram_disp = row["peak_vram_mb"] if row.get("peak_vram_mb") not in ("", None) else "N/A"
         LOG.info(
             "[%d/%d] %s -> %s %.2f%% (F1: %s, Peak VRAM: %s MB)",
             n,
@@ -5110,9 +4835,7 @@ def run_single_module_main(args) -> dict:
                 failed_data = []
                 if failed_json_path.exists():
                     try:
-                        failed_data = json.loads(
-                            failed_json_path.read_text(encoding="utf-8")
-                        )
+                        failed_data = json.loads(failed_json_path.read_text(encoding="utf-8"))
                         if not isinstance(failed_data, list):
                             failed_data = []
                     except Exception:
@@ -5139,9 +4862,7 @@ def run_single_module_main(args) -> dict:
                     )
                 ]
                 deduped.append(new_entry)
-                failed_json_path.write_text(
-                    json.dumps(deduped, indent=2), encoding="utf-8"
-                )
+                failed_json_path.write_text(json.dumps(deduped, indent=2), encoding="utf-8")
             except Exception as f_err:
                 LOG.debug("Could not update failed_runs.json: %s", f_err)
 
@@ -5182,22 +4903,16 @@ def run_single_module_main(args) -> dict:
                     "total_params_before": row.get("total_params_before", 0),
                     "total_params_after": row.get("total_params_after", 0),
                     "num_compressed_layers": row.get("num_compressed_layers", 0),
-                    "num_injected_attention_layers": row.get(
-                        "num_injected_attention_layers", 0
-                    ),
+                    "num_injected_attention_layers": row.get("num_injected_attention_layers", 0),
                     "lora_params": row.get("lora_params", 0),
                     "pass_threshold_pct": pass_threshold_pct,
                     "timestamp": row.get("timestamp", datetime.now().isoformat()),
                     "error": err[:500] if err else "",
                 }
-                with open(
-                    weights_dir / "summary_record.json", "w", encoding="utf-8"
-                ) as srec:
+                with open(weights_dir / "summary_record.json", "w", encoding="utf-8") as srec:
                     json.dump(summary_record, srec, indent=2)
             except Exception as srec_err:
-                LOG.debug(
-                    "Could not write summary_record.json for %s: %s", name, srec_err
-                )
+                LOG.debug("Could not write summary_record.json for %s: %s", name, srec_err)
         else:
             if getattr(args, "defer_export", False):
                 LOG.info(
@@ -5276,9 +4991,7 @@ def run_single_module_main(args) -> dict:
                     except Exception:
                         pass
                 except Exception as export_exc:
-                    LOG.warning(
-                        "Automated export exception for %s: %s", name, export_exc
-                    )
+                    LOG.warning("Automated export exception for %s: %s", name, export_exc)
 
         # Log per-module timing
         t_total = time.monotonic() - t
@@ -5307,27 +5020,21 @@ def run_single_module_main(args) -> dict:
         delta_acc = acc_val - base_benchmark_acc if m_name != "full" else 0.0
         f1_val = r.get("f1_score", "N/A")
         try:
-            f1_str = (
-                f"{float(f1_val):.4f}" if f1_val not in ("", "N/A", None) else "N/A"
-            )
+            f1_str = f"{float(f1_val):.4f}" if f1_val not in ("", "N/A", None) else "N/A"
         except (ValueError, TypeError):
             f1_str = str(f1_val)
 
         comp_rate = r.get("compression_rate", "1.00")
         try:
             comp_rate_str = (
-                f"{float(comp_rate):.2f}x"
-                if comp_rate not in ("", "N/A", None)
-                else "1.00x"
+                f"{float(comp_rate):.2f}x" if comp_rate not in ("", "N/A", None) else "1.00x"
             )
         except (ValueError, TypeError):
             comp_rate_str = str(comp_rate)
 
         vram = r.get("peak_vram_mb", "N/A")
         try:
-            vram_str = (
-                f"{float(vram):.1f} MB" if vram not in ("", "N/A", None) else "N/A"
-            )
+            vram_str = f"{float(vram):.1f} MB" if vram not in ("", "N/A", None) else "N/A"
         except (ValueError, TypeError):
             vram_str = str(vram)
 
@@ -5352,9 +5059,7 @@ def run_single_module_main(args) -> dict:
                 "Module": display_name,
                 "Status": r.get("status", "N/A"),
                 "Accuracy": f"{acc_val:.2f}%",
-                "Delta Acc": (
-                    f"{delta_acc:+.2f}%" if m_name != "full" else "0.00% (base)"
-                ),
+                "Delta Acc": (f"{delta_acc:+.2f}%" if m_name != "full" else "0.00% (base)"),
                 "F1": f1_str,
                 "Compressed Layers": r.get("num_compressed_layers", "0"),
                 "Compression Rate": comp_rate_str,
@@ -5423,9 +5128,7 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
 
     tmp_dir = Path("logs/isolated_results")
     tmp_dir.mkdir(parents=True, exist_ok=True)
-    result_json = (
-        tmp_dir / f"{module_name}_{int(time.time() * 1000)}_{os.getpid()}.json"
-    )
+    result_json = tmp_dir / f"{module_name}_{int(time.time() * 1000)}_{os.getpid()}.json"
     if result_json.exists():
         try:
             result_json.unlink()
@@ -5479,10 +5182,7 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
         cmd.append("--debug_module")
     if getattr(args, "verbose_debug", False):
         cmd.append("--verbose_debug")
-    if (
-        getattr(args, "span_lambda", None) is not None
-        and getattr(args, "span_lambda", 0.0) > 0
-    ):
+    if getattr(args, "span_lambda", None) is not None and getattr(args, "span_lambda", 0.0) > 0:
         cmd.extend(["--span_lambda", str(args.span_lambda)])
     if getattr(args, "kvtc_bits", None) is not None:
         cmd.extend(["--kvtc_bits", str(args.kvtc_bits)])
@@ -5491,9 +5191,7 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
     if getattr(args, "kvtc_pca_energy", None) is not None:
         cmd.extend(["--kvtc_pca_energy", str(args.kvtc_pca_energy)])
     if getattr(args, "kvtc_target_attention_only", None) is not None:
-        cmd.extend(
-            ["--kvtc_target_attention_only", str(args.kvtc_target_attention_only)]
-        )
+        cmd.extend(["--kvtc_target_attention_only", str(args.kvtc_target_attention_only)])
     if getattr(args, "kvtc_fallback_to_original", None) is not None:
         cmd.extend(["--kvtc_fallback_to_original", str(args.kvtc_fallback_to_original)])
     if getattr(args, "strict_rank", False):
@@ -5518,9 +5216,7 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
     t0 = time.monotonic()
 
     base_dir = HERE.parent.parent  # project root, resolved from this file's location
-    extra_flags = (
-        (0x08000000 | subprocess.CREATE_NEW_PROCESS_GROUP) if os.name == "nt" else 0
-    )
+    extra_flags = (0x08000000 | subprocess.CREATE_NEW_PROCESS_GROUP) if os.name == "nt" else 0
 
     with open(log_path, "w", encoding="utf-8") as log_file:
         proc = subprocess.Popen(
@@ -5534,15 +5230,11 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
         try:
             proc.wait(timeout=timeout_s)
             elapsed = time.monotonic() - t0
-            print(
-                f"[ISOLATED] {module_name} exited with code {proc.returncode} in {elapsed:.1f}s"
-            )
+            print(f"[ISOLATED] {module_name} exited with code {proc.returncode} in {elapsed:.1f}s")
         except subprocess.TimeoutExpired:
             print(f"[ISOLATED] {module_name} TIMEOUT after {timeout_s}s - killing")
             if os.name == "nt":
-                subprocess.run(
-                    ["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True
-                )
+                subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True)
             else:
                 proc.terminate()
                 try:
@@ -5586,9 +5278,7 @@ def main():
         if not raw_mods or raw_mods == ["all"]:
             names = all_available
         elif raw_mods == ["attentions"]:
-            names = ["full"] + [
-                m for m in all_available if m in ATTENTION_REGISTRY and m != "full"
-            ]
+            names = ["full"] + [m for m in all_available if m in ATTENTION_REGISTRY and m != "full"]
         elif raw_mods == ["compressors"]:
             names = ["full"] + [
                 m for m in all_available if m in COMPRESSOR_REGISTRY and m != "full"
@@ -5598,20 +5288,15 @@ def main():
     elif args.modules == "all":
         names = all_available
     elif args.modules == "attentions":
-        names = ["full"] + [
-            m for m in all_available if m in ATTENTION_REGISTRY and m != "full"
-        ]
+        names = ["full"] + [m for m in all_available if m in ATTENTION_REGISTRY and m != "full"]
     elif args.modules == "compressors":
-        names = ["full"] + [
-            m for m in all_available if m in COMPRESSOR_REGISTRY and m != "full"
-        ]
+        names = ["full"] + [m for m in all_available if m in COMPRESSOR_REGISTRY and m != "full"]
     else:
         names = [x.strip() for x in args.modules.split(",") if x.strip()]
 
     if args.dataset_dir is None:
         for cand in [
-            Path("PROJECT_ROOT_PLACEHOLDER/neuralops/data/glue_data")
-            / args.dataset,
+            Path("PROJECT_ROOT_PLACEHOLDER/neuralops/data/glue_data") / args.dataset,
             Path("neuralops/data/glue_data") / args.dataset,
             Path(__file__).parent / "data" / "glue_data" / args.dataset,
             Path("PROJECT_ROOT_PLACEHOLDER/neuralops/data/glue_data/sst2"),
@@ -5701,9 +5386,7 @@ def main():
             "total_params_before": result.get(
                 "total_params_before", result.get("params_before", 0)
             ),
-            "total_params_after": result.get(
-                "total_params_after", result.get("params_after", 0)
-            ),
+            "total_params_after": result.get("total_params_after", result.get("params_after", 0)),
             "trainable_recovery_params": result.get("trainable_recovery_params", 0),
             "compression_rate": result.get(
                 "compression_rate", result.get("compression_ratio", 1.0)
@@ -5713,12 +5396,8 @@ def main():
             "num_compressed_layers": result.get("num_compressed_layers", 0),
             "num_fallback_layers": result.get("num_fallback_layers", 0),
             "avg_reconstruction_error": result.get("avg_reconstruction_error", ""),
-            "weighted_reconstruction_error": result.get(
-                "weighted_reconstruction_error", ""
-            ),
-            "num_injected_attention_layers": result.get(
-                "num_injected_attention_layers", 0
-            ),
+            "weighted_reconstruction_error": result.get("weighted_reconstruction_error", ""),
+            "num_injected_attention_layers": result.get("num_injected_attention_layers", 0),
             "lora_params": result.get("lora_params", 0),
             "error": result.get("error", ""),
             "path": result.get("path", ""),
@@ -5760,9 +5439,7 @@ def main():
     if len(names) <= 10:
         pending_names = [n for n in names if n not in existing]
     else:
-        pending_names = [
-            n for n in names if n not in existing and n not in BLOCKED_MODULES
-        ]
+        pending_names = [n for n in names if n not in existing and n not in BLOCKED_MODULES]
 
     # for n in names:
     #     if n in existing:

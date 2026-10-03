@@ -29,6 +29,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -101,16 +102,10 @@ class SVDLLMLinear(nn.Module):
         self.scaling = lora_alpha / max(1, lora_rank)
 
         # Explicit factor buffers: W_u and W_v
-        self.W_u = nn.Parameter(
-            torch.empty(out_features, self.rank, device=device, dtype=dtype)
-        )
-        self.W_v = nn.Parameter(
-            torch.empty(self.rank, in_features, device=device, dtype=dtype)
-        )
+        self.W_u = nn.Parameter(torch.empty(out_features, self.rank, device=device, dtype=dtype))
+        self.W_v = nn.Parameter(torch.empty(self.rank, in_features, device=device, dtype=dtype))
         if bias:
-            self.bias = nn.Parameter(
-                torch.zeros(out_features, device=device, dtype=dtype)
-            )
+            self.bias = nn.Parameter(torch.zeros(out_features, device=device, dtype=dtype))
         else:
             self.register_parameter("bias", None)
 
@@ -163,16 +158,10 @@ class SVDLLMLinear(nn.Module):
             r = min(self.rank, W_u.size(1), W_v.size(0))
             self.W_u.data.zero_()
             self.W_v.data.zero_()
-            self.W_u.data[:, :r].copy_(
-                W_u[:, :r].to(device=self.W_u.device, dtype=self.W_u.dtype)
-            )
-            self.W_v.data[:r, :].copy_(
-                W_v[:r, :].to(device=self.W_v.device, dtype=self.W_v.dtype)
-            )
+            self.W_u.data[:, :r].copy_(W_u[:, :r].to(device=self.W_u.device, dtype=self.W_u.dtype))
+            self.W_v.data[:r, :].copy_(W_v[:r, :].to(device=self.W_v.device, dtype=self.W_v.dtype))
             if bias is not None and self.bias is not None:
-                self.bias.data.copy_(
-                    bias.to(device=self.bias.device, dtype=self.bias.dtype)
-                )
+                self.bias.data.copy_(bias.to(device=self.bias.device, dtype=self.bias.dtype))
 
     def set_active_lora_stage(self, stage: str | None) -> None:
         """
@@ -214,15 +203,9 @@ class SVDLLMLinear(nn.Module):
         # 1. Compute latent representation through W_v
         # latent = x @ W_v.T + (optional LoRA_v)
         latent = F.linear(x, self.W_v)
-        if (
-            self.lora_rank > 0
-            and self.lora_A_v is not None
-            and self.lora_B_v is not None
-        ):
+        if self.lora_rank > 0 and self.lora_A_v is not None and self.lora_B_v is not None:
             lora_v = (
-                F.linear(
-                    F.linear(x.to(self.lora_A_v.dtype), self.lora_A_v), self.lora_B_v
-                )
+                F.linear(F.linear(x.to(self.lora_A_v.dtype), self.lora_A_v), self.lora_B_v)
                 * self.scaling
             )
             latent = latent + lora_v.to(latent.dtype)
@@ -230,11 +213,7 @@ class SVDLLMLinear(nn.Module):
         # 2. Compute output through W_u
         # out = latent @ W_u.T + (optional LoRA_u)
         out = F.linear(latent, self.W_u)
-        if (
-            self.lora_rank > 0
-            and self.lora_A_u is not None
-            and self.lora_B_u is not None
-        ):
+        if self.lora_rank > 0 and self.lora_A_u is not None and self.lora_B_u is not None:
             lora_u = (
                 F.linear(
                     F.linear(latent.to(self.lora_A_u.dtype), self.lora_A_u),
@@ -317,9 +296,7 @@ class SVDLLMCompressor(BaseCompressor):
             try:
                 ds = load_dataset("wikitext", "wikitext-2-raw-v1", split="train")
             except Exception:
-                ds = load_dataset(
-                    "Salesforce/wikitext", "wikitext-2-raw-v1", split="train"
-                )
+                ds = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="train")
             texts = [t.strip() for t in ds["text"] if t and len(t.strip()) > 50]
             if len(texts) >= n_samples:
                 logger.info(
@@ -354,8 +331,7 @@ class SVDLLMCompressor(BaseCompressor):
         if isinstance(module, SVDLLMLinear):
             return False
         if any(
-            name.endswith(sfx)
-            for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]
+            name.endswith(sfx) for sfx in [".base_layer", ".lora_A", ".lora_B", ".lora_dropout"]
         ):
             return False
 
@@ -459,14 +435,10 @@ class SVDLLMCompressor(BaseCompressor):
                         or hasattr(module, "nf")
                         or hasattr(target_mod, "nf")
                     )
-                    weight_tensor = getattr(
-                        target_mod, "weight", getattr(module, "weight", None)
-                    )
+                    weight_tensor = getattr(target_mod, "weight", getattr(module, "weight", None))
                     if weight_tensor is None:
                         return
-                    in_f = (
-                        weight_tensor.shape[0] if is_conv1d else weight_tensor.shape[1]
-                    )
+                    in_f = weight_tensor.shape[0] if is_conv1d else weight_tensor.shape[1]
                     x_fp32 = x.float()
                     x_flat = x_fp32.reshape(-1, in_f)
                     mask = x_flat.abs().sum(dim=-1) > 1e-5
@@ -524,9 +496,7 @@ class SVDLLMCompressor(BaseCompressor):
         for exp in [-6, -5, -4, -3, -2, -1, 0]:
             eps = max(10**exp * mean_diag, 10**exp)
             try:
-                S = torch.linalg.cholesky(
-                    C + eps * torch.eye(n, device=C.device, dtype=C.dtype)
-                )
+                S = torch.linalg.cholesky(C + eps * torch.eye(n, device=C.device, dtype=C.dtype))
                 return S
             except Exception:
                 continue
@@ -562,9 +532,7 @@ class SVDLLMCompressor(BaseCompressor):
             try:
                 S_inv = torch.linalg.pinv(S)
             except Exception:
-                S_inv = torch.inverse(
-                    S + 1e-5 * torch.eye(n, device=S.device, dtype=S.dtype)
-                )
+                S_inv = torch.inverse(S + 1e-5 * torch.eye(n, device=S.device, dtype=S.dtype))
             W_white = W_fp32 @ S
         else:
             # Identity whitening (standard SVD fallback if covariance unavailable)
@@ -617,11 +585,7 @@ class SVDLLMCompressor(BaseCompressor):
             logits = getattr(outputs, "logits", None)
             if logits is None and isinstance(outputs, tuple):
                 logits = outputs[0]
-            if (
-                logits is not None
-                and isinstance(logits, torch.Tensor)
-                and logits.ndim >= 2
-            ):
+            if logits is not None and isinstance(logits, torch.Tensor) and logits.ndim >= 2:
                 probs = torch.softmax(logits.float(), dim=-1)
                 entropy = -(probs * torch.log(probs + 1e-10)).sum(dim=-1).mean()
                 return entropy
@@ -737,9 +701,7 @@ class SVDLLMCompressor(BaseCompressor):
                 or hasattr(target_mod, "nf")
             )
 
-            weight_tensor = getattr(
-                target_mod, "weight", getattr(layer, "weight", None)
-            )
+            weight_tensor = getattr(target_mod, "weight", getattr(layer, "weight", None))
             if weight_tensor is None:
                 continue
 
@@ -758,13 +720,9 @@ class SVDLLMCompressor(BaseCompressor):
 
             C = covariances.get(name, None)
             try:
-                W_u, W_v, error = self._cholesky_whiten_and_decompose(
-                    W, C, target_rank=r
-                )
+                W_u, W_v, error = self._cholesky_whiten_and_decompose(W, C, target_rank=r)
             except Exception as decomp_err:
-                logger.warning(
-                    "SVD-LLM decomposition failed for layer %s: %s", name, decomp_err
-                )
+                logger.warning("SVD-LLM decomposition failed for layer %s: %s", name, decomp_err)
                 self.fallback_layers.append(name)
                 continue
 
@@ -807,9 +765,7 @@ class SVDLLMCompressor(BaseCompressor):
             "fallback_layers": self.fallback_layers,
             "layer_errors": self.layer_errors,
             "layer_ranks": self.layer_ranks,
-            "mean_error": float(
-                sum(self.layer_errors.values()) / max(1, len(self.layer_errors))
-            ),
+            "mean_error": float(sum(self.layer_errors.values()) / max(1, len(self.layer_errors))),
         }
         self.model.compression_stats = stats
         return self.model, stats

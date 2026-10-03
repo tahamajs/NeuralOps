@@ -181,9 +181,7 @@ def run_command(cmd: list[str], desc: str) -> tuple[int, str, str]:
     LOG.info("Executing: %s", " ".join(cmd))
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0:
-        LOG.warning(
-            "%s failed (code %d):\n%s", desc, proc.returncode, proc.stderr[-500:]
-        )
+        LOG.warning("%s failed (code %d):\n%s", desc, proc.returncode, proc.stderr[-500:])
     return proc.returncode, proc.stdout, proc.stderr
 
 

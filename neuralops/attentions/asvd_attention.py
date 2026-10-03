@@ -16,6 +16,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import apply_attention_mask
 from neuralops.core.base import BaseAttention
@@ -69,12 +70,8 @@ def apply_rotary_pos_emb(
     if rotary_dim <= q.shape[-1]:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        q_rot = (q_rot * cos.to(q_rot.dtype)) + (
-            _rotate_half(q_rot) * sin.to(q_rot.dtype)
-        )
-        k_rot = (k_rot * cos.to(k_rot.dtype)) + (
-            _rotate_half(k_rot) * sin.to(k_rot.dtype)
-        )
+        q_rot = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
+        k_rot = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
         q_embed = torch.cat([q_rot, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot
         k_embed = torch.cat([k_rot, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot
     else:
@@ -121,12 +118,8 @@ class ASVDLinear(nn.Module):
 
         # Trainable LoRA adapter parameters
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty(lora_rank, in_features, **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty(out_features, lora_rank, **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features, **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank, **factory_kwargs))
             self.lora_scaling = 1.0
         else:
             self.register_parameter("lora_A", None)
@@ -224,9 +217,7 @@ class ASVDLinear(nn.Module):
                 V[:r, :in_copy].to(device=self.V.device, dtype=self.V.dtype)
             )
             if S is not None:
-                self.S.data[:r].copy_(
-                    S[:r].to(device=self.S.device, dtype=self.S.dtype)
-                )
+                self.S.data[:r].copy_(S[:r].to(device=self.S.device, dtype=self.S.dtype))
             else:
                 self.S.data[:r].fill_(1.0)
 
@@ -362,11 +353,7 @@ class ASVDAttention(BaseAttention):
         self.rank: int = getattr(
             config,
             "asvd_rank",
-            (
-                rank
-                if rank is not None
-                else getattr(config, "rank", kwargs.pop("rank", 32))
-            ),
+            (rank if rank is not None else getattr(config, "rank", kwargs.pop("rank", 32))),
         )
         self.lora_rank: int = getattr(config, "lora_rank", kwargs.get("lora_rank", 32))
         self.freeze_base: bool = getattr(
@@ -538,11 +525,7 @@ class ASVDAttention(BaseAttention):
 
             target_energy = max(
                 self.energy_threshold,
-                (
-                    1.0 - (self.error_threshold**2)
-                    if self.error_threshold is not None
-                    else 0.95
-                ),
+                (1.0 - (self.error_threshold**2) if self.error_threshold is not None else 0.95),
             )
             indices = (cum_energy >= target_energy).nonzero()
             if len(indices) > 0:
@@ -592,9 +575,7 @@ class ASVDAttention(BaseAttention):
 
     def copy_weights(self, src: Any) -> None:
         """Extracts and factorizes pretrained weights across DistilBERT, RoBERTa, GPT-2, Qwen/LLaMA."""
-        extracted_weights: dict[
-            str, tuple[torch.Tensor | None, torch.Tensor | None]
-        ] = {
+        extracted_weights: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
             "q": (None, None),
             "k": (None, None),
             "v": (None, None),
@@ -647,10 +628,7 @@ class ASVDAttention(BaseAttention):
                 if (
                     ("Conv1D" in c_cls)
                     or hasattr(base_c, "nf")
-                    or (
-                        "Conv1D"
-                        in getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__
-                    )
+                    or ("Conv1D" in getattr(c_attn_mod, "__class__", type(c_attn_mod)).__name__)
                     or hasattr(c_attn_mod, "nf")
                     or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
                 ):
@@ -681,12 +659,7 @@ class ASVDAttention(BaseAttention):
                     if (
                         ("Conv1D" in p_cls)
                         or hasattr(base_o, "nf")
-                        or (
-                            "Conv1D"
-                            in getattr(
-                                c_proj_mod, "__class__", type(c_proj_mod)
-                            ).__name__
-                        )
+                        or ("Conv1D" in getattr(c_proj_mod, "__class__", type(c_proj_mod)).__name__)
                         or hasattr(c_proj_mod, "nf")
                         or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
                     ):
@@ -726,9 +699,7 @@ class ASVDAttention(BaseAttention):
         for proj in ["q", "k", "v", "o"]:
             if extracted_weights[proj][0] is None:
                 for candidate in [f"{proj}_proj", f"{proj}_lin", proj]:
-                    if hasattr(src, candidate) and hasattr(
-                        getattr(src, candidate), "weight"
-                    ):
+                    if hasattr(src, candidate) and hasattr(getattr(src, candidate), "weight"):
                         mod = getattr(src, candidate)
                         b = getattr(mod, "bias", None)
                         extracted_weights[proj] = (
@@ -820,11 +791,7 @@ class ASVDAttention(BaseAttention):
         """Forward pass for factorized ASVD attention."""
         if hidden_states is None:
             hidden_states = kwargs.get("query", kwargs.get("x"))
-        if (
-            hidden_states is None
-            and len(args) > 0
-            and isinstance(args[0], torch.Tensor)
-        ):
+        if hidden_states is None and len(args) > 0 and isinstance(args[0], torch.Tensor):
             hidden_states = args[0]
         if attention_mask is None:
             attention_mask = kwargs.get("mask", kwargs.get("attn_mask"))
@@ -835,9 +802,7 @@ class ASVDAttention(BaseAttention):
         kv_H = self.num_kv_heads
 
         if encoder_hidden_states is not None:
-            raise NotImplementedError(
-                "Cross-attention is not supported in ASVDAttention."
-            )
+            raise NotImplementedError("Cross-attention is not supported in ASVDAttention.")
 
         # Extract rotary kwargs if supplied
         if position_embeddings is None:
@@ -846,15 +811,9 @@ class ASVDAttention(BaseAttention):
             position_ids = kwargs.get("position_ids")
 
         # 1. Project Q, K, V using low-rank factorized linear layers
-        q: torch.Tensor = (
-            self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
-        )
-        k: torch.Tensor = (
-            self.key(hidden_states).view(B, N, kv_H, d).transpose(1, 2).contiguous()
-        )
-        v: torch.Tensor = (
-            self.value(hidden_states).view(B, N, kv_H, d).transpose(1, 2).contiguous()
-        )
+        q: torch.Tensor = self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
+        k: torch.Tensor = self.key(hidden_states).view(B, N, kv_H, d).transpose(1, 2).contiguous()
+        v: torch.Tensor = self.value(hidden_states).view(B, N, kv_H, d).transpose(1, 2).contiguous()
 
         # 2. Apply Rotary Position Embedding (RoPE) before GQA expansion and masking
         if (
@@ -903,29 +862,19 @@ class ASVDAttention(BaseAttention):
                 if attention_mask.dtype == torch.bool:
                     extended_mask = torch.zeros_like(attention_mask, dtype=scores.dtype)
                     extended_mask = extended_mask.masked_fill(~attention_mask, -10000.0)
-                elif (
-                    torch.is_floating_point(attention_mask)
-                    and (attention_mask < 0).any()
-                ):
+                elif torch.is_floating_point(attention_mask) and (attention_mask < 0).any():
                     extended_mask = attention_mask.to(dtype=scores.dtype)
                 else:
-                    extended_mask = (
-                        1.0 - attention_mask.to(dtype=scores.dtype)
-                    ) * -10000.0
+                    extended_mask = (1.0 - attention_mask.to(dtype=scores.dtype)) * -10000.0
                 attention_mask = extended_mask.unsqueeze(1).unsqueeze(2)
             elif attention_mask.dim() == 3:
                 if attention_mask.dtype == torch.bool:
                     extended_mask = torch.zeros_like(attention_mask, dtype=scores.dtype)
                     extended_mask = extended_mask.masked_fill(~attention_mask, -10000.0)
-                elif (
-                    torch.is_floating_point(attention_mask)
-                    and (attention_mask < 0).any()
-                ):
+                elif torch.is_floating_point(attention_mask) and (attention_mask < 0).any():
                     extended_mask = attention_mask.to(dtype=scores.dtype)
                 else:
-                    extended_mask = (
-                        1.0 - attention_mask.to(dtype=scores.dtype)
-                    ) * -10000.0
+                    extended_mask = (1.0 - attention_mask.to(dtype=scores.dtype)) * -10000.0
                 attention_mask = extended_mask.unsqueeze(1)
             scores = apply_attention_mask(scores, attention_mask)
 
@@ -999,9 +948,7 @@ def inject_asvd(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -1065,9 +1012,7 @@ def inject_asvd(
     # Pre-flight extraction test: ensure source layer has extractable projections
     if old_attn is not None:
         try:
-            new_attn = ASVDAttention(
-                target_config, rank=rank, pretrained_attn=old_attn, **kwargs
-            )
+            new_attn = ASVDAttention(target_config, rank=rank, pretrained_attn=old_attn, **kwargs)
             if layer is not None:
                 if hasattr(layer, "attention"):
                     if hasattr(layer.attention, "self"):

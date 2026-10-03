@@ -18,6 +18,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -72,9 +73,7 @@ def _extract_valid_token_mask(
             if (m < -1.0).any():
                 return m >= -1.0
             elif (m <= 0.0).all():
-                return torch.ones(
-                    (batch_size, seq_len), dtype=torch.bool, device=device
-                )
+                return torch.ones((batch_size, seq_len), dtype=torch.bool, device=device)
             else:
                 return m > 0.5
         else:
@@ -175,21 +174,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(
-            torch.empty((out_features, in_features), **factory_kwargs)
-        )
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **factory_kwargs))
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(
-                torch.empty((lora_rank, in_features), **factory_kwargs)
-            )
-            self.lora_B = nn.Parameter(
-                torch.empty((out_features, lora_rank), **factory_kwargs)
-            )
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **factory_kwargs))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -225,10 +218,7 @@ class LoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            out = (
-                out
-                + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-            )
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
         return out
 
 
@@ -269,12 +259,8 @@ class XAttention(BaseAttention):
             self.is_decoder: bool = getattr(config, "is_decoder", False)
         else:
             self.adapter = None
-            self.hidden_size = _cfg_get(
-                config, "hidden_size", kwargs.get("hidden_size", 768)
-            )
-            self.num_heads = _cfg_get(
-                config, "num_attention_heads", kwargs.get("num_heads", 12)
-            )
+            self.hidden_size = _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
+            self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_heads", 12))
             self.num_kv_heads = _cfg_get(
                 config,
                 "num_key_value_heads",
@@ -284,9 +270,7 @@ class XAttention(BaseAttention):
             self.all_head_size = self.num_heads * self.head_dim
             self.kv_head_size = self.num_kv_heads * self.head_dim
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
-            self.is_decoder = bool(
-                _cfg_get(config, "is_decoder", kwargs.get("is_decoder", False))
-            )
+            self.is_decoder = bool(_cfg_get(config, "is_decoder", kwargs.get("is_decoder", False)))
 
         # Prioritize explicit kwargs and recompute all head dimensions
         if "hidden_size" in kwargs:
@@ -316,9 +300,7 @@ class XAttention(BaseAttention):
             self.keep_ratio = raw_sparsity
 
         self.is_nested_encoder: bool = False
-        self.lora_rank = kwargs.get(
-            "lora_rank", _cfg_get(config, "lora_rank", lora_rank)
-        )
+        self.lora_rank = kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank))
 
         target_dtype = kwargs.get("dtype")
         if target_dtype is None and pretrained_attn is not None:
@@ -462,29 +444,21 @@ class XAttention(BaseAttention):
 
         # 2. GPT-2 Fused c_attn Conv1D handling
         if hasattr(src, "c_attn") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             c_attn = getattr(src.c_attn, "base_layer", src.c_attn)
             weight = c_attn.weight.data
             bias = getattr(c_attn, "bias", None)
             bias_data = bias.data if bias is not None else None
             is_conv1d = "Conv1D" in c_attn.__class__.__name__ or hasattr(c_attn, "nf")
-            if is_conv1d or (
-                weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size
-            ):
+            if is_conv1d or (weight.dim() == 2 and weight.shape[1] == 3 * self.hidden_size):
                 weight = weight.t().contiguous()
             split_size = weight.shape[0] // 3
             q_w = weight[:split_size, :]
             k_w = weight[split_size : 2 * split_size, :]
             v_w = weight[2 * split_size :, :]
             q_b = bias_data[:split_size] if bias_data is not None else None
-            k_b = (
-                bias_data[split_size : 2 * split_size]
-                if bias_data is not None
-                else None
-            )
+            k_b = bias_data[split_size : 2 * split_size] if bias_data is not None else None
             v_b = bias_data[2 * split_size :] if bias_data is not None else None
             extracted["q"] = (q_w, q_b)
             extracted["k"] = (k_w, k_b)
@@ -505,9 +479,7 @@ class XAttention(BaseAttention):
 
         # 3. RoBERTa / BERT Nested Encoder handling
         if hasattr(src, "self") and (
-            extracted["q"][0] is None
-            or extracted["k"][0] is None
-            or extracted["v"][0] is None
+            extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             s = src.self
             if hasattr(s, "query"):
@@ -520,11 +492,7 @@ class XAttention(BaseAttention):
                 v_mod = getattr(s.value, "base_layer", s.value)
                 extracted["v"] = (v_mod.weight.data, getattr(v_mod, "bias", None))
 
-        if (
-            hasattr(src, "output")
-            and hasattr(src.output, "dense")
-            and extracted["o"][0] is None
-        ):
+        if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
             dense = getattr(src.output.dense, "base_layer", src.output.dense)
             extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
 
@@ -700,18 +668,8 @@ class XAttention(BaseAttention):
         dtype = hidden_states.dtype
 
         Q = self.query(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
-        K = (
-            self.key(kv_input)
-            .view(B, N_k, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        V = (
-            self.value(kv_input)
-            .view(B, N_k, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-        )
+        K = self.key(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V = self.value(kv_input).view(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         # Apply RoPE: Priority 1 = position_embeddings, Priority 2 = rotary_emb fallback
         position_embeddings = kwargs.get("position_embeddings")
@@ -734,9 +692,7 @@ class XAttention(BaseAttention):
                     kwargs.get("position_ids"),
                 )
             except Exception as e:
-                logger.warning(
-                    "maybe_apply_rotary failed: %s; continuing without RoPE", e
-                )
+                logger.warning("maybe_apply_rotary failed: %s; continuing without RoPE", e)
 
         # GQA repeat
         if self.kv_repeat > 1:
@@ -785,9 +741,7 @@ class XAttention(BaseAttention):
             mask = attention_mask if attention_mask is not None else kwargs.get("mask")
             if mask is not None:
                 valid_m = _extract_valid_token_mask(mask, B, N_k, device)
-                k_valid[:, :, :N_k, 0] = k_valid[:, :, :N_k, 0] * valid_m.unsqueeze(
-                    1
-                ).to(K.dtype)
+                k_valid[:, :, :N_k, 0] = k_valid[:, :, :N_k, 0] * valid_m.unsqueeze(1).to(K.dtype)
 
             q_valid_blocks = q_valid.view(B, 1, num_q_blocks, bsz, 1)
             Q_blocks = (Q_pad.view(B, H, num_q_blocks, bsz, d) * q_valid_blocks).sum(
@@ -799,23 +753,17 @@ class XAttention(BaseAttention):
                 dim=3
             ) / k_valid_blocks.sum(dim=3).clamp(min=1.0)
 
-            coarse_scores = (
-                torch.matmul(Q_blocks, K_blocks.transpose(-1, -2).contiguous()) * scale
-            )
+            coarse_scores = torch.matmul(Q_blocks, K_blocks.transpose(-1, -2).contiguous()) * scale
 
             if is_decoder:
                 q_block_pos = torch.arange(
                     num_k_blocks - num_q_blocks, num_k_blocks, device=device
                 ).unsqueeze(1)
                 k_block_pos = torch.arange(num_k_blocks, device=device).unsqueeze(0)
-                causal_block_mask = (
-                    (k_block_pos <= q_block_pos).unsqueeze(0).unsqueeze(0)
-                )
+                causal_block_mask = (k_block_pos <= q_block_pos).unsqueeze(0).unsqueeze(0)
                 coarse_scores = coarse_scores.masked_fill(~causal_block_mask, -10000.0)
 
-            k_blocks = max(
-                1, min(num_k_blocks, int(math.ceil(num_k_blocks * self.keep_ratio)))
-            )
+            k_blocks = max(1, min(num_k_blocks, int(math.ceil(num_k_blocks * self.keep_ratio))))
             _, topk_idx = torch.topk(coarse_scores, k=k_blocks, dim=-1)
 
             block_mask = torch.zeros(
@@ -833,15 +781,11 @@ class XAttention(BaseAttention):
             pad_q_total = total_q - N_q
             pad_k_total = total_k - N_k
             if pad_q_total > 0 or pad_k_total > 0:
-                scores_padded = F.pad(
-                    scores, (0, pad_k_total, 0, pad_q_total), value=-10000.0
-                )
+                scores_padded = F.pad(scores, (0, pad_k_total, 0, pad_q_total), value=-10000.0)
             else:
                 scores_padded = scores
 
-            scores_padded = scores_padded.view(
-                B, H, num_q_blocks, bsz, num_k_blocks, bsz
-            )
+            scores_padded = scores_padded.view(B, H, num_q_blocks, bsz, num_k_blocks, bsz)
             scores_padded = scores_padded.masked_fill(
                 ~block_mask.unsqueeze(3).unsqueeze(5), -10000.0
             )
@@ -861,9 +805,7 @@ class XAttention(BaseAttention):
                 scores = scores + mask.to(scores.dtype)
             else:
                 valid_m = _extract_valid_token_mask(mask, B, N_k, device)
-                scores = scores.masked_fill(
-                    (~valid_m).unsqueeze(1).unsqueeze(2), -10000.0
-                )
+                scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
 
         attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
         attn = self.dropout(attn)
@@ -938,9 +880,7 @@ def inject_xattention(
         and hasattr(target.bert.encoder, "layer")
     ):
         layer_list = target.bert.encoder.layer
-    elif hasattr(target, "layers") and isinstance(
-        target.layers, (torch.nn.ModuleList, list)
-    ):
+    elif hasattr(target, "layers") and isinstance(target.layers, (torch.nn.ModuleList, list)):
         layer_list = target.layers
 
     if layer_list is not None:
@@ -951,9 +891,7 @@ def inject_xattention(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=(
-                    comp_config
-                    if "comp_config" in locals() or "comp_config" in kwargs
-                    else None
+                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
                 ),
                 layer_idx=idx,
                 total_layers=tot,
