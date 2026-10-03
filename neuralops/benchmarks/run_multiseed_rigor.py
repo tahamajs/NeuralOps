@@ -167,7 +167,7 @@ def run_single_module_seed(
 
     cmd = [
         sys.executable,
-        str(REPO_ROOT / "Codes" / "neuralops" / "benchmarks" / "run_quality_sweep.py"),
+        str(REPO_ROOT / "neuralops" / "benchmarks" / "run_quality_sweep.py"),
         "--model",
         model_path,
         "--model_family",

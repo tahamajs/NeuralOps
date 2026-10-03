@@ -53,7 +53,7 @@ except ImportError:
 # -----------------------------------------------------------------------------
 HERE = Path(__file__).resolve().parent
 PROJECT_ROOT = HERE.parent.parent if HERE.name in ("experiments", "neuralops") else HERE
-for p in [str(PROJECT_ROOT), str(PROJECT_ROOT / "Codes")]:
+for p in [str(PROJECT_ROOT), str(PROJECT_ROOT / "neuralops")]:
     if p not in sys.path:
         sys.path.insert(0, p)
 

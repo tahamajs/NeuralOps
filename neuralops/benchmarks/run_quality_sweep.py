@@ -61,7 +61,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 HERE = Path(__file__).resolve().parent
 CODES = HERE.parent
 ROOT = CODES.parent
-sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "Codes")]
+sys.path[:0] = [str(CODES), str(ROOT), str(ROOT / "neuralops")]
 
 from neuralops.eval_all_models_datasets import apply_module_to_model
 from neuralops.utils.compat import module_family_support, wrap_for_family
@@ -5206,7 +5206,7 @@ def run_single_module_main(args) -> dict:
                 )
             else:
                 try:
-                    from Codes.framework.utils.hf_git_exporter import (
+                    from neuralops.utils.hf_git_exporter import (
                         handle_benchmark_run_export,
                     )
 

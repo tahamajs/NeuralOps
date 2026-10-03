@@ -31,7 +31,7 @@ from typing import Any
 HERE = Path(__file__).resolve().parent
 CODES = HERE.parent
 ROOT = CODES.parent
-for p in [str(CODES), str(ROOT), str(ROOT / "Codes")]:
+for p in [str(CODES), str(ROOT), str(ROOT / "neuralops")]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
