@@ -65,7 +65,7 @@ Out of 128 benchmarked configurations, exactly **39 modules** exhibited degraded
 
 - **Benchmark Metrics**: Accuracy: **9.79%** | F1: **9.7900** | Loss: `0.0000`
 - **Classification**: Collapse Type A (10% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/kronecker_tt_lora.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/kronecker_tt_lora.py)
+- **Source File Location**: [`Codes/framework/compression_engine/kronecker_tt_lora.py`](Codes/framework/compression_engine/kronecker_tt_lora.py)
 
 #### Mathematical Root Cause of Degradation
 The Kronecker-TT-LoRA compressor decomposed weights into a 3-core Tensor Train $\mathcal{W} \approx G_1 \circ G_2 \circ G_3$. When initializing TT cores without singular value rescaling, the dynamic range collapsed by several orders of magnitude ($10^{-6}$), causing all forward activation outputs to become zero or constant. Consequently, the classification head produced identical logits across all examples, leading to 9.79% accuracy (one-class majority vote collapse) with 0 training loss (degenerate gradients).
@@ -467,7 +467,7 @@ def kronecker_tt_lora_factory(
 
 - **Benchmark Metrics**: Accuracy: **9.97%** | F1: **9.9700** | Loss: `0.0000`
 - **Classification**: Collapse Type A (10% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/adaptive_ranks.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/adaptive_ranks.py)
+- **Source File Location**: [`Codes/framework/compression_engine/adaptive_ranks.py`](Codes/framework/compression_engine/adaptive_ranks.py)
 
 #### Mathematical Root Cause of Degradation
 The dynamic rank allocator computed singular value energy $\frac{\sum_{i=1}^r \sigma_i^2}{\sum \sigma_j^2} \ge \tau$ with threshold $\tau=0.92$. For dense projection layers with flat singular value spectra, the algorithm allocated $r=1$ or $r=2$ due to integer truncation on layers with low variance. Rank-1 bottleneck destroyed 98% of activation variance, collapsing outputs to a single scalar direction.
@@ -793,7 +793,7 @@ __all__ = [
 
 - **Benchmark Metrics**: Accuracy: **10.00%** | F1: **10.0000** | Loss: `0.0000`
 - **Classification**: Collapse Type A (10% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/a3_compressor.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/a3_compressor.py)
+- **Source File Location**: [`Codes/framework/compression_engine/a3_compressor.py`](Codes/framework/compression_engine/a3_compressor.py)
 
 #### Mathematical Root Cause of Degradation
 A3 compressor applied low-rank truncation directly to linear weights in-place ($W = U_r \Sigma_r V_r^T$) without substituting the underlying `nn.Linear` layers with factorized parameter modules. Because no fine-tuning or recovery step was executed post-compression, the frozen approximation error severely disrupted feature representations, resulting in complete uncalibrated collapse.
@@ -1124,7 +1124,7 @@ __all__ = ["A3FactorizedLinear", "A3Compressor", "a3_compressor_factory"]
 
 - **Benchmark Metrics**: Accuracy: **10.00%** | F1: **10.0000** | Loss: `0.0000`
 - **Classification**: Collapse Type A (10% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/admm_pruner.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/admm_pruner.py)
+- **Source File Location**: [`Codes/framework/compression_engine/admm_pruner.py`](Codes/framework/compression_engine/admm_pruner.py)
 
 #### Mathematical Root Cause of Degradation
 ADMM optimization was executed for only 6 iterations without warm-up or post-pruning fine-tuning. The hard 2:4 structured projection $Z = \Pi_{\mathcal{S}}(W + U)$ zeroed out 50% of weights abruptly without recalibrating subsequent LayerNorm scale/bias parameters, causing internal covariate shift and complete activation annihilation.
@@ -1407,7 +1407,7 @@ __all__ = [
 
 - **Benchmark Metrics**: Accuracy: **10.00%** | F1: **10.0000** | Loss: `0.0000`
 - **Classification**: Collapse Type A (10% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/armor_pruner.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/armor_pruner.py)
+- **Source File Location**: [`Codes/framework/compression_engine/armor_pruner.py`](Codes/framework/compression_engine/armor_pruner.py)
 
 #### Mathematical Root Cause of Degradation
 ARMOR computed 2:4 structured sparse weights $W_{\text{sparse}}$ and approximated the residual $R = W - W_{\text{sparse}}$ via SVD ($U_r \Sigma_r V_r^T$). However, the low-rank correction was added directly back into the float weight tensor prior to evaluation without preserving the low-rank factor gradients, leaving high-frequency components distorted.
@@ -1752,7 +1752,7 @@ __all__ = [
 
 - **Benchmark Metrics**: Accuracy: **10.00%** | F1: **10.0000** | Loss: `0.0000`
 - **Classification**: Collapse Type A (10% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/ast_pruner.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/ast_pruner.py)
+- **Source File Location**: [`Codes/framework/compression_engine/ast_pruner.py`](Codes/framework/compression_engine/ast_pruner.py)
 
 #### Mathematical Root Cause of Degradation
 AST pruner applied first-order Taylor saliency $I(W_{ij}) = |W_{ij} \odot g_{ij}|$ using unit dummy gradients ($g_{ij} = 1$) because no calibration forward-backward pass was executed. This degenerated Taylor saliency to pure magnitude pruning, which is suboptimal for multi-head attention projection weights.
@@ -2031,7 +2031,7 @@ __all__ = [
 
 - **Benchmark Metrics**: Accuracy: **10.00%** | F1: **10.0000** | Loss: `0.0000`
 - **Classification**: Collapse Type A (10% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/bonsai_pruner.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/bonsai_pruner.py)
+- **Source File Location**: [`Codes/framework/compression_engine/bonsai_pruner.py`](Codes/framework/compression_engine/bonsai_pruner.py)
 
 #### Mathematical Root Cause of Degradation
 Bonsai iterative pruning executed a cubic schedule $s_t = s_{\text{target}} (1 - (1 - t/T)^3)$ over 8 steps in a single zero-shot loop without intermediate parameter updates or fine-tuning steps, compounding truncation errors at each step.
@@ -2305,7 +2305,7 @@ __all__ = [
 
 - **Benchmark Metrics**: Accuracy: **10.00%** | F1: **10.0000** | Loss: `0.0000`
 - **Classification**: Collapse Type A (10% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/cachenotes_compressor.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/cachenotes_compressor.py)
+- **Source File Location**: [`Codes/framework/compression_engine/cachenotes_compressor.py`](Codes/framework/compression_engine/cachenotes_compressor.py)
 
 #### Mathematical Root Cause of Degradation
 CacheNotes was designed for dynamic KV cache token pruning during autoregressive generation. When applied to static sequence classification weights via neuron-level row pruning (retaining only `keep_ratio=0.3` of output features), 70% of linear output neurons were zeroed out, destroying classification capacity.
@@ -2602,7 +2602,7 @@ __all__ = [
 
 - **Benchmark Metrics**: Accuracy: **10.00%** | F1: **10.0000** | Loss: `0.0000`
 - **Classification**: Collapse Type A (10% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/come.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/come.py)
+- **Source File Location**: [`Codes/framework/compression_engine/come.py`](Codes/framework/compression_engine/come.py)
 
 #### Mathematical Root Cause of Degradation
 CoMe executed layer dropping by removing 30% of transformer layers (`keep_len = int(orig_len * 0.7)`) without intermediate bridge projections or residual realignment, creating a catastrophic representational gap between remaining layers.
@@ -2854,7 +2854,7 @@ __all__ = [
 
 - **Benchmark Metrics**: Accuracy: **10.00%** | F1: **10.0000** | Loss: `0.0000`
 - **Classification**: Collapse Type A (10% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/coopq_quantizer.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/coopq_quantizer.py)
+- **Source File Location**: [`Codes/framework/compression_engine/coopq_quantizer.py`](Codes/framework/compression_engine/coopq_quantizer.py)
 
 #### Mathematical Root Cause of Degradation
 CoopQ allocated 2-bit quantization to layers deemed low-sensitivity based on unnormalized Frobenius norm. At 2-bit uniform quantization without learnable codebooks or STE fine-tuning, round-trip quantization noise overwhelmed signal propagation.
@@ -3290,7 +3290,7 @@ __all__ = [
 
 - **Benchmark Metrics**: Accuracy: **10.00%** | F1: **10.0000** | Loss: `0.0000`
 - **Classification**: Collapse Type A (10% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/enlighten_compressor.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/enlighten_compressor.py)
+- **Source File Location**: [`Codes/framework/compression_engine/enlighten_compressor.py`](Codes/framework/compression_engine/enlighten_compressor.py)
 
 #### Mathematical Root Cause of Degradation
 ENLighten decomposed weights into $W = L + R_{\text{sparse}}$ with SVD rank 64 and 2:4 structured residual. The residual chunking along rows was applied in non-overlapping 4-tuples without scaling compensation, creating severe magnitude distortions.
@@ -3381,7 +3381,7 @@ def enlighten_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any
 
 - **Benchmark Metrics**: Accuracy: **10.00%** | F1: **10.0000** | Loss: `0.0000`
 - **Classification**: Collapse Type A (10% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/faq_quantizer.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/faq_quantizer.py)
+- **Source File Location**: [`Codes/framework/compression_engine/faq_quantizer.py`](Codes/framework/compression_engine/faq_quantizer.py)
 
 #### Mathematical Root Cause of Degradation
 FAQ (Feature-Activation-Aware Quantization) scaled weights by activation variance $s = \text{diag}(\sigma_X)$. In zero-shot mode without calibration data, `act_scale` defaulted to ones with zero variance clamping, causing division-by-zero or extreme scale truncation in INT4/INT8 quantization.
@@ -3689,7 +3689,7 @@ def faq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
 
 - **Benchmark Metrics**: Accuracy: **10.00%** | F1: **10.0000** | Loss: `0.0000`
 - **Classification**: Collapse Type A (10% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/flat_llm.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/flat_llm.py)
+- **Source File Location**: [`Codes/framework/compression_engine/flat_llm.py`](Codes/framework/compression_engine/flat_llm.py)
 
 #### Mathematical Root Cause of Degradation
 FLAT-LLM computed layer-wise flatness via Hessian trace $\text{Tr}(H)$. Without calibration data, $H$ was approximated by identity $I$, pruning neurons with lowest magnitude unconditionally. This dropped critical MLP intermediate neurons across all transformer layers.
@@ -3910,7 +3910,7 @@ def flat_llm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
 
 - **Benchmark Metrics**: Accuracy: **10.00%** | F1: **10.0000** | Loss: `0.0000`
 - **Classification**: Collapse Type A (10% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/gfws_d_compressor.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/gfws_d_compressor.py)
+- **Source File Location**: [`Codes/framework/compression_engine/gfws_d_compressor.py`](Codes/framework/compression_engine/gfws_d_compressor.py)
 
 #### Mathematical Root Cause of Degradation
 GFWS (Gradient-Free Fisher Weighted SVD) attempted to compute empirical Fisher weights from synthetic uniform noise when real data was absent. Random weighting warped the singular value spectrum, prioritizing noise dimensions over principal components.
@@ -4109,7 +4109,7 @@ def gfws_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
 
 - **Benchmark Metrics**: Accuracy: **10.00%** | F1: **10.0000** | Loss: `0.0000`
 - **Classification**: Collapse Type A (10% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/hybridkv_compressor.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/hybridkv_compressor.py)
+- **Source File Location**: [`Codes/framework/compression_engine/hybridkv_compressor.py`](Codes/framework/compression_engine/hybridkv_compressor.py)
 
 #### Mathematical Root Cause of Degradation
 HybridKV applied head classification (retaining only top 30% of attention heads) by zeroing out 70% of head projections in $W_q, W_k, W_v, W_o$. Dropping 70% of attention heads zero-shot destroyed multi-head self-attention mechanisms.
@@ -4440,7 +4440,7 @@ def hybridkv_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
 
 - **Benchmark Metrics**: Accuracy: **22.60%** | F1: **22.6000** | Loss: `0.0000`
 - **Classification**: Collapse Type B (22-28% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/dynamic_rank.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/dynamic_rank.py)
+- **Source File Location**: [`Codes/framework/compression_engine/dynamic_rank.py`](Codes/framework/compression_engine/dynamic_rank.py)
 
 #### Mathematical Root Cause of Degradation
 Entropy rank allocator distributed total rank budget based on singular entropy $H(\Sigma) = -\sum p_i \ln p_i$. Layers with low entropy received ranks as low as $r=1$, severely degrading transformer MLP up-projection layers ($3072 \to 768$). Output feature variance collapsed, resulting in 22.60% accuracy.
@@ -5111,7 +5111,7 @@ __all__ = [
 
 - **Benchmark Metrics**: Accuracy: **22.73%** | F1: **22.7300** | Loss: `0.0000`
 - **Classification**: Collapse Type B (22-28% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/cur_moe_compressor.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/cur_moe_compressor.py)
+- **Source File Location**: [`Codes/framework/compression_engine/cur_moe_compressor.py`](Codes/framework/compression_engine/cur_moe_compressor.py)
 
 #### Mathematical Root Cause of Degradation
 CUR matrix decomposition factorizes $W \approx C \cdot U \cdot R$. The intersection matrix $U = (W[I, J])^+$ computed via Moore-Penrose pseudo-inverse was severely ill-conditioned (condition number $> 10^8$), causing numerical overflow and output distortion.
@@ -5284,7 +5284,7 @@ def cur_moe_factory(
 
 - **Benchmark Metrics**: Accuracy: **22.85%** | F1: **22.8500** | Loss: `0.0000`
 - **Classification**: Collapse Type B (22-28% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/cr_compressor.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/cr_compressor.py)
+- **Source File Location**: [`Codes/framework/compression_engine/cr_compressor.py`](Codes/framework/compression_engine/cr_compressor.py)
 
 #### Mathematical Root Cause of Degradation
 Column-Row interpolative decomposition $W \approx C \cdot P$ selected skeleton columns $C$ based on crude column norms without pivoting, producing nearly collinear columns with singular projection matrix $P = C^+ W$.
@@ -5532,7 +5532,7 @@ def cr_compressor_factory(
 
 - **Benchmark Metrics**: Accuracy: **22.85%** | F1: **22.8500** | Loss: `0.0000`
 - **Classification**: Collapse Type B (22-28% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/direct_svd.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/direct_svd.py)
+- **Source File Location**: [`Codes/framework/compression_engine/direct_svd.py`](Codes/framework/compression_engine/direct_svd.py)
 
 #### Mathematical Root Cause of Degradation
 Direct SVD applied uniform low rank $r=32$ to all transformer layers, including word embedding projections and classifier head, causing severe capacity bottleneck at the network boundaries.
@@ -5708,7 +5708,7 @@ __all__ = ["DirectSVDCompressor", "direct_svd_factory", "direct_svd_compressor_f
 
 - **Benchmark Metrics**: Accuracy: **22.85%** | F1: **22.8500** | Loss: `0.0000`
 - **Classification**: Collapse Type B (22-28% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/dobi_svd.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/dobi_svd.py)
+- **Source File Location**: [`Codes/framework/compression_engine/dobi_svd.py`](Codes/framework/compression_engine/dobi_svd.py)
 
 #### Mathematical Root Cause of Degradation
 Dobi-SVD introduced learnable spectral gates $\alpha \in \mathbb{R}^r$ via $y = (x (V \odot \sigma(\alpha))^T) U^T$. Initial gate values were uncalibrated, causing $\sigma(\alpha)$ to attenuate singular components excessively during initial forward pass.
@@ -5944,7 +5944,7 @@ __all__ = [
 
 - **Benchmark Metrics**: Accuracy: **22.85%** | F1: **22.8500** | Loss: `0.0000`
 - **Classification**: Collapse Type B (22-28% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/entropy_budget_allocation.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/entropy_budget_allocation.py)
+- **Source File Location**: [`Codes/framework/compression_engine/entropy_budget_allocation.py`](Codes/framework/compression_engine/entropy_budget_allocation.py)
 
 #### Mathematical Root Cause of Degradation
 Entropy budget allocation ranked components by $(s_i^2 / H)$ globally. Layers with high singular entropy consumed the entire network rank budget, starving intermediate MLP layers to rank 1-2.
@@ -6252,7 +6252,7 @@ __all__ = [
 
 - **Benchmark Metrics**: Accuracy: **22.85%** | F1: **22.8500** | Loss: `0.0000`
 - **Classification**: Collapse Type B (22-28% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/erc_svd.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/erc_svd.py)
+- **Source File Location**: [`Codes/framework/compression_engine/erc_svd.py`](Codes/framework/compression_engine/erc_svd.py)
 
 #### Mathematical Root Cause of Degradation
 Error-Controlled SVD selected rank $r$ such that $\|W - W_r\|_F / \|W\|_F \le \epsilon$. With $\epsilon=0.05$ (95% energy), deep MLP layers required rank 48, but due to rank ceiling override (`rank=32`), the constraint was violated, truncating high-energy singular values.
@@ -6430,7 +6430,7 @@ __all__ = [
 
 - **Benchmark Metrics**: Accuracy: **22.85%** | F1: **22.8500** | Loss: `0.0000`
 - **Classification**: Collapse Type B (22-28% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/frandi_compressor.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/frandi_compressor.py)
+- **Source File Location**: [`Codes/framework/compression_engine/frandi_compressor.py`](Codes/framework/compression_engine/frandi_compressor.py)
 
 #### Mathematical Root Cause of Degradation
 FRanDI scaled weights by empirical activation covariance root $C_X^{1/2}$. When covariance was ill-conditioned, $C_X^{-1/2}$ amplification blew up factor $A = \sqrt{\Sigma} V^T C_X^{-1/2}$, causing numerical instability.
@@ -6771,7 +6771,7 @@ def frandi_factory(
 
 - **Benchmark Metrics**: Accuracy: **22.85%** | F1: **22.8500** | Loss: `0.0000`
 - **Classification**: Collapse Type B (22-28% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/grecodec_compressor.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/grecodec_compressor.py)
+- **Source File Location**: [`Codes/framework/compression_engine/grecodec_compressor.py`](Codes/framework/compression_engine/grecodec_compressor.py)
 
 #### Mathematical Root Cause of Degradation
 Greedy Coordinate Descent (GreCoDeC) ran only 5 iterations per rank-1 component. Non-orthogonal greedy updates accumulated substantial residual drift across 16 rank components.
@@ -7034,7 +7034,7 @@ def grecodec_compressor_factory(
 
 - **Benchmark Metrics**: Accuracy: **22.85%** | F1: **22.8500** | Loss: `0.0000`
 - **Classification**: Collapse Type B (22-28% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/hybrid_svd_layer.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/hybrid_svd_layer.py)
+- **Source File Location**: [`Codes/framework/compression_engine/hybrid_svd_layer.py`](Codes/framework/compression_engine/hybrid_svd_layer.py)
 
 #### Mathematical Root Cause of Degradation
 Hybrid SVD layer split projections into dense core + low-rank residual. Unbalanced initialization caused the low-rank branch to dominate output variance, distorting pretrained weights.
@@ -7299,7 +7299,7 @@ __all__ = [
 
 - **Benchmark Metrics**: Accuracy: **22.85%** | F1: **22.8500** | Loss: `0.0000`
 - **Classification**: Collapse Type B (22-28% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/mgie_svd_compressor.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/mgie_svd_compressor.py)
+- **Source File Location**: [`Codes/framework/compression_engine/mgie_svd_compressor.py`](Codes/framework/compression_engine/mgie_svd_compressor.py)
 
 #### Mathematical Root Cause of Degradation
 MGIE Budget compressor allocated ranks across all layers proportional to Shannon singular entropy without normalizing by layer parameter count, leading to disproportionate rank deficits in key attention projections.
@@ -7480,7 +7480,7 @@ __all__ = [
 
 - **Benchmark Metrics**: Accuracy: **22.85%** | F1: **22.8500** | Loss: `0.0000`
 - **Classification**: Collapse Type B (22-28% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/mgie_svd.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/mgie_svd.py)
+- **Source File Location**: [`Codes/framework/compression_engine/mgie_svd.py`](Codes/framework/compression_engine/mgie_svd.py)
 
 #### Mathematical Root Cause of Degradation
 MGIE per-layer entropy rank calculation used un-clamped log probabilities $p_i \log p_i$, yielding NaN values for zero singular values, which defaulted allocated rank to $r=1$.
@@ -7657,7 +7657,7 @@ __all__ = [
 
 - **Benchmark Metrics**: Accuracy: **27.93%** | F1: **27.9300** | Loss: `0.0000`
 - **Classification**: Collapse Type B (22-28% Loss=0.0)
-- **Source File Location**: [`Codes/framework/compression_engine/hashed_net_compressor.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/hashed_net_compressor.py)
+- **Source File Location**: [`Codes/framework/compression_engine/hashed_net_compressor.py`](Codes/framework/compression_engine/hashed_net_compressor.py)
 
 #### Mathematical Root Cause of Degradation
 HashedNet mapped linear layer parameters into a shared parameter bucket table of size $N=1024$. High hash collision rate across $768 \times 768 = 589,824$ weights caused distinct parameters to overwrite each other, drastically reducing model capacity.
@@ -7784,7 +7784,7 @@ def hashed_net_factory(
 
 - **Benchmark Metrics**: Accuracy: **47.82%** | F1: **45.3100** | Loss: `nan`
 - **Classification**: Divergence Type C (47-49% Loss=NaN)
-- **Source File Location**: [`Codes/framework/attentions/regla_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/regla_attention.py)
+- **Source File Location**: [`Codes/framework/attentions/regla_attention.py`](Codes/framework/attentions/regla_attention.py)
 
 #### Mathematical Root Cause of Degradation
 Refined Gated Linear Attention (ReGLA) normalized linear attention via $\frac{Q(K_{\text{gated}}^T V)}{Q z^T + \epsilon}$. On padded sequence tokens, $z = \sum K_{\text{gated}}$ evaluated to near-zero, producing near-zero denominators $Q z^T \approx 0$. Floating point underflow produced division by zero, yielding $\text{NaN}$ activations that propagated through LayerNorm into loss $\text{NaN}$.
@@ -7924,7 +7924,7 @@ class ReGLAAttention(BaseAttention):
 
 - **Benchmark Metrics**: Accuracy: **48.05%** | F1: **36.7200** | Loss: `nan`
 - **Classification**: Divergence Type C (47-49% Loss=NaN)
-- **Source File Location**: [`Codes/framework/attentions/aegis_v5.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/aegis_v5.py)
+- **Source File Location**: [`Codes/framework/attentions/aegis_v5.py`](Codes/framework/attentions/aegis_v5.py)
 
 #### Mathematical Root Cause of Degradation
 Aegis V5 evaluated Softpick rectified attention $p = \text{ReLU}(e^{(x-m)/\tau} - e^{-m/\tau})$. On long-tailed query-key distance matrices, $\sum p$ evaluated to zero for out-of-window tokens, causing $p / (\sum p + \epsilon)$ to produce division by zero and subsequent $\text{NaN}$ loss.
@@ -8317,7 +8317,7 @@ def inject_aegis_v5(
 
 - **Benchmark Metrics**: Accuracy: **48.05%** | F1: **47.0000** | Loss: `nan`
 - **Classification**: Divergence Type C (47-49% Loss=NaN)
-- **Source File Location**: [`Codes/framework/attentions/leka_v1.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/leka_v1.py)
+- **Source File Location**: [`Codes/framework/attentions/leka_v1.py`](Codes/framework/attentions/leka_v1.py)
 
 #### Mathematical Root Cause of Degradation
 LEKA V1 used unnormalized random Fourier features $\phi(x) = [\cos(x W_R), \sin(x W_R)] / \sqrt{F}$. Without pre-projection LayerNorm, large activation magnitudes caused the normalizer $\sum \phi(K)$ to vanish relative to $\phi(Q)$, causing unstable quotient dynamics and $\text{NaN}$ loss during FP16 training.
@@ -8573,7 +8573,7 @@ def inject_leka_v1(
 
 - **Benchmark Metrics**: Accuracy: **49.08%** | F1: **32.9200** | Loss: `0.6947`
 - **Classification**: Random Guessing Type D (49.08% Loss≈0.69)
-- **Source File Location**: [`Codes/framework/attentions/adasplash_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/adasplash_attention.py)
+- **Source File Location**: [`Codes/framework/attentions/adasplash_attention.py`](Codes/framework/attentions/adasplash_attention.py)
 
 #### Mathematical Root Cause of Degradation
 AdaSplash employed 1.5-entmax sparse attention solver. On short sequences with padding, the bisection threshold $\tau$ pushed all attention logits below zero, producing all-zero attention distributions where context vectors became zero vectors, causing loss to plateau at $\ln(2) \approx 0.6931$.
@@ -8821,7 +8821,7 @@ def inject_adasplash(
 
 - **Benchmark Metrics**: Accuracy: **49.08%** | F1: **32.9200** | Loss: `nan`
 - **Classification**: Divergence Type C (47-49% Loss=NaN)
-- **Source File Location**: [`Codes/framework/attentions/aegis_v2.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/aegis_v2.py)
+- **Source File Location**: [`Codes/framework/attentions/aegis_v2.py`](Codes/framework/attentions/aegis_v2.py)
 
 #### Mathematical Root Cause of Degradation
 Aegis V2 hybrid attention fused local band attention with global linear kernel attention. In the global linear branch, $Z = \phi(K)^T \mathbf{1}$ was un-masked for padding tokens, accumulating garbage activations from padded positions that inverted normalization denominator.
@@ -9142,7 +9142,7 @@ def inject_aegis_v2(
 
 - **Benchmark Metrics**: Accuracy: **49.08%** | F1: **32.9200** | Loss: `0.6958`
 - **Classification**: Random Guessing Type D (49.08% Loss≈0.69)
-- **Source File Location**: [`Codes/framework/attentions/aegis_v6.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/aegis_v6.py)
+- **Source File Location**: [`Codes/framework/attentions/aegis_v6.py`](Codes/framework/attentions/aegis_v6.py)
 
 #### Mathematical Root Cause of Degradation
 Aegis V6 context fusion gate was initialized with negative bias, routing 99% of representations through the untrained global RFF linear stream instead of the pretrained local attention stream, destroying zero-shot classification performance.
@@ -9578,7 +9578,7 @@ def inject_aegis_v6(
 
 - **Benchmark Metrics**: Accuracy: **49.08%** | F1: **32.9200** | Loss: `nan`
 - **Classification**: Divergence Type C (47-49% Loss=NaN)
-- **Source File Location**: [`Codes/framework/attentions/compressed_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/compressed_attention.py)
+- **Source File Location**: [`Codes/framework/attentions/compressed_attention.py`](Codes/framework/attentions/compressed_attention.py)
 
 #### Mathematical Root Cause of Degradation
 Compressed attention layer applied SVD factorization to QKV projections. During forward pass, singular values $S_{\text{qkv}}$ were multiplied twice: $\text{proj} = (x V_h^T) S_{\text{qkv}} S_{\text{qkv}} U^T$, scaling activations by $S^2$ (up to $10^4$), causing activation explosion and $\text{NaN}$ loss.
@@ -9752,7 +9752,7 @@ class CompressedAttentionLayer2(CompressedAttentionLayer):
 
 - **Benchmark Metrics**: Accuracy: **49.08%** | F1: **32.9200** | Loss: `nan`
 - **Classification**: Divergence Type C (47-49% Loss=NaN)
-- **Source File Location**: [`Codes/framework/attentions/compressed_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/compressed_attention.py)
+- **Source File Location**: [`Codes/framework/attentions/compressed_attention.py`](Codes/framework/attentions/compressed_attention.py)
 
 #### Mathematical Root Cause of Degradation
 Identical module to `compressed_attention_layer_energy` (registered under alias). Suffered from the same double-scaling $S^2$ bug in the forward pass.
@@ -9926,7 +9926,7 @@ class CompressedAttentionLayer2(CompressedAttentionLayer):
 
 - **Benchmark Metrics**: Accuracy: **49.08%** | F1: **32.9200** | Loss: `nan`
 - **Classification**: Divergence Type C (47-49% Loss=NaN)
-- **Source File Location**: [`Codes/framework/attentions/hamming_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/hamming_attention.py)
+- **Source File Location**: [`Codes/framework/attentions/hamming_attention.py`](Codes/framework/attentions/hamming_attention.py)
 
 #### Mathematical Root Cause of Degradation
 Hamming Attention used continuous $\tanh$ relaxation $\tanh(\beta \cdot x)$ with large scale factor $\beta=5.0$. Saturated tanh gradients vanished, preventing backpropagation, while large intermediate logits caused softmax exponent overflow to $\text{NaN}$.
@@ -10120,7 +10120,7 @@ def inject_hamming(
 
 - **Benchmark Metrics**: Accuracy: **49.08%** | F1: **32.9200** | Loss: `nan`
 - **Classification**: Divergence Type C (47-49% Loss=NaN)
-- **Source File Location**: [`Codes/framework/attentions/mixattention_moska.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/mixattention_moska.py)
+- **Source File Location**: [`Codes/framework/attentions/mixattention_moska.py`](Codes/framework/attentions/mixattention_moska.py)
 
 #### Mathematical Root Cause of Degradation
 MixAttention MOSKA executed FASA key-value token pruning by sorting token norms. The [CLS] token (index 0) was pruned when its norm was smaller than context tokens, discarding sentence-level classification representation.
@@ -10279,7 +10279,7 @@ class MixAttentionMoSKA(BaseAttention):
 
 - **Benchmark Metrics**: Accuracy: **49.08%** | F1: **32.9200** | Loss: `nan`
 - **Classification**: Divergence Type C (47-49% Loss=NaN)
-- **Source File Location**: [`Codes/framework/attentions/nha_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/nha_attention.py)
+- **Source File Location**: [`Codes/framework/attentions/nha_attention.py`](Codes/framework/attentions/nha_attention.py)
 
 #### Mathematical Root Cause of Degradation
 Native Hybrid Attention (NHA) fused local window attention with global RFF linear attention. Un-normalized RFF features $[\cos(Q W), \sin(Q W)]$ produced negative denominator approximations when tokens were masked with large negative numbers instead of zeroing.

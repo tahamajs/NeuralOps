@@ -8,7 +8,7 @@
 
 ## 1. Architectural Overview & Value Proposition
 
-The `wgqa` module (implemented in [`Codes/framework/attentions/wgqa_attention.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/attentions/wgqa_attention.py) as `WeightedGroupedQueryAttention` and registered under `wgqa`, `wgqa_attention`, `wgqa_inject`, and `inject_wgqa`) provides an efficient Grouped-Query Attention mechanism with learnable per-KV-head importance weights. 
+The `wgqa` module (implemented in [`Codes/framework/attentions/wgqa_attention.py`](Codes/framework/attentions/wgqa_attention.py) as `WeightedGroupedQueryAttention` and registered under `wgqa`, `wgqa_attention`, `wgqa_inject`, and `inject_wgqa`) provides an efficient Grouped-Query Attention mechanism with learnable per-KV-head importance weights. 
 
 By grouping multiple query heads per key-value head and scaling key-value projections by learnable per-head vectors $w_k$ and $w_v$, WGQA drastically reduces KV cache memory footprint during inference while preserving representational expressivity.
 

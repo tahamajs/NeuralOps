@@ -70,7 +70,7 @@ Three modules fail with `mat1 and mat2 shapes cannot be multiplied (2048x128 and
 
 **Severity:** 🟠 HIGH
 
-In [`eval_all_models_datasets.py`](file:///Users/tahamajs/Documents/uni/Project/Codes/framework/eval_all_models_datasets.py), the `_extract_logits_and_loss` function is **defined twice** (lines 349–377 and 405–433). The second definition silently overwrites the first — a latent bug.
+In [`eval_all_models_datasets.py`](Codes/framework/eval_all_models_datasets.py), the `_extract_logits_and_loss` function is **defined twice** (lines 349–377 and 405–433). The second definition silently overwrites the first — a latent bug.
 
 ---
 

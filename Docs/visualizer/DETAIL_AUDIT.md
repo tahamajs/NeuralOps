@@ -2,7 +2,7 @@
 
 > **Generated At**: 2026-09-19  
 > **Repository Target**: `Hooshaai/3d-neural-architecture-visualizer`  
-> **Workspace**: `/Users/tahamajs/Documents/uni/Project/Docs/visualizer`
+> **Workspace**: `Docs/visualizer`
 
 ---
 
