@@ -12,9 +12,9 @@ from typing import Any
 
 from neuralops.config import Config, load_config
 from neuralops.data import DataConfig, TaskType, load_dataset, preprocess_function
-from neuralops.models import load_model
+from neuralops.experiment_utils.model import load_model
 from neuralops.results_saver import ResultsSaver, SaveConfig
-from neuralops.training import HuggingFaceTrainer, ResultsManager, get_task_metrics
+from neuralops.trainer import HuggingFaceTrainer, ResultsManager, get_task_metrics
 
 logger = logging.getLogger(__name__)
 
