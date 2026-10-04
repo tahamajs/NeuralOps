@@ -1173,6 +1173,19 @@
           "status": "PASS"
         }
       }
+    },
+    {
+      "module": "block_transformer_hiba",
+      "timestamp": "20261005_032419",
+      "results": {
+        "C": {
+          "pre_ppl": 51.18,
+          "post_ppl": 17.47,
+          "recovery_pct": 3370675277.71,
+          "time_s": 115.3,
+          "status": "PASS"
+        }
+      }
     }
   ]
 }

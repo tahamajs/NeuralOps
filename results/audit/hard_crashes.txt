@@ -21,3 +21,4 @@ aegis_v6_attn
 aegisattention
 asvd
 bam_umoe
+chela_slay_attention
