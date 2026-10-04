@@ -1,0 +1,12 @@
+[
+  {
+    "module": "adaptive_svd",
+    "model": "gpt2",
+    "dataset": "sst2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 64.22,
+    "error": "FAIL: accuracy (64.22%) below pass threshold (66.44%, baseline=71.44%)",
+    "timestamp": "2026-10-05T02:40:06.501870"
+  }
+]

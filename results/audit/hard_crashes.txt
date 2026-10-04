@@ -15,3 +15,5 @@ aegis_v2
 aegis_v3
 aegis_v4
 aegis_v5
+aegis_v5_module
+aegis_v6
