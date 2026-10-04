@@ -475,19 +475,28 @@ class GriffinSSDBlock(BaseAttention):
             mask_2d = None
 
         if self.is_decoder:
-            # Forward causal decay matrix
-            tril_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=target_dtype))
-            D_causal = (
-                torch.exp(
-                    (pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(min=-40.0, max=0.0)
-                ).to(target_dtype)
-                * tril_mask
-            )
-            if mask_2d is not None:
-                D_causal = D_causal * mask_2d
-            D_causal = D_causal.to(target_dtype)
+            # Replace O(L^2) dense matrix with O(L) recurrent linear attention scan
+            y_fwd = torch.empty_like(q)
+            state = torch.zeros(B, H, d, d, device=q.device, dtype=target_dtype)
+            decay_val = torch.exp(log_decay.clamp(min=-40.0, max=0.0)).to(target_dtype)  # [1, H, 1, 1]
+            decay_val_state = decay_val.view(1, H, 1, 1)
             v_typed = v.to(target_dtype)
-            y_fwd = (attn_scores * D_causal) @ v_typed  # [B, H, L, d]
+            for t in range(L):
+                k_t = k[:, :, t:t+1, :]
+                v_t = v_typed[:, :, t:t+1, :]
+                q_t = q[:, :, t:t+1, :]
+                
+                # If there's a padding mask, mask out the update
+                if mask is not None:
+                    # mask_2d: True means valid, False means padding
+                    mask_t = mask_typed[:, t:t+1].view(B, 1, 1, 1)
+                    k_v_update = k_t.transpose(-1, -2) @ v_t
+                    state = state * decay_val_state + k_v_update * mask_t
+                else:
+                    state = state * decay_val_state + k_t.transpose(-1, -2) @ v_t
+                
+                y_fwd[:, :, t:t+1, :] = q_t @ state
+            
             return y_fwd.to(target_dtype), None
         else:
             # Symmetric distance decay for bidirectional encoders: D_sym(i, j) = exp(|i - j| * log_decay)

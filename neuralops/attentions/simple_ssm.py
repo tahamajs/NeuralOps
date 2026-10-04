@@ -281,18 +281,18 @@ class SimpleSSM(BaseAttention):
         pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)
 
         if self.is_decoder:
-            tril = torch.tril(torch.ones(L, L, device=hidden_states.device, dtype=target_dtype))
-            decay_mat = (
-                torch.exp(
-                    (pos_diff.unsqueeze(0).unsqueeze(0) * log_decay).clamp(min=-30.0, max=0.0)
-                )
-                * tril
-            )
+            # Replace O(L^2) dense matrix with O(L) recurrent scan
+            y_heads = torch.empty_like(u_heads)
+            state = torch.zeros(B, H, 1, d, device=u_heads.device, dtype=target_dtype)
+            decay_val = decay.to(target_dtype)
+            for t in range(L):
+                state = state * decay_val + u_heads[:, :, t:t+1, :]
+                y_heads[:, :, t:t+1, :] = state
+            y = y_heads.transpose(1, 2).contiguous().view(B, L, H * d)
         else:
             dist = torch.abs(pos_diff).unsqueeze(0).unsqueeze(0)
             decay_mat = torch.exp((dist * log_decay).clamp(min=-30.0, max=0.0))
-
-        y = (decay_mat.to(target_dtype) @ u_heads).transpose(1, 2).contiguous().view(B, L, H * d)
+            y = (decay_mat.to(target_dtype) @ u_heads).transpose(1, 2).contiguous().view(B, L, H * d)
         if y.shape[-1] != self.dim:
             if y.shape[-1] < self.dim:
                 y = F.pad(y, (0, self.dim - y.shape[-1]))
