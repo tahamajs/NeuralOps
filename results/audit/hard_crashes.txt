@@ -20,3 +20,4 @@ aegis_v6
 aegis_v6_attn
 aegisattention
 asvd
+bam_umoe

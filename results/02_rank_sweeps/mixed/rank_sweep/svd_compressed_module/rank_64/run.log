@@ -166,3 +166,19 @@ Notes:
 2026-10-05 03:17:11,827 [INFO] QwenQualitySweep: [1/1] svd_compressed_module -> PASS 78.21% (F1: 0.8077, Peak VRAM: 383.3 MB)
 2026-10-05 03:17:11,835 [INFO] HFGitExporter: [Automation] Run gpt2 / svd-compressed-module is SUCCESSFUL (acc=78.21% >= 69.54%). Starting automated HF export to Hooshaai/svd-linear-attention-gpt2-svd-compressed-module and Git recording.
 2026-10-05 03:17:11,836 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-gpt2-svd-compressed-module: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
+[main ddace3de6a] feat(benchmark): record successful svd_compressed_module on gpt2 (Acc: 78.21%, F1: 0.8077)
+ 6 files changed, 247 insertions(+)
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_compressed_module/rank_64/batch_cache_sst2/meta.json
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_compressed_module/rank_64/finetune_metadata.json
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_compressed_module/rank_64/gpt2_svd_compressed_module_full_metrics.json
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_compressed_module/rank_64/run.log
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_compressed_module/rank_64/summary.csv
+2026-10-05 03:18:36,442 [WARNING] HFGitExporter: Git push failed after 5 attempts — commit is local only.
+2026-10-05 03:18:36,444 [INFO] QwenQualitySweep: [1/1] svd_compressed_module Timing: eval_time=217.03s
+2026-10-05 03:18:36,445 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-10-05 03:18:36,770 [INFO] QwenQualitySweep: ================================================================================
+2026-10-05 03:18:36,771 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-10-05 03:18:36,780 [INFO] QwenQualitySweep: 
+               Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+svd_compressed_module   PASS   78.21%    +3.67% 0.8077                 12            1.17x  383.3 MB               9.49             10.89
+2026-10-05 03:18:36,781 [INFO] QwenQualitySweep: ================================================================================

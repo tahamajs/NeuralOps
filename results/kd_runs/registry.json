@@ -1160,6 +1160,19 @@
           "status": "PASS"
         }
       }
+    },
+    {
+      "module": "asvd_attention",
+      "timestamp": "20261005_031931",
+      "results": {
+        "C": {
+          "pre_ppl": 128.52,
+          "post_ppl": 11.89,
+          "recovery_pct": 186.76,
+          "time_s": 383.0,
+          "status": "PASS"
+        }
+      }
     }
   ]
 }
