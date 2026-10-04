@@ -1069,6 +1069,58 @@
           "status": "FAIL"
         }
       }
+    },
+    {
+      "module": "aegis_v1_module",
+      "timestamp": "20261005_021554",
+      "results": {
+        "C": {
+          "pre_ppl": 1194.29,
+          "post_ppl": 67.67,
+          "recovery_pct": 99.86,
+          "time_s": 288.2,
+          "status": "PASS"
+        }
+      }
+    },
+    {
+      "module": "aegis_v2",
+      "timestamp": "20261005_022028",
+      "results": {
+        "C": {
+          "pre_ppl": 1230.0,
+          "post_ppl": 67.39,
+          "recovery_pct": 99.89,
+          "time_s": 274.2,
+          "status": "PASS"
+        }
+      }
+    },
+    {
+      "module": "aegis_v3",
+      "timestamp": "20261005_022453",
+      "results": {
+        "C": {
+          "pre_ppl": 1196.99,
+          "post_ppl": 68.7,
+          "recovery_pct": 99.77,
+          "time_s": 264.8,
+          "status": "PASS"
+        }
+      }
+    },
+    {
+      "module": "aegis_v4",
+      "timestamp": "20261005_022929",
+      "results": {
+        "C": {
+          "pre_ppl": 1185.42,
+          "post_ppl": 67.86,
+          "recovery_pct": 99.84,
+          "time_s": 275.5,
+          "status": "PASS"
+        }
+      }
     }
   ]
 }

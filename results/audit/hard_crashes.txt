@@ -11,3 +11,7 @@ aegis_hybrid_attn
 aegis_spectron_fp8
 aegis_v1
 aegis_v1_module
+aegis_v2
+aegis_v3
+aegis_v4
+aegis_v5
