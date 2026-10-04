@@ -515,18 +515,15 @@ class NystromAttention(BaseAttention):
     # Core helpers
     # ==================================================================
     def _iterative_pinv(self, A: torch.Tensor, iters: int = 3) -> torch.Tensor:
-        """Stable pseudoinverse via torch.linalg.pinv with iterative fallback."""
-        try:
-            return torch.linalg.pinv(A.float()).to(A.dtype)
-        except Exception:
-            norm_1 = A.abs().sum(dim=-2).amax(dim=-1, keepdim=True).unsqueeze(-1)
-            norm_inf = A.abs().sum(dim=-1).amax(dim=-1, keepdim=True).unsqueeze(-1)
-            alpha = 1.0 / (norm_1 * norm_inf + 1e-5)
-            V = alpha * A.transpose(-2, -1).contiguous()
-            I = torch.eye(A.size(-1), device=A.device, dtype=A.dtype).unsqueeze(0).unsqueeze(0)
-            for _ in range(iters):
-                V = torch.matmul(V, 2.0 * I - torch.matmul(A, V))
-            return V
+        """Stable iterative pseudoinverse (Schultz method from Nyströmformer paper)."""
+        norm_1 = A.abs().sum(dim=-2).amax(dim=-1, keepdim=True).unsqueeze(-1)
+        norm_inf = A.abs().sum(dim=-1).amax(dim=-1, keepdim=True).unsqueeze(-1)
+        alpha = 1.0 / (norm_1 * norm_inf + 1e-5)
+        V = alpha * A.transpose(-2, -1).contiguous()
+        I = torch.eye(A.size(-1), device=A.device, dtype=A.dtype).unsqueeze(0).unsqueeze(0)
+        for _ in range(iters):
+            V = torch.matmul(V, 2.0 * I - torch.matmul(A, V))
+        return V
 
     def _dense_attention(
         self,
