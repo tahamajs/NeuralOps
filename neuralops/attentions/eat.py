@@ -1,25 +1,6 @@
 """
 EAT: Efficient Attention Transformer with Progressive Token Pruning.
-Production-Hardened (v2).
 
-Fixes (v2):
-  EAT-FIX-01  Removed output padding/truncation hack.
-  EAT-FIX-02  RoPE cos/sin broadcast corrected.
-  EAT-FIX-03  `is_nested_encoder` no longer triggers for DistilBERT.
-  EAT-FIX-04  Idempotency guard in injector.
-  EAT-FIX-05  SDPA causal + mask combination corrected (broadcast-safe).
-  EAT-FIX-06  `head_mask` applied uniformly across dense and SDPA paths.
-  EAT-FIX-07  `ProgressiveTokenPruning` only built when explicitly requested
-              via `enable_pruning=True` or `keep_ratio` in `comp_config`
-              (no more silent construction from `config.keep_ratio`).
-  EAT-FIX-08  `LoRALinear.forward` dtype-safe.
-  EAT-FIX-09  Storage accounting.
-  EAT-FIX-10  Config None-safety in `__init__`.
-  EAT-FIX-11  `copy_weights` device/dtype-safe and shape-tolerant.
-  EAT-FIX-12  Fallback GQA pooling uses `repeat_interleave`.
-  EAT-FIX-13  `logger` used consistently (no `print`).
-  EAT-FIX-14  `_make_placeholder` for missing source modules.
-  EAT-FIX-15  Warnings (not runtime errors) for near-zero weights.
 """
 
 from __future__ import annotations

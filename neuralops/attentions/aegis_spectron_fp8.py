@@ -1,5 +1,5 @@
 """
-Aegis-Spectron-FP8 Hybrid Attention (Final Corrected).
+Aegis-Spectron-FP8 Hybrid Attention .
 
 Three-branch attention with spectral entropy routing:
   1. Local sliding-window attention  (O(N*W))

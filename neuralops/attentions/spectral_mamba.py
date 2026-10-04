@@ -1,4 +1,5 @@
-"""Spectral-Mamba Attention Module: Hybrid Attention-State Space Module with Spectral Channel Modulation – Production-Hardened.
+"""
+Spectral-Mamba Attention Module: Hybrid Attention-State Space Module with Spectral Channel Modulation – Production-Hardened.
 
 Combines pretrained multi-head attention with a Spectral Mamba SSM branch via learned adaptive gating.
 

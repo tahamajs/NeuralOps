@@ -1,4 +1,5 @@
-"""Progressive Token Pruning (PTP) – Production-Hardened (v2).
+"""
+Progressive Token Pruning (PTP) – Production-Hardened.
 
 Learnable Progressive Token Pruning module with guaranteed [CLS] retention,
 multi-head attention capabilities, and full multi-architecture support.
@@ -23,23 +24,6 @@ If your goal is parameter compression, use SVD/MLA/quantization instead
 appropriate, but the pipeline should label it as a *compute optimizer*,
 not a *compressor*.
 
-Bug-fix map (v2):
-  PTP-FIX-01  **KV-cache support** for decoder inference. Both tuple and
-              DynamicCache formats are supported.
-  PTP-FIX-02  **RoPE past_len offset** for KV-cache.
-  PTP-FIX-03  **Removed double `scores[:, 0] = 1e4` assignment.**
-  PTP-FIX-04  **Score network shares weights across layers** (optional
-              shared scorer) to minimize parameter overhead.
-  PTP-FIX-05  **Correct `_rotate_half` for odd head_dim.**
-  PTP-FIX-06  **Position_ids forwarded to RoPE** when present.
-  PTP-FIX-07  **Injection rewritten**: single-pass, no mutation during
-              iteration; nested encoders handled correctly.
-  PTP-FIX-08  **Removed broken `comp_config if 'comp_config' in locals()`**.
-  PTP-FIX-09  **Forward sanity check** added.
-  PTP-FIX-10  **Added `dense`, `c_proj`, `o_proj` aliases.**
-  PTP-FIX-11  **`target_layer_idx` honored in whole-model traversal.**
-  PTP-FIX-12  **Class-level `is_custom_attention = True`** (it does replace
-              attention in the graph, but flags that it is not a compressor).
 """
 
 from __future__ import annotations

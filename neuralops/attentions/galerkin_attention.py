@@ -1,4 +1,5 @@
-"""Galerkin Attention: Petrov-Galerkin Projection Attention (Corrected v3).
+"""
+Galerkin Attention: Petrov-Galerkin Projection Attention.
 
 Rollback notes:
   The previous "linear attention with sequence-space normalization" attempt

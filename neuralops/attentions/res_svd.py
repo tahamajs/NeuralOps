@@ -1,4 +1,5 @@
-"""Spectral Residual Low-Rank SVD Attention (Res-SVD Attention) – Production-Hardened.
+"""
+Spectral Residual Low-Rank SVD Attention (Res-SVD Attention).
 
 W = U_base V_base^T + alpha * B A
 where B A is initialized from the top-k residual singular directions of W - W_base.

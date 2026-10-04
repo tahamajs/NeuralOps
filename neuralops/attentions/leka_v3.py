@@ -1,4 +1,5 @@
-"""LEKAv3: Linear-time Efficient Kernel Attention with Value-Scored Landmarks (Corrected O(N)).
+"""
+LEKAv3: Linear-time Efficient Kernel Attention with Value-Scored Landmarks (Corrected O(N)).
 
 Supports:
 - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)

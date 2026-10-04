@@ -1,4 +1,5 @@
-"""Gated DeltaNet Block with Optional Multi-Head Attention Bypass.
+"""
+Gated DeltaNet Block with Optional Multi-Head Attention Bypass.
 
 Implements an efficient hybrid linear-recurrent block switching dynamically between standard
 multi-head self-attention and Bidirectional Gated DeltaNet with pretrained weight transfer.

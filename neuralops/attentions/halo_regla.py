@@ -1,4 +1,5 @@
-"""HALO-ReGLA: Hardware-Aware Linear Optics & Rectified Gated Linear Attention – Production-Hardened.
+"""
+HALO-ReGLA: Hardware-Aware Linear Optics & Rectified Gated Linear Attention – Production-Hardened.
 
 Combines multi-head linear projection with Rotary Position Embeddings (RoPE),
 rectified kernel representations, and adaptive gating for zero-shot distillation from pretrained transformers.

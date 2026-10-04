@@ -1,4 +1,5 @@
-"""LEKAv2: Linear-time Efficient Kernel Attention with Landmark Distillation.
+"""
+LEKAv2: Linear-time Efficient Kernel Attention with Landmark Distillation.
 
 Supports:
 - Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)

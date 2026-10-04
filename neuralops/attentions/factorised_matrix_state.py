@@ -1,4 +1,5 @@
-"""Factorised Matrix State Attention Module.
+"""
+Factorised Matrix State Attention Module.
 
 Implements multi-head bidirectional/causal associative matrix memory updates combined with
 learnable decay gating, denominator normalization, low-rank factorized output projection,

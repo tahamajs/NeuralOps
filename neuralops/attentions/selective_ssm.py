@@ -1,4 +1,5 @@
-"""Selective State Space Model (SelectiveSSM).
+"""
+Selective State Space Model (SelectiveSSM).
 
 Faithful implementation of Mamba-style selective state space recurrence block.
 Features:

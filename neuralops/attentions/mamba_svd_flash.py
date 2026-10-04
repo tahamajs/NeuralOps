@@ -1,4 +1,5 @@
-"""MambaSVD-Flash v3: Hybrid Bidirectional SSM-FlashAttention Module.
+"""
+MambaSVD-Flash : Hybrid Bidirectional SSM-FlashAttention Module.
 
 Fuses bidirectional selective state-space dynamics with per-chunk online
 low-rank SVD of state transitions, coupled with a Multi-Head / GQA attention

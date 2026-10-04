@@ -1,4 +1,5 @@
-"""Phantom: Parameter-Hashed AttentioN with Token-wise Orthogonal Mapping – Production-Hardened.
+"""
+Phantom: Parameter-Hashed AttentioN with Token-wise Orthogonal Mapping.
 
 Combines CUR-matrix factorized linear projections based on empirical statistical leverage scores
 with multi-round angular Locality-Sensitive Hashing (LSH) sparse attention and rectified Softpick activation.

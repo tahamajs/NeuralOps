@@ -22,17 +22,6 @@ NOVELTY STATEMENT:
     3. No extra parameters beyond the gate:
        768 * 12 + 12 = 9,228 params (+0.014% on DistilBERT).
 
-Bug-fix map:
-  HA-FIX-01  out_proj always executed (no dead parameters in nested mode).
-  HA-FIX-02  _linear_branch: proper causal + padding masking.
-  HA-FIX-03  injector recursion guard.
-  HA-FIX-04  injector double-injection guard.
-  HA-FIX-05  removed 'comp_config' in locals() hack.
-  HA-FIX-06  is_nested_encoder set correctly in injector.
-  HA-FIX-07  KV-cache implemented (tuple + DynamicCache).
-  HA-FIX-08  RoPE past_len offset + position_embeddings support.
-  HA-FIX-09  head_mask broadcasting corrected (B, H, 1, 1).
-  HA-FIX-10  _standard_branch: optional SDPA fast path.
 """
 
 from __future__ import annotations

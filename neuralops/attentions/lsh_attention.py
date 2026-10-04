@@ -1,5 +1,5 @@
 """
-Locality-Sensitive Hashing (LSH) Attention – Reformer style (Corrected).
+Locality-Sensitive Hashing (LSH) Attention – Reformer style .
 
 Approximates dense attention by clustering keys and queries into discrete hash buckets
 via angular random hyperplane projections.

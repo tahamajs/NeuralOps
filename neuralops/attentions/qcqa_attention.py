@@ -1,4 +1,5 @@
-"""Quality and Capacity-Aware Grouped Query Attention (QCQA) — v2.
+"""
+Quality and Capacity-Aware Grouped Query Attention (QCQA).
 
 Dynamically synthesizes head-specific key-value representations for each
 query head via continuous learned routing distributions over a compressed

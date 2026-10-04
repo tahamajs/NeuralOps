@@ -1,7 +1,7 @@
-"""HymbaTransX: Hybrid Differential Transformer & State Space Model Block (Corrected).
+"""
+HymbaTransX: Hybrid Differential Transformer & State Space Model Block.
 
 Differential attention with rotary embeddings coupled with a State Space Model branch.
-
 """
 
 from __future__ import annotations

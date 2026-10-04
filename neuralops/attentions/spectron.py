@@ -1,5 +1,5 @@
 """
-SpectronAttention: Importance-Aware Low-Rank + Sparse Attention (Activation-Aware v2).
+SpectronAttention: Importance-Aware Low-Rank + Sparse Attention (Activation-Aware).
 
 Dynamically allocates non-uniform low-rank capacities across attention projection
 matrices under a global parameter budget via Lagrangian spectral entropy

@@ -1,28 +1,6 @@
 r"""
-CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel — Production-Hardened (v3).
+CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel — Production-Hardened.
 
-Fixes (v3) relative to v2:
-  CS-FIX-16  `_safe_int`, `_safe_float` helpers handle `None` values and missing
-             attributes uniformly. Previously `int(None)` could crash __init__.
-  CS-FIX-17  `_extract_attn_config` robustly resolves hidden_size, num_heads,
-             head_dim, num_kv_heads across HF configs (dict or object) and
-             uses pretrained attention as a fallback source.
-  CS-FIX-18  `_copy_pretrained` never raises on missing weights; instead it
-             logs and falls back to initialized weights (so injection still
-             succeeds on unexpected architectures).
-  CS-FIX-19  `inject_chela_slay` calls `.to(device, dtype)` after construction
-             so the new module lands on the correct device.
-  CS-FIX-20  `_copy_pretrained` handles the case where weights come from
-             HF's `base_layer` (PEFT-wrapped) transparently.
-  CS-FIX-21  `_copy_pretrained` never resets weights to zero when a source
-             tensor shape cannot be reconciled; it leaves the init intact.
-  CS-FIX-22  `comp_config=None` is tolerated everywhere.
-  CS-FIX-23  `key`/`value` aliases point to `W_k`/`W_v` (not `k_up`/`v_up`
-             which do not exist here).
-  CS-FIX-24  `gate_init_bias` no longer defaulted via `kwargs` — it uses the
-             constructor argument directly.
-  CS-FIX-25  `_causal_linear_attention` uses `denom.abs() + eps` consistently
-             (no sign flips).
 """
 
 from __future__ import annotations

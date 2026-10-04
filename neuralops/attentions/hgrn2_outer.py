@@ -1,24 +1,9 @@
-"""HGRN-2 Outer-Product Recurrent Linear Attention — Production-Hardened v2.
+"""
+HGRN-2 Outer-Product Recurrent Linear Attention — Production-Hardened v2.
 
 Multi-head bidirectional/causal outer-product associative matrix memory
 updates with log-space bounded decay gating and denominator normalization.
 
-Fixes (v2):
-  HGRN2-FIX-01  **Chunked cumsum scan** replaces the naive Python loop.
-                Complexity drops from O(L) sequential steps to O(L/C)
-                chunks. For L=128, C=64 → 2 chunks vs 128 steps.
-  HGRN2-FIX-02  **Denominator z now decays with the same gate as S.**
-                Previously `z = z + k_t` (no decay) caused the output
-                to shrink toward zero as sequence length grew.
-  HGRN2-FIX-03  **Idempotency guard** in `inject_hgrn2_outer`.
-  HGRN2-FIX-04  **`LoRALinear` dtype/device safe**.
-  HGRN2-FIX-05  **Injector returns the injected module** (not the layer)
-                so caller counters increment.
-  HGRN2-FIX-06  **Injector detects decoder** and passes `is_decoder`.
-  HGRN2-FIX-07  **`is_custom_attention = False`** on `LoRALinear`.
-  HGRN2-FIX-08  **Storage accounting** in `storage_bytes()`.
-  HGRN2-FIX-09  **`state_norm` applied on head_dim axis** consistently.
-  HGRN2-FIX-10  **Robust mask handling** for 2D/4D masks.
 """
 
 from __future__ import annotations
