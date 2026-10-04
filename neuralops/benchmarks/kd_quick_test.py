@@ -819,13 +819,8 @@ def main():
     LOG.info("Teacher baseline PPL calculated: %.2f", teacher_ppl)
 
     # FIX 3: Logical assignment of baseline PPL
-    if args.baseline_ppl is None or args.baseline_ppl <= 0:
-        baseline_ppl = teacher_ppl
-    else:
-        baseline_ppl = args.baseline_ppl
-        LOG.info("Overriding baseline PPL with user provided value: %.2f", baseline_ppl)
-        
-    LOG.info("Using baseline PPL for recovery metric: %.2f", baseline_ppl)
+    baseline_ppl = teacher_ppl
+    LOG.info("Using measured teacher PPL as baseline: %.2f", baseline_ppl)
     
     # ---- Run each method ----
     results: list[dict[str, Any]] = []
