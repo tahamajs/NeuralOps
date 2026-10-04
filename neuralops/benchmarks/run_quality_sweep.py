@@ -3660,7 +3660,40 @@ def run_single_module_main(args) -> dict:
         ds = load_from_disk(str(fallback_sst2))
     train = ds["train"]
     val = ds["validation"] if "validation" in ds else ds["test"]
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(args.model)
+    except Exception as e:
+        err_str = str(e).lower()
+        if any(
+            k in err_str
+            for k in (
+                "does not appear to have",
+                "can't load",
+                "couldn't connect",
+                "no weight",
+                "entry not found",
+                "cannot find the requested files",
+                "cannot find the file",
+            )
+        ):
+            LOG.error("Model %s has no weights/tokenizer or cannot be loaded: %s — skipping.", args.model, e)
+            out = Path(args.output_dir) if args.output_dir else Path("results")
+            out.mkdir(parents=True, exist_ok=True)
+            csv_name = (
+                f"summary_{args.output_suffix}.csv"
+                if getattr(args, "output_suffix", None)
+                else "summary.csv"
+            )
+            with open(out / csv_name, "w", newline="", encoding="utf-8") as f:
+                f.write("module_name,status,accuracy_pct,baseline_acc,pass_threshold_pct,error\n")
+                f.write(f"N/A,SKIP_NO_WEIGHTS,0.0,0.0,0.0,{str(e)[:200]}\n")
+            return {
+                "module_name": "N/A",
+                "status": "SKIP_NO_WEIGHTS",
+                "accuracy_pct": 0.0,
+                "error": str(e)[:200],
+            }
+        raise
     tokenizer.padding_side = "right"
     if tokenizer.pad_token_id is None:
         if tokenizer.eos_token:
