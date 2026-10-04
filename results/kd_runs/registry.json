@@ -1134,6 +1134,19 @@
           "status": "PASS"
         }
       }
+    },
+    {
+      "module": "aegis_v6",
+      "timestamp": "20261005_025739",
+      "results": {
+        "C": {
+          "pre_ppl": 765.13,
+          "post_ppl": 764.02,
+          "recovery_pct": 0.16,
+          "time_s": 1046.4,
+          "status": "FAIL"
+        }
+      }
     }
   ]
 }

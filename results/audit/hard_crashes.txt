@@ -17,3 +17,4 @@ aegis_v4
 aegis_v5
 aegis_v5_module
 aegis_v6
+aegis_v6_attn

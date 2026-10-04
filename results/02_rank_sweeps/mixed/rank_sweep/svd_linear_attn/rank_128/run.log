@@ -167,3 +167,42 @@ Notes:
 2026-10-05 02:54:25,074 [INFO] QwenQualitySweep: [1/1] svd_linear_attn -> PASS 78.67% (F1: 0.8102, Peak VRAM: 383.73 MB)
 2026-10-05 02:54:25,091 [INFO] HFGitExporter: [Automation] Run gpt2 / svd-linear-attn is SUCCESSFUL (acc=78.67% >= 69.54%). Starting automated HF export to Hooshaai/svd-linear-attention-gpt2-svd-linear-attn and Git recording.
 2026-10-05 02:54:25,093 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-gpt2-svd-linear-attn: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
+[main 990e07fabd] feat(benchmark): record successful svd_linear_attn on gpt2 (Acc: 78.67%, F1: 0.8102)
+ 29 files changed, 691 insertions(+)
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd/4models_summary.csv
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd/4models_summary.json
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd/distilbert/batch_cache_sst2/meta.json
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd/distilbert/distilbert-base-uncased_adaptive_svd_full_metrics.json
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd/distilbert/failed_runs.json
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd/distilbert/finetune_metadata.json
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd/distilbert/summary.csv
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd/gpt_neo/summary.csv
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd_attention/distilbert/batch_cache_sst2/meta.json
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd_attention/distilbert/distilbert-base-uncased_adaptive_svd_attention_full_metrics.json
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd_attention/distilbert/failed_runs.json
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd_attention/distilbert/finetune_metadata.json
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd_attention/distilbert/summary.csv
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd_attention/gpt_neo/summary.csv
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd_attention/roberta/batch_cache_sst2/meta.json
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd_attention/roberta/failed_runs.json
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd_attention/roberta/finetune_metadata.json
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd_attention/roberta/roberta-base_adaptive_svd_attention_full_metrics.json
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd_attention/roberta/summary.csv
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_linear_attn/rank_128/batch_cache_sst2/meta.json
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_linear_attn/rank_128/finetune_metadata.json
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_linear_attn/rank_128/gpt2_svd_linear_attn_full_metrics.json
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_linear_attn/rank_128/run.log
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_linear_attn/rank_128/summary.csv
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_linear_attn/rank_32/run.log
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_linear_attn/rank_64/batch_cache_sst2/meta.json
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_linear_attn/rank_64/finetune_metadata.json
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_linear_attn/rank_64/run.log
+2026-10-05 02:55:39,162 [WARNING] HFGitExporter: Git push failed after 5 attempts — commit is local only.
+2026-10-05 02:55:39,164 [INFO] QwenQualitySweep: [1/1] svd_linear_attn Timing: eval_time=495.75s
+2026-10-05 02:55:39,164 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-10-05 02:55:40,196 [INFO] QwenQualitySweep: ================================================================================
+2026-10-05 02:55:40,197 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-10-05 02:55:40,205 [INFO] QwenQualitySweep: 
+         Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+svd_linear_attn   PASS   78.67%    +4.13% 0.8102                 12            1.16x  383.7 MB              29.44             33.76
+2026-10-05 02:55:40,205 [INFO] QwenQualitySweep: ================================================================================
