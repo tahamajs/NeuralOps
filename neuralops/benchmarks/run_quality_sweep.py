@@ -1595,6 +1595,7 @@ def parse_args(argv=None):
     ap.add_argument("--num_labels", type=int, default=None)
     ap.add_argument("--output_dir", default=None)
     ap.add_argument("--modules", default=["all"], nargs="*")
+    ap.add_argument("--module", dest="modules", nargs="*")
     ap.add_argument("--output_suffix", type=str, default=None)
     ap.add_argument("--parallel", type=int, default=None)
     ap.add_argument("--module_filter", dest="modules", nargs="*")
