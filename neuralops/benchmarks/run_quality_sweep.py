@@ -1235,30 +1235,25 @@ def evaluate(
 def finetune(model, tokenizer, train, name, steps, seq_len, batch_size, device, fp16, lr=1e-4):
     for p in model.parameters():
         p.requires_grad = False
-    head = next(
-        (
-            getattr(model, attr, None)
-            for attr in (
-                "score",
-                "classifier",
-                "classification_head",
-                "classification_head.dense",
-            )
-            if getattr(model, attr, None) is not None
-        ),
-        None,
-    )
-    if head is None:
-        head = next(
-            (sub for name_, sub in model.named_modules() if name_.endswith("classification_head")),
-            None,
-        )
-    if head is None:
-        raise RuntimeError("Qwen sequence-classification head not found")
-    for p in head.parameters():
-        p.requires_grad = True
-        if p.dtype != torch.float32:
-            p.data = p.data.float()
+    head_found = False
+    for attr in ("score", "classifier", "pre_classifier", "classification_head"):
+        mod = getattr(model, attr, None)
+        if mod is not None:
+            head_found = True
+            for p in mod.parameters():
+                p.requires_grad = True
+                if p.dtype != torch.float32:
+                    p.data = p.data.float()
+    if not head_found:
+        for name_, sub in model.named_modules():
+            if any(k in name_ for k in ("classifier", "score", "classification_head")):
+                head_found = True
+                for p in sub.parameters():
+                    p.requires_grad = True
+                    if p.dtype != torch.float32:
+                        p.data = p.data.float()
+    if not head_found:
+        raise RuntimeError("Sequence-classification head not found")
     opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=lr)
     scaler = _make_grad_scaler(
         enabled=fp16 and device.type == "cuda",
@@ -3850,7 +3845,7 @@ def run_single_module_main(args) -> dict:
             len(st) < len(model_st) * 0.7
             or any(".lora_" in k for k in st)
             or all(
-                any(h in k for h in ("score", "classifier"))
+                any(h in k for h in ("score", "classifier", "pre_classifier", "classification_head"))
                 for k in st
                 if "weight" in k or "bias" in k
             )
@@ -4071,7 +4066,7 @@ def run_single_module_main(args) -> dict:
                         head_st = {
                             k: v
                             for k, v in base.state_dict().items()
-                            if any(h in k for h in ("score", "classifier"))
+                            if any(h in k for h in ("score", "classifier", "pre_classifier", "classification_head"))
                         }
                         torch.save(head_st, checkpoint)
                         LOG.info(
