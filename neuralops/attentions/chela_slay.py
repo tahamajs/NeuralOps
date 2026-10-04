@@ -235,6 +235,7 @@ class ChelaSlayAttention(BaseAttention):
         rank: int = 64,
         feature_dim: int = 128,
         pretrained_attn: nn.Module | None = None,
+        old_attn: nn.Module | None = None,
         gate_init_bias: float = 0.0,  # Balanced default: sigmoid(0)=0.5 (50% linear, 50% dense)
         comp_config: Any | None = None,
         layer_id: int | None = None,
