@@ -1,0 +1,31 @@
+# ─────────────────────────────────────────────────────────────────
+# Default experiment configuration
+# Override any value on the CLI:  --epochs 5 --lr 3e-5
+# ─────────────────────────────────────────────────────────────────
+
+# Model & task
+model_name:  distilbert-base-uncased
+task:        sst2
+max_len:     128
+num_labels:  2
+
+# Training
+epochs:      3
+batch_size:  16
+lr:          2.0e-5
+grad_accum:  1
+seed:        42
+max_grad_norm: 1.0
+gradient_checkpointing: false
+
+# Attention
+attn_type:   full          # 'full' = standard MHA; use a registry key to swap
+
+# Compression (optional)
+compressor:       null     # null = no compression; e.g. 'svd', 'tt', 'kronecker'
+compression_rank: 64
+
+# Paths
+output_dir:  ./results
+log_dir:     ./logs
+glue_base_path: null       # null = auto-discover or download
