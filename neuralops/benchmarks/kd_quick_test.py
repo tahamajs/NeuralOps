@@ -296,7 +296,7 @@ def set_train_scope(model, train_scope="all"):
                 n_matched += 1
             else:
                 p.requires_grad = False
-        logger.info("set_train_scope: matched %d attention param tensors", n_matched)
+        LOG.info("set_train_scope: matched %d attention param tensors", n_matched)
     else:
         raise ValueError(f"Unknown train_scope: {train_scope}")
 
