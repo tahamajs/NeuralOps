@@ -705,9 +705,180 @@ def print_comparison_table(results: list[dict[str, Any]]):
     print("+---------+----------+----------+----------+----------+----------+----------+")
 
 def main():
-    # Boilerplate setup and ArgumentParsing...
-    # (Rest of the original main function logic remains intact)
-    pass
-
+    parser = argparse.ArgumentParser(description="Knowledge Distillation on injected Mamba module")
+    
+    # ---- Model & Data ----
+    parser.add_argument("--model_name", type=str, default="gpt2", help="Teacher/student base model")
+    parser.add_argument("--module", type=str, default="mamba", help="Module to inject")
+    parser.add_argument("--rank", type=int, default=64, help="Rank for injected module")
+    parser.add_argument("--seq_len", type=int, default=256, help="Sequence length")
+    parser.add_argument("--max_train_texts", type=int, default=5000, help="Max texts for training chunks")
+    parser.add_argument("--num_chunks", type=int, default=412, help="Max number of training chunks (0=all)")
+    
+    # ---- Training ----
+    parser.add_argument("--batch_size", type=int, default=1)
+    parser.add_argument("--grad_accum_steps", type=int, default=1)
+    parser.add_argument("--learning_rate", type=float, default=5e-6)
+    parser.add_argument("--recovery_steps", type=int, default=1000)
+    parser.add_argument("--warmup_steps", type=int, default=100)
+    parser.add_argument("--eval_every", type=int, default=100)
+    parser.add_argument("--eval_max_tokens", type=int, default=15000)
+    parser.add_argument("--early_stop_ppl", type=float, default=5000.0)
+    parser.add_argument("--no_cosine_lr", action="store_true")
+    parser.add_argument("--max_grad_norm", type=float, default=1.0)
+    
+    # ---- KD Config ----
+    parser.add_argument("--methods", nargs="+", default=["C"], choices=["A", "B", "C", "D"],
+                        help="KD methods: A=logit KL, B=hidden MSE, C=curriculum, D=cosine+logit")
+    parser.add_argument("--kl_temperature", type=float, default=2.0)
+    parser.add_argument("--kl_warmup_steps", type=int, default=100)
+    
+    # ---- Cache ----
+    parser.add_argument("--use_cache", action="store_true", help="Use cached teacher outputs")
+    parser.add_argument("--cache_dir", type=str, default=None, help="Custom cache directory")
+    parser.add_argument("--cache_attn", action="store_true", help="Cache attention maps too")
+    
+    # ---- System ----
+    parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
+    parser.add_argument("--fp16", action="store_true", default=(torch.cuda.is_available()))
+    parser.add_argument("--train_scope", type=str, default="module",
+                        choices=["all", "mamba", "attention", "module"])
+    parser.add_argument("--baseline_ppl", type=float, default=21.71, help="Teacher baseline PPL")
+    parser.add_argument("--timestamp", type=str, default=None)
+    parser.add_argument("--log_file", type=str, default=None)
+    
+    args = parser.parse_args()
+    
+    # ---- Setup logging ----
+    if args.timestamp is None:
+        args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_file = args.log_file or f"logs/kd_{args.module}_{args.timestamp}.log"
+    setup_logging(log_file)
+    
+    LOG.info("=" * 70)
+    LOG.info("Knowledge Distillation Experiment")
+    LOG.info("=" * 70)
+    LOG.info("Model: %s | Module: %s | Methods: %s", args.model_name, args.module, args.methods)
+    LOG.info("Device: %s | FP16: %s | Batch: %d | Seq: %d", args.device, args.fp16, args.batch_size, args.seq_len)
+    
+    run_dir = make_run_dir(args.module, args)
+    LOG.info("Run directory: %s", run_dir)
+    
+    # ---- Load tokenizer & datasets ----
+    LOG.info("Loading tokenizer: %s", args.model_name)
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    
+    LOG.info("Loading WikiText-2 dataset...")
+    dataset = load_dataset("wikitext", "wikitext-2-raw-v1")
+    train_dataset = dataset["train"]
+    test_dataset = dataset["test"]
+    
+    # ---- Build training chunks ----
+    LOG.info("Building training chunks (max_texts=%d, seq_len=%d)...", args.max_train_texts, args.seq_len)
+    train_chunks = build_train_chunks(train_dataset, tokenizer, max_train_texts=args.max_train_texts, seq_len=args.seq_len)
+    if args.num_chunks > 0:
+        train_chunks = train_chunks[:args.num_chunks]
+    LOG.info("Training chunks: %s", tuple(train_chunks.shape))
+    
+    # ---- Load teacher & snapshot ----
+    LOG.info("Loading teacher model: %s", args.model_name)
+    teacher = AutoModelForCausalLM.from_pretrained(args.model_name)
+    teacher.eval()
+    teacher.to(args.device)
+    
+    LOG.info("Creating student snapshot...")
+    base_snapshot = AutoModelForCausalLM.from_pretrained(args.model_name)
+    base_snapshot.eval()
+    base_snapshot.to(args.device)
+    
+    # ---- Setup teacher cache ----
+    teacher_cache = None
+    if args.use_cache:
+        if args.cache_dir:
+            cache_dir = Path(args.cache_dir)
+        else:
+            cache_hash = get_cache_hash(args.model_name, args.model_name, args.seq_len, len(train_chunks), args.methods, args.cache_attn)
+            cache_dir = Path("results") / "kd_cache" / f"{args.model_name}_{cache_hash}"
+        
+        if is_cache_valid(cache_dir, len(train_chunks), args.seq_len, args.methods, args.cache_attn):
+            LOG.info("Loading existing teacher cache from %s", cache_dir)
+            teacher_cache = load_teacher_cache(cache_dir)
+        else:
+            LOG.info("Building teacher cache at %s", cache_dir)
+            build_teacher_cache(teacher, tokenizer, train_chunks, cache_dir, args.methods, args.device, args.seq_len, args.cache_attn, args.max_train_texts)
+            teacher_cache = load_teacher_cache(cache_dir)
+    
+    # ---- Baseline PPL (teacher) ----
+    LOG.info("Computing teacher baseline PPL...")
+    teacher_ppl = compute_perplexity(teacher, tokenizer, test_dataset, seq_len=args.seq_len, stride=128, max_eval_tokens=args.eval_max_tokens, device=args.device)
+    LOG.info("Teacher baseline PPL: %.2f", teacher_ppl)
+    baseline_ppl = teacher_ppl if args.baseline_ppl <= 0 else args.baseline_ppl
+    LOG.info("Using baseline PPL for recovery metric: %.2f", baseline_ppl)
+    
+    # ---- Run each method ----
+    results: list[dict[str, Any]] = []
+    for method_name in args.methods:
+        LOG.info("")
+        LOG.info("#" * 70)
+        LOG.info("# Running method %s", method_name)
+        LOG.info("#" * 70)
+        
+        result = run_kd_method(
+            method_name=method_name,
+            base_teacher=teacher,
+            base_snapshot=base_snapshot,
+            tokenizer=tokenizer,
+            train_chunks=train_chunks,
+            test_dataset=test_dataset,
+            args=args,
+            teacher_cache=teacher_cache,
+            baseline_ppl=baseline_ppl,
+        )
+        results.append(result)
+    
+    # ---- Print table & save ----
+    print_comparison_table(results)
+    
+    results_path = run_dir / "results.json"
+    results_path.write_text(json.dumps(results, indent=2), encoding="utf-8")
+    LOG.info("Results saved: %s", results_path)
+    
+    update_registry(args.module, run_dir, results, args, baseline_ppl)
+    update_latest_link(args.module, run_dir)
+    
+    LOG.info("")
+    LOG.info("=" * 70)
+    LOG.info("EXPERIMENT COMPLETE")
+    LOG.info("=" * 70)
+    
+    # ---- Plot (optional) ----
+    if HAS_MATPLOTLIB and len(results) > 0:
+        try:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            methods = [r["method"] for r in results]
+            pre_ppls = [r["pre_ppl"] for r in results]
+            post_ppls = [r["post_ppl"] for r in results]
+            x = np.arange(len(methods))
+            width = 0.35
+            ax.bar(x - width/2, pre_ppls, width, label="Pre-KD PPL")
+            ax.bar(x + width/2, post_ppls, width, label="Post-KD PPL")
+            ax.axhline(y=baseline_ppl, color="r", linestyle="--", label=f"Teacher baseline ({baseline_ppl:.2f})")
+            ax.set_xticks(x)
+            ax.set_xticklabels(methods)
+            ax.set_ylabel("Perplexity")
+            ax.set_title(f"KD Recovery — {args.module}")
+            ax.legend()
+            ax.set_yscale("log")
+            plot_path = run_dir / "comparison.png"
+            plt.tight_layout()
+            plt.savefig(plot_path, dpi=100)
+            plt.close()
+            LOG.info("Plot saved: %s", plot_path)
+        except Exception as e:
+            LOG.warning("Plot generation failed: %s", e)
+    
+    return 0
 if __name__ == "__main__":
     main()
