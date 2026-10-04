@@ -1061,9 +1061,9 @@ def get_dataset_batch(
                     tokenizer.pad_token_id = tokenizer.eos_token_id
 
                 try:
-                    raw_val = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
-                except Exception:
                     raw_val = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="test")
+                except Exception:
+                    raw_val = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
 
                 valid_texts = [t for t in raw_val["text"] if len(t.strip()) > 10][:200]
                 if not valid_texts:
