@@ -1,5 +1,5 @@
 """
-SAMBA-M3 v2: Hybrid Sliding-Window Attention and Spectral Mamba Block (Hardened).
+SAMBA-M3: Hybrid Sliding-Window Attention and Spectral Mamba Block (Hardened).
 
 """
 

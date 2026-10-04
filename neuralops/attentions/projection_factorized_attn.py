@@ -1,4 +1,5 @@
-"""Projection Factorized SVD Linear Attention — Production-Hardened (v2).
+"""
+Projection Factorized SVD Linear Attention.
 
 Delegates to `inject_svd_linear_attention` with a pre-discovered source
 attention and robust attribute-level replacement for all supported

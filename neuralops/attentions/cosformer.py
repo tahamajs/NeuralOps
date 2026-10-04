@@ -1,4 +1,5 @@
-"""Cosformer: Rethinking Softmax in Attention with Linear Complexity.
+"""
+Cosformer: Rethinking Softmax in Attention with Linear Complexity.
 
 Implements non-negative kernel feature mapping with cosine/sine positional reweighting,
 cumulative sum causal linear attention for decoders, and associative accumulation for encoders.

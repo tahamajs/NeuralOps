@@ -1,4 +1,5 @@
-"""Infini-Attention with Compressive Memory and Sliding Window — Fixed (v3).
+"""
+Infini-Attention with Compressive Memory and Sliding Window.
 
 Reference: Munkhdalai et al., "Leave No Context Behind: Efficient Infinite
 Context Transformers with Infini-attention", 2024.
@@ -12,31 +13,6 @@ Core mechanism:
 
 where σ(x) = ELU(x) + 1.
 
-Fixes (v3):
-  INF3-FIX-01  Forward signature now matches BERT/RoBERTa/DistilBERT
-               positional arg order exactly, so HF calls bind correctly.
-               `output_attentions` is the 7th positional arg (BERT style);
-               DistilBERT passes it as keyword. Both work.
-  INF3-FIX-02  `layer_idx` accepted as keyword with default 0.
-  INF3-FIX-03  All internal parameters (`beta`, `w_mem.weight`, `w_mem.bias`)
-               are explicitly initialized on the target device/dtype
-               BEFORE the first forward pass, so no device mismatch.
-  INF3-FIX-04  `_compressive_memory_read` precomputes `g · φ(k)` outside the
-               loop and uses a batched outer product; avoids `.to()` churn.
-  INF3-FIX-05  Memory state `M`, `Z` explicitly declared fp32 to avoid
-               autocast-related dtype drift.
-  INF3-FIX-06  Idempotency guard checks both source and parent layer.
-  INF3-FIX-07  Recursion guard in `inject_infini` (depth limit).
-  INF3-FIX-08  Sliding-window + causal + padding masks combined in one
-               `masked_fill` chain.
-  INF3-FIX-09  `nan_to_num` on all outputs (scores, attn, context, memory).
-  INF3-FIX-10  GQA `repeat_kv` applied before memory read, so `v` matches
-               the head layout used in the memory loop.
-  INF3-FIX-11  Storage accounting uses a single sum over real parameters.
-  INF3-FIX-12  `copy_weights` raises a descriptive error on irreconcilable
-               shape mismatch instead of silently truncating.
-  INF3-FIX-13  Proper handling of `head_mask` for 1D/2D/3D shapes.
-  INF3-FIX-14  `comp_config` extraction tolerant of dict/None/namespace.
 """
 
 from __future__ import annotations

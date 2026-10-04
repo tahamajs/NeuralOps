@@ -1,4 +1,5 @@
-"""Optimized Hybrid Attention (OHA) — Production-Hardened (v2).
+"""
+Optimized Hybrid Attention (OHA).
 
 Fuses localized sliding-window self-attention with sequence-compressed
 low-rank global attention via dynamic head-wise gated modulation and exact

@@ -1,4 +1,5 @@
-"""Multi-Head Latent Attention (MLA) – DeepSeek-V2 (Production-Hardened v2).
+"""
+Multi-Head Latent Attention (MLA) – DeepSeek-V2).
 
 Paper: https://arxiv.org/abs/2405.04434
 
@@ -12,31 +13,6 @@ Note on encoder-only models:
   loses accuracy. This version validates reconstruction error and falls
   back to the original attention when needed.
 
-Fixes (v2):
-  MLA-FIX-01  **Removed erroneous `norm_scale` on K/V.** The SVD low-rank
-              approximation already has norm `||S[:r]||_F`; multiplying by
-              `||W||_F / ||S[:r]||_F` scales the reconstruction back UP to
-              the original norm, making attention scores explode.
-  MLA-FIX-02  **Added `q_lin` / `k_lin` / `v_lin` / `out_lin` aliases** so
-              DistilBERT's `DistilBertAttention` container can be replaced
-              without breaking the forward pass.
-  MLA-FIX-03  **Added `fallback_to_original` + `max_error`** so the module
-              refuses to install itself if K/V reconstruction error is too
-              high.
-  MLA-FIX-04  **Added explicit K/V reconstruction-error validation** with
-              logging before installing.
-  MLA-FIX-05  **Robust `super().__init__`** with None-safe config.
-  MLA-FIX-06  **Idempotency guard** in `copy_weights` (early exit if
-              already initialized from the same source).
-  MLA-FIX-07  **Fixed `is_nested_encoder` determination** using the source
-              attention class (not just attribute probing).
-  MLA-FIX-08  **Storage accounting** via `storage_bytes()`.
-  MLA-FIX-09  **`is_custom_attention = False` on helper layers**
-              (`MLALoRALinear` is a linear layer, not attention).
-  MLA-FIX-10  **`dense`/`c_proj`/`o_proj` aliases** for GPT-2 / BART
-              compatibility.
-  MLA-FIX-11  **LoRA forward is dtype-safe**.
-  MLA-FIX-12  **Injector returns the new module** so counters work.
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-r"""
+"""
 Adaptive SVD Attention — Production-Hardened (v2).
 
 Low-rank factorized attention with dynamic cumulative energy-thresholded SVD
@@ -7,33 +7,6 @@ and trainable residual adapters:
     W ≈ U_r V_r + W_lora_B · W_lora_A
     where  U_r = U_{:, :r} · √Σ_r,  V_r = √Σ_r · V^T_{:r, :}
     and    r = argmin_{r} [ Σ_{i=1}^r σ_i² / Σ_j σ_j² ≥ τ ]
-
-Fixes (v2):
-  ASVD-FIX-01  **`--rank` now reaches the layer.** Previous priority order
-               placed `comp_config.svd_rank` above `kwargs["rank"]`, silently
-               freezing the rank at a config default regardless of CLI value.
-  ASVD-FIX-02  **Energy threshold default is 0.999.** With 0.92 the effective
-               rank was always the same (~40) for typical transformer weights,
-               making rank sweeps meaningless. 0.999 lets `svd_rank` actually
-               matter.
-  ASVD-FIX-03  **`AdaptiveSVDLinear.is_custom_attention = False`** and new
-               flag `is_svd_linear = True` so framework counters classify it
-               as a compressed linear layer, not as an attention module.
-  ASVD-FIX-04  **Single source of truth for head_dim/num_heads resolution**
-               (config → pretrained → fallback), no conflicting reads.
-  ASVD-FIX-05  **`_rotate_half` moved to module scope** (no per-forward
-               closure allocation).
-  ASVD-FIX-06  **`forward` always returns `(output, attn_weights)`.** The
-               T5-style `position_bias` is no longer returned in the second
-               slot (that broke `out, attn = attn(...)` unpacking).
-  ASVD-FIX-07  **Idempotency guard** in injector.
-  ASVD-FIX-08  **`is_causal` computed once in `__init__`.**
-  ASVD-FIX-09  **dtype-safe LoRA forward.**
-  ASVD-FIX-10  **Bias frozen after `copy_weights`.**
-  ASVD-FIX-11  **Storage accounting** (`_orig_storage_bytes` /
-               `_comp_storage_bytes`).
-  ASVD-FIX-12  **`config` attribute always set** so `self.config` never fails.
-  ASVD-FIX-13  **`inject_adaptive_svd` respects `kwargs["rank"]` first.**
 """
 
 import logging

@@ -1,4 +1,6 @@
-"""Linformer Attention – Production-hardened with full multi-architecture support."""
+"""
+Linformer Attention – Production-hardened with full multi-architecture support.
+"""
 
 from __future__ import annotations
 

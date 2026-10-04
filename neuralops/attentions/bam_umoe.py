@@ -1,5 +1,5 @@
 """
-BAM-UMoE: Unified Mixture of Experts Attention Block (Activation-Aware v2).
+BAM-UMoE: Unified Mixture of Experts Attention Block (Activation-Aware).
 
 Combines:
   1. Optional SVD factorization of Q/K/V/O for actual parameter reduction.
@@ -7,27 +7,6 @@ Combines:
   3. Cross-architecture weight transfer (DistilBERT, RoBERTa/BERT, GPT-2, Qwen/LLaMA).
   4. LoRA adapters for recovery fine-tuning.
 
-Fixes (v2):
-  BAM-FIX-01  `UnifiedMoE.is_custom_attention = False`.
-  BAM-FIX-02  MoE is OPTIONAL (`moe_enabled=False` by default). When enabled,
-              it uses a compact output_dim (`moe_output_dim=head_dim`) so it
-              does NOT cause expansion.
-  BAM-FIX-03  **Real parameter reduction**: SVD factorization applied to
-              Q/K/V/O via `svd_rank` parameter.
-  BAM-FIX-04  `aux_loss` stored as attribute (None initially), never a CPU
-              tensor on GPU. `get_aux_loss()` returns the correct device.
-  BAM-FIX-05  Idempotency guard in injector.
-  BAM-FIX-06  `apply_rotary_pos_emb` slices cos/sin for seq length.
-  BAM-FIX-07  Config None-safe `__init__`.
-  BAM-FIX-08  `copy_weights` device/dtype-safe.
-  BAM-FIX-09  Storage accounting in stats.
-  BAM-FIX-10  `head_mask` shape handling unified.
-  BAM-FIX-11  `moe_gate_init` configurable; default -3.0 (sigmoid ≈ 0.047).
-  BAM-FIX-12  MoE expert hidden dim is `dim // experts // 4` (compact).
-  BAM-FIX-13  Route only to self-attention (documented); MoE disabled for
-              cross-attention.
-  BAM-FIX-14  SDPA path validates mask before use.
-  BAM-FIX-15  No silent `except: pass`; errors logged.
 """
 
 import logging

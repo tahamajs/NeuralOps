@@ -1,4 +1,6 @@
-"""Refined Gated Linear Attention (ReGLA) – Production-Hardened (v2)."""
+"""
+Refined Gated Linear Attention (ReGLA)
+"""
 
 import logging
 import math

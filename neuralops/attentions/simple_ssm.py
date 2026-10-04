@@ -1,4 +1,5 @@
-"""Simple SSM: Simplified State Space Attention Block.
+"""
+Simple SSM: Simplified State Space Attention Block.
 
 Production-hardened across DistilBERT, RoBERTa, GPT-2, and Qwen architectures.
 Supports:

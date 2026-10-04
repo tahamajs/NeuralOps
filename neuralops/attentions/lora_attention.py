@@ -1,5 +1,5 @@
 """
-LoRA Parameter-Efficient Fine-Tuning Attention Module (v2, Production-Hardened).
+LoRA Parameter-Efficient Fine-Tuning Attention Module.
 
 Replaces standard Q/K/V/O projections with frozen pretrained base weights plus
 trainable low-rank residual adapters, with multi-architecture weight transfer,
@@ -10,21 +10,6 @@ This is intentionally an attention-swap module, NOT a compressor:
   - Only LoRA A/B are trainable.
   - Parameters are NOT reduced (compression_rate stays ~1.0).
   - Its purpose is PEFT, not compression.
-
-Fixes (v2):
-  LORA2-FIX-01  `actual_rank` is now purely the LoRA rank. `rank` (compression
-                rank) is no longer conflated with LoRA rank.
-  LORA2-FIX-02  Removed duplicated `if hasattr(layer, 'attention')` block.
-  LORA2-FIX-03  Removed unreachable `elif hasattr(layer, 'attention')`.
-  LORA2-FIX-04  Causal mask applied only for self-attention.
-  LORA2-FIX-05  Robust `cfg = None` handling.
-  LORA2-FIX-06  Proper `is_nested_encoder` propagation.
-  LORA2-FIX-07  Idempotency guard in injector.
-  LORA2-FIX-08  Storage accounting (`orig_storage_bytes`, `comp_storage_bytes`).
-  LORA2-FIX-09  LoRA init: kaiming A, zeros B, dtype-safe.
-  LORA2-FIX-10  `position_embeddings` accepted as explicit param + kwargs.
-  LORA2-FIX-11  Strict mask handling with normalized valid-mask shape.
-  LORA2-FIX-12  Deterministic injector recursion.
 """
 
 from __future__ import annotations

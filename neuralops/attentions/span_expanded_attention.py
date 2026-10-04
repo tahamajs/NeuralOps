@@ -1,4 +1,5 @@
-"""Span-Expanded Attention with HyLoRA – Production-Hardened.
+"""
+Span-Expanded Attention with HyLoRA.
 
 Extends attention receptive fields via fixed/cached key-value span expansion buffers,
 complemented by parallel low-rank adaptation (HyLoRA) for parameter-efficient adaptation.

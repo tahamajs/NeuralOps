@@ -1,4 +1,5 @@
-"""Random Projection Compressed (RPC) Attention — Production-Hardened (v2).
+"""
+Random Projection Compressed (RPC) Attention.
 
 Randomized linear subspace sketching via fixed head-wise Gaussian random
 projection buffers to compress query-key similarity evaluations.

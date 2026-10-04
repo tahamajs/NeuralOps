@@ -1,6 +1,5 @@
 """
 MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention (FASA).
-Production-Hardened (v2).
 
 """
 

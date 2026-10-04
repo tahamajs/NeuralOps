@@ -1,5 +1,5 @@
 """
-Hamming Attention Distillation (HAD) Module (Corrected).
+Hamming Attention Distillation (HAD) Module.
 
 Approximates dense inner products with differentiable continuous relaxations of
 Hamming distances over sign-binarized representations with calibrated temperature

@@ -1,4 +1,5 @@
-"""Nyströmformer Attention – Production-Hardened.
+"""
+Nyströmformer Attention.
 
 Nyström-based low-rank kernel approximation with iterative pseudoinverse.
 

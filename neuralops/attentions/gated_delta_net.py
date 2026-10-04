@@ -1,4 +1,6 @@
-"""Gated DeltaNet Attention Module — Production-Hardened (v2)."""
+"""
+Gated DeltaNet Attention Module — Production-Hardened.
+"""
 
 from __future__ import annotations
 

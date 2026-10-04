@@ -1,30 +1,10 @@
-r"""
-Grouped-Query Attention (GQA) — v3, rank-aware.
+"""
+Grouped-Query Attention (GQA) — rank-aware.
 
 Interpolates between Multi-Head Attention (MHA) and Multi-Query Attention (MQA)
 by dividing H_Q query heads into G groups, where each group shares a single
 Key-Value head pair (H_KV = G ≤ H_Q).
 
-Fixes (v3):
-  GQA-FIX-01  Causal mask via past_len, always applied for decoders.
-  GQA-FIX-02  Removed output padding/truncation hack.
-  GQA-FIX-03  Deterministic layer detection.
-  GQA-FIX-04  Removed thread-unsafe global injection depth.
-  GQA-FIX-05  Idempotency guard in injector.
-  GQA-FIX-06  Robust mask normalization (2D/3D/4D).
-  GQA-FIX-07  Consistent is_nested_encoder propagation.
-  GQA-FIX-08  Storage accounting.
-  GQA-FIX-09  Partial-RoPE support.
-  GQA-FIX-10  Conv1D bias handled correctly.
-  GQA-FIX-11  GQA-aware copy_weights with repeat_interleave pooling.
-  GQA-FIX-12  supports_rope flag.
-  GQA-FIX-13  dtype-safe RoPE.
-  GQA-FIX-14  Removed redundant double softmax.
-  GQA-FIX-15  get_ortho_loss for framework compatibility.
-  GQA-FIX-16  **`rank` now maps to `num_kv_heads` when passed via injector.**
-              Rank sweep actually produces different compression levels.
-  GQA-FIX-17  **`_unpack_weight_bias` handled for LoRA-wrapped modules.**
-  GQA-FIX-18  **Numerically safe padding mask path.**
 """
 
 from __future__ import annotations

@@ -1,4 +1,5 @@
-"""ORION: Optimized Rectified Input-aware Orthogonal Network (Corrected).
+"""
+ORION: Optimized Rectified Input-aware Orthogonal Network.
 
 Hybrid multi-head attention architecture integrating zero-shot SVD low-rank factorized
 projections, head-wise bifurcated linear kernel vs. temperature-softmax full attention,
