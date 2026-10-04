@@ -17,13 +17,13 @@ HERE = Path(__file__).resolve().parent
 # HERE is neuralops/runners
 NEURALOPS_DIR = HERE.parent
 PROJECT_ROOT = NEURALOPS_DIR.parent
-TRAINER_SCRIPT = NEURALOPS_DIR / "trainer" / "train_lra.py"
+TRAINER_SCRIPT = NEURALOPS_DIR / "benchmarks" / "run_quality_sweep.py"
 
 MODELS = [
-    {"name": "GPT-2 Base", "slug": "gpt2", "family": "gpt2"},
-    {"name": "RoBERTa Base", "slug": "roberta", "family": "roberta"},
-    {"name": "DistilBERT Base", "slug": "distilbert", "family": "distilbert"},
-    {"name": "GPT-Neo 125M", "slug": "gpt_neo", "family": "gpt_neo"},
+    {"name": "GPT-2 Base", "slug": "gpt2", "model": "gpt2", "family": "gpt"},
+    {"name": "RoBERTa Base", "slug": "roberta", "model": "roberta-base", "family": "roberta"},
+    {"name": "DistilBERT Base", "slug": "distilbert", "model": "distilbert-base-uncased", "family": "bert"},
+    {"name": "GPT-Neo 125M", "slug": "gpt_neo", "model": "EleutherAI/gpt-neo-125m", "family": "gpt"},
 ]
 PASS_THRESHOLD = 75.0
 
@@ -50,11 +50,11 @@ def run_orchestrator(module_key: str, default_args: list = None):
         cmd = [
             sys.executable,
             str(TRAINER_SCRIPT),
-            "--task",
-            "listops",
             "--model",
-            m["slug"],
-            "--module",
+            m.get("model", m["slug"]),
+            "--model_family",
+            m["family"],
+            "--modules",
             module_key,
             "--output_dir",
             str(out_dir),
@@ -76,7 +76,7 @@ def run_orchestrator(module_key: str, default_args: list = None):
             try:
                 with csv_path.open(encoding="utf-8") as cf:
                     for row in csv.DictReader(cf):
-                        if row.get("module_name") == module_key:
+                        if row.get("module_name") == module_key or row.get("module") == module_key:
                             row_data = row
                             break
             except Exception as exc:
