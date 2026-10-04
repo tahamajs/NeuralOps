@@ -167,3 +167,19 @@ Notes:
 2026-10-05 03:03:41,279 [INFO] QwenQualitySweep: [1/1] svd_linear_attn -> PASS 83.26% (F1: 0.8525, Peak VRAM: 419.73 MB)
 2026-10-05 03:03:41,288 [INFO] HFGitExporter: [Automation] Run gpt2 / svd-linear-attn is SUCCESSFUL (acc=83.26% >= 69.54%). Starting automated HF export to Hooshaai/svd-linear-attention-gpt2-svd-linear-attn and Git recording.
 2026-10-05 03:03:41,289 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-gpt2-svd-linear-attn: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
+[main ddc184824c] feat(benchmark): record successful svd_linear_attn on gpt2 (Acc: 83.26%, F1: 0.8525)
+ 7 files changed, 310 insertions(+)
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_linear_attn/rank_384/batch_cache_sst2/meta.json
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_linear_attn/rank_384/finetune_metadata.json
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_linear_attn/rank_384/gpt2_svd_linear_attn_full_metrics.json
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_linear_attn/rank_384/run.log
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_linear_attn/rank_384/summary.csv
+2026-10-05 03:05:12,050 [WARNING] HFGitExporter: Git push failed after 5 attempts — commit is local only.
+2026-10-05 03:05:12,053 [INFO] QwenQualitySweep: [1/1] svd_linear_attn Timing: eval_time=227.44s
+2026-10-05 03:05:12,054 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-10-05 03:05:12,332 [INFO] QwenQualitySweep: ================================================================================
+2026-10-05 03:05:12,333 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-10-05 03:05:12,342 [INFO] QwenQualitySweep: 
+         Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+svd_linear_attn   PASS   83.26%    +8.72% 0.8525                 12            1.00x  419.7 MB               9.91             11.37
+2026-10-05 03:05:12,342 [INFO] QwenQualitySweep: ================================================================================
