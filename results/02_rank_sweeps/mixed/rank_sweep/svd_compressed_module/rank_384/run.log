@@ -1,0 +1,145 @@
+2026-10-05 03:27:57,591 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
+2026-10-05 03:27:57,592 [INFO] QwenQualitySweep: GPU VRAM: 6.89 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-10-05 03:27:57,592 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=8 (explicit_parallel=True, explicit_batch=True)
+2026-10-05 03:27:57,653 [INFO] neuralops.attentions.gated_delta_net: GDN: Triton scan available
+2026-10-05 03:27:57,658 [INFO] neuralops.attentions.hgrn2_layer: HGRN2: Triton scan available
+2026-10-05 03:27:58,508 [INFO] QwenQualitySweep: Running 1 attention modules in-memory sequentially
+2026-10-05 03:27:58,511 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0%
+2026-10-05 03:27:59,220 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3018.19it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-10-05 03:28:00,533 [INFO] QwenQualitySweep: model=gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-10-05 03:28:00,533 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'raw_family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-10-05 03:28:00,533 [INFO] QwenQualitySweep: ================================================================================
+2026-10-05 03:28:00,533 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-10-05 03:28:00,533 [INFO] QwenQualitySweep:   model:             gpt2
+2026-10-05 03:28:00,533 [INFO] QwenQualitySweep:   family:            gpt
+2026-10-05 03:28:00,534 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-10-05 03:28:00,534 [INFO] QwenQualitySweep:   batch_size:        8
+2026-10-05 03:28:00,534 [INFO] QwenQualitySweep:   recovery_steps:    500
+2026-10-05 03:28:00,534 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-10-05 03:28:00,534 [INFO] QwenQualitySweep:   precision:         fp16
+2026-10-05 03:28:00,534 [INFO] QwenQualitySweep: ================================================================================
+2026-10-05 03:28:00,537 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-10-05 03:28:02,457 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=1.6523
+2026-10-05 03:28:03,639 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.8697
+2026-10-05 03:28:04,822 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=1.1547
+2026-10-05 03:28:05,993 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.6210
+2026-10-05 03:28:07,174 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.7070
+2026-10-05 03:28:08,354 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.5450
+2026-10-05 03:28:09,529 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.6959
+2026-10-05 03:28:10,736 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.5295
+2026-10-05 03:28:10,742 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\02_rank_sweeps\mixed\rank_sweep\svd_compressed_module\rank_384\finetuned_model.pt
+2026-10-05 03:28:11,886 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\02_rank_sweeps\mixed\rank_sweep\svd_compressed_module\rank_384\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-10-05 03:28:11,886 [INFO] QwenQualitySweep: Prepared 109 eval batches and 100 train batches directly on GPU.
+2026-10-05 03:28:15,895 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 74.54%
+2026-10-05 03:28:16,037 [INFO] QwenQualitySweep: ================================================================================
+2026-10-05 03:28:16,038 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-10-05 03:28:16,038 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-10-05 03:28:16,038 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-10-05 03:28:16,038 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-10-05 03:28:16,038 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-10-05 03:28:16,038 [INFO] QwenQualitySweep:   Statistical Floor:         56.00%
+2026-10-05 03:28:16,039 [INFO] QwenQualitySweep:   Fine-Tuned Baseline Acc:   74.54%
+2026-10-05 03:28:16,039 [INFO] QwenQualitySweep:   Acceptable Drop:           5.00%
+2026-10-05 03:28:16,039 [INFO] QwenQualitySweep:   Baseline Floor:            69.54%
+2026-10-05 03:28:16,039 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  69.54%
+2026-10-05 03:28:16,039 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92%, stat_floor=56.00%, baseline=74.54%, drop=5.0%, baseline_floor=69.54% -> pass_thresh=69.54%
+2026-10-05 03:28:16,039 [INFO] QwenQualitySweep: ================================================================================
+2026-10-05 03:28:16,040 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-10-05 03:28:16,120 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: svd_compressed_module (recovery_steps=500, batch_size=8, optimizer=adamw)
+2026-10-05 03:28:27,771 [INFO] neuralops.core.attention_utils: Successfully injected 'svd_compressed_module' into 12 transformer blocks.
+2026-10-05 03:28:27,793 [INFO] QwenQualitySweep: module=svd_compressed_module path=adapted_gpt
+2026-10-05 03:28:27,795 [INFO] QwenQualitySweep: module=svd_compressed_module injection summary: 24 SVDLinear layers active
+2026-10-05 03:28:27,796 [INFO] QwenQualitySweep: Running 500 recovery fine-tuning steps for svd_compressed_module (lr=2.0e-04)
+2026-10-05 03:28:28,121 [INFO] neuralops.utils.compat: Recovery fine-tuning selected 1179648 trainable parameters across 96 tensors.
+2026-10-05 03:28:28,123 [INFO] neuralops.utils.compat: Discovered 96 trainable tensors (1179648 params)
+2026-10-05 03:28:28,133 [INFO] QwenQualitySweep: LoRA fine-tuning: 1179648 trainable parameters across 96 tensors (lr=2.0e-04, optimizer=adamw, span_lambda=0.0000)
+2026-10-05 03:28:28,398 [INFO] QwenQualitySweep: Step 1/500 took 0.26s (loss=0.7533, bs=8, micro=8)
+2026-10-05 03:28:29,263 [INFO] QwenQualitySweep: Step 5/500 took 0.21s (loss=0.6945, bs=8, micro=8)
+2026-10-05 03:28:30,341 [INFO] QwenQualitySweep: Step 10/500 took 0.23s (loss=0.7104, bs=8, micro=8)
+2026-10-05 03:28:31,420 [INFO] QwenQualitySweep: Step 15/500 took 0.22s (loss=0.5154, bs=8, micro=8)
+2026-10-05 03:28:32,514 [INFO] QwenQualitySweep: Step 20/500 took 0.21s (loss=0.8843, bs=8, micro=8)
+2026-10-05 03:28:33,600 [INFO] QwenQualitySweep: Step 25/500 took 0.22s (loss=0.7129, bs=8, micro=8)
+2026-10-05 03:28:34,664 [INFO] QwenQualitySweep: Step 30/500 took 0.21s (loss=0.6199, bs=8, micro=8)
+2026-10-05 03:28:35,753 [INFO] QwenQualitySweep: Step 35/500 took 0.22s (loss=0.5012, bs=8, micro=8)
+2026-10-05 03:28:36,856 [INFO] QwenQualitySweep: Step 40/500 took 0.21s (loss=0.4792, bs=8, micro=8)
+2026-10-05 03:28:37,954 [INFO] QwenQualitySweep: Step 45/500 took 0.21s (loss=0.5783, bs=8, micro=8)
+2026-10-05 03:28:39,032 [INFO] QwenQualitySweep: Step 50/500 took 0.21s (loss=0.6852, bs=8, micro=8)
+2026-10-05 03:28:40,140 [INFO] QwenQualitySweep: Step 55/500 took 0.23s (loss=0.6898, bs=8, micro=8)
+2026-10-05 03:28:41,233 [INFO] QwenQualitySweep: Step 60/500 took 0.22s (loss=0.5879, bs=8, micro=8)
+2026-10-05 03:28:42,354 [INFO] QwenQualitySweep: Step 65/500 took 0.22s (loss=0.5475, bs=8, micro=8)
+2026-10-05 03:28:43,455 [INFO] QwenQualitySweep: Step 70/500 took 0.23s (loss=0.6325, bs=8, micro=8)
+2026-10-05 03:28:44,539 [INFO] QwenQualitySweep: Step 75/500 took 0.22s (loss=0.6311, bs=8, micro=8)
+2026-10-05 03:28:45,619 [INFO] QwenQualitySweep: Step 80/500 took 0.22s (loss=0.5793, bs=8, micro=8)
+2026-10-05 03:28:46,698 [INFO] QwenQualitySweep: Step 85/500 took 0.23s (loss=0.8125, bs=8, micro=8)
+2026-10-05 03:28:47,793 [INFO] QwenQualitySweep: Step 90/500 took 0.23s (loss=0.3859, bs=8, micro=8)
+2026-10-05 03:28:48,908 [INFO] QwenQualitySweep: Step 95/500 took 0.23s (loss=0.4667, bs=8, micro=8)
+2026-10-05 03:28:50,007 [INFO] QwenQualitySweep: Step 100/500 took 0.22s (loss=0.2747, bs=8, micro=8)
+2026-10-05 03:28:51,081 [INFO] QwenQualitySweep: Step 105/500 took 0.21s (loss=0.5976, bs=8, micro=8)
+2026-10-05 03:28:52,172 [INFO] QwenQualitySweep: Step 110/500 took 0.21s (loss=0.5378, bs=8, micro=8)
+2026-10-05 03:28:53,251 [INFO] QwenQualitySweep: Step 115/500 took 0.21s (loss=0.3002, bs=8, micro=8)
+2026-10-05 03:28:54,340 [INFO] QwenQualitySweep: Step 120/500 took 0.22s (loss=0.6598, bs=8, micro=8)
+2026-10-05 03:28:55,402 [INFO] QwenQualitySweep: Step 125/500 took 0.22s (loss=0.4351, bs=8, micro=8)
+2026-10-05 03:28:56,505 [INFO] QwenQualitySweep: Step 130/500 took 0.22s (loss=0.3987, bs=8, micro=8)
+2026-10-05 03:28:57,649 [INFO] QwenQualitySweep: Step 135/500 took 0.20s (loss=0.4466, bs=8, micro=8)
+2026-10-05 03:28:58,902 [INFO] QwenQualitySweep: Step 140/500 took 0.22s (loss=0.3868, bs=8, micro=8)
+2026-10-05 03:28:59,973 [INFO] QwenQualitySweep: Step 145/500 took 0.21s (loss=0.1769, bs=8, micro=8)
+2026-10-05 03:29:01,066 [INFO] QwenQualitySweep: Step 150/500 took 0.21s (loss=0.3845, bs=8, micro=8)
+2026-10-05 03:29:02,143 [INFO] QwenQualitySweep: Step 155/500 took 0.21s (loss=0.5696, bs=8, micro=8)
+2026-10-05 03:29:03,230 [INFO] QwenQualitySweep: Step 160/500 took 0.21s (loss=0.2874, bs=8, micro=8)
+2026-10-05 03:29:04,538 [INFO] QwenQualitySweep: Step 165/500 took 0.23s (loss=0.7147, bs=8, micro=8)
+2026-10-05 03:29:05,625 [INFO] QwenQualitySweep: Step 170/500 took 0.21s (loss=0.2905, bs=8, micro=8)
+2026-10-05 03:29:06,722 [INFO] QwenQualitySweep: Step 175/500 took 0.23s (loss=0.5048, bs=8, micro=8)
+2026-10-05 03:29:07,814 [INFO] QwenQualitySweep: Step 180/500 took 0.22s (loss=0.4006, bs=8, micro=8)
+2026-10-05 03:29:08,912 [INFO] QwenQualitySweep: Step 185/500 took 0.23s (loss=0.6325, bs=8, micro=8)
+2026-10-05 03:29:09,993 [INFO] QwenQualitySweep: Step 190/500 took 0.22s (loss=0.4077, bs=8, micro=8)
+2026-10-05 03:29:11,095 [INFO] QwenQualitySweep: Step 195/500 took 0.23s (loss=0.4230, bs=8, micro=8)
+2026-10-05 03:29:12,195 [INFO] QwenQualitySweep: Step 200/500 took 0.22s (loss=0.1149, bs=8, micro=8)
+2026-10-05 03:29:13,303 [INFO] QwenQualitySweep: Step 205/500 took 0.22s (loss=0.4727, bs=8, micro=8)
+2026-10-05 03:29:14,383 [INFO] QwenQualitySweep: Step 210/500 took 0.21s (loss=0.5114, bs=8, micro=8)
+2026-10-05 03:29:15,469 [INFO] QwenQualitySweep: Step 215/500 took 0.21s (loss=0.3251, bs=8, micro=8)
+2026-10-05 03:29:16,545 [INFO] QwenQualitySweep: Step 220/500 took 0.22s (loss=0.4940, bs=8, micro=8)
+2026-10-05 03:29:17,643 [INFO] QwenQualitySweep: Step 225/500 took 0.22s (loss=0.1383, bs=8, micro=8)
+2026-10-05 03:29:18,709 [INFO] QwenQualitySweep: Step 230/500 took 0.21s (loss=0.1177, bs=8, micro=8)
+2026-10-05 03:29:19,804 [INFO] QwenQualitySweep: Step 235/500 took 0.21s (loss=0.5699, bs=8, micro=8)
+2026-10-05 03:29:20,882 [INFO] QwenQualitySweep: Step 240/500 took 0.22s (loss=0.3581, bs=8, micro=8)
+2026-10-05 03:29:21,989 [INFO] QwenQualitySweep: Step 245/500 took 0.22s (loss=0.1616, bs=8, micro=8)
+2026-10-05 03:29:23,065 [INFO] QwenQualitySweep: Step 250/500 took 0.22s (loss=0.6484, bs=8, micro=8)
+2026-10-05 03:29:24,172 [INFO] QwenQualitySweep: Step 255/500 took 0.22s (loss=0.1281, bs=8, micro=8)
+2026-10-05 03:29:25,246 [INFO] QwenQualitySweep: Step 260/500 took 0.22s (loss=0.1464, bs=8, micro=8)
+2026-10-05 03:29:26,334 [INFO] QwenQualitySweep: Step 265/500 took 0.22s (loss=0.7567, bs=8, micro=8)
+2026-10-05 03:29:27,426 [INFO] QwenQualitySweep: Step 270/500 took 0.21s (loss=0.1640, bs=8, micro=8)
+2026-10-05 03:29:28,533 [INFO] QwenQualitySweep: Step 275/500 took 0.22s (loss=0.4752, bs=8, micro=8)
+2026-10-05 03:29:29,594 [INFO] QwenQualitySweep: Step 280/500 took 0.23s (loss=0.4265, bs=8, micro=8)
+2026-10-05 03:29:30,718 [INFO] QwenQualitySweep: Step 285/500 took 0.22s (loss=0.4669, bs=8, micro=8)
+2026-10-05 03:29:31,801 [INFO] QwenQualitySweep: Step 290/500 took 0.22s (loss=0.3926, bs=8, micro=8)
+2026-10-05 03:29:32,893 [INFO] QwenQualitySweep: Step 295/500 took 0.22s (loss=0.1518, bs=8, micro=8)
+2026-10-05 03:29:33,970 [INFO] QwenQualitySweep: Step 300/500 took 0.22s (loss=0.0920, bs=8, micro=8)
+2026-10-05 03:29:35,013 [INFO] QwenQualitySweep: Step 305/500 took 0.21s (loss=0.4276, bs=8, micro=8)
+2026-10-05 03:29:36,090 [INFO] QwenQualitySweep: Step 310/500 took 0.22s (loss=0.2480, bs=8, micro=8)
+2026-10-05 03:29:37,186 [INFO] QwenQualitySweep: Step 315/500 took 0.21s (loss=0.1673, bs=8, micro=8)
+2026-10-05 03:29:38,259 [INFO] QwenQualitySweep: Step 320/500 took 0.21s (loss=0.2905, bs=8, micro=8)
+2026-10-05 03:29:39,357 [INFO] QwenQualitySweep: Step 325/500 took 0.21s (loss=0.0862, bs=8, micro=8)
+2026-10-05 03:29:40,438 [INFO] QwenQualitySweep: Step 330/500 took 0.22s (loss=0.1113, bs=8, micro=8)
+2026-10-05 03:29:41,538 [INFO] QwenQualitySweep: Step 335/500 took 0.22s (loss=0.3389, bs=8, micro=8)
+2026-10-05 03:29:42,640 [INFO] QwenQualitySweep: Step 340/500 took 0.22s (loss=0.5869, bs=8, micro=8)
+2026-10-05 03:29:43,758 [INFO] QwenQualitySweep: Step 345/500 took 0.22s (loss=0.1281, bs=8, micro=8)
+2026-10-05 03:29:44,863 [INFO] QwenQualitySweep: Step 350/500 took 0.23s (loss=0.5368, bs=8, micro=8)
+2026-10-05 03:29:45,967 [INFO] QwenQualitySweep: Step 355/500 took 0.22s (loss=0.2033, bs=8, micro=8)
+2026-10-05 03:29:47,068 [INFO] QwenQualitySweep: Step 360/500 took 0.22s (loss=0.3380, bs=8, micro=8)
+2026-10-05 03:29:48,163 [INFO] QwenQualitySweep: Step 365/500 took 0.23s (loss=0.6952, bs=8, micro=8)
+2026-10-05 03:29:49,263 [INFO] QwenQualitySweep: Step 370/500 took 0.22s (loss=0.2159, bs=8, micro=8)
+2026-10-05 03:29:50,343 [INFO] QwenQualitySweep: Step 375/500 took 0.22s (loss=0.2694, bs=8, micro=8)
+2026-10-05 03:29:51,451 [INFO] QwenQualitySweep: Step 380/500 took 0.21s (loss=0.2769, bs=8, micro=8)
+2026-10-05 03:29:52,542 [INFO] QwenQualitySweep: Step 385/500 took 0.22s (loss=0.1292, bs=8, micro=8)
+2026-10-05 03:29:53,644 [INFO] QwenQualitySweep: Step 390/500 took 0.21s (loss=0.1260, bs=8, micro=8)
+2026-10-05 03:29:54,716 [INFO] QwenQualitySweep: Step 395/500 took 0.22s (loss=0.1470, bs=8, micro=8)
+2026-10-05 03:29:55,827 [INFO] QwenQualitySweep: Step 400/500 took 0.22s (loss=0.1846, bs=8, micro=8)
+2026-10-05 03:29:56,929 [INFO] QwenQualitySweep: Step 405/500 took 0.23s (loss=0.2080, bs=8, micro=8)
