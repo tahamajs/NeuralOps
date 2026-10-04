@@ -372,7 +372,9 @@ class SVDLinear(nn.Module):
                 Vx = F.linear(x, self.V)
                 out = F.linear(Vx, self.U, self.bias)
         elif not self.use_rms_norm:
-            out = self._safe_triton_dispatch(x)
+            # Bypass Triton dispatch which causes hard C++ ERROR_CODE_15 crashes on specific ranks
+            Vx = F.linear(x, self.V)
+            out = F.linear(Vx, self.U, self.bias)
         else:
             Vx = F.linear(x, self.V)
             if self.norm_weight is not None:
