@@ -235,8 +235,7 @@ class ChelaSlayAttention(BaseAttention):
         rank: int = 64,
         feature_dim: int = 128,
         pretrained_attn: nn.Module | None = None,
-        old_attn: nn.Module | None = None,
-        gate_init_bias: float = 8.0,  # FIX-4: safer default (sigmoid(8)≈0.9997)
+        gate_init_bias: float = 0.0,  # Balanced default: sigmoid(0)=0.5 (50% linear, 50% dense)
         comp_config: Any | None = None,
         layer_id: int | None = None,
         layer_idx: int | None = None,
@@ -245,6 +244,12 @@ class ChelaSlayAttention(BaseAttention):
     ) -> None:
         super().__init__(config=config, rank=rank, **kwargs)
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
+        gate_init_bias = _safe_float(
+            kwargs.get("gate_init_bias")
+            or _safe_getattr(comp_config, "gate_init_bias", None)
+            or gate_init_bias,
+            0.0,
+        )
 
         if config is None and source_attn is not None:
 
@@ -410,7 +415,7 @@ class ChelaSlayAttention(BaseAttention):
             torch.randn(self.head_dim, self.feature_dim, dtype=torch.float32) * 0.02
         )
 
-        # Adaptive gate — starts fully closed (nearly dense-only)
+        # Adaptive gate — starts balanced at gate_init_bias (default 0.0 -> 50% dense, 50% linear)
         self.lora_gate = nn.Linear(self.dim, self.num_heads)
         nn.init.zeros_(self.lora_gate.weight)
         with torch.no_grad():
@@ -855,22 +860,25 @@ class ChelaSlayAttention(BaseAttention):
             q_c = q_feat[:, :, s:e, :].float()
             k_c = k_feat[:, :, s:e, :].float()
             v_c = v_masked[:, :, s:e, :].float()
+            chunk_len = e - s
 
-            outer = k_c.unsqueeze(-1) * v_c.unsqueeze(-2)
-            S_intra = torch.cumsum(outer, dim=2)
-            Z_intra = torch.cumsum(k_c, dim=2)
+            # Intra-chunk causal masked attention: O(C * C * d)
+            scores = torch.matmul(q_c, k_c.transpose(-2, -1))
+            mask = torch.triu(torch.ones(chunk_len, chunk_len, device=q_c.device, dtype=torch.bool), diagonal=1)
+            scores_masked = scores.masked_fill(mask, 0.0)
+            num_intra = torch.matmul(scores_masked, v_c)
+            denom_intra = scores_masked.sum(dim=-1, keepdim=True)
 
-            S_total = S_intra + S_running.unsqueeze(2)
-            Z_total = Z_intra + Z_running.unsqueeze(2)
+            # Inter-chunk attention from past chunks: O(C * 2F * d)
+            num_inter = torch.matmul(q_c, S_running)
+            denom_inter = torch.matmul(q_c, Z_running.unsqueeze(-1))
 
-            num_c = torch.matmul(q_c.unsqueeze(-2), S_total).squeeze(-2)
-            denom_c = (q_c * Z_total).sum(dim=-1, keepdim=True)
-            # FIX-2: clamp to at least 1.0
-            denom_c = denom_c.abs().clamp_min(1.0)
-            out_chunks.append((num_c / denom_c).to(q_feat.dtype))
+            denom_c = (denom_intra + denom_inter).abs().clamp_min(1.0)
+            out_chunks.append(((num_intra + num_inter) / denom_c).to(q_feat.dtype))
 
-            S_running = S_running + outer.sum(dim=2)
-            Z_running = Z_running + k_c.sum(dim=2)
+            # Update running state
+            S_running = S_running + torch.matmul(k_c.transpose(-2, -1), v_c)
+            Z_running = Z_running + k_c.sum(dim=-2)
 
         return torch.cat(out_chunks, dim=2)
 

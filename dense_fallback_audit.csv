@@ -1,0 +1,116 @@
+module,status,reason,dense_patterns,sparse_patterns,has_softmax
+adaptive_span_attention,UNKNOWN,no clear causal handling pattern,,,False
+adaptive_sparse_attention,UNKNOWN,no clear causal handling pattern,,,False
+adaptive_svd_attention,UNKNOWN,no clear causal handling pattern,,,False
+adasplash_attention,UNKNOWN,no clear causal handling pattern,,,False
+aegis_hybrid,UNKNOWN,no clear causal handling pattern,,,False
+aegis_spectron_fp8,SPARSE_AWARE,has sparse causal: custom causal method,,custom causal method,False
+aegis_v2,LIKELY_DENSE,softmax in forward but no explicit causal check: F.softmax(scores),,,True
+aegis_v5,UNKNOWN,no clear causal handling pattern,,,False
+aegis_v6,SPARSE_AWARE,"has sparse causal: causal linear attention, custom causal method",,causal linear attention; custom causal method,False
+asvd_attention,UNKNOWN,no clear causal handling pattern,,,False
+bam_umoe,UNKNOWN,no clear causal handling pattern,,,False
+block_transformer_hiba,UNKNOWN,no clear causal handling pattern,,,False
+chela_slay,SPARSE_AWARE,"has sparse causal: causal linear attention, custom causal method",,causal linear attention; custom causal method,False
+cluster_attention,UNKNOWN,no clear causal handling pattern,,,False
+compressed_attention,LIKELY_DENSE,softmax in forward but no explicit causal check: F.softmax(scores),,,True
+compressed_mha_attention,LIKELY_DENSE,softmax in forward but no explicit causal check: F.softmax(scores),,,True
+cosformer,UNKNOWN,no clear causal handling pattern,,,False
+decay_linear_attention,UNKNOWN,no clear causal handling pattern,,,False
+eat,UNKNOWN,no clear causal handling pattern,,,False
+expert_choice_moe,UNKNOWN,no clear causal handling pattern,,,False
+factorised_matrix_state,UNKNOWN,no clear causal handling pattern,,,False
+flash_attention3,UNKNOWN,no clear causal handling pattern,,,False
+flash_attention3_fp8,UNKNOWN,no clear causal handling pattern,,,False
+full_attention,UNKNOWN,no clear causal handling pattern,,,False
+fused_svd_kernel,UNKNOWN,no clear causal handling pattern,,,False
+fusion_attn,UNKNOWN,no clear causal handling pattern,,,False
+galerkin_attention,UNKNOWN,no clear causal handling pattern,,,False
+gated_delta_net,SPARSE_AWARE,has sparse causal: chunked delta rule,,chunked delta rule,False
+gated_deltanet_block,UNKNOWN,no clear causal handling pattern,,,False
+gated_linear_attention,UNKNOWN,no clear causal handling pattern,,,False
+goldfinch_ahn,UNKNOWN,no clear causal handling pattern,,,False
+gqa_attention,UNKNOWN,no clear causal handling pattern,,,False
+granite_hybrid,UNKNOWN,no clear causal handling pattern,,,False
+griffin_ssd,DENSE_FALLBACK,dense fallback in forward: is_decoder check,is_decoder check,,True
+halo_regla,UNKNOWN,no clear causal handling pattern,,,False
+hamming_attention,UNKNOWN,no clear causal handling pattern,,,False
+hgrn2_gated_deltanet,UNKNOWN,no clear causal handling pattern,,,False
+hgrn2_layer,UNKNOWN,no clear causal handling pattern,,,False
+hgrn2_outer,UNKNOWN,no clear causal handling pattern,,,False
+hla_attention,UNKNOWN,no clear causal handling pattern,,,False
+hybrid_attention,UNKNOWN,no clear causal handling pattern,,,False
+hymba_transx,UNKNOWN,no clear causal handling pattern,,,False
+infini_attention,UNKNOWN,no clear causal handling pattern,,,False
+jamba,UNKNOWN,no clear causal handling pattern,,,False
+jamba_info,UNKNOWN,no clear causal handling pattern,,,False
+kda_attention,UNKNOWN,no clear causal handling pattern,,,False
+leka_v1,SPARSE_AWARE,"has sparse causal: causal linear attention, custom causal method",,causal linear attention; custom causal method,False
+leka_v2,UNKNOWN,no clear causal handling pattern,,,False
+leka_v3,UNKNOWN,no clear causal handling pattern,,,False
+linformer_attention,UNKNOWN,no clear causal handling pattern,,,False
+lola_attention,UNKNOWN,no clear causal handling pattern,,,False
+lora_attention,UNKNOWN,no clear causal handling pattern,,,False
+lsh_attention,UNKNOWN,no clear causal handling pattern,,,False
+mamba_block,UNKNOWN,no clear causal handling pattern,,,False
+mamba_svd_flash,UNKNOWN,no clear causal handling pattern,,,False
+minimal_nova,UNKNOWN,no clear causal handling pattern,,,False
+minimal_svd,UNKNOWN,no clear causal handling pattern,,,False
+mixattention_moska,UNKNOWN,no clear causal handling pattern,,,False
+mla_attention,UNKNOWN,no clear causal handling pattern,,,False
+moba_attention,UNKNOWN,no clear causal handling pattern,,,False
+moe_deltakv_paged,UNKNOWN,no clear causal handling pattern,,,False
+naive_svd,NO_FORWARD,no forward method found,,,False
+nasc_attention,UNKNOWN,no clear causal handling pattern,,,False
+nexus,SPARSE_AWARE,has sparse causal: chunked causal method,,chunked causal method,False
+nha_attention,UNKNOWN,no clear causal handling pattern,,,False
+nsa_attention,UNKNOWN,no clear causal handling pattern,,,False
+nystrom_attention,SPARSE_AWARE,has sparse causal: chunked causal method,,chunked causal method,False
+optimized_hybrid_attention,UNKNOWN,no clear causal handling pattern,,,False
+orion,UNKNOWN,no clear causal handling pattern,,,False
+padre_attention,UNKNOWN,no clear causal handling pattern,,,False
+performer_attention,UNKNOWN,no clear causal handling pattern,,,False
+phantom,UNKNOWN,no clear causal handling pattern,,,False
+primal_attention,UNKNOWN,no clear causal handling pattern,,,False
+progressive_token_pruning,UNKNOWN,no clear causal handling pattern,,,False
+projection_factorized_attn,NO_FORWARD,no forward method found,,,False
+qcqa_attention,UNKNOWN,no clear causal handling pattern,,,False
+rala_attention,UNKNOWN,no clear causal handling pattern,,,False
+reap_moe,UNKNOWN,no clear causal handling pattern,,,False
+regla_attention,UNKNOWN,no clear causal handling pattern,,,False
+replace,UNKNOWN,no clear causal handling pattern,,,False
+res_svd,LIKELY_DENSE,softmax in forward but no explicit causal check: F.softmax(scores),,,True
+routing_attention,UNKNOWN,no clear causal handling pattern,,,False
+rpc_attention,UNKNOWN,no clear causal handling pattern,,,False
+salt_attention,UNKNOWN,no clear causal handling pattern,,,False
+samba_m3,UNKNOWN,no clear causal handling pattern,,,False
+samba_moe,UNKNOWN,no clear causal handling pattern,,,False
+selective_ssm,UNKNOWN,no clear causal handling pattern,,,False
+simple_ssm,DENSE_FALLBACK,dense fallback in forward: is_decoder check,is_decoder check,,False
+soa_attn,UNKNOWN,no clear causal handling pattern,,,False
+span_expanded_attention,UNKNOWN,no clear causal handling pattern,,,False
+spectra_v2,UNKNOWN,no clear causal handling pattern,,,False
+spectraformer_attention,UNKNOWN,no clear causal handling pattern,,,False
+spectral_mamba,UNKNOWN,no clear causal handling pattern,,,False
+spectron,UNKNOWN,no clear causal handling pattern,,,False
+squeezing_heads_distill,UNKNOWN,no clear causal handling pattern,,,False
+svd_attention,UNKNOWN,no clear causal handling pattern,,,False
+svd_compressed,LIKELY_DENSE,softmax in forward but no explicit causal check: F.softmax(scores),,,True
+svd_linear_attention,UNKNOWN,no clear causal handling pattern,,,False
+svd_linear_decay,NO_FORWARD,no forward method found,,,False
+svd_llm_v2_attention,LIKELY_DENSE,softmax in forward but no explicit causal check: F.softmax(scores),,,True
+svd_mamba,UNKNOWN,no clear causal handling pattern,,,False
+svd_projection_attention,UNKNOWN,no clear causal handling pattern,,,False
+template_attention,UNKNOWN,no clear causal handling pattern,,,False
+tlinformer_attention,UNKNOWN,no clear causal handling pattern,,,False
+token_compressed_attention,UNKNOWN,no clear causal handling pattern,,,False
+tpa_attention,UNKNOWN,no clear causal handling pattern,,,False
+triton_cosformer,SPARSE_AWARE,has sparse causal: triton causal kernel,,triton causal kernel,False
+triton_svd_linear_attention,SPARSE_AWARE,"has sparse causal: chunked causal method, triton causal kernel",,chunked causal method; triton causal kernel,False
+unified_rope,UNKNOWN,no clear causal handling pattern,,,False
+upi_stuffed_mamba,UNKNOWN,no clear causal handling pattern,,,False
+vig_attention,UNKNOWN,no clear causal handling pattern,,,False
+vspec,UNKNOWN,no clear causal handling pattern,,,False
+wgqa_attention,UNKNOWN,no clear causal handling pattern,,,False
+xattention,UNKNOWN,no clear causal handling pattern,,,False
+zeros_attention,UNKNOWN,no clear causal handling pattern,,,False
