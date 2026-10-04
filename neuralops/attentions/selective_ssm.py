@@ -9,6 +9,7 @@ Features:
 - Depthwise 1D convolution with SiLU gating
 - Bidirectional support with independent forward and backward parameters
 - No internal LayerNorm duplication
+- Memory-safe contiguous memory layouts and padding mask protections
 """
 
 import logging
@@ -19,6 +20,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.selective_scan import selective_scan
@@ -39,7 +41,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 @ATTENTION_REGISTRY.register("mamba_ssm")
 class SelectiveSSM(BaseAttention):
     r"""
-    Faithful Mamba-style selective SSM block.
+    Faithful Mamba-style selective SSM block with hardened execution paths.
     """
 
     supports_causal: bool = True
@@ -123,8 +125,8 @@ class SelectiveSSM(BaseAttention):
             self.A_log_bwd = nn.Parameter(torch.log(A_bwd))
             self.D_bwd = nn.Parameter(torch.ones(self.d_inner))
             self.out_proj_bwd = nn.Linear(self.d_inner, self.d_model, bias=bias)
+        
         self.triton_kwargs = {}
-
         self._reset_parameters()
 
     def _reset_parameters(self) -> None:
@@ -162,8 +164,9 @@ class SelectiveSSM(BaseAttention):
     ) -> torch.Tensor:
         B, L, _ = x_ssm.shape
 
-        # Conv1d
-        x_conv = conv1d_layer(x_ssm.transpose(1, 2))[..., :L].transpose(1, 2)
+        # FIX: Ensure transposed inputs to Conv1D are strictly contiguous
+        x_ssm_t = x_ssm.transpose(1, 2).contiguous()
+        x_conv = conv1d_layer(x_ssm_t)[..., :L].transpose(1, 2).contiguous()
         x_conv = F.silu(x_conv)
 
         # Selective projections
@@ -174,19 +177,20 @@ class SelectiveSSM(BaseAttention):
 
         A = -torch.exp(A_log_param.float())  # (d_inner, d_state)
 
+        # FIX: Force strict contiguous memory layout for all inputs to Triton/CUDA kernel
         y = selective_scan(
-            u=x_conv.transpose(1, 2),
-            delta=dt.transpose(1, 2),
+            u=x_conv.transpose(1, 2).contiguous(),
+            delta=dt.transpose(1, 2).contiguous(),
             A=A,
-            B=B_ssm.transpose(1, 2),
-            C=C_ssm.transpose(1, 2),
+            B=B_ssm.transpose(1, 2).contiguous(),
+            C=C_ssm.transpose(1, 2).contiguous(),
             D=D_param,
         )  # (B, d_inner, L)
-        y = y.transpose(1, 2)  # (B, L, d_inner)
+        y = y.transpose(1, 2).contiguous()  # (B, L, d_inner)
 
         # Gating
         target_dtype = x_ssm.dtype
-        y = (y.to(target_dtype) * F.silu(z.to(target_dtype))).to(target_dtype)
+        y = (y.to(target_dtype) * F.silu(z.to(target_dtype)))
         return y
 
     def forward(
@@ -213,6 +217,15 @@ class SelectiveSSM(BaseAttention):
         x_proj = self.in_proj(hidden_states).to(target_dtype)
         x_ssm, z = x_proj.chunk(2, dim=-1)
 
+        # FIX: Prevent State Poisoning from Padded Tokens
+        # Zeros out embeddings where padding exists so the state ignores them entirely
+        if attention_mask is not None:
+            valid_mask = get_token_valid_mask(attention_mask, B, L, hidden_states.device)
+            if valid_mask is not None:
+                mask_float = valid_mask.unsqueeze(-1).to(target_dtype)
+                x_ssm = x_ssm * mask_float
+                z = z * mask_float
+
         y_fwd = self._forward_core(
             x_ssm=x_ssm,
             z=z,
@@ -222,11 +235,13 @@ class SelectiveSSM(BaseAttention):
             A_log_param=self.A_log,
             D_param=self.D,
         )
-        out = self.out_proj(y_fwd.to(target_dtype)).to(target_dtype)
+        out = self.out_proj(y_fwd.to(target_dtype))
 
         if self.bidirectional:
-            x_ssm_bwd = torch.flip(x_ssm, [1])
-            z_bwd = torch.flip(z, [1])
+            # FIX: Memory layouts are immediately made contiguous after any flip operations
+            x_ssm_bwd = torch.flip(x_ssm, [1]).contiguous()
+            z_bwd = torch.flip(z, [1]).contiguous()
+            
             y_bwd = self._forward_core(
                 x_ssm=x_ssm_bwd,
                 z=z_bwd,
@@ -236,10 +251,11 @@ class SelectiveSSM(BaseAttention):
                 A_log_param=self.A_log_bwd,
                 D_param=self.D_bwd,
             )
-            y_bwd = torch.flip(y_bwd, [1])
-            out = (out + self.out_proj_bwd(y_bwd.to(target_dtype))).to(target_dtype)
+            
+            y_bwd = torch.flip(y_bwd, [1]).contiguous()
+            out = out + self.out_proj_bwd(y_bwd.to(target_dtype))
 
-        return (out.to(target_dtype), None)
+        return (out, None)
 
 
 SimpleSSM = SelectiveSSM
