@@ -88,46 +88,43 @@ def _block_sparse_attn_fwd_kernel(
 
         if is_valid_block:
             n_offset = start_n * BLOCK_N
-            
-            # 2. Causal Skip (if the entire K block is in the future)
-            if IS_CAUSAL:
-                if n_offset > (start_m * BLOCK_M + BLOCK_M - 1):
-                    continue
+            is_future_block = IS_CAUSAL and (n_offset > (start_m * BLOCK_M + BLOCK_M - 1))
 
-            k_ptrs = K + off_hz * stride_kh + (n_offset + offs_n[:, None]) * stride_kn + offs_d[None, :] * stride_kd
-            v_ptrs = V + off_hz * stride_vh + (n_offset + offs_n[:, None]) * stride_vn + offs_d[None, :] * stride_vd
+            if not is_future_block:
+                k_ptrs = K + off_hz * stride_kh + (n_offset + offs_n[:, None]) * stride_kn + offs_d[None, :] * stride_kd
+                v_ptrs = V + off_hz * stride_vh + (n_offset + offs_n[:, None]) * stride_vn + offs_d[None, :] * stride_vd
 
-            k = tl.load(k_ptrs, mask=(n_offset + offs_n[:, None]) < N_k, other=0.0)
-            qk = tl.dot(q, tl.trans(k)) * sm_scale
+                k = tl.load(k_ptrs, mask=(n_offset + offs_n[:, None]) < N_k, other=0.0)
+                qk = tl.dot(q, tl.trans(k)) * sm_scale
 
-            # 3. Fine-grained Causal Masking
-            if IS_CAUSAL:
-                causal_mask = offs_m[:, None] >= (n_offset + offs_n[None, :])
-                qk = tl.where(causal_mask, qk, float("-inf"))
+                # 3. Fine-grained Causal Masking
+                if IS_CAUSAL:
+                    causal_mask = offs_m[:, None] >= (n_offset + offs_n[None, :])
+                    qk = tl.where(causal_mask, qk, float("-inf"))
 
-            # 4. Fine-grained Padding Masking
-            if HAS_TOKEN_MASK:
-                tmask_ptr = TokenMask + b_idx * stride_tmb + (n_offset + offs_n[None, :]) * stride_tmn
-                tmask = tl.load(tmask_ptr, mask=(n_offset + offs_n[None, :]) < N_k, other=0)
-                qk = tl.where(tmask == 1, qk, float("-inf"))
-            else:
-                bounds_mask = (n_offset + offs_n[None, :]) < N_k
-                qk = tl.where(bounds_mask, qk, float("-inf"))
+                # 4. Fine-grained Padding Masking
+                if HAS_TOKEN_MASK:
+                    tmask_ptr = TokenMask + b_idx * stride_tmb + (n_offset + offs_n[None, :]) * stride_tmn
+                    tmask = tl.load(tmask_ptr, mask=(n_offset + offs_n[None, :]) < N_k, other=0)
+                    qk = tl.where(tmask == 1, qk, float("-inf"))
+                else:
+                    bounds_mask = (n_offset + offs_n[None, :]) < N_k
+                    qk = tl.where(bounds_mask, qk, float("-inf"))
 
-            # 5. Online Softmax Update
-            m_ij = tl.maximum(m_i, tl.max(qk, 1))
-            p = tl.exp(qk - m_ij[:, None])
-            
-            l_ij = tl.sum(p, 1)
-            alpha = tl.exp(m_i - m_ij)
-            l_i = l_i * alpha + l_ij
+                # 5. Online Softmax Update
+                m_ij = tl.maximum(m_i, tl.max(qk, 1))
+                p = tl.exp(qk - m_ij[:, None])
 
-            acc = acc * alpha[:, None]
-            v = tl.load(v_ptrs, mask=(n_offset + offs_n[:, None]) < N_k, other=0.0)
-            p = p.to(v.dtype)
-            acc += tl.dot(p, v)
+                l_ij = tl.sum(p, 1)
+                alpha = tl.exp(m_i - m_ij)
+                l_i = l_i * alpha + l_ij
 
-            m_i = m_ij
+                acc = acc * alpha[:, None]
+                v = tl.load(v_ptrs, mask=(n_offset + offs_n[:, None]) < N_k, other=0.0)
+                p = p.to(v.dtype)
+                acc += tl.dot(p, v)
+
+                m_i = m_ij
 
     # Safe division to prevent NaN on fully masked queries
     out_vals = acc / l_i[:, None]
