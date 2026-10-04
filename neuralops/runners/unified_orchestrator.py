@@ -78,13 +78,20 @@ def run_orchestrator(module_key: str, default_args: list = None):
             try:
                 with csv_path.open(encoding="utf-8") as cf:
                     for row in csv.DictReader(cf):
-                        if row.get("module_name") == module_key or row.get("module") == module_key:
+                        if (
+                            row.get("module_name") == module_key
+                            or row.get("module") == module_key
+                            or row.get("status") == "SKIP_NO_WEIGHTS"
+                        ):
                             row_data = row
                             break
             except Exception as exc:
                 logger.warning("Could not parse %s: %s", csv_path, exc)
 
-        status = row_data.get("status", "FAIL" if proc.returncode != 0 else "UNKNOWN")
+        if row_data.get("status") == "SKIP_NO_WEIGHTS":
+            status = "SKIP_NO_WEIGHTS"
+        else:
+            status = row_data.get("status", "FAIL" if proc.returncode != 0 else "UNKNOWN")
         try:
             acc = float(row_data.get("accuracy_pct") or 0.0)
         except (ValueError, TypeError):

@@ -572,20 +572,19 @@ class XAttention(BaseAttention):
                             b_val[: min(len(target.bias), len(b_val))]
                         )
                 elif proj_key == "o" and self.is_nested_encoder:
-                    min_d = min(target.weight.shape[0], target.weight.shape[1])
-                    target.weight.data.zero_()
-                    target.weight.data[:min_d, :min_d].fill_diagonal_(1.0)
-                    if target.bias is not None:
-                        target.bias.data.zero_()
+                    # In nested encoders (BERT/RoBERTa), the outer block has attention.output.dense!
+                    # Replacing self.out_proj with nn.Identity avoids 7M redundant weights and parameter expansion.
+                    self.out_proj = nn.Identity()
+                    target = self.out_proj
 
-                # Frobenius norm verification (>= 1e-4)
-                w_norm = float(torch.linalg.norm(target.weight.data.float()).item())
-                if w_norm < 1e-4:
-                    logger.warning(
-                        f"XAttention weight copy verification failed for '{proj_key}': norm too small ({w_norm:.2e})"
-                    )
-
-                target.freeze_base_weights()
+                if not isinstance(target, nn.Identity):
+                    # Frobenius norm verification (>= 1e-4)
+                    w_norm = float(torch.linalg.norm(target.weight.data.float()).item())
+                    if w_norm < 1e-4:
+                        logger.warning(
+                            f"XAttention weight copy verification failed for '{proj_key}': norm too small ({w_norm:.2e})"
+                        )
+                    target.freeze_base_weights()
 
         # Preserve source LoRA adapters if present on source module
         source_submodules = {
@@ -600,6 +599,8 @@ class XAttention(BaseAttention):
             ("v", self.value),
             ("o", self.out_proj),
         ]:
+            if isinstance(target, nn.Identity):
+                continue
             for name in source_submodules[proj_key]:
                 if hasattr(src, name):
                     sub = getattr(src, name)
