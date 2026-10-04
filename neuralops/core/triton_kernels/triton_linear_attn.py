@@ -110,11 +110,11 @@ def _linear_attn_fwd_kernel(
             causal_mask = offs_n[:, None] >= offs_n[None, :]
             qk = tl.where(causal_mask, qk, 0.0)
 
-            num_intra = tl.dot(qk, v)
+            num_intra = tl.dot(qk.to(v.dtype), v)
             den_intra = tl.sum(qk, axis=1)
 
             # Inter-block Attention (from State)
-            num_inter = tl.dot(q_act, S)
+            num_inter = tl.dot(q_act, S.to(q_act.dtype))
             den_inter = tl.sum(q_act * Z[None, :], axis=1)
 
             # Output Calculation
@@ -166,7 +166,7 @@ def _linear_attn_fwd_kernel(
             q = tl.load(curr_q_ptrs, mask=mask_qk, other=0.0)
             q_act = _elu_plus_one(q)
             
-            num = tl.dot(q_act, S)
+            num = tl.dot(q_act, S.to(q_act.dtype))
             den = tl.sum(q_act * Z[None, :], axis=1) + eps
             out = num / den[:, None]
             
