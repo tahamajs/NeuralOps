@@ -28,7 +28,7 @@ The `docs/` deployment and the interactive 3D Visualizer were audited to ensure 
 - **Missing Markdown Monograms (6 Modules):** The interactive 3D visualizer allows users to select `galerkin`, `soa_fused_module`, `soa_module`, `upi_mamba`, `dobi`, and `tomoe`. However, clicking the "📖 Doc" button on these 6 modules throws a 404 error because their corresponding markdown files are missing from `docs/content/`.
 - **Catalog Out-of-Sync:** The framework evaluated over 240 modules, but the sidebar menu `docs/catalog.json` only indexes 203 modules. Around 37 newer optimization modules are currently hidden from the Research Hub's main navigation UI.
 
----
+---د
 
 ## 3. Compression Engine Full Audit
 The audit of the 102 files and 302 registered compression factories revealed massive parameter savings across the framework.
