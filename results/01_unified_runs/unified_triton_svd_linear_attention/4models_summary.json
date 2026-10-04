@@ -2,5 +2,41 @@
   {
     "name": "GPT-2 Base",
     "slug": "gpt2",
-    "family": "gpt2",
-    "out_dir": 
+    "family": "gpt",
+    "out_dir": "D:\\SVD_linear_Attention\\results\\01_unified_runs\\unified_triton_svd_linear_attention\\gpt2",
+    "exit_code": 0,
+    "status": "PASS",
+    "accuracy_pct": 61.81,
+    "elapsed_s": 66.64137005805969
+  },
+  {
+    "name": "RoBERTa Base",
+    "slug": "roberta",
+    "family": "roberta",
+    "out_dir": "D:\\SVD_linear_Attention\\results\\01_unified_runs\\unified_triton_svd_linear_attention\\roberta",
+    "exit_code": 0,
+    "status": "FAIL_BELOW_CHANCE",
+    "accuracy_pct": 50.92,
+    "elapsed_s": 47.01820921897888
+  },
+  {
+    "name": "DistilBERT Base",
+    "slug": "distilbert",
+    "family": "bert",
+    "out_dir": "D:\\SVD_linear_Attention\\results\\01_unified_runs\\unified_triton_svd_linear_attention\\distilbert",
+    "exit_code": 0,
+    "status": "FAIL_BELOW_CHANCE",
+    "accuracy_pct": 51.15,
+    "elapsed_s": 31.936542987823486
+  },
+  {
+    "name": "GPT-Neo 125M",
+    "slug": "gpt_neo",
+    "family": "gpt",
+    "out_dir": "D:\\SVD_linear_Attention\\results\\01_unified_runs\\unified_triton_svd_linear_attention\\gpt_neo",
+    "exit_code": 1,
+    "status": "FAIL",
+    "accuracy_pct": 0.0,
+    "elapsed_s": 17.38311266899109
+  }
+]
