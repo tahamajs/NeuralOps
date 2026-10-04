@@ -283,39 +283,27 @@ def set_train_scope(model, train_scope="all"):
         for p in model.parameters():
             p.requires_grad = True
     elif train_scope in ("mamba", "attention", "module"):
-        named_mods = dict(model.named_modules())
+        # Names of attributes that indicate an attention module
+        ATTN_ATTR_NAMES = ("attn", "attention", "self_attn")
+        
         for name, p in model.named_parameters():
-            if ".attn." not in name:
-                p.requires_grad = False
-                continue
-            if any(name.endswith(sfx) for sfx in (".U", ".S", ".V")):
-                p.requires_grad = False
-                continue
-            factorised_base = False
-            for base_sfx in (".down.weight", ".up.weight", ".up.bias"):
-                if name.endswith(base_sfx):
-                    parent_path = name.rsplit(".", 2)[0]
-                    parent_mod = named_mods.get(parent_path)
-                    if parent_mod is not None:
-                        if getattr(parent_mod, "lora_A", None) is not None and getattr(parent_mod, "lora_B", None) is not None:
-                            factorised_base = True
-                    break
-            if factorised_base:
-                p.requires_grad = False
-                continue
-            sub = name.split(".attn.", 1)[-1]
-            if sub.startswith(("c_attn.weight", "c_proj.weight", "c_attn.bias", "c_proj.bias")) or sub in ("c_attn", "c_proj"):
+            # Check if any attention-attribute appears in the parameter name
+            has_attn_attr = any(
+                f".{attr}." in name or name.endswith(f".{attr}") 
+                for attr in ATTN_ATTR_NAMES
+            )
+            if not has_attn_attr:
                 p.requires_grad = False
                 continue
             p.requires_grad = True
     else:
         raise ValueError(f"Unknown train_scope: {train_scope}")
-
+    
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     total = sum(p.numel() for p in model.parameters())
-    LOG.info("Train scope '%s': %d/%d trainable (%.2f%%)", train_scope, trainable, total, 100.0 * trainable / max(1, total))
+    LOG.info("Train scope '%s': %d/%d trainable (%.2f%%)", 
+             train_scope, trainable, total, 100.0 * trainable / max(1, total))
     return trainable
-
 
 # -----------------------------------------------------------------------------
 # Teacher Output Preprocessing Cache

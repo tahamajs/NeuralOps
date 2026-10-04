@@ -1,25 +1,25 @@
-r"""
-CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel — PRODUCTION-HARDENED.
-
-CRITICAL FIXES (2026-10-04):
-  FIX-1: Non-negative Yat feature map: (cos+1)/2 and (sin+1)/2.
-         Original [cos, sin] is bipolar; denominator can hit zero → PPL explosion.
-  FIX-2: Aggressive denominator clamp (min 1.0) in both attention paths.
-  FIX-3: Normalize linear_out magnitude before gating.
-  FIX-4: Safe gate init bias = 8.0 (99.97% dense contribution at start).
-  FIX-5: No Triton — pure PyTorch.
+"""
+Information-Bottlenecked Jamba Architecture with Dual Operational Modes.
+Differential attention with concept-bottlenecked SSM branch - Production Ready.
 """
 
 from __future__ import annotations
 
 import logging
 import math
-from typing import Any
+from typing import Any, Optional, Tuple, Dict, List, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+try:
+    from neuralops.attentions.simple_ssm import SimpleSSM
+except Exception as e:
+    logging.getLogger(__name__).warning("SimpleSSM import failed: %s", e)
+    SimpleSSM = None  # type: ignore
+
+from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 
@@ -27,68 +27,24 @@ logger = logging.getLogger(__name__)
 
 
 # ===========================================================================
-# Safe config helpers
+# RoPE
 # ===========================================================================
-def _safe_getattr(obj: Any, key: str, default: Any = None) -> Any:
-    if obj is None:
-        return default
-    if isinstance(obj, dict):
-        return obj.get(key, default)
-    return getattr(obj, key, default)
-
-
-def _safe_int(val: Any, default: int = 0) -> int:
-    if val is None:
-        return default
-    try:
-        return int(val)
-    except (TypeError, ValueError):
-        return default
-
-
-def _safe_float(val: Any, default: float = 0.0) -> float:
-    if val is None:
-        return default
-    try:
-        return float(val)
-    except (TypeError, ValueError):
-        return default
-
-
-def _resolve_attr(cfg: Any, *keys: str) -> Any:
-    for k in keys:
-        v = _safe_getattr(cfg, k, None)
-        if v is not None:
-            return v
-    return None
-
-
-# ===========================================================================
-# Helpers
-# ===========================================================================
-def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
-    if n_rep == 1:
-        return hidden_states
-    b, h, s, d = hidden_states.shape
-    return hidden_states[:, :, None, :, :].expand(b, h, n_rep, s, d).reshape(b, h * n_rep, s, d)
-
-
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    d = x.shape[-1]
-    if d % 2 != 0:
-        x_even = x[..., :-1]
-        x1 = x_even[..., : (d - 1) // 2]
-        x2 = x_even[..., (d - 1) // 2 :]
-        rot_even = torch.cat((-x2, x1), dim=-1)
-        return torch.cat((rot_even, x[..., -1:]), dim=-1)
-    x1 = x[..., : d // 2]
-    x2 = x[..., d // 2 :]
+    x1 = x[..., : x.shape[-1] // 2]
+    x2 = x[..., x.shape[-1] // 2 :]
     return torch.cat((-x2, x1), dim=-1)
 
 
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
+def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+    position_ids: Optional[torch.Tensor] = None,
+) -> Tuple[torch.Tensor, torch.Tensor]:
     if cos is None or sin is None:
         return q, k
+
     if cos.dim() == 2:
         cos = cos.unsqueeze(0).unsqueeze(0)
         sin = sin.unsqueeze(0).unsqueeze(0)
@@ -99,45 +55,145 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
         cos = cos.unsqueeze(0)
         sin = sin.unsqueeze(0)
 
-    if cos.shape[-2] != q.shape[-2]:
-        cos = cos[..., : q.shape[-2], :]
-        sin = sin[..., : q.shape[-2], :]
+    seq_axis = -2
+    if cos.shape[seq_axis] != q.shape[seq_axis]:
+        if cos.shape[seq_axis] >= q.shape[seq_axis]:
+            cos = cos.narrow(seq_axis, cos.shape[seq_axis] - q.shape[seq_axis], q.shape[seq_axis])
+            sin = sin.narrow(seq_axis, sin.shape[seq_axis] - q.shape[seq_axis], q.shape[seq_axis])
+        else:
+            raise ValueError(
+                f"apply_rotary_pos_emb: cos seq len {cos.shape[seq_axis]} < q seq len {q.shape[seq_axis]}"
+            )
 
-    rotary_dim = min(cos.shape[-1], q.shape[-1], k.shape[-1])
-    rotary_dim = (rotary_dim // 2) * 2
-    if rotary_dim <= 0:
-        return q, k
+    rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
 
-    q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-    k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-    cos_cut = cos[..., :rotary_dim].to(q_rot.dtype)
-    sin_cut = sin[..., :rotary_dim].to(q_rot.dtype)
+    if rotary_dim < head_dim:
+        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
+        k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
+        cos_q, sin_q = cos.to(q_rot.dtype), sin.to(q_rot.dtype)
+        cos_k, sin_k = cos.to(k_rot.dtype), sin.to(k_rot.dtype)
+        q_rot = (q_rot * cos_q) + (_rotate_half(q_rot) * sin_q)
+        k_rot = (k_rot * cos_k) + (_rotate_half(k_rot) * sin_k)
+        q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot
+        k = torch.cat([k_rot, k_pass], dim=-1) if k_pass.numel() > 0 else k_pass
+    else:
+        cos_q, sin_q = cos[..., :head_dim].to(q.dtype), sin[..., :head_dim].to(q.dtype)
+        cos_k, sin_k = cos[..., :head_dim].to(k.dtype), sin[..., :head_dim].to(k.dtype)
+        q = (q * cos_q) + (_rotate_half(q) * sin_q)
+        k = (k * cos_k) + (_rotate_half(k) * sin_k)
 
-    q_rot_emb = (q_rot * cos_cut) + (_rotate_half(q_rot) * sin_cut)
-    k_rot_emb = (k_rot * cos_cut) + (_rotate_half(k_rot) * sin_cut)
-
-    q = torch.cat([q_rot_emb, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_emb
-    k = torch.cat([k_rot_emb, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_emb
     return q, k
 
 
-# ===========================================================================
-# LoRALinear
-# ===========================================================================
-class LoRALinear(nn.Module):
-    is_custom_attention: bool = False
+def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
+    if n_rep == 1:
+        return hidden_states
+    b, num_kv_heads, slen, head_dim = hidden_states.shape
+    hidden_states = hidden_states[:, :, None, :, :].expand(b, num_kv_heads, n_rep, slen, head_dim)
+    return hidden_states.reshape(b, num_kv_heads * n_rep, slen, head_dim)
 
+
+def _detect_decoder(config: Any, is_decoder: Optional[bool], src_attn: Optional[nn.Module]) -> bool:
+    if is_decoder is not None:
+        return bool(is_decoder)
+    if config is not None:
+        if getattr(config, "is_decoder", False) or getattr(config, "causal", False):
+            return True
+        mt = str(getattr(config, "model_type", "") or "").lower()
+        if mt.startswith(
+            (
+                "gpt", "qwen", "llama", "mistral", "gemma", "phi",
+                "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
+            )
+        ):
+            return True
+        arch = getattr(config, "architectures", None)
+        if arch and any(("GPT" in str(a) or "CausalLM" in str(a)) for a in arch):
+            return True
+    if src_attn is not None:
+        if getattr(src_attn, "is_decoder", False):
+            return True
+        if hasattr(src_attn, "c_attn"):
+            return True
+        if "gpt" in src_attn.__class__.__name__.lower():
+            return True
+    return False
+
+
+def _detect_return_format(source_attn: Optional[nn.Module], is_nested: bool) -> str:
+    if is_nested:
+        return "bert"
+    if source_attn is None:
+        return "llama"
+    cls = source_attn.__class__.__name__.lower()
+    if any(k in cls for k in ("gpt2", "gptne", "gptj", "gpt_neo", "gpt_j")):
+        return "gpt2"
+    if hasattr(source_attn, "c_attn"):
+        return "gpt2"
+    return "llama"
+
+
+def _read_cache(
+    past_key_value: Any,
+) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor], Optional[torch.Tensor], int, Any]:
+    """Extracted to safely parse KV and SSM cache. Returns (k1, k2, v, length, ssm_state_fwd)."""
+    if past_key_value is None:
+        return None, None, None, 0, None
+
+    if isinstance(past_key_value, (tuple, list)):
+        if len(past_key_value) == 0:
+            return None, None, None, 0, None
+        first = past_key_value[0]
+        if isinstance(first, (tuple, list)):
+            entry = past_key_value[0]
+            k1, k2, v = entry[0], entry[1], entry[2]
+            ssm_state = entry[3] if len(entry) > 3 else None
+            return k1, k2, v, k1.shape[-2], ssm_state
+        if len(past_key_value) >= 3:
+            k1, k2, v = past_key_value[0], past_key_value[1], past_key_value[2]
+            ssm_state = past_key_value[3] if len(past_key_value) > 3 else None
+            return k1, k2, v, k1.shape[-2], ssm_state
+
+    # HF standard cache objects
+    if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
+        k1 = past_key_value.key_cache[0]
+        k2 = past_key_value.key_cache[1] if len(past_key_value.key_cache) > 1 else k1
+        v = (
+            past_key_value.value_cache[0]
+            if hasattr(past_key_value, "value_cache") and past_key_value.value_cache
+            else None
+        )
+        ssm_state = getattr(past_key_value, "ssm_state", None)
+        if k1 is not None:
+            return k1, k2, v, k1.shape[-2], ssm_state
+
+    return None, None, None, 0, None
+
+
+class RMSNorm(nn.Module):
+    def __init__(self, dim: int, eps: float = 1e-6):
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(dim))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        norm = torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps)
+        return x * norm * self.weight
+
+
+class LoRALinear(nn.Module):
     def __init__(
         self,
-        in_features,
-        out_features,
-        bias=True,
-        lora_rank=16,
-        lora_alpha=32.0,
-        freeze_base=False,
-        device=None,
-        dtype=None,
-    ):
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        freeze_base: bool = False,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+    ) -> None:
         super().__init__()
         fk = {"device": device, "dtype": dtype}
         self.in_features = int(in_features)
@@ -147,15 +203,15 @@ class LoRALinear(nn.Module):
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
-        self.weight = nn.Parameter(torch.empty((self.out_features, self.in_features), **fk))
+        self.weight = nn.Parameter(torch.empty((out_features, in_features), **fk))
         if bias:
-            self.bias = nn.Parameter(torch.empty(self.out_features, **fk))
+            self.bias = nn.Parameter(torch.empty(out_features, **fk))
         else:
             self.register_parameter("bias", None)
 
         if self.lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty((self.lora_rank, self.in_features), **fk))
-            self.lora_B = nn.Parameter(torch.empty((self.out_features, self.lora_rank), **fk))
+            self.lora_A = nn.Parameter(torch.empty((lora_rank, in_features), **fk))
+            self.lora_B = nn.Parameter(torch.empty((out_features, lora_rank), **fk))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
@@ -164,7 +220,7 @@ class LoRALinear(nn.Module):
         if freeze_base:
             self.freeze_base_weights()
 
-    def reset_parameters(self):
+    def reset_parameters(self) -> None:
         nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
         if self.bias is not None:
             fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
@@ -177,7 +233,7 @@ class LoRALinear(nn.Module):
             nn.init.zeros_(self.lora_B)
             self.lora_B.requires_grad = True
 
-    def freeze_base_weights(self):
+    def freeze_base_weights(self) -> None:
         self.weight.requires_grad = False
         if self.bias is not None:
             self.bias.requires_grad = False
@@ -187,319 +243,314 @@ class LoRALinear(nn.Module):
             if self.lora_B is not None:
                 self.lora_B.requires_grad = True
 
-    def unfreeze_base_weights(self):
+    def unfreeze_base_weights(self) -> None:
         self.weight.requires_grad = True
         if self.bias is not None:
             self.bias.requires_grad = True
 
-    def forward(self, x):
-        w = self.weight.to(x.dtype) if self.weight.dtype != x.dtype else self.weight
-        b = (
-            self.bias.to(x.dtype)
-            if (self.bias is not None and self.bias.dtype != x.dtype)
-            else self.bias
-        )
-        out = F.linear(x, w, b)
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = F.linear(x, self.weight, self.bias)
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
         return out
 
 
-# ===========================================================================
-# ChelaSlayAttention
-# ===========================================================================
-@ATTENTION_REGISTRY.register(
-    "chela_slay", supports_causal=True, supports_bidirectional=True, supports_gqa=True
-)
-@ATTENTION_REGISTRY.register(
-    "chela_slay_attention",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
-class ChelaSlayAttention(BaseAttention):
-    r"""
-    CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel.
+class InfoMambaConceptBottleneck(nn.Module):
+    """Real Concept Bottleneck separating down and up projections for SSM integration."""
+    def __init__(self, dim: int, bottleneck_dim: int = 256) -> None:
+        super().__init__()
+        self.dim = dim
+        self.bottleneck_dim = bottleneck_dim
+        self.norm_in = nn.LayerNorm(dim)
+        self.W_down = nn.Linear(dim, bottleneck_dim, bias=False)
+        self.norm_mid = nn.LayerNorm(bottleneck_dim)
+        self.W_up = nn.Linear(bottleneck_dim, dim, bias=False)
+        self.norm_out = nn.LayerNorm(dim)
 
-    CRITICAL: Feature map uses shifted (cos+1)/2, (sin+1)/2 to ensure
-    non-negative features. This is required for stable denominator.
-    """
+    def down(self, x: torch.Tensor) -> torch.Tensor:
+        h = self.norm_in(x)
+        z = self.W_down(h)
+        return self.norm_mid(z)
 
+    def up(self, z: torch.Tensor) -> torch.Tensor:
+        z = F.gelu(z)
+        h = self.W_up(z)
+        return self.norm_out(h)
+
+
+@ATTENTION_REGISTRY.register("jamba_info", supports_causal=True, supports_gqa=True)
+class JambaInfoBlock(BaseAttention):
     is_custom_attention: bool = True
 
     def __init__(
         self,
-        config: Any | None = None,
-        rank: int = 64,
-        feature_dim: int = 128,
-        pretrained_attn: nn.Module | None = None,
-        old_attn: nn.Module | None = None,
-        gate_init_bias: float = 8.0,  # FIX-4: safer default (sigmoid(8)≈0.9997)
-        comp_config: Any | None = None,
-        layer_id: int | None = None,
-        layer_idx: int | None = None,
-        is_decoder: bool | None = None,
+        config: Optional[Any] = None,
+        rank: Optional[int] = 64,
+        pretrained_attn: Optional[nn.Module] = None,
+        old_attn: Optional[nn.Module] = None,
+        comp_config: Optional[Any] = None,
+        is_decoder: Optional[bool] = None,
+        per_head_alpha: bool = True,
         **kwargs: Any,
     ) -> None:
-        super().__init__(config=config, rank=rank, **kwargs)
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        if config is None and source_attn is not None:
+        try:
+            super().__init__(config, rank)
+        except TypeError:
+            super().__init__(config)
 
-            class _Dummy:
-                pass
+        hidden_size = self._detect_hidden_size(config, source_attn, kwargs)
+        num_heads = self._detect_num_heads(config, source_attn, kwargs, hidden_size)
+        num_kv_heads = self._detect_num_kv_heads(config, source_attn, kwargs, num_heads)
+        head_dim = self._detect_head_dim(config, source_attn, kwargs, hidden_size, num_heads)
 
-            config = _Dummy()
-            out_layer = (
-                _safe_getattr(source_attn, "out_lin", None)
-                or _safe_getattr(source_attn, "dense", None)
-                or _safe_getattr(source_attn, "c_proj", None)
-                or _safe_getattr(source_attn, "o_proj", None)
-            )
-            q_layer = (
-                _safe_getattr(source_attn, "q_lin", None)
-                or _safe_getattr(source_attn, "query", None)
-                or _safe_getattr(source_attn, "c_attn", None)
-                or _safe_getattr(source_attn, "q_proj", None)
-            )
-            if out_layer is not None and hasattr(out_layer, "out_features"):
-                config.hidden_size = out_layer.out_features
-            elif q_layer is not None and hasattr(q_layer, "in_features"):
-                config.hidden_size = q_layer.in_features
-            else:
-                config.hidden_size = 768
-            config.num_attention_heads = (
-                _safe_getattr(source_attn, "num_heads", None)
-                or _safe_getattr(source_attn, "num_attention_heads", None)
-                or _safe_getattr(source_attn, "n_heads", None)
-                or 12
-            )
-            config.num_key_value_heads = config.num_attention_heads
-            config.is_decoder = False
-            config.model_type = ""
-
-        if config is None:
-
-            class _DefaultCfg:
-                pass
-
-            config = _DefaultCfg()
-            config.hidden_size = 768
-            config.num_attention_heads = 12
-            config.num_key_value_heads = 12
-            config.is_decoder = False
-            config.model_type = ""
-
-        self.dim = _safe_int(
-            kwargs.get("hidden_size")
-            or kwargs.get("d_model")
-            or _resolve_attr(config, "hidden_size", "d_model", "dim"),
-            768,
-        )
-        if self.dim <= 0:
-            self.dim = 768
-
-        n_heads_raw = (
-            kwargs.get("num_heads")
-            or kwargs.get("num_attention_heads")
-            or _resolve_attr(config, "num_attention_heads", "num_heads", "n_heads", "n_head")
-        )
-        self.num_heads = _safe_int(n_heads_raw, 12)
-        if self.num_heads <= 0:
-            self.num_heads = 12
-
-        kv_heads_raw = (
-            kwargs.get("num_kv_heads")
-            or kwargs.get("num_key_value_heads")
-            or _resolve_attr(config, "num_key_value_heads", "num_kv_heads")
-        )
-        self.num_kv_heads = _safe_int(kv_heads_raw, self.num_heads)
-        self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
-
-        head_dim_raw = kwargs.get("head_dim") or _safe_getattr(config, "head_dim", None)
-        if head_dim_raw is not None:
-            self.head_dim = _safe_int(head_dim_raw, self.dim // max(1, self.num_heads))
-        else:
-            self.head_dim = self.dim // max(1, self.num_heads)
-        if self.head_dim <= 0:
-            self.head_dim = 64
-
+        self.dim = int(hidden_size)
+        self.hidden_size = self.dim
+        self.num_heads = int(num_heads)
+        self.num_kv_heads = int(num_kv_heads)
+        self.head_dim = int(head_dim)
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
-        self.feature_dim = max(2, _safe_int(feature_dim, 128))
-        self.output_feature_dim = 2 * self.feature_dim
+        self.supports_gqa = True
 
-        resolved_layer_id = (
-            layer_id
-            if layer_id is not None
-            else (
-                layer_idx
-                if layer_idx is not None
-                else kwargs.get("layer_id", kwargs.get("layer_idx", 0))
-            )
-        )
-        self.layer_idx = _safe_int(resolved_layer_id, 0)
+        self.is_decoder = _detect_decoder(config, is_decoder, source_attn)
+        self.is_causal = self.is_decoder
+        self.is_nested_encoder = False
+        self._return_format = _detect_return_format(source_attn, self.is_nested_encoder)
 
-        self.lora_rank = _safe_int(
-            _safe_getattr(config, "lora_rank", None)
-            or _safe_getattr(comp_config, "lora_rank", None)
-            or kwargs.get("lora_rank", 16),
-            16,
+        self.lora_rank = int(
+            getattr(config, "lora_rank", None)
+            or (getattr(comp_config, "lora_rank", None) if comp_config else None)
+            or kwargs.get("lora_rank", 16)
         )
-        self.lora_alpha = _safe_float(
-            _safe_getattr(config, "lora_alpha", None)
-            or _safe_getattr(comp_config, "lora_alpha", None)
-            or kwargs.get("lora_alpha", 32.0),
-            32.0,
+        self.lora_alpha = float(
+            getattr(config, "lora_alpha", None)
+            or (getattr(comp_config, "lora_alpha", None) if comp_config else None)
+            or kwargs.get("lora_alpha", 32.0)
         )
         self.freeze_base = self.lora_rank > 0
 
-        if is_decoder is not None:
-            self.is_decoder = bool(is_decoder)
-        else:
-            model_type = str(_safe_getattr(config, "model_type", "") or "").lower()
-            is_dec = bool(
-                _safe_getattr(config, "is_decoder", False)
-                or _safe_getattr(config, "is_causal", False)
-                or kwargs.get("is_causal", False)
-            )
-            _dec_pfx = (
-                "gpt", "qwen", "llama", "mistral", "gemma", "phi",
-                "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
-            )
-            if any(model_type.startswith(p) for p in _dec_pfx) or any(
-                "GPT" in str(a) or "CausalLM" in str(a)
-                for a in (_safe_getattr(config, "architectures", []) or [])
-            ):
-                is_dec = True
-            if source_attn is not None:
-                if _safe_getattr(source_attn, "is_decoder", False) or hasattr(
-                    source_attn, "c_attn"
-                ):
-                    is_dec = True
-            self.is_decoder = is_dec
-        self.is_causal = self.is_decoder
-        self.is_nested_encoder = False
+        # Projections
+        self.W_q1 = LoRALinear(self.dim, self.all_head_size, bias=False, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.W_k1 = LoRALinear(self.dim, self.all_kv_head_size, bias=False, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.W_q2 = LoRALinear(self.dim, self.all_head_size, bias=False, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.W_k2 = LoRALinear(self.dim, self.all_kv_head_size, bias=False, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.W_v  = LoRALinear(self.dim, self.all_kv_head_size, bias=False, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
+        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        self.W_q = LoRALinear(
-            self.dim, self.all_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base,
-        )
-        self.W_k = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base,
-        )
-        self.W_v = LoRALinear(
-            self.dim, self.all_kv_head_size, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base,
-        )
-        self.out_proj = LoRALinear(
-            self.all_head_size, self.dim, bias=True,
-            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base,
-        )
+        # Differential parameters
+        self.lambda_q1 = nn.Parameter(torch.zeros(self.num_heads))
+        self.lambda_k1 = nn.Parameter(torch.zeros(self.num_heads))
+        self.lambda_q2 = nn.Parameter(torch.zeros(self.num_heads))
+        self.lambda_k2 = nn.Parameter(torch.zeros(self.num_heads))
+        
+        # FIX 4.1: Per-head initialization for Lambda per Diff Transformer formulation
+        head_ids = torch.arange(self.num_heads, dtype=torch.float32)
+        lambda_init_vals = 0.8 - 0.6 * torch.exp(-0.3 * head_ids)
+        self.lambda_init = nn.Parameter(lambda_init_vals)
 
-        # Yat projection — small init to keep proj values in [-1, 1]
-        self.yat_proj = nn.Parameter(
-            torch.randn(self.head_dim, self.feature_dim, dtype=torch.float32) * 0.02
-        )
+        self.diff_norm = RMSNorm(self.all_head_size)
 
-        # Adaptive gate — starts fully closed (nearly dense-only)
-        self.lora_gate = nn.Linear(self.dim, self.num_heads)
-        nn.init.zeros_(self.lora_gate.weight)
-        with torch.no_grad():
-            self.lora_gate.bias.data.fill_(float(gate_init_bias))
+        self.per_head_alpha = bool(per_head_alpha)
+        self.alpha_raw = nn.Parameter(torch.full((self.num_heads,), -2.0) if self.per_head_alpha else torch.tensor(-2.0))
 
-        dropout_p = _safe_float(
-            _resolve_attr(config, "dropout", "attention_probs_dropout_prob") or 0.1,
-            0.1,
-        )
+        # FIX 4.2: Dynamic Relative Bottleneck + SSM Dimension
+        bottleneck_dim = int(getattr(comp_config, "bottleneck_dim", None) or max(64, self.dim // 3))
+        self.bottleneck = InfoMambaConceptBottleneck(self.dim, bottleneck_dim=bottleneck_dim)
+
+        self.ssm_fwd: Optional[nn.Module] = None
+        self.ssm_bwd: Optional[nn.Module] = None
+        
+        if SimpleSSM is not None:
+            self.ssm_fwd = self._make_ssm(config, bottleneck_dim)
+            if not self.is_decoder:
+                # FIX 3.2: Weight sharing to prevent parameter duplication
+                self.ssm_bwd = self.ssm_fwd
+
+        dropout_p = float(getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1)) if config else 0.1)
         self.dropout = nn.Dropout(dropout_p)
 
-        self.rotary_emb = None
-        self.comp_config = comp_config
-
-        self._orig_storage_bytes = 0
-        self._comp_storage_bytes = 0
-
         if source_attn is not None:
+            self.copy_weights(source_attn)
+
+        self._return_format = _detect_return_format(source_attn, self.is_nested_encoder)
+
+    # 5.1 Aliases as properties to prevent read-only overrides
+    @property
+    def q_proj(self) -> LoRALinear: return self.W_q1
+    @property
+    def k_proj(self) -> LoRALinear: return self.W_k1
+    @property
+    def v_proj(self) -> LoRALinear: return self.W_v
+    @property
+    def q_lin(self) -> LoRALinear: return self.W_q1
+    @property
+    def k_lin(self) -> LoRALinear: return self.W_k1
+    @property
+    def v_lin(self) -> LoRALinear: return self.W_v
+    @property
+    def dense(self) -> LoRALinear: return self.out_proj
+    @property
+    def c_proj(self) -> LoRALinear: return self.out_proj
+    @property
+    def o_proj(self) -> LoRALinear: return self.out_proj
+
+    def _make_ssm(self, config: Optional[Any], d_model: int) -> Optional[nn.Module]:
+        if SimpleSSM is None:
+            return None
+        try:
+            return SimpleSSM(d_model=d_model, config=config, is_decoder=self.is_decoder)
+        except Exception as e:
+            logger.warning("SimpleSSM instantiation failed: %s", e)
+            return None
+
+    @staticmethod
+    def _detect_hidden_size(config, src, kwargs) -> int:
+        for k in ("hidden_size", "d_model", "n_embd", "dim"):
+            v = kwargs.get(k)
+            if isinstance(v, int) and v > 0:
+                return v
+        if config is not None:
+            for k in ("hidden_size", "d_model", "n_embd", "dim"):
+                v = getattr(config, k, None)
+                if isinstance(v, int) and v > 0:
+                    return v
+        if src is not None:
+            for attr in ("out_lin", "out_proj", "o_proj", "dense", "c_proj"):
+                mod = getattr(src, attr, None)
+                if mod is not None and hasattr(mod, "out_features"):
+                    return int(mod.out_features)
+            for attr in ("q_proj", "q_lin", "query", "W_q1", "c_attn"):
+                mod = getattr(src, attr, None)
+                if mod is not None and hasattr(mod, "in_features"):
+                    return int(mod.in_features)
+        return 768
+
+    @staticmethod
+    def _detect_num_heads(config, src, kwargs, hidden_size) -> int:
+        for k in ("num_heads", "num_attention_heads", "n_heads", "n_head"):
+            v = kwargs.get(k)
+            if isinstance(v, int) and v > 0:
+                return v
+        if config is not None:
+            for k in ("num_attention_heads", "num_heads", "n_heads", "n_head"):
+                v = getattr(config, k, None)
+                if isinstance(v, int) and v > 0:
+                    return v
+        if src is not None:
+            for k in ("num_heads", "num_attention_heads", "n_heads"):
+                v = getattr(src, k, None)
+                if isinstance(v, int) and v > 0:
+                    return v
+        return max(1, hidden_size // 64)
+
+    @staticmethod
+    def _detect_num_kv_heads(config, src, kwargs, num_heads) -> int:
+        for k in ("num_key_value_heads", "num_kv_heads"):
+            v = kwargs.get(k)
+            if isinstance(v, int) and v > 0:
+                return v
+        if config is not None:
+            for k in ("num_key_value_heads", "num_kv_heads"):
+                v = getattr(config, k, None)
+                if isinstance(v, int) and v > 0:
+                    return v
+        if src is not None:
+            v = getattr(src, "num_key_value_heads", None)
+            if isinstance(v, int) and v > 0:
+                return v
+        return num_heads
+
+    @staticmethod
+    def _detect_head_dim(config, src, kwargs, hidden_size, num_heads) -> int:
+        v = kwargs.get("head_dim")
+        if isinstance(v, int) and v > 0:
+            return v
+        if config is not None:
+            for k in ("head_dim", "kv_channels", "d_kv"):
+                v = getattr(config, k, None)
+                if isinstance(v, int) and v > 0:
+                    return v
+        if src is not None:
+            for attr in ("q_proj", "query", "q_lin", "W_q1"):
+                mod = getattr(src, attr, None)
+                if mod is not None and hasattr(mod, "weight") and mod.weight is not None:
+                    try:
+                        return int(mod.weight.shape[0] // max(1, num_heads))
+                    except Exception:
+                        pass
+        return max(1, hidden_size // max(1, num_heads))
+
+    def _run_ssm(
+        self, ssm: Optional[nn.Module], x: torch.Tensor, attention_mask: Optional[torch.Tensor], past_state: Any = None
+    ) -> Tuple[torch.Tensor, Any]:
+        if ssm is None:
+            return torch.zeros_like(x), None
+        
+        try:
+            # FIX 3.1: Support KV-Cache logic for Autoregressive Generation
+            out = ssm(x, attention_mask=attention_mask, past_state=past_state)
+        except TypeError:
             try:
-                self._copy_pretrained(source_attn)
+                out = ssm(x, attention_mask=attention_mask)
             except Exception as e:
-                logger.warning(
-                    "ChelaSlayAttention._copy_pretrained failed: %s. Using init.", e
-                )
+                logger.debug("SSM forward failed: %s", e)
+                return torch.zeros_like(x), None
+                
+        if isinstance(out, tuple):
+            return out[0], out[1] if len(out) > 1 else None
+        return out, None
 
-    # ---- aliases ----
-    @property
-    def gate(self): return self.lora_gate
-    @property
-    def random_proj(self): return self.yat_proj
-    @property
-    def q_proj(self): return self.W_q
-    @property
-    def k_proj(self): return self.W_k
-    @property
-    def v_proj(self): return self.W_v
-    @property
-    def o_proj(self): return self.out_proj
-    @property
-    def q_lin(self): return self.W_q
-    @property
-    def k_lin(self): return self.W_k
-    @property
-    def v_lin(self): return self.W_v
-    @property
-    def out_lin(self): return self.out_proj
-    @property
-    def query(self): return self.W_q
-    @property
-    def key(self): return self.W_k
-    @property
-    def value(self): return self.W_v
-    @property
-    def dense(self): return self.out_proj
-    @property
-    def c_proj(self): return self.out_proj
+    def _format_output(self, out: torch.Tensor, attn_weights: Optional[torch.Tensor], present: Any) -> tuple:
+        fmt = self._return_format
+        if fmt == "bert":
+            return (out, attn_weights)
+        if fmt == "gpt2":
+            # FIX 5.2: Safe GPT-2 Output format compatibility
+            if present is None:
+                return (out, attn_weights)
+            return (out, present, attn_weights)
+        return (out, attn_weights, present)
 
-    # ------------------------------------------------------------------
-    # Weight transfer
-    # ------------------------------------------------------------------
-    def _copy_pretrained(self, pretrained_attn: nn.Module) -> None:
-        if pretrained_attn is None:
+    def _normalize_head_mask(self, head_mask: torch.Tensor, attn: torch.Tensor) -> torch.Tensor:
+        hm = head_mask.to(attn.dtype)
+        H = self.num_heads
+        if hm.dim() == 1:
+            hm = hm.view(1, H, 1, 1) if hm.numel() == H else hm.view(1, -1, 1, 1)
+        elif hm.dim() == 2:
+            if hm.shape[-1] == H:
+                hm = hm.view(hm.shape[0], H, 1, 1)
+            elif hm.shape[0] == H:
+                hm = hm.t().view(1, H, 1, 1)
+            else:
+                hm = hm.view(1, hm.shape[-1], 1, 1)
+        elif hm.dim() == 3:
+            if hm.shape[1] == H:
+                hm = hm.unsqueeze(2)
+            elif hm.shape[2] == H:
+                hm = hm.permute(0, 2, 1).unsqueeze(2)
+            else:
+                hm = hm.unsqueeze(1)
+        return attn * hm
+
+    def copy_weights(self, src: Any) -> None:
+        if src is None:
             return
 
-        try:
-            for p in pretrained_attn.parameters():
-                self._orig_storage_bytes += p.numel() * p.element_size()
-        except Exception:
-            pass
-
-        cls_name = pretrained_attn.__class__.__name__
-        has_out_lin = (
-            hasattr(pretrained_attn, "out_lin")
-            or hasattr(pretrained_attn, "c_proj")
-            or hasattr(pretrained_attn, "o_proj")
-        )
+        cls_name = src.__class__.__name__
+        has_out_lin = any(hasattr(src, a) for a in ("out_lin", "c_proj", "o_proj"))
         is_nested = False
         if (
             (
-                hasattr(pretrained_attn, "self")
-                and hasattr(pretrained_attn.self, "query")
-                and hasattr(pretrained_attn, "output")
-                and hasattr(pretrained_attn.output, "dense")
+                hasattr(src, "self")
+                and hasattr(src.self, "query")
+                and hasattr(src, "output")
+                and hasattr(src.output, "dense")
             )
             or (
-                cls_name in (
-                    "BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention",
-                    "ElectraSelfAttention", "DebertaSelfAttention",
-                )
+                cls_name in ["BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention", "ElectraSelfAttention", "DebertaSelfAttention"]
                 or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower())
             )
             and not has_out_lin
@@ -507,58 +558,55 @@ class ChelaSlayAttention(BaseAttention):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
-        if hasattr(pretrained_attn, "rotary_emb"):
-            self.rotary_emb = pretrained_attn.rotary_emb
+        extracted = {"q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None)}
 
-        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
-        }
-
-        def _unwrap(mod):
-            return getattr(mod, "base_layer", mod)
-
-        # GPT-2 fused
-        if hasattr(pretrained_attn, "c_attn") and pretrained_attn.c_attn is not None:
-            c_attn_mod = _unwrap(pretrained_attn.c_attn)
-            c_w = getattr(c_attn_mod, "weight", None)
-            if c_w is not None:
-                c_w = c_w.data.clone()
-                is_conv = pretrained_attn.c_attn.__class__.__name__ == "Conv1D" or (
-                    c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]
+        if hasattr(src, "c_attn") and src.c_attn is not None:
+            c = src.c_attn
+            base_c = getattr(c, "base_layer", c)
+            cw = getattr(base_c, "weight", getattr(c, "weight", None))
+            if cw is not None:
+                cw = cw.data.clone()
+                is_conv = (
+                    c.__class__.__name__ == "Conv1D"
+                    or base_c.__class__.__name__ == "Conv1D"
+                    or (cw.ndim == 2 and cw.shape[1] == 3 * self.hidden_size)
                 )
                 if is_conv:
-                    c_w = c_w.t().contiguous()
-                split = c_w.size(0) // 3
-                c_b = getattr(c_attn_mod, "bias", None)
-                c_b_data = c_b.data.clone() if c_b is not None else None
-                extracted["q"] = (c_w[:split], c_b_data[:split] if c_b_data is not None else None)
-                extracted["k"] = (c_w[split:2*split], c_b_data[split:2*split] if c_b_data is not None else None)
-                extracted["v"] = (c_w[2*split:], c_b_data[2*split:] if c_b_data is not None else None)
+                    cw = cw.t().contiguous()
+                split = cw.size(0) // 3
+                bmod = getattr(base_c, "bias", getattr(c, "bias", None))
+                cb = bmod.data.clone() if bmod is not None else None
+                extracted["q"] = (cw[:split], cb[:split] if cb is not None else None)
+                extracted["k"] = (cw[split : 2 * split], cb[split : 2 * split] if cb is not None else None)
+                extracted["v"] = (cw[2 * split :], cb[2 * split :] if cb is not None else None)
+            if hasattr(src, "c_proj") and src.c_proj is not None:
+                o = src.c_proj
+                base_o = getattr(o, "base_layer", o)
+                ow = getattr(base_o, "weight", getattr(o, "weight", None))
+                if ow is not None:
+                    ow = ow.data.clone()
+                    is_conv_o = (
+                        o.__class__.__name__ == "Conv1D"
+                        or base_o.__class__.__name__ == "Conv1D"
+                        or (ow.ndim == 2 and ow.shape[0] < ow.shape[1])
+                    )
+                    if is_conv_o:
+                        ow = ow.t().contiguous()
+                    bo = getattr(base_o, "bias", getattr(o, "bias", None))
+                    extracted["o"] = (ow, bo.data.clone() if bo is not None else None)
 
-            if hasattr(pretrained_attn, "c_proj") and pretrained_attn.c_proj is not None:
-                c_proj_mod = _unwrap(pretrained_attn.c_proj)
-                o_w = getattr(c_proj_mod, "weight", None)
-                if o_w is not None:
-                    o_w = o_w.data.clone()
-                    if o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]:
-                        o_w = o_w.t().contiguous()
-                    o_b = getattr(c_proj_mod, "bias", None)
-                    extracted["o"] = (o_w, o_b.data.clone() if o_b is not None else None)
-
-        # Nested
-        elif hasattr(pretrained_attn, "self") and hasattr(pretrained_attn.self, "query"):
-            s = pretrained_attn.self
-            for key, sub_name in (("q", "query"), ("k", "key"), ("v", "value")):
-                m = _unwrap(getattr(s, sub_name, None))
+        elif hasattr(src, "self") and hasattr(src.self, "query"):
+            s = src.self
+            for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
+                m = getattr(s, sub, None)
                 if m is not None and hasattr(m, "weight"):
                     b = getattr(m, "bias", None)
                     extracted[key] = (m.weight.data.clone(), b.data.clone() if b is not None else None)
-            if hasattr(pretrained_attn, "output") and hasattr(pretrained_attn.output, "dense"):
-                out_mod = _unwrap(pretrained_attn.output.dense)
-                b = getattr(out_mod, "bias", None)
-                extracted["o"] = (out_mod.weight.data.clone(), b.data.clone() if b is not None else None)
+            if hasattr(src, "output") and hasattr(src.output, "dense"):
+                d = src.output.dense
+                b = getattr(d, "bias", None)
+                extracted["o"] = (d.weight.data.clone(), b.data.clone() if b is not None else None)
 
-        # Flat
         else:
             candidates = {
                 "q": ("q_lin", "q_proj", "query", "W_q"),
@@ -568,367 +616,232 @@ class ChelaSlayAttention(BaseAttention):
             }
             for key, names in candidates.items():
                 for n in names:
-                    if hasattr(pretrained_attn, n):
-                        m = _unwrap(getattr(pretrained_attn, n))
+                    if hasattr(src, n):
+                        m = getattr(src, n)
                         if m is not None and hasattr(m, "weight"):
+                            w = m.weight.data.clone()
+                            is_conv = m.__class__.__name__ == "Conv1D" or (key == "o" and w.ndim == 2 and w.shape[0] < w.shape[1])
+                            if is_conv:
+                                w = w.t().contiguous()
                             b = getattr(m, "bias", None)
-                            extracted[key] = (m.weight.data.clone(), b.data.clone() if b is not None else None)
+                            extracted[key] = (w, b.data.clone() if b is not None else None)
                             break
 
-        # UniversalAdapter fallback
-        missing = [
-            k for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
-        if missing:
-            try:
-                from neuralops.core.adapters import UniversalAdapter
-                ad = UniversalAdapter()
-                for k in missing:
-                    w, b = ad.get_weight_bias(pretrained_attn, k)
-                    if w is not None:
-                        extracted[k] = (w.clone(), b.clone() if b is not None else None)
-            except Exception as e:
-                logger.debug("UniversalAdapter fallback failed: %s", e)
+        def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
+            if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
+                return w.t().contiguous()
+            return w
 
-        missing_after = [
-            k for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
-        if missing_after:
-            logger.warning(
-                "ChelaSlayAttention: missing projections %s from %s; using init.",
-                missing_after, pretrained_attn.__class__.__name__,
-            )
+        def _copy_into(target_mod: LoRALinear, w: Optional[torch.Tensor], b: Optional[torch.Tensor]) -> None:
+            if w is None:
+                return
+            if w.ndim != 2:
+                w = w.reshape(w.size(0), -1)
+            if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
+                w = w.t().contiguous()
+            r, c = min(target_mod.weight.size(0), w.size(0)), min(target_mod.weight.size(1), w.size(1))
+            target_mod.weight.data[:r, :c].copy_(w[:r, :c].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype))
+            if b is not None and target_mod.bias is not None:
+                n = min(b.numel(), target_mod.bias.numel())
+                b_val = b.data if isinstance(b, nn.Parameter) else b
+                target_mod.bias.data[:n].copy_(b_val[:n].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype))
 
-        target_map = {"q": self.W_q, "k": self.W_k, "v": self.W_v, "o": self.out_proj}
         with torch.no_grad():
-            for key, target_mod in target_map.items():
-                w, b = extracted[key]
-                if w is None:
-                    if key == "o" and self.is_nested_encoder:
-                        nn.init.eye_(target_mod.weight)
-                        if target_mod.bias is not None:
-                            nn.init.zeros_(target_mod.bias)
-                    continue
+            w_q, _ = extracted["q"]
+            w_k, _ = extracted["k"]
+            w_v, _ = extracted["v"]
+            w_o, b_o = extracted["o"]
 
-                if w.ndim != 2:
-                    w = w.reshape(w.size(0), -1)
-                if (
-                    w.shape != target_mod.weight.shape
-                    and w.t().contiguous().shape == target_mod.weight.shape
-                ):
-                    w = w.t().contiguous()
+            if w_q is not None:
+                _copy_into(self.W_q1, _orient(w_q, self.hidden_size), None)
+                _copy_into(self.W_q2, _orient(w_q, self.hidden_size), None)
+            if w_k is not None:
+                _copy_into(self.W_k1, _orient(w_k, self.hidden_size), None)
+                _copy_into(self.W_k2, _orient(w_k, self.hidden_size), None)
+            if w_v is not None:
+                _copy_into(self.W_v, _orient(w_v, self.hidden_size), None)
+            if w_o is not None:
+                _copy_into(self.out_proj, _orient(w_o, self.all_head_size), b_o)
+            elif self.is_nested_encoder:
+                nn.init.eye_(self.out_proj.weight)
+                if self.out_proj.bias is not None:
+                    nn.init.zeros_(self.out_proj.bias)
 
-                out_d = min(target_mod.weight.size(0), w.size(0))
-                in_d = min(target_mod.weight.size(1), w.size(1))
-                if out_d == target_mod.weight.size(0) and in_d == target_mod.weight.size(1):
-                    target_mod.weight.data.copy_(
-                        w.to(target_mod.weight.device, target_mod.weight.dtype)
-                    )
-                else:
-                    target_mod.weight.data.zero_()
-                    target_mod.weight.data[:out_d, :in_d].copy_(
-                        w[:out_d, :in_d].to(target_mod.weight.device, target_mod.weight.dtype)
-                    )
+        if self.freeze_base:
+            for mod in (self.W_q1, self.W_k1, self.W_q2, self.W_k2, self.W_v, self.out_proj):
+                mod.freeze_base_weights()
 
-                if b is not None and target_mod.bias is not None:
-                    mn = min(target_mod.bias.numel(), b.numel())
-                    target_mod.bias.data[:mn].copy_(
-                        b[:mn].to(target_mod.bias.device, target_mod.bias.dtype)
-                    )
-                elif target_mod.bias is not None:
-                    nn.init.zeros_(target_mod.bias)
-
-                nrm = float(torch.norm(target_mod.weight.data).item())
-                if nrm < 1e-4:
-                    logger.warning("ChelaSlay: '%s' near-zero norm (%.2e)", key, nrm)
-
-                if self.freeze_base:
-                    target_mod.freeze_base_weights()
-
-        try:
-            for m in (self.W_q, self.W_k, self.W_v, self.out_proj):
-                for p in m.parameters():
-                    self._comp_storage_bytes += p.numel() * p.element_size()
-        except Exception:
-            pass
-
-    # ------------------------------------------------------------------
-    # Spherical normalize
-    # ------------------------------------------------------------------
-    def _spherical_normalize(self, x: torch.Tensor) -> torch.Tensor:
-        """Map x to a unit vector times log(1 + |x|)."""
-        norm = torch.norm(x, p=2, dim=-1, keepdim=True)
-        magnitude = torch.log1p(norm.clamp_min(0.0))
-        return x / (norm + 1e-6) * magnitude
-
-    # ------------------------------------------------------------------
-    # FIX-1: Non-negative Yat feature map
-    # ------------------------------------------------------------------
-    def _yat_feature_map(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Non-negative shifted Yat feature map.
-
-        FIX-1: Original [cos, sin] is bipolar → denominator can hit zero.
-        Fixed: ((cos + 1)/2, (sin + 1)/2) → all features in [0, 1].
-
-        This guarantees the linear-attention denominator
-        Z = sum_j k_feat[j]   and   q_feat · Z
-        are always non-negative and bounded away from zero.
-        """
-        if self.yat_proj.shape[0] != x.shape[-1]:
-            raise RuntimeError(
-                f"ChelaSlay: yat_proj shape {tuple(self.yat_proj.shape)} "
-                f"vs x last dim {x.shape[-1]}."
-            )
-        proj = torch.matmul(x, self.yat_proj.to(x.device, x.dtype))
-        scale = math.sqrt(2.0 / float(self.feature_dim))
-        # FIX-1: Non-negative shifted features
-        cos_shifted = (torch.cos(proj) + 1.0) * 0.5   # in [0, 1]
-        sin_shifted = (torch.sin(proj) + 1.0) * 0.5   # in [0, 1]
-        return torch.cat([cos_shifted, sin_shifted], dim=-1) * scale
-
-    # ------------------------------------------------------------------
-    # Forward
-    # ------------------------------------------------------------------
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: torch.Tensor | None = None,
-        head_mask: torch.Tensor | None = None,
-        encoder_hidden_states: torch.Tensor | None = None,
-        encoder_attention_mask: torch.Tensor | None = None,
-        past_key_value: Any | None = None,
-        output_attentions: bool | None = False,
-        output_hidden_states: bool | None = False,
-        return_dict: bool | None = True,
-        position_ids: torch.Tensor | None = None,
-        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+        position_ids: Optional[torch.Tensor] = None,
+        past_key_value: Optional[Any] = None,
+        output_attentions: Optional[bool] = False,
         *args: Any,
         **kwargs: Any,
     ):
+        mask = kwargs.get("mask")
+        if attention_mask is None and mask is not None:
+            attention_mask = mask
+
         x = hidden_states
         B, L, D = x.shape
-        is_cross = encoder_hidden_states is not None
-        kv_input = encoder_hidden_states if is_cross else x
+        device = x.device
 
-        q = self.W_q(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        k = (
-            self.W_k(kv_input)
-            .view(B, -1, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        v = (
-            self.W_v(kv_input)
-            .view(B, -1, self.num_kv_heads, self.head_dim)
-            .transpose(1, 2)
-            .contiguous()
-        )
-        kv_len = k.shape[2]
+        # --- FIX 3.1: Read SSM state alongside KV cache ---
+        past_k1, past_k2, past_v, past_len, past_ssm_state = _read_cache(past_key_value)
 
-        if position_embeddings is not None and not is_cross:
-            if isinstance(position_embeddings, tuple):
-                cos, sin = position_embeddings
-                q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
-        elif self.rotary_emb is not None and not is_cross:
-            if position_ids is not None:
-                try:
-                    cos, sin = self.rotary_emb(x, seq_len=kv_len)
-                except TypeError:
-                    cos, sin = self.rotary_emb(x, position_ids)
-                q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
+        q1 = self.W_q1(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k1 = self.W_k1(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        q2 = self.W_q2(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        k2 = self.W_k2(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        v = self.W_v(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
-        if self.num_kv_heads != self.num_heads:
-            k = repeat_kv(k, self.kv_repeat)
+        position_embeddings = position_embeddings or kwargs.get("position_embeddings")
+        if position_embeddings is None and position_ids is None:
+            position_ids = kwargs.get("position_ids")
+
+        if position_embeddings is not None:
+            cos, sin = position_embeddings
+            if cos.shape[-2] >= past_len + L:
+                cos = cos.narrow(-2, past_len, L)
+                sin = sin.narrow(-2, past_len, L)
+            q1, k1 = apply_rotary_pos_emb(q1, k1, cos, sin)
+            q2, k2 = apply_rotary_pos_emb(q2, k2, cos, sin)
+
+        if past_k1 is not None:
+            k1 = torch.cat([past_k1.to(k1.dtype), k1], dim=-2)
+            k2 = torch.cat([past_k2.to(k2.dtype), k2], dim=-2)
+            v = torch.cat([past_v.to(v.dtype), v], dim=-2)
+
+        if self.kv_repeat > 1:
+            k1 = repeat_kv(k1, self.kv_repeat)
+            k2 = repeat_kv(k2, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        # ---- Dense stream (mathematically identical to softmax) ----
-        dense_scores = torch.matmul(
-            q.float(), k.float().transpose(-2, -1).contiguous()
-        ) * (self.head_dim ** -0.5)
+        scale = 1.0 / math.sqrt(self.head_dim)
+        scores1 = torch.matmul(q1.float(), k1.float().transpose(-2, -1).contiguous()) * scale
+        scores2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1).contiguous()) * scale
 
-        can_causal = bool(self.is_causal and not is_cross and kv_len == L)
-        if can_causal:
-            causal = torch.triu(
-                torch.full((L, L), -1e4, device=x.device, dtype=torch.float32),
-                diagonal=1,
-            )
-            dense_scores = dense_scores + causal.unsqueeze(0).unsqueeze(0)
+        if self.is_decoder and L > 1:
+            kv_len = k1.shape[-2]
+            causal = torch.tril(torch.ones(L, kv_len, device=device, dtype=torch.bool), diagonal=past_len)
+            scores1 = scores1.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
+            scores2 = scores2.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
 
-        eff_mask = encoder_attention_mask if is_cross else attention_mask
-        valid_mask = None
-        if eff_mask is not None:
-            if eff_mask.dim() == 2:
-                valid_mask = (eff_mask > 0).float().unsqueeze(1).unsqueeze(-1)
-                pad_m = (1.0 - eff_mask.unsqueeze(1).unsqueeze(2).float()) * -1e4
-                dense_scores = dense_scores + pad_m
-            elif eff_mask.dim() == 3:
-                valid_mask = (eff_mask[:, 0, :] > -1000.0).float().unsqueeze(1).unsqueeze(-1)
-                dense_scores = dense_scores + eff_mask.unsqueeze(1).float()
-            elif eff_mask.dim() == 4:
-                valid_mask = (eff_mask[:, 0, -1, :] > -1000.0).float().unsqueeze(1).unsqueeze(-1)
-                dense_scores = dense_scores + eff_mask.float()
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                valid = get_token_valid_mask(attention_mask, B, k1.shape[-2], device)
+                if valid is not None:
+                    scores1 = scores1.masked_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
+                    scores2 = scores2.masked_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
+            elif attention_mask.dim() == 3:
+                m3 = attention_mask.unsqueeze(1).float()
+                if attention_mask.dtype == torch.bool:
+                    m3 = (~attention_mask).unsqueeze(1).float() * -1e4
+                scores1 = scores1 + m3
+                scores2 = scores2 + m3
+            elif attention_mask.dim() == 4:
+                m4 = (~attention_mask).float() * -1e4 if attention_mask.dtype == torch.bool else attention_mask.float()
+                scores1 = scores1 + m4
+                scores2 = scores2 + m4
 
-        dense_scores = torch.nan_to_num(dense_scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-        dense_attn = F.softmax(dense_scores, dim=-1)
-        dense_attn = torch.nan_to_num(dense_attn, nan=0.0)
+        scores1 = torch.nan_to_num(scores1, nan=-1e4, posinf=1e4, neginf=-1e4)
+        scores2 = torch.nan_to_num(scores2, nan=-1e4, posinf=1e4, neginf=-1e4)
 
-        head_mask_b = None
+        attn1 = F.softmax(scores1, dim=-1).to(q1.dtype)
+        attn2 = F.softmax(scores2, dim=-1).to(q2.dtype)
+
+        lambda_full = (torch.exp(self.lambda_q1 * self.lambda_k1) - torch.exp(self.lambda_q2 * self.lambda_k2) + self.lambda_init).to(attn1.dtype)
+        lambda_full = lambda_full.view(1, self.num_heads, 1, 1)
+
+        # --- FIX 3.4: (1.0 - \lambda_init) scaling & Safe diff_attn without ReLU ---
+        scale_factor = (1.0 - self.lambda_init).view(1, self.num_heads, 1, 1).to(attn1.dtype)
+        diff_attn = (attn1 - lambda_full * attn2) * scale_factor
+        diff_attn = self.dropout(diff_attn).to(v.dtype)
+
         if head_mask is not None:
-            if head_mask.dim() == 1:
-                head_mask_b = head_mask.view(1, -1, 1, 1)
-            elif head_mask.dim() == 2:
-                head_mask_b = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
-            elif head_mask.dim() == 4:
-                head_mask_b = head_mask
-            if head_mask_b is not None:
-                dense_attn = dense_attn * head_mask_b.to(dense_attn.dtype)
+            diff_attn = self._normalize_head_mask(head_mask, diff_attn)
 
-        dense_attn = self.dropout(dense_attn)
-        dense_out = torch.matmul(dense_attn.to(v.dtype), v)
+        attn_out = torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+        attn_out = self.diff_norm(attn_out)
 
-        # ---- Linear stream (FIX-1, FIX-2) ----
-        q_norm = self._spherical_normalize(q)
-        k_norm = self._spherical_normalize(k)
-        q_feat = self._yat_feature_map(q_norm)
-        k_feat = self._yat_feature_map(k_norm)
+        # --- FIX 3.3: True Concept Bottleneck Integration (attn_out -> bottleneck -> ssm) ---
+        z_down = self.bottleneck.down(attn_out)
 
-        if valid_mask is not None:
-            k_feat = k_feat * valid_mask.to(k_feat.device, k_feat.dtype)
-            v_masked = v * valid_mask.to(v.device, v.dtype)
+        ssm_state_fwd_next = None
+        if self.is_decoder:
+            z_ssm, ssm_state_fwd_next = self._run_ssm(self.ssm_fwd, z_down, attention_mask, past_state=past_ssm_state)
         else:
-            v_masked = v
+            if self.ssm_bwd is not None:
+                z_rev = torch.flip(z_down, dims=[1]).contiguous()
+                # FIX 4.3: Safe mask flipping for bidirectional SSM
+                rev_mask = torch.flip(attention_mask, dims=[-1]).contiguous() if attention_mask is not None else None
+                
+                ssm_fwd_out, _ = self._run_ssm(self.ssm_fwd, z_down, attention_mask)
+                ssm_bwd_out, _ = self._run_ssm(self.ssm_bwd, z_rev, rev_mask)
+                z_ssm = 0.5 * (ssm_fwd_out + torch.flip(ssm_bwd_out, dims=[1]).contiguous())
+            else:
+                z_ssm, _ = self._run_ssm(self.ssm_fwd, z_down, attention_mask)
 
-        if can_causal:
-            linear_out = self._causal_linear_attention(q_feat, k_feat, v_masked, L)
+        # --- Update Cache ---
+        if self.is_decoder:
+            present_key_value = (k1, k2, v, ssm_state_fwd_next)
         else:
-            linear_out = self._bidirectional_linear_attention(q_feat, k_feat, v_masked)
+            present_key_value = (k1, k2, v)
 
-        # FIX-3: Normalize linear_out magnitude
-        linear_out = linear_out / linear_out.norm(dim=-1, keepdim=True).clamp_min(1.0)
+        ssm_branch = self.bottleneck.up(z_ssm)
 
-        if head_mask_b is not None:
-            hw = head_mask_b.squeeze(-1).squeeze(-1)
-            linear_out = linear_out * hw.unsqueeze(-1).to(linear_out.dtype)
+        # --- Alpha blending (FIX 4.4 Dtype Mismatch Resolution) ---
+        target_dtype = x.dtype
+        alpha = torch.sigmoid(self.alpha_raw.to(target_dtype))
+        
+        if self.per_head_alpha:
+            alpha = alpha.view(1, 1, self.num_heads, 1)
+            attn_out_h = attn_out.view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+            ssm_branch_h = ssm_branch.view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+            combined = (1.0 - alpha) * attn_out_h + alpha * ssm_branch_h
+            combined = combined.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+        else:
+            combined = (1.0 - alpha) * attn_out.to(target_dtype) + alpha * ssm_branch.to(target_dtype)
 
-        # ---- Adaptive gating (FIX-4: gate starts nearly 1) ----
-        g = torch.sigmoid(self.lora_gate(x)).transpose(1, 2).contiguous().unsqueeze(-1)
-        fused = g * dense_out + (1.0 - g) * linear_out
-        out = fused.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+        # Apply head mask optionally to the combined output as well, if required
+        if head_mask is not None and head_mask.dim() == 1:
+            hm_combined = head_mask.view(1, 1, self.num_heads, 1).to(target_dtype)
+            combined = (combined.view(B, L, self.num_heads, self.head_dim) * hm_combined).view(B, L, self.all_head_size)
 
+        combined = torch.nan_to_num(combined, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        # FIX 4.5: Ensure out_proj operates safely mapping all_head_size back to hidden_size
         if self.is_nested_encoder:
-            final_out = out
+            out = combined.to(target_dtype)
         else:
-            final_out = self.out_proj(out)
+            out = self.out_proj(combined).to(target_dtype)
 
-        return final_out, (dense_attn if output_attentions else None)
-
-    # ------------------------------------------------------------------
-    # FIX-2: Denom clamping in both attention paths
-    # ------------------------------------------------------------------
-    def _bidirectional_linear_attention(self, q_feat, k_feat, v_masked):
-        KV = torch.matmul(
-            k_feat.transpose(-2, -1).contiguous().float(), v_masked.float()
-        )
-        Z = k_feat.float().sum(dim=2, keepdim=True)
-        num = torch.matmul(q_feat.float(), KV)
-        denom = (q_feat.float() * Z).sum(dim=-1, keepdim=True)
-        # FIX-2: clamp to at least 1.0
-        denom = denom.abs().clamp_min(1.0)
-        return (num / denom).to(q_feat.dtype)
-
-    def _causal_linear_attention(self, q_feat, k_feat, v_masked, L):
-        chunk_size = 64
-        B, H, _, feat_2f = k_feat.shape
-        Dh = v_masked.shape[-1]
-        num_chunks = (L + chunk_size - 1) // chunk_size
-
-        S_running = torch.zeros(B, H, feat_2f, Dh, device=q_feat.device, dtype=torch.float32)
-        Z_running = torch.zeros(B, H, feat_2f, device=q_feat.device, dtype=torch.float32)
-        out_chunks = []
-
-        for c in range(num_chunks):
-            s = c * chunk_size
-            e = min(s + chunk_size, L)
-            q_c = q_feat[:, :, s:e, :].float()
-            k_c = k_feat[:, :, s:e, :].float()
-            v_c = v_masked[:, :, s:e, :].float()
-
-            outer = k_c.unsqueeze(-1) * v_c.unsqueeze(-2)
-            S_intra = torch.cumsum(outer, dim=2)
-            Z_intra = torch.cumsum(k_c, dim=2)
-
-            S_total = S_intra + S_running.unsqueeze(2)
-            Z_total = Z_intra + Z_running.unsqueeze(2)
-
-            num_c = torch.matmul(q_c.unsqueeze(-2), S_total).squeeze(-2)
-            denom_c = (q_c * Z_total).sum(dim=-1, keepdim=True)
-            # FIX-2: clamp to at least 1.0
-            denom_c = denom_c.abs().clamp_min(1.0)
-            out_chunks.append((num_c / denom_c).to(q_feat.dtype))
-
-            S_running = S_running + outer.sum(dim=2)
-            Z_running = Z_running + k_c.sum(dim=2)
-
-        return torch.cat(out_chunks, dim=2)
-
-    def storage_bytes(self) -> dict[str, int]:
-        def _sz(p):
-            if isinstance(p, (nn.Parameter, torch.Tensor)):
-                return p.numel() * p.element_size()
-            return 0
-
-        out = {}
-        for name, m in (
-            ("W_q", self.W_q), ("W_k", self.W_k), ("W_v", self.W_v),
-            ("out_proj", self.out_proj), ("lora_gate", self.lora_gate),
-        ):
-            out[name] = sum(_sz(p) for p in m.parameters())
-        out["yat_proj"] = _sz(self.yat_proj)
-        out["total"] = sum(out.values())
-        return out
+        attn_weights = diff_attn if output_attentions else None
+        return self._format_output(out, attn_weights, present_key_value)
 
 
-# ===========================================================================
-# Injector
-# ===========================================================================
-@ATTENTION_REGISTRY.register("chela_slay_inject")
-@ATTENTION_REGISTRY.register("inject_chela_slay")
-def inject_chela_slay(
-    layer: Any = None,
-    model: Any = None,
-    model_config: Any = None,
-    comp_config: Any = None,
-    layer_idx: int = 0,
-    total_layers: int = 12,
-    old_attn: nn.Module | None = None,
-    _depth: int = 0,
-    **kwargs: Any,
+@ATTENTION_REGISTRY.register("jamba_info_inject")
+@ATTENTION_REGISTRY.register("inject_jamba_info")
+def inject_jamba_info(
+    layer: Optional[Any] = None, model: Optional[Any] = None, model_config: Optional[Any] = None, comp_config: Optional[Any] = None,
+    layer_idx: int = 0, total_layers: int = 12, old_attn: Optional[nn.Module] = None, _depth: int = 0, **kwargs: Any,
 ):
     if _depth > 8:
-        logger.warning("inject_chela_slay: max recursion depth exceeded.")
         return None
-
     target = layer if layer is not None else model
     if target is None:
+        target = kwargs.get("model", kwargs.get("layer"))
+    if target is None:
         return None
-
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
-    # Whole-model traversal
     layer_list = None
-    for path in (
-        ("distilbert", "transformer", "layer"),
-        ("roberta", "encoder", "layer"),
-        ("bert", "encoder", "layer"),
-        ("transformer", "h"),
-        ("model", "layers"),
-        ("encoder", "layer"),
-        ("layers",),
-        ("h",),
-    ):
+    for path in (("distilbert", "transformer", "layer"), ("roberta", "encoder", "layer"), ("bert", "encoder", "layer"), ("transformer", "h"), ("model", "layers"), ("encoder", "layer"), ("layers",), ("h",)):
         obj = target
         ok = True
         for p in path:
@@ -942,78 +855,63 @@ def inject_chela_slay(
             break
 
     if layer_list is not None:
-        n = 0
+        num_injected = 0
         for idx, lyr in enumerate(layer_list):
-            res = inject_chela_slay(
-                layer=lyr, model_config=cfg, comp_config=comp_config,
-                layer_idx=idx, total_layers=len(layer_list), _depth=_depth + 1, **kwargs,
-            )
+            res = inject_jamba_info(layer=lyr, model_config=cfg, comp_config=comp_config, layer_idx=idx, total_layers=len(layer_list), _depth=_depth + 1, **kwargs)
             if res is not None:
-                n += 1
-        return target if n > 0 else None
+                num_injected += 1
+        return target if num_injected > 0 else None
 
-    # Single-layer
-    src = old_attn
-    if src is None:
-        for attr in ("attention", "attn", "self_attn", "self"):
-            if hasattr(target, attr):
-                cand = getattr(target, attr)
-                if isinstance(cand, nn.Module) and cand is not target:
-                    src = getattr(cand, "self", cand)
+    layer = target
+    try:
+        src_attn = old_attn
+        if src_attn is None and layer is not None:
+            for attr in ("attention", "self_attn", "attn", "self"):
+                if hasattr(layer, attr):
+                    cand = getattr(layer, attr)
+                    src_attn = getattr(cand, "self", cand)
                     break
 
-    if src is not None and (
-        isinstance(src, ChelaSlayAttention) or "ChelaSlay" in src.__class__.__name__
-    ):
-        return None
-
-    try:
-        new_attn = ChelaSlayAttention(
-            config=cfg,
-            pretrained_attn=src if src is not None else None,
-            comp_config=comp_config,
-            layer_id=layer_idx, layer_idx=layer_idx,
-            **kwargs,
-        )
-        if src is not None:
-            p = next(src.parameters(), None)
-            if p is not None:
-                new_attn = new_attn.to(device=p.device, dtype=p.dtype)
-
-        spliced = False
-        if hasattr(target, "attention"):
-            if hasattr(target.attention, "self"):
-                new_attn.is_nested_encoder = True
-                target.attention.self = new_attn
-            else:
-                new_attn.is_nested_encoder = False
-                target.attention = new_attn
-            spliced = True
-        elif hasattr(target, "attn"):
-            new_attn.is_nested_encoder = False
-            target.attn = new_attn
-            spliced = True
-        elif hasattr(target, "self_attn"):
-            new_attn.is_nested_encoder = False
-            target.self_attn = new_attn
-            spliced = True
-        elif hasattr(target, "self"):
-            new_attn.is_nested_encoder = True
-            target.self = new_attn
-            spliced = True
-
-        if not spliced:
-            logger.error("inject_chela_slay: no writable attr on %s", target.__class__.__name__)
+        if isinstance(src_attn, JambaInfoBlock) or "JambaInfo" in src_attn.__class__.__name__:
             return None
+
+        new_attn = JambaInfoBlock(config=cfg, comp_config=comp_config, old_attn=src_attn, **kwargs)
+
+        if src_attn is not None:
+            p = next(src_attn.parameters(), None)
+            if p is not None:
+                new_attn.to(device=p.device, dtype=p.dtype)
+
+        if layer is not None:
+            spliced = False
+            if hasattr(layer, "attention"):
+                if hasattr(layer.attention, "self"):
+                    new_attn.is_nested_encoder = True
+                    layer.attention.self = new_attn
+                else:
+                    new_attn.is_nested_encoder = False
+                    layer.attention = new_attn
+                spliced = True
+            elif hasattr(layer, "self_attn"):
+                new_attn.is_nested_encoder = False
+                layer.self_attn = new_attn
+                spliced = True
+            elif hasattr(layer, "attn"):
+                new_attn.is_nested_encoder = False
+                layer.attn = new_attn
+                spliced = True
+            elif hasattr(layer, "self"):
+                new_attn.is_nested_encoder = True
+                layer.self = new_attn
+                spliced = True
+
+            if not spliced:
+                return None
+            new_attn._return_format = _detect_return_format(src_attn, new_attn.is_nested_encoder)
+
         return new_attn
     except Exception as e:
-        logger.error("inject_chela_slay failed at layer %d: %s", layer_idx, e, exc_info=True)
+        logger.error("inject_jamba_info failed at layer %d: %s", layer_idx, e, exc_info=True)
         return None
 
-
-__all__ = [
-    "ChelaSlayAttention",
-    "inject_chela_slay",
-    "apply_rotary_pos_emb",
-    "repeat_kv",
-]
+__all__ = ["JambaInfoBlock", "InfoMambaConceptBottleneck", "LoRALinear", "apply_rotary_pos_emb", "inject_jamba_info"]
