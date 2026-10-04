@@ -8,5 +8,15 @@
     "accuracy_pct": 51.15,
     "error": "FAIL: accuracy (51.15%) below chance threshold (56.00%)",
     "timestamp": "2026-10-04T16:43:09.751277"
+  },
+  {
+    "module": "triton_svd_linear_attention",
+    "model": "distilbert-base-uncased",
+    "dataset": "sst2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 73.51,
+    "error": "FAIL: accuracy (73.51%) below pass threshold (77.80%, baseline=82.80%)",
+    "timestamp": "2026-10-04T17:11:14.541933"
   }
 ]
