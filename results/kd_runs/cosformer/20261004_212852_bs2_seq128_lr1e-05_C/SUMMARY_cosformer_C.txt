@@ -1,0 +1,44 @@
+================================================================================
+RUN SUMMARY: cosformer / C
+================================================================================
+
+MODEL INFO:
+  Total params:      125.62 M
+  Trainable params:  29.53 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           128
+  Total tokens:      52736
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        53449.5600
+  Post-KD PPL:       522.5500
+  PPL Ratio:         7.9090
+  Recovery:          99.14%
+  Peak VRAM:         2002.77 MB
+  Train time:        339.00 s
+  s/step:            1.1300
+  Loss (final):      2.5693
+  Cached:            False
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        8077243a30e1
+
+TRAINING HISTORY (last 10 steps):
+  step   291 | loss=2.6712 | lr=5.00e-06
+  step   292 | loss=2.9107 | lr=5.00e-06
+  step   293 | loss=2.4520 | lr=5.00e-06
+  step   294 | loss=2.9948 | lr=5.00e-06
+  step   295 | loss=2.5032 | lr=5.00e-06
+  step   296 | loss=3.2869 | lr=5.00e-06
+  step   297 | loss=3.0603 | lr=5.00e-06
+  step   298 | loss=3.5160 | lr=5.00e-06
+  step   299 | loss=3.6335 | lr=5.00e-06
+  step   300 | loss=2.5693 | lr=5.00e-06

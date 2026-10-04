@@ -1,0 +1,16 @@
+stages:
+  - name: "stage1_naive_svd"
+    modules: ["naive_svd"]
+    description: "Stage 1: Plain uncalibrated truncated SVD baseline"
+  - name: "stage2_cholesky"
+    modules: ["aasvd"]
+    description: "Stage 2: Stage 1 + Cholesky activation whitening"
+  - name: "stage3_entropy"
+    modules: ["dynamic_entropy"]
+    description: "Stage 3: Stage 2 + dynamic entropy rank allocation"
+  - name: "stage4_fusion"
+    modules: ["fusion_attn"]
+    description: "Stage 4: Stage 3 + fusion/Mamba linear attention kernel"
+  - name: "stage5_ressvd"
+    modules: ["res_svd"]
+    description: "Stage 5: Full pipeline + ResSVD residual recovery fine-tuning"

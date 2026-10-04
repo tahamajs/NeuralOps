@@ -1,0 +1,44 @@
+================================================================================
+RUN SUMMARY: linformer_attention / C
+================================================================================
+
+MODEL INFO:
+  Total params:      103.6 M
+  Trainable params:  7.51 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           128
+  Total tokens:      52736
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        1891.9900
+  Post-KD PPL:       631.0600
+  PPL Ratio:         9.5514
+  Recovery:          69.06%
+  Peak VRAM:         1682.59 MB
+  Train time:        196.44 s
+  s/step:            0.6548
+  Loss (final):      2.4070
+  Cached:            False
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        8077243a30e1
+
+TRAINING HISTORY (last 10 steps):
+  step   291 | loss=3.2693 | lr=5.00e-06
+  step   292 | loss=3.4792 | lr=5.00e-06
+  step   293 | loss=2.5439 | lr=5.00e-06
+  step   294 | loss=2.6724 | lr=5.00e-06
+  step   295 | loss=3.1932 | lr=5.00e-06
+  step   296 | loss=2.7375 | lr=5.00e-06
+  step   297 | loss=2.9292 | lr=5.00e-06
+  step   298 | loss=2.7794 | lr=5.00e-06
+  step   299 | loss=3.0948 | lr=5.00e-06
+  step   300 | loss=2.4070 | lr=5.00e-06

@@ -1,0 +1,15 @@
+{
+  "method": "C",
+  "module": "cosformer",
+  "pre_ppl": 53449.56,
+  "post_ppl": 522.55,
+  "ppl_ratio": 7.909,
+  "recovery_pct": 99.14,
+  "peak_vram_mb": 2002.77,
+  "train_time_s": 339.0,
+  "s_per_step": 1.13,
+  "loss_final": 2.5693,
+  "cached": false,
+  "train_scope": "module",
+  "num_trainable_params": 29528064
+}

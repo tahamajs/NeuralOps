@@ -1,0 +1,14 @@
+[
+  {
+    "method": "C",
+    "pre_ppl": 66.06,
+    "post_ppl": 56.94,
+    "ppl_ratio": 0.8618,
+    "recovery_pct": 0.0,
+    "peak_vram_mb": 2496.5,
+    "train_time_s": 228.72,
+    "s_per_step": 0.4574,
+    "loss_final": 0.5649,
+    "cached": false
+  }
+]

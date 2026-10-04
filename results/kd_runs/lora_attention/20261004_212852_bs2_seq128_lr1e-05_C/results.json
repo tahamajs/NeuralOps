@@ -1,0 +1,17 @@
+[
+  {
+    "method": "C",
+    "module": "lora_attention",
+    "pre_ppl": 66.06,
+    "post_ppl": 59.44,
+    "ppl_ratio": 0.8997,
+    "recovery_pct": 0.0,
+    "peak_vram_mb": 2016.62,
+    "train_time_s": 448.2,
+    "s_per_step": 1.494,
+    "loss_final": 0.9842,
+    "cached": false,
+    "train_scope": "module",
+    "num_trainable_params": 29528064
+  }
+]

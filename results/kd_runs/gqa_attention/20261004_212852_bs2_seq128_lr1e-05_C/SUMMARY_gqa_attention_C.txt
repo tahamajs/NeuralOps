@@ -1,0 +1,44 @@
+================================================================================
+RUN SUMMARY: gqa_attention / C
+================================================================================
+
+MODEL INFO:
+  Total params:      125.62 M
+  Trainable params:  29.53 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           128
+  Total tokens:      52736
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        66.0600
+  Post-KD PPL:       59.5800
+  PPL Ratio:         0.9018
+  Recovery:          0.00%
+  Peak VRAM:         2029.94 MB
+  Train time:        155.51 s
+  s/step:            0.5184
+  Loss (final):      0.5141
+  Cached:            False
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        8077243a30e1
+
+TRAINING HISTORY (last 10 steps):
+  step   291 | loss=1.0452 | lr=5.00e-06
+  step   292 | loss=0.6745 | lr=5.00e-06
+  step   293 | loss=1.0315 | lr=5.00e-06
+  step   294 | loss=0.5737 | lr=5.00e-06
+  step   295 | loss=0.5434 | lr=5.00e-06
+  step   296 | loss=1.0134 | lr=5.00e-06
+  step   297 | loss=0.5884 | lr=5.00e-06
+  step   298 | loss=0.5390 | lr=5.00e-06
+  step   299 | loss=0.5916 | lr=5.00e-06
+  step   300 | loss=0.5141 | lr=5.00e-06

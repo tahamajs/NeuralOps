@@ -1,0 +1,17 @@
+[
+  {
+    "method": "C",
+    "module": "performer_attention",
+    "pre_ppl": NaN,
+    "post_ppl": NaN,
+    "ppl_ratio": Infinity,
+    "recovery_pct": 0.0,
+    "peak_vram_mb": 2055.43,
+    "train_time_s": 79.23,
+    "s_per_step": 0.7923,
+    "loss_final": 10.1997,
+    "cached": false,
+    "train_scope": "module",
+    "num_trainable_params": 29528064
+  }
+]

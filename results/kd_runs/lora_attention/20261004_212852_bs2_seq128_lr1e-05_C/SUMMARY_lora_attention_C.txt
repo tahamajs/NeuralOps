@@ -1,0 +1,44 @@
+================================================================================
+RUN SUMMARY: lora_attention / C
+================================================================================
+
+MODEL INFO:
+  Total params:      125.62 M
+  Trainable params:  29.53 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        412
+  Seq len:           128
+  Total tokens:      52736
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        66.0600
+  Post-KD PPL:       59.4400
+  PPL Ratio:         0.8997
+  Recovery:          0.00%
+  Peak VRAM:         2016.62 MB
+  Train time:        448.20 s
+  s/step:            1.4940
+  Loss (final):      0.9842
+  Cached:            False
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        8077243a30e1
+
+TRAINING HISTORY (last 10 steps):
+  step   291 | loss=1.1156 | lr=5.00e-06
+  step   292 | loss=0.7074 | lr=5.00e-06
+  step   293 | loss=2.0285 | lr=5.00e-06
+  step   294 | loss=1.0115 | lr=5.00e-06
+  step   295 | loss=0.5661 | lr=5.00e-06
+  step   296 | loss=0.5980 | lr=5.00e-06
+  step   297 | loss=0.5606 | lr=5.00e-06
+  step   298 | loss=0.5257 | lr=5.00e-06
+  step   299 | loss=0.5720 | lr=5.00e-06
+  step   300 | loss=0.9842 | lr=5.00e-06

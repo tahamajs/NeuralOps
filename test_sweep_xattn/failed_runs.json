@@ -1,0 +1,12 @@
+[
+  {
+    "module": "xattention",
+    "model": "gpt2",
+    "dataset": "sst2",
+    "status": "FAIL_BELOW_CHANCE",
+    "perplexity": "",
+    "accuracy_pct": 49.08,
+    "error": "FAIL: accuracy (49.08%) below chance threshold (56.00%)",
+    "timestamp": "2026-10-04T16:30:14.659008"
+  }
+]

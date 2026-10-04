@@ -1,0 +1,7 @@
+{
+  "num_chunks": 412,
+  "seq_len": 128,
+  "total_tokens": 52736,
+  "vocab_size": 50257,
+  "max_train_texts": 5000
+}

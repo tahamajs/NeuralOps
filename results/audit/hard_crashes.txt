@@ -10,3 +10,4 @@ aegis_hybrid_attention
 aegis_hybrid_attn
 aegis_spectron_fp8
 aegis_v1
+aegis_v1_module
