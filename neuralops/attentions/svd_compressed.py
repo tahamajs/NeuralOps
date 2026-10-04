@@ -327,7 +327,7 @@ class SVDCompressedAttention(BaseAttention):
             )
 
         self.is_nested_encoder: bool = False
-        default_r = int(_cfg_get(model_config, "svd_rank", _cfg_get(model_config, "rank", 64)))
+        default_r = int(kwargs.get("rank", _cfg_get(model_config, "svd_rank", _cfg_get(model_config, "rank", 64))))
         default_r = max(1, min(default_r, self.hidden_size, self.all_head_size))
         self.ranks: dict[str, int] = {}
         for k in ("q", "k", "v", "o"):
