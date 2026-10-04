@@ -1,0 +1,5 @@
+model_name,model_slug,status,accuracy_pct,elapsed_s
+GPT-2 Base,gpt2,FAIL,0.0,17.469868183135986
+RoBERTa Base,roberta,FAIL,0.0,20.0633225440979
+DistilBERT Base,distilbert,FAIL,0.0,20.324150562286377
+GPT-Neo 125M,gpt_neo,FAIL,0.0,19.737932682037354
