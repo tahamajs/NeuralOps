@@ -771,7 +771,10 @@ def main():
         tokenizer.pad_token = tokenizer.eos_token
     
     LOG.info("Loading WikiText-2 dataset...")
-    dataset = load_dataset("wikitext", "wikitext-2-raw-v1")
+    try:
+        dataset = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1")
+    except Exception:
+        dataset = load_dataset("wikitext", "wikitext-2-raw-v1")
     train_dataset = dataset["train"]
     test_dataset = dataset["test"]
     
