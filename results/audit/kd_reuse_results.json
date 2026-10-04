@@ -1,0 +1,841 @@
+{
+  "adaptive_span": {
+    "pre_ppl": 51.11,
+    "post_ppl": 19.0,
+    "recovery_pct": 3211222457.89,
+    "time_s": 178.8,
+    "status": "PASS"
+  },
+  "adaptive_sparse_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "adaptive_sparse_attention_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "adaptive_sparse_attn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "adaptive_svd": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "adaptive_svd_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "adaptive_svd_attn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "adasplash": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "adasplash_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "aegis_hybrid": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "aegis_hybrid_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "aegis_hybrid_attn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "aegis_spectron_fp8": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "aegis_v1": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "aegis_v1_module": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "aegis_v3": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "aegis_v4": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "aegis_v5": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "aegis_v5_module": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "aegis_v6": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "aegis_v6_attn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "aegisattention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "asvd": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "asvd_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "bam_umoe": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "block_transformer_hiba": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "chela_slay_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "cluster": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "cluster_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "compressed_attention_layer": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "compressed_attention_layer_energy": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "compressed_mha": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "compression_unified_rope": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "cosformer_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "decay_gated_linear_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "decay_linear_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "decay_linear_attn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "eat": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "eat_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "expert_choice_moe_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "factorised_matrix_state": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "fasa": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "fasa_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "flash3_fp8": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "flash_attention3_fp8": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "fms": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "full": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "fused_svd_kernel": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "fused_svd_kernel_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "fusion_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "fusion_attn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "galerkin": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "galerkin_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "gated_linear_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "gated_linear_attn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "goldfinch": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "goldfinch_ahn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "gqa": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "granite_hybrid": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "granite_hybrid_block": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "griffin_ssd": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "griffin_ssd_block": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "grouped_query_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "halo_regla": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "halo_regla_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "hamming": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "hamming_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "hgrn2": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "hgrn2_gated_deltanet": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "hla": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "hla_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "hybrid_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "hymba_transx": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "hymba_transx_attn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "infini": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "infini_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "jamba_info": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "kda": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "kda_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "leka_v1": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "leka_v1_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "leka_v2": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "leka_v2_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "leka_v3": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "leka_v3_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "linformer": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "lola": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "lola_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "lola_attn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "lora_attn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "low_rank_modulated_attention_class": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "lsh": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "lsh_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "mha_sdpa": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "minimal_aurora": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "minimal_nova": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "minimal_prism": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "minimal_svd": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "minimal_svd_v2": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "mixattention_moska": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "mla": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "mla_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "moba": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "moba_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "moe_deltakv_paged": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "naive_svd": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "nasc": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "nasc_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "nexus": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "nexus_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "nexusattention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "nha_attention_class": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "nha_class": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "nli_softmax_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "nli_softmax_attn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "nsa": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "nsa_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "oha": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "oha_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "optimized_hybrid_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "orion": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "orion_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "orion_module": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "padre": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "padre_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "performer": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "phantom": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "phantom_module": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "primal": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "primal_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "projection_factorized_attn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "qcqa": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "qcqa_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "qcqa_attn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "rala": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "rala_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "rala_compressor": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "rala_linear_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "reap_moe": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "reap_moe_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "reap_moe_attn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "regla_attention_class": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "regla_class": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "replace_attention_class": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "replace_class": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "routing_attention_class": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "routing_class": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "rpc_attention_class": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "rpc_class": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "salt": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "salt_f": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "salt_f_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "selective_mamba": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "selective_ssm": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "simple_ssm": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "simplessm": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "smart_weighted_ensemble": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "soa_attn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "soa_fused_attn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "soa_fused_module": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "soa_module": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "soafusedattention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "span_expanded": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "span_expanded_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "spectra_v2": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "spectra_v2_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "spectraformer": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "spectraformer_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "spectral_residual_svd": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "spectron": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "spectron_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "spectron_attn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "squeezing_heads": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "squeezing_heads_distill": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "squeezing_heads_distiller": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "svd_linear": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "svd_linear_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "svd_linear_attn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "svd_linear_decay": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "svd_proj": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "svd_proj_attn": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "svd_projection": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "svd_projection_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "svd_seq": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "svd_sequence": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "svd_sequence_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "template_attention_class": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "tlinformer": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "tlinformer_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "token_compressed": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "tp_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "tpa": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "tpa_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "triton_svd_linear_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "unified_rope": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "unified_rope_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "upi_mamba": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "upi_stuffed_mamba": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "vig": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "vig_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "vspec": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "vspec_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "weighted_ensemble": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "wgqa": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "wgqa_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "x_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "your_custom_attention_class": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "zeros": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  },
+  "zeros_attention": {
+    "status": "CRASH",
+    "error": "Error(s) in loading state_dict for GPT2LMHeadModel:\n\tMissing key(s) in state_dict: \"transformer.h.0.attn.span_logits\", \"transformer.h.0.attn.q_proj.weight\", \"transformer.h.0.attn.q_proj.bias\", \"transf"
+  }
+}
