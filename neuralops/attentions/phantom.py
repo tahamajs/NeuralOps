@@ -340,8 +340,14 @@ class PHANTOMAttention(BaseAttention):
         self.supports_gqa: bool = True
 
         is_dec = getattr(config, "is_decoder", kwargs.get("is_decoder", False))
-        if kwargs.get("is_causal", False):
+        if kwargs.get("is_causal", False) or getattr(config, "causal", False):
             is_dec = True
+        
+        # Robust detection like in NASC
+        m_type = str(getattr(config, "model_type", "")).lower() if config else ""
+        if any(m_type.startswith(p) for p in ("gpt", "qwen", "llama", "mistral", "gemma", "phi", "opt")):
+            is_dec = True
+
         self.is_decoder = bool(is_dec)
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
