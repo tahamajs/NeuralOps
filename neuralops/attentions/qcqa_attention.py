@@ -707,7 +707,14 @@ class QCQAAttention(BaseAttention):
         # Aggregate over query positions to get head-level routing.
         # This keeps the routing input-dependent (from q) while remaining
         # computationally tractable and semantically meaningful.
-        w_head = route_weights.mean(dim=1)  # (B, H_q, H_kv)
+        if self.is_decoder and not is_cross:
+            # To prevent future information leaking backwards through the sequence mean,
+            # use the routing weights from the first token only for the entire sequence.
+            # This maintains O(1) KV mixing while preserving strict causality.
+            w_head = route_weights[:, 0, :, :]  # (B, H_q, H_kv)
+        else:
+            w_head = route_weights.mean(dim=1)  # (B, H_q, H_kv)
+        
         w_head = w_head / w_head.sum(dim=-1, keepdim=True).clamp(min=1e-9)
 
         # Mix KV heads: k_cat[b, h_q, j, d] = Σ_{h_kv} w_head[b, h_q, h_kv] · k[b, j, h_kv, d]
