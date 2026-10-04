@@ -38,9 +38,10 @@ def run_module(module_name, args, timeout_s=3600):
         "--methods", *args.methods,
         "--device", args.device,
         "--train_scope", args.train_scope,
-        "--baseline_ppl", str(args.baseline_ppl),
         "--max_train_texts", str(args.max_train_texts),
     ]
+    if args.baseline_ppl is not None:
+        cmd.extend(["--baseline_ppl", str(args.baseline_ppl)])
     if args.fp16:
         cmd.append("--fp16")
     if args.no_cosine_lr:
@@ -58,7 +59,7 @@ def run_module(module_name, args, timeout_s=3600):
     try:
         result = subprocess.run(
             cmd,
-            cwd=str(HERE),
+            cwd=str(HERE.parent),
             timeout=timeout_s,
             capture_output=False,
         )
@@ -114,7 +115,7 @@ def main():
     parser.add_argument("--fp16", action="store_true", default=True)
     parser.add_argument("--train_scope", default="module",
                         choices=["all", "mamba", "attention", "module"])
-    parser.add_argument("--baseline_ppl", type=float, default=21.71)
+    parser.add_argument("--baseline_ppl", type=float, default=None)
     parser.add_argument("--timeout", type=int, default=1800)
 
     args = parser.parse_args()
