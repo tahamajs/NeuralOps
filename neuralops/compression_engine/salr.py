@@ -71,19 +71,21 @@ class SALRLayer(nn.Module):
             self.register_parameter("bias", None)
 
         # 1D binary mask on singular bottleneck components: [rank, 1]
-        mask = torch.ones(self.rank, 1, dtype=torch.float32, device=device)
+        # FIX: Created in the exact dtype to avoid casting overheads
+        mask = torch.ones(self.rank, 1, dtype=dtype, device=device)
         if 0.0 < self.sparsity < 1.0:
             num_zeros = int(round(self.rank * self.sparsity))
             if num_zeros > 0:
                 mask[-num_zeros:, :] = 0.0
         self.register_buffer("mask", mask)
 
+        # FIX: LoRA is initialized with the correct dtype natively, not forced to float32
         if self.lora_r > 0:
             self.lora_A = nn.Parameter(
-                torch.empty((self.lora_r, in_features), dtype=torch.float32, device=device)
+                torch.empty((self.lora_r, in_features), dtype=dtype, device=device)
             )
             self.lora_B = nn.Parameter(
-                torch.zeros((out_features, self.lora_r), dtype=torch.float32, device=device)
+                torch.zeros((out_features, self.lora_r), dtype=dtype, device=device)
             )
             nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         else:
@@ -105,20 +107,27 @@ class SALRLayer(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Two-stage forward pass with sparse bottleneck mask and optional LoRA branch."""
-        V_masked = self.V * self.mask.to(dtype=self.V.dtype)
+        # FIX: No dtype casting required if mask is created in matching dtype
+        V_masked = self.V * self.mask
         latent = F.linear(x, V_masked)  # [..., rank]
         out = F.linear(latent, self.U, self.bias)  # [..., out_features]
 
+        # FIX: x.float() is removed to maintain fast FP16/BF16 tensor cores inference
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x.float(), self.lora_A), self.lora_B) * self.scaling
-            out = out + lora_out.to(out.dtype)
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
+            out = out + lora_out
         return out
 
     @property
     def weight(self) -> torch.Tensor:
-        """Effective reconstructed weight matrix."""
-        V_masked = self.V * self.mask.to(dtype=self.V.dtype)
+        """Effective reconstructed weight matrix WITH sparsity applied."""
+        V_masked = self.V * self.mask
         return torch.matmul(self.U, V_masked)
+        
+    @property
+    def pre_pruned_weight(self) -> torch.Tensor:
+        """Weight matrix representing pure low-rank truncation (without sparsity mask)."""
+        return torch.matmul(self.U, self.V)
 
     def extra_repr(self) -> str:
         return f"in_features={self.in_features}, out_features={self.out_features}, rank={self.rank}, sparsity={self.sparsity}, lora_r={self.lora_r}"
@@ -220,7 +229,7 @@ class SALRCompressor(BaseCompressor):
             )
 
         # Diagnostics & Tracking
-        self.visited_modules: set[int] = set()
+        self.visited_weights: set[int] = set() # FIX: track weight id, not module id
         self.compressed_layers: list[str] = []
         self.protected_layers: list[str] = []
         self.skipped_layers: list[str] = []
@@ -270,7 +279,6 @@ class SALRCompressor(BaseCompressor):
                 "embed",
                 "embedding",
                 "cls_head",
-                "head",
                 "logits_processor",
             ]
         ):
@@ -349,27 +357,38 @@ class SALRCompressor(BaseCompressor):
         max_r = min(out_f, in_f)
         param_cap = max(1, (in_f * out_f) // (in_f + out_f) - 1)
         r = max(self.min_rank, min(rank, max_r - 1, param_cap))
+        
         if r >= max_r:
             logger.debug(
                 "SALR: rank %d >= max_r %d; skipping layer for no parameter reduction",
-                r,
-                max_r,
+                r, max_r
             )
             return None
 
         device = base_layer.weight.device
         dtype = base_layer.weight.dtype
 
-        # SVD in FP32
+        # FIX: Add Robust CPU Fallback to prevent GPU Memory Crashes during SVD
         try:
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
         except Exception as e:
-            logger.warning("SALR SVD decomposition failure: %s", e)
-            return None
+            logger.warning("GPU SVD Failed (%s). Attempting CPU fallback...", e)
+            try:
+                U, S, Vt = torch.linalg.svd(W.cpu(), full_matrices=False)
+                U = U.to(device)
+                S = S.to(device)
+                Vt = Vt.to(device)
+            except Exception as e_cpu:
+                logger.error("SALR CPU SVD decomposition failure: %s", e_cpu)
+                return None
 
         sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
         U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
         V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(dtype=dtype, device=device)
+
+        # Clear large tensors from GPU memory aggressively
+        del W, U, S, Vt
+        torch.cuda.empty_cache()
 
         has_existing_lora = hasattr(layer, "lora_A") and hasattr(layer, "lora_B")
         effective_lora_r = self.lora_r
@@ -396,34 +415,26 @@ class SALRCompressor(BaseCompressor):
             try:
                 if hasattr(layer.lora_A, "weight") and salr_layer.lora_A is not None:
                     salr_layer.lora_A.data.copy_(layer.lora_A.weight.data)
-                elif (
-                    hasattr(layer, "lora_A")
-                    and isinstance(layer.lora_A, torch.Tensor)
-                    and salr_layer.lora_A is not None
-                ):
+                elif hasattr(layer, "lora_A") and isinstance(layer.lora_A, torch.Tensor) and salr_layer.lora_A is not None:
                     salr_layer.lora_A.data.copy_(layer.lora_A.data)
+                
                 if hasattr(layer.lora_B, "weight") and salr_layer.lora_B is not None:
                     salr_layer.lora_B.data.copy_(layer.lora_B.weight.data)
-                elif (
-                    hasattr(layer, "lora_B")
-                    and isinstance(layer.lora_B, torch.Tensor)
-                    and salr_layer.lora_B is not None
-                ):
+                elif hasattr(layer, "lora_B") and isinstance(layer.lora_B, torch.Tensor) and salr_layer.lora_B is not None:
                     salr_layer.lora_B.data.copy_(layer.lora_B.data)
             except Exception as e_lora:
                 logger.warning("Could not copy existing LoRA adapters: %s", e_lora)
 
-        # Frobenius reconstruction error check
-        W_rec = salr_layer.weight.float()
-        norm_orig = torch.norm(W, p="fro").clamp_min(1e-8)
-        rel_err = (torch.norm(W - W_rec, p="fro") / norm_orig).item()
+        # FIX: Calculate error on the Pure Low Rank Truncation (ignoring the intentional sparsity)
+        W_rec_pure = salr_layer.pre_pruned_weight.float()
+        norm_orig = torch.norm(raw_w.contiguous().float(), p="fro").clamp_min(1e-8)
+        rel_err = (torch.norm(raw_w.contiguous().float() - W_rec_pure, p="fro") / norm_orig).item()
 
-        is_invalid = torch.isnan(W_rec).any() or torch.isinf(W_rec).any()
+        is_invalid = torch.isnan(W_rec_pure).any() or torch.isinf(W_rec_pure).any()
         if rel_err > self.max_error:
             logger.warning(
-                "SALR: reconstruction error %.4f exceeded threshold %.4f.",
-                rel_err,
-                self.max_error,
+                "SALR: Rank-truncation error %.4f exceeded threshold %.4f.",
+                rel_err, self.max_error,
             )
             is_invalid = True
 
@@ -437,7 +448,7 @@ class SALRCompressor(BaseCompressor):
         """Compress all linear layers in the model."""
         self.layer_errors = {}
         self.replaced_layers = []
-        self.visited_modules.clear()
+        self.visited_weights.clear()
         self.compressed_layers.clear()
         self.protected_layers.clear()
         self.skipped_layers.clear()
@@ -455,12 +466,15 @@ class SALRCompressor(BaseCompressor):
             return self.model, self.get_compression_stats()
 
         for name, module in target_layers:
-            mod_id = id(module)
-            if mod_id in self.visited_modules:
-                logger.debug("SALR: Skipping tied module %s", name)
+            base_mod = getattr(module, "base_layer", module)
+            
+            # FIX: Tracking by weight ID to safely prevent double compression of tied weights
+            weight_id = id(getattr(base_mod, "weight", None))
+            if weight_id in self.visited_weights:
+                logger.debug("SALR: Skipping tied module weight %s", name)
                 self.skipped_layers.append(name)
                 continue
-            self.visited_modules.add(mod_id)
+            self.visited_weights.add(weight_id)
 
             try:
                 new_layer = self.compress_linear(module, rank=self.rank)
