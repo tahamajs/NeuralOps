@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 """
 Adaptive Knowledge Distillation (KD) Experiment on MambaBlock.
-
-Evaluates whether KD can rescue an SSM-based module injected into GPT-2.
-Includes mathematically corrected KL-Divergence scaling, robust caching,
-and proper SSM trainable parameter mapping.
+Optimized for Single-Process, Multi-Module Continuous Sweep.
 """
 
 import argparse
@@ -237,8 +234,6 @@ class HiddenProjectionAdapter(nn.Module):
 
 
 def compute_kl_divergence(student_logits: torch.Tensor, teacher_logits: torch.Tensor, temperature: float = 2.0) -> torch.Tensor:
-    # Flatten tensors so `batchmean` reduction accurately divides by (Batch * SeqLen)
-    # This prevents the KL loss from scaling linearly with sequence length
     p_s = F.log_softmax(student_logits.view(-1, student_logits.size(-1)) / temperature, dim=-1)
     p_t = F.softmax(teacher_logits.view(-1, teacher_logits.size(-1)) / temperature, dim=-1)
     return F.kl_div(p_s, p_t, reduction="batchmean") * (temperature * temperature)
@@ -280,10 +275,6 @@ def compute_method_d_loss(student_out: Any, teacher_out: Any, input_ids: torch.T
 
 
 def set_train_scope(model, train_scope="all"):
-    """
-    FIX 1: Updated ATTN_ATTRS and check logic so Mamba/SSM layers are correctly included 
-    in the training scope and not falsely frozen.
-    """
     if train_scope == "all":
         for p in model.parameters():
             p.requires_grad = True
@@ -291,7 +282,6 @@ def set_train_scope(model, train_scope="all"):
         ATTN_ATTRS = ("attn", "attention", "self_attn", "mamba", "ssm")
         n_matched = 0
         for name, p in model.named_parameters():
-            # Check if any of the target keywords exist in the parameter name
             has_attn = any(attr in name.lower() for attr in ATTN_ATTRS)
             if has_attn:
                 p.requires_grad = True
@@ -304,10 +294,6 @@ def set_train_scope(model, train_scope="all"):
 
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     total = sum(p.numel() for p in model.parameters())
-    LOG.info(
-        "Train scope '%s': %d/%d trainable (%.2f%%)",
-        train_scope, trainable, total, 100.0 * trainable / max(1, total),
-    )
     return trainable
 
 # -----------------------------------------------------------------------------
@@ -364,7 +350,7 @@ def build_teacher_cache(teacher: nn.Module, tokenizer, train_chunks: torch.Tenso
     need_hidden = any(m in methods_set for m in ("B", "C", "D"))
     need_attn = include_attn and ("C" in methods_set)
 
-    LOG.info("Building teacher cache for %d chunks (max_texts=%d, seq_len=%d)...", n_chunks, max_train_texts, seq_len)
+    LOG.info("Building teacher cache for %d chunks...", n_chunks)
     t0 = time.time()
     teacher.eval()
     teacher.to(device)
@@ -408,55 +394,42 @@ def build_teacher_cache(teacher: nn.Module, tokenizer, train_chunks: torch.Tenso
         "logits_size_bytes": 0, "hidden_size_bytes": 0, "attn_size_bytes": 0, "build_time_s": round(time.time() - t0, 2),
     }
 
-    total_size_bytes = 0
     if need_logits and logits_buffer is not None:
         logits_path = cache_dir / "teacher_logits.pt"
         torch.save(logits_buffer, logits_path, _use_new_zipfile_serialization=True)
         manifest["logits_file"] = "teacher_logits.pt"
-        manifest["logits_size_bytes"] = logits_path.stat().st_size
-        total_size_bytes += manifest["logits_size_bytes"]
         del logits_buffer
 
     if need_hidden and hidden_buffer is not None:
         hidden_path = cache_dir / "teacher_hidden.pt"
         torch.save(hidden_buffer, hidden_path, _use_new_zipfile_serialization=True)
         manifest["hidden_file"] = "teacher_hidden.pt"
-        manifest["hidden_size_bytes"] = hidden_path.stat().st_size
-        total_size_bytes += manifest["hidden_size_bytes"]
         del hidden_buffer
 
     if need_attn and attn_buffer is not None:
         attn_path = cache_dir / "teacher_attn.pt"
         torch.save(attn_buffer, attn_path, _use_new_zipfile_serialization=True)
         manifest["attn_file"] = "teacher_attn.pt"
-        manifest["attn_size_bytes"] = attn_path.stat().st_size
-        total_size_bytes += manifest["attn_size_bytes"]
         del attn_buffer
 
     manifest_path = cache_dir / "manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    LOG.info("Cache built: %s (total: %.1f GB)", cache_dir, total_size_bytes / 1e9)
+    LOG.info("Cache built: %s", cache_dir)
     return manifest_path
 
 
 def load_teacher_cache(cache_dir: Path) -> dict[str, Any]:
     manifest_path = cache_dir / "manifest.json"
-    if not manifest_path.exists():
-        raise FileNotFoundError(f"Cache manifest not found at {manifest_path}")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-
     cache: dict[str, Any] = {"manifest": manifest, "logits": None, "hidden_states": None, "attentions": None}
 
     def _load_tensor(key: str):
         if manifest.get(f"has_{key}") and manifest.get(f"{key}_file"):
             fpath = cache_dir / manifest[f"{key}_file"]
             if fpath.exists():
-                # FIX 2: Load directly into RAM (mmap=False) to avoid I/O bottlenecks during training loop
-                LOG.info("Loading %s directly into RAM for fast I/O...", key)
                 try:
                     cache[key] = torch.load(fpath, map_location="cpu", weights_only=False)
-                except Exception as e:
-                    LOG.warning("RAM load failed for %s, falling back to mmap: %s", key, e)
+                except Exception:
                     cache[key] = torch.load(fpath, map_location="cpu", mmap=True, weights_only=False)
 
     _load_tensor("logits")
@@ -478,33 +451,31 @@ def can_use_cache_for_method(cache: dict[str, Any] | None, method_name: str, inc
 # Single Method Runner
 # -----------------------------------------------------------------------------
 def run_kd_method(
-    method_name: str, base_teacher: AutoModelForCausalLM, base_snapshot: AutoModelForCausalLM,
+    method_name: str, module_name: str, base_teacher: AutoModelForCausalLM, base_snapshot: AutoModelForCausalLM,
     tokenizer: AutoTokenizer, train_chunks: torch.Tensor, test_dataset: Any, args: argparse.Namespace,
     teacher_cache: dict[str, Any] | None = None, baseline_ppl: float = 21.71,
 ) -> dict[str, Any]:
-    LOG.info("=" * 70)
-    LOG.info(f"STARTING METHOD {method_name}")
-    LOG.info("=" * 70)
-
+    
     device = args.device
     if device.startswith("cuda") and torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats()
 
     use_cache = can_use_cache_for_method(teacher_cache, method_name, getattr(args, "cache_attn", False))
+    
+    # Safe Graph Reset: Deepcopy from CPU guarantees a clean architectural state
     student = copy.deepcopy(base_snapshot)
     student.to(device)
 
     calib_slice = train_chunks[:4, :128].to(device)
-    student, comp_stats = apply_module_to_model(student, args.module, "auto", rank=args.rank, device=device, calibration_data=calib_slice, tokenizer=tokenizer)
+    student, comp_stats = apply_module_to_model(student, module_name, "auto", rank=args.rank, device=device, calibration_data=calib_slice, tokenizer=tokenizer)
 
     if args.fp16 and device.startswith("cuda"):
         student.half()
 
     pre_ppl = compute_perplexity(student, tokenizer, test_dataset, seq_len=args.seq_len, stride=128, max_eval_tokens=args.eval_max_tokens, device=device)
-    LOG.info("Pre-KD PPL for Method %s: %.2f", method_name, pre_ppl)
+    LOG.info("Pre-KD PPL for Module %s, Method %s: %.2f", module_name, method_name, pre_ppl)
 
     n_trainable = set_train_scope(student, args.train_scope)
-    # FIX 1 (fallback condition): ensure mamba/ssm keywords are included when recovering trainable parameters
     if n_trainable == 0:
         for name, p in student.named_parameters():
             if any(k in name.lower() for k in ["attn", "mamba", "ssm"]): 
@@ -573,7 +544,8 @@ def run_kd_method(
 
         try:
             batch_slice = slice(chunk_idx, min(chunk_idx + args.batch_size, num_chunks))
-            batch_ids = train_chunks[batch_slice].to(device)
+            # VRAM optimization: Use non_blocking to overlap transfer with compute
+            batch_ids = train_chunks[batch_slice].to(device, non_blocking=True)
             chunk_idx = (chunk_idx + args.batch_size) % num_chunks
             if batch_ids.size(1) > current_seq_len:
                 batch_ids = batch_ids[:, :current_seq_len]
@@ -660,7 +632,7 @@ def run_kd_method(
             LOG.warning(f"[{method_name}] CUDA OOM! Halving sequence length to 128...")
             current_seq_len = 128
             optimizer.zero_grad()
-            accum_count = 0  # Warn: dropping accumulated gradients
+            accum_count = 0  
             gc.collect()
             torch.cuda.empty_cache()
             continue
@@ -676,12 +648,13 @@ def run_kd_method(
 
     LOG.info(f"[{method_name}] COMPLETE | Pre: {pre_ppl:.2f} -> Post: {post_ppl:.2f} | Recovery: {recovery_pct}% | VRAM: {peak_vram} MB | Time: {train_time}s")
 
+    # Thorough VRAM cleanup before next module/method
     del student
     if projection_adapter is not None: del projection_adapter
     del optimizer, scheduler, scaler
     gc.collect()
     if torch.cuda.is_available(): torch.cuda.empty_cache()
-    time.sleep(2)
+    time.sleep(1)
 
     return {
         "method": method_name, "pre_ppl": pre_ppl, "post_ppl": post_ppl, "ppl_ratio": ppl_ratio,
@@ -707,7 +680,8 @@ def main():
     
     # ---- Model & Data ----
     parser.add_argument("--model_name", type=str, default="gpt2", help="Teacher/student base model")
-    parser.add_argument("--module", type=str, default="mamba", help="Module to inject")
+    # FIX: Native Multi-Module support
+    parser.add_argument("--modules", nargs="+", default=["mamba"], help="List of modules to process sequentially")
     parser.add_argument("--rank", type=int, default=64, help="Rank for injected module")
     parser.add_argument("--seq_len", type=int, default=256, help="Sequence length")
     parser.add_argument("--max_train_texts", type=int, default=5000, help="Max texts for training chunks")
@@ -742,29 +716,24 @@ def main():
     parser.add_argument("--train_scope", type=str, default="module",
                         choices=["all", "mamba", "attention", "module"])
     
-    # FIX 3: Make baseline_ppl logic clear and fallback correctly
     parser.add_argument("--baseline_ppl", type=float, default=None, help="Teacher baseline PPL (optional override)")
     parser.add_argument("--timestamp", type=str, default=None)
     parser.add_argument("--log_file", type=str, default=None)
     
     args = parser.parse_args()
     
-    # ---- Setup logging ----
     if args.timestamp is None:
         args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_file = args.log_file or f"logs/kd_{args.module}_{args.timestamp}.log"
+    log_file = args.log_file or f"logs/kd_sweep_{args.timestamp}.log"
     setup_logging(log_file)
     
     LOG.info("=" * 70)
-    LOG.info("Knowledge Distillation Experiment")
+    LOG.info("Multi-Module Knowledge Distillation Sweep")
     LOG.info("=" * 70)
-    LOG.info("Model: %s | Module: %s | Methods: %s", args.model_name, args.module, args.methods)
+    LOG.info("Model: %s | Modules: %d to process | Methods: %s", args.model_name, len(args.modules), args.methods)
     LOG.info("Device: %s | FP16: %s | Batch: %d | Seq: %d", args.device, args.fp16, args.batch_size, args.seq_len)
     
-    run_dir = make_run_dir(args.module, args)
-    LOG.info("Run directory: %s", run_dir)
-    
-    # ---- Load tokenizer & datasets ----
+    # ---- 1. Phase 0: Setup Once ----
     LOG.info("Loading tokenizer: %s", args.model_name)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     if tokenizer.pad_token is None:
@@ -775,28 +744,24 @@ def main():
         dataset = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1")
     except Exception:
         dataset = load_dataset("wikitext", "wikitext-2-raw-v1")
-    train_dataset = dataset["train"]
-    test_dataset = dataset["test"]
     
-    # ---- Build training chunks ----
-    LOG.info("Building training chunks (max_texts=%d, seq_len=%d)...", args.max_train_texts, args.seq_len)
-    train_chunks = build_train_chunks(train_dataset, tokenizer, max_train_texts=args.max_train_texts, seq_len=args.seq_len)
+    train_chunks = build_train_chunks(dataset["train"], tokenizer, max_train_texts=args.max_train_texts, seq_len=args.seq_len)
     if args.num_chunks > 0:
         train_chunks = train_chunks[:args.num_chunks]
     LOG.info("Training chunks: %s", tuple(train_chunks.shape))
     
-    # ---- Load teacher & snapshot ----
     LOG.info("Loading teacher model: %s", args.model_name)
     teacher = AutoModelForCausalLM.from_pretrained(args.model_name)
     teacher.eval()
     teacher.to(args.device)
     
-    LOG.info("Creating student snapshot...")
+    # Safe Graph Setup: Kept on CPU to avoid mutation and save VRAM
+    LOG.info("Creating safe pristine student snapshot (CPU)...")
     base_snapshot = AutoModelForCausalLM.from_pretrained(args.model_name)
     base_snapshot.eval()
-    base_snapshot.to(args.device)
+    base_snapshot.cpu() 
     
-    # ---- Setup teacher cache ----
+    # ---- 2. Cache Generation & Baseline ----
     teacher_cache = None
     if args.use_cache:
         if args.cache_dir:
@@ -813,77 +778,76 @@ def main():
             build_teacher_cache(teacher, tokenizer, train_chunks, cache_dir, args.methods, args.device, args.seq_len, args.cache_attn, args.max_train_texts)
             teacher_cache = load_teacher_cache(cache_dir)
     
-    # ---- Baseline PPL (teacher) ----
     LOG.info("Computing teacher baseline PPL...")
-    teacher_ppl = compute_perplexity(teacher, tokenizer, test_dataset, seq_len=args.seq_len, stride=128, max_eval_tokens=args.eval_max_tokens, device=args.device)
-    LOG.info("Teacher baseline PPL calculated: %.2f", teacher_ppl)
-
-    # FIX 3: Logical assignment of baseline PPL
-    baseline_ppl = teacher_ppl
+    baseline_ppl = compute_perplexity(teacher, tokenizer, dataset["test"], seq_len=args.seq_len, stride=128, max_eval_tokens=args.eval_max_tokens, device=args.device)
     LOG.info("Using measured teacher PPL as baseline: %.2f", baseline_ppl)
+
+    # VRAM Optimization: Move Teacher to CPU if cache is actively handling everything
+    if args.use_cache and teacher_cache is not None:
+        LOG.info("Teacher cache is loaded. Evicting Teacher from VRAM to CPU to save memory...")
+        teacher.cpu()
+        torch.cuda.empty_cache()
     
-    # ---- Run each method ----
-    results: list[dict[str, Any]] = []
-    for method_name in args.methods:
-        LOG.info("")
-        LOG.info("#" * 70)
-        LOG.info("# Running method %s", method_name)
-        LOG.info("#" * 70)
+    # ---- 3. Phase 1: Module Sweep Loop ----
+    for idx, module_name in enumerate(args.modules, 1):
+        LOG.info("\n" + "=" * 70)
+        LOG.info(f"PROCESSING MODULE {idx}/{len(args.modules)}: {module_name}")
+        LOG.info("=" * 70)
         
-        result = run_kd_method(
-            method_name=method_name,
-            base_teacher=teacher,
-            base_snapshot=base_snapshot,
-            tokenizer=tokenizer,
-            train_chunks=train_chunks,
-            test_dataset=test_dataset,
-            args=args,
-            teacher_cache=teacher_cache,
-            baseline_ppl=baseline_ppl,
-        )
-        results.append(result)
-    
-    # ---- Print table & save ----
-    print_comparison_table(results)
-    
-    results_path = run_dir / "results.json"
-    results_path.write_text(json.dumps(results, indent=2), encoding="utf-8")
-    LOG.info("Results saved: %s", results_path)
-    
-    update_registry(args.module, run_dir, results, args, baseline_ppl)
-    update_latest_link(args.module, run_dir)
-    
-    LOG.info("")
+        run_dir = make_run_dir(module_name, args)
+        module_results: list[dict[str, Any]] = []
+        
+        for method_name in args.methods:
+            LOG.info("\n# Running method %s for %s", method_name, module_name)
+            result = run_kd_method(
+                method_name=method_name,
+                module_name=module_name,
+                base_teacher=teacher,
+                base_snapshot=base_snapshot,
+                tokenizer=tokenizer,
+                train_chunks=train_chunks,
+                test_dataset=dataset["test"],
+                args=args,
+                teacher_cache=teacher_cache,
+                baseline_ppl=baseline_ppl,
+            )
+            module_results.append(result)
+        
+        print_comparison_table(module_results)
+        
+        # Incremental Save: Ensure data is saved immediately after EACH module
+        results_path = run_dir / "results.json"
+        results_path.write_text(json.dumps(module_results, indent=2), encoding="utf-8")
+        
+        update_registry(module_name, run_dir, module_results, args, baseline_ppl)
+        update_latest_link(module_name, run_dir)
+        
+        if HAS_MATPLOTLIB and len(module_results) > 0:
+            try:
+                fig, ax = plt.subplots(figsize=(10, 6))
+                methods = [r["method"] for r in module_results]
+                pre_ppls = [r["pre_ppl"] for r in module_results]
+                post_ppls = [r["post_ppl"] for r in module_results]
+                x = np.arange(len(methods))
+                width = 0.35
+                ax.bar(x - width/2, pre_ppls, width, label="Pre-KD PPL")
+                ax.bar(x + width/2, post_ppls, width, label="Post-KD PPL")
+                ax.axhline(y=baseline_ppl, color="r", linestyle="--", label=f"Teacher baseline ({baseline_ppl:.2f})")
+                ax.set_xticks(x)
+                ax.set_xticklabels(methods)
+                ax.set_ylabel("Perplexity")
+                ax.set_title(f"KD Recovery — {module_name}")
+                ax.legend()
+                ax.set_yscale("log")
+                plt.tight_layout()
+                plt.savefig(run_dir / "comparison.png", dpi=100)
+                plt.close()
+            except Exception as e:
+                LOG.warning("Plot generation failed: %s", e)
+
+    LOG.info("\n" + "=" * 70)
+    LOG.info("SWEEP COMPLETELY FINISHED!")
     LOG.info("=" * 70)
-    LOG.info("EXPERIMENT COMPLETE")
-    LOG.info("=" * 70)
-    
-    # ---- Plot (optional) ----
-    if HAS_MATPLOTLIB and len(results) > 0:
-        try:
-            fig, ax = plt.subplots(figsize=(10, 6))
-            methods = [r["method"] for r in results]
-            pre_ppls = [r["pre_ppl"] for r in results]
-            post_ppls = [r["post_ppl"] for r in results]
-            x = np.arange(len(methods))
-            width = 0.35
-            ax.bar(x - width/2, pre_ppls, width, label="Pre-KD PPL")
-            ax.bar(x + width/2, post_ppls, width, label="Post-KD PPL")
-            ax.axhline(y=baseline_ppl, color="r", linestyle="--", label=f"Teacher baseline ({baseline_ppl:.2f})")
-            ax.set_xticks(x)
-            ax.set_xticklabels(methods)
-            ax.set_ylabel("Perplexity")
-            ax.set_title(f"KD Recovery — {args.module}")
-            ax.legend()
-            ax.set_yscale("log")
-            plot_path = run_dir / "comparison.png"
-            plt.tight_layout()
-            plt.savefig(plot_path, dpi=100)
-            plt.close()
-            LOG.info("Plot saved: %s", plot_path)
-        except Exception as e:
-            LOG.warning("Plot generation failed: %s", e)
-    
     return 0
 
 if __name__ == "__main__":
