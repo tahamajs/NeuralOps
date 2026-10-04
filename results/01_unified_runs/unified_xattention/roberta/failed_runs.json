@@ -1,0 +1,12 @@
+[
+  {
+    "module": "xattention",
+    "model": "roberta-base",
+    "dataset": "sst2",
+    "status": "MODERATE_EXPANSION",
+    "perplexity": "",
+    "accuracy_pct": 57.0,
+    "error": "base_before=124647170 base_after=131734286 delta=+5.69%",
+    "timestamp": "2026-10-04T16:35:16.023744"
+  }
+]

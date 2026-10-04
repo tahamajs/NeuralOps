@@ -7,7 +7,7 @@
     "exit_code": 0,
     "status": "PASS",
     "accuracy_pct": 61.81,
-    "elapsed_s": 66.64137005805969
+    "elapsed_s": 16.17724323272705
   },
   {
     "name": "RoBERTa Base",
@@ -17,7 +17,7 @@
     "exit_code": 0,
     "status": "FAIL_BELOW_CHANCE",
     "accuracy_pct": 50.92,
-    "elapsed_s": 47.01820921897888
+    "elapsed_s": 29.463873624801636
   },
   {
     "name": "DistilBERT Base",
@@ -27,7 +27,7 @@
     "exit_code": 0,
     "status": "FAIL_BELOW_CHANCE",
     "accuracy_pct": 51.15,
-    "elapsed_s": 31.936542987823486
+    "elapsed_s": 24.83601427078247
   },
   {
     "name": "GPT-Neo 125M",
@@ -37,6 +37,6 @@
     "exit_code": 1,
     "status": "FAIL",
     "accuracy_pct": 0.0,
-    "elapsed_s": 17.38311266899109
+    "elapsed_s": 27.23331093788147
   }
 ]
