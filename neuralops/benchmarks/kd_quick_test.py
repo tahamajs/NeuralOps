@@ -743,11 +743,27 @@ def main():
     parser.add_argument("--fp16", action="store_true", default=(torch.cuda.is_available()))
     parser.add_argument("--train_scope", type=str, default="module",
                         choices=["all", "mamba", "attention", "module"])
-    parser.add_argument("--baseline_ppl", type=float, default=21.71, help="Teacher baseline PPL")
+    
+    def _default_baseline_ppl(seq_len: int) -> float:
+        """Return the correct GPT-2 WikiText-2 PPL for a given seq_len."""
+        if seq_len <= 128:
+            return 66.07
+        elif seq_len <= 256:
+            return 35.0
+        elif seq_len <= 512:
+            return 25.0
+        else:
+            return 21.71
+
+    parser.add_argument("--baseline_ppl", type=float, default=None, help="Teacher baseline PPL")
     parser.add_argument("--timestamp", type=str, default=None)
     parser.add_argument("--log_file", type=str, default=None)
     
     args = parser.parse_args()
+
+    if args.baseline_ppl is None:
+        args.baseline_ppl = _default_baseline_ppl(args.seq_len)
+        LOG.info("Auto-selected baseline_ppl=%.2f for seq_len=%d", args.baseline_ppl, args.seq_len)
     
     # ---- Setup logging ----
     if args.timestamp is None:
