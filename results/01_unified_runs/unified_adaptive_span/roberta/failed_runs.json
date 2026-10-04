@@ -1,0 +1,12 @@
+[
+  {
+    "module": "adaptive_span",
+    "model": "roberta-base",
+    "dataset": "sst2",
+    "status": "FAIL",
+    "perplexity": "",
+    "accuracy_pct": 61.12,
+    "error": "FAIL: accuracy (61.12%) below pass threshold (72.75%, baseline=77.75%)",
+    "timestamp": "2026-10-05T02:34:00.476702"
+  }
+]
