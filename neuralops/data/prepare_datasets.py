@@ -278,9 +278,9 @@ def prepare_lm_dataset(
             tokenizer.pad_token = tokenizer.eos_token
             tokenizer.pad_token_id = tokenizer.eos_token_id
         if ds_name == "wikitext2":
-            raw = load_dataset("wikitext", "wikitext-2-raw-v1")
+            raw = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1")
         elif ds_name == "wikitext103":
-            raw = load_dataset("wikitext", "wikitext-103-raw-v1")
+            raw = load_dataset("Salesforce/wikitext", "wikitext-103-raw-v1")
         else:
             raw = load_dataset(ds_name)
 
