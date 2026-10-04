@@ -957,7 +957,34 @@ def inject_tlinformer(
 
     layer = target
     try:
-        source_module = old_attn if old_attn is not None else layer
+        # Resolve the actual attention submodule (not the transformer block)
+        if old_attn is not None:
+            source_module = old_attn
+        elif hasattr(layer, "attn"):
+            source_module = layer.attn               # GPT-2: GPT2Attention
+        elif hasattr(layer, "attention") and hasattr(layer.attention, "self"):
+            source_module = layer.attention.self     # BERT/RoBERTa: BertSelfAttention
+        elif hasattr(layer, "attention"):
+            source_module = layer.attention           # DistilBERT
+        elif hasattr(layer, "self_attn"):
+            source_module = layer.self_attn           # LLaMA/Qwen
+        else:
+            source_module = layer
+
+        # Verification: ensure source has the required weight attributes
+        has_weights = any(
+            hasattr(source_module, attr)
+            for attr in ("c_attn", "q_proj", "query", "q_lin")
+        )
+        if not has_weights:
+            logger.error(
+                "TLinFormer: source module %s has no attention weights. "
+                "Expected c_attn, q_proj, query, or q_lin. Skipping injection.",
+                type(source_module).__name__,
+            )
+            return None
+            
+            
         new_attn = TLinFormerAttention(
             config=model_config,
             pretrained_attn=source_module,
