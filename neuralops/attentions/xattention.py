@@ -24,6 +24,12 @@ from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.utils.model_family import ModelAdapter
 
+try:
+    from neuralops.core.triton_sparse_attn import triton_block_sparse_attention, HAS_TRITON
+except Exception:
+    triton_block_sparse_attention = None
+    HAS_TRITON = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -777,41 +783,87 @@ class XAttention(BaseAttention):
                 diag_indices = torch.arange(diag_k, device=device)
                 block_mask[:, :, diag_indices, diag_indices] = True
 
-            # Efficiently apply block_mask to scores via broadcasting without repeat_interleave
-            pad_q_total = total_q - N_q
-            pad_k_total = total_k - N_k
-            if pad_q_total > 0 or pad_k_total > 0:
-                scores_padded = F.pad(scores, (0, pad_k_total, 0, pad_q_total), value=-10000.0)
+            # --- TRITON INTEGRATION ---
+            # اگر Triton در دسترس باشد، ما از کرنل بهینه استفاده میکنیم
+            if HAS_TRITON and Q.device.type == "cuda" and triton_block_sparse_attention is not None:
+                try:
+                    # اعمال توکن ماسک سطح-دانه (Fine-grained)
+                    token_mask = None
+                    if attention_mask is not None or kwargs.get("mask") is not None:
+                        mask = attention_mask if attention_mask is not None else kwargs.get("mask")
+                        token_mask = _extract_valid_token_mask(mask, B, N_k, device)
+
+                    # محاسبه Attention با O(N * k) حافظه و پردازش
+                    context = triton_block_sparse_attention(
+                        q=Q,
+                        k=K,
+                        v=V,
+                        block_mask=block_mask,
+                        block_size=self.block_size,
+                        token_mask=token_mask,
+                        is_causal=is_decoder,
+                    )
+                    attn = None  # در تریتون ما مستقیما خروجی میگیریم و ماتریس Attn را ایجاد نمیکنیم
+                except Exception as e:
+                    logger.warning(
+                        "Triton block-sparse attention failed (%s). Falling back to PyTorch.", e
+                    )
+                    context = None
             else:
-                scores_padded = scores
+                context = None
 
-            scores_padded = scores_padded.view(B, H, num_q_blocks, bsz, num_k_blocks, bsz)
-            scores_padded = scores_padded.masked_fill(
-                ~block_mask.unsqueeze(3).unsqueeze(5), -10000.0
-            )
-            scores = scores_padded.view(B, H, total_q, total_k)[:, :, :N_q, :N_k]
+            if context is None:
+                # --- PyTorch Fallback (فقط برای CPU یا در صورت نبود Triton) ---
+                pad_q_total = total_q - N_q
+                pad_k_total = total_k - N_k
+                if pad_q_total > 0 or pad_k_total > 0:
+                    scores_padded = F.pad(scores, (0, pad_k_total, 0, pad_q_total), value=-10000.0)
+                else:
+                    scores_padded = scores
 
-        # Apply causal mask
-        if is_decoder:
-            q_pos = torch.arange(N_k - N_q, N_k, device=device).unsqueeze(1)
-            k_pos = torch.arange(N_k, device=device).unsqueeze(0)
-            causal_tril = (k_pos <= q_pos).unsqueeze(0).unsqueeze(0)
-            scores = scores.masked_fill(~causal_tril, -10000.0)
+                scores_padded = scores_padded.view(B, H, num_q_blocks, bsz, num_k_blocks, bsz)
+                scores_padded = scores_padded.masked_fill(~block_mask.unsqueeze(3).unsqueeze(5), -10000.0)
+                scores = scores_padded.view(B, H, total_q, total_k)[:, :, :N_q, :N_k]
 
-        # Apply attention mask
-        mask = attention_mask if attention_mask is not None else kwargs.get("mask")
-        if mask is not None:
-            if mask.dim() == 4:
-                scores = scores + mask.to(scores.dtype)
-            else:
-                valid_m = _extract_valid_token_mask(mask, B, N_k, device)
-                scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
+                if is_decoder:
+                    q_pos = torch.arange(N_k - N_q, N_k, device=device).unsqueeze(1)
+                    k_pos = torch.arange(N_k, device=device).unsqueeze(0)
+                    causal_tril = (k_pos <= q_pos).unsqueeze(0).unsqueeze(0)
+                    scores = scores.masked_fill(~causal_tril, -10000.0)
 
-        attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
-        attn = self.dropout(attn)
+                mask = attention_mask if attention_mask is not None else kwargs.get("mask")
+                if mask is not None:
+                    if mask.dim() == 4:
+                        scores = scores + mask.to(scores.dtype)
+                    else:
+                        valid_m = _extract_valid_token_mask(mask, B, N_k, device)
+                        scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
+
+                attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
+                attn = self.dropout(attn)
+                context = torch.matmul(attn, V)
+        else:
+            # Fallback when block routing criteria are not met (dense attention)
+            if is_decoder:
+                q_pos = torch.arange(N_k - N_q, N_k, device=device).unsqueeze(1)
+                k_pos = torch.arange(N_k, device=device).unsqueeze(0)
+                causal_tril = (k_pos <= q_pos).unsqueeze(0).unsqueeze(0)
+                scores = scores.masked_fill(~causal_tril, -10000.0)
+
+            mask = attention_mask if attention_mask is not None else kwargs.get("mask")
+            if mask is not None:
+                if mask.dim() == 4:
+                    scores = scores + mask.to(scores.dtype)
+                else:
+                    valid_m = _extract_valid_token_mask(mask, B, N_k, device)
+                    scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
+
+            attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
+            attn = self.dropout(attn)
+            context = torch.matmul(attn, V)
 
         # Head mask broadcasting across 1D/2D/3D/4D
-        if head_mask is not None:
+        if attn is not None and head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
             elif head_mask.dim() == 2:
@@ -821,8 +873,7 @@ class XAttention(BaseAttention):
             elif head_mask.dim() == 4:
                 pass
             attn = attn * head_mask.to(attn.dtype)
-
-        context = torch.matmul(attn, V)
+            context = torch.matmul(attn, V)
         context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
 
         if self.is_nested_encoder:
