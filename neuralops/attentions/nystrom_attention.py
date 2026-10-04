@@ -1,17 +1,16 @@
 """
-Nyströmformer Attention.
+Nyströmformer Attention with Chunked Causal Nyström for decoders.
 
 Nyström-based low-rank kernel approximation with iterative pseudoinverse.
 
 Supports:
-- Multi-architecture copy_weights (GPT-2, RoBERTa/BERT nested, Qwen/LLaMA, DistilBERT)
+- Chunked Causal Nyström (for GPT-2, LLaMA, Qwen, etc.)
+- Standard Nyström (for BERT, RoBERTa encoders)
+- Multi-architecture copy_weights
 - Trainable LoRA adapters with frozen base weights
 - GQA with repeat_kv
 - RoPE position embeddings
-- Causal masking for decoders
-- Nested encoder bypass
 - Frobenius norm verification (>= 1e-4)
-- Safe injection returning None on failure
 """
 
 from __future__ import annotations
@@ -157,7 +156,7 @@ class LoRALinear(nn.Module):
 )
 class NystromAttention(BaseAttention):
     is_custom_attention: bool = True
-    triton_kernel: str = "linear_attn"
+    # NOTE: No Triton kernel — uses pure PyTorch.
 
     def __init__(
         self,
@@ -165,6 +164,7 @@ class NystromAttention(BaseAttention):
         rank: int | None = None,
         num_landmarks: int | None = None,
         pinv_iterations: int = 3,
+        chunk_size: int = 256,
         pretrained_attn: nn.Module | None = None,
         old_attn: nn.Module | None = None,
         comp_config: Any | None = None,
@@ -246,6 +246,14 @@ class NystromAttention(BaseAttention):
         self.num_landmarks = min(32, int(landmarks_cfg))
         self.pinv_iterations = pinv_iterations
 
+        # Chunk size for causal Nyström
+        self.chunk_size = int(
+            kwargs.get(
+                "chunk_size",
+                getattr(comp_config, "nystrom_chunk_size", chunk_size),
+            )
+        )
+
         # Decoder detection
         model_type = getattr(config, "model_type", "").lower() if config else ""
         is_dec = (
@@ -259,18 +267,8 @@ class NystromAttention(BaseAttention):
         )
         _mt = (model_type or "").lower()
         _decoder_prefixes = (
-            "gpt",
-            "qwen",
-            "llama",
-            "mistral",
-            "gemma",
-            "phi",
-            "opt",
-            "bloom",
-            "falcon",
-            "olmo",
-            "mpt",
-            "stablelm",
+            "gpt", "qwen", "llama", "mistral", "gemma", "phi",
+            "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
         )
         if (
             any(_mt.startswith(p) for p in _decoder_prefixes)
@@ -310,35 +308,23 @@ class NystromAttention(BaseAttention):
 
         # Projections
         self.query = LoRALinear(
-            self.dim,
-            self.all_head_size,
-            bias=True,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
+            self.dim, self.all_head_size, bias=True,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.key = LoRALinear(
-            self.dim,
-            self.all_kv_head_size,
-            bias=True,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
+            self.dim, self.all_kv_head_size, bias=True,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.value = LoRALinear(
-            self.dim,
-            self.all_kv_head_size,
-            bias=True,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
+            self.dim, self.all_kv_head_size, bias=True,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
         self.out_proj = LoRALinear(
-            self.all_head_size,
-            self.dim,
-            bias=True,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
+            self.all_head_size, self.dim, bias=True,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
 
@@ -348,50 +334,31 @@ class NystromAttention(BaseAttention):
             else 0.1
         )
         self.dropout = nn.Dropout(dropout_p)
-        self.triton_kwargs = {"phi": "identity", "eps": 1e-6}
 
         if source_attn is not None:
             self.copy_weights(source_attn)
 
+    # --- Aliases ---
     @property
-    def q_proj(self):
-        return self.query
-
+    def q_proj(self): return self.query
     @property
-    def k_proj(self):
-        return self.key
-
+    def k_proj(self): return self.key
     @property
-    def v_proj(self):
-        return self.value
-
+    def v_proj(self): return self.value
     @property
-    def q_lin(self):
-        return self.query
-
+    def q_lin(self): return self.query
     @property
-    def k_lin(self):
-        return self.key
-
+    def k_lin(self): return self.key
     @property
-    def v_lin(self):
-        return self.value
-
+    def v_lin(self): return self.value
     @property
-    def out_lin(self):
-        return self.out_proj
-
+    def out_lin(self): return self.out_proj
     @property
-    def dense(self):
-        return self.out_proj
-
+    def dense(self): return self.out_proj
     @property
-    def o_proj(self):
-        return self.out_proj
-
+    def o_proj(self): return self.out_proj
     @property
-    def c_proj(self):
-        return self.out_proj
+    def c_proj(self): return self.out_proj
 
     def copy_weights(self, src: Any) -> None:
         if src is None:
@@ -399,19 +366,13 @@ class NystromAttention(BaseAttention):
 
         cls_name = getattr(src, "__class__", type(src)).__name__
         has_out = (
-            hasattr(src, "dense")
-            or hasattr(src, "out_proj")
-            or hasattr(src, "out_lin")
-            or hasattr(src, "c_proj")
-            or hasattr(src, "o_proj")
+            hasattr(src, "dense") or hasattr(src, "out_proj") or hasattr(src, "out_lin")
+            or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         )
         is_nested = False
         if cls_name in [
-            "BertSelfAttention",
-            "RobertaSelfAttention",
-            "XLMRobertaSelfAttention",
-            "ElectraSelfAttention",
-            "DebertaSelfAttention",
+            "BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention",
+            "ElectraSelfAttention", "DebertaSelfAttention",
         ] or (hasattr(src, "query") and not has_out):
             is_nested = True
         if hasattr(src, "self") and hasattr(src, "output"):
@@ -419,13 +380,10 @@ class NystromAttention(BaseAttention):
         self.is_nested_encoder = bool(is_nested)
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None),
-            "k": (None, None),
-            "v": (None, None),
-            "o": (None, None),
+            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
-        # 1. GPT-2 fused
+        # GPT-2 fused
         if hasattr(src, "c_attn") and src.c_attn is not None:
             c_attn_mod = src.c_attn
             base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
@@ -435,8 +393,7 @@ class NystromAttention(BaseAttention):
                 is_conv1d = (
                     "Conv1D" in c_attn_mod.__class__.__name__
                     or "Conv1D" in base_c.__class__.__name__
-                    or hasattr(c_attn_mod, "nf")
-                    or hasattr(base_c, "nf")
+                    or hasattr(c_attn_mod, "nf") or hasattr(base_c, "nf")
                     or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
                 )
                 if is_conv1d:
@@ -444,18 +401,9 @@ class NystromAttention(BaseAttention):
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (
-                    c_w[:split_size, :],
-                    c_b[:split_size] if c_b is not None else None,
-                )
-                extracted["k"] = (
-                    c_w[split_size : 2 * split_size, :],
-                    c_b[split_size : 2 * split_size] if c_b is not None else None,
-                )
-                extracted["v"] = (
-                    c_w[2 * split_size :, :],
-                    c_b[2 * split_size :] if c_b is not None else None,
-                )
+                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
+                extracted["k"] = (c_w[split_size:2*split_size, :], c_b[split_size:2*split_size] if c_b is not None else None)
+                extracted["v"] = (c_w[2*split_size:, :], c_b[2*split_size:] if c_b is not None else None)
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = src.c_proj
@@ -466,19 +414,15 @@ class NystromAttention(BaseAttention):
                     is_conv1d = (
                         "Conv1D" in c_proj_mod.__class__.__name__
                         or "Conv1D" in base_o.__class__.__name__
-                        or hasattr(c_proj_mod, "nf")
-                        or hasattr(base_o, "nf")
+                        or hasattr(c_proj_mod, "nf") or hasattr(base_o, "nf")
                         or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
                     )
                     if is_conv1d:
                         o_w = o_w.t().contiguous()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (
-                        o_w,
-                        bias_o.data.clone() if bias_o is not None else None,
-                    )
+                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
-        # 2. RoBERTa nested
+        # RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
@@ -495,7 +439,7 @@ class NystromAttention(BaseAttention):
                     out_mod.bias.data.clone() if out_mod.bias is not None else None,
                 )
 
-        # 3. Flat modules
+        # Flat
         else:
             proj_candidates = {
                 "q": ["q_lin", "q_proj", "query"],
@@ -515,14 +459,12 @@ class NystromAttention(BaseAttention):
                             break
 
         missing = [
-            k
-            for k, (w, _) in extracted.items()
+            k for k, (w, _) in extracted.items()
             if w is None and (k != "o" or not self.is_nested_encoder)
         ]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
-
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -531,12 +473,7 @@ class NystromAttention(BaseAttention):
             except Exception:
                 pass
 
-        target_map = {
-            "q": self.query,
-            "k": self.key,
-            "v": self.value,
-            "o": self.out_proj,
-        }
+        target_map = {"q": self.query, "k": self.key, "v": self.value, "o": self.out_proj}
 
         with torch.no_grad():
             for proj_key, target_mod in target_map.items():
@@ -550,21 +487,13 @@ class NystromAttention(BaseAttention):
 
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
-
-                if (
-                    w.shape != target_mod.weight.shape
-                    and target_mod.weight.shape == w.t().contiguous().shape
-                ):
+                if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
                     w = w.t().contiguous()
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
-
                 target_mod.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(
-                        device=target_mod.weight.device, dtype=target_mod.weight.dtype
-                    )
+                    w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype)
                 )
-
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
                     target_mod.bias.data[:min_b].copy_(
@@ -576,23 +505,25 @@ class NystromAttention(BaseAttention):
                 w_norm = float(torch.linalg.norm(target_mod.weight.data.float()).item())
                 if w_norm < 1e-4:
                     logger.warning(
-                        f"NystromAttention weight verification failed for '{proj_key}': norm too small ({w_norm:.2e})"
+                        f"NystromAttention weight verification failed for '{proj_key}': "
+                        f"norm too small ({w_norm:.2e})"
                     )
-
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
 
+    # ==================================================================
+    # Core helpers
+    # ==================================================================
     def _iterative_pinv(self, A: torch.Tensor, iters: int = 3) -> torch.Tensor:
+        """Stable pseudoinverse via torch.linalg.pinv with iterative fallback."""
         try:
             return torch.linalg.pinv(A.float()).to(A.dtype)
         except Exception:
             norm_1 = A.abs().sum(dim=-2).amax(dim=-1, keepdim=True).unsqueeze(-1)
             norm_inf = A.abs().sum(dim=-1).amax(dim=-1, keepdim=True).unsqueeze(-1)
             alpha = 1.0 / (norm_1 * norm_inf + 1e-5)
-
             V = alpha * A.transpose(-2, -1).contiguous()
             I = torch.eye(A.size(-1), device=A.device, dtype=A.dtype).unsqueeze(0).unsqueeze(0)
-
             for _ in range(iters):
                 V = torch.matmul(V, 2.0 * I - torch.matmul(A, V))
             return V
@@ -605,23 +536,19 @@ class NystromAttention(BaseAttention):
         valid_mask: torch.Tensor,
         dtype: torch.dtype,
     ) -> torch.Tensor:
+        """Dense (non-causal) attention for encoder fallback."""
         scale = 1.0 / math.sqrt(self.head_dim)
         try:
             if valid_mask.all():
                 return F.scaled_dot_product_attention(
-                    Q,
-                    K,
-                    V,
-                    is_causal=getattr(self, "is_causal", False)
-                    or getattr(self, "is_decoder", False),
+                    Q, K, V,
+                    is_causal=False,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 ).to(dtype)
             else:
                 attn_mask = valid_mask.unsqueeze(1).unsqueeze(2)
                 return F.scaled_dot_product_attention(
-                    Q,
-                    K,
-                    V,
+                    Q, K, V,
                     attn_mask=attn_mask,
                     dropout_p=self.dropout.p if self.training else 0.0,
                 ).to(dtype)
@@ -635,6 +562,164 @@ class NystromAttention(BaseAttention):
         attn_weights = self.dropout(attn_weights)
         return torch.matmul(attn_weights, V)
 
+    def _pool_landmarks(self, X: torch.Tensor, m: int) -> torch.Tensor:
+        """Adaptive average pooling to extract `m` landmarks from X.
+
+        Args:
+            X: (B, H, N, d)
+            m: number of landmarks
+        Returns:
+            (B, H, m, d)
+        """
+        B, H, N, d = X.shape
+        if m >= N:
+            return X
+        X_flat = X.reshape(B * H, N, d).transpose(1, 2).contiguous()  # (B*H, d, N)
+        pooled = F.adaptive_avg_pool1d(X_flat, m)                      # (B*H, d, m)
+        return pooled.transpose(1, 2).contiguous().reshape(B, H, m, d)
+
+    # ==================================================================
+    # Chunked Causal Nyström (NEW — for decoders)
+    # ==================================================================
+    def _chunked_causal_nystrom(
+        self,
+        Q: torch.Tensor,
+        K: torch.Tensor,
+        V: torch.Tensor,
+        valid_mask: torch.Tensor,
+        chunk_size: int = 256,
+    ) -> torch.Tensor:
+        """
+        Chunked Causal Nyström attention.
+
+        Algorithm:
+          For each chunk c = [start_c, end_c):
+            1. Intra-chunk: causal dense attention within the chunk.
+               Output shape: (B, H, C, d)
+            2. Inter-chunk (only if c > 0): Nyström with landmarks pooled
+               from ALL previous chunks (0..c-1).
+               Compute:
+                 F1 = softmax(Q_c @ K_landmarks^T)         (B, H, C, m)
+                 F2 = softmax(Q_landmarks @ K_landmarks^T) (B, H, m, m)
+                 F3 = softmax(Q_landmarks @ K_prev^T)      (B, H, m, start)
+                 out_cross = F1 @ pinv(F2) @ F3 @ V_prev   (B, H, C, d)
+            3. Combine intra + cross.
+
+        Complexity: O(N * C + N * m * d) where C is chunk_size.
+        For N=512, C=256, m=32: this is much faster than O(N²)=262k.
+
+        Args:
+            Q, K, V: (B, H, N, d)
+            valid_mask: (B, N) boolean
+            chunk_size: int, size of each causal chunk
+        Returns:
+            (B, H, N, d)
+        """
+        B, H, N, d = Q.shape
+        device = Q.device
+        dtype = Q.dtype
+        scale = 1.0 / math.sqrt(d)
+        m = min(self.num_landmarks, N)
+
+        # If sequence fits in one chunk, use causal dense
+        if N <= chunk_size:
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+            causal = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
+            scores = scores.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
+            scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
+            attn = F.softmax(scores, dim=-1).to(dtype)
+            attn = torch.nan_to_num(attn, nan=0.0)
+            attn = self.dropout(attn)
+            return torch.matmul(attn, V)
+
+        num_chunks = (N + chunk_size - 1) // chunk_size
+        outputs: list[torch.Tensor] = []
+
+        for c_idx in range(num_chunks):
+            start = c_idx * chunk_size
+            end = min(start + chunk_size, N)
+            C_len = end - start
+
+            Q_c = Q[:, :, start:end, :]                    # (B, H, C, d)
+            K_c = K[:, :, start:end, :]
+            V_c = V[:, :, start:end, :]
+            mask_c = valid_mask[:, start:end]              # (B, C)
+
+            # ---- 1. Intra-chunk causal dense attention ----
+            scores_intra = torch.matmul(
+                Q_c.float(), K_c.float().transpose(-2, -1).contiguous()
+            ) * scale                                        # (B, H, C, C)
+            causal_intra = torch.tril(
+                torch.ones(C_len, C_len, device=device, dtype=torch.bool)
+            )
+            scores_intra = scores_intra.masked_fill(
+                ~causal_intra.unsqueeze(0).unsqueeze(0), -1e4
+            )
+            scores_intra = scores_intra.masked_fill(
+                ~mask_c.unsqueeze(1).unsqueeze(2), -1e4
+            )
+            attn_intra = F.softmax(scores_intra, dim=-1).to(dtype)
+            attn_intra = torch.nan_to_num(attn_intra, nan=0.0)
+            out_intra = torch.matmul(attn_intra, V_c)         # (B, H, C, d)
+
+            # ---- 2. Inter-chunk Nyström (skip for first chunk) ----
+            if c_idx == 0:
+                outputs.append(out_intra)
+                continue
+
+            K_prev = K[:, :, :start, :]                       # (B, H, prev_len, d)
+            V_prev = V[:, :, :start, :]
+            mask_prev = valid_mask[:, :start]                 # (B, prev_len)
+            prev_len = start
+
+            # Pool landmarks from Q_c and K_prev
+            m_prev = min(m, prev_len)
+            K_landmarks = self._pool_landmarks(K_prev, m_prev)   # (B, H, m_prev, d)
+            Q_landmarks = self._pool_landmarks(Q_c, min(m, C_len))  # (B, H, m_c, d)
+
+            # F1: (B, H, C, m_prev)
+            scores1 = torch.matmul(
+                Q_c.float(), K_landmarks.float().transpose(-2, -1).contiguous()
+            ) * scale
+            F1 = F.softmax(scores1, dim=-1).to(dtype)
+
+            # F2: (B, H, m_c, m_prev)
+            scores2 = torch.matmul(
+                Q_landmarks.float(), K_landmarks.float().transpose(-2, -1).contiguous()
+            ) * scale
+            F2 = F.softmax(scores2, dim=-1).to(dtype)
+
+            # F3: (B, H, m_c, prev_len)
+            scores3 = torch.matmul(
+                Q_landmarks.float(), K_prev.float().transpose(-2, -1).contiguous()
+            ) * scale
+            scores3 = scores3.masked_fill(
+                ~mask_prev.unsqueeze(1).unsqueeze(2), -1e4
+            )
+            F3 = F.softmax(scores3, dim=-1).to(dtype)
+
+            # Pseudoinverse of F2
+            F2_pinv = self._iterative_pinv(F2, iters=self.pinv_iterations)  # (B, H, m_prev, m_c)
+
+            # Cross-chunk output: F1 @ F2_pinv @ F3 @ V_prev
+            # F3 @ V_prev: (B, H, m_c, d)
+            step1 = torch.matmul(F3, V_prev)
+            # F2_pinv @ step1: (B, H, m_prev, d)
+            step2 = torch.matmul(F2_pinv, step1)
+            # F1 @ step2: (B, H, C, d)
+            out_cross = torch.matmul(F1, step2)
+            out_cross = torch.nan_to_num(out_cross, nan=0.0)
+
+            # ---- 3. Combine ----
+            out_c = out_intra + out_cross
+            outputs.append(out_c)
+
+        context = torch.cat(outputs, dim=2)   # (B, H, N, d)
+        return context
+
+    # ==================================================================
+    # Forward
+    # ==================================================================
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -667,66 +752,63 @@ class NystromAttention(BaseAttention):
 
         valid_mask = get_token_valid_mask(attention_mask, B, N, device)
 
+        # ============================================================
+        # Causal (decoder) → Chunked Causal Nyström
+        # ============================================================
         if self.is_decoder or self.is_causal:
-            scale = 1.0 / math.sqrt(d)
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-            causal_mask = torch.tril(torch.ones((N, N), device=device, dtype=torch.bool))
-            scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
-            scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
-            attn_weights = F.softmax(scores, dim=-1).to(dtype)
-            attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
-            attn_weights = self.dropout(attn_weights)
-            context = torch.matmul(attn_weights, V)
-        elif max(128, 2 * self.num_landmarks) >= N:
-            # Short sequence dense fallback: Nyström low-rank approximation is mathematically
-            # sub-optimal and memory-inefficient when N <= 2*landmarks (or N <= 128)
+            context = self._chunked_causal_nystrom(
+                Q, K, V, valid_mask, chunk_size=self.chunk_size
+            )
+            context = self.dropout(context)
+
+        # ============================================================
+        # Encoder path
+        # ============================================================
+        elif max(64, 2 * self.num_landmarks) >= N:
+            # Very short sequence — dense attention
             context = self._dense_attention(Q, K, V, valid_mask, dtype)
         else:
+            # Standard Nyström for encoder
             m = min(self.num_landmarks, N)
 
-            # Adaptive pooling landmarks
-            Q_flat = Q.reshape(B * H, N, d).transpose(1, 2).contiguous()
-            K_flat = K.reshape(B * H, N, d).transpose(1, 2).contiguous()
-
-            Q_landmarks = (
-                F.adaptive_avg_pool1d(Q_flat, m).transpose(1, 2).contiguous().reshape(B, H, m, d)
-            )
-            K_landmarks = (
-                F.adaptive_avg_pool1d(K_flat, m).transpose(1, 2).contiguous().reshape(B, H, m, d)
-            )
+            Q_landmarks = self._pool_landmarks(Q, m)
+            K_landmarks = self._pool_landmarks(K, m)
 
             scale = 1.0 / math.sqrt(d)
-            scores1 = (
-                torch.matmul(Q.float(), K_landmarks.float().transpose(-2, -1).contiguous()) * scale
-            )
-            scores2 = (
-                torch.matmul(
-                    Q_landmarks.float(),
-                    K_landmarks.float().transpose(-2, -1).contiguous(),
-                )
-                * scale
-            )
-            scores3 = (
-                torch.matmul(Q_landmarks.float(), K.float().transpose(-2, -1).contiguous()) * scale
-            )
 
-            mask_expanded = valid_mask.unsqueeze(1).unsqueeze(2)
-            scores3 = scores3.masked_fill(~mask_expanded, -1e4)
-
+            # F1: (B, H, N, m)
+            scores1 = torch.matmul(
+                Q.float(), K_landmarks.float().transpose(-2, -1).contiguous()
+            ) * scale
             F1 = F.softmax(scores1, dim=-1).to(dtype)
+
+            # F2: (B, H, m, m)
+            scores2 = torch.matmul(
+                Q_landmarks.float(), K_landmarks.float().transpose(-2, -1).contiguous()
+            ) * scale
             F2 = F.softmax(scores2, dim=-1).to(dtype)
+
+            # F3: (B, H, m, N)
+            scores3 = torch.matmul(
+                Q_landmarks.float(), K.float().transpose(-2, -1).contiguous()
+            ) * scale
+            scores3 = scores3.masked_fill(
+                ~valid_mask.unsqueeze(1).unsqueeze(2), -1e4
+            )
             F3 = F.softmax(scores3, dim=-1).to(dtype)
 
             F2_pinv = self._iterative_pinv(F2, iters=self.pinv_iterations)
 
-            # Associative linear multiplication: O(N * m * d)
+            # (B, H, m, d) ← F3 @ V
             step1 = torch.matmul(F3, V)
+            # (B, H, m, d) ← F2_pinv @ step1
             step2 = torch.matmul(F2_pinv, step1)
+            # (B, H, N, d) ← F1 @ step2
             context = torch.matmul(F1, step2)
-
             context = torch.nan_to_num(context, nan=0.0)
             context = self.dropout(context)
 
+        # Head mask
         if head_mask is not None:
             if head_mask.dim() == 1:
                 hm = head_mask.view(1, -1, 1, 1)
@@ -734,9 +816,12 @@ class NystromAttention(BaseAttention):
                 hm = head_mask.view(head_mask.size(0), -1, 1, 1)
             else:
                 hm = head_mask
-            context = context * hm
+            context = context * hm.to(context.dtype)
 
+        # Zero-out padded positions
         context = context * valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
+
+        # Merge heads
         context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
@@ -747,6 +832,9 @@ class NystromAttention(BaseAttention):
         return out, None
 
 
+# ===========================================================================
+# Injector
+# ===========================================================================
 @ATTENTION_REGISTRY.register("nystrom_inject")
 @ATTENTION_REGISTRY.register("inject_nystrom")
 def inject_nystrom(
@@ -797,9 +885,7 @@ def inject_nystrom(
             res = inject_nystrom(
                 layer=lyr,
                 model_config=cfg,
-                comp_config=(
-                    comp_config if "comp_config" in locals() or "comp_config" in kwargs else None
-                ),
+                comp_config=comp_config,
                 layer_idx=idx,
                 total_layers=tot,
                 **kwargs,
@@ -865,6 +951,5 @@ def inject_nystrom(
         return new_attn
     except Exception as e:
         import logging
-
         logging.getLogger(__name__).error(f"NystromAttention injection failed: {e}")
         return None
