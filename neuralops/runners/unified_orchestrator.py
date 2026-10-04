@@ -50,6 +50,8 @@ def run_orchestrator(module_key: str, default_args: list = None):
         cmd = [
             sys.executable,
             str(TRAINER_SCRIPT),
+            "--task",
+            "listops",
             "--model",
             m["slug"],
             "--module",
@@ -160,7 +162,14 @@ def run_orchestrator(module_key: str, default_args: list = None):
             w.writeheader()
             w.writerows(rows)
     with json_path.open("w", encoding="utf-8") as f:
-        json.dump([{k: v for k, v in r.items() if k != "row_data"} for r in results], f, indent=2)
+        dump_data = []
+        for r in results:
+            clean_r = {}
+            for k, v in r.items():
+                if k != "row_data":
+                    clean_r[k] = str(v) if isinstance(v, Path) else v
+            dump_data.append(clean_r)
+        json.dump(dump_data, f, indent=2)
     logger.info("Consolidated results saved → %s", RESULTS_BASE)
 
     try:
