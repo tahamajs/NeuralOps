@@ -57,6 +57,11 @@ except Exception:
     _HAS_TRITON = False
 
 try:
+    from neuralops.core.triton_linear_attn import fast_linear_attention
+except Exception:
+    fast_linear_attention = None
+
+try:
     from neuralops.attentions.fused_svd_kernel import FusedSVDLinear, fused_svd_linear
 
     HAS_FUSED_KERNEL = True
@@ -1081,21 +1086,17 @@ class SVDLinearAttention(BaseAttention):
         v: torch.Tensor,
         mask: torch.Tensor | None,
     ) -> torch.Tensor:
-        if mask is None and _HAS_TRITON and triton_dispatch is not None:
+        if mask is None and q.device.type == "cuda" and fast_linear_attention is not None:
             try:
-                return triton_dispatch(
-                    self.triton_kernel,
+                return fast_linear_attention(
                     q,
                     k,
                     v,
                     is_causal=self.is_decoder,
-                    **self.triton_kwargs,
+                    eps=self.eps,
                 )
             except Exception as e:
-                logger.warning(
-                    "SVDLinearAttention: triton linear_attn failed (%s); fallback.",
-                    e,
-                )
+                logger.warning("Fast Triton kernel failed (%s). Falling back to PyTorch.", e)
 
         B, H, N, D_k = q.shape
         D_v = v.shape[-1]
