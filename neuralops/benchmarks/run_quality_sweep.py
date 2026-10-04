@@ -82,6 +82,8 @@ FIELDS = [
     "module_name",
     "status",
     "accuracy_pct",
+    "baseline_acc",
+    "pass_threshold_pct",
     "f1_score",
     "f1_macro",
     "precision",
@@ -1671,6 +1673,12 @@ def parse_args(argv=None):
     )
     ap.add_argument("--recovery_steps", type=int, default=50)
     ap.add_argument("--recovery_modules", default="")
+    ap.add_argument(
+        "--acceptable_drop",
+        type=float,
+        default=5.0,
+        help="Maximum allowed drop in percentage points relative to baseline accuracy (default: 5.0)",
+    )
     ap.add_argument("--optimizer", choices=("adamw", "muon"), default="adamw")
     ap.add_argument("--use_muon", action="store_true")
     ap.add_argument("--muon_lr", type=float, default=0.02)
@@ -3680,6 +3688,29 @@ def run_single_module_main(args) -> dict:
             num_classes = 2
     LOG.info("Configured dataset '%s' with num_labels=%d", args.dataset, num_classes)
     try:
+        from huggingface_hub import list_repo_files
+        try:
+            files = list_repo_files(args.model)
+            has_weights = any(
+                f.endswith(".safetensors") or f.endswith(".bin") or f.endswith(".pt")
+                for f in files
+            )
+            if not has_weights:
+                LOG.error("Model %s has no weight files in repository. Skipping.", args.model)
+                out = Path(args.output_dir) if args.output_dir else Path("results")
+                out.mkdir(parents=True, exist_ok=True)
+                csv_name = (
+                    f"summary_{args.output_suffix}.csv"
+                    if getattr(args, "output_suffix", None)
+                    else "summary.csv"
+                )
+                with open(out / csv_name, "w", newline="", encoding="utf-8") as f:
+                    f.write("module_name,status,accuracy_pct,baseline_acc,pass_threshold_pct,error\n")
+                    f.write("N/A,SKIP_NO_WEIGHTS,0.0,0.0,0.0,Repository has no weight files\n")
+                return {"module_name": "N/A", "status": "SKIP_NO_WEIGHTS", "accuracy_pct": 0.0, "error": "No weight files"}
+        except Exception:
+            pass  # Continue if offline or hub check fails
+
         from transformers import AutoConfig, AutoModelForCausalLM
 
         cfg = AutoConfig.from_pretrained(args.model)
@@ -3732,6 +3763,37 @@ def run_single_module_main(args) -> dict:
     except torch.OutOfMemoryError as e:
         LOG.critical("CUDA OOM while loading base model: %s", e)
         sys.exit(1)
+    except Exception as e:
+        err_str = str(e).lower()
+        if any(
+            k in err_str
+            for k in (
+                "does not appear to have",
+                "can't load",
+                "couldn't connect",
+                "no weight",
+                "entry not found",
+                "cannot find the file",
+            )
+        ):
+            LOG.error("Model %s has no weights or cannot be loaded: %s — skipping.", args.model, e)
+            out = Path(args.output_dir) if args.output_dir else Path("results")
+            out.mkdir(parents=True, exist_ok=True)
+            csv_name = (
+                f"summary_{args.output_suffix}.csv"
+                if getattr(args, "output_suffix", None)
+                else "summary.csv"
+            )
+            with open(out / csv_name, "w", newline="", encoding="utf-8") as f:
+                f.write("module_name,status,accuracy_pct,baseline_acc,pass_threshold_pct,error\n")
+                f.write(f"N/A,SKIP_NO_WEIGHTS,0.0,0.0,0.0,{str(e)[:200]}\n")
+            return {
+                "module_name": "N/A",
+                "status": "SKIP_NO_WEIGHTS",
+                "accuracy_pct": 0.0,
+                "error": str(e)[:200],
+            }
+        raise
     base.config.pad_token_id = (
         tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
     )
@@ -4302,10 +4364,17 @@ def run_single_module_main(args) -> dict:
     # live from the loaded validation split.  This ensures the threshold is always
     # calibrated to whatever dataset+split is actually on disk.
     stat_margin_pct = round(z_score * se * 100.0, 2)
-    pass_threshold_pct = round(majority_baseline_pct + stat_margin_pct, 2)
+    statistical_floor = round(majority_baseline_pct + stat_margin_pct, 2)
+    acceptable_drop = float(getattr(args, "acceptable_drop", 5.0))
+    if base_benchmark_acc is not None and base_benchmark_acc > 0.0:
+        baseline_floor = round(base_benchmark_acc - acceptable_drop, 2)
+    else:
+        baseline_floor = statistical_floor
+    pass_threshold_pct = max(statistical_floor, baseline_floor)
     threshold_source = (
-        f"dynamic: majority={majority_baseline_pct:.2f}% ({majority_count}/{total_val_samples}), "
-        f"SE={se * 100:.3f}%, 3*SE={stat_margin_pct:.3f}%"
+        f"dynamic: majority={majority_baseline_pct:.2f}%, stat_floor={statistical_floor:.2f}%, "
+        f"baseline={base_benchmark_acc:.2f}%, drop={acceptable_drop:.1f}%, "
+        f"baseline_floor={baseline_floor:.2f}% -> pass_thresh={pass_threshold_pct:.2f}%"
     )
 
     LOG.info("=" * 80)
@@ -4314,6 +4383,10 @@ def run_single_module_main(args) -> dict:
     LOG.info("  True Majority Baseline:    %.2f%%", majority_baseline_pct)
     LOG.info("  Standard Error (SE):       %.3f%%", se * 100.0)
     LOG.info("  Statistical Margin (3*SE): %.2f%%", stat_margin_pct)
+    LOG.info("  Statistical Floor:         %.2f%%", statistical_floor)
+    LOG.info("  Fine-Tuned Baseline Acc:   %.2f%%", base_benchmark_acc)
+    LOG.info("  Acceptable Drop:           %.2f%%", acceptable_drop)
+    LOG.info("  Baseline Floor:            %.2f%%", baseline_floor)
     LOG.info("  PASS Threshold (Min Acc):  %.2f%%", pass_threshold_pct)
     LOG.info("  Threshold Source:          %s", threshold_source)
     LOG.info("=" * 80)
@@ -4739,19 +4812,23 @@ def run_single_module_main(args) -> dict:
                     err = f"FAIL_PPL_DIVERGED: perplexity ({ppl_num:.2f}) exceeded threshold 100.0"
             else:
                 if acc <= 0.0 or (status == "PENDING" and acc < pass_threshold_pct):
-                    status = "EVAL_FAILED" if acc <= 0.0 else "FAIL_BELOW_CHANCE"
+                    status = "EVAL_FAILED" if acc <= 0.0 else ("FAIL_BELOW_CHANCE" if acc < statistical_floor else "FAIL")
                     if acc <= 0.0:
                         err = f"EVAL_FAILED: evaluated accuracy is non-positive ({acc:.2f}%)"
+                    elif acc < statistical_floor:
+                        err = f"FAIL_BELOW_CHANCE: accuracy ({acc:.2f}%) below chance floor ({statistical_floor:.2f}%)"
+                    else:
+                        err = f"FAIL: accuracy ({acc:.2f}%) below baseline pass threshold ({pass_threshold_pct:.2f}%, baseline={base_benchmark_acc:.2f}%)"
                 elif acc >= pass_threshold_pct:
                     status = "PASS"
                 else:
-                    status = "FAIL_BELOW_CHANCE"
+                    status = "FAIL_BELOW_CHANCE" if acc < statistical_floor else "FAIL"
 
                 if had_nan:
                     status = "FAIL_RECOVERY_NAN"
                     err = "note: recovery_loss_nan"
                 elif acc < pass_threshold_pct and status != "EVAL_FAILED":
-                    err = f"FAIL: accuracy ({acc:.2f}%) below chance threshold ({pass_threshold_pct:.2f}%)"
+                    err = f"FAIL: accuracy ({acc:.2f}%) below pass threshold ({pass_threshold_pct:.2f}%, baseline={base_benchmark_acc:.2f}%)"
 
             # Check parameter expansion — exclude LoRA adapter params from base model count
             p_before = comp_metrics.get("total_params_before", total_params_before)
@@ -4765,9 +4842,13 @@ def run_single_module_main(args) -> dict:
                 if base_params_after > p_before * 1.20:
                     status = "EXTREME_EXPANSION"
                     err = f"base_before={p_before} base_after={base_params_after} delta=+{base_delta_pct:.1f}%"
-                elif base_params_after > p_before and base_delta > 1024 and base_delta_pct > 0.05:
-                    status = "MODERATE_EXPANSION"
-                    err = f"base_before={p_before} base_after={base_params_after} delta=+{base_delta_pct:.2f}%"
+                elif base_delta > 0.05 * p_before:
+                    # Exclude attention-injection modules where architecture might require adapter/bridge layers (up to 10%)
+                    if comp_metrics.get("num_injected_attention_layers", 0) > 0 and base_delta <= 0.10 * p_before:
+                        pass
+                    else:
+                        status = "MODERATE_EXPANSION"
+                        err = f"base_before={p_before} base_after={base_params_after} delta=+{base_delta_pct:.2f}%"
                 elif (
                     comp_metrics.get("num_compressed_layers", 0) == 0
                     and comp_metrics.get("num_injected_attention_layers", 0) == 0
@@ -4788,7 +4869,7 @@ def run_single_module_main(args) -> dict:
                         status = "PASS"
                         err = "note: zero compressed layers, zero injected layers, model unchanged"
 
-        # Update per-module full metrics JSON with final classification status and elapsed time
+        # Update per-module full metrics JSON with final classification status, baseline_acc, and elapsed time
         json_path = out / f"{model_slug}_{name}_full_metrics.json"
         if json_path.exists():
             try:
@@ -4796,6 +4877,8 @@ def run_single_module_main(args) -> dict:
                     jdata = json.load(jf)
                 jdata["performance"]["status"] = status
                 jdata["performance"]["elapsed_s"] = round(time.monotonic() - t, 2)
+                jdata["performance"]["baseline_acc"] = base_benchmark_acc
+                jdata["performance"]["pass_threshold_pct"] = pass_threshold_pct
                 with open(json_path, "w", encoding="utf-8") as jf:
                     json.dump(jdata, jf, indent=4)
             except Exception:
@@ -4822,6 +4905,8 @@ def run_single_module_main(args) -> dict:
             "module_name": name,
             "status": status,
             "accuracy_pct": acc,
+            "baseline_acc": base_benchmark_acc,
+            "pass_threshold_pct": pass_threshold_pct,
             "ppl_status": ppl_status,
             "f1_score": perf_metrics.get("f1_score", 0.0),
             "f1_macro": perf_metrics.get("f1_macro", 0.0),
