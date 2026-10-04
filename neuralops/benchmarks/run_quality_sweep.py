@@ -4003,7 +4003,7 @@ def run_single_module_main(args) -> dict:
         )
         state = torch.load(parent_checkpoint, map_location="cpu", weights_only=False)
         _safe_load_state(base, state)
-    elif checkpoint.exists():
+    elif checkpoint.exists() and not args.fresh:
         LOG.info("Loading cached fine-tuned checkpoint: %s", checkpoint)
         state = torch.load(checkpoint, map_location="cpu", weights_only=False)
         _safe_load_state(base, state)
