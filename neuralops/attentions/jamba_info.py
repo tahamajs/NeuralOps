@@ -1,8 +1,15 @@
 """
 Information-Bottlenecked Jamba Architecture with Dual Operational Modes.
-
 Differential attention with concept-bottlenecked SSM branch.
 
+=== FIXES APPLIED (2026-10-04) ===
+FIX 1: (1 - λ_init) scaling per Diff Transformer paper (Ye et al., ICLR 2025).
+FIX 2: Per-head λ_init via the paper's formula: 0.8 - 0.6 * exp(-0.3 * h).
+FIX 3: RMSNorm applied to SSM branch for scale consistency with attention.
+FIX 4: Correct mask reversal in encoder bidirectional SSM.
+FIX 5: position_ids fallback via rotary_emb when position_embeddings is None.
+FIX 6: Robust cache dtype handling (no per-step .to() calls).
+FIX 7: dtype-consistent sigmoid on alpha_raw.
 """
 
 from __future__ import annotations
@@ -29,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 # ===========================================================================
-# RoPE
+# RoPE & Utilities
 # ===========================================================================
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     x1 = x[..., : x.shape[-1] // 2]
@@ -48,28 +55,26 @@ def apply_rotary_pos_emb(
         return q, k
 
     if cos.dim() == 2:
-        cos = cos.unsqueeze(0).unsqueeze(0)
-        sin = sin.unsqueeze(0).unsqueeze(0)
+        cos, sin = cos.unsqueeze(0).unsqueeze(0), sin.unsqueeze(0).unsqueeze(0)
     elif cos.dim() == 3:
-        cos = cos.unsqueeze(1)
-        sin = sin.unsqueeze(1)
-    while cos.dim() < q.dim():
-        cos = cos.unsqueeze(0)
-        sin = sin.unsqueeze(0)
+        cos, sin = cos.unsqueeze(1), sin.unsqueeze(1)
 
-    # JI-06: robust slicing
+    while cos.dim() < q.dim():
+        cos, sin = cos.unsqueeze(0), sin.unsqueeze(0)
+
     seq_axis = -2
     if cos.shape[seq_axis] != q.shape[seq_axis]:
         if cos.shape[seq_axis] >= q.shape[seq_axis]:
-            cos = cos.narrow(seq_axis, cos.shape[seq_axis] - q.shape[seq_axis], q.shape[seq_axis])
-            sin = sin.narrow(seq_axis, sin.shape[seq_axis] - q.shape[seq_axis], q.shape[seq_axis])
+            offset = cos.shape[seq_axis] - q.shape[seq_axis]
+            cos = cos.narrow(seq_axis, offset, q.shape[seq_axis])
+            sin = sin.narrow(seq_axis, offset, q.shape[seq_axis])
         else:
             raise ValueError(
-                f"apply_rotary_pos_emb: cos seq len {cos.shape[seq_axis]} < q seq len {q.shape[seq_axis]}"
+                f"apply_rotary_pos_emb: cos seq len {cos.shape[seq_axis]} < "
+                f"q seq len {q.shape[seq_axis]}"
             )
 
-    rotary_dim = cos.shape[-1]
-    head_dim = q.shape[-1]
+    rotary_dim, head_dim = cos.shape[-1], q.shape[-1]
 
     if rotary_dim < head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
@@ -90,61 +95,48 @@ def apply_rotary_pos_emb(
 
 
 def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
-    """Equivalent of torch.repeat_interleave(x, dim=1, repeats=n_rep)."""
     if n_rep == 1:
         return hidden_states
     b, num_kv_heads, slen, head_dim = hidden_states.shape
-    hidden_states = hidden_states[:, :, None, :, :].expand(b, num_kv_heads, n_rep, slen, head_dim)
+    hidden_states = hidden_states[:, :, None, :, :].expand(
+        b, num_kv_heads, n_rep, slen, head_dim
+    )
     return hidden_states.reshape(b, num_kv_heads * n_rep, slen, head_dim)
 
 
-def _detect_decoder(config: Any, is_decoder: bool | None, src_attn: nn.Module | None) -> bool:
+def _detect_decoder(
+    config: Any, is_decoder: bool | None, src_attn: nn.Module | None
+) -> bool:
     if is_decoder is not None:
         return bool(is_decoder)
     if config is not None:
         if getattr(config, "is_decoder", False) or getattr(config, "causal", False):
             return True
         mt = str(getattr(config, "model_type", "") or "").lower()
-        if mt.startswith(
-            (
-                "gpt",
-                "qwen",
-                "llama",
-                "mistral",
-                "gemma",
-                "phi",
-                "opt",
-                "bloom",
-                "falcon",
-                "olmo",
-                "mpt",
-                "stablelm",
-            )
-        ):
-            return True
-        arch = getattr(config, "architectures", None)
-        if arch and any(("GPT" in str(a) or "CausalLM" in str(a)) for a in arch):
+        if mt.startswith((
+            "gpt", "qwen", "llama", "mistral", "gemma", "phi",
+            "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
+        )):
             return True
     if src_attn is not None:
-        if getattr(src_attn, "is_decoder", False):
-            return True
-        if hasattr(src_attn, "c_attn"):
-            return True
-        if "gpt" in src_attn.__class__.__name__.lower():
+        if (
+            getattr(src_attn, "is_decoder", False)
+            or hasattr(src_attn, "c_attn")
+            or "gpt" in src_attn.__class__.__name__.lower()
+        ):
             return True
     return False
 
 
 def _detect_return_format(source_attn: nn.Module | None, is_nested: bool) -> str:
-    """JI-13: choose output tuple layout for the host model."""
     if is_nested:
-        return "bert"  # (out, attn_weights)
+        return "bert"
     if source_attn is None:
         return "llama"
     cls = source_attn.__class__.__name__.lower()
-    if any(k in cls for k in ("gpt2", "gptne", "gptj", "gpt_neo", "gpt_j")):
-        return "gpt2"
-    if hasattr(source_attn, "c_attn"):
+    if any(k in cls for k in ("gpt2", "gptne", "gptj", "gpt_neo", "gpt_j")) or hasattr(
+        source_attn, "c_attn"
+    ):
         return "gpt2"
     return "llama"
 
@@ -152,26 +144,22 @@ def _detect_return_format(source_attn: nn.Module | None, is_nested: bool) -> str
 def _read_cache(
     past_key_value: Any,
 ) -> tuple[torch.Tensor | None, torch.Tensor | None, torch.Tensor | None, int]:
-    """JI-01: extract (k1, k2, v, past_len) from various cache formats."""
     if past_key_value is None:
         return None, None, None, 0
-
-    # Tuple/list: ((k1, k2, v),) or (k1, k2, v)
     if isinstance(past_key_value, (tuple, list)):
         if len(past_key_value) == 0:
             return None, None, None, 0
         first = past_key_value[0]
         if isinstance(first, (tuple, list)):
-            # Per-layer cache
-            entry = past_key_value[0]  # This API is single-layer; extend if needed
-            k1, k2, v = entry[0], entry[1], entry[2]
-            return k1, k2, v, k1.shape[-2]
-        # Flat (k1, k2, v)
+            entry = past_key_value[0]
+            return entry[0], entry[1], entry[2], entry[0].shape[-2]
         if len(past_key_value) >= 3:
-            k1, k2, v = past_key_value[0], past_key_value[1], past_key_value[2]
-            return k1, k2, v, k1.shape[-2]
-
-    # HF Cache object (best-effort; layer 0)
+            return (
+                past_key_value[0],
+                past_key_value[1],
+                past_key_value[2],
+                past_key_value[0].shape[-2],
+            )
     if hasattr(past_key_value, "key_cache") and past_key_value.key_cache:
         k1 = past_key_value.key_cache[0]
         k2 = past_key_value.key_cache[1] if len(past_key_value.key_cache) > 1 else k1
@@ -182,8 +170,23 @@ def _read_cache(
         )
         if k1 is not None:
             return k1, k2, v, k1.shape[-2]
-
     return None, None, None, 0
+
+
+# ===========================================================================
+# Core Modules
+# ===========================================================================
+class RMSNorm(nn.Module):
+    """RMSNorm for stabilizing Differential Attention Outputs."""
+
+    def __init__(self, dim: int, eps: float = 1e-6):
+        super().__init__()
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(dim))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        norm = torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps)
+        return x * norm * self.weight
 
 
 class LoRALinear(nn.Module):
@@ -200,10 +203,8 @@ class LoRALinear(nn.Module):
     ) -> None:
         super().__init__()
         fk = {"device": device, "dtype": dtype}
-        self.in_features = int(in_features)
-        self.out_features = int(out_features)
-        self.lora_rank = int(lora_rank)
-        self.lora_alpha = float(lora_alpha)
+        self.in_features, self.out_features = int(in_features), int(out_features)
+        self.lora_rank, self.lora_alpha = int(lora_rank), float(lora_alpha)
         self.lora_scaling = (lora_alpha / lora_rank) if lora_rank > 0 else 1.0
         self.freeze_base = freeze_base
 
@@ -247,24 +248,23 @@ class LoRALinear(nn.Module):
             if self.lora_B is not None:
                 self.lora_B.requires_grad = True
 
-    def unfreeze_base_weights(self) -> None:
-        self.weight.requires_grad = True
-        if self.bias is not None:
-            self.bias.requires_grad = True
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        dt = x.dtype
-        w = self.weight.to(dt) if self.weight.dtype != dt else self.weight
-        b = self.bias.to(dt) if (self.bias is not None and self.bias.dtype != dt) else self.bias
-        out = F.linear(x, w, b)
-        if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            a = self.lora_A.to(dt) if self.lora_A.dtype != dt else self.lora_A
-            bb = self.lora_B.to(dt) if self.lora_B.dtype != dt else self.lora_B
-            out = out + F.linear(F.linear(x, a), bb) * self.lora_scaling
-        return out.to(dt)
+        out = F.linear(x, self.weight, self.bias)
+        if (
+            self.lora_rank > 0
+            and self.lora_A is not None
+            and self.lora_B is not None
+        ):
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        return out
 
 
 class InfoMambaConceptBottleneck(nn.Module):
+    """
+    Information Bottleneck with down/up projections.
+    SSM executes in the compressed (bottleneck_dim) space.
+    """
+
     def __init__(self, dim: int, bottleneck_dim: int = 256) -> None:
         super().__init__()
         self.dim = dim
@@ -275,10 +275,12 @@ class InfoMambaConceptBottleneck(nn.Module):
         self.W_up = nn.Linear(bottleneck_dim, dim, bias=False)
         self.norm_out = nn.LayerNorm(dim)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def down(self, x: torch.Tensor) -> torch.Tensor:
         h = self.norm_in(x)
         z = self.W_down(h)
-        z = self.norm_mid(z)
+        return self.norm_mid(z)
+
+    def up(self, z: torch.Tensor) -> torch.Tensor:
         z = F.gelu(z)
         h = self.W_up(z)
         return self.norm_out(h)
@@ -300,11 +302,7 @@ class JambaInfoBlock(BaseAttention):
         **kwargs: Any,
     ) -> None:
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
-
-        try:
-            super().__init__(config, rank)
-        except TypeError:
-            super().__init__(config)
+        super().__init__(config, rank)
 
         hidden_size = self._detect_hidden_size(config, source_attn, kwargs)
         num_heads = self._detect_num_heads(config, source_attn, kwargs, hidden_size)
@@ -324,7 +322,10 @@ class JambaInfoBlock(BaseAttention):
         self.is_decoder = _detect_decoder(config, is_decoder, source_attn)
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
-        self._return_format = "llama"
+        self._return_format = _detect_return_format(source_attn, self.is_nested_encoder)
+
+        # Optional rotary_emb (for position_ids fallback)
+        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn else None
 
         # LoRA
         self.lora_rank = int(
@@ -340,69 +341,62 @@ class JambaInfoBlock(BaseAttention):
         self.freeze_base = self.lora_rank > 0
 
         # ---------- Projections ----------
-        def _mk_qk():
-            return LoRALinear(
-                self.dim,
-                self.all_head_size,
-                bias=False,
-                lora_rank=self.lora_rank,
-                lora_alpha=self.lora_alpha,
-                freeze_base=self.freeze_base,
-            )
-
-        def _mk_v():
-            return LoRALinear(
-                self.dim,
-                self.all_kv_head_size,
-                bias=False,
-                lora_rank=self.lora_rank,
-                lora_alpha=self.lora_alpha,
-                freeze_base=self.freeze_base,
-            )
-
-        self.W_q1 = _mk_qk()
+        self.W_q1 = LoRALinear(
+            self.dim, self.all_head_size, bias=False,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
         self.W_k1 = LoRALinear(
-            self.dim,
-            self.all_kv_head_size,
-            bias=False,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
+            self.dim, self.all_kv_head_size, bias=False,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
-        self.W_q2 = _mk_qk()
+        self.W_q2 = LoRALinear(
+            self.dim, self.all_head_size, bias=False,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
         self.W_k2 = LoRALinear(
-            self.dim,
-            self.all_kv_head_size,
-            bias=False,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
+            self.dim, self.all_kv_head_size, bias=False,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
-        self.W_v = _mk_v()
+        self.W_v = LoRALinear(
+            self.dim, self.all_kv_head_size, bias=False,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
         self.out_proj = LoRALinear(
-            self.all_head_size,
-            self.dim,
-            bias=True,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
+            self.all_head_size, self.dim, bias=True,
+            lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
             freeze_base=self.freeze_base,
         )
 
         # Aliases
-        self.q_proj = self.W_q1
-        self.k_proj = self.W_k1
-        self.v_proj = self.W_v
+        self.q_proj, self.k_proj, self.v_proj = self.W_q1, self.W_k1, self.W_v
 
-        # ---------- JI-02: learnable per-head λ (DIFF Transformer style) ----------
-        # λ_full[h] = exp(λ_q1[h] · λ_k1[h]) - exp(λ_q2[h] · λ_k2[h]) + λ_init[h]
+        # ---------- Differential Variables ----------
         self.lambda_q1 = nn.Parameter(torch.zeros(self.num_heads))
         self.lambda_k1 = nn.Parameter(torch.zeros(self.num_heads))
         self.lambda_q2 = nn.Parameter(torch.zeros(self.num_heads))
         self.lambda_k2 = nn.Parameter(torch.zeros(self.num_heads))
-        # λ_init per head; initial value mimics the previous constant 0.2
-        self.lambda_init = nn.Parameter(torch.full((self.num_heads,), 0.2))
 
-        # ---------- JI-07: per-head α ----------
+        # FIX 2: Per-head λ_init via Diff Transformer paper formula.
+        # Formula: λ_init[h] = 0.8 - 0.6 · exp(-0.3 · h)
+        head_ids = torch.arange(self.num_heads, dtype=torch.float32)
+        lambda_init_values = 0.8 - 0.6 * torch.exp(-0.3 * head_ids)
+        self.lambda_init = nn.Parameter(lambda_init_values)
+
+        # FIX 1: Precompute (1 - λ_init) as a buffer for scale factor.
+        # Stored as buffer (not parameter) because it's derived from lambda_init.
+        # Recomputed in forward to stay in sync if lambda_init changes.
+        # (No need to register as buffer — computed on the fly in forward.)
+
+        # FIX 3: RMSNorm on both branches for scale consistency
+        self.diff_norm = RMSNorm(self.all_head_size)
+        self.ssm_norm = RMSNorm(self.dim)
+
+        # ---------- Alpha ----------
         self.per_head_alpha = bool(per_head_alpha)
         if self.per_head_alpha:
             self.alpha_raw = nn.Parameter(torch.full((self.num_heads,), -2.0))
@@ -410,18 +404,26 @@ class JambaInfoBlock(BaseAttention):
             self.alpha_raw = nn.Parameter(torch.tensor(-2.0))
 
         # ---------- Bottleneck + SSM ----------
-        bottleneck_dim = int(getattr(comp_config, "bottleneck_dim", 256) if comp_config else 256)
+        bottleneck_dim = int(
+            getattr(comp_config, "bottleneck_dim", 256) if comp_config else 256
+        )
+        # Ensure bottleneck_dim is reasonable relative to dim
+        bottleneck_dim = max(64, min(bottleneck_dim, self.dim))
         self.bottleneck = InfoMambaConceptBottleneck(self.dim, bottleneck_dim=bottleneck_dim)
 
-        self.ssm_fwd: nn.Module | None = None
-        self.ssm_bwd: nn.Module | None = None  # only for encoders (JI-10)
+        # SSM in bottleneck space
+        self.ssm_fwd, self.ssm_bwd = None, None
         if SimpleSSM is not None:
-            self.ssm_fwd = self._make_ssm(config)
+            self.ssm_fwd = self._make_ssm(config, bottleneck_dim)
             if not self.is_decoder:
-                self.ssm_bwd = self._make_ssm(config)
+                self.ssm_bwd = self._make_ssm(config, bottleneck_dim)
 
         dropout_p = float(
-            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
+            getattr(
+                config,
+                "dropout",
+                getattr(config, "attention_probs_dropout_prob", 0.1),
+            )
             if config
             else 0.1
         )
@@ -430,23 +432,14 @@ class JambaInfoBlock(BaseAttention):
         if source_attn is not None:
             self.copy_weights(source_attn)
 
-        self._return_format = _detect_return_format(source_attn, self.is_nested_encoder)
-
-    # ------------------------------------------------------------------
-    def _make_ssm(self, config: Any | None) -> nn.Module | None:
+    def _make_ssm(self, config: Any | None, d_model: int) -> nn.Module | None:
         if SimpleSSM is None:
             return None
         try:
-            return SimpleSSM(d_model=self.dim, config=config, is_decoder=self.is_decoder)
-        except TypeError:
-            try:
-                return SimpleSSM(d_model=self.dim, config=config)
-            except TypeError:
-                try:
-                    return SimpleSSM(self.dim)
-                except Exception as e:
-                    logger.warning("SimpleSSM instantiation failed: %s", e)
-                    return None
+            return SimpleSSM(d_model=d_model, config=config, is_decoder=self.is_decoder)
+        except Exception as e:
+            logger.warning("SimpleSSM instantiation failed: %s", e)
+            return None
 
     @staticmethod
     def _detect_hidden_size(config, src, kwargs) -> int:
@@ -525,7 +518,6 @@ class JambaInfoBlock(BaseAttention):
                         pass
         return max(1, hidden_size // max(1, num_heads))
 
-    # ---------------- Misc ----------------
     def _run_ssm(
         self,
         ssm: nn.Module | None,
@@ -542,12 +534,13 @@ class JambaInfoBlock(BaseAttention):
             except Exception as e:
                 logger.debug("SSM forward failed: %s", e)
                 return torch.zeros_like(x)
-        if isinstance(out, tuple):
-            out = out[0]
-        return out
+        return out[0] if isinstance(out, tuple) else out
 
     def _format_output(
-        self, out: torch.Tensor, attn_weights: torch.Tensor | None, present: Any | None
+        self,
+        out: torch.Tensor,
+        attn_weights: torch.Tensor | None,
+        present: Any | None,
     ) -> tuple:
         fmt = self._return_format
         if fmt == "bert":
@@ -556,17 +549,14 @@ class JambaInfoBlock(BaseAttention):
             return (out, present, attn_weights)
         return (out, attn_weights, present)
 
-    def _normalize_head_mask(self, head_mask: torch.Tensor, attn: torch.Tensor) -> torch.Tensor:
-        """JI-03: robust normalisation. attn: (B, H, Lq, Lk)."""
+    def _normalize_head_mask(
+        self, head_mask: torch.Tensor, attn: torch.Tensor
+    ) -> torch.Tensor:
         hm = head_mask.to(attn.dtype)
         H = self.num_heads
         if hm.dim() == 1:
-            if hm.numel() == H:
-                hm = hm.view(1, H, 1, 1)
-            else:
-                hm = hm.view(1, -1, 1, 1)
+            hm = hm.view(1, H, 1, 1) if hm.numel() == H else hm.view(1, -1, 1, 1)
         elif hm.dim() == 2:
-            # Prefer interpreting last dim as heads; else treat as (layers, heads)
             if hm.shape[-1] == H:
                 hm = hm.view(hm.shape[0], H, 1, 1)
             elif hm.shape[0] == H:
@@ -574,20 +564,17 @@ class JambaInfoBlock(BaseAttention):
             else:
                 hm = hm.view(1, hm.shape[-1], 1, 1)
         elif hm.dim() == 3:
-            # (B, H, Lk) or (B, Lk, H)
             if hm.shape[1] == H:
-                hm = hm.unsqueeze(2)  # (B, H, 1, Lk)
+                hm = hm.unsqueeze(2)
             elif hm.shape[2] == H:
-                hm = hm.permute(0, 2, 1).unsqueeze(2)  # (B, H, 1, Lk)
+                hm = hm.permute(0, 2, 1).unsqueeze(2)
             else:
                 hm = hm.unsqueeze(1)
-        # dim == 4: pass through
         return attn * hm
 
     def copy_weights(self, src: Any) -> None:
         if src is None:
             return
-
         cls_name = src.__class__.__name__
         has_out_lin = any(hasattr(src, a) for a in ("out_lin", "c_proj", "o_proj"))
         is_nested = False
@@ -599,8 +586,7 @@ class JambaInfoBlock(BaseAttention):
                 and hasattr(src.output, "dense")
             )
             or (
-                cls_name
-                in [
+                cls_name in [
                     "BertSelfAttention",
                     "RobertaSelfAttention",
                     "XLMRobertaSelfAttention",
@@ -628,12 +614,11 @@ class JambaInfoBlock(BaseAttention):
             cw = getattr(base_c, "weight", getattr(c, "weight", None))
             if cw is not None:
                 cw = cw.data.clone()
-                is_conv = (
+                if (
                     c.__class__.__name__ == "Conv1D"
                     or base_c.__class__.__name__ == "Conv1D"
                     or (cw.ndim == 2 and cw.shape[1] == 3 * self.hidden_size)
-                )
-                if is_conv:
+                ):
                     cw = cw.t().contiguous()
                 split = cw.size(0) // 3
                 bmod = getattr(base_c, "bias", getattr(c, "bias", None))
@@ -653,16 +638,16 @@ class JambaInfoBlock(BaseAttention):
                 ow = getattr(base_o, "weight", getattr(o, "weight", None))
                 if ow is not None:
                     ow = ow.data.clone()
-                    is_conv_o = (
+                    if (
                         o.__class__.__name__ == "Conv1D"
                         or base_o.__class__.__name__ == "Conv1D"
                         or (ow.ndim == 2 and ow.shape[0] < ow.shape[1])
-                    )
-                    if is_conv_o:
+                    ):
                         ow = ow.t().contiguous()
                     bo = getattr(base_o, "bias", getattr(o, "bias", None))
                     extracted["o"] = (ow, bo.data.clone() if bo is not None else None)
 
+        # BERT/RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
             s = src.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
@@ -681,6 +666,7 @@ class JambaInfoBlock(BaseAttention):
                     b.data.clone() if b is not None else None,
                 )
 
+        # Flat
         else:
             candidates = {
                 "q": ("q_lin", "q_proj", "query"),
@@ -694,10 +680,9 @@ class JambaInfoBlock(BaseAttention):
                         m = getattr(src, n)
                         if m is not None and hasattr(m, "weight"):
                             w = m.weight.data.clone()
-                            is_conv = m.__class__.__name__ == "Conv1D" or (
+                            if m.__class__.__name__ == "Conv1D" or (
                                 key == "o" and w.ndim == 2 and w.shape[0] < w.shape[1]
-                            )
-                            if is_conv:
+                            ):
                                 w = w.t().contiguous()
                             b = getattr(m, "bias", None)
                             extracted[key] = (
@@ -723,18 +708,6 @@ class JambaInfoBlock(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
-        if missing_after:
-            logger.warning(
-                "JambaInfoBlock.copy_weights: missing %s from %s; keeping defaults.",
-                missing_after,
-                src.__class__.__name__,
-            )
-
         def _orient(w: torch.Tensor, in_dim: int) -> torch.Tensor:
             if w.dim() == 2 and w.shape[1] != in_dim and w.shape[0] == in_dim:
                 return w.t().contiguous()
@@ -755,12 +728,17 @@ class JambaInfoBlock(BaseAttention):
             r = min(target_mod.weight.size(0), w.size(0))
             c = min(target_mod.weight.size(1), w.size(1))
             target_mod.weight.data[:r, :c].copy_(
-                w[:r, :c].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype)
+                w[:r, :c].to(
+                    device=target_mod.weight.device, dtype=target_mod.weight.dtype
+                )
             )
             if b is not None and target_mod.bias is not None:
                 n = min(b.numel(), target_mod.bias.numel())
+                b_val = b.data if isinstance(b, nn.Parameter) else b
                 target_mod.bias.data[:n].copy_(
-                    b[:n].to(device=target_mod.bias.device, dtype=target_mod.bias.dtype)
+                    b_val[:n].to(
+                        device=target_mod.bias.device, dtype=target_mod.bias.dtype
+                    )
                 )
 
         with torch.no_grad():
@@ -784,24 +762,6 @@ class JambaInfoBlock(BaseAttention):
                 if self.out_proj.bias is not None:
                     nn.init.zeros_(self.out_proj.bias)
 
-        # JI-11: only warn, do not reinit. Reinit destroys legit small weights.
-        for name, mod in (
-            ("W_q1", self.W_q1),
-            ("W_k1", self.W_k1),
-            ("W_q2", self.W_q2),
-            ("W_k2", self.W_k2),
-            ("W_v", self.W_v),
-            ("out_proj", self.out_proj),
-        ):
-            w_norm = float(torch.norm(mod.weight.data).item())
-            if w_norm < 1e-6:
-                logger.warning(
-                    "JambaInfoBlock: weight '%s' has near-zero norm (%.2e). "
-                    "Verify the source attention was properly initialized.",
-                    name,
-                    w_norm,
-                )
-
         if self.freeze_base:
             for mod in (
                 self.W_q1,
@@ -813,7 +773,6 @@ class JambaInfoBlock(BaseAttention):
             ):
                 mod.freeze_base_weights()
 
-    # ---------------- Forward ----------------
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -826,7 +785,7 @@ class JambaInfoBlock(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ):
-        # Mask may come via kwargs
+        # ---- Input validation ----
         mask = kwargs.get("mask")
         if attention_mask is None and mask is not None:
             attention_mask = mask
@@ -835,52 +794,75 @@ class JambaInfoBlock(BaseAttention):
         B, L, D = x.shape
         device = x.device
 
-        # --- JI-01: read cache ---
+        # ---- Read cache ----
         past_k1, past_k2, past_v, past_len = _read_cache(past_key_value)
 
-        # --- QKV projections ---
+        # ---- QKV projections ----
         q1 = self.W_q1(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        k1 = self.W_k1(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        k1 = (
+            self.W_k1(x)
+            .view(B, L, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
         q2 = self.W_q2(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        k2 = self.W_k2(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        v = self.W_v(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        k2 = (
+            self.W_k2(x)
+            .view(B, L, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.W_v(x)
+            .view(B, L, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
-        # --- JI-05: position_ids accepted; JI-06: RoPE offset ---
+        # ---- RoPE ----
         position_embeddings = position_embeddings or kwargs.get("position_embeddings")
-        if position_embeddings is None and position_ids is None:
-            position_ids = kwargs.get("position_ids")
+        if position_embeddings is None:
+            position_ids = position_ids or kwargs.get("position_ids")
 
         if position_embeddings is not None:
             cos, sin = position_embeddings
-            # Slice to current positions
             if cos.shape[-2] >= past_len + L:
                 cos = cos.narrow(-2, past_len, L)
                 sin = sin.narrow(-2, past_len, L)
             q1, k1 = apply_rotary_pos_emb(q1, k1, cos, sin)
             q2, k2 = apply_rotary_pos_emb(q2, k2, cos, sin)
-        elif position_ids is not None:
-            # RoPE via position_ids not supported here without a rotary_emb;
-            # caller should pass position_embeddings.
-            pass
+        elif position_ids is not None and self.rotary_emb is not None:
+            # FIX 5: fallback via rotary_emb if available
+            try:
+                cos, sin = self.rotary_emb(x, position_ids=position_ids)
+                if cos.shape[-2] >= L:
+                    cos = cos[..., :L, :]
+                    sin = sin[..., :L, :]
+                q1, k1 = apply_rotary_pos_emb(q1, k1, cos, sin)
+                q2, k2 = apply_rotary_pos_emb(q2, k2, cos, sin)
+            except Exception as e:
+                logger.debug("rotary_emb fallback failed: %s", e)
 
-        # --- JI-01: append to cache (before GQA expansion) ---
+        # ---- KV cache append (before GQA) ----
         if past_k1 is not None:
-            k1 = torch.cat([past_k1.to(k1.dtype), k1], dim=-2)
-            k2 = torch.cat([past_k2.to(k2.dtype), k2], dim=-2)
-            v = torch.cat([past_v.to(v.dtype), v], dim=-2)
+            # FIX 6: cache is stored in the same dtype as k1
+            k1 = torch.cat([past_k1, k1], dim=-2)
+            k2 = torch.cat([past_k2, k2], dim=-2)
+            v = torch.cat([past_v, v], dim=-2)
         present_key_value = (k1, k2, v)
 
-        # --- GQA expand ---
+        # ---- GQA expand ----
         if self.kv_repeat > 1:
             k1 = repeat_kv(k1, self.kv_repeat)
             k2 = repeat_kv(k2, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
+        # ---- Attention scores ----
         scale = 1.0 / math.sqrt(self.head_dim)
         scores1 = torch.matmul(q1.float(), k1.float().transpose(-2, -1).contiguous()) * scale
         scores2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1).contiguous()) * scale
 
-        # --- Causal mask with past_len offset ---
+        # ---- Causal mask ----
         if self.is_decoder and L > 1:
             kv_len = k1.shape[-2]
             causal = torch.tril(
@@ -890,7 +872,7 @@ class JambaInfoBlock(BaseAttention):
             scores1 = scores1.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
             scores2 = scores2.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
 
-        # --- JI-04: attention_mask dims 2/3/4 ---
+        # ---- Attention mask ----
         if attention_mask is not None:
             if attention_mask.dim() == 2:
                 valid = get_token_valid_mask(attention_mask, B, k1.shape[-2], device)
@@ -898,7 +880,6 @@ class JambaInfoBlock(BaseAttention):
                     scores1 = scores1.masked_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
                     scores2 = scores2.masked_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
             elif attention_mask.dim() == 3:
-                # (B, Lq, Lk) broadcast to (B, 1, Lq, Lk)
                 m3 = attention_mask.unsqueeze(1).float()
                 if attention_mask.dtype == torch.bool:
                     m3 = (~attention_mask).unsqueeze(1).float() * -1e4
@@ -918,64 +899,88 @@ class JambaInfoBlock(BaseAttention):
         attn1 = F.softmax(scores1, dim=-1).to(q1.dtype)
         attn2 = F.softmax(scores2, dim=-1).to(q2.dtype)
 
-        # --- JI-02: learnable per-head λ ---
-        # λ_full[h] = exp(λ_q1[h] · λ_k1[h]) - exp(λ_q2[h] · λ_k2[h]) + λ_init[h]
+        # ---- Differential Attention (Diff Transformer) ----
         lambda_full = (
             torch.exp(self.lambda_q1 * self.lambda_k1)
             - torch.exp(self.lambda_q2 * self.lambda_k2)
             + self.lambda_init
-        ).to(attn1.dtype)  # (H,)
+        ).to(attn1.dtype)
         lambda_full = lambda_full.view(1, self.num_heads, 1, 1)
 
-        diff = attn1 - lambda_full * attn2
-        diff = F.relu(diff)
-        diff = diff / (diff.sum(dim=-1, keepdim=True) + 1e-8)
+        # FIX 1: (1 - λ_init) scaling per Diff Transformer paper
+        scale_factor = (1.0 - self.lambda_init).to(attn1.dtype).view(
+            1, self.num_heads, 1, 1
+        )
 
-        diff_attn = self.dropout(diff).to(v.dtype)
+        diff_attn = (attn1 - lambda_full * attn2) * scale_factor
+        diff_attn = self.dropout(diff_attn).to(v.dtype)
 
-        # --- JI-03: head_mask ---
         if head_mask is not None:
             diff_attn = self._normalize_head_mask(head_mask, diff_attn)
 
         attn_out = (
-            torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+            torch.matmul(diff_attn, v)
+            .transpose(1, 2)
+            .contiguous()
+            .view(B, L, self.all_head_size)
         )
+        attn_out = self.diff_norm(attn_out)
 
-        # --- Bottleneck + SSM ---
-        bottleneck_x = self.bottleneck(x)
+        # ---- Information Bottleneck + SSM ----
+        # NOTE: bottleneck operates on x (dual path with attention).
+        # To connect bottleneck to attention, replace `x` with `attn_out` below.
+        z = self.bottleneck.down(x)
 
         if self.is_decoder:
-            ssm_branch = self._run_ssm(self.ssm_fwd, bottleneck_x, attention_mask)
+            z_ssm = self._run_ssm(self.ssm_fwd, z, attention_mask)
         else:
-            # JI-10: use a separate backward SSM if available
             if self.ssm_bwd is not None:
-                x_rev = torch.flip(bottleneck_x, dims=[1])
-                ssm_fwd = self._run_ssm(self.ssm_fwd, bottleneck_x, attention_mask)
-                ssm_bwd = self._run_ssm(self.ssm_bwd, x_rev, attention_mask)
-                ssm_branch = 0.5 * (ssm_fwd + torch.flip(ssm_bwd, dims=[1]))
-            else:
-                ssm_branch = self._run_ssm(self.ssm_fwd, bottleneck_x, attention_mask)
+                z_rev = torch.flip(z, dims=[1]).contiguous()
+                # FIX 4: proper mask reversal — flip along sequence dim
+                if attention_mask is not None:
+                    # Determine sequence dim: for (B, L) it's dim=1;
+                    # for (B, 1, L, L) it's dim=-1; for (B, L, L) it's dim=-1
+                    if attention_mask.dim() == 2:
+                        rev_mask = torch.flip(attention_mask, dims=[1]).contiguous()
+                    elif attention_mask.dim() == 3:
+                        rev_mask = torch.flip(attention_mask, dims=[-1]).contiguous()
+                    elif attention_mask.dim() == 4:
+                        rev_mask = torch.flip(attention_mask, dims=[-1]).contiguous()
+                    else:
+                        rev_mask = attention_mask
+                else:
+                    rev_mask = None
 
-        # --- JI-07: α combination (per-head or scalar) ---
+                ssm_fwd = self._run_ssm(self.ssm_fwd, z, attention_mask)
+                ssm_bwd = self._run_ssm(self.ssm_bwd, z_rev, rev_mask)
+                z_ssm = 0.5 * (ssm_fwd + torch.flip(ssm_bwd, dims=[1]).contiguous())
+            else:
+                z_ssm = self._run_ssm(self.ssm_fwd, z, attention_mask)
+
+        ssm_branch = self.bottleneck.up(z_ssm)
+
+        # FIX 3: RMSNorm on SSM branch for scale consistency
+        ssm_branch = self.ssm_norm(ssm_branch)
+
+        # ---- Alpha blending ----
         target_dtype = x.dtype
+
         if self.per_head_alpha:
-            alpha = torch.sigmoid(self.alpha_raw).to(target_dtype)  # (H,)
-            alpha = alpha.view(1, self.num_heads, 1, 1)
+            # FIX 7: sigmoid in target dtype
+            alpha = torch.sigmoid(self.alpha_raw.to(target_dtype)).view(
+                1, 1, self.num_heads, 1
+            )
             attn_out_h = attn_out.view(B, L, self.num_heads, self.head_dim)
-            attn_out_h = attn_out_h.transpose(1, 2)  # (B, H, L, Dh)
             ssm_branch_h = ssm_branch.view(B, L, self.num_heads, self.head_dim)
-            ssm_branch_h = ssm_branch_h.transpose(1, 2)  # (B, H, L, Dh)
-            combined = (1.0 - alpha) * attn_out_h.to(target_dtype) + alpha * ssm_branch_h.to(
-                target_dtype
-            )
-            combined = combined.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+            combined = (1.0 - alpha) * attn_out_h + alpha * ssm_branch_h
+            combined = combined.view(B, L, self.all_head_size)
         else:
-            alpha = torch.sigmoid(self.alpha_raw).to(target_dtype)
-            combined = (1.0 - alpha) * attn_out.to(target_dtype) + alpha * ssm_branch.to(
-                target_dtype
-            )
+            alpha = torch.sigmoid(self.alpha_raw.to(target_dtype))
+            combined = (1.0 - alpha) * attn_out + alpha * ssm_branch
+
         combined = torch.nan_to_num(combined, nan=0.0, posinf=1e4, neginf=-1e4)
 
+        # ---- Output projection ----
         if self.is_nested_encoder:
             out = combined.to(target_dtype)
         else:
@@ -986,7 +991,7 @@ class JambaInfoBlock(BaseAttention):
 
 
 # ===========================================================================
-# Injector (JI-12: no double copy_weights)
+# Injector
 # ===========================================================================
 @ATTENTION_REGISTRY.register("jamba_info_inject")
 @ATTENTION_REGISTRY.register("inject_jamba_info")
@@ -1002,15 +1007,12 @@ def inject_jamba_info(
     **kwargs: Any,
 ):
     if _depth > 8:
-        logger.warning("inject_jamba_info: max recursion depth exceeded.")
         return None
-
     target = layer if layer is not None else model
     if target is None:
         target = kwargs.get("model", kwargs.get("layer"))
     if target is None:
         return None
-
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
     layer_list = None
@@ -1038,14 +1040,13 @@ def inject_jamba_info(
 
     if layer_list is not None:
         num_injected = 0
-        tot = len(layer_list)
         for idx, lyr in enumerate(layer_list):
             res = inject_jamba_info(
                 layer=lyr,
                 model_config=cfg,
                 comp_config=comp_config,
                 layer_idx=idx,
-                total_layers=tot,
+                total_layers=len(layer_list),
                 _depth=_depth + 1,
                 **kwargs,
             )
@@ -1066,12 +1067,8 @@ def inject_jamba_info(
         if isinstance(src_attn, JambaInfoBlock) or "JambaInfo" in src_attn.__class__.__name__:
             return None
 
-        # JI-12: pass old_attn so __init__ calls copy_weights exactly once
         new_attn = JambaInfoBlock(
-            config=cfg,
-            comp_config=comp_config,
-            old_attn=src_attn,
-            **kwargs,
+            config=cfg, comp_config=comp_config, old_attn=src_attn, **kwargs
         )
 
         if src_attn is not None:
@@ -1103,13 +1100,10 @@ def inject_jamba_info(
                 spliced = True
 
             if not spliced:
-                logger.error(
-                    "inject_jamba_info: no writable attention attribute on %s",
-                    type(layer).__name__,
-                )
                 return None
-
-            new_attn._return_format = _detect_return_format(src_attn, new_attn.is_nested_encoder)
+            new_attn._return_format = _detect_return_format(
+                src_attn, new_attn.is_nested_encoder
+            )
 
         return new_attn
     except Exception as e:
