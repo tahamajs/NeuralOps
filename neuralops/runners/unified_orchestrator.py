@@ -58,6 +58,8 @@ def run_orchestrator(module_key: str, default_args: list = None):
             module_key,
             "--output_dir",
             str(out_dir),
+            "--finetune_steps",
+            "350",
         ] + extra_args
         logger.info("Executing: %s", " ".join(cmd))
         t0 = time.time()
