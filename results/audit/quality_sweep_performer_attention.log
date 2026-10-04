@@ -1,0 +1,26 @@
+2026-10-04 18:51:17,214 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=8 (explicit_parallel=False, explicit_batch=False)
+2026-10-04 18:51:17,247 [INFO] neuralops.attentions.gated_delta_net: GDN: Triton scan available
+2026-10-04 18:51:17,392 [INFO] neuralops.attentions.hgrn2_layer: HGRN2: Triton scan available
+2026-10-04 18:51:22,422 [INFO] QwenQualitySweep: Running 1 attention modules in-memory sequentially
+2026-10-04 18:51:47,753 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights:   7%|▋         | 11/148 [00:00<00:01, 93.51it/s]Loading weights:  16%|█▌        | 24/148 [00:00<00:01, 113.49it/s]Loading weights:  45%|████▍     | 66/148 [00:00<00:00, 243.44it/s]Loading weights:  91%|█████████ | 135/148 [00:00<00:00, 408.96it/s]Loading weights: 100%|██████████| 148/148 [00:00<00:00, 347.85it/s]
+[transformers] [1mGPT2ForSequenceClassification LOAD REPORT[0m from: gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-10-04 18:52:37,233 [INFO] QwenQualitySweep: model=gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-10-04 18:52:37,978 [INFO] QwenQualitySweep: detected model family=gpt2 adapter={'family': 'gpt', 'raw_family': 'gpt2', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-10-04 18:52:39,015 [INFO] QwenQualitySweep: ================================================================================
+2026-10-04 18:52:39,097 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-10-04 18:52:39,097 [INFO] QwenQualitySweep:   model:             gpt2
+2026-10-04 18:52:41,743 [INFO] QwenQualitySweep:   family:            gpt2
+2026-10-04 18:52:41,743 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-10-04 18:52:41,750 [INFO] QwenQualitySweep:   batch_size:        8
+2026-10-04 18:52:41,757 [INFO] QwenQualitySweep:   recovery_steps:    50
+2026-10-04 18:52:41,776 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-10-04 18:52:41,787 [INFO] QwenQualitySweep:   precision:         fp16
+2026-10-04 18:52:41,787 [INFO] QwenQualitySweep: ================================================================================
+2026-10-04 18:52:42,052 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-04)
