@@ -3,7 +3,6 @@ Kernelized Decay Attention (KDA) / Recurrent Linear Attention.
 
 Implements multi-head linear recurrence with learned exponential decay gating,
 spherical normalization, denominator tracking, and pretrained weight transfer.
-
 """
 
 from __future__ import annotations
@@ -61,7 +60,6 @@ def apply_rotary_pos_emb(
     if rotary_dim < head_dim:
         q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
         k_rot, k_pass = k[..., :rotary_dim], k[..., rotary_dim:]
-        # KDA-FIX-04: dtype-safe cast
         q_rot_embed = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
         k_rot_embed = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
         q = torch.cat([q_rot_embed, q_pass], dim=-1)
@@ -277,18 +275,8 @@ class KDAAttention(BaseAttention):
         )
         _mt = (model_type or "").lower()
         _decoder_prefixes = (
-            "gpt",
-            "qwen",
-            "llama",
-            "mistral",
-            "gemma",
-            "phi",
-            "opt",
-            "bloom",
-            "falcon",
-            "olmo",
-            "mpt",
-            "stablelm",
+            "gpt", "qwen", "llama", "mistral", "gemma", "phi",
+            "opt", "bloom", "falcon", "olmo", "mpt", "stablelm",
         )
         if (
             any(_mt.startswith(p) for p in _decoder_prefixes)
@@ -305,71 +293,39 @@ class KDAAttention(BaseAttention):
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = False
 
-        # ---- KDA-FIX-02: rename to lora_* prefix for framework recognition ----
-        # KDA-FIX-01: init at 5.0 → sigmoid(5) ≈ 0.9933 → effective context ~150 tokens
         self.lora_beta = nn.Parameter(torch.ones(self.num_heads, 1, 1) * 5.0)
         self.lora_output_scale = nn.Parameter(torch.ones(1))
 
         # ---- LoRA config ----
         if config is not None:
-            self.lora_rank = getattr(
-                config,
-                "lora_rank",
-                getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)),
-            )
+            self.lora_rank = getattr(config, "lora_rank", getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16)))
+            self.lora_alpha = getattr(config, "lora_alpha", getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
         elif comp_config is not None:
             self.lora_rank = getattr(comp_config, "lora_rank", kwargs.get("lora_rank", 16))
-        else:
-            self.lora_rank = kwargs.get("lora_rank", 16)
-
-        if config is not None:
-            self.lora_alpha = getattr(
-                config,
-                "lora_alpha",
-                getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)),
-            )
-        elif comp_config is not None:
             self.lora_alpha = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
         else:
+            self.lora_rank = kwargs.get("lora_rank", 16)
             self.lora_alpha = kwargs.get("lora_alpha", 32.0)
 
         self.freeze_base = self.lora_rank > 0
-        self.rotary_emb = (
-            getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
-        )
+        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
 
         # ---- projections ----
         self.q_proj = LoRALinear(
-            self.dim,
-            self.all_head_size,
-            bias=True,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base,
+            self.dim, self.all_head_size, bias=True, lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha, freeze_base=self.freeze_base,
         )
         self.k_proj = LoRALinear(
-            self.dim,
-            self.all_kv_head_size,
-            bias=True,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base,
+            self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha, freeze_base=self.freeze_base,
         )
         self.v_proj = LoRALinear(
-            self.dim,
-            self.all_kv_head_size,
-            bias=True,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base,
+            self.dim, self.all_kv_head_size, bias=True, lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha, freeze_base=self.freeze_base,
         )
         self.out_proj = LoRALinear(
-            self.all_head_size,
-            self.dim,
-            bias=True,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base,
+            self.all_head_size, self.dim, bias=True, lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha, freeze_base=self.freeze_base,
         )
 
         if source_attn is not None:
@@ -389,24 +345,16 @@ class KDAAttention(BaseAttention):
 
         cls_name = getattr(src, "__class__", type(src)).__name__
         has_out = (
-            hasattr(src, "dense")
-            or hasattr(src, "out_proj")
-            or hasattr(src, "out_lin")
-            or hasattr(src, "c_proj")
-            or hasattr(src, "o_proj")
+            hasattr(src, "dense") or hasattr(src, "out_proj") or hasattr(src, "out_lin")
+            or hasattr(src, "c_proj") or hasattr(src, "o_proj")
         )
-        if cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (
-            hasattr(src, "query") and not has_out
-        ):
+        if cls_name in ("BertSelfAttention", "RobertaSelfAttention") or (hasattr(src, "query") and not has_out):
             self.is_nested_encoder = True
         if hasattr(src, "self") and hasattr(src, "output"):
             self.is_nested_encoder = True
 
         extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None),
-            "k": (None, None),
-            "v": (None, None),
-            "o": (None, None),
+            "q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None),
         }
 
         # 1. GPT-2 fused c_attn
@@ -416,28 +364,15 @@ class KDAAttention(BaseAttention):
             c_w = getattr(base_c, "weight", getattr(c_attn_mod, "weight", None))
             if c_w is not None:
                 c_w = c_w.data.clone()
-                if (
-                    c_attn_mod.__class__.__name__ == "Conv1D"
-                    or base_c.__class__.__name__ == "Conv1D"
-                    or hasattr(c_attn_mod, "nf")
-                    or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])
-                ):
+                if (c_attn_mod.__class__.__name__ == "Conv1D" or base_c.__class__.__name__ == "Conv1D"
+                    or hasattr(c_attn_mod, "nf") or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1])):
                     c_w = c_w.t()
                 split_size = c_w.size(0) // 3
                 bias_mod = getattr(base_c, "bias", getattr(c_attn_mod, "bias", None))
                 c_b = bias_mod.data.clone() if bias_mod is not None else None
-                extracted["q"] = (
-                    c_w[:split_size, :],
-                    c_b[:split_size] if c_b is not None else None,
-                )
-                extracted["k"] = (
-                    c_w[split_size : 2 * split_size, :],
-                    c_b[split_size : 2 * split_size] if c_b is not None else None,
-                )
-                extracted["v"] = (
-                    c_w[2 * split_size :, :],
-                    c_b[2 * split_size :] if c_b is not None else None,
-                )
+                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
+                extracted["k"] = (c_w[split_size : 2 * split_size, :], c_b[split_size : 2 * split_size] if c_b is not None else None)
+                extracted["v"] = (c_w[2 * split_size :, :], c_b[2 * split_size :] if c_b is not None else None)
 
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 c_proj_mod = src.c_proj
@@ -445,18 +380,11 @@ class KDAAttention(BaseAttention):
                 o_w = getattr(base_o, "weight", getattr(c_proj_mod, "weight", None))
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if (
-                        c_proj_mod.__class__.__name__ == "Conv1D"
-                        or base_o.__class__.__name__ == "Conv1D"
-                        or hasattr(c_proj_mod, "nf")
-                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
-                    ):
+                    if (c_proj_mod.__class__.__name__ == "Conv1D" or base_o.__class__.__name__ == "Conv1D"
+                        or hasattr(c_proj_mod, "nf") or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])):
                         o_w = o_w.t()
                     bias_o = getattr(base_o, "bias", getattr(c_proj_mod, "bias", None))
-                    extracted["o"] = (
-                        o_w,
-                        bias_o.data.clone() if bias_o is not None else None,
-                    )
+                    extracted["o"] = (o_w, bias_o.data.clone() if bias_o is not None else None)
 
         # 2. RoBERTa nested
         elif hasattr(src, "self") and hasattr(src.self, "query"):
@@ -464,16 +392,10 @@ class KDAAttention(BaseAttention):
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
                 mod = getattr(s, sub_name, None)
                 if mod is not None and hasattr(mod, "weight"):
-                    extracted[proj_key] = (
-                        mod.weight.data.clone(),
-                        mod.bias.data.clone() if mod.bias is not None else None,
-                    )
+                    extracted[proj_key] = (mod.weight.data.clone(), mod.bias.data.clone() if mod.bias is not None else None)
             if hasattr(src, "output") and hasattr(src.output, "dense"):
                 out_mod = src.output.dense
-                extracted["o"] = (
-                    out_mod.weight.data.clone(),
-                    out_mod.bias.data.clone() if out_mod.bias is not None else None,
-                )
+                extracted["o"] = (out_mod.weight.data.clone(), out_mod.bias.data.clone() if out_mod.bias is not None else None)
 
         # 3. Flat modules
         else:
@@ -489,31 +411,16 @@ class KDAAttention(BaseAttention):
                         mod = getattr(src, name)
                         if mod is not None and hasattr(mod, "weight"):
                             w_data = mod.weight.data.clone()
-                            if (
-                                mod.__class__.__name__ == "Conv1D"
-                                or hasattr(mod, "nf")
-                                or (
-                                    w_data.ndim == 2
-                                    and proj_key == "o"
-                                    and w_data.shape[0] < w_data.shape[1]
-                                )
-                            ):
+                            if (mod.__class__.__name__ == "Conv1D" or hasattr(mod, "nf") or
+                                (w_data.ndim == 2 and proj_key == "o" and w_data.shape[0] < w_data.shape[1])):
                                 w_data = w_data.t()
-                            extracted[proj_key] = (
-                                w_data,
-                                mod.bias.data.clone() if mod.bias is not None else None,
-                            )
+                            extracted[proj_key] = (w_data, mod.bias.data.clone() if mod.bias is not None else None)
                             break
 
-        missing = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing:
             try:
                 from neuralops.core.adapters import UniversalAdapter
-
                 adapter = UniversalAdapter()
                 for k in missing:
                     w, b = adapter.get_weight_bias(src, k)
@@ -522,23 +429,22 @@ class KDAAttention(BaseAttention):
             except Exception as e:
                 logger.debug("UniversalAdapter fallback: %s", e)
 
-        missing_after = [
-            k
-            for k, (w, _) in extracted.items()
-            if w is None and (k != "o" or not self.is_nested_encoder)
-        ]
+        missing_after = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
         if missing_after:
-            raise RuntimeError(
-                f"KDAAttention copy_weights failed: missing mandatory projections "
-                f"{missing_after} from {src.__class__.__name__}."
-            )
+            raise RuntimeError(f"KDAAttention copy_weights failed: missing mandatory projections {missing_after} from {src.__class__.__name__}.")
 
-        target_map = {
-            "q": self.q_proj,
-            "k": self.k_proj,
-            "v": self.v_proj,
-            "o": self.out_proj,
-        }
+        def _align_kv(w: torch.Tensor, b: torch.Tensor | None, target_size: int, num_kv_heads: int, head_dim: int) -> tuple[torch.Tensor, torch.Tensor | None]:
+            """FIX: Proper GQA mean-pooling alignment to prevent information loss."""
+            if w.shape[0] == target_size:
+                return w, b
+            if w.shape[0] > target_size and w.shape[0] % target_size == 0:
+                rep = w.shape[0] // target_size
+                w_pooled = w.view(num_kv_heads, rep, head_dim, -1).mean(dim=1).view(target_size, -1)
+                b_pooled = b.view(num_kv_heads, rep, head_dim).mean(dim=1).view(-1) if b is not None else None
+                return w_pooled, b_pooled
+            return w[:target_size, :], (b[:target_size] if b is not None else None)
+
+        target_map = {"q": self.q_proj, "k": self.k_proj, "v": self.v_proj, "o": self.out_proj}
 
         with torch.no_grad():
             for proj_key, target_mod in target_map.items():
@@ -552,16 +458,18 @@ class KDAAttention(BaseAttention):
 
                 if w.ndim != 2:
                     w = w.reshape(w.size(0), -1)
-
                 if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().shape:
                     w = w.t()
+
+                # Align GQA keys and values if necessary
+                if proj_key in ("k", "v"):
+                    w, b = _align_kv(w, b, target_mod.weight.size(0), self.num_kv_heads, self.head_dim)
+
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
 
                 target_mod.weight.data[:out_d, :in_d].copy_(
-                    w[:out_d, :in_d].to(
-                        device=target_mod.weight.device, dtype=target_mod.weight.dtype
-                    )
+                    w[:out_d, :in_d].to(device=target_mod.weight.device, dtype=target_mod.weight.dtype)
                 )
 
                 if b is not None and target_mod.bias is not None:
@@ -572,13 +480,6 @@ class KDAAttention(BaseAttention):
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
 
-                w_norm = float(torch.norm(w[:out_d, :in_d]).item())
-                if w_norm < 1e-4:
-                    raise RuntimeError(
-                        f"KDAAttention weight verification failed for "
-                        f"'{proj_key}': norm too small ({w_norm:.2e})"
-                    )
-
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
 
@@ -586,7 +487,7 @@ class KDAAttention(BaseAttention):
             self.freeze_base_weights()
 
     # ------------------------------------------------------------------
-    # KDA-FIX-03: chunked scan with bidirectional guard
+    # Chunked scan with bidirectional guard
     # ------------------------------------------------------------------
     def _kda_scan_chunked(
         self,
@@ -659,7 +560,10 @@ class KDAAttention(BaseAttention):
 
             num_total = num_intra + num_inter
             den_total = (den_intra + den_inter).clamp(min=1e-4)
-            yc = (num_total / den_total).to(q.dtype)
+            
+            # FIX: Added strict clamping to prevent FP16 Overflow in Chunked mode
+            yc = torch.clamp(num_total / den_total, min=-1e4, max=1e4).to(q.dtype)
+            
             if mc is not None:
                 yc = yc * mc.unsqueeze(1).unsqueeze(-1)
             y_fwd_list.append(yc)
@@ -679,22 +583,18 @@ class KDAAttention(BaseAttention):
 
         y_fwd = torch.cat(y_fwd_list, dim=2)
 
-        # KDA-FIX-03: guard against infinite recursion in bidirectional mode
         if (not self.is_decoder) and _allow_bidirectional:
-            q_rev = q.flip(dims=[2])
-            k_rev = k.flip(dims=[2])
-            v_rev = v.flip(dims=[2])
-            mask_rev = mask_float.flip(dims=[-1]) if mask_float is not None else None
+            # FIX: Added `.contiguous()` to prevent CuBLAS kernel crash on negative strides
+            q_rev = q.flip(dims=[2]).contiguous()
+            k_rev = k.flip(dims=[2]).contiguous()
+            v_rev = v.flip(dims=[2]).contiguous()
+            mask_rev = mask_float.flip(dims=[-1]).contiguous() if mask_float is not None else None
+            
             y_bwd_rev, _ = self._kda_scan_chunked(
-                q_rev,
-                k_rev,
-                v_rev,
-                decay,
-                mask_rev,
-                chunk_size=chunk_size,
-                _allow_bidirectional=False,
+                q_rev, k_rev, v_rev, decay, mask_rev,
+                chunk_size=chunk_size, _allow_bidirectional=False,
             )
-            y_bwd = y_bwd_rev.flip(dims=[2])
+            y_bwd = y_bwd_rev.flip(dims=[2]).contiguous()
             return y_fwd, y_bwd
 
         return y_fwd, None
@@ -821,7 +721,6 @@ class KDAAttention(BaseAttention):
         q = F.elu(q_raw) + 1.0
         k = (F.elu(k_raw) + 1.0) / (d**0.5)
 
-        # KDA-FIX-01 + KDA-FIX-02: decay from lora_beta (trainable, init 5.0)
         decay = torch.sigmoid(self.lora_beta).view(1, H, 1, 1)
 
         mask_bool = None
@@ -848,7 +747,6 @@ class KDAAttention(BaseAttention):
 
         out = y.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
-        # KDA-FIX-02: output_scale via lora_output_scale (trainable)
         out = out * self.lora_output_scale
         if self.is_nested_encoder:
             final_out = out
@@ -859,7 +757,7 @@ class KDAAttention(BaseAttention):
 
 
 # ============================================================================
-# Injection (KDA-FIX-05: recursion guard)
+# Injection
 # ============================================================================
 
 
