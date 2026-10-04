@@ -6,8 +6,8 @@
     "out_dir": "D:\\SVD_linear_Attention\\results\\01_unified_runs\\unified_triton_svd_linear_attention\\gpt2",
     "exit_code": 0,
     "status": "PASS",
-    "accuracy_pct": 62.04,
-    "elapsed_s": 37.56664752960205
+    "accuracy_pct": 71.1,
+    "elapsed_s": 99.0446457862854
   },
   {
     "name": "RoBERTa Base",
@@ -15,9 +15,9 @@
     "family": "roberta",
     "out_dir": "D:\\SVD_linear_Attention\\results\\01_unified_runs\\unified_triton_svd_linear_attention\\roberta",
     "exit_code": 0,
-    "status": "FAIL_BELOW_CHANCE",
-    "accuracy_pct": 50.92,
-    "elapsed_s": 29.957892179489136
+    "status": "PASS",
+    "accuracy_pct": 74.77,
+    "elapsed_s": 76.63620257377625
   },
   {
     "name": "DistilBERT Base",
@@ -25,9 +25,9 @@
     "family": "bert",
     "out_dir": "D:\\SVD_linear_Attention\\results\\01_unified_runs\\unified_triton_svd_linear_attention\\distilbert",
     "exit_code": 0,
-    "status": "FAIL_BELOW_CHANCE",
-    "accuracy_pct": 51.15,
-    "elapsed_s": 26.82580327987671
+    "status": "PASS",
+    "accuracy_pct": 73.51,
+    "elapsed_s": 52.579261302948
   },
   {
     "name": "GPT-Neo 125M",
@@ -37,6 +37,6 @@
     "exit_code": 1,
     "status": "FAIL",
     "accuracy_pct": 0.0,
-    "elapsed_s": 32.00893211364746
+    "elapsed_s": 16.994539260864258
   }
 ]
