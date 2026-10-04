@@ -780,11 +780,17 @@ class NASCAttention(BaseAttention):
                 attn = attn * head_mask
             O = torch.matmul(attn, V)
         else:
-            summary = hidden_states.mean(dim=1)
-            gates = F.softmax(self.gate_proj(summary), dim=-1)  # [B, 3]
-            g0 = gates[:, 0].view(B, 1, 1, 1)
-            g1 = gates[:, 1].view(B, 1, 1, 1)
-            g2 = gates[:, 2].view(B, 1, 1, 1)
+            if is_causal:
+                gates = F.softmax(self.gate_proj(hidden_states), dim=-1)  # [B, L, 3]
+                g0 = gates[:, :, 0].unsqueeze(1).unsqueeze(-1)  # [B, 1, L, 1]
+                g1 = gates[:, :, 1].unsqueeze(1).unsqueeze(-1)
+                g2 = gates[:, :, 2].unsqueeze(1).unsqueeze(-1)
+            else:
+                summary = hidden_states.mean(dim=1)
+                gates = F.softmax(self.gate_proj(summary), dim=-1)  # [B, 3]
+                g0 = gates[:, 0].view(B, 1, 1, 1)
+                g1 = gates[:, 1].view(B, 1, 1, 1)
+                g2 = gates[:, 2].view(B, 1, 1, 1)
 
             O_loc = self._local_window_attention(Q, K, V, valid_mask, is_causal)
             O_sp = self._sparse_block_attention(Q, K, V, valid_mask, is_causal)
