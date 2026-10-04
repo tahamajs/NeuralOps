@@ -9,7 +9,7 @@
         "val_loss": 0.7106,
         "perplexity": null,
         "status": "FAIL_BELOW_CHANCE",
-        "elapsed_s": 4.5
+        "elapsed_s": 4.47
     },
     "efficiency": {
         "total_params_before": 66955010,
@@ -54,7 +54,7 @@
     },
     "hardware": {
         "peak_vram_mb": 388.86,
-        "tokens_per_sec": 80624.55
+        "tokens_per_sec": 80937.33
     },
     "architecture": {
         "span_distribution": {},
@@ -68,10 +68,10 @@
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 512)"
     },
     "seed": 42,
-    "git_sha": "4a10e2b92d",
+    "git_sha": "d867d224e5",
     "git_dirty": true,
     "torch_version": "2.6.0+cu124",
     "transformers_version": "5.5.0",
     "cuda_version": "12.4",
-    "timestamp": "2026-10-04T13:09:11.566536+00:00"
+    "timestamp": "2026-10-04T13:13:09.621075+00:00"
 }
