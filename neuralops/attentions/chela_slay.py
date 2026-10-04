@@ -1,11 +1,13 @@
 r"""
-CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel — Production-Hardened.
+CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel — PRODUCTION-HARDENED.
 
-FIXES APPLIED (2026-10-04):
-  FIX 1: Non-negative feature map (shifted cos/sin) to prevent denominator blow-up.
-  FIX 2: Denominator clamping (min 0.1) to avoid division by near-zero.
-  FIX 3: Linear output normalization for magnitude stability.
-  FIX 4: Better numerical safety in causal linear attention.
+CRITICAL FIXES (2026-10-04):
+  FIX-1: Non-negative Yat feature map: (cos+1)/2 and (sin+1)/2.
+         Original [cos, sin] is bipolar; denominator can hit zero → PPL explosion.
+  FIX-2: Aggressive denominator clamp (min 1.0) in both attention paths.
+  FIX-3: Normalize linear_out magnitude before gating.
+  FIX-4: Safe gate init bias = 8.0 (99.97% dense contribution at start).
+  FIX-5: No Triton — pure PyTorch.
 """
 
 from __future__ import annotations
@@ -221,9 +223,8 @@ class ChelaSlayAttention(BaseAttention):
     r"""
     CHELA-SLAY: Spherical Linearized Attention with Yat-Kernel.
 
-    FIX 1: Non-negative feature map (shifted cos/sin).
-    FIX 2: Denominator clamping.
-    FIX 3: Linear output normalization.
+    CRITICAL: Feature map uses shifted (cos+1)/2, (sin+1)/2 to ensure
+    non-negative features. This is required for stable denominator.
     """
 
     is_custom_attention: bool = True
@@ -235,7 +236,7 @@ class ChelaSlayAttention(BaseAttention):
         feature_dim: int = 128,
         pretrained_attn: nn.Module | None = None,
         old_attn: nn.Module | None = None,
-        gate_init_bias: float = 5.0,
+        gate_init_bias: float = 8.0,  # FIX-4: safer default (sigmoid(8)≈0.9997)
         comp_config: Any | None = None,
         layer_id: int | None = None,
         layer_idx: int | None = None,
@@ -245,7 +246,6 @@ class ChelaSlayAttention(BaseAttention):
         super().__init__(config=config, rank=rank, **kwargs)
         source_attn = pretrained_attn if pretrained_attn is not None else old_attn
 
-        # Resolve config from source_attn if config is missing
         if config is None and source_attn is not None:
 
             class _Dummy:
@@ -343,7 +343,6 @@ class ChelaSlayAttention(BaseAttention):
         )
         self.layer_idx = _safe_int(resolved_layer_id, 0)
 
-        # LoRA config
         self.lora_rank = _safe_int(
             _safe_getattr(config, "lora_rank", None)
             or _safe_getattr(comp_config, "lora_rank", None)
@@ -358,7 +357,6 @@ class ChelaSlayAttention(BaseAttention):
         )
         self.freeze_base = self.lora_rank > 0
 
-        # Decoder detection
         if is_decoder is not None:
             self.is_decoder = bool(is_decoder)
         else:
@@ -386,7 +384,6 @@ class ChelaSlayAttention(BaseAttention):
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
 
-        # Projections
         self.W_q = LoRALinear(
             self.dim, self.all_head_size, bias=True,
             lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
@@ -408,12 +405,12 @@ class ChelaSlayAttention(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # Yat projection
+        # Yat projection — small init to keep proj values in [-1, 1]
         self.yat_proj = nn.Parameter(
             torch.randn(self.head_dim, self.feature_dim, dtype=torch.float32) * 0.02
         )
 
-        # Adaptive gate
+        # Adaptive gate — starts fully closed (nearly dense-only)
         self.lora_gate = nn.Linear(self.dim, self.num_heads)
         nn.init.zeros_(self.lora_gate.weight)
         with torch.no_grad():
@@ -436,10 +433,7 @@ class ChelaSlayAttention(BaseAttention):
                 self._copy_pretrained(source_attn)
             except Exception as e:
                 logger.warning(
-                    "ChelaSlayAttention._copy_pretrained failed on %s: %s. "
-                    "Using initialized weights.",
-                    source_attn.__class__.__name__,
-                    e,
+                    "ChelaSlayAttention._copy_pretrained failed: %s. Using init.", e
                 )
 
     # ---- aliases ----
@@ -664,19 +658,24 @@ class ChelaSlayAttention(BaseAttention):
     # Spherical normalize
     # ------------------------------------------------------------------
     def _spherical_normalize(self, x: torch.Tensor) -> torch.Tensor:
+        """Map x to a unit vector times log(1 + |x|)."""
         norm = torch.norm(x, p=2, dim=-1, keepdim=True)
         magnitude = torch.log1p(norm.clamp_min(0.0))
         return x / (norm + 1e-6) * magnitude
 
     # ------------------------------------------------------------------
-    # FIX 1: Non-negative Yat feature map
+    # FIX-1: Non-negative Yat feature map
     # ------------------------------------------------------------------
     def _yat_feature_map(self, x: torch.Tensor) -> torch.Tensor:
         """
-        FIX 1: Non-negative shifted cos/sin feature map.
+        Non-negative shifted Yat feature map.
 
-        Original: [cos(Wx), sin(Wx)] — bipolar, causes denominator blow-up.
-        Fixed:    [(cos(Wx)+1)/2, (sin(Wx)+1)/2] — non-negative in [0, 1].
+        FIX-1: Original [cos, sin] is bipolar → denominator can hit zero.
+        Fixed: ((cos + 1)/2, (sin + 1)/2) → all features in [0, 1].
+
+        This guarantees the linear-attention denominator
+        Z = sum_j k_feat[j]   and   q_feat · Z
+        are always non-negative and bounded away from zero.
         """
         if self.yat_proj.shape[0] != x.shape[-1]:
             raise RuntimeError(
@@ -685,9 +684,9 @@ class ChelaSlayAttention(BaseAttention):
             )
         proj = torch.matmul(x, self.yat_proj.to(x.device, x.dtype))
         scale = math.sqrt(2.0 / float(self.feature_dim))
-        # Non-negative shifted features
-        cos_shifted = (torch.cos(proj) + 1.0) * 0.5
-        sin_shifted = (torch.sin(proj) + 1.0) * 0.5
+        # FIX-1: Non-negative shifted features
+        cos_shifted = (torch.cos(proj) + 1.0) * 0.5   # in [0, 1]
+        sin_shifted = (torch.sin(proj) + 1.0) * 0.5   # in [0, 1]
         return torch.cat([cos_shifted, sin_shifted], dim=-1) * scale
 
     # ------------------------------------------------------------------
@@ -745,10 +744,10 @@ class ChelaSlayAttention(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        # Dense stream
-        dense_scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * (
-            self.head_dim**-0.5
-        )
+        # ---- Dense stream (mathematically identical to softmax) ----
+        dense_scores = torch.matmul(
+            q.float(), k.float().transpose(-2, -1).contiguous()
+        ) * (self.head_dim ** -0.5)
 
         can_causal = bool(self.is_causal and not is_cross and kv_len == L)
         if can_causal:
@@ -790,7 +789,7 @@ class ChelaSlayAttention(BaseAttention):
         dense_attn = self.dropout(dense_attn)
         dense_out = torch.matmul(dense_attn.to(v.dtype), v)
 
-        # Linear stream
+        # ---- Linear stream (FIX-1, FIX-2) ----
         q_norm = self._spherical_normalize(q)
         k_norm = self._spherical_normalize(k)
         q_feat = self._yat_feature_map(q_norm)
@@ -807,14 +806,14 @@ class ChelaSlayAttention(BaseAttention):
         else:
             linear_out = self._bidirectional_linear_attention(q_feat, k_feat, v_masked)
 
-        # FIX 3: Normalize linear output magnitude
+        # FIX-3: Normalize linear_out magnitude
         linear_out = linear_out / linear_out.norm(dim=-1, keepdim=True).clamp_min(1.0)
 
         if head_mask_b is not None:
             hw = head_mask_b.squeeze(-1).squeeze(-1)
             linear_out = linear_out * hw.unsqueeze(-1).to(linear_out.dtype)
 
-        # Adaptive gating
+        # ---- Adaptive gating (FIX-4: gate starts nearly 1) ----
         g = torch.sigmoid(self.lora_gate(x)).transpose(1, 2).contiguous().unsqueeze(-1)
         fused = g * dense_out + (1.0 - g) * linear_out
         out = fused.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
@@ -827,15 +826,17 @@ class ChelaSlayAttention(BaseAttention):
         return final_out, (dense_attn if output_attentions else None)
 
     # ------------------------------------------------------------------
-    # FIX 2: Denom clamping in linear attention paths
+    # FIX-2: Denom clamping in both attention paths
     # ------------------------------------------------------------------
     def _bidirectional_linear_attention(self, q_feat, k_feat, v_masked):
-        KV = torch.matmul(k_feat.transpose(-2, -1).contiguous().float(), v_masked.float())
+        KV = torch.matmul(
+            k_feat.transpose(-2, -1).contiguous().float(), v_masked.float()
+        )
         Z = k_feat.float().sum(dim=2, keepdim=True)
         num = torch.matmul(q_feat.float(), KV)
         denom = (q_feat.float() * Z).sum(dim=-1, keepdim=True)
-        # FIX 2: clamp denominator to avoid division by near-zero
-        denom = denom.abs().clamp_min(0.1) + 1e-5
+        # FIX-2: clamp to at least 1.0
+        denom = denom.abs().clamp_min(1.0)
         return (num / denom).to(q_feat.dtype)
 
     def _causal_linear_attention(self, q_feat, k_feat, v_masked, L):
@@ -864,8 +865,8 @@ class ChelaSlayAttention(BaseAttention):
 
             num_c = torch.matmul(q_c.unsqueeze(-2), S_total).squeeze(-2)
             denom_c = (q_c * Z_total).sum(dim=-1, keepdim=True)
-            # FIX 2: clamp denominator
-            denom_c = denom_c.abs().clamp_min(0.1) + 1e-5
+            # FIX-2: clamp to at least 1.0
+            denom_c = denom_c.abs().clamp_min(1.0)
             out_chunks.append((num_c / denom_c).to(q_feat.dtype))
 
             S_running = S_running + outer.sum(dim=2)
