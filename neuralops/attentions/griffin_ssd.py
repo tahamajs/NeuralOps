@@ -1,4 +1,5 @@
-"""Griffin SSD: Hybrid Local Sliding-Window Attention and Global State Space Duality (SSD) Kernel.
+"""
+Griffin SSD: Hybrid Local Sliding-Window Attention and Global State Space Duality (SSD) Kernel.
 
 Combines bidirectional/causal local sliding-window self-attention with multi-head
 State Space Duality linear recurrence, LoRA residual adapters, and multi-architecture pretrained weight transfer.

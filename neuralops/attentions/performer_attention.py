@@ -1,4 +1,5 @@
-"""Performer Attention – Fast Attention via Positive Orthogonal Random Features (FAVOR+).
+"""
+Performer Attention – Fast Attention via Positive Orthogonal Random Features (FAVOR+).
 
 Production-hardened with full multi-architecture support.
 

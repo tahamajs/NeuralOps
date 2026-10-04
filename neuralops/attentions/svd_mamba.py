@@ -1,4 +1,5 @@
-"""SVD-Mamba: SVD-factorized Selective State Space Model.
+"""
+SVD-Mamba: SVD-factorized Selective State Space Model.
 Hardened for production use across diverse transformer architectures:
 - DistilBERT (Flat MHA)
 - RoBERTa / BERT (Nested Encoder Self-Attention)

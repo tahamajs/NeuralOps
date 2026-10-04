@@ -1,4 +1,5 @@
-"""Kernelized Decay Attention (KDA) / Recurrent Linear Attention (Corrected).
+"""
+Kernelized Decay Attention (KDA) / Recurrent Linear Attention.
 
 Implements multi-head linear recurrence with learned exponential decay gating,
 spherical normalization, denominator tracking, and pretrained weight transfer.

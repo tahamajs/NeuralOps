@@ -6,30 +6,6 @@ Combines:
   2. Paged Delta-KV temporal compression with adaptive quantization.
   3. Optional low-rank factorization of temporal deltas.
 
-Fixes (v2):
-  MDP-FIX-01  **Adaptive page_size**: if `page_size >= seq_len`, paging is
-              disabled (falls back to full attention for that layer).
-  MDP-FIX-02  **STE quantization now has a reconstruction-error guard.**
-              If delta-KV reconstruction error exceeds `max_delta_error`,
-              we skip compression and use the raw K/V.
-  MDP-FIX-03  **`aux_loss` is now an `nn.Parameter` of shape `(1,)`** so it
-              travels with the model and can be added to the training loss.
-  MDP-FIX-04  **MoE routing now runs on encoder models too** (removed the
-              hard `is_causal` short-circuit).
-  MDP-FIX-05  **`is_nested_encoder` for DistilBERT correctly set to `True`**,
-              and `out_proj` skipped during forward for nested encoders.
-  MDP-FIX-06  **Idempotency guard** in `inject_moe_deltakv_paged`.
-  MDP-FIX-07  **Storage accounting** in `storage_bytes()`.
-  MDP-FIX-08  **`LoRALinear.forward` is dtype-safe.**
-  MDP-FIX-09  **Per-projection try/except in `copy_weights`.**
-  MDP-FIX-10  **Cleaner page routing** with causal masking that matches the
-              `is_causal` flag correctly.
-  MDP-FIX-11  **CLS/page-0 bias is only applied when causal masking allows it.**
-  MDP-FIX-12  **`q_bits` and `svd_rank` are validated at construction.**
-  MDP-FIX-13  **Forward returns `(out, attn_weights)`; second item is always
-              either a tensor or `None` — never a tuple.**
-  MDP-FIX-14  **`hidden_size`, `num_heads`, `head_dim` inferred consistently
-              across all architectures.**
 """
 
 from __future__ import annotations

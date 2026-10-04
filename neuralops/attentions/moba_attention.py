@@ -1,4 +1,5 @@
-"""MoBA: Mixture of Block Attention — Production-Hardened (v2).
+"""
+MoBA: Mixture of Block Attention — Production-Hardened.
 
 Registered as 'moba', 'moba_attention', 'moba_inject'.
 

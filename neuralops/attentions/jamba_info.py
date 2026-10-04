@@ -1,4 +1,5 @@
-"""Information-Bottlenecked Jamba Architecture with Dual Operational Modes (v2 — Production-Hardened).
+"""
+Information-Bottlenecked Jamba Architecture with Dual Operational Modes.
 
 Differential attention with concept-bottlenecked SSM branch.
 

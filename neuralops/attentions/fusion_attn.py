@@ -1,4 +1,5 @@
-"""FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention Module (Production-Hardened v2).
+"""
+FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention Module.
 
 Hybrid sparse attention with:
   - Short-sequence fast path (full attention via SDPA / manual)
@@ -12,32 +13,6 @@ Hybrid sparse attention with:
   - Padding masking across both paths
   - KV-cache support
 
-Bug-fix map (v2):
-  FA-FIX-01  `logger` defined at module scope.
-  FA-FIX-02  Fast-path SDPA now honors attention_mask / head_mask /
-             output_attentions; falls back to manual path when needed.
-  FA-FIX-03  Block-path causal mask uses ABSOLUTE positions, not a
-             fixed local diagonal.
-  FA-FIX-04  Block-path padding mask is gathered with the same indices
-             as K/V, so masking is aligned.
-  FA-FIX-05  `top_indices[..., 0] = 0` replaced with proper
-             "force-include block 0" via top-(k-1) + cat.
-  FA-FIX-06  `past_key_value` is read and updated for self-attention.
-  FA-FIX-07  RoPE fallback uses `hidden_states` (was `v`).
-  FA-FIX-08  NaN/Inf guards on block-path output.
-  FA-FIX-09  `head_mask` applied in block path.
-  FA-FIX-10  `output_attentions` returns block-attention weights.
-  FA-FIX-11  `inject_fusion_attn` logs exceptions with traceback.
-  FA-FIX-12  Idempotency guard in injector.
-  FA-FIX-13  `num_kv_heads` reads `num_kv_heads` fallback (was only
-             `num_key_value_heads`).
-  FA-FIX-14  Debug `print` removed.
-  FA-FIX-15  Per-head gating MLP (no more shared gate).
-  FA-FIX-16  Gate uses per-token centroid scoring (mean over block is
-             kept, but head_id is embedded in the gate input).
-  FA-FIX-17  Block loop replaced with vectorized gather where possible.
-  FA-FIX-18  Causal masking applied to gate_scores before top-k in
-             decoders, so top-k only considers visible blocks.
 """
 
 from __future__ import annotations

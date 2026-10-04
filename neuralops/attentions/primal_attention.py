@@ -1,4 +1,5 @@
-"""Primal Attention: Self-Attention through Asymmetric Kernel SVD in Primal Representation.
+"""
+Primal Attention: Self-Attention through Asymmetric Kernel SVD in Primal Representation.
 
 Nyström-inspired low-rank landmark approximation of self-attention using segment pooling
 landmarks and iterative Schulz pseudoinverse refinement.

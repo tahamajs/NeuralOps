@@ -1,4 +1,5 @@
-"""Hadamard Linear Attention (HLA).
+"""
+Hadamard Linear Attention (HLA).
 
 Multi-head bidirectional/causal linear recurrent attention with Hadamard associative kernelization,
 learnable decay gating, denominator normalization, and pretrained weight transfer.

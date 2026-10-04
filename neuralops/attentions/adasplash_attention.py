@@ -4,7 +4,6 @@ AdaSplash Attention: Adaptive Splash Attention with α-Entmax Sparse Activations
 Combines localized sliding-window splash radius with sparse α-entmax adaptive thresholding
 and global token routing, ensuring robust numerical convergence and exact pretrained weight transfer.
 
-[OPTIMIZED FOR ZERO-SHOT BENCHMARKING]
 """
 
 import logging

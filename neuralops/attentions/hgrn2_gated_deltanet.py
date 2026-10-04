@@ -1,24 +1,9 @@
-"""HGRN-2 Gated DeltaNet Hybrid Attention Module — Production-Hardened (v2).
+"""
+HGRN-2 Gated DeltaNet Hybrid Attention Module — Production-Hardened.
 
 Combines bidirectional/causal HGRN-2 element-wise linear recurrence with multi-head
 Gated DeltaNet associative matrix memory.
 
-Fixes (v2):
-  HGD-FIX-01  is_custom_attention = True (this IS attention).
-  HGD-FIX-02  Balanced gate init (+/-log(0.9/0.1) instead of 4.0).
-  HGD-FIX-03  Idempotency guard in injector.
-  HGD-FIX-04  No padding between branches — must be same shape.
-  HGD-FIX-05  Cross-attention raises clear error.
-  HGD-FIX-06  freeze_base applied after copy.
-  HGD-FIX-07  Storage accounting.
-  HGD-FIX-08  kwargs filtered per branch.
-  HGD-FIX-09  Idempotency guard.
-  HGD-FIX-10  Recursion guard in injector.
-  HGD-FIX-11  LoRALinear imported from neuralops.
-  HGD-FIX-12  Gate trainability controlled by flag.
-  HGD-FIX-13  Mask and head_mask passed separately.
-  HGD-FIX-14  Removed output shape padding/truncation hack.
-  HGD-FIX-15  get_ortho_loss for framework compatibility.
 """
 
 from __future__ import annotations

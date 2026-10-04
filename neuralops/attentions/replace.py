@@ -1,5 +1,5 @@
 """
-Model Attention Replacement and Dynamic Graph Surgery Utilities — v2.
+Model Attention Replacement and Dynamic Graph Surgery Utilities.
 
 """
 

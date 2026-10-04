@@ -1,5 +1,5 @@
 """
-AEGIS-Attention V5 (Corrected): Adaptive Enhanced Global-Local Integrated Sparse Attention.
+AEGIS-Attention V5 : Adaptive Enhanced Global-Local Integrated Sparse Attention.
 
 Architecture:
   * FactorisedLinear: SVD-factorized linear layers with energy-based rank selection + LoRA.

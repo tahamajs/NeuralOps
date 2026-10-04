@@ -1,5 +1,5 @@
 """
-Aegis-Attention V2 (Corrected).
+Aegis-Attention V2 .
 
 Hybrid low-rank factorized attention with:
   * SVD + LoRA projections (FactorisedLinear)

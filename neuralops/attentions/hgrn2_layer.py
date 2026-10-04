@@ -1,4 +1,5 @@
-"""Hierarchically Gated Recurrent Network V2 (HGRN-2) Layer.
+"""
+Hierarchically Gated Recurrent Network V2 (HGRN-2) Layer.
 
 Implements bidirectional/causal element-wise linear recurrence with dynamic input-dependent
 log-space forget gating, input modulation, LoRA adapters, and multi-architecture pretrained weight transfer.

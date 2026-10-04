@@ -1,28 +1,10 @@
-"""Native Hybrid Attention (NHA) – Production-Hardened (v2).
+"""
+Native Hybrid Attention (NHA) – Production-Hardened .
 
 Fuses localized sliding-window attention with global linear Random Fourier
 Features (RFF) via dynamic token-level gating and exact pretrained weight
 transfer.
 
-Fixes (v2):
-  NHA-FIX-01  **Registry keys separated**: class under `nha_class` /
-              `nha_attention_class`; injector under `nha` / `inject_nha`.
-  NHA-FIX-02  **Removed `return None` in forward** — RoPE failures now
-              propagate as RuntimeError, not silent crash.
-  NHA-FIX-03  **Removed all `print()`** — uses `logger`.
-  NHA-FIX-04  **`_rotate_half` handles odd head_dim.**
-  NHA-FIX-05  **KV-cache support** (tuple + HF DynamicCache).
-  NHA-FIX-06  **`num_kv_heads` clamped** to `num_heads`.
-  NHA-FIX-07  **`is_nested_encoder` initialized to False.**
-  NHA-FIX-08  **Cross-attention raises NotImplementedError.**
-  NHA-FIX-09  **No silent padding/truncation** of output dim.
-  NHA-FIX-10  **Idempotency guard in inject_nha.**
-  NHA-FIX-11  **`self.rotary_emb` receives a proper `x` reference** (q or k).
-  NHA-FIX-12  **`comp_config` resolved safely** (not via `or`).
-  NHA-FIX-13  **Forward sanity check** after weight transfer.
-  NHA-FIX-14  **LoRA dtype-safe forward.**
-  NHA-FIX-15  **`output_scale` applied consistently** in both nested and
-              non-nested paths.
 """
 
 from __future__ import annotations

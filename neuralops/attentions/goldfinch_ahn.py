@@ -1,6 +1,5 @@
 """
 GoldFinch-AHN: Adaptive Hybrid Network — Sliding Window + Gated Recurrent Memory.
-Production-Hardened (v2).
 
 """
 

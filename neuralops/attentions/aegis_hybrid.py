@@ -7,26 +7,6 @@ Combines:
   3. Trainable LoRA adapters on top of frozen low-rank base.
   4. Learnable fusion gate between local and global branches.
 
-Fixes (v2):
-  AH-FIX-01  `FactorizedLinear.is_custom_attention = False`.
-  AH-FIX-02  `use_global` is configurable; global path restored with proper
-             learnable kernel feature map.
-  AH-FIX-03  Fast `weight` property (no full matmul on each access).
-  AH-FIX-04  GQA-aware SVD initialization with `repeat_interleave` pooling.
-  AH-FIX-05  Robust GPT-2 Conv1D handling (checks layout at runtime).
-  AH-FIX-06  Comprehensive mask normalization (2D/3D/4D).
-  AH-FIX-07  Correct `past_len` derived from `past_key_value` shape, not
-             from `N_kv - N` (which is wrong for cross-attention).
-  AH-FIX-08  Full `inject_aegis_hybrid` with recursion + idempotency guard.
-  AH-FIX-09  RoPE supported via `position_embeddings` or `self.rotary_emb`.
-  AH-FIX-10  dtype-safe attention matmul.
-  AH-FIX-11  `local_window` default consistent (256).
-  AH-FIX-12  Storage accounting.
-  AH-FIX-13  `output_hidden_states` / `return_dict` / `*args` supported.
-  AH-FIX-14  `FactorizedLinear` uses `down`/`up` names for consistency
-             with the rest of the framework, with backward-compat aliases
-             `lin1`/`lin2`.
-  AH-FIX-15  Optional activation whitening via `whitening` dict.
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-r"""
+"""
 Triton-Accelerated SVD Linear Attention & Chunked Causal Linear Attention.
 
 High-performance GPU implementation using OpenAI Triton language (tl) with:

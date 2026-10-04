@@ -1,4 +1,5 @@
-"""Native Sparse Attention (NSA) Module (Production-Hardened).
+"""
+Native Sparse Attention (NSA) Module (Production-Hardened).
 
 Combines sliding-window local context capture with dynamic, input-dependent top-$k$
 global routing across key-value representations in a fully vectorized manner.
