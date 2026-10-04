@@ -46,7 +46,9 @@ except (ImportError, ModuleNotFoundError):
 @triton.jit
 def _elu_plus_one(x):
     """Applies ELU(x) + 1.0 activation."""
-    return tl.where(x > 0.0, x + 1.0, tl.exp(x))
+    x_f32 = x.to(tl.float32)
+    exp_x = tl.exp(x_f32).to(x.dtype)
+    return tl.where(x > 0.0, x + 1.0, exp_x)
 
 
 # ==============================================================================

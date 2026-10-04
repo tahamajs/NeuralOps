@@ -695,8 +695,60 @@ def compute_compression_metrics(
             and compression_rate <= 1.001
         ),
     }
+def _make_grad_scaler(enabled: bool, device_type: str = "cuda"):
+    """
+    Create GradScaler compatible with PyTorch 1.x, 2.0, and 2.1+.
 
+    PyTorch 2.1+ deprecated torch.cuda.amp.GradScaler in favor of
+    torch.amp.GradScaler(device_type, ...). This helper handles both.
+    """
+    try:
+        # PyTorch 2.1+ API
+        return torch.amp.GradScaler(device_type, enabled=enabled)
+    except (AttributeError, TypeError):
+        try:
+            # PyTorch 2.0 / 1.x API
+            return torch.cuda.amp.GradScaler(enabled=enabled)
+        except Exception:
+            # Fallback — dummy scaler for CPU-only environments
+            class _DummyScaler:
+                def scale(self, loss): return loss
+                def unscale_(self, opt): pass
+                def step(self, opt): opt.step()
+                def update(self): pass
+            return _DummyScaler()
+def _propagate_module_flags_to_config(
+    model: torch.nn.Module,
+    args: argparse.Namespace,
+    module_name: str,
+    extra_keys: tuple[str, ...] = (
+        "max_error", "target_attention_only", "rank", "force_rank",
+        "lora_rank", "lora_alpha", "sparsity", "use_fisher",
+        "recalibrate_ln", "n_calib", "strict_rank",
+    ),
+) -> None:
+    """
+    Propagate module-specific CLI flags to model.config.
 
+    For each arg like `adasvd_max_error`, sets:
+        model.config.adasvd_max_error = value
+        model.config.max_error = value  (stripped prefix)
+
+    This replaces ~800 lines of repetitive if-statements.
+    """
+    if not hasattr(model, "config") or model.config is None:
+        return
+
+    prefix = module_name + "_"
+    for attr_name, attr_val in vars(args).items():
+        if attr_val is None:
+            continue
+        if attr_name.startswith(prefix):
+            setattr(model.config, attr_name, attr_val)
+            stripped = attr_name[len(prefix):]
+            setattr(model.config, stripped, attr_val)
+        elif attr_name in extra_keys:
+            setattr(model.config, attr_name, attr_val)
 # ============================================================================
 # Metrics export
 # ============================================================================
@@ -1208,7 +1260,10 @@ def finetune(model, tokenizer, train, name, steps, seq_len, batch_size, device, 
         if p.dtype != torch.float32:
             p.data = p.data.float()
     opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=lr)
-    scaler = torch.amp.GradScaler("cuda", enabled=fp16 and device.type == "cuda")
+    scaler = _make_grad_scaler(
+        enabled=fp16 and device.type == "cuda",
+        device_type="cuda",
+    )
     model.train()
     for step in range(steps):
         i = (step * batch_size) % len(train)
@@ -1254,7 +1309,10 @@ def finetune_with_kd(
         trainable = [p for p in model.parameters() if p.requires_grad]
 
     opt = torch.optim.AdamW(trainable, lr=lr, weight_decay=0.01)
-    scaler = torch.amp.GradScaler("cuda", enabled=fp16 and device.type == "cuda")
+    scaler = _make_grad_scaler(
+        enabled=fp16 and device.type == "cuda",
+        device_type="cuda",
+    )
 
     for step in range(steps):
         if precomputed_batches and len(precomputed_batches) > 0:
@@ -1360,7 +1418,10 @@ def finetune_lora(
         return 1.0
 
     scheduler = torch.optim.lr_scheduler.LambdaLR(opt, lr_lambda)
-    scaler = torch.amp.GradScaler("cuda", enabled=fp16 and device.type == "cuda")
+    scaler = _make_grad_scaler(
+        enabled=fp16 and device.type == "cuda",
+        device_type="cuda",
+    )
     model.train()
 
     curr_batch_size = batch_size
@@ -2907,10 +2968,30 @@ def _run_candidate_pipeline(
                 )
 
         t_compress_start = time.monotonic()
-        model, _ = apply_module_to_model(model, name, typ, rank=module_rank, device=device)
+        _calib_slice = None
+        if typ == "compressor":
+            try:
+                _calib_slice = train[:4] if hasattr(train, "__getitem__") else None
+                if _calib_slice is not None and hasattr(_calib_slice, "column_names"):
+                    _calib_slice = {
+                        k: torch.tensor(_calib_slice[k]).to(device)
+                        for k in _calib_slice.column_names
+                    }
+            except Exception as cal_err:
+                LOG.debug("Calibration slice prep failed: %s", cal_err)
+
+        model, _ = apply_module_to_model(
+            model, name, typ,
+            rank=module_rank,
+            device=device,
+            calibration_data=_calib_slice,
+            tokenizer=tokenizer,
+        )
         measured_calib_time = round(time.monotonic() - t_compress_start, 2)
         model = model.to(device)
         injected = True
+
+
         path_name = f"adapted_{family}" if family != "bert" else "legacy_bert"
         LOG.info("module=%s path=%s", name, path_name)
         num_svd_layers = sum(
@@ -4251,6 +4332,7 @@ def run_single_module_main(args) -> dict:
     summary_dict = {}
 
     def _flush_summary_csv():
+        """Atomic CSV write — safe across parallel processes."""
         try:
             _tmp = path.with_suffix(".tmp")
             with _tmp.open("w", newline="", encoding="utf8") as _f:
@@ -4258,15 +4340,11 @@ def run_single_module_main(args) -> dict:
                 _w.writeheader()
                 for _m in summary_dict:
                     _w.writerow(summary_dict[_m])
-            if _tmp.exists():
-                if path.exists():
-                    try:
-                        path.unlink()
-                    except Exception:
-                        pass
-                _tmp.rename(path)
+            # os.replace is atomic on all platforms (Windows + POSIX)
+            os.replace(str(_tmp), str(path))
         except Exception as _csv_err:
             LOG.warning("Could not write summary.csv to %s: %s", path, _csv_err)
+
 
     if path.exists():
         backup_path = path.with_suffix(".csv.bak")
@@ -5127,6 +5205,20 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
     import os
     import sys
 
+    # FIX: check script existence before launching subprocess
+    child_script = (HERE / "run_one_module_isolated.py").resolve()
+    if not child_script.exists():
+        LOG.error(
+            "run_module_isolated: child script not found at %s. "
+            "Cannot run module '%s'.",
+            child_script, module_name,
+        )
+        return {
+            "status": "SCRIPT_NOT_FOUND",
+            "error": f"Missing child script: {child_script}",
+            "elapsed_s": 0.0,
+        }
+
     tmp_dir = Path("logs/isolated_results")
     tmp_dir.mkdir(parents=True, exist_ok=True)
     result_json = tmp_dir / f"{module_name}_{int(time.time() * 1000)}_{os.getpid()}.json"
@@ -5136,8 +5228,7 @@ def run_module_isolated(module_name: str, args, timeout_s: int) -> dict:
         except Exception:
             pass
 
-    child_script = (HERE / "run_one_module_isolated.py").resolve()
-    cmd = [
+        cmd = [
         sys.executable,
         "-u",
         str(child_script),
@@ -5328,23 +5419,20 @@ def main():
             for r in csv.DictReader(f):
                 summary_dict[r["module_name"]] = r
 
+    SKIP_STATUSES = {
+        "PASS",
+        "PASS_LOW_PPL",
+        "SKIP_DEPRECATED",
+        "SKIP_BLOCKED",
+    }
+
     existing = (
         set()
         if (args.fresh or getattr(args, "no_skip", False))
         else {
             m
             for m, r in summary_dict.items()
-            if r.get("status")
-            in {
-                "PASS",
-                "PASS_LOW",
-                "REJECTED_EXPANSION",
-                "EXTREME_EXPANSION",
-                "MODERATE_EXPANSION",
-                "TIMEOUT",
-                "SKIP_BERT_ARCHITECTURAL",
-                "SKIP_BLOCKED",
-            }
+            if r.get("status") in SKIP_STATUSES
         }
     )
 
