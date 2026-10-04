@@ -1147,6 +1147,19 @@
           "status": "FAIL"
         }
       }
+    },
+    {
+      "module": "aegisattention",
+      "timestamp": "20261005_030631",
+      "results": {
+        "C": {
+          "pre_ppl": 1081.13,
+          "post_ppl": 75.97,
+          "recovery_pct": 99.02,
+          "time_s": 327.9,
+          "status": "PASS"
+        }
+      }
     }
   ]
 }
