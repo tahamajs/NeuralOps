@@ -3192,6 +3192,12 @@ def _run_candidate_pipeline(
             or typ in recovery_targets
             or name in recovery_targets
         )
+        rec_steps = (
+            args.recovery_steps
+            if getattr(args, "recovery_steps", None) is not None and args.recovery_steps > 0
+            else 50
+        )
+
         if should_recover:
             FROM_SCRATCH_MODULES = {
                 "linear_attention",
@@ -3248,9 +3254,7 @@ def _run_candidate_pipeline(
                 "adaptive_sparse_attention",
             }
             if name in FROM_SCRATCH_MODULES or name in ("asvd", "asvd_attention"):
-                rec_steps = (
-                    args.recovery_steps if getattr(args, "recovery_steps", None) is not None else 50
-                )
+                # rec_steps already set above
                 if name in ("asvd", "asvd_attention") and family == "gpt":
                     rec_lr = args.learning_rate if args.learning_rate != 2e-4 else 1e-4
                 else:
@@ -3262,6 +3266,7 @@ def _run_candidate_pipeline(
                     if args.learning_rate
                     else (5e-5 if (family == "qwen3_5" or hidden_size > 512) else 1e-4)
                 )
+            
             LOG.info(
                 "Running %d recovery fine-tuning steps for %s (lr=%.1e)",
                 rec_steps,
