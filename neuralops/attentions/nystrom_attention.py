@@ -583,138 +583,111 @@ class NystromAttention(BaseAttention):
     # ==================================================================
     def _chunked_causal_nystrom(
         self,
-        Q: torch.Tensor,
-        K: torch.Tensor,
-        V: torch.Tensor,
-        valid_mask: torch.Tensor,
+        Q: torch.Tensor,  # (B, H, N, d)
+        K: torch.Tensor,  # (B, H, N, d)
+        V: torch.Tensor,  # (B, H, N, d)
+        valid_mask: torch.Tensor,  # (B, N)
         chunk_size: int = 256,
     ) -> torch.Tensor:
         """
         Chunked Causal Nyström attention.
 
-        Algorithm:
-          For each chunk c = [start_c, end_c):
-            1. Intra-chunk: causal dense attention within the chunk.
-               Output shape: (B, H, C, d)
-            2. Inter-chunk (only if c > 0): Nyström with landmarks pooled
-               from ALL previous chunks (0..c-1).
-               Compute:
-                 F1 = softmax(Q_c @ K_landmarks^T)         (B, H, C, m)
-                 F2 = softmax(Q_landmarks @ K_landmarks^T) (B, H, m, m)
-                 F3 = softmax(Q_landmarks @ K_prev^T)      (B, H, m, start)
-                 out_cross = F1 @ pinv(F2) @ F3 @ V_prev   (B, H, C, d)
-            3. Combine intra + cross.
+        For each chunk c:
+          - Compute landmarks from chunks 0..c (cumulative)
+          - Within-chunk: dense causal attention
+          - Across-chunks: Nyström with cumulative landmarks
 
-        Complexity: O(N * C + N * m * d) where C is chunk_size.
-        For N=512, C=256, m=32: this is much faster than O(N²)=262k.
-
-        Args:
-            Q, K, V: (B, H, N, d)
-            valid_mask: (B, N) boolean
-            chunk_size: int, size of each causal chunk
-        Returns:
-            (B, H, N, d)
+        Complexity: O(N * C) where C = chunk_size (not O(N²))
         """
         B, H, N, d = Q.shape
         device = Q.device
         dtype = Q.dtype
-        scale = 1.0 / math.sqrt(d)
         m = min(self.num_landmarks, N)
 
-        # If sequence fits in one chunk, use causal dense
-        if N <= chunk_size:
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-            causal = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
-            scores = scores.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
-            scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
-            attn = F.softmax(scores, dim=-1).to(dtype)
-            attn = torch.nan_to_num(attn, nan=0.0)
-            attn = self.dropout(attn)
-            return torch.matmul(attn, V)
-
+        # Split into chunks
         num_chunks = (N + chunk_size - 1) // chunk_size
-        outputs: list[torch.Tensor] = []
+        outputs = []
 
         for c_idx in range(num_chunks):
             start = c_idx * chunk_size
             end = min(start + chunk_size, N)
             C_len = end - start
 
-            Q_c = Q[:, :, start:end, :]                    # (B, H, C, d)
+            Q_c = Q[:, :, start:end, :]   # (B, H, C_len, d)
             K_c = K[:, :, start:end, :]
             V_c = V[:, :, start:end, :]
-            mask_c = valid_mask[:, start:end]              # (B, C)
+            mask_c = valid_mask[:, start:end]
 
-            # ---- 1. Intra-chunk causal dense attention ----
-            scores_intra = torch.matmul(
-                Q_c.float(), K_c.float().transpose(-2, -1).contiguous()
-            ) * scale                                        # (B, H, C, C)
-            causal_intra = torch.tril(
-                torch.ones(C_len, C_len, device=device, dtype=torch.bool)
-            )
-            scores_intra = scores_intra.masked_fill(
-                ~causal_intra.unsqueeze(0).unsqueeze(0), -1e4
-            )
+            # 1. Within-chunk dense causal attention
+            scale = 1.0 / math.sqrt(d)
+            scores_intra = torch.matmul(Q_c.float(), K_c.float().transpose(-2, -1)) * scale
+            causal = torch.tril(torch.ones(C_len, C_len, device=device, dtype=torch.bool))
+            scores_intra = scores_intra.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
             scores_intra = scores_intra.masked_fill(
                 ~mask_c.unsqueeze(1).unsqueeze(2), -1e4
             )
             attn_intra = F.softmax(scores_intra, dim=-1).to(dtype)
             attn_intra = torch.nan_to_num(attn_intra, nan=0.0)
-            out_intra = torch.matmul(attn_intra, V_c)         # (B, H, C, d)
+            out_intra = torch.matmul(attn_intra, V_c)  # (B, H, C_len, d)
 
-            # ---- 2. Inter-chunk Nyström (skip for first chunk) ----
+            # 2. Across-chunks Nyström (if c_idx > 0)
             if c_idx == 0:
                 outputs.append(out_intra)
                 continue
 
-            K_prev = K[:, :, :start, :]                       # (B, H, prev_len, d)
+            # Landmarks from all previous chunks (0..c_idx-1)
+            K_prev = K[:, :, :start, :]  # (B, H, start, d)
             V_prev = V[:, :, :start, :]
-            mask_prev = valid_mask[:, :start]                 # (B, prev_len)
-            prev_len = start
+            mask_prev = valid_mask[:, :start]
 
-            # Pool landmarks from Q_c and K_prev
-            m_prev = min(m, prev_len)
-            K_landmarks = self._pool_landmarks(K_prev, m_prev)   # (B, H, m_prev, d)
-            Q_landmarks = self._pool_landmarks(Q_c, min(m, C_len))  # (B, H, m_c, d)
+            # Compute landmarks via adaptive pooling
+            m_prev = min(m, start)
+            K_flat = K_prev.reshape(B * H, start, d).transpose(1, 2).contiguous()
+            K_landmarks = (
+                F.adaptive_avg_pool1d(K_flat, m_prev)
+                .transpose(1, 2)
+                .contiguous()
+                .reshape(B, H, m_prev, d)
+            )
 
-            # F1: (B, H, C, m_prev)
-            scores1 = torch.matmul(
-                Q_c.float(), K_landmarks.float().transpose(-2, -1).contiguous()
-            ) * scale
+            # Nyström approximation for cross-chunk
+            # F1 = softmax(Q_c @ K_landmarks^T)  → (B, H, C_len, m_prev)
+            scores1 = torch.matmul(Q_c.float(), K_landmarks.float().transpose(-2, -1)) * scale
             F1 = F.softmax(scores1, dim=-1).to(dtype)
 
-            # F2: (B, H, m_c, m_prev)
+            # F2 = softmax(Q_landmarks @ K_landmarks^T)  → (B, H, m_prev, m_prev)
+            Q_flat = Q_c.reshape(B * H, C_len, d).transpose(1, 2).contiguous()
+            Q_landmarks = (
+                F.adaptive_avg_pool1d(Q_flat, m_prev)
+                .transpose(1, 2)
+                .contiguous()
+                .reshape(B, H, m_prev, d)
+            )
             scores2 = torch.matmul(
-                Q_landmarks.float(), K_landmarks.float().transpose(-2, -1).contiguous()
+                Q_landmarks.float(), K_landmarks.float().transpose(-2, -1)
             ) * scale
             F2 = F.softmax(scores2, dim=-1).to(dtype)
 
-            # F3: (B, H, m_c, prev_len)
-            scores3 = torch.matmul(
-                Q_landmarks.float(), K_prev.float().transpose(-2, -1).contiguous()
-            ) * scale
-            scores3 = scores3.masked_fill(
-                ~mask_prev.unsqueeze(1).unsqueeze(2), -1e4
-            )
+            # F3 = softmax(Q_landmarks @ K_prev^T)  → (B, H, m_prev, start)
+            scores3 = torch.matmul(Q_landmarks.float(), K_prev.float().transpose(-2, -1)) * scale
+            scores3 = scores3.masked_fill(~mask_prev.unsqueeze(1).unsqueeze(2), -1e4)
             F3 = F.softmax(scores3, dim=-1).to(dtype)
 
             # Pseudoinverse of F2
-            F2_pinv = self._iterative_pinv(F2, iters=self.pinv_iterations)  # (B, H, m_prev, m_c)
+            F2_pinv = self._iterative_pinv(F2, iters=self.pinv_iterations)
 
             # Cross-chunk output: F1 @ F2_pinv @ F3 @ V_prev
-            # F3 @ V_prev: (B, H, m_c, d)
-            step1 = torch.matmul(F3, V_prev)
-            # F2_pinv @ step1: (B, H, m_prev, d)
-            step2 = torch.matmul(F2_pinv, step1)
-            # F1 @ step2: (B, H, C, d)
-            out_cross = torch.matmul(F1, step2)
+            step1 = torch.matmul(F3, V_prev)      # (B, H, m_prev, d)
+            step2 = torch.matmul(F2_pinv, step1)  # (B, H, m_prev, d)
+            out_cross = torch.matmul(F1, step2)   # (B, H, C_len, d)
             out_cross = torch.nan_to_num(out_cross, nan=0.0)
 
-            # ---- 3. Combine ----
+            # 3. Combine intra and cross
             out_c = out_intra + out_cross
             outputs.append(out_c)
 
-        context = torch.cat(outputs, dim=2)   # (B, H, N, d)
+        # Concatenate all chunks
+        context = torch.cat(outputs, dim=2)  # (B, H, N, d)
         return context
 
     # ==================================================================
@@ -756,8 +729,9 @@ class NystromAttention(BaseAttention):
         # Causal (decoder) → Chunked Causal Nyström
         # ============================================================
         if self.is_decoder or self.is_causal:
+            # Use chunked causal Nyström
             context = self._chunked_causal_nystrom(
-                Q, K, V, valid_mask, chunk_size=self.chunk_size
+                Q, K, V, valid_mask, chunk_size=256
             )
             context = self.dropout(context)
 
