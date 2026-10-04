@@ -240,14 +240,14 @@ def evaluate_module_ppl(
 
     # Load datasets
     try:
-        ds_test = load_dataset("wikitext", dataset_name, split=split)
-    except Exception:
         ds_test = load_dataset("Salesforce/wikitext", dataset_name, split=split)
+    except Exception:
+        ds_test = load_dataset("wikitext", dataset_name, split=split)
 
     try:
-        ds_train = load_dataset("wikitext", dataset_name, split="train")
-    except Exception:
         ds_train = load_dataset("Salesforce/wikitext", dataset_name, split="train")
+    except Exception:
+        ds_train = load_dataset("wikitext", dataset_name, split="train")
 
     is_baseline = module_name.lower() in ("none", "baseline", "full")
 

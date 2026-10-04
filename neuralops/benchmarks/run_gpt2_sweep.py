@@ -969,11 +969,11 @@ def main(argv: list[str] | None = None):
 
     LOG.info("Loading WikiText-2 (%s)...", args.split)
     try:
-        ds_test = load_dataset("wikitext", args.dataset_name, split=args.split)
-        ds_train = load_dataset("wikitext", args.dataset_name, split="train")
-    except Exception:
         ds_test = load_dataset("Salesforce/wikitext", args.dataset_name, split=args.split)
         ds_train = load_dataset("Salesforce/wikitext", args.dataset_name, split="train")
+    except Exception:
+        ds_test = load_dataset("wikitext", args.dataset_name, split=args.split)
+        ds_train = load_dataset("wikitext", args.dataset_name, split="train")
 
     # ---- Calibration loader ----
     LOG.info(
