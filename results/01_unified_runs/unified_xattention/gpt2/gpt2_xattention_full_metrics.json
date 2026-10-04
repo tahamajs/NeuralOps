@@ -1,15 +1,15 @@
 {
     "model": "gpt2_xattention",
     "performance": {
-        "accuracy_pct": 73.51,
-        "f1_score": 0.7674,
-        "f1_macro": 0.7299,
-        "precision": 0.7495,
-        "recall": 0.7328,
-        "val_loss": 0.5561,
+        "accuracy_pct": 78.33,
+        "f1_score": 0.797,
+        "f1_macro": 0.7823,
+        "precision": 0.7861,
+        "recall": 0.7823,
+        "val_loss": 0.5002,
         "perplexity": null,
         "status": "PASS",
-        "elapsed_s": 5.69
+        "elapsed_s": 24.08
     },
     "efficiency": {
         "total_params_before": 124441344,
@@ -41,8 +41,8 @@
         }
     },
     "hardware": {
-        "peak_vram_mb": 553.43,
-        "tokens_per_sec": 31121.19
+        "peak_vram_mb": 554.56,
+        "tokens_per_sec": 34525.0
     },
     "architecture": {
         "span_distribution": {},
@@ -50,16 +50,16 @@
         "sparsity_ratio_percent": 0.0
     },
     "scalability": {
-        "L_128_vram_mb": 378.93,
-        "L_256_vram_mb": 384.75,
-        "L_512_vram_mb": 396.38,
+        "L_128_vram_mb": 380.06,
+        "L_256_vram_mb": 385.88,
+        "L_512_vram_mb": 397.51,
         "L_1024_vram_mb": "unsupported (exceeds model max_position_embeddings 1024)"
     },
     "seed": 42,
-    "git_sha": "6af5d825e1",
+    "git_sha": "76153940ea",
     "git_dirty": true,
     "torch_version": "2.6.0+cu124",
     "transformers_version": "5.5.0",
     "cuda_version": "12.4",
-    "timestamp": "2026-10-04T13:04:29.697588+00:00"
+    "timestamp": "2026-10-04T13:17:06.544594+00:00"
 }
