@@ -294,9 +294,9 @@ class SVDLLMCompressor(BaseCompressor):
             from datasets import load_dataset
 
             try:
-                ds = load_dataset("wikitext", "wikitext-2-raw-v1", split="train")
-            except Exception:
                 ds = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="train")
+            except Exception:
+                ds = load_dataset("wikitext", "wikitext-2-raw-v1", split="train")
             texts = [t.strip() for t in ds["text"] if t and len(t.strip()) > 50]
             if len(texts) >= n_samples:
                 logger.info(
