@@ -283,26 +283,29 @@ def set_train_scope(model, train_scope="all"):
         for p in model.parameters():
             p.requires_grad = True
     elif train_scope in ("mamba", "attention", "module"):
-        # Names of attributes that indicate an attention module
-        ATTN_ATTR_NAMES = ("attn", "attention", "self_attn")
-        
+        ATTN_ATTRS = ("attn", "attention", "self_attn")
+        n_matched = 0
         for name, p in model.named_parameters():
-            # Check if any attention-attribute appears in the parameter name
-            has_attn_attr = any(
-                f".{attr}." in name or name.endswith(f".{attr}") 
-                for attr in ATTN_ATTR_NAMES
+            # Match any of: .attn. , .attention. , .self_attn.
+            has_attn = any(
+                f".{attr}." in name or name.endswith(f".{attr}")
+                for attr in ATTN_ATTRS
             )
-            if not has_attn_attr:
+            if has_attn:
+                p.requires_grad = True
+                n_matched += 1
+            else:
                 p.requires_grad = False
-                continue
-            p.requires_grad = True
+        logger.info("set_train_scope: matched %d attention param tensors", n_matched)
     else:
         raise ValueError(f"Unknown train_scope: {train_scope}")
-    
+
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     total = sum(p.numel() for p in model.parameters())
-    LOG.info("Train scope '%s': %d/%d trainable (%.2f%%)", 
-             train_scope, trainable, total, 100.0 * trainable / max(1, total))
+    LOG.info(
+        "Train scope '%s': %d/%d trainable (%.2f%%)",
+        train_scope, trainable, total, 100.0 * trainable / max(1, total),
+    )
     return trainable
 
 # -----------------------------------------------------------------------------
