@@ -1679,6 +1679,14 @@ def parse_args(argv=None):
         default=5.0,
         help="Maximum allowed drop in percentage points relative to baseline accuracy (default: 5.0)",
     )
+    ap.add_argument(
+        "--refinetune-head",
+        "--refinetune_head",
+        dest="refinetune_head",
+        action="store_true",
+        default=False,
+        help="Force re-training of the classification head (ignores cache).",
+    )
     ap.add_argument("--optimizer", choices=("adamw", "muon"), default="adamw")
     ap.add_argument("--use_muon", action="store_true")
     ap.add_argument("--muon_lr", type=float, default=0.02)
@@ -4091,14 +4099,36 @@ def run_single_module_main(args) -> dict:
                 p.requires_grad = True
         LOG.info("Injected %d LoRALinear layers into %s backbone", num_lora, family)
 
-    if parent_checkpoint.exists() and (args.fresh or not checkpoint.exists()):
+    meta_path = out / "finetune_metadata.json"
+    cache_valid = False
+    if checkpoint.exists():
+        if meta_path.exists():
+            try:
+                meta_data = json.loads(meta_path.read_text(encoding="utf-8"))
+                if meta_data.get("fix_version") == "v2_unfreeze_pre_classifier":
+                    cache_valid = True
+                else:
+                    LOG.info(
+                        "Cached head version mismatch (%s != v2_unfreeze_pre_classifier). Re-finetuning head.",
+                        meta_data.get("fix_version"),
+                    )
+            except Exception:
+                cache_valid = True
+        else:
+            cache_valid = True
+
+    refinetune = getattr(args, "refinetune_head", False)
+    if refinetune:
+        LOG.info("Forcing re-training of classification head (--refinetune-head passed).")
+
+    if not refinetune and parent_checkpoint.exists() and not checkpoint.exists():
         LOG.info(
             "Loading shared baseline checkpoint from parent directory: %s",
             parent_checkpoint,
         )
         state = torch.load(parent_checkpoint, map_location="cpu", weights_only=False)
         _safe_load_state(base, state)
-    elif checkpoint.exists() and not args.fresh:
+    elif not refinetune and cache_valid and checkpoint.exists():
         LOG.info("Loading cached fine-tuned checkpoint: %s", checkpoint)
         state = torch.load(checkpoint, map_location="cpu", weights_only=False)
         _safe_load_state(base, state)
@@ -4191,8 +4221,10 @@ def run_single_module_main(args) -> dict:
             json.dumps(
                 {
                     "classification_head_trained": True,
+                    "fix_version": "v2_unfreeze_pre_classifier",
                     "finetune_mode": args.finetune_mode,
                     "steps": args.finetune_steps,
+                    "model": str(args.model),
                     "dataset": args.dataset,
                     "seed": args.seed,
                 }
