@@ -1,0 +1,116 @@
+module_name,source_file,bucket,has_softmax,has_causal_mask,has_chunked_logic,has_recurrent_state,is_decoder_aware,notes
+adaptive_span_attention,neuralops/attentions/adaptive_span_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+adaptive_sparse_attention,neuralops/attentions/adaptive_sparse_attention.py,TRUE_CAUSAL,True,True,True,False,True,Chunked causal linear / state attention
+adaptive_svd_attention,neuralops/attentions/adaptive_svd_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+adasplash_attention,neuralops/attentions/adasplash_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+aegis_hybrid,neuralops/attentions/aegis_hybrid.py,TRUE_CAUSAL,True,False,True,False,True,Chunked causal linear / state attention
+aegis_spectron_fp8,neuralops/attentions/aegis_spectron_fp8.py,TRUE_CAUSAL,True,False,True,True,True,Chunked causal linear / state attention
+aegis_v2,neuralops/attentions/aegis_v2.py,BROKEN_ON_DECODER,True,False,False,False,True,Softmax attention without causal masking; leaks future tokens on decoder
+aegis_v5,neuralops/attentions/aegis_v5.py,TRUE_CAUSAL,True,True,True,False,True,Chunked causal linear / state attention
+aegis_v6,neuralops/attentions/aegis_v6.py,TRUE_CAUSAL,True,False,True,False,True,Chunked causal linear / state attention
+asvd_attention,neuralops/attentions/asvd_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+bam_umoe,neuralops/attentions/bam_umoe.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+block_transformer_hiba,neuralops/attentions/block_transformer_hiba.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+chela_slay,neuralops/attentions/chela_slay.py,TRUE_CAUSAL,True,True,True,True,True,Chunked causal linear / state attention
+cluster_attention,neuralops/attentions/cluster_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+compressed_attention,neuralops/attentions/compressed_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+compressed_mha_attention,neuralops/attentions/compressed_mha_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+cosformer,neuralops/attentions/cosformer.py,TRUE_CAUSAL,False,True,True,False,True,Chunked causal linear / state attention
+decay_linear_attention,neuralops/attentions/decay_linear_attention.py,TRUE_CAUSAL,False,True,True,True,True,Chunked causal linear / state attention
+eat,neuralops/attentions/eat.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+expert_choice_moe,neuralops/attentions/expert_choice_moe.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+factorised_matrix_state,neuralops/attentions/factorised_matrix_state.py,TRUE_CAUSAL,False,True,True,True,True,Chunked causal linear / state attention
+flash_attention3,neuralops/attentions/flash_attention3.py,TRUE_CAUSAL,False,True,False,False,True,Linear causal attention
+flash_attention3_fp8,neuralops/attentions/flash_attention3_fp8.py,TRUE_CAUSAL,False,True,False,False,True,Linear causal attention
+full_attention,neuralops/attentions/full_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+fused_svd_kernel,neuralops/attentions/fused_svd_kernel.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+fusion_attn,neuralops/attentions/fusion_attn.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+galerkin_attention,neuralops/attentions/galerkin_attention.py,TRUE_CAUSAL,False,True,False,False,True,Linear causal attention
+gated_delta_net,neuralops/attentions/gated_delta_net.py,TRUE_CAUSAL,False,True,True,True,True,Chunked causal linear / state attention
+gated_deltanet_block,neuralops/attentions/gated_deltanet_block.py,TRUE_CAUSAL,False,False,False,True,False,Recurrent SSM / state-space / linear scan causal attention
+gated_linear_attention,neuralops/attentions/gated_linear_attention.py,TRUE_CAUSAL,False,True,True,True,True,Chunked causal linear / state attention
+goldfinch_ahn,neuralops/attentions/goldfinch_ahn.py,TRUE_CAUSAL,True,True,False,True,True,Recurrent SSM / state-space / linear scan causal attention
+gqa_attention,neuralops/attentions/gqa_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+granite_hybrid,neuralops/attentions/granite_hybrid.py,TRUE_CAUSAL,True,True,False,True,True,Recurrent SSM / state-space / linear scan causal attention
+griffin_ssd,neuralops/attentions/griffin_ssd.py,DENSE_FALLBACK,True,True,False,False,True,Decoder branch uses O(L^2) dense decay matrix and softmax fallback
+halo_regla,neuralops/attentions/halo_regla.py,TRUE_CAUSAL,True,True,False,True,True,Recurrent SSM / state-space / linear scan causal attention
+hamming_attention,neuralops/attentions/hamming_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+hgrn2_gated_deltanet,neuralops/attentions/hgrn2_gated_deltanet.py,TRUE_CAUSAL,False,True,False,True,True,Recurrent SSM / state-space / linear scan causal attention
+hgrn2_layer,neuralops/attentions/hgrn2_layer.py,TRUE_CAUSAL,False,True,True,True,True,Chunked causal linear / state attention
+hgrn2_outer,neuralops/attentions/hgrn2_outer.py,TRUE_CAUSAL,False,True,True,True,True,Chunked causal linear / state attention
+hla_attention,neuralops/attentions/hla_attention.py,TRUE_CAUSAL,False,True,False,True,True,Recurrent SSM / state-space / linear scan causal attention
+hybrid_attention,neuralops/attentions/hybrid_attention.py,TRUE_CAUSAL,True,True,True,False,True,Chunked causal linear / state attention
+hymba_transx,neuralops/attentions/hymba_transx.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+infini_attention,neuralops/attentions/infini_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+jamba,neuralops/attentions/jamba.py,TRUE_CAUSAL,True,True,False,True,True,Recurrent SSM / state-space / linear scan causal attention
+jamba_info,neuralops/attentions/jamba_info.py,TRUE_CAUSAL,True,True,False,True,True,Recurrent SSM / state-space / linear scan causal attention
+kda_attention,neuralops/attentions/kda_attention.py,TRUE_CAUSAL,False,True,True,False,True,Chunked causal linear / state attention
+leka_v1,neuralops/attentions/leka_v1.py,TRUE_CAUSAL,False,True,True,False,True,Chunked causal linear / state attention
+leka_v2,neuralops/attentions/leka_v2.py,TRUE_CAUSAL,True,True,True,False,True,Chunked causal linear / state attention
+leka_v3,neuralops/attentions/leka_v3.py,TRUE_CAUSAL,True,True,True,False,True,Chunked causal linear / state attention
+linformer_attention,neuralops/attentions/linformer_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+lola_attention,neuralops/attentions/lola_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+lora_attention,neuralops/attentions/lora_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+lsh_attention,neuralops/attentions/lsh_attention.py,TRUE_CAUSAL,True,True,True,False,True,Chunked causal linear / state attention
+mamba_block,neuralops/attentions/mamba_block.py,TRUE_CAUSAL,False,False,True,True,True,Chunked causal linear / state attention
+mamba_svd_flash,neuralops/attentions/mamba_svd_flash.py,TRUE_CAUSAL,True,True,False,True,True,Recurrent SSM / state-space / linear scan causal attention
+minimal_nova,neuralops/attentions/minimal_nova.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+minimal_svd,neuralops/attentions/minimal_svd.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+mixattention_moska,neuralops/attentions/mixattention_moska.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+mla_attention,neuralops/attentions/mla_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+moba_attention,neuralops/attentions/moba_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+moe_deltakv_paged,neuralops/attentions/moe_deltakv_paged.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+naive_svd,neuralops/attentions/naive_svd.py,TRUE_CAUSAL,False,False,False,False,True,Linear causal attention
+nasc_attention,neuralops/attentions/nasc_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+nexus,neuralops/attentions/nexus.py,TRUE_CAUSAL,True,True,True,False,True,Chunked causal linear / state attention
+nha_attention,neuralops/attentions/nha_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+nsa_attention,neuralops/attentions/nsa_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+nystrom_attention,neuralops/attentions/nystrom_attention.py,TRUE_CAUSAL,True,True,True,False,True,Chunked causal linear / state attention
+optimized_hybrid_attention,neuralops/attentions/optimized_hybrid_attention.py,TRUE_CAUSAL,True,True,True,False,True,Chunked causal linear / state attention
+orion,neuralops/attentions/orion.py,TRUE_CAUSAL,True,True,True,True,True,Chunked causal linear / state attention
+padre_attention,neuralops/attentions/padre_attention.py,TRUE_CAUSAL,False,True,False,False,True,Linear causal attention
+performer_attention,neuralops/attentions/performer_attention.py,TRUE_CAUSAL,False,True,True,True,True,Chunked causal linear / state attention
+phantom,neuralops/attentions/phantom.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+primal_attention,neuralops/attentions/primal_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+progressive_token_pruning,neuralops/attentions/progressive_token_pruning.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+projection_factorized_attn,neuralops/attentions/projection_factorized_attn.py,ENCODER_ONLY,False,False,False,False,False,"Encoder-only / bidirectional only, raises NotImplementedError or unsupported on decoder"
+qcqa_attention,neuralops/attentions/qcqa_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+rala_attention,neuralops/attentions/rala_attention.py,TRUE_CAUSAL,False,True,False,True,True,Recurrent SSM / state-space / linear scan causal attention
+reap_moe,neuralops/attentions/reap_moe.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+regla_attention,neuralops/attentions/regla_attention.py,TRUE_CAUSAL,False,True,True,True,True,Chunked causal linear / state attention
+replace,neuralops/attentions/replace.py,ENCODER_ONLY,True,True,False,False,True,"Encoder-only / bidirectional only, raises NotImplementedError or unsupported on decoder"
+res_svd,neuralops/attentions/res_svd.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+routing_attention,neuralops/attentions/routing_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+rpc_attention,neuralops/attentions/rpc_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+salt_attention,neuralops/attentions/salt_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+samba_m3,neuralops/attentions/samba_m3.py,TRUE_CAUSAL,True,True,False,True,True,Recurrent SSM / state-space / linear scan causal attention
+samba_moe,neuralops/attentions/samba_moe.py,TRUE_CAUSAL,True,False,False,True,True,Recurrent SSM / state-space / linear scan causal attention
+selective_ssm,neuralops/attentions/selective_ssm.py,TRUE_CAUSAL,False,False,False,True,False,Recurrent SSM / state-space / linear scan causal attention
+simple_ssm,neuralops/attentions/simple_ssm.py,DENSE_FALLBACK,False,True,False,True,True,Decoder branch materializes O(L^2) tril decay matrix instead of recurrent scan
+soa_attn,neuralops/attentions/soa_attn.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+span_expanded_attention,neuralops/attentions/span_expanded_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+spectra_v2,neuralops/attentions/spectra_v2.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+spectraformer_attention,neuralops/attentions/spectraformer_attention.py,TRUE_CAUSAL,False,True,False,True,True,Recurrent SSM / state-space / linear scan causal attention
+spectral_mamba,neuralops/attentions/spectral_mamba.py,TRUE_CAUSAL,True,True,False,True,True,Recurrent SSM / state-space / linear scan causal attention
+spectron,neuralops/attentions/spectron.py,TRUE_CAUSAL,True,True,False,True,True,Recurrent SSM / state-space / linear scan causal attention
+squeezing_heads_distill,neuralops/attentions/squeezing_heads_distill.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+svd_attention,neuralops/attentions/svd_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+svd_compressed,neuralops/attentions/svd_compressed.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+svd_linear_attention,neuralops/attentions/svd_linear_attention.py,TRUE_CAUSAL,True,True,True,True,True,Chunked causal linear / state attention
+svd_linear_decay,neuralops/attentions/svd_linear_decay.py,ENCODER_ONLY,False,False,False,False,False,"Encoder-only / bidirectional only, raises NotImplementedError or unsupported on decoder"
+svd_llm_v2_attention,neuralops/attentions/svd_llm_v2_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+svd_mamba,neuralops/attentions/svd_mamba.py,TRUE_CAUSAL,True,True,True,True,True,Chunked causal linear / state attention
+svd_projection_attention,neuralops/attentions/svd_projection_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+template_attention,neuralops/attentions/template_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+tlinformer_attention,neuralops/attentions/tlinformer_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+token_compressed_attention,neuralops/attentions/token_compressed_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+tpa_attention,neuralops/attentions/tpa_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+triton_cosformer,neuralops/attentions/triton_cosformer.py,TRUE_CAUSAL,False,True,True,True,True,Custom Triton causal kernel
+triton_svd_linear_attention,neuralops/attentions/triton_svd_linear_attention.py,TRUE_CAUSAL,False,True,True,True,True,Custom Triton causal kernel
+unified_rope,neuralops/attentions/unified_rope.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+upi_stuffed_mamba,neuralops/attentions/upi_stuffed_mamba.py,TRUE_CAUSAL,False,False,True,True,True,Chunked causal linear / state attention
+vig_attention,neuralops/attentions/vig_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+vspec,neuralops/attentions/vspec.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+wgqa_attention,neuralops/attentions/wgqa_attention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+xattention,neuralops/attentions/xattention.py,CAUSAL_VIA_MASK,True,True,False,False,True,Softmax attention with causal triangular mask (O(N^2))
+zeros_attention,neuralops/attentions/zeros_attention.py,TRUE_CAUSAL,False,True,False,False,True,Linear causal attention

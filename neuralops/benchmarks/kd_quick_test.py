@@ -3,7 +3,8 @@
 Adaptive Knowledge Distillation (KD) Experiment on MambaBlock.
 
 Evaluates whether KD can rescue an SSM-based module injected into GPT-2.
-Includes mathematically corrected KL-Divergence scaling and robust caching.
+Includes mathematically corrected KL-Divergence scaling, robust caching,
+and proper SSM trainable parameter mapping.
 """
 
 import argparse
@@ -236,8 +237,8 @@ class HiddenProjectionAdapter(nn.Module):
 
 
 def compute_kl_divergence(student_logits: torch.Tensor, teacher_logits: torch.Tensor, temperature: float = 2.0) -> torch.Tensor:
-    # FIX: Flatten tensors so `batchmean` reduction accurately divides by (Batch * SeqLen)
-    # This prevents the KL loss from scaling linearly with sequence length!
+    # Flatten tensors so `batchmean` reduction accurately divides by (Batch * SeqLen)
+    # This prevents the KL loss from scaling linearly with sequence length
     p_s = F.log_softmax(student_logits.view(-1, student_logits.size(-1)) / temperature, dim=-1)
     p_t = F.softmax(teacher_logits.view(-1, teacher_logits.size(-1)) / temperature, dim=-1)
     return F.kl_div(p_s, p_t, reduction="batchmean") * (temperature * temperature)
@@ -279,24 +280,25 @@ def compute_method_d_loss(student_out: Any, teacher_out: Any, input_ids: torch.T
 
 
 def set_train_scope(model, train_scope="all"):
+    """
+    FIX 1: Updated ATTN_ATTRS and check logic so Mamba/SSM layers are correctly included 
+    in the training scope and not falsely frozen.
+    """
     if train_scope == "all":
         for p in model.parameters():
             p.requires_grad = True
     elif train_scope in ("mamba", "attention", "module"):
-        ATTN_ATTRS = ("attn", "attention", "self_attn")
+        ATTN_ATTRS = ("attn", "attention", "self_attn", "mamba", "ssm")
         n_matched = 0
         for name, p in model.named_parameters():
-            # Match any of: .attn. , .attention. , .self_attn.
-            has_attn = any(
-                f".{attr}." in name or name.endswith(f".{attr}")
-                for attr in ATTN_ATTRS
-            )
+            # Check if any of the target keywords exist in the parameter name
+            has_attn = any(attr in name.lower() for attr in ATTN_ATTRS)
             if has_attn:
                 p.requires_grad = True
                 n_matched += 1
             else:
                 p.requires_grad = False
-        LOG.info("set_train_scope: matched %d attention param tensors", n_matched)
+        LOG.info("set_train_scope: matched %d target param tensors", n_matched)
     else:
         raise ValueError(f"Unknown train_scope: {train_scope}")
 
@@ -340,7 +342,6 @@ def is_cache_valid(cache_dir: Path, expected_chunks: int, expected_seq_len: int,
         need_hidden = any(m in methods_set for m in ("B", "C", "D"))
         need_attn = include_attn and ("C" in methods_set)
 
-        # FIX: Robustly check existence by ensuring the filename is valid
         if need_logits:
             fname = manifest.get("logits_file")
             if not manifest.get("has_logits") or not fname or not (cache_dir / fname).exists(): return False
@@ -450,11 +451,13 @@ def load_teacher_cache(cache_dir: Path) -> dict[str, Any]:
         if manifest.get(f"has_{key}") and manifest.get(f"{key}_file"):
             fpath = cache_dir / manifest[f"{key}_file"]
             if fpath.exists():
+                # FIX 2: Load directly into RAM (mmap=False) to avoid I/O bottlenecks during training loop
+                LOG.info("Loading %s directly into RAM for fast I/O...", key)
                 try:
-                    cache[key] = torch.load(fpath, map_location="cpu", mmap=True)
+                    cache[key] = torch.load(fpath, map_location="cpu", weights_only=False)
                 except Exception as e:
-                    LOG.warning("mmap failed for %s, loading fully into RAM: %s", key, e)
-                    cache[key] = torch.load(fpath, map_location="cpu")
+                    LOG.warning("RAM load failed for %s, falling back to mmap: %s", key, e)
+                    cache[key] = torch.load(fpath, map_location="cpu", mmap=True, weights_only=False)
 
     _load_tensor("logits")
     _load_tensor("hidden_states")
@@ -501,9 +504,11 @@ def run_kd_method(
     LOG.info("Pre-KD PPL for Method %s: %.2f", method_name, pre_ppl)
 
     n_trainable = set_train_scope(student, args.train_scope)
+    # FIX 1 (fallback condition): ensure mamba/ssm keywords are included when recovering trainable parameters
     if n_trainable == 0:
         for name, p in student.named_parameters():
-            if ".attn." in name: p.requires_grad = True
+            if any(k in name.lower() for k in ["attn", "mamba", "ssm"]): 
+                p.requires_grad = True
         n_trainable = sum(p.numel() for p in student.parameters() if p.requires_grad)
 
     for p in student.parameters():
@@ -517,8 +522,10 @@ def run_kd_method(
     attn_mamba_params, other_params = [], []
     for name, p in student.named_parameters():
         if p.requires_grad:
-            if ".attn." in name or "mamba" in name.lower() or "ssm" in name.lower(): attn_mamba_params.append(p)
-            else: other_params.append(p)
+            if any(k in name.lower() for k in ["attn", "mamba", "ssm"]):
+                attn_mamba_params.append(p)
+            else: 
+                other_params.append(p)
 
     adapter_params = list(projection_adapter.parameters()) if projection_adapter is not None else []
     param_groups = []
@@ -683,7 +690,7 @@ def run_kd_method(
     }
 
 # -----------------------------------------------------------------------------
-# Comparison Table & Main (Unchanged logical structure, trimmed for brevity)
+# Comparison Table & Main
 # -----------------------------------------------------------------------------
 def print_comparison_table(results: list[dict[str, Any]]):
     header = "+---------+----------+----------+----------+----------+----------+----------+\n| Method  | Pre PPL  | Post PPL | Recovery | Time (s) | VRAM(MB) | Cached   |\n+---------+----------+----------+----------+----------+----------+----------+"
@@ -735,26 +742,12 @@ def main():
     parser.add_argument("--train_scope", type=str, default="module",
                         choices=["all", "mamba", "attention", "module"])
     
-    def _default_baseline_ppl(seq_len: int) -> float:
-        """Return the correct GPT-2 WikiText-2 PPL for a given seq_len."""
-        if seq_len <= 128:
-            return 66.07
-        elif seq_len <= 256:
-            return 35.0
-        elif seq_len <= 512:
-            return 25.0
-        else:
-            return 21.71
-
-    parser.add_argument("--baseline_ppl", type=float, default=None, help="Teacher baseline PPL")
+    # FIX 3: Make baseline_ppl logic clear and fallback correctly
+    parser.add_argument("--baseline_ppl", type=float, default=None, help="Teacher baseline PPL (optional override)")
     parser.add_argument("--timestamp", type=str, default=None)
     parser.add_argument("--log_file", type=str, default=None)
     
     args = parser.parse_args()
-
-    if args.baseline_ppl is None:
-        args.baseline_ppl = _default_baseline_ppl(args.seq_len)
-        LOG.info("Auto-selected baseline_ppl=%.2f for seq_len=%d", args.baseline_ppl, args.seq_len)
     
     # ---- Setup logging ----
     if args.timestamp is None:
@@ -823,8 +816,15 @@ def main():
     # ---- Baseline PPL (teacher) ----
     LOG.info("Computing teacher baseline PPL...")
     teacher_ppl = compute_perplexity(teacher, tokenizer, test_dataset, seq_len=args.seq_len, stride=128, max_eval_tokens=args.eval_max_tokens, device=args.device)
-    LOG.info("Teacher baseline PPL: %.2f", teacher_ppl)
-    baseline_ppl = teacher_ppl if args.baseline_ppl <= 0 else args.baseline_ppl
+    LOG.info("Teacher baseline PPL calculated: %.2f", teacher_ppl)
+
+    # FIX 3: Logical assignment of baseline PPL
+    if args.baseline_ppl is None or args.baseline_ppl <= 0:
+        baseline_ppl = teacher_ppl
+    else:
+        baseline_ppl = args.baseline_ppl
+        LOG.info("Overriding baseline PPL with user provided value: %.2f", baseline_ppl)
+        
     LOG.info("Using baseline PPL for recovery metric: %.2f", baseline_ppl)
     
     # ---- Run each method ----
@@ -890,5 +890,6 @@ def main():
             LOG.warning("Plot generation failed: %s", e)
     
     return 0
+
 if __name__ == "__main__":
     main()
