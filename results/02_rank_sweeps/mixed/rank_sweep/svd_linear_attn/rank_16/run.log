@@ -167,3 +167,27 @@ Notes:
 2026-10-05 02:40:52,282 [INFO] QwenQualitySweep: [1/1] svd_linear_attn -> PASS 73.51% (F1: 0.7759, Peak VRAM: 367.98 MB)
 2026-10-05 02:40:52,294 [INFO] HFGitExporter: [Automation] Run gpt2 / svd-linear-attn is SUCCESSFUL (acc=73.51% >= 69.54%). Starting automated HF export to Hooshaai/svd-linear-attention-gpt2-svd-linear-attn and Git recording.
 2026-10-05 02:40:52,296 [WARNING] HFGitExporter: Hugging Face upload failed for Hooshaai/svd-linear-attention-gpt2-svd-linear-attn: Cannot reach https://huggingface.co/api/repos/create: offline mode is enabled. To disable it, please unset the `HF_HUB_OFFLINE` environment variable.
+[main 0f7ebb86c7] feat(benchmark): record successful svd_linear_attn on gpt2 (Acc: 73.51%, F1: 0.7759)
+ 15 files changed, 433 insertions(+)
+ create mode 100644 results/01_unified_runs/unified_adaptive_span/4models_summary.csv
+ create mode 100644 results/01_unified_runs/unified_adaptive_span/4models_summary.json
+ create mode 100644 results/01_unified_runs/unified_adaptive_span/gpt_neo/summary.csv
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd/gpt2/batch_cache_sst2/meta.json
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd/gpt2/failed_runs.json
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd/gpt2/finetune_metadata.json
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd/gpt2/gpt2_adaptive_svd_full_metrics.json
+ create mode 100644 results/01_unified_runs/unified_adaptive_svd/gpt2/summary.csv
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_linear_attn/rank_16/batch_cache_sst2/meta.json
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_linear_attn/rank_16/finetune_metadata.json
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_linear_attn/rank_16/gpt2_svd_linear_attn_full_metrics.json
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_linear_attn/rank_16/run.log
+ create mode 100644 results/02_rank_sweeps/mixed/rank_sweep/svd_linear_attn/rank_16/summary.csv
+2026-10-05 02:41:59,674 [WARNING] HFGitExporter: Git push failed after 5 attempts — commit is local only.
+2026-10-05 02:41:59,676 [INFO] QwenQualitySweep: [1/1] svd_linear_attn Timing: eval_time=290.01s
+2026-10-05 02:41:59,676 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-10-05 02:42:00,256 [INFO] QwenQualitySweep: ================================================================================
+2026-10-05 02:42:00,257 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-10-05 02:42:00,270 [INFO] QwenQualitySweep: 
+         Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+svd_linear_attn   PASS   73.51%    -1.03% 0.7759                 12            1.26x  368.0 MB              25.49             29.23
+2026-10-05 02:42:00,271 [INFO] QwenQualitySweep: ================================================================================

@@ -1,0 +1,56 @@
+2026-10-05 02:43:31,744 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0% (leaving 2.40 GB headroom)
+2026-10-05 02:43:31,745 [INFO] QwenQualitySweep: GPU VRAM: 5.98 GB free / 8.00 GB total on NVIDIA GeForce RTX 4070 Laptop GPU
+2026-10-05 02:43:31,745 [INFO] QwenQualitySweep: Configured execution sizing: parallel=1, batch_size=8 (explicit_parallel=True, explicit_batch=True)
+2026-10-05 02:43:31,806 [INFO] neuralops.attentions.gated_delta_net: GDN: Triton scan available
+2026-10-05 02:43:31,811 [INFO] neuralops.attentions.hgrn2_layer: HGRN2: Triton scan available
+2026-10-05 02:43:32,524 [INFO] QwenQualitySweep: Running 1 attention modules in-memory sequentially
+2026-10-05 02:43:32,528 [INFO] QwenQualitySweep: Configured PyTorch per-process GPU memory fraction cap: 70.0%
+2026-10-05 02:43:33,273 [INFO] QwenQualitySweep: Configured dataset 'sst2' with num_labels=2
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 4545.91it/s]
+[1mGPT2ForSequenceClassification LOAD REPORT[0m from: gpt2
+Key          | Status  | 
+-------------+---------+-
+score.weight | MISSING | 
+
+Notes:
+- MISSING:	those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+2026-10-05 02:43:34,687 [INFO] QwenQualitySweep: model=gpt2 qwen_compat=False hidden=768 heads=12 head_dim=? layers=12
+2026-10-05 02:43:34,687 [INFO] QwenQualitySweep: detected model family=gpt adapter={'family': 'gpt', 'raw_family': 'gpt', 'hidden_size': 768, 'num_heads': 12, 'num_key_value_heads': 12, 'q_proj_out': 768, 'kv_proj_out': 768, 'kv_repeat': 1, 'head_dim': 64, 'num_hidden_layers': 12, 'causal': True, 'mask_rank': 4, 'position_embedding': 'absolute', 'supports_gqa': False, 'supports_delta_net': False, 'supports_moe': False}
+2026-10-05 02:43:34,688 [INFO] QwenQualitySweep: ================================================================================
+2026-10-05 02:43:34,688 [INFO] QwenQualitySweep: ACTIVE SWEEP CONFIGURATION:
+2026-10-05 02:43:34,688 [INFO] QwenQualitySweep:   model:             gpt2
+2026-10-05 02:43:34,688 [INFO] QwenQualitySweep:   family:            gpt
+2026-10-05 02:43:34,688 [INFO] QwenQualitySweep:   dataset:           sst2
+2026-10-05 02:43:34,688 [INFO] QwenQualitySweep:   batch_size:        8
+2026-10-05 02:43:34,688 [INFO] QwenQualitySweep:   recovery_steps:    500
+2026-10-05 02:43:34,689 [INFO] QwenQualitySweep:   optimizer:         adamw (muon_lr=2.0e-02, adam_lr=2.0e-04, weight_decay=1.0e-02)
+2026-10-05 02:43:34,689 [INFO] QwenQualitySweep:   precision:         fp16
+2026-10-05 02:43:34,689 [INFO] QwenQualitySweep: ================================================================================
+2026-10-05 02:43:34,692 [INFO] QwenQualitySweep: Fine-tuning classification head for 200 steps before module injection (head_lr=1.0e-03)
+2026-10-05 02:43:44,551 [INFO] QwenQualitySweep: fine-tune step 25/200 loss=1.6523
+2026-10-05 02:43:51,762 [INFO] QwenQualitySweep: fine-tune step 50/200 loss=0.8697
+2026-10-05 02:44:00,381 [INFO] QwenQualitySweep: fine-tune step 75/200 loss=1.1547
+2026-10-05 02:44:07,057 [INFO] QwenQualitySweep: fine-tune step 100/200 loss=0.6210
+2026-10-05 02:44:13,861 [INFO] QwenQualitySweep: fine-tune step 125/200 loss=0.7070
+2026-10-05 02:44:20,404 [INFO] QwenQualitySweep: fine-tune step 150/200 loss=0.5450
+2026-10-05 02:44:29,015 [INFO] QwenQualitySweep: fine-tune step 175/200 loss=0.6959
+2026-10-05 02:44:37,728 [INFO] QwenQualitySweep: fine-tune step 200/200 loss=0.5295
+2026-10-05 02:44:37,735 [INFO] QwenQualitySweep: Saved lightweight fine-tuned head checkpoint: results\02_rank_sweeps\mixed\rank_sweep\svd_linear_attn\rank_64\finetuned_model.pt
+2026-10-05 02:44:49,623 [INFO] QwenQualitySweep: Saved pre-tokenized batch cache to results\02_rank_sweeps\mixed\rank_sweep\svd_linear_attn\rank_64\batch_cache_sst2 (will be reused by subsequent module runs)
+2026-10-05 02:44:49,623 [INFO] QwenQualitySweep: Prepared 109 eval batches and 100 train batches directly on GPU.
+2026-10-05 02:45:39,021 [INFO] QwenQualitySweep: Baseline model benchmark accuracy on validation set: 74.54%
+2026-10-05 02:45:40,193 [INFO] QwenQualitySweep: ================================================================================
+2026-10-05 02:45:40,194 [INFO] QwenQualitySweep: STATISTICAL BENCHMARK THRESHOLDS (Validation N=872):
+2026-10-05 02:45:40,194 [INFO] QwenQualitySweep:   Validation Majority Count: 444 / 872
+2026-10-05 02:45:40,194 [INFO] QwenQualitySweep:   True Majority Baseline:    50.92%
+2026-10-05 02:45:40,194 [INFO] QwenQualitySweep:   Standard Error (SE):       1.693%
+2026-10-05 02:45:40,194 [INFO] QwenQualitySweep:   Statistical Margin (3*SE): 5.08%
+2026-10-05 02:45:40,194 [INFO] QwenQualitySweep:   Statistical Floor:         56.00%
+2026-10-05 02:45:40,194 [INFO] QwenQualitySweep:   Fine-Tuned Baseline Acc:   74.54%
+2026-10-05 02:45:40,195 [INFO] QwenQualitySweep:   Acceptable Drop:           5.00%
+2026-10-05 02:45:40,195 [INFO] QwenQualitySweep:   Baseline Floor:            69.54%
+2026-10-05 02:45:40,195 [INFO] QwenQualitySweep:   PASS Threshold (Min Acc):  69.54%
+2026-10-05 02:45:40,195 [INFO] QwenQualitySweep:   Threshold Source:          dynamic: majority=50.92%, stat_floor=56.00%, baseline=74.54%, drop=5.0%, baseline_floor=69.54% -> pass_thresh=69.54%
+2026-10-05 02:45:40,195 [INFO] QwenQualitySweep: ================================================================================
+2026-10-05 02:45:40,196 [INFO] QwenQualitySweep: Initializing ModelStateSnapshot for in-memory module swapping...
+2026-10-05 02:45:40,609 [INFO] QwenQualitySweep: >>> STARTING MODULE [1/1]: svd_linear_attn (recovery_steps=500, batch_size=8, optimizer=adamw)
