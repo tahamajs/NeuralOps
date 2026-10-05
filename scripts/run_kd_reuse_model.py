@@ -44,9 +44,13 @@ def main():
     ap.add_argument("--learning_rate", type=float, default=5e-5)
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--timeout", type=int, default=1800)
+    ap.add_argument("--max_vram_frac", type=float, default=None)
     args = ap.parse_args()
 
     import torch
+    if args.max_vram_frac is not None and args.max_vram_frac > 0.0 and args.max_vram_frac <= 1.0:
+        torch.cuda.set_per_process_memory_fraction(args.max_vram_frac)
+        
     from transformers import AutoModelForCausalLM, AutoTokenizer
     from datasets import load_dataset
     # FIX: Correct import name 'inject_attention'
