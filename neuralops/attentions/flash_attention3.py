@@ -840,7 +840,7 @@ class FlashAttention3(BaseAttention):
                             device=device,
                             dtype=torch.float32,
                         ),
-                        diagonal=1,
+                        diagonal=1 + max(0, kv_len - L),
                     )
                     attn_mask = (
                         (attn_mask + causal_m.unsqueeze(0).unsqueeze(0))
