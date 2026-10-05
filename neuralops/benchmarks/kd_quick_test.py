@@ -12,6 +12,8 @@ import hashlib
 import json
 import logging
 import math
+import platform
+import subprocess
 import sys
 import time
 from datetime import datetime
@@ -130,6 +132,368 @@ def update_latest_link(module_name: str, run_dir: Path):
         latest_file.write_text(str(run_dir.resolve()), encoding="utf-8")
     except Exception as e:
         LOG.warning("Failed to update latest.txt for %s: %s", module_name, e)
+
+
+# =============================================================================
+# Run Details & Visualization Persistence
+# =============================================================================
+def get_environment_info() -> dict[str, Any]:
+    """Collect environment info for reproducibility."""
+    info: dict[str, Any] = {
+        "python_version": sys.version,
+        "platform": platform.platform(),
+        "torch_version": torch.__version__,
+        "cuda_version": torch.version.cuda if torch.cuda.is_available() else None,
+        "cudnn_version": torch.backends.cudnn.version() if torch.cuda.is_available() else None,
+        "gpu_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+        "gpu_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
+        "gpu_total_memory_gb": round(torch.cuda.get_device_properties(0).total_memory / 1e9, 2) if torch.cuda.is_available() else 0,
+        "numpy_version": np.__version__,
+        "timestamp": datetime.now().isoformat(),
+    }
+    try:
+        import transformers
+        info["transformers_version"] = transformers.__version__
+    except Exception:
+        info["transformers_version"] = "unknown"
+    try:
+        import datasets as _ds
+        info["datasets_version"] = _ds.__version__
+    except Exception:
+        info["datasets_version"] = "unknown"
+    try:
+        info["git_commit"] = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=str(PROJECT_ROOT),
+            text=True, stderr=subprocess.DEVNULL,
+        ).strip()
+        info["git_branch"] = subprocess.check_output(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=str(PROJECT_ROOT),
+            text=True, stderr=subprocess.DEVNULL,
+        ).strip()
+        info["git_dirty"] = bool(subprocess.check_output(
+            ["git", "status", "--porcelain"],
+            cwd=str(PROJECT_ROOT),
+            text=True, stderr=subprocess.DEVNULL,
+        ).strip())
+    except Exception:
+        info["git_commit"] = "unknown"
+        info["git_branch"] = "unknown"
+        info["git_dirty"] = None
+    return info
+
+
+def get_dataset_info(train_chunks: torch.Tensor, tokenizer, max_train_texts: int, args: argparse.Namespace) -> dict[str, Any]:
+    return {
+        "dataset_name": "Salesforce/wikitext (wikitext-2-raw-v1)",
+        "test_split": getattr(args, "test_split", "test"),
+        "num_chunks": int(len(train_chunks)),
+        "seq_len": int(train_chunks.shape[1]) if len(train_chunks) > 0 else 0,
+        "total_tokens": int(train_chunks.numel()),
+        "vocab_size": int(len(tokenizer)),
+        "max_train_texts": int(max_train_texts),
+        "eval_max_tokens": getattr(args, "eval_max_tokens", 15000),
+        "eval_stride": getattr(args, "eval_stride", 128),
+    }
+
+
+def get_model_summary(model: nn.Module | None) -> dict[str, Any]:
+    """Extract architecture summary from model."""
+    if model is None:
+        return {"error": "model is None"}
+    total_params = sum(p.numel() for p in model.parameters())
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    summary: dict[str, Any] = {
+        "total_params": total_params,
+        "trainable_params": trainable_params,
+        "frozen_params": total_params - trainable_params,
+        "total_params_M": round(total_params / 1e6, 2),
+        "trainable_params_M": round(trainable_params / 1e6, 2),
+        "model_class": model.__class__.__name__,
+    }
+    if hasattr(model, "config"):
+        cfg_dict: dict[str, Any] = {}
+        for k, v in vars(model.config).items():
+            if k.startswith("_"):
+                continue
+            try:
+                json.dumps(v)
+                cfg_dict[k] = v
+            except Exception:
+                cfg_dict[k] = str(v)
+        summary["config"] = cfg_dict
+    return summary
+
+
+def save_run_details(
+    run_dir: Path,
+    module_name: str,
+    method_name: str,
+    args: argparse.Namespace,
+    training_history: dict[str, Any],
+    result: dict[str, Any],
+    env_info: dict[str, Any],
+    dataset_info: dict[str, Any],
+    model_summary: dict[str, Any],
+    model: nn.Module | None = None,
+    adapter: nn.Module | None = None,
+    save_weights: bool = False,
+    extra: dict[str, Any] | None = None,
+) -> None:
+    """Save complete run details to run_dir."""
+    run_dir = Path(run_dir)
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    prefix = f"{module_name}_{method_name}"
+
+    # 1. Config
+    config_serializable: dict[str, Any] = {}
+    for k, v in vars(args).items():
+        try:
+            json.dumps(v)
+            config_serializable[k] = v
+        except Exception:
+            config_serializable[k] = str(v)
+    (run_dir / f"config_{prefix}.json").write_text(
+        json.dumps(config_serializable, indent=2), encoding="utf-8"
+    )
+
+    # 2. Environment
+    (run_dir / f"environment_{prefix}.json").write_text(
+        json.dumps(env_info, indent=2), encoding="utf-8"
+    )
+
+    # 3. Model summary
+    (run_dir / f"model_summary_{prefix}.json").write_text(
+        json.dumps(model_summary, indent=2), encoding="utf-8"
+    )
+
+    # 4. Dataset info
+    (run_dir / f"dataset_info_{prefix}.json").write_text(
+        json.dumps(dataset_info, indent=2), encoding="utf-8"
+    )
+
+    # 5. Training history
+    (run_dir / f"training_history_{prefix}.json").write_text(
+        json.dumps(training_history, indent=2), encoding="utf-8"
+    )
+
+    # 6. Result (clean internal refs)
+    result_clean = {k: v for k, v in result.items() if not k.startswith("_")}
+    (run_dir / f"result_{prefix}.json").write_text(
+        json.dumps(result_clean, indent=2), encoding="utf-8"
+    )
+
+    # 7. Extra
+    if extra:
+        (run_dir / f"extra_{prefix}.json").write_text(
+            json.dumps(extra, indent=2), encoding="utf-8"
+        )
+
+    # 8. Human-readable summary
+    def _fmt(v: Any, f: str = ".4f", default: str = "?") -> str:
+        try:
+            if v is None:
+                return default
+            return f"{v:{f}}"
+        except Exception:
+            return str(v) if v is not None else default
+
+    summary_txt = f"""{'='*80}
+RUN SUMMARY: {module_name} / {method_name}
+{'='*80}
+
+MODEL INFO:
+  Total params:      {model_summary.get('total_params_M', '?')} M
+  Trainable params:  {model_summary.get('trainable_params_M', '?')} M
+  Class:             {model_summary.get('model_class', '?')}
+
+DATASET INFO:
+  Num chunks:        {dataset_info.get('num_chunks', '?')}
+  Seq len:           {dataset_info.get('seq_len', '?')}
+  Total tokens:      {dataset_info.get('total_tokens', '?')}
+  Vocab size:        {dataset_info.get('vocab_size', '?')}
+
+RESULTS:
+  Pre-KD PPL:        {_fmt(result.get('pre_ppl'))}
+  Post-KD PPL:       {_fmt(result.get('post_ppl'))}
+  PPL Ratio:         {_fmt(result.get('ppl_ratio'))}
+  Recovery:          {_fmt(result.get('recovery_pct'), '.2f')}%
+  Peak VRAM:         {_fmt(result.get('peak_vram_mb'), '.2f')} MB
+  Train time:        {_fmt(result.get('train_time_s'), '.2f')} s
+  s/step:            {_fmt(result.get('s_per_step'), '.4f')}
+  Loss (final):      {_fmt(result.get('loss_final'))}
+  Cached:            {result.get('cached', '?')}
+
+ENVIRONMENT:
+  Python:            {str(env_info.get('python_version', '?')).split()[0]}
+  Torch:             {env_info.get('torch_version', '?')}
+  CUDA:              {env_info.get('cuda_version', '?')}
+  GPU:               {env_info.get('gpu_name', '?')}
+  Git commit:        {str(env_info.get('git_commit', 'unknown'))[:12]}
+
+TRAINING HISTORY (last 10 steps):
+"""
+    loss_hist = training_history.get("loss", [])
+    lr_hist = training_history.get("lr", [])
+    for i in range(max(0, len(loss_hist) - 10), len(loss_hist)):
+        step = loss_hist[i].get("step", i)
+        loss = loss_hist[i].get("loss", 0)
+        lr = lr_hist[i].get("lr", 0) if i < len(lr_hist) else 0
+        summary_txt += f"  step {step:5d} | loss={loss:.4f} | lr={lr:.2e}\n"
+
+    (run_dir / f"SUMMARY_{prefix}.txt").write_text(summary_txt, encoding="utf-8")
+
+    # 9. Weights (optional)
+    if save_weights and model is not None:
+        try:
+            weights_path = run_dir / f"model_final_{prefix}.pt"
+            state = {k: v.detach().cpu() for k, v in model.state_dict().items()}
+            torch.save(state, weights_path)
+            LOG.info("Saved model weights: %s", weights_path)
+        except Exception as e:
+            LOG.warning("Failed to save model weights: %s", e)
+
+    if save_weights and adapter is not None:
+        try:
+            adapter_path = run_dir / f"adapter_final_{prefix}.pt"
+            torch.save(adapter.state_dict(), adapter_path)
+            LOG.info("Saved adapter: %s", adapter_path)
+        except Exception as e:
+            LOG.warning("Failed to save adapter: %s", e)
+
+    LOG.info("Saved all run details to %s", run_dir)
+
+
+def save_summary_csv(run_dir: Path, module_name: str, results: list[dict[str, Any]], baseline_ppl: float) -> None:
+    try:
+        csv_path = run_dir / "results.csv"
+        fieldnames = [
+            "module", "method", "pre_ppl", "post_ppl", "recovery_pct", "ppl_ratio",
+            "loss_final", "train_time_s", "s_per_step", "peak_vram_mb", "cached",
+            "teacher_params", "student_params", "trainable_params", "batch_size",
+            "seq_len", "learning_rate", "recovery_steps", "baseline_ppl"
+        ]
+        with open(csv_path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+            writer.writeheader()
+            for r in results:
+                row = dict(r)
+                row["module"] = module_name
+                row["baseline_ppl"] = baseline_ppl
+                writer.writerow(row)
+    except Exception as e:
+        LOG.warning("Failed to write results.csv: %s", e)
+
+
+def save_plots(run_dir: Path, module_name: str, module_results: list[dict[str, Any]], baseline_ppl: float) -> None:
+    if not HAS_MATPLOTLIB or len(module_results) == 0:
+        return
+    try:
+        # 1. Comparison bar chart
+        fig, ax = plt.subplots(figsize=(10, 6), dpi=150)
+        methods = [r["method"] for r in module_results]
+        pre_ppls = [r.get("pre_ppl", float("nan")) for r in module_results]
+        post_ppls = [r.get("post_ppl", float("nan")) for r in module_results]
+        x = np.arange(len(methods))
+        width = 0.35
+        ax.bar(x - width/2, pre_ppls, width, label="Pre-KD PPL", color="#4C72B0", alpha=0.85)
+        ax.bar(x + width/2, post_ppls, width, label="Post-KD PPL", color="#55A868", alpha=0.85)
+        if baseline_ppl is not None and np.isfinite(baseline_ppl):
+            ax.axhline(y=baseline_ppl, color="#C44E52", linestyle="--", linewidth=2, label=f"Teacher baseline ({baseline_ppl:.2f})")
+        ax.set_xticks(x)
+        ax.set_xticklabels(methods, fontsize=11, fontweight="bold")
+        ax.set_ylabel("Perplexity (log scale)", fontsize=12)
+        ax.set_title(f"KD Recovery Comparison — {module_name}", fontsize=14, fontweight="bold")
+        ax.legend(frameon=True, fontsize=11)
+        ax.set_yscale("log")
+        ax.grid(True, which="both", linestyle=":", alpha=0.5)
+        plt.tight_layout()
+        plt.savefig(run_dir / "comparison.png", dpi=150)
+        plt.close(fig)
+
+        # 2. Detailed training curves for each method
+        for r in module_results:
+            method = r["method"]
+            loss_hist = r.get("loss_history", [])
+            ppl_hist = r.get("ppl_history", {})
+            lr_hist = r.get("lr_history", [])
+
+            # Dual-axis training curves (Loss + PPL)
+            if loss_hist or ppl_hist:
+                fig, ax1 = plt.subplots(figsize=(10, 6), dpi=150)
+                if loss_hist:
+                    steps, losses = zip(*loss_hist)
+                    ax1.plot(steps, losses, color="#1f77b4", linewidth=1.5, alpha=0.8, label="Training Loss")
+                    ax1.set_xlabel("Step", fontsize=12)
+                    ax1.set_ylabel("Training Loss", color="#1f77b4", fontsize=12)
+                    ax1.tick_params(axis="y", labelcolor="#1f77b4")
+                    ax1.grid(True, linestyle=":", alpha=0.5)
+
+                if ppl_hist:
+                    ax2 = ax1.twinx()
+                    p_steps, p_vals = zip(*sorted([(int(k), v) for k, v in ppl_hist.items() if np.isfinite(v)]))
+                    if p_steps:
+                        ax2.plot(p_steps, p_vals, "r-o", linewidth=2.0, markersize=5, label="Eval PPL")
+                        if baseline_ppl is not None and np.isfinite(baseline_ppl):
+                            ax2.axhline(y=baseline_ppl, color="r", linestyle="--", alpha=0.6, label=f"Teacher Baseline ({baseline_ppl:.2f})")
+                        ax2.set_ylabel("Perplexity (log scale)", color="r", fontsize=12)
+                        ax2.tick_params(axis="y", labelcolor="r")
+                        ax2.set_yscale("log")
+
+                plt.title(f"Training & Perplexity Curves — {module_name} (Method {method})", fontsize=14, fontweight="bold")
+                fig.tight_layout()
+                plt.savefig(run_dir / f"training_curves_{method}.png", dpi=150)
+                plt.close(fig)
+
+            # Standalone Loss Curve
+            if loss_hist:
+                fig, ax = plt.subplots(figsize=(9, 5), dpi=150)
+                steps, losses = zip(*loss_hist)
+                ax.plot(steps, losses, color="#1f77b4", linewidth=1.5)
+                ax.set_xlabel("Step", fontsize=12)
+                ax.set_ylabel("Loss", fontsize=12)
+                ax.set_title(f"Loss Curve — {module_name} (Method {method})", fontsize=13, fontweight="bold")
+                ax.grid(True, linestyle=":", alpha=0.5)
+                fig.tight_layout()
+                plt.savefig(run_dir / f"loss_curve_{method}.png", dpi=150)
+                plt.close(fig)
+
+            # Standalone PPL Curve
+            if ppl_hist:
+                fig, ax = plt.subplots(figsize=(9, 5), dpi=150)
+                p_items = sorted([(int(k), v) for k, v in ppl_hist.items() if np.isfinite(v)])
+                if p_items:
+                    p_steps, p_vals = zip(*p_items)
+                    ax.plot(p_steps, p_vals, "r-o", linewidth=2.0, markersize=6, label="Eval PPL")
+                    if baseline_ppl is not None and np.isfinite(baseline_ppl):
+                        ax.axhline(y=baseline_ppl, color="black", linestyle="--", linewidth=1.5, label=f"Teacher ({baseline_ppl:.2f})")
+                    ax.set_xlabel("Step", fontsize=12)
+                    ax.set_ylabel("Perplexity (log scale)", fontsize=12)
+                    ax.set_yscale("log")
+                    ax.set_title(f"Perplexity Trajectory — {module_name} (Method {method})", fontsize=13, fontweight="bold")
+                    ax.legend(frameon=True)
+                    ax.grid(True, which="both", linestyle=":", alpha=0.5)
+                    fig.tight_layout()
+                    plt.savefig(run_dir / f"ppl_curve_{method}.png", dpi=150)
+                    plt.close(fig)
+
+            # Learning Rate Schedule Curve
+            if lr_hist:
+                fig, ax = plt.subplots(figsize=(9, 4), dpi=150)
+                steps, lrs = zip(*lr_hist)
+                ax.plot(steps, lrs, color="#2ca02c", linewidth=1.5)
+                ax.set_xlabel("Step", fontsize=12)
+                ax.set_ylabel("Learning Rate", fontsize=12)
+                ax.set_title(f"LR Schedule — {module_name} (Method {method})", fontsize=13, fontweight="bold")
+                ax.grid(True, linestyle=":", alpha=0.5)
+                fig.tight_layout()
+                plt.savefig(run_dir / f"lr_schedule_{method}.png", dpi=150)
+                plt.close(fig)
+
+    except Exception as e:
+        LOG.warning("Plot generation failed: %s", e)
 
 
 # -----------------------------------------------------------------------------
@@ -534,6 +898,7 @@ def run_kd_method(
     method_name: str, module_name: str, base_teacher: AutoModelForCausalLM | None, base_snapshot: AutoModelForCausalLM,
     tokenizer: AutoTokenizer, train_chunks: torch.Tensor, test_dataset: Any, args: argparse.Namespace,
     teacher_cache: dict[str, Any] | None = None, baseline_ppl: float = 21.71,
+    run_dir: Path | None = None, env_info: dict[str, Any] | None = None, dataset_info: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     # If cache is fully handling everything and teacher wasn't loaded, use the identical snapshot for param counts only
     _teacher_ref = base_teacher if base_teacher is not None else base_snapshot
@@ -633,6 +998,7 @@ def run_kd_method(
 
     ppl_history: dict[int, float] = {}
     loss_history: list[tuple[int, float]] = []
+    lr_history: list[tuple[int, float]] = []
     current_seq_len = args.seq_len
     num_chunks = len(train_chunks)
     chunk_idx = 0
@@ -709,6 +1075,7 @@ def run_kd_method(
 
             if accum_count % args.grad_accum_steps == 0:
                 loss_history.append((step, final_loss))
+                lr_history.append((step, float(scheduler.get_last_lr()[0])))
                 max_norm = getattr(args, "max_grad_norm", 1.0)
                 if use_scaler:
                     scaler.unscale_(optimizer)
@@ -766,15 +1133,7 @@ def run_kd_method(
     total_teacher_params = sum(p.numel() for p in _teacher_ref.parameters())
     total_student_params = sum(p.numel() for p in student.parameters())
 
-    # Thorough VRAM cleanup before next module/method
-    del student
-    if projection_adapter is not None: del projection_adapter
-    del optimizer, scheduler, scaler
-    gc.collect()
-    if torch.cuda.is_available(): torch.cuda.empty_cache()
-    time.sleep(1)
-
-    return {
+    result_dict: dict[str, Any] = {
         "method": method_name, "pre_ppl": pre_ppl, "post_ppl": post_ppl, "ppl_ratio": ppl_ratio,
         "recovery_pct": recovery_pct, "peak_vram_mb": peak_vram, "train_time_s": train_time,
         "s_per_step": s_per_step, "loss_final": round(final_loss, 4), "cached": bool(use_cache),
@@ -789,7 +1148,49 @@ def run_kd_method(
         "gpu_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu",
         "loss_history": loss_history,
         "ppl_history": ppl_history,
+        "lr_history": lr_history,
     }
+
+    full_history = {
+        "loss": [{"step": s, "loss": round(float(l), 4)} for s, l in loss_history],
+        "lr": [{"step": s, "lr": float(lr)} for s, lr in lr_history],
+        "ppl": {str(s): round(float(p), 4) for s, p in ppl_history.items() if np.isfinite(p)},
+    }
+
+    if run_dir is not None and env_info is not None and dataset_info is not None:
+        try:
+            run_model_summary = get_model_summary(student)
+            save_run_details(
+                run_dir=run_dir,
+                module_name=module_name,
+                method_name=method_name,
+                args=args,
+                training_history=full_history,
+                result=result_dict,
+                env_info=env_info,
+                dataset_info=dataset_info,
+                model_summary=run_model_summary,
+                model=student,
+                adapter=projection_adapter,
+                save_weights=getattr(args, "save_weights", False),
+                extra={
+                    "comp_stats": str(comp_stats) if comp_stats is not None else None,
+                    "delta_pre": round(float(pre_ppl - baseline_ppl), 4),
+                    "baseline_ppl": baseline_ppl,
+                },
+            )
+        except Exception as e:
+            LOG.warning("Failed to save run details: %s", e)
+
+    # Thorough VRAM cleanup before next module/method
+    del student
+    if projection_adapter is not None: del projection_adapter
+    del optimizer, scheduler, scaler
+    gc.collect()
+    if torch.cuda.is_available(): torch.cuda.empty_cache()
+    time.sleep(1)
+
+    return result_dict
 
 # -----------------------------------------------------------------------------
 # Comparison Table & Main
@@ -813,8 +1214,10 @@ def main():
     # ---- Model & Data ----
     parser.add_argument("--model_name", type=str, default="gpt2", help="Teacher/student base model")
     # FIX: Native Multi-Module support
+    parser.add_argument("--module", dest="modules", nargs="+", help="Alias for --modules")
     parser.add_argument("--modules", nargs="+", default=["mamba"], help="List of modules to process sequentially")
     parser.add_argument("--rank", type=int, default=64, help="Rank for injected module")
+    parser.add_argument("--save_weights", action="store_true", help="Save final student and adapter weights")
     parser.add_argument("--seq_len", type=int, default=256, help="Sequence length")
     parser.add_argument("--max_train_texts", type=int, default=5000, help="Max texts for training chunks")
     parser.add_argument("--num_chunks", type=int, default=412, help="Max number of training chunks (0=all)")
@@ -963,6 +1366,9 @@ def main():
         baseline_ppl, test_split_name, args.eval_max_tokens, eval_stride, args.seq_len
     )
     
+    env_info = get_environment_info()
+    dataset_info = get_dataset_info(train_chunks, tokenizer, args.max_train_texts, args)
+
     # ---- 3. Phase 1: Module Sweep Loop ----
     for idx, module_name in enumerate(args.modules, 1):
         LOG.info("\n" + "=" * 70)
@@ -981,10 +1387,13 @@ def main():
                 base_snapshot=base_snapshot,
                 tokenizer=tokenizer,
                 train_chunks=train_chunks,
-                test_dataset=dataset["test"],
+                test_dataset=dataset[test_split_name],
                 args=args,
                 teacher_cache=teacher_cache,
                 baseline_ppl=baseline_ppl,
+                run_dir=run_dir,
+                env_info=env_info,
+                dataset_info=dataset_info,
             )
             module_results.append(result)
         
@@ -994,65 +1403,11 @@ def main():
         results_path = run_dir / "results.json"
         results_path.write_text(json.dumps(module_results, indent=2), encoding="utf-8")
         
+        save_summary_csv(run_dir, module_name, module_results, baseline_ppl)
         update_registry(module_name, run_dir, module_results, args, baseline_ppl)
         update_latest_link(module_name, run_dir)
         
-        if HAS_MATPLOTLIB and len(module_results) > 0:
-            try:
-                fig, ax = plt.subplots(figsize=(10, 6))
-                methods = [r["method"] for r in module_results]
-                pre_ppls = [r["pre_ppl"] for r in module_results]
-                post_ppls = [r["post_ppl"] for r in module_results]
-                x = np.arange(len(methods))
-                width = 0.35
-                ax.bar(x - width/2, pre_ppls, width, label="Pre-KD PPL")
-                ax.bar(x + width/2, post_ppls, width, label="Post-KD PPL")
-                ax.axhline(y=baseline_ppl, color="r", linestyle="--", label=f"Teacher baseline ({baseline_ppl:.2f})")
-                ax.set_xticks(x)
-                ax.set_xticklabels(methods)
-                ax.set_ylabel("Perplexity")
-                ax.set_title(f"KD Recovery — {module_name}")
-                ax.legend()
-                ax.set_yscale("log")
-                plt.tight_layout()
-                plt.savefig(run_dir / "comparison.png", dpi=100)
-                plt.close()
-
-                # Generate detailed training curves for each method
-                for r in module_results:
-                    method = r["method"]
-                    loss_hist = r.get("loss_history", [])
-                    ppl_hist = r.get("ppl_history", {})
-                    
-                    if not loss_hist and not ppl_hist:
-                        continue
-                        
-                    fig, ax1 = plt.subplots(figsize=(10, 6))
-                    
-                    if loss_hist:
-                        steps, losses = zip(*loss_hist)
-                        ax1.plot(steps, losses, "b-", alpha=0.6, label="Training Loss")
-                        ax1.set_xlabel("Step")
-                        ax1.set_ylabel("Loss", color="b")
-                        ax1.tick_params(axis="y", labelcolor="b")
-                    
-                    if ppl_hist:
-                        ax2 = ax1.twinx()
-                        # Sort by step
-                        p_steps, p_vals = zip(*sorted(ppl_hist.items(), key=lambda x: int(x[0])))
-                        ax2.plot(p_steps, p_vals, "r-o", linewidth=2, label="Eval PPL")
-                        ax2.axhline(y=baseline_ppl, color="r", linestyle="--", alpha=0.5, label="Teacher PPL")
-                        ax2.set_ylabel("Perplexity", color="r")
-                        ax2.tick_params(axis="y", labelcolor="r")
-                        ax2.set_yscale("log")
-                    
-                    plt.title(f"Training Curves — {module_name} (Method {method})")
-                    fig.tight_layout()
-                    plt.savefig(run_dir / f"training_curves_{method}.png", dpi=100)
-                    plt.close()
-                    
-            except Exception as e:
-                LOG.warning("Plot generation failed: %s", e)
+        save_plots(run_dir, module_name, module_results, baseline_ppl)
 
     LOG.info("\n" + "=" * 70)
     LOG.info("SWEEP COMPLETELY FINISHED!")
