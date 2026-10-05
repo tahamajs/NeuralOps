@@ -1186,6 +1186,32 @@
           "status": "PASS"
         }
       }
+    },
+    {
+      "module": "chela_slay_attention",
+      "timestamp": "20261005_032903",
+      "results": {
+        "C": {
+          "pre_ppl": 66.84,
+          "post_ppl": 19.5,
+          "recovery_pct": 6183.57,
+          "time_s": 283.1,
+          "status": "PASS"
+        }
+      }
+    },
+    {
+      "module": "cluster",
+      "timestamp": "20261005_033109",
+      "results": {
+        "C": {
+          "pre_ppl": 51.18,
+          "post_ppl": 17.88,
+          "recovery_pct": 3329635810.85,
+          "time_s": 125.6,
+          "status": "PASS"
+        }
+      }
     }
   ]
 }
