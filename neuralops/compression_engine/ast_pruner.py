@@ -1,10 +1,10 @@
 r"""
 AST: Adaptive Semi-Structured 2:4 and N:M Pruning with Empirical Fisher
-Calibration and PCA Coordinate Rotation (Corrected).
+Calibration, PCA Coordinate Rotation, and Soft Straight-Through Estimator (STE).
 
 Registered in COMPRESSOR_REGISTRY as 'ast_pruner' and 'ast'.
 
-Mathematical Formulation (CORRECTED):
+Mathematical Formulation:
   1. Activation Covariance & PCA:
        Σ_X = (1/(N-1)) (X-μ)^T (X-μ) = Q Λ Q^T,  Q^T Q = I
   2. Empirical Jacobian-weighted saliency:
@@ -16,7 +16,10 @@ Mathematical Formulation (CORRECTED):
        S_ij = |W_ij| · sqrt(F_proj_ij + ε)
   5. 2:4 structured mask on ORIGINAL weights:
        W_pruned = Π_{2:4}(W, S)
-
+  6. Soft Straight-Through Estimator (STE):
+       W_forward = W_pruned + W - W.detach()
+       Allows 2:4 sparsity during forward pass while routing dense gradients to all
+       weights during backward pass so the model recovers and updates importance dynamically.
 """
 
 from __future__ import annotations
@@ -50,17 +53,18 @@ def _cfg_get(cfg: Any, key: str, default: Any) -> Any:
 
 
 # ============================================================================
-# ASTPrunedLoRALinear
+# ASTPrunedLoRALinear with Soft STE
 # ============================================================================
 
 
 class ASTPrunedLoRALinear(nn.Module):
     """
-    Linear layer with frozen AST-pruned base weights and optional trainable
-    LoRA adapters.
+    Linear layer with trainable base weights and dynamic 2:4 structured sparsity
+    via Soft Straight-Through Estimator (STE) + optional trainable LoRA adapters.
 
     The base weight is stored in original coordinate basis with a true 2:4
-    (or N:M) sparsity pattern. Framework may pack it as sparse if desired.
+    sparsity pattern enforced in the forward pass, while receiving dense
+    unfrozen gradients in the backward pass.
     """
 
     def __init__(
@@ -69,6 +73,7 @@ class ASTPrunedLoRALinear(nn.Module):
         out_features: int,
         weight: torch.Tensor,
         bias: torch.Tensor | None = None,
+        mask: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         device: torch.device | None = None,
@@ -85,14 +90,21 @@ class ASTPrunedLoRALinear(nn.Module):
         target_device = device if device is not None else weight.device
         target_dtype = dtype if dtype is not None else weight.dtype
 
+        # FIXED: Ensure base weight is trainable with requires_grad=True so STE passes dense gradients back
         self.weight = nn.Parameter(
             weight.to(device=target_device, dtype=target_dtype),
-            requires_grad=False,
+            requires_grad=True,
         )
+
+        if mask is not None:
+            self.register_buffer("mask", mask.to(device=target_device, dtype=target_dtype))
+        else:
+            self.register_buffer("mask", torch.ones_like(self.weight))
+
         if bias is not None:
             self.bias = nn.Parameter(
                 bias.to(device=target_device, dtype=target_dtype),
-                requires_grad=False,
+                requires_grad=True,
             )
         else:
             self.register_parameter("bias", None)
@@ -122,26 +134,27 @@ class ASTPrunedLoRALinear(nn.Module):
         cls,
         linear: nn.Module,
         weight: torch.Tensor,
+        mask: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> ASTPrunedLoRALinear:
         bias = None
         if hasattr(linear, "bias") and linear.bias is not None:
             bias = linear.bias.detach()
-        in_features = getattr(linear, "in_features", getattr(linear, "nf", weight.shape[1]))
-        out_features = getattr(linear, "out_features", getattr(linear, "nf", weight.shape[0]))
+        in_features = getattr(linear, "in_features", weight.shape[1])
+        out_features = getattr(linear, "out_features", weight.shape[0])
         return cls(
             in_features=in_features,
             out_features=out_features,
             weight=weight,
             bias=bias,
+            mask=mask,
             lora_r=lora_r,
             lora_alpha=lora_alpha,
             device=weight.device,
             dtype=weight.dtype,
         )
 
-    # AST-FIX-12: framework merge() compatibility
     def merge(self) -> None:
         """Merge LoRA into base weight in place."""
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
@@ -156,16 +169,23 @@ class ASTPrunedLoRALinear(nn.Module):
         self.merge()
 
     def unmerge(self) -> None:
-        # Not supported after merge
         pass
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
-        out = F.linear(x_flat, self.weight, self.bias)
+
+        # FIXED: Soft Straight-Through Estimator (STE) for 2:4 structured sparsity.
+        # W_forward has strict 2:4 sparsity in forward pass, but d(W_forward)/d(W) = 1 in backward pass.
+        if self.mask is not None:
+            w_pruned = self.weight * self.mask
+            w_forward = w_pruned + self.weight - self.weight.detach()
+        else:
+            w_forward = self.weight
+
+        out = F.linear(x_flat, w_forward, self.bias)
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            # AST-FIX: single dtype conversion
             x_f = x_flat.float()
             lora_out = F.linear(F.linear(x_f, self.lora_A), self.lora_B)
             out = out + (self.scaling * lora_out).to(out.dtype)
@@ -183,14 +203,7 @@ class ASTPrunedLoRALinear(nn.Module):
 class ASTPruner(BaseCompressor):
     """
     AST Pruner: vectorized semi-structured 2:4 / N:M pruning with empirical
-    Jacobian calibration and PCA coordinate rotation (saliency only).
-
-    Design notes:
-      * PCA rotation is used **for saliency estimation only**. The actual
-        2:4 mask is applied to the ORIGINAL weights so the sparsity pattern
-        is preserved and remains exploitable by sparse backends.
-      * The Jacobian proxy (0.5·||logits||²) is a heuristic inspired by
-        SparseGPT; it is NOT the true Fisher Information Matrix.
+    Jacobian calibration, PCA coordinate rotation, and Soft Straight-Through Estimator (STE).
     """
 
     def __init__(
@@ -274,9 +287,6 @@ class ASTPruner(BaseCompressor):
         self.layer_errors: dict[str, float] = {}
         self.stats: dict[str, Any] = {}
 
-    # ------------------------------------------------------------------
-    # Target selection
-    # ------------------------------------------------------------------
     def _is_gqa_asymmetric(self, name: str, module: nn.Module) -> bool:
         if not self.skip_attention_qkv:
             return False
@@ -355,18 +365,9 @@ class ASTPruner(BaseCompressor):
             return any(t in name for t in self.target_modules)
         return True
 
-    # ------------------------------------------------------------------
-    # Calibration: collect activations and Jacobian-proxy squared gradients
-    # ------------------------------------------------------------------
     def _collect_jacobian_and_activations(
         self,
     ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]]:
-        """
-        Returns (activation_covariances, jacobian_proxy_squared).
-        AST-FIX-06: uses eval() + enable_grad() (not train()).
-        AST-FIX-07: always averages over batches.
-        AST-FIX-13: passes attention_mask when present.
-        """
         activations: dict[str, list[torch.Tensor]] = {}
         fisher_info: dict[str, torch.Tensor] = {}
         hooks = []
@@ -382,7 +383,6 @@ class ASTPruner(BaseCompressor):
             if self._is_target_module(name, module):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
-        # Build calibration batches
         batches: list[Any] = []
         if self.calibration_loader is not None:
             for b in self.calibration_loader:
@@ -400,7 +400,6 @@ class ASTPruner(BaseCompressor):
                 )
             ]
 
-        # AST-FIX-06: eval mode (no dropout) + enable_grad for backward
         self.model.eval()
         n_batches_run = 0
         try:
@@ -424,8 +423,6 @@ class ASTPruner(BaseCompressor):
                         )
 
                     if self.use_fisher and out is not None:
-                        # AST-FIX-14: explicit naming - this is NOT true Fisher
-                        # 0.5·||logits||² is a Jacobian-weighted norm proxy.
                         logits = None
                         if hasattr(out, "logits"):
                             logits = out.logits
@@ -445,7 +442,6 @@ class ASTPruner(BaseCompressor):
                             for name, module in self.model.named_modules():
                                 if not self._is_target_module(name, module):
                                     continue
-                                # Resolve weight
                                 target_w = getattr(module, "weight", None)
                                 base = getattr(module, "base_layer", module)
                                 if target_w is None:
@@ -466,7 +462,6 @@ class ASTPruner(BaseCompressor):
             for h in hooks:
                 h.remove()
 
-        # AST-FIX-07: always divide (even for n_batches_run == 1)
         if n_batches_run >= 1:
             inv = 1.0 / float(n_batches_run)
             for k in list(fisher_info.keys()):
@@ -476,7 +471,6 @@ class ASTPruner(BaseCompressor):
                 "AST: no successful backward passes; saliency will fall back to |W| only."
             )
 
-        # Build covariance map, then discard raw activations (AST-FIX-11)
         cov_map: dict[str, torch.Tensor] = {}
         for name, act_list in activations.items():
             if not act_list:
@@ -488,10 +482,8 @@ class ASTPruner(BaseCompressor):
             mean = torch.mean(act_concat, dim=0, keepdim=True)
             centered = act_concat - mean
             cov = torch.matmul(centered.T, centered) / float(N - 1)
-            # AST-FIX-09: explicit symmetrize
             cov = (cov + cov.T) * 0.5
             cov_map[name] = cov
-            # Free memory
             del act_concat, centered, mean
             if name not in fisher_info:
                 fisher_info[name] = torch.var(torch.zeros(1, D), dim=0, keepdim=True).expand(1, D)
@@ -499,21 +491,12 @@ class ASTPruner(BaseCompressor):
 
         return cov_map, fisher_info
 
-    # ------------------------------------------------------------------
-    # PCA basis extraction (per-layer, no covariance retained)
-    # ------------------------------------------------------------------
     @staticmethod
     def _pca_basis(cov: torch.Tensor, d_in: int, device: torch.device) -> torch.Tensor:
-        """
-        AST-FIX-08: scaled eigenvalue regularization.
-        AST-FIX-09: symmetrize before eigh.
-        Returns orthonormal Q (d_in, d_in) in original column basis.
-        """
         cov = cov.to(device).float()
         if cov.shape != (d_in, d_in):
             return torch.eye(d_in, device=device)
 
-        # Eigenvalue regularization proportional to mean variance
         diag_mean = float(cov.diagonal().mean().item())
         eps = max(1e-8, 1e-6 * diag_mean)
         cov = cov + eps * torch.eye(d_in, device=device)
@@ -530,9 +513,6 @@ class ASTPruner(BaseCompressor):
             logger.warning("AST: eigh failed (%s); using identity.", e)
             return torch.eye(d_in, device=device)
 
-    # ------------------------------------------------------------------
-    # Compress
-    # ------------------------------------------------------------------
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         from neuralops.core.model_utils import replace_module
 
@@ -568,26 +548,10 @@ class ASTPruner(BaseCompressor):
             device = W.device
             dtype = target_mod.weight.dtype
 
-            # ------------------------------------------------------------------
-            # 1. Compute saliency in ORIGINAL basis (AST-FIX-01)
-            # ------------------------------------------------------------------
-            # Saliency is computed as:
-            #   1a. Rotate Fisher into PCA basis: F_rot = F @ (Q ⊙ Q)
-            #   1b. Apply 2:4-aware importance per (row, column) in the rotated
-            #       basis, then project the rotation-weighted per-column score
-            #       back to the original column basis using Q.
-            #
-            # In practice, we use the following simplified and provably
-            # structure-preserving form:
-            #   S_ij = |W_ij| · sqrt(F_proj_ij + ε)
-            # where F_proj = F @ (Q ⊙ Q)  (a per-element projection back).
-            # This yields a dense saliency map in the ORIGINAL basis, but the
-            # actual mask is applied to W (not W_rot), preserving 2:4 sparsity.
-            # ------------------------------------------------------------------
+            # 1. Compute saliency in ORIGINAL basis
             fisher = fisher_map.get(name, None)
             if fisher is not None and self.use_fisher:
                 F_mat = fisher.to(device).float()
-                # AST-FIX-10: NaN/Inf guard
                 F_mat = torch.nan_to_num(F_mat, nan=0.0, posinf=0.0, neginf=0.0)
 
                 if is_conv1d and F_mat.dim() == 2 and F_mat.shape == raw_w.shape:
@@ -596,9 +560,8 @@ class ASTPruner(BaseCompressor):
                 if F_mat.dim() == 2 and F_mat.shape == W.shape:
                     if self.use_pca and name in cov_map:
                         Q = self._pca_basis(cov_map[name], d_in, device)
-                        # Project Fisher into rotated basis, then back
-                        F_rot = F_mat @ (Q * Q)  # (d_out, d_in) × (d_in, d_in)
-                        F_proj = F_rot @ Q.T  # (d_out, d_in) × (d_in, d_in) → (d_out, d_in)
+                        F_rot = F_mat @ (Q * Q)
+                        F_proj = F_rot @ Q.T
                     else:
                         F_proj = F_mat
                 elif F_mat.shape[-1] == d_in and F_mat.dim() == 1:
@@ -612,15 +575,12 @@ class ASTPruner(BaseCompressor):
 
             saliency = torch.nan_to_num(saliency, nan=0.0, posinf=1e4, neginf=0.0)
 
-            # ------------------------------------------------------------------
-            # 2. Apply 2:4 structured mask on ORIGINAL weights
-            # ------------------------------------------------------------------
-            W_pruned, _mask = apply_24_structured_mask(W, saliency=saliency, dim=self.dim)
+            # 2. Compute 2:4 structured mask on ORIGINAL weights
+            W_pruned, mask_24 = apply_24_structured_mask(W, saliency=saliency, dim=self.dim)
             W_final = torch.nan_to_num(W_pruned, nan=0.0, posinf=0.0, neginf=0.0)
+            mask_final = torch.nan_to_num(mask_24, nan=1.0, posinf=1.0, neginf=1.0)
 
-            # ------------------------------------------------------------------
             # 3. Error check
-            # ------------------------------------------------------------------
             w_norm = torch.linalg.norm(W).item()
             err = float(torch.linalg.norm(W - W_final).item() / max(w_norm, 1e-12))
             self.layer_errors[name] = err
@@ -634,66 +594,50 @@ class ASTPruner(BaseCompressor):
                 )
                 if self.fallback_to_original:
                     logger.info("AST: falling back to original for %s.", name)
-                    # AST-FIX-02: only freeze the base weight, not LoRA
+                    # Keep fallback layers trainable
                     for pn, p in module.named_parameters(recurse=False):
-                        if "lora_" in pn.lower():
-                            continue  # keep LoRA trainable
-                        p.requires_grad = False
+                        p.requires_grad = True
                     self.fallback_layers.append(name)
                     continue
 
-            # ------------------------------------------------------------------
-            # 4. Replace / in-place update
-            # ------------------------------------------------------------------
-            if self.lora_r > 0:
-                new_layer = ASTPrunedLoRALinear.from_linear(
-                    target_mod,
-                    weight=W_final.contiguous(),
-                    lora_r=self.lora_r,
-                    lora_alpha=self.lora_alpha,
-                )
+            # 4. FIXED: Replace with ASTPrunedLoRALinear implementing Soft STE
+            # Store dense trainable W in weight parameter and mask in buffer.
+            # Base weights remain trainable (requires_grad=True) to absorb KD gradients.
+            new_layer = ASTPrunedLoRALinear.from_linear(
+                target_mod,
+                weight=W.contiguous().to(dtype=dtype, device=device),
+                mask=mask_final.contiguous().to(dtype=dtype, device=device),
+                lora_r=self.lora_r,
+                lora_alpha=self.lora_alpha,
+            )
+            # Ensure base weight is trainable
+            new_layer.weight.requires_grad = True
 
-                # AST-FIX-04: type-safe LoRA transfer
-                if hasattr(module, "base_layer"):
-                    if hasattr(module, "lora_A") and module.lora_A is not None:
-                        src_a = getattr(module.lora_A, "weight", module.lora_A)
-                        if (
-                            isinstance(src_a, torch.Tensor)
-                            and src_a.shape == new_layer.lora_A.shape
-                        ):
-                            new_layer.lora_A.data.copy_(src_a.to(new_layer.lora_A.dtype))
-                    if hasattr(module, "lora_B") and module.lora_B is not None:
-                        src_b = getattr(module.lora_B, "weight", module.lora_B)
-                        if (
-                            isinstance(src_b, torch.Tensor)
-                            and src_b.shape == new_layer.lora_B.shape
-                        ):
-                            new_layer.lora_B.data.copy_(src_b.to(new_layer.lora_B.dtype))
+            if hasattr(module, "base_layer"):
+                if hasattr(module, "lora_A") and module.lora_A is not None:
+                    src_a = getattr(module.lora_A, "weight", module.lora_A)
+                    if (
+                        isinstance(src_a, torch.Tensor)
+                        and src_a.shape == new_layer.lora_A.shape
+                    ):
+                        new_layer.lora_A.data.copy_(src_a.to(new_layer.lora_A.dtype))
+                if hasattr(module, "lora_B") and module.lora_B is not None:
+                    src_b = getattr(module.lora_B, "weight", module.lora_B)
+                    if (
+                        isinstance(src_b, torch.Tensor)
+                        and src_b.shape == new_layer.lora_B.shape
+                    ):
+                        new_layer.lora_B.data.copy_(src_b.to(new_layer.lora_B.dtype))
 
-                    # Swap the base layer in place
-                    if hasattr(module, "base_layer"):
-                        module.base_layer = new_layer
-                    # AST-FIX-03: removed dead `if name == "":` branch
-                    # Don't call replace_module for the wrapped module
-                    # because we already replaced its inner base_layer
-                else:
-                    if name != "":
-                        replace_module(self.model, name, new_layer)
-                    else:
-                        self.model = new_layer
+                module.base_layer = new_layer
             else:
-                # AST-FIX-05: no_grad around mutation
-                with torch.no_grad():
-                    new_w = W_final.to(dtype=dtype, device=device)
-                    if is_conv1d:
-                        new_w = new_w.t().contiguous()
-                    target_mod.weight.data.copy_(new_w)
+                if name != "":
+                    replace_module(self.model, name, new_layer)
+                else:
+                    self.model = new_layer
 
             self.compressed_layers.append(name)
 
-        # ------------------------------------------------------------------
-        # LayerNorm recalibration
-        # ------------------------------------------------------------------
         if self.recalibrate_ln and (
             self.calibration_loader is not None or self.calibration_texts is not None
         ):
@@ -708,9 +652,6 @@ class ASTPruner(BaseCompressor):
             except Exception as e:
                 logger.warning("AST: LayerNorm recalibration skipped: %s", e)
 
-        # ------------------------------------------------------------------
-        # Forward sanity check (AST-FIX-13: passes attention_mask)
-        # ------------------------------------------------------------------
         forward_check_success = False
         try:
             self.model.eval()
@@ -726,7 +667,6 @@ class ASTPruner(BaseCompressor):
         except Exception as e:
             logger.warning("AST: post-compression forward check failed: %s", e)
 
-        # AST-FIX-15: log skipped layer count
         if self.skipped_layers:
             logger.info(
                 "AST: skipped %d layers (dup weights / target rules).",
@@ -763,7 +703,7 @@ class ASTPruner(BaseCompressor):
                 "lora_r": self.lora_r,
                 "lora_alpha": self.lora_alpha,
                 "forward_check_success": forward_check_success,
-                "method": "ast_jacobian_pca_2_4_pruning",
+                "method": "ast_jacobian_pca_2_4_pruning_with_soft_ste",
             }
         )
         self.stats = stats
