@@ -262,18 +262,18 @@ class AdaSplashAttention(BaseAttention):
                     getattr(config, "rank", kwargs.get("lora_rank", kwargs.pop("rank", 16))),
                 ),
             )
-            self.lora_rank = int(lora_rank_cfg)
-        lora_alpha_cfg = getattr(
-            config,
-            "lora_alpha",
-            getattr(
-                kwargs.get("comp_config", None),
+            self.lora_rank = int(lora_rank_cfg) if lora_rank_cfg is not None else 16
+            lora_alpha_cfg = getattr(
+                config,
                 "lora_alpha",
-                kwargs.get("lora_alpha", 32.0),
-            ),
-        )
-        self.lora_alpha = float(lora_alpha_cfg) if lora_rank_cfg is not None else 16
-        self.num_heads = kwargs.get("num_heads", self.adapter.num_heads or 12)
+                getattr(
+                    kwargs.get("comp_config", None),
+                    "lora_alpha",
+                    kwargs.get("lora_alpha", 32.0),
+                ),
+            )
+            self.lora_alpha = float(lora_alpha_cfg)
+            self.num_heads = kwargs.get("num_heads", self.adapter.num_heads or 12)
             self.num_kv_heads = kwargs.get(
                 "num_kv_heads", self.adapter.num_key_value_heads or self.num_heads
             )
