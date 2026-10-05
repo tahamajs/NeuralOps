@@ -604,7 +604,9 @@ class AegisHybridAttention(BaseAttention):
         )
 
         # ---- fusion gate (per-head, init ~0.88 to local) ----
-        self.fusion_beta = nn.Parameter(torch.zeros(self.num_heads))
+        # FIXED: Initializing to 2.0 (sigmoid(2.0) ≈ 0.88) so it heavily favors the 
+        # local branch (pretrained weights) to prevent random noise from breaking KD at step 0.
+        self.fusion_beta = nn.Parameter(torch.full((self.num_heads,), 2.0))
 
         # AH-FIX-12: storage accounting
         self._orig_storage_bytes = 0
