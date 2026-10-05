@@ -315,13 +315,22 @@ def get_cache_hash(model_path: str, tokenizer_name: str, seq_len: int, num_chunk
     return hashlib.sha256(json.dumps(cache_key_data, sort_keys=True).encode()).hexdigest()[:12]
 
 
-def is_cache_valid(cache_dir: Path, expected_chunks: int, expected_seq_len: int, methods: list[str], include_attn: bool = False) -> bool:
+def is_cache_valid(
+    cache_dir: Path, expected_chunks: int, expected_seq_len: int, methods: list[str], include_attn: bool = False,
+    expected_eval_max_tokens: int | None = None, expected_eval_stride: int | None = None
+) -> bool:
     manifest_path = cache_dir / "manifest.json"
     if not manifest_path.exists():
         return False
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         if manifest.get("n_chunks") != expected_chunks or manifest.get("seq_len") != expected_seq_len:
+            return False
+        if expected_eval_max_tokens is not None and manifest.get("eval_max_tokens") != expected_eval_max_tokens:
+            return False
+        if expected_eval_stride is not None and manifest.get("eval_stride") != expected_eval_stride:
+            return False
+        if "baseline_ppl" not in manifest:
             return False
         methods_set = set(methods)
         need_logits = any(m in methods_set for m in ("A", "C", "D"))
@@ -342,7 +351,11 @@ def is_cache_valid(cache_dir: Path, expected_chunks: int, expected_seq_len: int,
         return False
 
 
-def build_teacher_cache(teacher: nn.Module, tokenizer, train_chunks: torch.Tensor, cache_dir: Path, methods: list[str], device: str, seq_len: int, include_attn: bool = False, max_train_texts: int = 1000) -> Path:
+def build_teacher_cache(
+    teacher: nn.Module, tokenizer, train_chunks: torch.Tensor, cache_dir: Path, methods: list[str],
+    device: str, seq_len: int, include_attn: bool = False, max_train_texts: int = 1000,
+    baseline_ppl: float | None = None, eval_max_tokens: int | None = None, eval_stride: int | None = None
+) -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
     n_chunks = len(train_chunks)
     methods_set = set(methods)
@@ -412,6 +425,13 @@ def build_teacher_cache(teacher: nn.Module, tokenizer, train_chunks: torch.Tenso
         manifest["attn_file"] = "teacher_attn.pt"
         del attn_buffer
 
+    if baseline_ppl is not None:
+        manifest["baseline_ppl"] = baseline_ppl
+    if eval_max_tokens is not None:
+        manifest["eval_max_tokens"] = eval_max_tokens
+    if eval_stride is not None:
+        manifest["eval_stride"] = eval_stride
+
     manifest_path = cache_dir / "manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     LOG.info("Cache built: %s", cache_dir)
@@ -451,10 +471,12 @@ def can_use_cache_for_method(cache: dict[str, Any] | None, method_name: str, inc
 # Single Method Runner
 # -----------------------------------------------------------------------------
 def run_kd_method(
-    method_name: str, module_name: str, base_teacher: AutoModelForCausalLM, base_snapshot: AutoModelForCausalLM,
+    method_name: str, module_name: str, base_teacher: AutoModelForCausalLM | None, base_snapshot: AutoModelForCausalLM,
     tokenizer: AutoTokenizer, train_chunks: torch.Tensor, test_dataset: Any, args: argparse.Namespace,
     teacher_cache: dict[str, Any] | None = None, baseline_ppl: float = 21.71,
 ) -> dict[str, Any]:
+    # If cache is fully handling everything and teacher wasn't loaded, use the identical snapshot for param counts
+    _teacher_ref = base_teacher if base_teacher is not None else base_snapshot
     
     device = args.device
     if device.startswith("cuda") and torch.cuda.is_available():
@@ -540,7 +562,7 @@ def run_kd_method(
 
     while step < total_steps:
         student.train()
-        if not use_cache: base_teacher.eval()
+        if not use_cache: _teacher_ref.eval()
 
         try:
             batch_slice = slice(chunk_idx, min(chunk_idx + args.batch_size, num_chunks))
@@ -564,7 +586,7 @@ def run_kd_method(
                     teacher_out = CachedTeacherOutput(logits=c_logits, hidden_states=c_hidden, attentions=c_attn)
                 else:
                     with torch.no_grad():
-                        teacher_out = base_teacher(batch_ids, output_hidden_states=(method_name in ("B", "C", "D")), output_attentions=(method_name == "C"))
+                        teacher_out = _teacher_ref(batch_ids, output_hidden_states=(method_name in ("B", "C", "D")), output_attentions=(method_name == "C"))
 
                 student_out = student(batch_ids, output_hidden_states=(method_name in ("B", "C", "D")), output_attentions=(method_name == "C"))
 
@@ -656,7 +678,7 @@ def run_kd_method(
     if torch.cuda.is_available(): torch.cuda.empty_cache()
     time.sleep(1)
 
-    total_teacher_params = sum(p.numel() for p in base_teacher.parameters())
+    total_teacher_params = sum(p.numel() for p in _teacher_ref.parameters())
     total_student_params = sum(p.numel() for p in student.parameters())
 
     return {
@@ -764,11 +786,6 @@ def main():
         train_chunks = train_chunks[:args.num_chunks]
     LOG.info("Training chunks: %s", tuple(train_chunks.shape))
     
-    LOG.info("Loading teacher model: %s", args.model_name)
-    teacher = AutoModelForCausalLM.from_pretrained(args.model_name)
-    teacher.eval()
-    teacher.to(args.device)
-    
     # Safe Graph Setup: Kept on CPU to avoid mutation and save VRAM
     LOG.info("Creating safe pristine student snapshot (CPU)...")
     base_snapshot = AutoModelForCausalLM.from_pretrained(args.model_name)
@@ -776,7 +793,10 @@ def main():
     base_snapshot.cpu() 
     
     # ---- 2. Cache Generation & Baseline ----
+    teacher = None
     teacher_cache = None
+    baseline_ppl = None
+    
     if args.use_cache:
         if args.cache_dir:
             cache_dir = Path(args.cache_dir)
@@ -784,23 +804,32 @@ def main():
             cache_hash = get_cache_hash(args.model_name, args.model_name, args.seq_len, len(train_chunks), args.methods, args.cache_attn)
             cache_dir = Path("results") / "kd_cache" / f"{args.model_name}_{cache_hash}"
         
-        if is_cache_valid(cache_dir, len(train_chunks), args.seq_len, args.methods, args.cache_attn):
-            LOG.info("Loading existing teacher cache from %s", cache_dir)
+        if is_cache_valid(cache_dir, len(train_chunks), args.seq_len, args.methods, args.cache_attn, args.eval_max_tokens, 128):
+            LOG.info("Loading existing teacher cache from %s. (Skipping teacher model load completely!)", cache_dir)
             teacher_cache = load_teacher_cache(cache_dir)
+            baseline_ppl = teacher_cache["manifest"]["baseline_ppl"]
         else:
+            LOG.info("Loading teacher model to build cache: %s", args.model_name)
+            teacher = AutoModelForCausalLM.from_pretrained(args.model_name)
+            teacher.eval()
+            teacher.to(args.device)
+            LOG.info("Computing teacher baseline PPL...")
+            baseline_ppl = compute_perplexity(teacher, tokenizer, dataset["test"], seq_len=args.seq_len, stride=128, max_eval_tokens=args.eval_max_tokens, device=args.device)
             LOG.info("Building teacher cache at %s", cache_dir)
-            build_teacher_cache(teacher, tokenizer, train_chunks, cache_dir, args.methods, args.device, args.seq_len, args.cache_attn, args.max_train_texts)
+            build_teacher_cache(teacher, tokenizer, train_chunks, cache_dir, args.methods, args.device, args.seq_len, args.cache_attn, args.max_train_texts, baseline_ppl, args.eval_max_tokens, 128)
             teacher_cache = load_teacher_cache(cache_dir)
-    
-    LOG.info("Computing teacher baseline PPL...")
-    baseline_ppl = compute_perplexity(teacher, tokenizer, dataset["test"], seq_len=args.seq_len, stride=128, max_eval_tokens=args.eval_max_tokens, device=args.device)
-    LOG.info("Using measured teacher PPL as baseline: %.2f", baseline_ppl)
+            LOG.info("Teacher cache built. Evicting Teacher from VRAM to CPU to save memory...")
+            teacher.cpu()
+            torch.cuda.empty_cache()
+    else:
+        LOG.info("Loading teacher model: %s", args.model_name)
+        teacher = AutoModelForCausalLM.from_pretrained(args.model_name)
+        teacher.eval()
+        teacher.to(args.device)
+        LOG.info("Computing teacher baseline PPL...")
+        baseline_ppl = compute_perplexity(teacher, tokenizer, dataset["test"], seq_len=args.seq_len, stride=128, max_eval_tokens=args.eval_max_tokens, device=args.device)
 
-    # VRAM Optimization: Move Teacher to CPU if cache is actively handling everything
-    if args.use_cache and teacher_cache is not None:
-        LOG.info("Teacher cache is loaded. Evicting Teacher from VRAM to CPU to save memory...")
-        teacher.cpu()
-        torch.cuda.empty_cache()
+    LOG.info("Using teacher baseline PPL: %.2f", baseline_ppl)
     
     # ---- 3. Phase 1: Module Sweep Loop ----
     for idx, module_name in enumerate(args.modules, 1):
