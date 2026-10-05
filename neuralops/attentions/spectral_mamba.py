@@ -798,9 +798,13 @@ class SpectralMambaAttention(BaseAttention):
                 attn_out = self.out_lin(attn_ctx)
 
         # Spectral Mamba stream
-        mamba_out = self.spectral_mamba(hidden_states)
-        while isinstance(mamba_out, (tuple, list)):
-            mamba_out = mamba_out[0]
+        # FIXED: FFT violates causality; bypass Spectral Mamba stream for decoders
+        if self.is_decoder:
+            mamba_out = torch.zeros_like(attn_out)
+        else:
+            mamba_out = self.spectral_mamba(hidden_states)
+            while isinstance(mamba_out, (tuple, list)):
+                mamba_out = mamba_out[0]
 
         if mamba_out.shape[-1] != attn_out.shape[-1]:
             if mamba_out.shape[-1] < attn_out.shape[-1]:
