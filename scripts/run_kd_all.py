@@ -54,6 +54,14 @@ def run_module(module_name, args, timeout_s=3600):
         cmd.append("--cache_attn")
     if args.num_chunks > 0:
         cmd.extend(["--num_chunks", str(args.num_chunks)])
+    if getattr(args, "self_train_steps", None) is not None:
+        cmd.extend(["--self_train_steps", str(args.self_train_steps)])
+    if getattr(args, "self_train_lr", None) is not None:
+        cmd.extend(["--self_train_lr", str(args.self_train_lr)])
+    if getattr(args, "self_train_warmup", None) is not None:
+        cmd.extend(["--self_train_warmup", str(args.self_train_warmup)])
+    if getattr(args, "strict_ppl_check", False):
+        cmd.append("--strict_ppl_check")
 
     LOG.info("Running: %s", " ".join(cmd))
 
@@ -105,6 +113,10 @@ def main():
     parser.add_argument("--eval_max_tokens", type=int, default=15000)
     parser.add_argument("--eval_stride", type=int, default=128)
     parser.add_argument("--no_cosine_lr", action="store_true")
+    parser.add_argument("--self_train_steps", type=int, default=200, help="Stage 2 CE-only self-training steps (default: 200)")
+    parser.add_argument("--self_train_lr", type=float, default=None, help="Stage 2 learning rate")
+    parser.add_argument("--self_train_warmup", type=int, default=20, help="Stage 2 warmup steps")
+    parser.add_argument("--strict_ppl_check", action="store_true", help="Abort module if pre-KD PPL <= baseline PPL")
 
     # KD
     parser.add_argument("--methods", nargs="+", default=["C"],
