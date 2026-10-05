@@ -698,6 +698,9 @@ def run_kd_method(
 
     LOG.info(f"[{method_name}] COMPLETE | Pre: {pre_ppl:.2f} -> Post: {post_ppl:.2f} | Recovery: {recovery_pct}% | VRAM: {peak_vram} MB | Time: {train_time}s")
 
+    total_teacher_params = sum(p.numel() for p in _teacher_ref.parameters())
+    total_student_params = sum(p.numel() for p in student.parameters())
+
     # Thorough VRAM cleanup before next module/method
     del student
     if projection_adapter is not None: del projection_adapter
@@ -705,9 +708,6 @@ def run_kd_method(
     gc.collect()
     if torch.cuda.is_available(): torch.cuda.empty_cache()
     time.sleep(1)
-
-    total_teacher_params = sum(p.numel() for p in _teacher_ref.parameters())
-    total_student_params = sum(p.numel() for p in student.parameters())
 
     return {
         "method": method_name, "pre_ppl": pre_ppl, "post_ppl": post_ppl, "ppl_ratio": ppl_ratio,
