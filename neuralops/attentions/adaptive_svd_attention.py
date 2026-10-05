@@ -667,11 +667,13 @@ class AdaptiveSVDAttention(BaseAttention):
                     continue
                 self._init_svd_part(target, w, b)
 
-                # ASVD-FIX-10: freeze all base params + bias
-                target.U.requires_grad = False
-                target.V.requires_grad = False
+                # FIXED: Adaptive SVD Base Matrices: Explicitly unfreeze target.U and target.V 
+                # so the optimizer can adjust the base singular vectors during KD phase
+                # (A rank-16 LoRA cannot mathematically reconstruct 98% missing variance alone)
+                target.U.requires_grad = True
+                target.V.requires_grad = True
                 if target.bias is not None:
-                    target.bias.requires_grad = False
+                    target.bias.requires_grad = True
                 if target.lora_A is not None:
                     target.lora_A.requires_grad = True
                 if target.lora_B is not None:
