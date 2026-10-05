@@ -210,21 +210,25 @@ class ASVDLinear(nn.Module):
             out_copy = min(self.out_features, U.size(0))
             in_copy = min(self.in_features, V.size(1))
 
+            U_clean = torch.nan_to_num(U[:out_copy, :r], nan=0.0)
+            V_clean = torch.nan_to_num(V[:r, :in_copy], nan=0.0)
             self.U.data[:out_copy, :r].copy_(
-                U[:out_copy, :r].to(device=self.U.device, dtype=self.U.dtype)
+                U_clean.to(device=self.U.device, dtype=self.U.dtype)
             )
             self.V.data[:r, :in_copy].copy_(
-                V[:r, :in_copy].to(device=self.V.device, dtype=self.V.dtype)
+                V_clean.to(device=self.V.device, dtype=self.V.dtype)
             )
             if S is not None:
-                self.S.data[:r].copy_(S[:r].to(device=self.S.device, dtype=self.S.dtype))
+                S_clean = torch.nan_to_num(S[:r], nan=1.0)
+                self.S.data[:r].copy_(S_clean.to(device=self.S.device, dtype=self.S.dtype))
             else:
                 self.S.data[:r].fill_(1.0)
 
             if bias is not None and self.bias is not None:
                 min_b = min(self.out_features, bias.numel())
+                bias_clean = torch.nan_to_num(bias[:min_b], nan=0.0)
                 self.bias.data[:min_b].copy_(
-                    bias[:min_b].to(device=self.bias.device, dtype=self.bias.dtype)
+                    bias_clean.to(device=self.bias.device, dtype=self.bias.dtype)
                 )
             elif self.bias is not None:
                 self.bias.data.zero_()
@@ -255,12 +259,28 @@ class ASVDLinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: (*, in_features)
         # Factorized SVD projection: y = ((x @ V.T) * S) @ U.T + bias
-        V_eff = self.S.view(-1, 1) * self.V
-        out = triton_dispatch(self.triton_kernel, x, self.U, V_eff, bias=self.bias)
+        # FIXED: Triton Guard: Check if tensor is on CUDA and half-precision (float16/bfloat16).
+        # For torch.float32 or CPU execution, gracefully bypass Triton kernel and run
+        # standard PyTorch matrix multiplication to avoid fallback warnings and dispatch overhead.
+        if x.is_cuda and x.dtype in (torch.float16, torch.bfloat16):
+            V_eff = self.S.view(-1, 1) * self.V
+            out = triton_dispatch(self.triton_kernel, x, self.U, V_eff, bias=self.bias)
+        else:
+            # High-precision PyTorch evaluation: ((x @ V.T) * S) @ U.T + bias
+            u = self.U.to(x.dtype)
+            s = self.S.to(x.dtype)
+            v = self.V.to(x.dtype)
+            b = self.bias.to(x.dtype) if self.bias is not None else None
+
+            x_v = F.linear(x, v)       # x @ V.T -> shape (*, rank)
+            x_vs = x_v * s             # (*, rank) * (rank,)
+            out = F.linear(x_vs, u, b) # ((x @ V.T) * S) @ U.T + bias -> shape (*, out_features)
 
         # 4. Residual LoRA adapter path: (x @ lora_A.T) @ lora_B.T
         if getattr(self, "lora_A", None) is not None and self.lora_A is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B)
+            a = self.lora_A.to(x.dtype)
+            bb = self.lora_B.to(x.dtype)
+            lora_out = F.linear(F.linear(x, a), bb)
             out = out + lora_out * self.lora_scaling
 
         return out
@@ -293,11 +313,38 @@ class ASVDAttention(BaseAttention):
     def __init__(
         self,
         config: Any | None = None,
-        rank: int | None = None,
+        *args: Any,
         pretrained_attn: nn.Module | None = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__()
+        # Extract rank whether passed positionally (as args[0]), as explicit keyword, or in kwargs dict
+        pos_rank = args[0] if len(args) > 0 else None
+        if len(args) > 1 and pretrained_attn is None:
+            pretrained_attn = args[1]
+        kw_rank = kwargs.pop("rank", None)
+        raw_rank = pos_rank if pos_rank is not None else kw_rank
+        resolved_rank = int(
+            raw_rank
+            if raw_rank is not None
+            else getattr(config, "asvd_rank", getattr(config, "rank", 32))
+        )
+        self.lora_rank = int(getattr(config, "lora_rank", kwargs.pop("lora_rank", 32)))
+        self.freeze_base = bool(
+            getattr(config, "freeze_base", kwargs.pop("freeze_base", self.lora_rank > 0))
+        )
+        self.energy_threshold = float(
+            getattr(config, "asvd_energy_threshold", kwargs.pop("energy_threshold", 0.95))
+        )
+        self.error_threshold = getattr(
+            config, "asvd_error_threshold", kwargs.pop("error_threshold", 0.40)
+        )
+        if self.error_threshold is not None:
+            self.error_threshold = float(self.error_threshold)
+        self.dynamic_rank = bool(
+            getattr(config, "asvd_dynamic_rank", kwargs.pop("dynamic_rank", True))
+        )
+
+        super().__init__(config=config, rank=resolved_rank, **kwargs)
         self.config = config
         model = config
         self.hidden_size: int = kwargs.get(
@@ -350,24 +397,7 @@ class ASVDAttention(BaseAttention):
         self.kv_repeat: int = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         # Rank configuration
-        self.rank: int = getattr(
-            config,
-            "asvd_rank",
-            (rank if rank is not None else getattr(config, "rank", kwargs.pop("rank", 32))),
-        )
-        self.lora_rank: int = getattr(config, "lora_rank", kwargs.get("lora_rank", 32))
-        self.freeze_base: bool = getattr(
-            config, "freeze_base", kwargs.get("freeze_base", self.lora_rank > 0)
-        )
-        self.energy_threshold: float = getattr(
-            config, "asvd_energy_threshold", kwargs.get("energy_threshold", 0.95)
-        )
-        self.error_threshold: float | None = getattr(
-            config, "asvd_error_threshold", kwargs.get("error_threshold", 0.40)
-        )
-        self.dynamic_rank: bool = getattr(
-            config, "asvd_dynamic_rank", kwargs.get("dynamic_rank", True)
-        )
+        self.rank: int = resolved_rank
 
         # Flags & metadata
         self.supports_gqa: bool = True
@@ -928,6 +958,11 @@ def inject_asvd(
 
     cfg = model_config if model_config is not None else getattr(target, "config", None)
 
+    # FIXED: Keyword Argument Cleanup: pop rank and copy_weights early from kwargs
+    # so they are never passed twice when delegating to inject_attention or ASVDAttention
+    rank = kwargs.pop("rank", 64)
+    copy_weights = kwargs.pop("copy_weights", True)
+
     # Whole-model traversal
     layer_list = None
     if hasattr(target, "distilbert") and hasattr(target.distilbert, "transformer"):
@@ -961,6 +996,8 @@ def inject_asvd(
                 comp_config=comp_config,
                 layer_idx=idx,
                 total_layers=tot,
+                rank=rank,
+                copy_weights=copy_weights,
                 **kwargs,
             )
             if res is not None:
@@ -968,8 +1005,6 @@ def inject_asvd(
         return target if num_injected > 0 else None
 
     layer = target
-    rank = kwargs.get("rank", 64)
-    copy_weights = kwargs.get("copy_weights", True)
     config = cfg
 
     """Universal injection factory for ASVDAttention with pre-flight extraction validation."""
