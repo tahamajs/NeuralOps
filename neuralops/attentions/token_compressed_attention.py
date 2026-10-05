@@ -853,7 +853,9 @@ class TokenCompressedAttention(BaseAttention):
 
         # ---- Causal mask (on original positions) ----
         if self.is_decoder and top_idx is not None:
-            q_pos = torch.arange(L, device=device).view(1, 1, L, 1)
+            N_k = full_k_use.shape[-2]
+            # FIXED: Shift q_pos by N_k - L so queries correctly attend to their past during generation.
+            q_pos = torch.arange(N_k - L, N_k, device=device).view(1, 1, L, 1)
             k_orig = top_idx.unsqueeze(1).unsqueeze(2)
             causal_mask = k_orig > q_pos
             scores = scores.masked_fill(causal_mask, -1e4)

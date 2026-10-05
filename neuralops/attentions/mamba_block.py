@@ -183,7 +183,9 @@ class MambaBlock(nn.Module):
             out_channels=self.d_inner,
             kernel_size=self.d_conv,
             groups=self.d_inner,
-            padding=self.d_conv - 1,
+            # FIXED: padding=self.d_conv - 1 causes right-padding, leaking future tokens.
+            # Changed to padding=0; manual left-padding is now applied during forward pass.
+            padding=0,
             bias=conv_bias,
         )
         self.x_proj = nn.Linear(self.d_inner, self.dt_rank + 2 * self.d_state, bias=False)
@@ -669,10 +671,11 @@ class MambaBlock(nn.Module):
                 [conv_prev.transpose(1, 2), x_ssm], dim=1
             )  # (B, L + d_conv - 1, d_inner)
         else:
-            x_cat = x_ssm
+            # FIXED: Explicit left-padding to prevent future token leakage
+            x_cat = F.pad(x_ssm.transpose(1, 2), (self.d_conv - 1, 0)).transpose(1, 2)
 
-        x_conv_full = self.conv1d(x_cat.transpose(1, 2))  # (B, d_inner, L' + d_conv - 1)
-        # Take only the L last positions
+        x_conv_full = self.conv1d(x_cat.transpose(1, 2))  # (B, d_inner, L)
+        # Take only the L last positions (strictly causal)
         x_conv = x_conv_full[..., -L:].transpose(1, 2)  # (B, L, d_inner)
 
         # New conv state: last (d_conv - 1) tokens of input
