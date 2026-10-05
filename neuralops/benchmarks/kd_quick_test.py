@@ -880,11 +880,28 @@ def set_train_scope(model, train_scope="all"):
         for p in model.parameters():
             p.requires_grad = True
     elif train_scope in ("mamba", "attention", "module"):
-        ATTN_ATTRS = ("attn", "attention", "self_attn", "mamba", "ssm")
+        TARGET_ATTRS = (
+            "attn",
+            "attention",
+            "self_attn",
+            "mamba",
+            "ssm",
+            "moe",
+            "router",
+            "expert",
+            "gate",
+            "lora",
+            "adapter",
+            "sparse",
+            "down",
+            "up",
+            "linear",
+        )
         n_matched = 0
         for name, p in model.named_parameters():
-            has_attn = any(attr in name.lower() for attr in ATTN_ATTRS)
-            if has_attn:
+            has_match = any(attr in name.lower() for attr in TARGET_ATTRS)
+            # If train_scope is "module", also ensure any parameter already marked trainable by an injector stays trainable
+            if has_match or (train_scope == "module" and p.requires_grad):
                 p.requires_grad = True
                 n_matched += 1
             else:

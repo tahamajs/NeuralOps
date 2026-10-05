@@ -475,7 +475,7 @@ class AegisAttentionV3(BaseAttention):
         self.all_head_size = self.h * self.d
         self.all_kv_head_size = self.num_kv_heads * self.d
         self.window = config.window_size
-        self.is_decoder = getattr(config, "is_decoder", False)
+        self.is_decoder = self._detect_decoder(config, is_decoder, pretrained_attn) or bool(getattr(config, "is_decoder", False))
         self.is_nested_encoder = False
         self.chunk_size = config.chunk_size
 
