@@ -167,6 +167,7 @@ class FactorizedLinear(nn.Module):
         self.out_features = int(out_features)
         self.rank = max(1, min(int(rank), self.in_features, self.out_features))
         self.svd_rank = self.rank
+        self.lora_alpha = 32.0
         self.lora_rank = (
             min(int(lora_rank), min(self.in_features, self.out_features)) if lora_rank > 0 else 0
         )
@@ -254,7 +255,7 @@ class FactorizedLinear(nn.Module):
         if self.lora_A is not None:
             a = self.lora_A.to(orig_dtype) if self.lora_A.dtype != orig_dtype else self.lora_A
             b = self.lora_B.to(orig_dtype) if self.lora_B.dtype != orig_dtype else self.lora_B
-            out = out.to(orig_dtype) + F.linear(F.linear(x, a), b)
+            out = out.to(orig_dtype) + F.linear(F.linear(x, a), b) * (self.lora_alpha / self.lora_rank)
         return out.to(orig_dtype)
 
 
@@ -604,9 +605,7 @@ class AegisHybridAttention(BaseAttention):
         )
 
         # ---- fusion gate (per-head, init ~0.88 to local) ----
-        # FIXED: Initializing to 2.0 (sigmoid(2.0) ≈ 0.88) so it heavily favors the 
-        # local branch (pretrained weights) to prevent random noise from breaking KD at step 0.
-        self.fusion_beta = nn.Parameter(torch.full((self.num_heads,), 2.0))
+        self.fusion_beta = nn.Parameter(torch.full((self.num_heads,), 4.0))
 
         # AH-FIX-12: storage accounting
         self._orig_storage_bytes = 0
