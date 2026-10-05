@@ -746,8 +746,8 @@ def measure_latency(
     student: nn.Module,
     tokenizer,
     device: str,
-    n_runs: int = 10,
-    warmup: int = 3,
+    n_runs: int = 3,
+    warmup: int = 1,
     max_new_tokens: int = 50,
 ) -> dict[str, float]:
     """Measure generation latency across multiple runs after warmup."""
@@ -1235,7 +1235,8 @@ def run_kd_method(
     loss_history: list[tuple[int, float]] = []
     lr_history: list[tuple[int, float]] = []
     current_seq_len = args.seq_len
-    num_chunks = len(train_chunks)
+    gpu_train_chunks = train_chunks.to(device)
+    num_chunks = len(gpu_train_chunks)
     chunk_idx = 0
 
     t_start = time.time()
@@ -1250,8 +1251,7 @@ def run_kd_method(
 
         try:
             batch_slice = slice(chunk_idx, min(chunk_idx + args.batch_size, num_chunks))
-            # VRAM optimization: Use non_blocking to overlap transfer with compute
-            batch_ids = train_chunks[batch_slice].to(device, non_blocking=True)
+            batch_ids = gpu_train_chunks[batch_slice]
             chunk_idx = (chunk_idx + args.batch_size) % num_chunks
             if batch_ids.size(1) > current_seq_len:
                 batch_ids = batch_ids[:, :current_seq_len]
@@ -1379,12 +1379,12 @@ def run_kd_method(
         for s2_step in range(1, self_train_steps + 1):
             student.train()
             batch_slice = slice(chunk_idx, min(chunk_idx + args.batch_size, num_chunks))
-            batch_ids = train_chunks[batch_slice].to(device, non_blocking=True)
+            batch_ids = gpu_train_chunks[batch_slice]
             chunk_idx = (chunk_idx + args.batch_size) % num_chunks
             if batch_ids.size(0) == 0:
                 chunk_idx = 0
                 batch_slice = slice(0, min(args.batch_size, num_chunks))
-                batch_ids = train_chunks[batch_slice].to(device, non_blocking=True)
+                batch_ids = gpu_train_chunks[batch_slice]
 
             if warmup_s2 > 0 and s2_step <= warmup_s2:
                 for param_group in stage2_optimizer.param_groups:
@@ -1482,7 +1482,9 @@ def run_kd_method(
     # 2. Train/Test Gap
     test_ppl = post_ppl
     if train_dataset is not None:
-        train_ppl = eval_ppl(student, tokenizer, train_dataset, args)
+        train_args = copy.copy(args)
+        train_args.eval_max_tokens = min(getattr(args, "eval_max_tokens", 15000), 5000)
+        train_ppl = eval_ppl(student, tokenizer, train_dataset, train_args)
     else:
         train_ppl = float("nan")
     overfit_gap = round(float(test_ppl - train_ppl), 2) if np.isfinite(test_ppl) and np.isfinite(train_ppl) else float("nan")
