@@ -95,6 +95,7 @@ class ASVDLinear(nn.Module):
         rank: int,
         bias: bool = True,
         lora_rank: int = 0,
+        lora_alpha: float = 32.0,
         freeze_base: bool = False,
         dtype: torch.dtype | None = None,
         device: torch.device | None = None,
@@ -120,10 +121,12 @@ class ASVDLinear(nn.Module):
         if self.lora_rank > 0:
             self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features, **factory_kwargs))
             self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank, **factory_kwargs))
-            self.lora_scaling = 1.0
+            self.lora_alpha = float(lora_alpha)
+            self.lora_scaling = (self.lora_alpha / max(1, self.lora_rank)) if self.lora_rank > 0 else 1.0
         else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
+            self.register_parameter('lora_A', None)
+            self.register_parameter('lora_B', None)
+            self.lora_alpha = float(lora_alpha)
             self.lora_scaling = 1.0
 
         self.reset_parameters()

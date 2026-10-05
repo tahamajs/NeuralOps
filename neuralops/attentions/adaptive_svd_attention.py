@@ -64,6 +64,7 @@ class AdaptiveSVDLinear(nn.Module):
         out_features: int,
         svd_rank: int,
         residual_rank: int = 16,
+        lora_alpha: float = 32.0,
         bias: bool = True,
         trainable_svd: bool = False,
         dtype: torch.dtype | None = None,
@@ -75,6 +76,8 @@ class AdaptiveSVDLinear(nn.Module):
         max_rank = min(self.in_features, self.out_features)
         self.svd_rank = int(min(svd_rank, max_rank))
         self.residual_rank = int(min(residual_rank, max_rank))
+        self.lora_alpha = float(lora_alpha)
+        self.lora_scaling = (self.lora_alpha / max(1, self.residual_rank)) if self.residual_rank > 0 else 1.0
 
         fk = {"dtype": dtype, "device": device}
         self.U = nn.Parameter(
@@ -154,7 +157,7 @@ class AdaptiveSVDLinear(nn.Module):
         if self.lora_A is not None and self.lora_B is not None:
             a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
             b = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-            out = out + F.linear(F.linear(x, a), b)
+            out = out + F.linear(F.linear(x, a), b) * getattr(self, "lora_scaling", 1.0)
 
         if self.bias is not None:
             out = out + self.bias.to(out.dtype)
