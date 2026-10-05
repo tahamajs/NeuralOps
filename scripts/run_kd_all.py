@@ -147,7 +147,9 @@ def main():
     if reg_file.exists():
         try:
             data = json.loads(reg_file.read_text(encoding="utf-8"))
-            completed.update(data.get("runs", {}).keys())
+            for run_entry in data.get("runs", []):
+                if "module" in run_entry:
+                    completed.add(run_entry["module"])
         except Exception as e:
             LOG.warning(f"Could not read registry.json: {e}")
 
