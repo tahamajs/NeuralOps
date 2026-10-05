@@ -17,7 +17,20 @@ sys.path.insert(0, str(HERE))
 def load_tier1_modules():
     p = HERE / "results" / "audit" / "trusted_modules.json"
     data = json.loads(p.read_text(encoding="utf-8"))
-    return sorted(set(data.get("tier1_true_causal", []) + data.get("tier2_causal_via_mask", [])))
+    modules = sorted(set(data.get("tier1_true_causal", []) + data.get("tier2_causal_via_mask", [])))
+    
+    from neuralops.core.registry import ATTENTION_REGISTRY
+    seen = set()
+    deduped = []
+    for m in modules:
+        try:
+            cls = ATTENTION_REGISTRY.resolve(m)
+            if cls not in seen:
+                seen.add(cls)
+                deduped.append(m)
+        except Exception:
+            deduped.append(m)
+    return deduped
 
 def main():
     ap = argparse.ArgumentParser()
