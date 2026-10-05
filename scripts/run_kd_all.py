@@ -107,7 +107,7 @@ def main():
                         choices=["A", "B", "C", "D"])
 
     # Cache
-    parser.add_argument("--use_cache", action="store_true")
+    parser.add_argument("--use_cache", action="store_true", default=True, help="Use teacher cache (defaults to True)")
     parser.add_argument("--cache_attn", action="store_true")
 
     # System
