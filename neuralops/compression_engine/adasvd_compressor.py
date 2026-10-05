@@ -1194,11 +1194,18 @@ class AdaSVDCompressor(BaseCompressor):
 
             if self._is_fused_qkv_layer(name, module):
                 if self.rank is not None:
-                    r_floor = max(r_floor, min(288, self.rank))
+                    r_floor = max(r_floor, min(128, self.rank))
                     max_param_r = min(max_param_r, 432)
                 else:
-                    r_floor = max(r_floor, 288)
+                    r_floor = max(r_floor, 128)
                     max_param_r = min(max_param_r, 432)
+            else:
+                # FIXED: Adaptive Rank Strategy: Force rank=64 (or 128 for fused above)
+                # for attention projections to prevent 98% spectral loss (Initial PPL: 1233)
+                if self.rank is not None:
+                    r_floor = max(r_floor, min(64, self.rank))
+                else:
+                    r_floor = max(r_floor, 64)
 
             allocated_rank = max(r_floor, min(allocated_rank, max_param_r))
 

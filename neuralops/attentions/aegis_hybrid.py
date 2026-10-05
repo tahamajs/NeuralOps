@@ -1186,7 +1186,9 @@ def inject_aegis_hybrid(
     try:
         new_attn = AegisHybridAttention(
             config=aegis_cfg,
-            pretrained_attn=src if src is not target else None,
+            # FIXED: Catastrophic Divergence (Exploded). Previously passed None if src == target.
+            # We must pass src so that copy_weights extracts from target directly (e.g. GPT2Attention).
+            pretrained_attn=src if kwargs.get("copy_weights", True) else None,
             whitening=kwargs.pop("whitening", None),
         )
     except Exception as e:
