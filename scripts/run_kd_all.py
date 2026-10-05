@@ -39,6 +39,8 @@ def run_module(module_name, args, timeout_s=3600):
         "--device", args.device,
         "--train_scope", args.train_scope,
         "--max_train_texts", str(args.max_train_texts),
+        "--eval_max_tokens", str(args.eval_max_tokens),
+        "--eval_stride", str(args.eval_stride),
     ]
     if args.baseline_ppl is not None:
         cmd.extend(["--baseline_ppl", str(args.baseline_ppl)])
@@ -90,16 +92,18 @@ def main():
     # Model & data
     parser.add_argument("--model_name", default="gpt2")
     parser.add_argument("--rank", type=int, default=64)
-    parser.add_argument("--seq_len", type=int, default=256)
+    parser.add_argument("--seq_len", type=int, default=128)
     parser.add_argument("--max_train_texts", type=int, default=5000)
-    parser.add_argument("--num_chunks", type=int, default=412)
+    parser.add_argument("--num_chunks", type=int, default=800)
 
     # Training
-    parser.add_argument("--batch_size", type=int, default=1)
-    parser.add_argument("--learning_rate", type=float, default=5e-6)
-    parser.add_argument("--recovery_steps", type=int, default=1000)
-    parser.add_argument("--warmup_steps", type=int, default=100)
+    parser.add_argument("--batch_size", type=int, default=16)
+    parser.add_argument("--learning_rate", type=float, default=4e-6)
+    parser.add_argument("--recovery_steps", type=int, default=500)
+    parser.add_argument("--warmup_steps", type=int, default=50)
     parser.add_argument("--eval_every", type=int, default=100)
+    parser.add_argument("--eval_max_tokens", type=int, default=15000)
+    parser.add_argument("--eval_stride", type=int, default=128)
     parser.add_argument("--no_cosine_lr", action="store_true")
 
     # KD
