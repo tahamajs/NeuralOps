@@ -552,6 +552,7 @@ class AegisSpectronFP8Attention(BaseAttention):
         self.linear_B = nn.Parameter(torch.full((self.all_head_size,), rec_scale))
         self.linear_C = nn.Parameter(torch.full((self.all_head_size,), rec_scale))
         self.decay_param = nn.Parameter(torch.zeros(self.all_head_size))
+        self.state_norm = nn.LayerNorm(self.all_head_size)
         # SP-FIX-13: per-head gate.
         self.bidir_gate = nn.Parameter(torch.zeros(self.num_heads))
         self.linear_in = (
@@ -987,12 +988,13 @@ class AegisSpectronFP8Attention(BaseAttention):
         out_fwd = _state_recurrence_jit(u, gamma, reverse=False)
 
         if self.is_decoder:
-            out_h = out_fwd.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
+            out_flat = self.state_norm(out_fwd)
+            out_h = out_flat.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
         else:
             out_bwd = _state_recurrence_jit(u, gamma, reverse=True)
             gate = torch.sigmoid(self.bidir_gate.to(X.dtype)).view(1, self.num_heads, 1, 1)
-            out_fwd_h = out_fwd.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-            out_bwd_h = out_bwd.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
+            out_fwd_h = self.state_norm(out_fwd).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
+            out_bwd_h = self.state_norm(out_bwd).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
             out_h = gate * out_fwd_h + (1.0 - gate) * out_bwd_h
 
         out_h = out_h * self.linear_C.view(1, self.num_heads, 1, self.head_dim).to(X.dtype)
