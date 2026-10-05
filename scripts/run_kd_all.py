@@ -153,8 +153,16 @@ def main():
         except Exception as e:
             LOG.warning(f"Could not read registry.json: {e}")
 
-    final_modules = []
     seen_refs = set()
+    if has_reg:
+        for c in completed:
+            try:
+                cls = ATTENTION_REGISTRY.resolve(c)
+                seen_refs.add(id(cls))
+            except Exception:
+                pass
+
+    final_modules = []
     for m in modules:
         if m in completed:
             LOG.info(f"Skipping {m} (already evaluated in registry.json)")
@@ -164,7 +172,7 @@ def main():
             try:
                 cls = ATTENTION_REGISTRY.resolve(m)
                 if id(cls) in seen_refs:
-                    LOG.info(f"Skipping {m} (alias of already tested class)")
+                    LOG.info(f"Skipping {m} (alias of already tested or queued class)")
                     continue
                 seen_refs.add(id(cls))
             except Exception:
