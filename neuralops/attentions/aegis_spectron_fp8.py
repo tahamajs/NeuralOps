@@ -299,6 +299,19 @@ def _local_window_attention(
         causal = abs_k <= abs_q
         band = band & causal.unsqueeze(0).unsqueeze(0)
 
+    # Fast path: use fused scaled_dot_product_attention when no token padding mask is needed
+    if token_valid is None:
+        mask_val = -1e4
+        attn_bias = torch.zeros(1, 1, N, N_k, device=Q.device, dtype=Q.dtype)
+        attn_bias = attn_bias.masked_fill(~band, mask_val)
+        out = F.scaled_dot_product_attention(
+            Q, K, V,
+            attn_mask=attn_bias,
+            dropout_p=dropout_p if training else 0.0,
+            is_causal=False,
+        )
+        return out, None
+
     scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
     mask_val = -1e4
     scores = scores.masked_fill(~band, mask_val)
