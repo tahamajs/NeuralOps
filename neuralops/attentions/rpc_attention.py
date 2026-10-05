@@ -285,7 +285,7 @@ class RPCAttention(BaseAttention):
                 _cfg_get(config, "rank", rank if rank is not None else 64),
             ),
         )
-        self.sketch_rank = max(1, min(int(raw_rank), self.head_dim))
+        self.sketch_rank = max(1, min(int(raw_rank), self.dim))
 
         # ---- projection rank for FactorizedLoRALinear ----
         raw_proj_rank = int(
