@@ -135,6 +135,7 @@ class AdaSplashLinear(nn.Module):
         in_features: int,
         out_features: int,
         lora_rank: int = 16,
+        lora_alpha: float = 32.0,
         bias: bool = True,
         dtype: torch.dtype | None = None,
         device: torch.device | None = None,
@@ -143,6 +144,8 @@ class AdaSplashLinear(nn.Module):
         self.in_features: int = in_features
         self.out_features: int = out_features
         self.lora_rank: int = min(lora_rank, min(in_features, out_features))
+        self.lora_alpha: float = float(lora_alpha)
+        self.lora_scaling: float = (self.lora_alpha / max(1, self.lora_rank)) if self.lora_rank > 0 else 1.0
 
         factory_kwargs = {"dtype": dtype, "device": device}
 
@@ -200,7 +203,8 @@ class AdaSplashLinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = F.linear(x, self.weight, self.bias)
         if getattr(self, "lora_A", None) is not None and getattr(self, "lora_B", None) is not None:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
+            scaling = getattr(self, "lora_scaling", 1.0)
+            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * scaling
         return out
 
 
@@ -258,7 +262,17 @@ class AdaSplashAttention(BaseAttention):
                     getattr(config, "rank", kwargs.get("lora_rank", kwargs.pop("rank", 16))),
                 ),
             )
-            self.lora_rank = int(lora_rank_cfg) if lora_rank_cfg is not None else 16
+            self.lora_rank = int(lora_rank_cfg)
+        lora_alpha_cfg = getattr(
+            config,
+            "lora_alpha",
+            getattr(
+                kwargs.get("comp_config", None),
+                "lora_alpha",
+                kwargs.get("lora_alpha", 32.0),
+            ),
+        )
+        self.lora_alpha = float(lora_alpha_cfg) if lora_rank_cfg is not None else 16
             self.num_heads = kwargs.get("num_heads", self.adapter.num_heads or 12)
             self.num_kv_heads = kwargs.get(
                 "num_kv_heads", self.adapter.num_key_value_heads or self.num_heads
@@ -291,6 +305,7 @@ class AdaSplashAttention(BaseAttention):
             self.n_iter = int(kwargs.get("n_iter", n_iter))
             self.splash_radius = int(kwargs.get("splash_radius", splash_radius))
             self.lora_rank = int(kwargs.get("lora_rank", kwargs.pop("rank", 16)))
+            self.lora_alpha = float(kwargs.get("lora_alpha", 32.0))
             self.hidden_size = kwargs.get("hidden_size", 768)
             self.num_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads", 12))
             self.num_kv_heads = kwargs.get(
@@ -307,12 +322,12 @@ class AdaSplashAttention(BaseAttention):
         self.kv_head_size = self.num_kv_heads * self.head_dim
 
         self.q_proj = AdaSplashLinear(
-            self.hidden_size, self.all_head_size, lora_rank=self.lora_rank
+            self.hidden_size, self.all_head_size, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha
         )
-        self.k_proj = AdaSplashLinear(self.hidden_size, self.kv_head_size, lora_rank=self.lora_rank)
-        self.v_proj = AdaSplashLinear(self.hidden_size, self.kv_head_size, lora_rank=self.lora_rank)
+        self.k_proj = AdaSplashLinear(self.hidden_size, self.kv_head_size, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
+        self.v_proj = AdaSplashLinear(self.hidden_size, self.kv_head_size, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha)
         self.out_proj = AdaSplashLinear(
-            self.all_head_size, self.hidden_size, lora_rank=self.lora_rank
+            self.all_head_size, self.hidden_size, lora_rank=self.lora_rank, lora_alpha=self.lora_alpha
         )
 
         # Aliases
