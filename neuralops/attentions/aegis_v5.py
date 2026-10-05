@@ -149,7 +149,8 @@ class AegisConfigV5:
     dropout: float = 0.1
     is_decoder: bool = False
     # V5-FIX-14: rff_proj as buffer (fixed random features). Set True to make trainable.
-    rff_trainable: bool = False
+    # FIXED: Set rff_trainable = True so the global projection buffers become trainable nn.Parameters
+    rff_trainable: bool = True
     # SDPA fast path for very short sequences.
     use_sdpa_fast_path: bool = True
     # Chunk size for causal kernel linear attention (lower = less memory, slower).
@@ -183,7 +184,8 @@ class FactorisedLinear(nn.Module):
         max_rank: int = 384,
         rank: int | None = None,
         bias: bool = True,
-        lora_rank: int = 16,
+        # FIXED: Capacity Bottleneck: Increased default lora_rank from 16 to 64
+        lora_rank: int = 64,
         lora_alpha: float = 32.0,
         **kwargs: Any,
     ) -> None:
@@ -322,10 +324,12 @@ class FactorisedLinear(nn.Module):
             self.freeze_base_weights()
 
     def freeze_base_weights(self) -> None:
-        self.down.weight.requires_grad = False
-        self.up.weight.requires_grad = False
+        # FIXED: Capacity Bottleneck: Explicitly unfreeze base factorized projections
+        # so they can absorb the teacher's dense knowledge during Phase 1
+        self.down.weight.requires_grad = True
+        self.up.weight.requires_grad = True
         if self.up.bias is not None:
-            self.up.bias.requires_grad = False
+            self.up.bias.requires_grad = True
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             self.lora_A.requires_grad = True
             self.lora_B.requires_grad = True
