@@ -389,6 +389,10 @@ class AdaptiveSpanAttention(BaseAttention):
             self.max_span = int(max_span)
             self.ramp_size = float(ramp_size)
 
+        # FIXED: Failure Mode 1 (Mode Collapse): Enforce min_span = 32 floor
+        # to prevent the attention span from collapsing to S -> 1 token ("eseseses..." loops)
+        self.min_span: float = float(kwargs.get("min_span", getattr(config, "min_span", 32.0) if config else 32.0))
+
         # ---------------- Decoder / nested encoder detection ----------------
         model_type = getattr(config, "model_type", "").lower() if config else ""
         is_dec = (
@@ -567,7 +571,8 @@ class AdaptiveSpanAttention(BaseAttention):
 
     @property
     def current_span(self) -> torch.Tensor:
-        return torch.sigmoid(self.span_logits) * self.max_span
+        raw_span = torch.sigmoid(self.span_logits) * self.max_span
+        return torch.clamp(raw_span, min=self.min_span)
 
     def get_span_regularization_loss(self, lambda_span: float = 0.01) -> torch.Tensor:
         return lambda_span * torch.sigmoid(self.span_logits).mean()
@@ -912,7 +917,8 @@ class AdaptiveSpanAttention(BaseAttention):
         # FIX: Apply Adaptive Span penalty BEFORE softmax to preserve logic & gradient
         # =========================================================================
         if not is_cross_attention:
-            span = torch.sigmoid(self.span_logits) * self.max_span  # [H]
+            # FIXED: Enforce min_span floor to avoid auto-regressive Markov bigram collapse ("eseseses...")
+            span = torch.clamp(torch.sigmoid(self.span_logits) * self.max_span, min=self.min_span)  # [H]
             if position_ids is not None:
                 q_pos = position_ids[0].to(torch.float32)
                 if N_k == N_q:

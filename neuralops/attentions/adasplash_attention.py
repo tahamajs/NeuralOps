@@ -233,9 +233,11 @@ class AdaSplashAttention(BaseAttention):
         self,
         config: Any,
         rank: int | None = None,
-        alpha: float = 1.1,  # FIX: Softened from 1.5 to 1.1 for zero-shot accuracy
+        # FIXED: Failure Mode 1 (Mode Collapse): Default alpha = 1.0 (exact softmax)
+        # Prevents sparse entmax from zeroing out the entire distribution tail, stopping degenerate "eseseses..." loops.
+        alpha: float = 1.0,
         n_iter: int = 15,
-        splash_radius: int = 128,  # FIX: Increased from 32 to 128 for healthy context window
+        splash_radius: int = 128,
         pretrained_attn: nn.Module | None = None,
         **kwargs: Any,
     ) -> None:
@@ -871,7 +873,7 @@ def inject_adasplash(
         if cfg is None and hasattr(src, "config"):
             cfg = src.config
 
-        alpha = getattr(comp_config, "alpha", kwargs.get("alpha", 1.1))
+        alpha = getattr(comp_config, "alpha", kwargs.get("alpha", 1.0))
         splash_radius = getattr(comp_config, "splash_radius", kwargs.get("splash_radius", 128))
         lora_rank = getattr(
             comp_config,

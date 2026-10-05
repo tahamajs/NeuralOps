@@ -880,6 +880,9 @@ def set_train_scope(model, train_scope="all"):
         for p in model.parameters():
             p.requires_grad = True
     elif train_scope in ("mamba", "attention", "module"):
+        # FIXED: Failure Mode 4 (Scope Mismatch in bam_umoe & MLP Pruners).
+        # Expand TARGET_ATTRS to include MLP/FFN projection attributes so that
+        # pruned MLP weights (c_fc, c_proj) are not accidentally frozen during module distillation.
         TARGET_ATTRS = (
             "attn",
             "attention",
@@ -896,6 +899,15 @@ def set_train_scope(model, train_scope="all"):
             "down",
             "up",
             "linear",
+            "mlp",
+            "c_fc",
+            "c_proj",
+            "dense",
+            "ffn",
+            "fc",
+            "w1",
+            "w2",
+            "w3",
         )
         n_matched = 0
         for name, p in model.named_parameters():
