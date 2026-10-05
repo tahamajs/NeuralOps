@@ -183,9 +183,8 @@ def main():
                 mod = run_entry.get("module")
                 if not mod:
                     continue
-                methods_data = run_entry.get("methods", {})
                 if args.require_stage2:
-                    if any("post_ppl_stage2" in mdata for mdata in methods_data.values()):
+                    if "post_ppl_stage2" in run_entry:
                         completed.add(mod)
                 else:
                     completed.add(mod)
