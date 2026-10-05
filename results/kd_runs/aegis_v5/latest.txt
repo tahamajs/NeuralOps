@@ -1,0 +1,1 @@
+D:\SVD_linear_Attention\results\kd_runs\aegis_v5\20261005_145230_bs8_seq128_lr5e-06_C

@@ -1,0 +1,42 @@
+{
+  "model_name": "gpt2",
+  "modules": [
+    "ast"
+  ],
+  "rank": 64,
+  "save_weights": false,
+  "seq_len": 128,
+  "max_train_texts": 5000,
+  "num_chunks": 800,
+  "batch_size": 8,
+  "grad_accum_steps": 1,
+  "learning_rate": 5e-06,
+  "recovery_steps": 300,
+  "warmup_steps": 30,
+  "eval_every": 100,
+  "eval_max_tokens": 15000,
+  "eval_stride": 128,
+  "test_split": "test",
+  "early_stop_ppl": 5000.0,
+  "no_cosine_lr": false,
+  "max_grad_norm": 1.0,
+  "methods": [
+    "C"
+  ],
+  "kl_temperature": 2.0,
+  "kl_warmup_steps": 100,
+  "use_cache": true,
+  "cache_dir": null,
+  "cache_attn": false,
+  "device": "cuda",
+  "fp16": true,
+  "train_scope": "module",
+  "self_train_steps": 200,
+  "self_train_lr": null,
+  "self_train_warmup": 20,
+  "strict_ppl_check": false,
+  "eval_lambada": false,
+  "baseline_ppl": null,
+  "timestamp": "20261005_151856",
+  "log_file": null
+}

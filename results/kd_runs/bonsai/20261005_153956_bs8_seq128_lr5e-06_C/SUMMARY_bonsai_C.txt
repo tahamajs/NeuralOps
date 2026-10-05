@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: bonsai / C
+================================================================================
+
+MODEL INFO:
+  Total params:      124.44 M
+  Trainable params:  28.35 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        800
+  Seq len:           128
+  Total tokens:      102400
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        4140.2400
+  Post-KD PPL:       385.1100
+  Stage 1 (KD) PPL:  519.2900
+  Stage 2 (Self) PPL:385.1100
+  KD Gain:           +3620.95
+  Self Gain:         +134.18
+  Total Gain:        +3755.13
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         5.8288
+  Recovery:          92.17%
+  Peak VRAM:         3520.94 MB
+  Train time:        98.32 s (Stage 1: 64.6s, Stage 2: 33.7s)
+  s/step:            0.1966
+  Loss (final):      3.6113
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.7602
+  Repetition-3:      0.0781
+  Train PPL:         329.9800
+  Test PPL:          385.1100
+  Overfit Gap:       55.13
+  Latency (mean):    1851.73 ms
+  Latency (std):     19.64 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        1a89fb7c5f42
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=6.3470 | lr=2.93e-06
+  step   420 | loss=6.0543 | lr=2.55e-06
+  step   430 | loss=5.8429 | lr=2.17e-06
+  step   440 | loss=5.8122 | lr=1.79e-06
+  step   450 | loss=6.3555 | lr=1.44e-06
+  step   460 | loss=6.2241 | lr=1.11e-06
+  step   470 | loss=6.1389 | lr=8.18e-07
+  step   480 | loss=6.1463 | lr=5.68e-07
+  step   490 | loss=6.0891 | lr=3.67e-07
+  step   500 | loss=6.3210 | lr=2.20e-07

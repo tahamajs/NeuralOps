@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: bam_umoe / C
+================================================================================
+
+MODEL INFO:
+  Total params:      106.75 M
+  Trainable params:  10.66 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        800
+  Seq len:           128
+  Total tokens:      102400
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        910.7600
+  Post-KD PPL:       95.8000
+  Stage 1 (KD) PPL:  129.2500
+  Stage 2 (Self) PPL:95.8000
+  KD Gain:           +781.51
+  Self Gain:         +33.45
+  Total Gain:        +814.96
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         1.4500
+  Recovery:          96.48%
+  Peak VRAM:         3583.15 MB
+  Train time:        274.65 s (Stage 1: 165.1s, Stage 2: 109.6s)
+  s/step:            0.5493
+  Loss (final):      1.4792
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.2245
+  Repetition-3:      0.7396
+  Train PPL:         79.6100
+  Test PPL:          95.8000
+  Overfit Gap:       16.19
+  Latency (mean):    5542.64 ms
+  Latency (std):     33.97 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        1a89fb7c5f42
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=4.8848 | lr=2.93e-06
+  step   420 | loss=4.5553 | lr=2.55e-06
+  step   430 | loss=4.1684 | lr=2.17e-06
+  step   440 | loss=4.3423 | lr=1.79e-06
+  step   450 | loss=4.6273 | lr=1.44e-06
+  step   460 | loss=4.8715 | lr=1.11e-06
+  step   470 | loss=4.4222 | lr=8.18e-07
+  step   480 | loss=4.2615 | lr=5.68e-07
+  step   490 | loss=4.5223 | lr=3.67e-07
+  step   500 | loss=4.6291 | lr=2.20e-07
