@@ -138,7 +138,12 @@ class AegisSpectronFP8Config:
         self.c_glob = float(kwargs.get("c_glob", 0.8))
         self.c_lin = float(kwargs.get("c_lin", 1.0))
         self.dropout = float(kwargs.get("dropout", 0.1))
-        self.router_init_bias = tuple(kwargs.get("router_init_bias", (4.0, 0.0, 0.0)))
+        env_bias = os.environ.get("AEGIS_ROUTER_BIAS", None)
+        if env_bias is not None:
+            init_bias = tuple(float(x.strip()) for x in env_bias.split(","))
+        else:
+            init_bias = tuple(kwargs.get("router_init_bias", (4.0, 0.0, 0.0)))
+        self.router_init_bias = init_bias
         self.is_decoder = bool(kwargs.get("is_decoder", False))
         self.fp8_format = str(kwargs.get("fp8_format", "e4m3"))
         self.chunk_size = int(kwargs.get("chunk_size", 64))
@@ -1030,6 +1035,17 @@ class AegisSpectronFP8Attention(BaseAttention):
 
         # Routing on hidden states (self-attention only).
         alpha = self.router(hidden_states, token_valid=token_valid_new)
+        force_branch = os.environ.get("AEGIS_FORCE_BRANCH", "").lower()
+        if force_branch == "loc":
+            alpha = torch.zeros_like(alpha)
+            alpha[:, :, 0] = 1.0
+        elif force_branch == "glob":
+            alpha = torch.zeros_like(alpha)
+            alpha[:, :, 1] = 1.0
+        elif force_branch == "lin":
+            alpha = torch.zeros_like(alpha)
+            alpha[:, :, 2] = 1.0
+
         alpha_loc = alpha[:, :, 0].view(B, 1, N, 1)
         alpha_glob = alpha[:, :, 1].view(B, 1, N, 1)
         alpha_lin = alpha[:, :, 2].view(B, 1, N, 1)
