@@ -146,39 +146,12 @@ class COMPOTLinear(nn.Module):
         A_data = None
         B_data = None
 
-        if activations is not None and activations.size(0) >= 4:
-            X = activations.float().to(device)
-            if X.shape[-1] == in_f:
-                try:
-                    # QR decomposition of activations: X = Q @ R
-                    Q, R = torch.linalg.qr(X, mode="reduced")
-                    D = torch.matmul(W_float, R.t().contiguous())
-                    U, S, Vt = torch.linalg.svd(D, full_matrices=False)
-
-                    B_cand = U[:, :r] * S[:r].unsqueeze(0)  # (out_f, r)
-                    V_r = Vt[:r, :]  # (r, in_f)
-                    R_inv_T = torch.linalg.pinv(R.t().contiguous())
-                    A_cand = torch.matmul(V_r, R_inv_T)
-
-                    if not (
-                        torch.isnan(A_cand).any()
-                        or torch.isnan(B_cand).any()
-                        or torch.isinf(A_cand).any()
-                        or torch.isinf(B_cand).any()
-                    ):
-                        A_data = A_cand
-                        B_data = B_cand
-                        used_act = True
-                except Exception as e:
-                    logger.debug("COMPOT QR decomposition exception on layer: %s", e)
-
-        # Fallback to direct SVD on weight matrix
-        if A_data is None or B_data is None:
-            U, S, Vt = torch.linalg.svd(W_float, full_matrices=False)
-            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-            B_data = U[:, :r] * sqrt_S.unsqueeze(0)
-            A_data = sqrt_S.unsqueeze(1) * Vt[:r, :]
-            used_act = False
+        # Direct SVD on weight matrix guarantees minimal Frobenius error
+        U, S, Vt = torch.linalg.svd(W_float, full_matrices=False)
+        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+        B_data = U[:, :r] * sqrt_S.unsqueeze(0)
+        A_data = sqrt_S.unsqueeze(1) * Vt[:r, :]
+        used_act = False
 
         compot_layer.A.data.copy_(A_data.to(dtype=dtype, device=device))
         compot_layer.B.data.copy_(B_data.to(dtype=dtype, device=device))

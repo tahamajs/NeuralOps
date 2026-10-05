@@ -326,23 +326,15 @@ class StableKernelFeatureMap(nn.Module):
         return torch.cat(blocks, dim=1)[:, :m] * math.sqrt(d)
 
     def forward(self, x):
-        """FAVOR+ feature map with GLOBAL max subtraction for FP16 stability."""
+        """FAVOR+ feature map with proper d**-0.25 scaling for FP16 stability."""
         with torch.autocast(device_type=x.device.type, enabled=False):
-            x_f = x.float()
-            phi = torch.matmul(x_f, self.proj.float())
-            norm_sq = (x_f * x_f).sum(dim=-1, keepdim=True) / 2.0
-            raw = phi - norm_sq
-
-            # FIX: Global max (scalar) subtraction to avoid FP16 overflow.
-            # This scalar cancels in the softmax normalization (safe).
-            max_val = raw.detach().max()
-
-            exp_in = torch.clamp(
-                raw - max_val,
-                min=self.cfg.clamp_min,
-                max=self.cfg.clamp_max,
-            )
-            return (self.scale * torch.exp(exp_in)).to(x.dtype)
+            # Scale inputs by d**-0.25 so inner products match softmax scaling
+            x_scaled = x.float() * (self.head_dim ** -0.25)
+            proj = self.proj.float() / math.sqrt(self.head_dim)
+            phi = torch.matmul(x_scaled, proj)
+            norm_sq = (x_scaled * x_scaled).sum(dim=-1, keepdim=True) * 0.5
+            diff = torch.clamp(phi - norm_sq, min=-30.0, max=10.0)
+            return (self.scale * torch.exp(diff)).to(x.dtype)
 
 
 # ===========================================================================
@@ -844,11 +836,54 @@ class AegisAttentionV3(BaseAttention):
                 return _fallback_out
 
         # ---- Case: N == N_k (training / full prefill) ----
-        # FIXED: Task 1 (Causal Linear Attention). 
-        # Replaced the O(N) sequential Python chunk loop with hardware-fused Triton kernel.
-        # This computes causal masked intra-chunk + running state inter-chunk attention in SRAM.
-        from neuralops.attentions.chela_slay import ChelaSlayCausalLinearFunction
-        return ChelaSlayCausalLinearFunction.apply(Q_feat, K_feat, V, chunk_size)
+        # FIXED: Native chunked FAVOR+ causal scan with stable 1e-6 denominator clamping.
+        pad_len = (chunk_size - (N % chunk_size)) % chunk_size
+        if pad_len > 0:
+            q_pad = F.pad(Q_feat, (0, 0, 0, pad_len))
+            k_pad = F.pad(K_feat, (0, 0, 0, pad_len))
+            v_pad = F.pad(V, (0, 0, 0, pad_len))
+        else:
+            q_pad, k_pad, v_pad = Q_feat, K_feat, V
+
+        B_dim = q_pad.shape[0]
+        H_dim = q_pad.shape[1]
+        D_dim = V.shape[-1]
+        num_chunks = q_pad.shape[2] // chunk_size
+        q_c = q_pad.view(B_dim, H_dim, num_chunks, chunk_size, -1).float()
+        k_c = k_pad.view(B_dim, H_dim, num_chunks, chunk_size, -1).float()
+        v_c = v_pad.view(B_dim, H_dim, num_chunks, chunk_size, D_dim).float()
+
+        if pad_len > 0:
+            valid_mask = torch.ones(num_chunks, chunk_size, device=Q.device, dtype=torch.float32)
+            valid_mask[-1, chunk_size - pad_len:] = 0.0
+            v_m = valid_mask.view(1, 1, num_chunks, chunk_size, 1)
+            q_c = q_c * v_m
+            k_c = k_c * v_m
+            v_c = v_c * v_m
+
+        scores = torch.matmul(q_c, k_c.transpose(-2, -1))
+        causal_mask = torch.triu(torch.ones(chunk_size, chunk_size, device=Q.device, dtype=torch.bool), diagonal=1)
+        scores = scores.masked_fill(causal_mask, 0.0)
+
+        num_intra = torch.matmul(scores, v_c)
+        den_intra = scores.sum(dim=-1, keepdim=True)
+
+        delta_s = torch.matmul(k_c.transpose(-2, -1), v_c)
+        delta_z = k_c.sum(dim=-2)
+
+        s_cumsum = torch.cumsum(delta_s, dim=2)
+        s_past = torch.cat([torch.zeros_like(delta_s[:, :, :1]), s_cumsum[:, :, :-1]], dim=2)
+
+        z_cumsum = torch.cumsum(delta_z, dim=2)
+        z_past = torch.cat([torch.zeros_like(delta_z[:, :, :1]), z_cumsum[:, :, :-1]], dim=2)
+
+        num_inter = torch.matmul(q_c, s_past)
+        den_inter = (q_c * z_past.unsqueeze(-2)).sum(dim=-1, keepdim=True)
+
+        denom = (den_intra + den_inter).clamp(min=1e-6)
+        out = (num_intra + num_inter) / denom
+        out = out.view(B_dim, H_dim, -1, D_dim)[:, :, :N, :]
+        return torch.nan_to_num(out.to(Q.dtype), nan=0.0, posinf=0.0, neginf=0.0)
 
     # ------------------------------------------------------------------
     # KV-cache
