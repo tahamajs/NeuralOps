@@ -10,6 +10,7 @@ Three-branch attention with spectral entropy routing:
 
 import logging
 import math
+import os
 from typing import Any
 
 import torch
@@ -28,6 +29,8 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 
 
 def fp8_cast_simulate(x: torch.Tensor, format: str = "e4m3", per_channel: bool = False, use_ste: bool | None = None) -> torch.Tensor:
+    if os.environ.get("AEGIS_DISABLE_FP8", "0") == "1":
+        return x
     if not isinstance(x, torch.Tensor) or not x.is_floating_point(): return x
     if use_ste is None: use_ste = x.requires_grad and torch.is_grad_enabled()
     orig_dtype = x.dtype
@@ -299,6 +302,18 @@ def _local_window_attention(
         causal = abs_k <= abs_q
         band = band & causal.unsqueeze(0).unsqueeze(0)
 
+    if os.environ.get("AEGIS_DISABLE_LOCAL", "0") == "1":
+        # Fall back to unconstrained causal attention
+        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+        if is_decoder:
+            causal = abs_k <= abs_q
+            scores = scores.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
+        if token_valid is not None:
+            scores = scores.masked_fill(~token_valid[:, None, None, :].to(torch.bool), -1e4)
+        attn = F.softmax(scores.float(), dim=-1).to(Q.dtype)
+        attn = F.dropout(attn, p=dropout_p, training=training)
+        return torch.matmul(attn, V.to(attn.dtype)), attn
+
     # Fast path: use fused scaled_dot_product_attention when no token padding mask is needed
     if token_valid is None:
         mask_val = -1e4
@@ -396,8 +411,9 @@ def _noncausal_global_linear_attention(
 # ===========================================================================
 
 
-@torch.jit.script
 def _state_recurrence_jit(u: torch.Tensor, gamma: torch.Tensor, reverse: bool = False) -> torch.Tensor:
+    if os.environ.get("AEGIS_DISABLE_RECURRENCE", "0") == "1":
+        return u
     if reverse: u = torch.flip(u, dims=[1])
     gamma_b = gamma.view(1, 1, -1).squeeze(1)
     B, N, D = u.shape
