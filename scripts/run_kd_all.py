@@ -14,12 +14,22 @@ HERE = Path(__file__).resolve().parent
 
 
 def read_modules_from_file(path="all_modules.txt"):
-    """Read module list from all_modules.txt."""
+    """Read module list from all_modules.txt or fallbacks."""
     f = Path(path)
     if not f.exists():
-        LOG.error("File %s not found. Run list_modules.py first.", path)
+        for candidate in [
+            HERE.parent / path,
+            HERE.parent / "docs" / "reports" / path,
+            HERE.parent / "docs" / "reports" / "all_modules.txt",
+            HERE.parent / "docs" / "reports" / "all_canonical_modules.txt",
+        ]:
+            if candidate.exists():
+                f = candidate
+                break
+    if not f.exists():
+        LOG.error("File %s not found. Checked docs/reports/all_modules.txt.", path)
         return []
-    return [line.strip() for line in f.read_text().splitlines() if line.strip()]
+    return [line.strip() for line in f.read_text(encoding="utf-8").splitlines() if line.strip() and not line.strip().startswith("#")]
 
 
 def run_module(module_name, args, timeout_s=3600):
@@ -105,10 +115,10 @@ def main():
     parser.add_argument("--num_chunks", type=int, default=800)
 
     # Training
-    parser.add_argument("--batch_size", type=int, default=16)
-    parser.add_argument("--learning_rate", type=float, default=4e-6)
-    parser.add_argument("--recovery_steps", type=int, default=500)
-    parser.add_argument("--warmup_steps", type=int, default=50)
+    parser.add_argument("--batch_size", type=int, default=4, help="Batch size (default: 4 for VRAM stability)")
+    parser.add_argument("--learning_rate", type=float, default=5e-6)
+    parser.add_argument("--recovery_steps", type=int, default=300)
+    parser.add_argument("--warmup_steps", type=int, default=30)
     parser.add_argument("--eval_every", type=int, default=100)
     parser.add_argument("--eval_max_tokens", type=int, default=15000)
     parser.add_argument("--eval_stride", type=int, default=128)
@@ -117,6 +127,8 @@ def main():
     parser.add_argument("--self_train_lr", type=float, default=None, help="Stage 2 learning rate")
     parser.add_argument("--self_train_warmup", type=int, default=20, help="Stage 2 warmup steps")
     parser.add_argument("--strict_ppl_check", action="store_true", help="Abort module if pre-KD PPL <= baseline PPL")
+    parser.add_argument("--force", action="store_true", help="Force rerun of all modules even if in registry.json")
+    parser.add_argument("--require_stage2", action="store_true", default=True, help="Only consider runs completed if stage2 metrics exist")
 
     # KD
     parser.add_argument("--methods", nargs="+", default=["C"],
@@ -164,12 +176,19 @@ def main():
 
     completed = set()
     reg_file = HERE.parent / "results" / "kd_runs" / "registry.json"
-    if reg_file.exists():
+    if reg_file.exists() and not args.force:
         try:
             data = json.loads(reg_file.read_text(encoding="utf-8"))
             for run_entry in data.get("runs", []):
-                if "module" in run_entry:
-                    completed.add(run_entry["module"])
+                mod = run_entry.get("module")
+                if not mod:
+                    continue
+                methods_data = run_entry.get("methods", {})
+                if args.require_stage2:
+                    if any("post_ppl_stage2" in mdata for mdata in methods_data.values()):
+                        completed.add(mod)
+                else:
+                    completed.add(mod)
         except Exception as e:
             LOG.warning(f"Could not read registry.json: {e}")
 
