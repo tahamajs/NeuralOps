@@ -370,8 +370,9 @@ class AdaptiveSparseAttention(BaseAttention):
             self.lora_alpha = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
         else:
             self.lora_rank = kwargs.get("lora_rank", lora_rank)
-            self.lora_alpha = kwargs.get("lora_alpha", 32.0)
-        self.freeze_base: bool = self.lora_rank > 0
+        # FIXED: Capacity Bottleneck: Do not freeze base weights when lora_rank > 0
+        # Base projections must remain trainable to adapt during KD phase
+        self.freeze_base: bool = False
 
         self.q_proj = LoRALinear(
             self.hidden_size,
@@ -735,7 +736,7 @@ class AdaptiveSparseAttention(BaseAttention):
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
 
-        if self.lora_rank > 0 or self.freeze_base:
+        if self.freeze_base:
             self.freeze_base_weights()
 
     def get_sparsity_loss(self) -> torch.Tensor:
