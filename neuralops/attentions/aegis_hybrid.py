@@ -401,6 +401,65 @@ def _global_linear_attention(
     return torch.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0).to(Q.dtype)
 
 
+def _causal_linear_attention(
+    Q: torch.Tensor,
+    K: torch.Tensor,
+    V: torch.Tensor,
+    feature_map: KernelFeatureMap,
+    token_valid: torch.Tensor | None,
+    chunk_size: int = 64,
+) -> torch.Tensor:
+    """Chunked causal linear attention (FAVOR+) preventing future token leakage."""
+    B, H, N, D = Q.shape
+    N_k = K.shape[2]
+
+    Q_feat = feature_map(Q)
+    K_feat = feature_map(K)
+
+    if token_valid is not None:
+        kv = token_valid[:, None, :, None].to(K_feat.dtype)
+        K_feat = K_feat * kv
+        V = V * kv
+
+    # Single-token decode with past cache: query sees all past keys causally
+    if N == 1:
+        KV = torch.matmul(K_feat.transpose(-2, -1).contiguous(), V.to(K_feat.dtype))
+        Z = K_feat.sum(dim=-2, keepdim=True)
+        num = torch.matmul(Q_feat, KV)
+        den = torch.matmul(Q_feat, Z.transpose(-1, -2).contiguous()).clamp(min=1e-6)
+        out = num / den
+        return torch.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0).to(Q.dtype)
+
+    # Multi-token / training prefill: chunked cumsum
+    M = Q_feat.shape[-1]
+    d_v = V.shape[-1]
+    state_kv = torch.zeros(B, H, M, d_v, device=Q.device, dtype=Q_feat.dtype)
+    state_k = torch.zeros(B, H, M, device=Q.device, dtype=Q_feat.dtype)
+    outs = []
+
+    for start in range(0, N, chunk_size):
+        end = min(start + chunk_size, N)
+        Qc = Q_feat[:, :, start:end]
+        Kc = K_feat[:, :, start:end]
+        Vc = V[:, :, start:end].to(Q_feat.dtype)
+
+        KV_local = (Kc.unsqueeze(-1) * Vc.unsqueeze(-2)).cumsum(dim=2)
+        K_local = Kc.cumsum(dim=2)
+
+        KV_total = KV_local + state_kv.unsqueeze(2)
+        K_total = K_local + state_k.unsqueeze(2)
+
+        num = torch.einsum("bhnm,bhnmd->bhnd", Qc, KV_total)
+        den = torch.einsum("bhnm,bhnm->bhn", Qc, K_total).clamp(min=1e-6)
+        outs.append(num / den.unsqueeze(-1))
+
+        state_kv = KV_total[:, :, -1]
+        state_k = K_total[:, :, -1]
+
+    out = torch.cat(outs, dim=2)
+    return torch.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0).to(Q.dtype)
+
+
 # ===========================================================================
 # Main attention
 # ===========================================================================
@@ -929,13 +988,23 @@ class AegisHybridAttention(BaseAttention):
 
         # ---- global linear attention (optional) ----
         if self.use_global:
-            global_out = _global_linear_attention(
-                Q,
-                K_full,
-                V_full,
-                self.kernel_map,
-                token_valid,
-            )
+            if self.is_decoder and not is_cross:
+                global_out = _causal_linear_attention(
+                    Q,
+                    K_full,
+                    V_full,
+                    self.kernel_map,
+                    token_valid,
+                    chunk_size=getattr(self.config, "chunk_size", 64),
+                )
+            else:
+                global_out = _global_linear_attention(
+                    Q,
+                    K_full,
+                    V_full,
+                    self.kernel_map,
+                    token_valid,
+                )
             beta = torch.sigmoid(self.fusion_beta).view(1, self.num_heads, 1, 1)
             # β → local, (1-β) → global
             fused = beta * local_out + (1.0 - beta) * global_out
@@ -989,6 +1058,7 @@ class AegisHybridAttention(BaseAttention):
 # ===========================================================================
 # AH-FIX-08: full injector with recursion + idempotency
 # ===========================================================================
+@ATTENTION_REGISTRY.register("aegis_hybrid_fn")
 @ATTENTION_REGISTRY.register("aegis_hybrid_inject")
 @ATTENTION_REGISTRY.register("inject_aegis_hybrid")
 def inject_aegis_hybrid(
