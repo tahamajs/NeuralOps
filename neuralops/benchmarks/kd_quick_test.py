@@ -397,15 +397,20 @@ def build_teacher_cache(
 
             if need_logits and logits_buffer is not None:
                 logits_buffer[start_idx:end_idx] = out.logits.detach().to(torch.float16).cpu().numpy()
-                logits_buffer.flush()
             if need_hidden and hidden_buffer is not None and out.hidden_states is not None:
                 for l, h in enumerate(out.hidden_states):
                     hidden_buffer[l, start_idx:end_idx] = h.detach().to(torch.float16).cpu().numpy()
-                hidden_buffer.flush()
             if need_attn and attn_buffer is not None and out.attentions is not None:
                 for l, a in enumerate(out.attentions):
                     attn_buffer[l, start_idx:end_idx] = a.detach().to(torch.float16).cpu().numpy()
-                attn_buffer.flush()
+
+        # Flush outside the loop
+        if need_logits and logits_buffer is not None:
+            logits_buffer.flush()
+        if need_hidden and hidden_buffer is not None:
+            hidden_buffer.flush()
+        if need_attn and attn_buffer is not None:
+            attn_buffer.flush()
 
     manifest: dict[str, Any] = {
         "n_chunks": n_chunks, "seq_len": seq_len, "vocab_size": vocab_size,
