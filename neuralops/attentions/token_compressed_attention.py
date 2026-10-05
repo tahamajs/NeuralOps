@@ -802,9 +802,11 @@ class TokenCompressedAttention(BaseAttention):
         # ---- KV-cache mode: prefill or decode ----
         is_kv_cache_mode = past_key_value is not None
 
-        if is_kv_cache_mode:
-            # In KV-cache mode, we apply compression to the FULL sequence
-            # (past + current), so training and inference are consistent.
+        # FIXED: Global topk selection violates causality. Disable compression entirely if is_decoder.
+        if self.is_decoder:
+            is_kv_cache_mode = True # Force fallback
+            
+        if is_kv_cache_mode and self.is_decoder:
             if isinstance(past_key_value, (tuple, list)):
                 past_k, past_v = past_key_value[0], past_key_value[1]
             else:
@@ -817,21 +819,13 @@ class TokenCompressedAttention(BaseAttention):
             else:
                 full_k, full_v = k, v
 
-            # We need hidden_states for the full sequence for importance.
-            # Since we only have current hidden_states, we use the mean
-            # over the current hidden_states as a proxy for past.
-            # (For proper training, use full hidden_states.)
-            if past_k is not None:
-                # Approximate: use current x as proxy for past positions
-                x_full = hidden_states  # only current positions
-                # Fall back to simple attention (no compression on past)
-                # to avoid distribution mismatch
-                full_k_use = full_k
-                full_v_use = full_v
-                top_idx = None
-                comp_valid = None
-                ste_mask = None
-            else:
+            # Standard attention for decoder (causality preservation)
+            full_k_use = full_k
+            full_v_use = full_v
+            top_idx = None
+            comp_valid = None
+            ste_mask = None
+        elif is_kv_cache_mode:
                 # Prefill: apply compression normally
                 full_k_use, full_v_use, top_idx, comp_valid, ste_mask = self._select_compressed_tokens(
                     hidden_states, q, full_k, full_v, valid_mask_2d

@@ -629,7 +629,13 @@ class ProgressiveTokenPruning(BaseAttention):
                 scores[:, 0],
             )
 
-        k_tokens = max(1, min(L, int(math.ceil(L * self.keep_ratio))))
+        # FIXED: Global top-k pruning over the sequence axis violates causality.
+        # Disable pruning for auto-regressive generation/causal models.
+        if getattr(self, "is_decoder", False):
+            k_tokens = L
+        else:
+            k_tokens = max(1, min(L, int(math.ceil(L * self.keep_ratio))))
+            
         top_scores, top_indices = torch.topk(scores, k_tokens, dim=-1)
         top_indices, _ = torch.sort(top_indices, dim=-1)
 
