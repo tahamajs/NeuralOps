@@ -506,8 +506,14 @@ def run_kd_method(
     calib_slice = train_chunks[:4, :128].to(device)
     student, comp_stats = apply_module_to_model(student, module_name, "auto", rank=args.rank, device=device, calibration_data=calib_slice, tokenizer=tokenizer)
 
+    # CRITICAL FIX: Re-move ENTIRE student to device after injection.
+    # apply_module_to_model creates new submodules that start on CPU.
+    # Without this second .to(device), those injected layers stay on CPU
+    # causing "Expected all tensors to be on the same device" crashes.
     if args.fp16 and device.startswith("cuda"):
-        student.half()
+        student = student.half().to(device)
+    else:
+        student = student.to(device)
 
     pre_ppl = compute_perplexity(student, tokenizer, test_dataset, seq_len=args.seq_len, stride=128, max_eval_tokens=args.eval_max_tokens, device=device)
     LOG.info("Pre-KD PPL for Module %s, Method %s: %.2f", module_name, method_name, pre_ppl)
