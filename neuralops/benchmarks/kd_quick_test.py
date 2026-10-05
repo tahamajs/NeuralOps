@@ -373,13 +373,17 @@ def build_teacher_cache(
     num_layers = getattr(getattr(teacher, "config", None), "n_layer", 12) + 1
     hidden_dim = getattr(getattr(teacher, "config", None), "n_embd", 768)
 
-    logits_buffer = torch.empty((n_chunks, seq_len, vocab_size), dtype=torch.float16) if need_logits else None
-    hidden_buffer = torch.empty((num_layers, n_chunks, seq_len, hidden_dim), dtype=torch.float16) if need_hidden else None
-    attn_buffer = None
-    if need_attn:
-        n_heads = getattr(getattr(teacher, "config", None), "n_head", 12)
-        n_attn_layers = getattr(getattr(teacher, "config", None), "n_layer", 12)
-        attn_buffer = torch.empty((n_attn_layers, n_chunks, n_heads, seq_len, seq_len), dtype=torch.float16)
+    import numpy as np
+    n_heads = getattr(getattr(teacher, "config", None), "n_head", 12)
+    n_attn_layers = getattr(getattr(teacher, "config", None), "n_layer", 12)
+    
+    logits_shape = (n_chunks, seq_len, vocab_size)
+    hidden_shape = (num_layers, n_chunks, seq_len, hidden_dim)
+    attn_shape = (n_attn_layers, n_chunks, n_heads, seq_len, seq_len)
+    
+    logits_buffer = np.memmap(cache_dir / "teacher_logits.dat", dtype='float16', mode='w+', shape=logits_shape) if need_logits else None
+    hidden_buffer = np.memmap(cache_dir / "teacher_hidden.dat", dtype='float16', mode='w+', shape=hidden_shape) if need_hidden else None
+    attn_buffer = np.memmap(cache_dir / "teacher_attn.dat", dtype='float16', mode='w+', shape=attn_shape) if need_attn else None
 
     with torch.no_grad():
         for start_idx in range(0, n_chunks, eval_batch_size):
@@ -392,37 +396,37 @@ def build_teacher_cache(
                 out = teacher(chunk_batch, output_hidden_states=need_hidden, output_attentions=need_attn)
 
             if need_logits and logits_buffer is not None:
-                logits_buffer[start_idx:end_idx] = out.logits.detach().to(torch.float16).cpu()
+                logits_buffer[start_idx:end_idx] = out.logits.detach().to(torch.float16).cpu().numpy()
+                logits_buffer.flush()
             if need_hidden and hidden_buffer is not None and out.hidden_states is not None:
                 for l, h in enumerate(out.hidden_states):
-                    hidden_buffer[l, start_idx:end_idx] = h.detach().to(torch.float16).cpu()
+                    hidden_buffer[l, start_idx:end_idx] = h.detach().to(torch.float16).cpu().numpy()
+                hidden_buffer.flush()
             if need_attn and attn_buffer is not None and out.attentions is not None:
                 for l, a in enumerate(out.attentions):
-                    attn_buffer[l, start_idx:end_idx] = a.detach().to(torch.float16).cpu()
+                    attn_buffer[l, start_idx:end_idx] = a.detach().to(torch.float16).cpu().numpy()
+                attn_buffer.flush()
 
     manifest: dict[str, Any] = {
         "n_chunks": n_chunks, "seq_len": seq_len, "vocab_size": vocab_size,
         "has_logits": need_logits, "has_hidden": need_hidden, "has_attn": need_attn,
         "logits_file": None, "hidden_file": None, "attn_file": None,
+        "logits_shape": logits_shape if need_logits else None,
+        "hidden_shape": hidden_shape if need_hidden else None,
+        "attn_shape": attn_shape if need_attn else None,
         "logits_size_bytes": 0, "hidden_size_bytes": 0, "attn_size_bytes": 0, "build_time_s": round(time.time() - t0, 2),
     }
 
     if need_logits and logits_buffer is not None:
-        logits_path = cache_dir / "teacher_logits.pt"
-        torch.save(logits_buffer, logits_path, _use_new_zipfile_serialization=True)
-        manifest["logits_file"] = "teacher_logits.pt"
+        manifest["logits_file"] = "teacher_logits.dat"
         del logits_buffer
 
     if need_hidden and hidden_buffer is not None:
-        hidden_path = cache_dir / "teacher_hidden.pt"
-        torch.save(hidden_buffer, hidden_path, _use_new_zipfile_serialization=True)
-        manifest["hidden_file"] = "teacher_hidden.pt"
+        manifest["hidden_file"] = "teacher_hidden.dat"
         del hidden_buffer
 
     if need_attn and attn_buffer is not None:
-        attn_path = cache_dir / "teacher_attn.pt"
-        torch.save(attn_buffer, attn_path, _use_new_zipfile_serialization=True)
-        manifest["attn_file"] = "teacher_attn.pt"
+        manifest["attn_file"] = "teacher_attn.dat"
         del attn_buffer
 
     if baseline_ppl is not None:
@@ -439,6 +443,7 @@ def build_teacher_cache(
 
 
 def load_teacher_cache(cache_dir: Path) -> dict[str, Any]:
+    import numpy as np
     manifest_path = cache_dir / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     cache: dict[str, Any] = {"manifest": manifest, "logits": None, "hidden_states": None, "attentions": None}
@@ -447,10 +452,15 @@ def load_teacher_cache(cache_dir: Path) -> dict[str, Any]:
         if manifest.get(f"has_{key}") and manifest.get(f"{key}_file"):
             fpath = cache_dir / manifest[f"{key}_file"]
             if fpath.exists():
-                try:
-                    cache[key] = torch.load(fpath, map_location="cpu", weights_only=False)
-                except Exception:
-                    cache[key] = torch.load(fpath, map_location="cpu", mmap=True, weights_only=False)
+                if fpath.suffix == '.dat':
+                    shape = tuple(manifest[f"{key}_shape"])
+                    np_memmap = np.memmap(fpath, dtype='float16', mode='r', shape=shape)
+                    cache[key] = torch.from_numpy(np_memmap)
+                else:
+                    try:
+                        cache[key] = torch.load(fpath, map_location="cpu", weights_only=False)
+                    except Exception:
+                        cache[key] = torch.load(fpath, map_location="cpu", mmap=True, weights_only=False)
 
     _load_tensor("logits")
     _load_tensor("hidden_states")
