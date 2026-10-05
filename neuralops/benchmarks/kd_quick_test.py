@@ -490,7 +490,7 @@ def run_kd_method(
     tokenizer: AutoTokenizer, train_chunks: torch.Tensor, test_dataset: Any, args: argparse.Namespace,
     teacher_cache: dict[str, Any] | None = None, baseline_ppl: float = 21.71,
 ) -> dict[str, Any]:
-    # If cache is fully handling everything and teacher wasn't loaded, use the identical snapshot for param counts
+    # If cache is fully handling everything and teacher wasn't loaded, use the identical snapshot for param counts only
     _teacher_ref = base_teacher if base_teacher is not None else base_snapshot
     
     device = args.device
@@ -498,6 +498,13 @@ def run_kd_method(
         torch.cuda.reset_peak_memory_stats()
 
     use_cache = can_use_cache_for_method(teacher_cache, method_name, getattr(args, "cache_attn", False))
+    
+    # CRITICAL FIX: If we will call the teacher live (cache miss), make sure it's on device.
+    # base_snapshot is CPU-only (pristine copy). base_teacher is already on device if it was loaded.
+    # When there's no cache, we need the teacher on GPU or we get device mismatch on forward.
+    if not use_cache and _teacher_ref is not None:
+        _teacher_ref = _teacher_ref.to(device)
+        _teacher_ref.eval()
     
     # Safe Graph Reset: Deepcopy from CPU guarantees a clean architectural state
     student = copy.deepcopy(base_snapshot)
