@@ -573,10 +573,9 @@ class PerformerAttention(BaseAttention):
         proj = torch.matmul(x, omega_t)  # [B, H, N, M]
 
         if self.kernel_type in ("favor_plus", "exp", "favor"):
-            # FIX 1: no per-token max subtraction
             diag_sq = torch.sum(x**2, dim=-1, keepdim=True) * 0.5  # [B,H,N,1]
-            # FIX 12: only clamp min
-            diff = torch.clamp(proj - diag_sq, min=-30.0)
+            # FIXED: Added max clamp to prevent FP16 overflow (which causes NaN collapse)
+            diff = torch.clamp(proj - diag_sq, min=-30.0, max=11.0)
             phi = torch.exp(diff)  # FIX 6: no +eps
             phi = phi / math.sqrt(self.num_features)
         elif self.kernel_type == "elu":

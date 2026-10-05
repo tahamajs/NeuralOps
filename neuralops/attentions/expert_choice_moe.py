@@ -238,16 +238,30 @@ class ExpertChoiceMoE(nn.Module):
         if self.training and self.noise_std > 0:
             logits = logits + torch.randn_like(logits) * self.noise_std
 
-        # Softmax over tokens per expert
-        gate_scores = F.softmax(logits.float(), dim=0).to(dtype=logits.dtype)
-        k = max(1, min(T, int(T * self.capacity_factor / self.n_experts)))
+        # FIXED: Converted to Causal Token-Choice MoE routing to prevent future token leakage.
+        # Expert-Choice applies softmax over the sequence (dim=0), which catastrophically leaks future tokens into past states.
+        # We now apply softmax over the experts (dim=-1) and select top-k experts per token.
+        gate_scores = F.softmax(logits.float(), dim=-1).to(dtype=logits.dtype)
+        
+        # Select top-2 experts per token (standard MoE)
+        top_k_experts = min(2, self.n_experts)
+        topk_vals, topk_indices = torch.topk(gate_scores, top_k_experts, dim=-1)
 
         out_flat = torch.zeros_like(x_flat)
         for e in range(self.n_experts):
-            scores_e = gate_scores[:, e]
-            topk_vals, topk_indices = torch.topk(scores_e, k, dim=0)
+            # Find tokens assigned to expert e
+            expert_mask = topk_indices == e
+            token_indices = expert_mask.any(dim=-1).nonzero(as_tuple=True)[0]
+            
+            if token_indices.numel() == 0:
+                continue
 
-            selected_x = x_flat[topk_indices]
+            # Get the gating values for the selected tokens
+            # expert_mask is [T, top_k], so we need to extract the matching topk_vals
+            matched_vals = topk_vals[expert_mask]
+
+            selected_x = x_flat[token_indices]
+            
             if selected_x.size(-1) == self.d_model:
                 expert_out = self.experts[e](selected_x)
             else:
@@ -270,9 +284,10 @@ class ExpertChoiceMoE(nn.Module):
                 expert_out = proj_out(self.experts[e](proj_in(selected_x)))
 
             update_val = (
-                expert_out.to(out_flat.dtype) * topk_vals.unsqueeze(-1).to(out_flat.dtype)
+                expert_out.to(out_flat.dtype) * matched_vals.unsqueeze(-1).to(out_flat.dtype)
             ).to(dtype=out_flat.dtype)
-            out_flat.index_add_(0, topk_indices, update_val)
+            
+            out_flat.index_add_(0, token_indices, update_val)
 
         # Auxiliary load balancing loss
         prob_mean = F.softmax(logits.float() / 1.0, dim=-1).mean(dim=0)
