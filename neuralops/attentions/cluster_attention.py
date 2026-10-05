@@ -907,7 +907,11 @@ class ClusterAttention(BaseAttention):
                         if hasattr(self, "_seq_idx") and len(self._seq_idx) >= L
                         else torch.arange(L, device=device)
                     )
-                    band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
+                    # FIXED: Failure Mode 1 (Mode Collapse): Causal band mask prevents future token leakage
+                    if is_decoder:
+                        band_mask = (idx.unsqueeze(1) >= idx.unsqueeze(0)) & ((idx.unsqueeze(1) - idx.unsqueeze(0)) <= self.window_size)
+                    else:
+                        band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
                     band_mask_4d = band_mask.unsqueeze(0).unsqueeze(0) & key_valid_4d
                     scores_loc = scores_loc.masked_fill(~band_mask_4d, -10000.0)
                     attn_loc = torch.nan_to_num(F.softmax(scores_loc.float(), dim=-1), nan=0.0).to(
