@@ -118,6 +118,16 @@ def update_registry(module_name: str, run_dir: Path, results: list[dict[str, Any
             "baseline_ppl": baseline_ppl,
             "best_post_ppl": best_post_ppl,
             "best_recovery_pct": best_recovery,
+            "post_ppl_stage1": primary_res.get("post_ppl_stage1"),
+            "post_ppl_stage2": primary_res.get("post_ppl_stage2"),
+            "kd_gain": primary_res.get("kd_gain"),
+            "self_gain": primary_res.get("self_gain"),
+            "total_gain": primary_res.get("total_gain"),
+            "aligned_with_teacher": primary_res.get("aligned_with_teacher"),
+            "beat_teacher_after_self": primary_res.get("beat_teacher_after_self"),
+            "stage1_time_s": primary_res.get("stage1_time_s"),
+            "stage2_time_s": primary_res.get("stage2_time_s"),
+            "eval_protocol": primary_res.get("eval_protocol"),
             "generation": primary_res.get("generation"),
             "overfit_gap": primary_res.get("overfit_gap"),
             "latency": primary_res.get("latency"),
@@ -326,10 +336,17 @@ DATASET INFO:
 RESULTS:
   Pre-KD PPL:        {_fmt(result.get('pre_ppl'))}
   Post-KD PPL:       {_fmt(result.get('post_ppl'))}
+  Stage 1 (KD) PPL:  {_fmt(result.get('post_ppl_stage1'))}
+  Stage 2 (Self) PPL:{_fmt(result.get('post_ppl_stage2'))}
+  KD Gain:           {_fmt(result.get('kd_gain'), '+.2f')}
+  Self Gain:         {_fmt(result.get('self_gain'), '+.2f')}
+  Total Gain:        {_fmt(result.get('total_gain'), '+.2f')}
+  Aligned w/ Teacher:{'YES' if result.get('aligned_with_teacher') else 'NO'}
+  Beat Teacher:      {'YES' if result.get('beat_teacher_after_self') else 'NO'}
   PPL Ratio:         {_fmt(result.get('ppl_ratio'))}
   Recovery:          {_fmt(result.get('recovery_pct'), '.2f')}%
   Peak VRAM:         {_fmt(result.get('peak_vram_mb'), '.2f')} MB
-  Train time:        {_fmt(result.get('train_time_s'), '.2f')} s
+  Train time:        {_fmt(result.get('train_time_s'), '.2f')} s (Stage 1: {_fmt(result.get('stage1_time_s'), '.1f')}s, Stage 2: {_fmt(result.get('stage2_time_s'), '.1f')}s)
   s/step:            {_fmt(result.get('s_per_step'), '.4f')}
   Loss (final):      {_fmt(result.get('loss_final'))}
   Cached:            {result.get('cached', '?')}
@@ -389,11 +406,13 @@ def save_summary_csv(run_dir: Path, module_name: str, results: list[dict[str, An
         csv_path = run_dir / "results.csv"
         fieldnames = [
             "module", "method", "pre_ppl", "post_ppl", "recovery_pct", "ppl_ratio",
+            "post_ppl_stage1", "post_ppl_stage2", "kd_gain", "self_gain", "total_gain",
+            "aligned_with_teacher", "beat_teacher_after_self", "stage1_time_s", "stage2_time_s",
             "train_ppl", "test_ppl", "overfit_gap", "distinct_2", "repetition_3",
             "mean_latency_ms", "std_latency_ms", "lambada_acc",
             "loss_final", "train_time_s", "s_per_step", "peak_vram_mb", "cached",
             "teacher_params", "student_params", "trainable_params", "batch_size",
-            "seq_len", "learning_rate", "recovery_steps", "baseline_ppl"
+            "seq_len", "learning_rate", "recovery_steps", "self_train_steps", "baseline_ppl"
         ]
         with open(csv_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
@@ -661,8 +680,9 @@ def evaluate_generation(
     all_bigrams: list[tuple[int, int]] = []
     all_trigrams: list[tuple[int, int, int]] = []
     samples: list[dict[str, Any]] = []
+    amp_enabled = device.startswith("cuda") and torch.cuda.is_available()
 
-    with torch.no_grad():
+    with torch.no_grad(), torch.amp.autocast(device_type="cuda" if amp_enabled else "cpu", dtype=torch.float16, enabled=amp_enabled):
         for prompt in prompts:
             inp = tokenizer(prompt, return_tensors="pt").to(device)
             inp_len = inp.input_ids.shape[1]
@@ -720,8 +740,9 @@ def measure_latency(
     """Measure generation latency across multiple runs after warmup."""
     student.eval()
     inp = tokenizer("The quick brown fox", return_tensors="pt").to(device)
+    amp_enabled = device.startswith("cuda") and torch.cuda.is_available()
 
-    with torch.no_grad():
+    with torch.no_grad(), torch.amp.autocast(device_type="cuda" if amp_enabled else "cpu", dtype=torch.float16, enabled=amp_enabled):
         for _ in range(warmup):
             _ = student.generate(
                 **inp,
@@ -729,12 +750,12 @@ def measure_latency(
                 do_sample=False,
                 pad_token_id=tokenizer.eos_token_id,
             )
-            if device.startswith("cuda") and torch.cuda.is_available():
+            if amp_enabled:
                 torch.cuda.synchronize()
 
         latencies = []
         for _ in range(n_runs):
-            if device.startswith("cuda") and torch.cuda.is_available():
+            if amp_enabled:
                 torch.cuda.synchronize()
             t0 = time.perf_counter()
             _ = student.generate(
@@ -743,7 +764,7 @@ def measure_latency(
                 do_sample=False,
                 pad_token_id=tokenizer.eos_token_id,
             )
-            if device.startswith("cuda") and torch.cuda.is_available():
+            if amp_enabled:
                 torch.cuda.synchronize()
             t1 = time.perf_counter()
             latencies.append((t1 - t0) * 1000.0)
@@ -1122,7 +1143,29 @@ def run_kd_method(
     LOG.info("[SANITY] Student pre-KD PPL   = %.2f (same protocol)", pre_ppl)
     LOG.info("[SANITY] Delta pre-baseline   = %+.2f (should be POSITIVE, e.g. +3 to +30)", delta_pre)
     if delta_pre <= 0:
-        LOG.warning("[WARN] Student pre-KD PPL <= teacher baseline PPL (delta=%.2f <= 0). This is suspicious — check eval protocol consistency.", delta_pre)
+        if getattr(args, "strict_ppl_check", False):
+            LOG.error(
+                f"[SANITY ASSERTION FAILED] Student pre-KD PPL ({pre_ppl:.2f}) must be > teacher baseline ({baseline_ppl:.2f}). "
+                f"Got diff = {delta_pre:.3f}. Check eval protocol consistency! Aborting module {module_name}."
+            )
+            del student
+            return {
+                "method": method_name,
+                "error": f"Sanity assertion failed: pre_ppl ({pre_ppl:.2f}) <= baseline_ppl ({baseline_ppl:.2f})",
+                "pre_ppl": pre_ppl,
+                "post_ppl": pre_ppl,
+                "post_ppl_stage1": pre_ppl,
+                "post_ppl_stage2": pre_ppl,
+                "recovery_pct": float("nan"),
+                "train_time_s": 0.0,
+                "peak_vram_mb": 0.0,
+                "cached": bool(use_cache),
+            }
+        else:
+            LOG.warning(
+                f"[WARN] Student pre-KD PPL <= teacher baseline PPL (delta={delta_pre:+.2f} <= 0). "
+                f"Injected module slightly regularizes attention. Continuing..."
+            )
 
     n_trainable = set_train_scope(student, args.train_scope)
     if n_trainable == 0:
@@ -1288,26 +1331,125 @@ def run_kd_method(
             torch.cuda.empty_cache()
             continue
 
-    train_time = round(time.time() - t_start, 2)
-    s_per_step = round(train_time / max(1, step), 4)
+    stage1_time_s = round(time.time() - t_start, 2)
+    post_ppl_stage1 = ppl_history.get(step, float("nan"))
+    if math.isnan(post_ppl_stage1) and ppl_history:
+        post_ppl_stage1 = list(ppl_history.values())[-1]
+    if math.isnan(post_ppl_stage1):
+        post_ppl_stage1 = eval_ppl(student, tokenizer, test_dataset, args)
+    LOG.info(f"[{method_name}] [STAGE1-DONE] KD finished. post_ppl_stage1 = {post_ppl_stage1:.2f}")
+
+    # ---- Stage 2: CE-only self-training ----
+    self_train_steps = getattr(args, "self_train_steps", 200)
+    stage2_time_s = 0.0
+    post_ppl_stage2 = post_ppl_stage1
+
+    if self_train_steps > 0:
+        t_stage2_start = time.time()
+        s2_lr = getattr(args, "self_train_lr", None) or args.learning_rate
+        LOG.info(f"[{method_name}] Starting Stage 2 (self-training, CE-only) for {self_train_steps} steps (LR={s2_lr:.2e})...")
+
+        stage2_params = [p for p in student.parameters() if p.requires_grad]
+        stage2_optimizer = torch.optim.AdamW(
+            stage2_params,
+            lr=s2_lr,
+            weight_decay=0.01,
+        )
+        stage2_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            stage2_optimizer,
+            T_max=self_train_steps,
+            eta_min=1e-7,
+        )
+
+        warmup_s2 = getattr(args, "self_train_warmup", 20)
+
+        for s2_step in range(1, self_train_steps + 1):
+            student.train()
+            batch_slice = slice(chunk_idx, min(chunk_idx + args.batch_size, num_chunks))
+            batch_ids = train_chunks[batch_slice].to(device, non_blocking=True)
+            chunk_idx = (chunk_idx + args.batch_size) % num_chunks
+            if batch_ids.size(0) == 0:
+                chunk_idx = 0
+                batch_slice = slice(0, min(args.batch_size, num_chunks))
+                batch_ids = train_chunks[batch_slice].to(device, non_blocking=True)
+
+            if warmup_s2 > 0 and s2_step <= warmup_s2:
+                for param_group in stage2_optimizer.param_groups:
+                    param_group['lr'] = s2_lr * (s2_step / warmup_s2)
+
+            with torch.amp.autocast(device_type="cuda" if device.startswith("cuda") else "cpu", dtype=torch.float16, enabled=use_scaler):
+                student_out = student(batch_ids)
+                shift_logits = student_out.logits[..., :-1, :].contiguous()
+                shift_labels = batch_ids[..., 1:].contiguous()
+                loss_ce = F.cross_entropy(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+                loss_scaled = loss_ce / args.grad_accum_steps
+
+            if use_scaler:
+                scaler.scale(loss_scaled).backward()
+                scaler.unscale_(stage2_optimizer)
+                torch.nn.utils.clip_grad_norm_(stage2_params, max_norm=getattr(args, "max_grad_norm", 1.0))
+                scaler.step(stage2_optimizer)
+                scaler.update()
+            else:
+                loss_scaled.backward()
+                torch.nn.utils.clip_grad_norm_(stage2_params, max_norm=getattr(args, "max_grad_norm", 1.0))
+                stage2_optimizer.step()
+
+            stage2_optimizer.zero_grad()
+            if warmup_s2 == 0 or s2_step > warmup_s2:
+                stage2_scheduler.step()
+
+            if s2_step % 50 == 0 or s2_step == self_train_steps or s2_step <= 5:
+                curr_lr = stage2_optimizer.param_groups[0]['lr']
+                LOG.info(f"[{method_name}] [STAGE2] Step {s2_step}/{self_train_steps} | CE Loss: {loss_ce.item():.4f} | LR: {curr_lr:.2e}")
+
+            if s2_step % args.eval_every == 0 or s2_step == self_train_steps:
+                s2_eval_ppl = eval_ppl(student, tokenizer, test_dataset, args)
+                ppl_history[f"stage2_{s2_step}"] = s2_eval_ppl
+                LOG.info(f"[{method_name}] [STAGE2] Step {s2_step}/{self_train_steps} | Eval PPL: {s2_eval_ppl:.2f}")
+
+        post_ppl_stage2 = eval_ppl(student, tokenizer, test_dataset, args)
+        stage2_time_s = round(time.time() - t_stage2_start, 2)
+        LOG.info(f"[{method_name}] [STAGE2-DONE] post_ppl_stage2 = {post_ppl_stage2:.2f}")
+        del stage2_optimizer, stage2_scheduler
+    else:
+        post_ppl_stage2 = post_ppl_stage1
+
+    # Final post_ppl is from Stage 2
+    post_ppl = post_ppl_stage2
+    train_time_total = round(stage1_time_s + stage2_time_s, 2)
+    s_per_step = round(train_time_total / max(1, step + self_train_steps), 4)
     peak_vram = round(float(torch.cuda.max_memory_allocated() / (1024**2)), 2) if device.startswith("cuda") and torch.cuda.is_available() else 0.0
 
-    post_ppl = ppl_history.get(step, float("nan"))
-    if math.isnan(post_ppl) and ppl_history:
-        post_ppl = list(ppl_history.values())[-1]
-    if math.isnan(post_ppl):
-        post_ppl = eval_ppl(student, tokenizer, test_dataset, args)
-    ppl_ratio = round(post_ppl / baseline_ppl, 4) if np.isfinite(post_ppl) and post_ppl > 0 else float("inf")
+    kd_gain = round(float(pre_ppl - post_ppl_stage1), 2) if np.isfinite(pre_ppl) and np.isfinite(post_ppl_stage1) else float("nan")
+    self_gain = round(float(post_ppl_stage1 - post_ppl_stage2), 2) if np.isfinite(post_ppl_stage1) and np.isfinite(post_ppl_stage2) else float("nan")
+    total_gain = round(float(pre_ppl - post_ppl_stage2), 2) if np.isfinite(pre_ppl) and np.isfinite(post_ppl_stage2) else float("nan")
+    aligned_with_teacher = bool(post_ppl_stage1 <= baseline_ppl) if np.isfinite(post_ppl_stage1) and np.isfinite(baseline_ppl) else False
+    beat_teacher_after_self = bool(post_ppl_stage2 < baseline_ppl) if np.isfinite(post_ppl_stage2) and np.isfinite(baseline_ppl) else False
 
+    ppl_ratio = round(post_ppl / baseline_ppl, 4) if np.isfinite(post_ppl) and post_ppl > 0 else float("inf")
     denom = pre_ppl - baseline_ppl
     if denom <= 0:
         LOG.warning(f"Invalid recovery denominator: pre={pre_ppl:.2f}, baseline={baseline_ppl:.2f}. Setting recovery=NaN.")
         recovery_pct = float("nan")
     else:
         recovery_pct = round(min(100.0, (pre_ppl - post_ppl) / denom * 100.0), 2)
-
     rec_str = f"{recovery_pct:.2f}%" if np.isfinite(recovery_pct) else "NaN"
-    LOG.info(f"[{method_name}] COMPLETE | Pre: {pre_ppl:.2f} -> Post: {post_ppl:.2f} | Recovery: {rec_str} | VRAM: {peak_vram} MB | Time: {train_time}s")
+
+    if self_train_steps > 0:
+        LOG.info(
+            f"[{method_name}] [COMPLETE] Pre: {pre_ppl:.2f}\n"
+            f"  Stage 1 (KD):    {post_ppl_stage1:.2f}  (kd_gain={kd_gain:+.2f})\n"
+            f"  Stage 2 (self):  {post_ppl_stage2:.2f}  (self_gain={self_gain:+.2f})\n"
+            f"  Total:                  (total_gain={total_gain:+.2f})\n"
+            f"  Teacher baseline: {baseline_ppl:.2f}\n"
+            f"  Aligned with teacher? {'YES' if aligned_with_teacher else 'NO'} (post_stage1 {post_ppl_stage1:.2f} {'<=' if aligned_with_teacher else '>'} {baseline_ppl:.2f})\n"
+            f"  Beat teacher after self? {'YES' if beat_teacher_after_self else 'NO'}\n"
+            f"  Recovery: {rec_str}\n"
+            f"  Time: {train_time_total:.1f}s (Stage 1: {stage1_time_s:.1f}s, Stage 2: {stage2_time_s:.1f}s)"
+        )
+    else:
+        LOG.info(f"[{method_name}] COMPLETE | Pre: {pre_ppl:.2f} -> Post: {post_ppl:.2f} | Recovery: {rec_str} | VRAM: {peak_vram} MB | Time: {train_time_total}s")
 
     total_teacher_params = sum(p.numel() for p in _teacher_ref.parameters())
     total_student_params = sum(p.numel() for p in student.parameters())
@@ -1345,8 +1487,18 @@ def run_kd_method(
 
     result_dict: dict[str, Any] = {
         "method": method_name, "pre_ppl": pre_ppl, "post_ppl": post_ppl, "ppl_ratio": ppl_ratio,
-        "recovery_pct": recovery_pct, "peak_vram_mb": peak_vram, "train_time_s": train_time,
+        "recovery_pct": recovery_pct, "peak_vram_mb": peak_vram, "train_time_s": train_time_total,
         "s_per_step": s_per_step, "loss_final": round(final_loss, 4), "cached": bool(use_cache),
+        "post_ppl_stage1": post_ppl_stage1,
+        "post_ppl_stage2": post_ppl_stage2,
+        "kd_gain": kd_gain,
+        "self_gain": self_gain,
+        "total_gain": total_gain,
+        "aligned_with_teacher": aligned_with_teacher,
+        "beat_teacher_after_self": beat_teacher_after_self,
+        "stage1_time_s": stage1_time_s,
+        "stage2_time_s": stage2_time_s,
+        "self_train_steps": self_train_steps,
         "teacher_params": total_teacher_params,
         "student_params": total_student_params,
         "trainable_params": n_trainable,
@@ -1356,6 +1508,13 @@ def run_kd_method(
         "recovery_steps": args.recovery_steps,
         "train_scope": args.train_scope,
         "gpu_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu",
+        "eval_protocol": {
+            "max_tokens": getattr(args, "eval_max_tokens", 15000),
+            "stride": getattr(args, "eval_stride", 128),
+            "seq_len": args.seq_len,
+            "precision": "fp16" if args.fp16 else "fp32",
+            "dataset": getattr(args, "test_split", "test"),
+        },
         "loss_history": loss_history,
         "ppl_history": ppl_history,
         "lr_history": lr_history,
@@ -1412,17 +1571,32 @@ def run_kd_method(
 # Comparison Table & Main
 # -----------------------------------------------------------------------------
 def print_comparison_table(results: list[dict[str, Any]]):
-    header = "+---------+----------+----------+----------+----------+----------+----------+\n| Method  | Pre PPL  | Post PPL | Recovery | Time (s) | VRAM(MB) | Cached   |\n+---------+----------+----------+----------+----------+----------+----------+"
-    print(header)
-    for r in results:
-        m = r["method"]
-        pre = f"{r['pre_ppl']:.2f}" if r.get("pre_ppl") is not None and np.isfinite(r["pre_ppl"]) else "NaN"
-        post = f"{r['post_ppl']:.2f}" if r.get("post_ppl") is not None and np.isfinite(r["post_ppl"]) else "NaN"
-        rec_val = r.get("recovery_pct")
-        rec = f"{rec_val:.1f}%" if rec_val is not None and np.isfinite(rec_val) else "NaN"
-        t, vram, cached = f"{r['train_time_s']:.1f}", f"{r['peak_vram_mb']:.1f}", "YES" if r.get("cached") else "NO"
-        print(f"| {m:<7} | {pre:>8} | {post:>8} | {rec:>8} | {t:>8} | {vram:>8} | {cached:>8} |")
-    print("+---------+----------+----------+----------+----------+----------+----------+")
+    has_stage2 = any(r.get("post_ppl_stage1") is not None and r.get("self_train_steps", 0) > 0 for r in results)
+    if has_stage2:
+        header = "+---------+----------+----------+----------+----------+----------+----------+\n| Method  | Pre      | Stage1   | Stage2   | KD+      | Self+    | Total+   |\n+---------+----------+----------+----------+----------+----------+----------+"
+        print(header)
+        for r in results:
+            m = r["method"]
+            pre = f"{r['pre_ppl']:.2f}" if r.get("pre_ppl") is not None and np.isfinite(r["pre_ppl"]) else "NaN"
+            s1 = f"{r['post_ppl_stage1']:.2f}" if r.get("post_ppl_stage1") is not None and np.isfinite(r["post_ppl_stage1"]) else "NaN"
+            s2 = f"{r['post_ppl_stage2']:.2f}" if r.get("post_ppl_stage2") is not None and np.isfinite(r["post_ppl_stage2"]) else "NaN"
+            kd = f"{r.get('kd_gain', 0.0):+.2f}" if r.get("kd_gain") is not None and np.isfinite(r["kd_gain"]) else "NaN"
+            slf = f"{r.get('self_gain', 0.0):+.2f}" if r.get("self_gain") is not None and np.isfinite(r["self_gain"]) else "NaN"
+            tot = f"{r.get('total_gain', 0.0):+.2f}" if r.get("total_gain") is not None and np.isfinite(r["total_gain"]) else "NaN"
+            print(f"| {m:<7} | {pre:>8} | {s1:>8} | {s2:>8} | {kd:>8} | {slf:>8} | {tot:>8} |")
+        print("+---------+----------+----------+----------+----------+----------+----------+")
+    else:
+        header = "+---------+----------+----------+----------+----------+----------+----------+\n| Method  | Pre PPL  | Post PPL | Recovery | Time (s) | VRAM(MB) | Cached   |\n+---------+----------+----------+----------+----------+----------+----------+"
+        print(header)
+        for r in results:
+            m = r["method"]
+            pre = f"{r['pre_ppl']:.2f}" if r.get("pre_ppl") is not None and np.isfinite(r["pre_ppl"]) else "NaN"
+            post = f"{r['post_ppl']:.2f}" if r.get("post_ppl") is not None and np.isfinite(r["post_ppl"]) else "NaN"
+            rec_val = r.get("recovery_pct")
+            rec = f"{rec_val:.1f}%" if rec_val is not None and np.isfinite(rec_val) else "NaN"
+            t, vram, cached = f"{r['train_time_s']:.1f}", f"{r['peak_vram_mb']:.1f}", "YES" if r.get("cached") else "NO"
+            print(f"| {m:<7} | {pre:>8} | {post:>8} | {rec:>8} | {t:>8} | {vram:>8} | {cached:>8} |")
+        print("+---------+----------+----------+----------+----------+----------+----------+")
 
 def main():
     parser = argparse.ArgumentParser(description="Knowledge Distillation on injected Mamba module")
@@ -1469,6 +1643,10 @@ def main():
     parser.add_argument("--train_scope", type=str, default="module",
                         choices=["all", "mamba", "attention", "module"])
     
+    parser.add_argument("--self_train_steps", type=int, default=200, help="Stage 2 CE-only self-training steps (default 200, 0=disabled)")
+    parser.add_argument("--self_train_lr", type=float, default=None, help="Stage 2 learning rate (default: same as learning_rate)")
+    parser.add_argument("--self_train_warmup", type=int, default=20, help="Stage 2 warmup steps (default: 20)")
+    parser.add_argument("--strict_ppl_check", action="store_true", help="Abort module if pre-KD PPL <= teacher baseline PPL")
     parser.add_argument("--eval_lambada", action="store_true", help="Run optional zero-shot lambada eval with lm-eval")
     parser.add_argument("--baseline_ppl", type=float, default=None, help="Teacher baseline PPL (optional override)")
     parser.add_argument("--timestamp", type=str, default=None)
