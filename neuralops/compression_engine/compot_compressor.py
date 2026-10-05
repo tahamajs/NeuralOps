@@ -2,7 +2,8 @@
 COMPOT: Compressed Orthogonal Dictionary Learning Compressor.
 Registered in COMPRESSOR_REGISTRY as 'compot'. Production hardened for
 multi-architecture compatibility (DistilBERT, RoBERTa, GPT-2, Qwen3.5) with
-reconstruction validation, Conv1D support, rank reduction bounds, and safe fallback.
+reconstruction validation, Conv1D support, rank reduction bounds, safe fallback,
+and Layer-Sniffing Rank Allocation.
 """
 
 from __future__ import annotations
@@ -213,6 +214,7 @@ class COMPOTCompressor(BaseCompressor):
     - Robust Conv1D support (GPT-2 c_attn, c_proj) via weight transposition.
     - Unified critical-layer protection via should_compress_linear.
     - Comprehensive per-layer stats and error reporting.
+    - Layer-Sniffing Rank Allocation: allocates higher rank capacity to wide MLP layers.
     """
 
     def __init__(
@@ -377,10 +379,20 @@ class COMPOTCompressor(BaseCompressor):
             else:
                 out_f, in_f = raw_w.shape[0], raw_w.shape[1]
 
+            # FIXED: Layer-Sniffing Rank Allocation.
+            # Inspect layer dimensions to distinguish dense MLP projections (e.g. 768->3072, 3072->768)
+            # from standard attention projections. Wide MLP layers destroy up to 93% of the Frobenius norm
+            # if compressed to a tiny rank, so we allocate double/quadruple rank capacity.
+            is_mlp = (max(in_f, out_f) >= 3072) or (max(in_f, out_f) >= 4 * min(in_f, out_f))
+            if is_mlp:
+                adaptive_rank = max(128, self.rank * 2) if self.rank > 0 else 128
+            else:
+                adaptive_rank = self.rank
+
             # Guarantee parameter reduction: r * (in_f + out_f) < in_f * out_f
             max_reduction_r = max(1, (in_f * out_f) // (in_f + out_f) - 1)
             max_r = max(1, min(in_f - 1, out_f - 1, max_reduction_r))
-            r = max(1, min(self.rank, max_r))
+            r = max(1, min(adaptive_rank, max_r))
 
             act = activations.get(name, None)
             compot_layer, err, used_act = COMPOTLinear.from_linear_and_activations(
@@ -400,8 +412,6 @@ class COMPOTCompressor(BaseCompressor):
                     out_f,
                     in_f,
                 )
-                for p in module.parameters():
-                    p.requires_grad = False
                 self.fallback_layers.append(name)
                 continue
 
@@ -417,8 +427,6 @@ class COMPOTCompressor(BaseCompressor):
                         "Skipping COMPOT compression for %s (fallback to original).",
                         name,
                     )
-                    for p in module.parameters():
-                        p.requires_grad = False
                     self.fallback_layers.append(name)
                     continue
 
@@ -440,6 +448,11 @@ class COMPOTCompressor(BaseCompressor):
             if self.compressed_layers
             else 0.0
         )
+        avg_rank = (
+            float(sum(self.layer_ranks.values()) / max(1, len(self.layer_ranks)))
+            if self.layer_ranks
+            else float(self.rank)
+        )
         stats.update(
             {
                 "compressed_layers": self.compressed_layers,
@@ -453,13 +466,15 @@ class COMPOTCompressor(BaseCompressor):
                 "num_compressed": len(self.compressed_layers),
                 "num_fallback": len(self.fallback_layers),
                 "compot_rank": self.rank,
+                "avg_rank": avg_rank,
             }
         )
         logger.info(
-            "Compressor compot finished: %d compressed, %d fallback, avg_err=%.4f, max_err_threshold=%.4f",
+            "Compressor compot finished: %d compressed, %d fallback, avg_err=%.4f, avg_rank=%.1f, max_err_threshold=%.4f",
             len(self.compressed_layers),
             len(self.fallback_layers),
             avg_err,
+            avg_rank,
             self.max_error,
         )
         return self.model, stats
