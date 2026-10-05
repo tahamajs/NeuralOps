@@ -707,6 +707,10 @@ class AegisHybridAttention(BaseAttention):
                 U, S, Vh = torch.linalg.svd(W, full_matrices=False)
 
             r = min(proj.rank, U.size(1), Vh.size(0))
+            dev = proj.down.weight.device
+            W = W.to(dev)
+            if b is not None:
+                b = b.to(dev)
             proj.down.weight.data.zero_()
             proj.up.weight.data.zero_()
             proj.down.weight.data[:r, :].copy_(Vh[:r, :].to(proj.down.weight.dtype))

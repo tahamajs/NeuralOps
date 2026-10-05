@@ -433,27 +433,31 @@ class ChelaSlayCausalLinearFunction(torch.autograd.Function):
         )
 
         if use_triton:
-            q_c = q_feat.contiguous()
-            k_c = k_feat.contiguous()
-            v_c = v_masked.contiguous()
-            out = torch.empty((B, H, L, D_v), device=q_feat.device, dtype=q_feat.dtype)
-            grid = (B * H, 1, 1)
+            try:
+                q_c = q_feat.contiguous()
+                k_c = k_feat.contiguous()
+                v_c = v_masked.contiguous()
+                out = torch.empty((B, H, L, D_v), device=q_feat.device, dtype=q_feat.dtype)
+                grid = (B * H, 1, 1)
 
-            BLOCK_F = triton.next_power_of_2(feat_2f)
-            BLOCK_D = triton.next_power_of_2(D_v)
+                BLOCK_F = triton.next_power_of_2(feat_2f)
+                BLOCK_D = triton.next_power_of_2(D_v)
 
-            _chela_slay_causal_linear_fwd_kernel[grid](
-                q_c, k_c, v_c, out,
-                q_c.stride(0), q_c.stride(1), q_c.stride(2), q_c.stride(3),
-                k_c.stride(0), k_c.stride(1), k_c.stride(2), k_c.stride(3),
-                v_c.stride(0), v_c.stride(1), v_c.stride(2), v_c.stride(3),
-                out.stride(0), out.stride(1), out.stride(2), out.stride(3),
-                B, H, L,
-                FEAT_2F=feat_2f,
-                D_V=D_v,
-                BLOCK_F=BLOCK_F,
-                BLOCK_D=BLOCK_D,
-            )
+                _chela_slay_causal_linear_fwd_kernel[grid](
+                    q_c, k_c, v_c, out,
+                    q_c.stride(0), q_c.stride(1), q_c.stride(2), q_c.stride(3),
+                    k_c.stride(0), k_c.stride(1), k_c.stride(2), k_c.stride(3),
+                    v_c.stride(0), v_c.stride(1), v_c.stride(2), v_c.stride(3),
+                    out.stride(0), out.stride(1), out.stride(2), out.stride(3),
+                    B, H, L,
+                    FEAT_2F=feat_2f,
+                    D_V=D_v,
+                    BLOCK_F=BLOCK_F,
+                    BLOCK_D=BLOCK_D,
+                )
+            except Exception as e:
+                logger.debug("Triton kernel fallback to vectorized PyTorch: %s", e)
+                out = _py_causal_linear_attention_vectorized(q_feat, k_feat, v_masked, chunk_size=chunk_size)
         else:
             out = _py_causal_linear_attention_vectorized(q_feat, k_feat, v_masked, chunk_size=chunk_size)
 
