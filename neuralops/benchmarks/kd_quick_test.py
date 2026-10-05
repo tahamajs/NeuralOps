@@ -460,6 +460,18 @@ def save_plots(run_dir: Path, module_name: str, module_results: list[dict[str, A
         plt.savefig(run_dir / "comparison.png", dpi=150)
         plt.close(fig)
 
+        def _parse_ppl_step(k: Any, base_offset: int = 0) -> int:
+            s = str(k)
+            if "stage2_" in s:
+                try:
+                    return base_offset + int(s.replace("stage2_", ""))
+                except Exception:
+                    return base_offset
+            try:
+                return int(float(s))
+            except Exception:
+                return 0
+
         # 2. Detailed training curves for each method
         for r in module_results:
             method = r["method"]
@@ -467,8 +479,12 @@ def save_plots(run_dir: Path, module_name: str, module_results: list[dict[str, A
             ppl_hist = r.get("ppl_history", {})
             lr_hist = r.get("lr_history", [])
 
+            stage1_steps = [int(float(k)) for k in ppl_hist.keys() if str(k).replace(".", "", 1).isdigit()]
+            base_offset = max(stage1_steps, default=0)
+            p_items = sorted([(_parse_ppl_step(k, base_offset), v) for k, v in ppl_hist.items() if np.isfinite(v)], key=lambda x: x[0])
+
             # Dual-axis training curves (Loss + PPL)
-            if loss_hist or ppl_hist:
+            if loss_hist or p_items:
                 fig, ax1 = plt.subplots(figsize=(10, 6), dpi=150)
                 if loss_hist:
                     steps, losses = zip(*loss_hist)
@@ -478,16 +494,15 @@ def save_plots(run_dir: Path, module_name: str, module_results: list[dict[str, A
                     ax1.tick_params(axis="y", labelcolor="#1f77b4")
                     ax1.grid(True, linestyle=":", alpha=0.5)
 
-                if ppl_hist:
+                if p_items:
                     ax2 = ax1.twinx()
-                    p_steps, p_vals = zip(*sorted([(int(k), v) for k, v in ppl_hist.items() if np.isfinite(v)]))
-                    if p_steps:
-                        ax2.plot(p_steps, p_vals, "r-o", linewidth=2.0, markersize=5, label="Eval PPL")
-                        if baseline_ppl is not None and np.isfinite(baseline_ppl):
-                            ax2.axhline(y=baseline_ppl, color="r", linestyle="--", alpha=0.6, label=f"Teacher Baseline ({baseline_ppl:.2f})")
-                        ax2.set_ylabel("Perplexity (log scale)", color="r", fontsize=12)
-                        ax2.tick_params(axis="y", labelcolor="r")
-                        ax2.set_yscale("log")
+                    p_steps, p_vals = zip(*p_items)
+                    ax2.plot(p_steps, p_vals, "r-o", linewidth=2.0, markersize=5, label="Eval PPL")
+                    if baseline_ppl is not None and np.isfinite(baseline_ppl):
+                        ax2.axhline(y=baseline_ppl, color="r", linestyle="--", alpha=0.6, label=f"Teacher Baseline ({baseline_ppl:.2f})")
+                    ax2.set_ylabel("Perplexity (log scale)", color="r", fontsize=12)
+                    ax2.tick_params(axis="y", labelcolor="r")
+                    ax2.set_yscale("log")
 
                 plt.title(f"Training & Perplexity Curves — {module_name} (Method {method})", fontsize=14, fontweight="bold")
                 fig.tight_layout()
@@ -508,23 +523,21 @@ def save_plots(run_dir: Path, module_name: str, module_results: list[dict[str, A
                 plt.close(fig)
 
             # Standalone PPL Curve
-            if ppl_hist:
+            if p_items:
                 fig, ax = plt.subplots(figsize=(9, 5), dpi=150)
-                p_items = sorted([(int(k), v) for k, v in ppl_hist.items() if np.isfinite(v)])
-                if p_items:
-                    p_steps, p_vals = zip(*p_items)
-                    ax.plot(p_steps, p_vals, "r-o", linewidth=2.0, markersize=6, label="Eval PPL")
-                    if baseline_ppl is not None and np.isfinite(baseline_ppl):
-                        ax.axhline(y=baseline_ppl, color="black", linestyle="--", linewidth=1.5, label=f"Teacher ({baseline_ppl:.2f})")
-                    ax.set_xlabel("Step", fontsize=12)
-                    ax.set_ylabel("Perplexity (log scale)", fontsize=12)
-                    ax.set_yscale("log")
-                    ax.set_title(f"Perplexity Trajectory — {module_name} (Method {method})", fontsize=13, fontweight="bold")
-                    ax.legend(frameon=True)
-                    ax.grid(True, which="both", linestyle=":", alpha=0.5)
-                    fig.tight_layout()
-                    plt.savefig(run_dir / f"ppl_curve_{method}.png", dpi=150)
-                    plt.close(fig)
+                p_steps, p_vals = zip(*p_items)
+                ax.plot(p_steps, p_vals, "r-o", linewidth=2.0, markersize=6, label="Eval PPL")
+                if baseline_ppl is not None and np.isfinite(baseline_ppl):
+                    ax.axhline(y=baseline_ppl, color="black", linestyle="--", linewidth=1.5, label=f"Teacher ({baseline_ppl:.2f})")
+                ax.set_xlabel("Step", fontsize=12)
+                ax.set_ylabel("Perplexity (log scale)", fontsize=12)
+                ax.set_yscale("log")
+                ax.set_title(f"Perplexity Trajectory — {module_name} (Method {method})", fontsize=13, fontweight="bold")
+                ax.legend(frameon=True)
+                ax.grid(True, which="both", linestyle=":", alpha=0.5)
+                fig.tight_layout()
+                plt.savefig(run_dir / f"ppl_curve_{method}.png", dpi=150)
+                plt.close(fig)
 
             # Learning Rate Schedule Curve
             if lr_hist:
@@ -1398,6 +1411,10 @@ def run_kd_method(
             stage2_optimizer.zero_grad()
             if warmup_s2 == 0 or s2_step > warmup_s2:
                 stage2_scheduler.step()
+
+            if s2_step % 10 == 0 or s2_step == self_train_steps:
+                loss_history.append((step + s2_step, float(loss_ce.item())))
+                lr_history.append((step + s2_step, float(stage2_optimizer.param_groups[0]['lr'])))
 
             if s2_step % 50 == 0 or s2_step == self_train_steps or s2_step <= 5:
                 curr_lr = stage2_optimizer.param_groups[0]['lr']
