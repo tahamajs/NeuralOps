@@ -174,3 +174,14 @@ Notes:
 2026-10-05 03:33:03,857 [INFO] QwenQualitySweep: Step 490/500 took 0.25s (loss=0.4162, bs=8, micro=8)
 2026-10-05 03:33:05,097 [INFO] QwenQualitySweep: Step 495/500 took 0.24s (loss=0.5604, bs=8, micro=8)
 2026-10-05 03:33:06,350 [INFO] QwenQualitySweep: Step 500/500 took 0.24s (loss=0.3687, bs=8, micro=8)
+2026-10-05 03:33:19,509 [INFO] QwenQualitySweep: Exported comprehensive profiling metrics to results\02_rank_sweeps\mixed\rank_sweep\rpc_attention_class\rank_16\gpt2_rpc_attention_class_full_metrics.json
+2026-10-05 03:33:19,788 [INFO] QwenQualitySweep: [1/1] rpc_attention_class -> FAIL 65.25% (F1: 0.7297, Peak VRAM: 375.99 MB)
+2026-10-05 03:33:19,788 [INFO] QwenQualitySweep: [Quality Guard] Module 'rpc_attention_class' did not pass quality criteria (status=FAIL, acc=65.25%, pass_thresh=69.54%). Pruning large checkpoint artifacts but preserving metrics.
+2026-10-05 03:33:19,795 [INFO] QwenQualitySweep: [1/1] rpc_attention_class Timing: eval_time=153.58s
+2026-10-05 03:33:19,795 [INFO] QwenQualitySweep: Restoring model state from snapshot for next module...
+2026-10-05 03:33:20,114 [INFO] QwenQualitySweep: ================================================================================
+2026-10-05 03:33:20,114 [INFO] QwenQualitySweep: BENCHMARK QUALITY SWEEP SUMMARY TABLE (gpt2 on sst2)
+2026-10-05 03:33:20,120 [INFO] QwenQualitySweep: 
+             Module Status Accuracy Delta Acc     F1  Compressed Layers Compression Rate Peak VRAM Inference Time (s) Latency (ms/samp)
+rpc_attention_class   FAIL   65.25%    -9.29% 0.7297                 12            1.22x  376.0 MB              12.27             14.07
+2026-10-05 03:33:20,120 [INFO] QwenQualitySweep: ================================================================================
