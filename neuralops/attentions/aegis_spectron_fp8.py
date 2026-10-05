@@ -315,7 +315,7 @@ def _local_window_attention(
         return torch.matmul(attn, V.to(attn.dtype)), attn
 
     # Fast path: use fused scaled_dot_product_attention when no token padding mask is needed
-    if token_valid is None:
+    if token_valid is None or bool(token_valid.all()):
         mask_val = -1e4
         attn_bias = torch.zeros(1, 1, N, N_k, device=Q.device, dtype=Q.dtype)
         attn_bias = attn_bias.masked_fill(~band, mask_val)
@@ -550,7 +550,7 @@ class AegisSpectronFP8Attention(BaseAttention):
         # Linear recurrence parameters (SP-FIX-06: no dead linear_A).
         self.linear_B = nn.Parameter(torch.ones(self.all_head_size))
         self.linear_C = nn.Parameter(torch.ones(self.all_head_size))
-        self.decay_param = nn.Parameter(torch.full((self.all_head_size,), 4.5951))
+        self.decay_param = nn.Parameter(torch.zeros(self.all_head_size))
         # SP-FIX-13: per-head gate.
         self.bidir_gate = nn.Parameter(torch.zeros(self.num_heads))
         self.linear_in = (
