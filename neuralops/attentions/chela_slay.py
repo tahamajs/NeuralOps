@@ -833,7 +833,12 @@ class ChelaSlayAttention(BaseAttention):
                 o_w = getattr(c_proj_mod, "weight", None)
                 if o_w is not None:
                     o_w = o_w.data.clone()
-                    if o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]:
+                    is_conv = (
+                        pretrained_attn.c_proj.__class__.__name__ == "Conv1D"
+                        or c_proj_mod.__class__.__name__ == "Conv1D"
+                        or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1])
+                    )
+                    if is_conv:
                         o_w = o_w.t().contiguous()
                     o_b = getattr(c_proj_mod, "bias", None)
                     extracted["o"] = (o_w, o_b.data.clone() if o_b is not None else None)
