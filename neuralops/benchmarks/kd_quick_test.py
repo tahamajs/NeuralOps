@@ -672,6 +672,8 @@ def run_kd_method(
         "recovery_steps": args.recovery_steps,
         "train_scope": args.train_scope,
         "gpu_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu",
+        "loss_history": loss_history,
+        "ppl_history": ppl_history,
     }
 
 # -----------------------------------------------------------------------------
@@ -854,6 +856,40 @@ def main():
                 plt.tight_layout()
                 plt.savefig(run_dir / "comparison.png", dpi=100)
                 plt.close()
+
+                # Generate detailed training curves for each method
+                for r in module_results:
+                    method = r["method"]
+                    loss_hist = r.get("loss_history", [])
+                    ppl_hist = r.get("ppl_history", {})
+                    
+                    if not loss_hist and not ppl_hist:
+                        continue
+                        
+                    fig, ax1 = plt.subplots(figsize=(10, 6))
+                    
+                    if loss_hist:
+                        steps, losses = zip(*loss_hist)
+                        ax1.plot(steps, losses, "b-", alpha=0.6, label="Training Loss")
+                        ax1.set_xlabel("Step")
+                        ax1.set_ylabel("Loss", color="b")
+                        ax1.tick_params(axis="y", labelcolor="b")
+                    
+                    if ppl_hist:
+                        ax2 = ax1.twinx()
+                        # Sort by step
+                        p_steps, p_vals = zip(*sorted(ppl_hist.items(), key=lambda x: int(x[0])))
+                        ax2.plot(p_steps, p_vals, "r-o", linewidth=2, label="Eval PPL")
+                        ax2.axhline(y=baseline_ppl, color="r", linestyle="--", alpha=0.5, label="Teacher PPL")
+                        ax2.set_ylabel("Perplexity", color="r")
+                        ax2.tick_params(axis="y", labelcolor="r")
+                        ax2.set_yscale("log")
+                    
+                    plt.title(f"Training Curves — {module_name} (Method {method})")
+                    fig.tight_layout()
+                    plt.savefig(run_dir / f"training_curves_{method}.png", dpi=100)
+                    plt.close()
+                    
             except Exception as e:
                 LOG.warning("Plot generation failed: %s", e)
 
