@@ -281,14 +281,13 @@ class KernelFeatureMap(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         with torch.autocast(device_type=x.device.type, enabled=False):
-            x_f = x.float()
-            proj = self.proj.float()
-            phi = torch.matmul(x_f, proj)
-            norm_sq = (x_f * x_f).sum(dim=-1, keepdim=True) / 2.0
-            raw = phi - norm_sq
-            max_val = raw.detach().max()
-            exp_in = torch.clamp(raw - max_val, min=-20.0, max=8.0)
-            return (self.scale * torch.exp(exp_in)).to(x.dtype)
+            # Scale inputs by d**-0.25 so inner products match softmax scaling (d**-0.5)
+            x_scaled = x.float() * (self.head_dim ** -0.25)
+            proj = self.proj.float() / math.sqrt(self.head_dim)
+            phi = torch.matmul(x_scaled, proj)
+            norm_sq = (x_scaled * x_scaled).sum(dim=-1, keepdim=True) * 0.5
+            diff = torch.clamp(phi - norm_sq, min=-30.0, max=10.0)
+            return (self.scale * torch.exp(diff)).to(x.dtype)
 
 
 # ===========================================================================
@@ -431,12 +430,52 @@ def _causal_linear_attention(
         return torch.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0).to(Q.dtype)
 
     # Multi-token / training prefill: chunked cumsum
-    # FIXED: Task 1 (Causal Linear Attention). 
-    # Replaced the O(N) sequential Python chunk loop with hardware-fused Triton kernel.
-    # This computes causal masked intra-chunk + running state inter-chunk attention in SRAM.
-    from neuralops.attentions.chela_slay import ChelaSlayCausalLinearFunction
-    out = ChelaSlayCausalLinearFunction.apply(Q_feat, K_feat, V, chunk_size)
-    return torch.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0).to(Q.dtype)
+    # FIXED: Native chunked FAVOR+ causal scan with numerically stable denominator clamping (clamp_min 1e-6).
+    # Eliminates the 1e-10 attenuation and state explosion from mismatched Yat-kernel clamp_min(1.0).
+    pad_len = (chunk_size - (N % chunk_size)) % chunk_size
+    if pad_len > 0:
+        q_pad = F.pad(Q_feat, (0, 0, 0, pad_len))
+        k_pad = F.pad(K_feat, (0, 0, 0, pad_len))
+        v_pad = F.pad(V, (0, 0, 0, pad_len))
+    else:
+        q_pad, k_pad, v_pad = Q_feat, K_feat, V
+
+    num_chunks = q_pad.shape[2] // chunk_size
+    q_c = q_pad.view(B, H, num_chunks, chunk_size, -1).float()
+    k_c = k_pad.view(B, H, num_chunks, chunk_size, -1).float()
+    v_c = v_pad.view(B, H, num_chunks, chunk_size, D).float()
+
+    if pad_len > 0:
+        valid_mask = torch.ones(num_chunks, chunk_size, device=Q.device, dtype=torch.float32)
+        valid_mask[-1, chunk_size - pad_len:] = 0.0
+        v_m = valid_mask.view(1, 1, num_chunks, chunk_size, 1)
+        q_c = q_c * v_m
+        k_c = k_c * v_m
+        v_c = v_c * v_m
+
+    scores = torch.matmul(q_c, k_c.transpose(-2, -1))
+    causal_mask = torch.triu(torch.ones(chunk_size, chunk_size, device=Q.device, dtype=torch.bool), diagonal=1)
+    scores = scores.masked_fill(causal_mask, 0.0)
+
+    num_intra = torch.matmul(scores, v_c)
+    den_intra = scores.sum(dim=-1, keepdim=True)
+
+    delta_s = torch.matmul(k_c.transpose(-2, -1), v_c)
+    delta_z = k_c.sum(dim=-2)
+
+    s_cumsum = torch.cumsum(delta_s, dim=2)
+    s_past = torch.cat([torch.zeros_like(delta_s[:, :, :1]), s_cumsum[:, :, :-1]], dim=2)
+
+    z_cumsum = torch.cumsum(delta_z, dim=2)
+    z_past = torch.cat([torch.zeros_like(delta_z[:, :, :1]), z_cumsum[:, :, :-1]], dim=2)
+
+    num_inter = torch.matmul(q_c, s_past)
+    den_inter = (q_c * z_past.unsqueeze(-2)).sum(dim=-1, keepdim=True)
+
+    denom = (den_intra + den_inter).clamp(min=1e-6)
+    out = (num_intra + num_inter) / denom
+    out = out.view(B, H, -1, D)[:, :, :N, :]
+    return torch.nan_to_num(out.to(Q.dtype), nan=0.0, posinf=0.0, neginf=0.0)
 
 
 # ===========================================================================
@@ -673,6 +712,20 @@ class AegisHybridAttention(BaseAttention):
             proj.down.weight.data[:r, :].copy_(Vh[:r, :].to(proj.down.weight.dtype))
             US = U[:, :r] @ torch.diag(S[:r])
             proj.up.weight.data[:, :r].copy_(US.to(proj.up.weight.dtype))
+
+            # Initialize LoRA adapters on the residual to recover lost capacity
+            if proj.lora_A is not None and proj.lora_B is not None and proj.lora_rank > 0:
+                W_svd = proj.up.weight.float() @ proj.down.weight.float()
+                R = W - W_svd
+                try:
+                    U_r, S_r, Vh_r = torch.linalg.svd(R, full_matrices=False)
+                    r_lora = min(proj.lora_rank, U_r.size(1), Vh_r.size(0))
+                    proj.lora_A.data.zero_()
+                    proj.lora_B.data.zero_()
+                    proj.lora_A.data[:r_lora, :].copy_(Vh_r[:r_lora, :].to(proj.lora_A.dtype))
+                    proj.lora_B.data[:, :r_lora].copy_((U_r[:, :r_lora] @ torch.diag(S_r[:r_lora])).to(proj.lora_B.dtype))
+                except Exception:
+                    pass
 
             if b is not None and proj.up.bias is not None:
                 n = min(b.numel(), proj.up.bias.numel())
