@@ -219,7 +219,7 @@ class SelectiveMamba(BaseAttention):
             self.inner_dim,
             kernel_size=d_conv,
             groups=self.inner_dim,
-            padding=d_conv - 1,
+            padding=0,
         )
         # A_log init: log([1, 2, ..., d_state]) repeated.
         # In our scan, we compute A = +exp(A_log) (positive),
@@ -702,13 +702,17 @@ class SelectiveMamba(BaseAttention):
 
         conv_w = self.conv1d.weight.to(x_in.dtype)
         conv_b = self.conv1d.bias.to(x_in.dtype) if self.conv1d.bias is not None else None
+        
+        # FIXED: Apply explicit left padding for causal convolution
+        x_pad = F.pad(x_in.transpose(1, 2), (self.d_conv - 1, 0))
+        
         x_conv = (
             F.conv1d(
-                x_in.transpose(1, 2),
+                x_pad,
                 conv_w,
                 conv_b,
                 stride=self.conv1d.stride,
-                padding=self.conv1d.padding,
+                padding=0,
                 dilation=self.conv1d.dilation,
                 groups=self.conv1d.groups,
             )[:, :, :L]
