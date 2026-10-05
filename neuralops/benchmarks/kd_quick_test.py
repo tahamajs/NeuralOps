@@ -104,6 +104,8 @@ def update_registry(module_name: str, run_dir: Path, results: list[dict[str, Any
         best_post_ppl = min((r["post_ppl"] for r in valid_results), default=float("nan"))
         best_recovery = max((r.get("recovery_pct", 0.0) for r in valid_results), default=0.0)
 
+        primary_res = valid_results[0] if valid_results else (results[0] if results else {})
+
         entry = {
             "module": module_name,
             "timestamp": getattr(args, "timestamp", datetime.now().strftime("%Y%m%d_%H%M%S")),
@@ -116,6 +118,12 @@ def update_registry(module_name: str, run_dir: Path, results: list[dict[str, Any
             "baseline_ppl": baseline_ppl,
             "best_post_ppl": best_post_ppl,
             "best_recovery_pct": best_recovery,
+            "generation": primary_res.get("generation"),
+            "overfit_gap": primary_res.get("overfit_gap"),
+            "latency": primary_res.get("latency"),
+            "train_ppl": primary_res.get("train_ppl"),
+            "test_ppl": primary_res.get("test_ppl"),
+            "lambada_acc": primary_res.get("lambada_acc"),
             "results": {r["method"]: {k: v for k, v in r.items() if k != "method"} for r in results},
         }
         data["runs"].append(entry)
@@ -326,6 +334,16 @@ RESULTS:
   Loss (final):      {_fmt(result.get('loss_final'))}
   Cached:            {result.get('cached', '?')}
 
+QUALITY EVALUATION:
+  Distinct-2:        {_fmt(result.get('generation', {}).get('distinct_2'), '.4f') if isinstance(result.get('generation'), dict) else '?'}
+  Repetition-3:      {_fmt(result.get('generation', {}).get('repetition_3'), '.4f') if isinstance(result.get('generation'), dict) else '?'}
+  Train PPL:         {_fmt(result.get('train_ppl'))}
+  Test PPL:          {_fmt(result.get('test_ppl'))}
+  Overfit Gap:       {_fmt(result.get('overfit_gap'), '.2f')}
+  Latency (mean):    {_fmt(result.get('latency', {}).get('mean_latency_ms'), '.2f') if isinstance(result.get('latency'), dict) else '?'} ms
+  Latency (std):     {_fmt(result.get('latency', {}).get('std_latency_ms'), '.2f') if isinstance(result.get('latency'), dict) else '?'} ms
+  Lambada Acc:       {_fmt(result.get('lambada_acc'), '.4f')}
+
 ENVIRONMENT:
   Python:            {str(env_info.get('python_version', '?')).split()[0]}
   Torch:             {env_info.get('torch_version', '?')}
@@ -371,6 +389,8 @@ def save_summary_csv(run_dir: Path, module_name: str, results: list[dict[str, An
         csv_path = run_dir / "results.csv"
         fieldnames = [
             "module", "method", "pre_ppl", "post_ppl", "recovery_pct", "ppl_ratio",
+            "train_ppl", "test_ppl", "overfit_gap", "distinct_2", "repetition_3",
+            "mean_latency_ms", "std_latency_ms", "lambada_acc",
             "loss_final", "train_time_s", "s_per_step", "peak_vram_mb", "cached",
             "teacher_params", "student_params", "trainable_params", "batch_size",
             "seq_len", "learning_rate", "recovery_steps", "baseline_ppl"
@@ -382,6 +402,14 @@ def save_summary_csv(run_dir: Path, module_name: str, results: list[dict[str, An
                 row = dict(r)
                 row["module"] = module_name
                 row["baseline_ppl"] = baseline_ppl
+                gen = r.get("generation")
+                if isinstance(gen, dict):
+                    row["distinct_2"] = gen.get("distinct_2")
+                    row["repetition_3"] = gen.get("repetition_3")
+                lat = r.get("latency")
+                if isinstance(lat, dict):
+                    row["mean_latency_ms"] = lat.get("mean_latency_ms")
+                    row["std_latency_ms"] = lat.get("std_latency_ms")
                 writer.writerow(row)
     except Exception as e:
         LOG.warning("Failed to write results.csv: %s", e)
@@ -604,6 +632,156 @@ def eval_ppl(
         max_eval_tokens=max_eval_tokens,
         device=device,
     )
+
+
+# -----------------------------------------------------------------------------
+# End-to-End Quality Evaluation (Generation, Latency & Task Accuracy)
+# -----------------------------------------------------------------------------
+def evaluate_generation(
+    student: nn.Module,
+    tokenizer,
+    device: str,
+    n_prompts: int = 4,
+    max_new_tokens: int = 50,
+    seed: int = 42,
+) -> dict[str, Any]:
+    """Test text generation on fixed prompts. Computes distinct-2 and repetition-3 metrics."""
+    student.eval()
+    prompts = [
+        "The quick brown fox",
+        "Once upon a time",
+        "In the beginning",
+        "The future of AI is",
+    ][:n_prompts]
+
+    torch.manual_seed(seed)
+    if device.startswith("cuda") and torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+    all_bigrams: list[tuple[int, int]] = []
+    all_trigrams: list[tuple[int, int, int]] = []
+    samples: list[dict[str, Any]] = []
+
+    with torch.no_grad():
+        for prompt in prompts:
+            inp = tokenizer(prompt, return_tensors="pt").to(device)
+            inp_len = inp.input_ids.shape[1]
+            try:
+                out = student.generate(
+                    **inp,
+                    max_new_tokens=max_new_tokens,
+                    do_sample=True,
+                    temperature=0.8,
+                    top_p=0.95,
+                    pad_token_id=tokenizer.eos_token_id,
+                )
+                gen_ids = out[0, inp_len:].detach().cpu().tolist()
+            except Exception as e:
+                LOG.warning("Generation failed for prompt '%s': %s", prompt, e)
+                gen_ids = []
+
+            gen_sample_ids = gen_ids[:max_new_tokens]
+            gen_text = tokenizer.decode(gen_sample_ids, skip_special_tokens=True)
+
+            bigrams = [tuple(gen_ids[i:i + 2]) for i in range(len(gen_ids) - 1)]
+            trigrams = [tuple(gen_ids[i:i + 3]) for i in range(len(gen_ids) - 2)]
+            all_bigrams.extend(bigrams)
+            all_trigrams.extend(trigrams)
+
+            samples.append({
+                "prompt": prompt,
+                "text": gen_text,
+                "first_50_tokens": gen_sample_ids,
+            })
+
+    total_bigrams = len(all_bigrams)
+    unique_bigrams = len(set(all_bigrams))
+    distinct_2 = round(unique_bigrams / max(1, total_bigrams), 4) if total_bigrams > 0 else 0.0
+
+    total_trigrams = len(all_trigrams)
+    unique_trigrams = len(set(all_trigrams))
+    repetition_3 = round(1.0 - (unique_trigrams / max(1, total_trigrams)), 4) if total_trigrams > 0 else 0.0
+
+    return {
+        "distinct_2": distinct_2,
+        "repetition_3": repetition_3,
+        "samples": samples,
+    }
+
+
+def measure_latency(
+    student: nn.Module,
+    tokenizer,
+    device: str,
+    n_runs: int = 10,
+    warmup: int = 3,
+    max_new_tokens: int = 50,
+) -> dict[str, float]:
+    """Measure generation latency across multiple runs after warmup."""
+    student.eval()
+    inp = tokenizer("The quick brown fox", return_tensors="pt").to(device)
+
+    with torch.no_grad():
+        for _ in range(warmup):
+            _ = student.generate(
+                **inp,
+                max_new_tokens=max_new_tokens,
+                do_sample=False,
+                pad_token_id=tokenizer.eos_token_id,
+            )
+            if device.startswith("cuda") and torch.cuda.is_available():
+                torch.cuda.synchronize()
+
+        latencies = []
+        for _ in range(n_runs):
+            if device.startswith("cuda") and torch.cuda.is_available():
+                torch.cuda.synchronize()
+            t0 = time.perf_counter()
+            _ = student.generate(
+                **inp,
+                max_new_tokens=max_new_tokens,
+                do_sample=False,
+                pad_token_id=tokenizer.eos_token_id,
+            )
+            if device.startswith("cuda") and torch.cuda.is_available():
+                torch.cuda.synchronize()
+            t1 = time.perf_counter()
+            latencies.append((t1 - t0) * 1000.0)
+
+    mean_ms = round(float(np.mean(latencies)), 2) if latencies else 0.0
+    std_ms = round(float(np.std(latencies)), 2) if latencies else 0.0
+    return {
+        "mean_latency_ms": mean_ms,
+        "std_latency_ms": std_ms,
+    }
+
+
+def evaluate_lambada(
+    student: nn.Module,
+    tokenizer,
+    device: str,
+    limit: int = 50,
+) -> float | None:
+    """Optional zero-shot eval on lambada_openai using lm-eval if installed and available."""
+    try:
+        import lm_eval  # type: ignore
+        from lm_eval.models.huggingface import HFLM  # type: ignore
+
+        hflm = HFLM(pretrained=student, tokenizer=tokenizer, batch_size=8, device=device)
+        res = lm_eval.simple_evaluate(
+            model=hflm,
+            tasks=["lambada_openai"],
+            limit=limit,
+            batch_size=8,
+            device=device,
+        )
+        if "results" in res and "lambada_openai" in res["results"]:
+            acc = res["results"]["lambada_openai"].get("acc,none") or res["results"]["lambada_openai"].get("acc")
+            if acc is not None:
+                return round(float(acc), 4)
+    except Exception as e:
+        LOG.debug("lm-eval lambada evaluation skipped: %s", e)
+    return None
 
 
 # -----------------------------------------------------------------------------
@@ -899,6 +1077,7 @@ def run_kd_method(
     tokenizer: AutoTokenizer, train_chunks: torch.Tensor, test_dataset: Any, args: argparse.Namespace,
     teacher_cache: dict[str, Any] | None = None, baseline_ppl: float = 21.71,
     run_dir: Path | None = None, env_info: dict[str, Any] | None = None, dataset_info: dict[str, Any] | None = None,
+    train_dataset: Any | None = None,
 ) -> dict[str, Any]:
     # If cache is fully handling everything and teacher wasn't loaded, use the identical snapshot for param counts only
     _teacher_ref = base_teacher if base_teacher is not None else base_snapshot
@@ -1133,6 +1312,37 @@ def run_kd_method(
     total_teacher_params = sum(p.numel() for p in _teacher_ref.parameters())
     total_student_params = sum(p.numel() for p in student.parameters())
 
+    # -------------------------------------------------------------------------
+    # End-to-End Quality Evaluation (Diagnostic battery)
+    # -------------------------------------------------------------------------
+    t_qual_start = time.time()
+    
+    # 1. Generation test
+    gen_results = evaluate_generation(student, tokenizer, device=device)
+    
+    # 2. Train/Test Gap
+    test_ppl = post_ppl
+    if train_dataset is not None:
+        train_ppl = eval_ppl(student, tokenizer, train_dataset, args)
+    else:
+        train_ppl = float("nan")
+    overfit_gap = round(float(test_ppl - train_ppl), 2) if np.isfinite(test_ppl) and np.isfinite(train_ppl) else float("nan")
+
+    # 3. Latency test
+    lat_results = measure_latency(student, tokenizer, device=device)
+
+    # 4. Optional Lambada eval
+    lambada_acc = None
+    if getattr(args, "eval_lambada", False):
+        lambada_acc = evaluate_lambada(student, tokenizer, device=device)
+
+    qual_time = round(time.time() - t_qual_start, 2)
+    LOG.info(
+        f"[QUALITY] distinct_2={gen_results['distinct_2']:.2f}, repetition_3={gen_results['repetition_3']:.2f}, "
+        f"train_ppl={train_ppl:.2f}, test_ppl={test_ppl:.2f}, overfit_gap={overfit_gap:.2f}, "
+        f"latency={lat_results['mean_latency_ms']:.1f}ms"
+    )
+
     result_dict: dict[str, Any] = {
         "method": method_name, "pre_ppl": pre_ppl, "post_ppl": post_ppl, "ppl_ratio": ppl_ratio,
         "recovery_pct": recovery_pct, "peak_vram_mb": peak_vram, "train_time_s": train_time,
@@ -1149,6 +1359,12 @@ def run_kd_method(
         "loss_history": loss_history,
         "ppl_history": ppl_history,
         "lr_history": lr_history,
+        "generation": gen_results,
+        "latency": lat_results,
+        "train_ppl": train_ppl,
+        "test_ppl": test_ppl,
+        "overfit_gap": overfit_gap,
+        "lambada_acc": lambada_acc,
     }
 
     full_history = {
@@ -1253,6 +1469,7 @@ def main():
     parser.add_argument("--train_scope", type=str, default="module",
                         choices=["all", "mamba", "attention", "module"])
     
+    parser.add_argument("--eval_lambada", action="store_true", help="Run optional zero-shot lambada eval with lm-eval")
     parser.add_argument("--baseline_ppl", type=float, default=None, help="Teacher baseline PPL (optional override)")
     parser.add_argument("--timestamp", type=str, default=None)
     parser.add_argument("--log_file", type=str, default=None)
@@ -1394,6 +1611,7 @@ def main():
                 run_dir=run_dir,
                 env_info=env_info,
                 dataset_info=dataset_info,
+                train_dataset=dataset["train"],
             )
             module_results.append(result)
         
