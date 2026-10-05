@@ -350,3 +350,6 @@ paper/_PROGRESS.md
 results/.DS_Store
 results/baseline_check/**/*.pt  
 results/baseline_check/**/*.bin  
+
+
+*.dat

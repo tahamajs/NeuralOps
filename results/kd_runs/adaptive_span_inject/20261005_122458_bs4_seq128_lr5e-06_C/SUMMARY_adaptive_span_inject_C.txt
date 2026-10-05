@@ -1,0 +1,44 @@
+================================================================================
+RUN SUMMARY: adaptive_span_inject / C
+================================================================================
+
+MODEL INFO:
+  Total params:      125.62 M
+  Trainable params:  29.53 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        800
+  Seq len:           128
+  Total tokens:      102400
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        65.9700
+  Post-KD PPL:       64.1100
+  PPL Ratio:         0.9703
+  Recovery:          nan%
+  Peak VRAM:         2597.79 MB
+  Train time:        32.75 s
+  s/step:            0.6550
+  Loss (final):      0.6235
+  Cached:            False
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        2207a5e4e59c
+
+TRAINING HISTORY (last 10 steps):
+  step    40 | loss=0.8234 | lr=3.66e-06
+  step    41 | loss=0.5763 | lr=2.99e-06
+  step    42 | loss=0.6163 | lr=2.50e-06
+  step    43 | loss=0.5471 | lr=2.50e-06
+  step    44 | loss=1.0261 | lr=2.50e-06
+  step    45 | loss=0.5486 | lr=2.50e-06
+  step    46 | loss=0.5922 | lr=2.50e-06
+  step    47 | loss=0.5458 | lr=2.50e-06
+  step    48 | loss=0.7883 | lr=2.50e-06
+  step    49 | loss=0.6235 | lr=2.50e-06

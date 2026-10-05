@@ -1,0 +1,1 @@
+D:\SVD_linear_Attention\results\kd_runs\adaptive_span_inject\20261005_130022_bs8_seq128_lr5e-06_C
