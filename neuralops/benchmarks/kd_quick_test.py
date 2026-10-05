@@ -656,10 +656,22 @@ def run_kd_method(
     if torch.cuda.is_available(): torch.cuda.empty_cache()
     time.sleep(1)
 
+    total_teacher_params = sum(p.numel() for p in base_teacher.parameters())
+    total_student_params = sum(p.numel() for p in student.parameters())
+
     return {
         "method": method_name, "pre_ppl": pre_ppl, "post_ppl": post_ppl, "ppl_ratio": ppl_ratio,
         "recovery_pct": recovery_pct, "peak_vram_mb": peak_vram, "train_time_s": train_time,
         "s_per_step": s_per_step, "loss_final": round(final_loss, 4), "cached": bool(use_cache),
+        "teacher_params": total_teacher_params,
+        "student_params": total_student_params,
+        "trainable_params": n_trainable,
+        "batch_size": args.batch_size,
+        "seq_len": args.seq_len,
+        "learning_rate": args.learning_rate,
+        "recovery_steps": args.recovery_steps,
+        "train_scope": args.train_scope,
+        "gpu_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu",
     }
 
 # -----------------------------------------------------------------------------
