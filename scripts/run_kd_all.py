@@ -134,6 +134,48 @@ def main():
         skip_set = set(args.skip)
         modules = [m for m in modules if m not in skip_set]
 
+    # Deduplicate and skip already run modules
+    import json
+    try:
+        from neuralops.core.registry import ATTENTION_REGISTRY
+        has_reg = True
+    except ImportError:
+        has_reg = False
+
+    completed = set()
+    reg_file = HERE.parent / "results" / "kd_runs" / "registry.json"
+    if reg_file.exists():
+        try:
+            data = json.loads(reg_file.read_text(encoding="utf-8"))
+            completed.update(data.get("runs", {}).keys())
+        except Exception as e:
+            LOG.warning(f"Could not read registry.json: {e}")
+
+    final_modules = []
+    seen_refs = set()
+    for m in modules:
+        if m in completed:
+            LOG.info(f"Skipping {m} (already evaluated in registry.json)")
+            continue
+        
+        if has_reg:
+            try:
+                cls = ATTENTION_REGISTRY.resolve(m)
+                if id(cls) in seen_refs:
+                    LOG.info(f"Skipping {m} (alias of already tested class)")
+                    continue
+                seen_refs.add(id(cls))
+            except Exception:
+                pass
+                
+        final_modules.append(m)
+
+    modules = final_modules
+    
+    if not modules:
+        LOG.error("All modules skipped. Aborting.")
+        return 0
+
     LOG.info("=" * 80)
     LOG.info("KD QUICK TEST — %d modules", len(modules))
     LOG.info("Model: %s", args.model_name)
