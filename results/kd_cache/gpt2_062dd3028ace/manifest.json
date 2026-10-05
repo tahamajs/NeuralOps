@@ -23,7 +23,7 @@
   "logits_size_bytes": 0,
   "hidden_size_bytes": 0,
   "attn_size_bytes": 0,
-  "build_time_s": 108.8,
+  "build_time_s": 61.42,
   "baseline_ppl": 66.07,
   "eval_max_tokens": 15000,
   "eval_stride": 128,
