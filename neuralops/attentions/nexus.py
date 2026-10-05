@@ -300,20 +300,34 @@ class SeerGating(nn.Module):
             torch.matmul(q_gate, k_gate).squeeze(-1).squeeze(-1) / self.temperature
         )
 
-        keep_per_head = torch.clamp((gate_score * n_blocks).long(), min=1, max=n_blocks)
-
-        mask = torch.zeros(B, H, n_blocks, n_blocks, device=Q.device, dtype=torch.bool)
+        # FIXED: Gradient breakage due to .long() and .item() in python loop.
+        # Implemented a fully vectorized Soft Straight-Through Estimator (STE) mask
+        # so gate_score receives dense gradients while maintaining hard sparsity in forward pass.
+        k_float = gate_score * n_blocks
+        
+        idx = torch.arange(n_blocks, device=Q.device).view(1, 1, 1, n_blocks)
+        k_float_exp = k_float.unsqueeze(-1).unsqueeze(-1)
+        
+        # Soft mask for differentiability
+        temperature = 0.1
+        soft_mask = torch.sigmoid((k_float_exp - idx) / temperature)
+        
+        # Hard mask for strict sparsity (k_float rounded)
+        k_int = torch.clamp(k_float.round(), min=1, max=n_blocks).long().unsqueeze(-1).unsqueeze(-1)
+        hard_mask = (idx < k_int).float()
+        
+        # STE Trick: Forward is hard, backward is soft
+        ste_mask = hard_mask + soft_mask - soft_mask.detach()
+        
+        mask = torch.zeros(B, H, n_blocks, n_blocks, device=Q.device, dtype=ste_mask.dtype)
+        # Apply STE mask across all queries (dim 2) for the selected key blocks (dim 3)
+        mask = mask + ste_mask
+        
+        # Ensure diagonal and first block are always kept
         diag_idx = torch.arange(n_blocks, device=Q.device)
-        mask[:, :, diag_idx, diag_idx] = True
-        mask[:, :, :, 0] = True
-
-        for b in range(B):
-            for h in range(H):
-                k_keep = keep_per_head[b, h].item()
-                if k_keep > 1 and n_blocks > 2:
-                    extra_needed = min(k_keep - 1, n_blocks - 1)
-                    if extra_needed > 0:
-                        mask[b, h, :, 1 : 1 + extra_needed] = True
+        mask[:, :, diag_idx, diag_idx] = 1.0
+        mask[:, :, :, 0] = 1.0
+        
         return mask
 
 
@@ -370,19 +384,21 @@ class DualStageStripeAttention(nn.Module):
         else:
             inter_mask = torch.ones(B, H, nb, nb, device=Q.device, dtype=torch.bool)
 
-        if seer_mask is not None:
-            inter_mask = inter_mask | seer_mask
-
+        # Handle boolean base mask
         inter_mask[:, :, :, 0] = True
         diag_idx = torch.arange(nb, device=Q.device)
         inter_mask[:, :, diag_idx, diag_idx] = True
 
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
-        expanded_mask = inter_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[
-            :, :, :N, :N
-        ]
-        scores = scores.masked_fill(~expanded_mask, -10000.0)
+        expanded_inter_mask = inter_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[:, :, :N, :N]
+        scores = scores.masked_fill(~expanded_inter_mask, -10000.0)
+
+        if seer_mask is not None:
+            # seer_mask is an STE float mask [B, H, nb, nb]
+            expanded_seer = seer_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[:, :, :N, :N]
+            # Inject differentiable mask via additive penalty
+            scores = scores + (expanded_seer - 1.0) * 10000.0
 
         if self.cfg.stripe_enabled and N > 256:
             sw = self.cfg.stripe_width
