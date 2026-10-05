@@ -844,33 +844,11 @@ class AegisAttentionV3(BaseAttention):
                 return _fallback_out
 
         # ---- Case: N == N_k (training / full prefill) ----
-        M = Q_feat.shape[-1]
-        state_kv = torch.zeros(B, h, M, d, device=Q.device, dtype=Q_feat.dtype)
-        state_k = torch.zeros(B, h, M, device=Q.device, dtype=Q_feat.dtype)
-        outs = []
-
-        for start in range(0, N, chunk_size):
-            end = min(start + chunk_size, N)
-            Qc = Q_feat[:, :, start:end]
-            Kc = K_feat[:, :, start:end]
-            Vc = V[:, :, start:end]
-
-            # FIX-C3: correct outer product orientation
-            KV_local = (Kc.unsqueeze(-1) * Vc.unsqueeze(-2)).cumsum(dim=2)
-            K_local = Kc.cumsum(dim=2)
-
-            KV_total = KV_local + state_kv.unsqueeze(2)
-            K_total = K_local + state_k.unsqueeze(2)
-
-            num = torch.einsum("bhnm,bhnmd->bhnd", Qc, KV_total)
-            den = torch.einsum("bhnm,bhnm->bhn", Qc, K_total).clamp(min=1e-6)
-            outs.append(num / den.unsqueeze(-1))
-
-            state_kv = KV_total[:, :, -1]
-            state_k = K_total[:, :, -1]
-
-        out = torch.cat(outs, dim=2)
-        return torch.nan_to_num(out, nan=0.0)
+        # FIXED: Task 1 (Causal Linear Attention). 
+        # Replaced the O(N) sequential Python chunk loop with hardware-fused Triton kernel.
+        # This computes causal masked intra-chunk + running state inter-chunk attention in SRAM.
+        from neuralops.attentions.chela_slay import ChelaSlayCausalLinearFunction
+        return ChelaSlayCausalLinearFunction.apply(Q_feat, K_feat, V, chunk_size)
 
     # ------------------------------------------------------------------
     # KV-cache
