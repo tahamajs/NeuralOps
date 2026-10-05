@@ -533,7 +533,10 @@ class FullAttention(BaseAttention):
         )
         if is_decoder:
             causal_tril = (
-                torch.tril(torch.ones((N_q, N_k), device=device, dtype=torch.bool))
+                torch.tril(
+                    torch.ones((N_q, N_k), device=device, dtype=torch.bool),
+                    diagonal=max(0, N_k - N_q)
+                )
                 .unsqueeze(0)
                 .unsqueeze(0)
             )

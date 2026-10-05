@@ -292,7 +292,10 @@ class SpectronSpectralEntropyRouter(nn.Module):
 
             if token_valid is not None:
                 entropy = entropy * token_valid.float()
-                entropy = entropy / entropy.amax(dim=-1, keepdim=True).clamp(min=1e-6)
+            
+            # FIXED: Normalize by theoretical maximum entropy log(D) instead of sequence amax() 
+            # to strictly preserve causality and prevent future token leakage.
+            entropy = entropy / math.log(D)
 
         h = self.h_proj(X.to(self.h_proj.weight.dtype))  # (B, N, 3)
         h = h * entropy.unsqueeze(-1).to(h.dtype)

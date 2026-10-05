@@ -785,7 +785,7 @@ class GroupedQueryAttention(BaseAttention):
         if valid_mask is not None:
             scores = scores.masked_fill(~valid_mask[:, None, None, :], -1e4)
 
-        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+        # FIXED: Removed destructive torch.nan_to_num(..., nan=-1e4) before softmax
         attn = F.softmax(scores, dim=-1).to(dtype)
         attn = torch.nan_to_num(attn, nan=0.0)
         attn = self.dropout(attn)

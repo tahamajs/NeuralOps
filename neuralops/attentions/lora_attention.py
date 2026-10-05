@@ -676,10 +676,14 @@ class LoRAAttention(BaseAttention):
             in ("gpt2", "qwen", "qwen2", "qwen3_5", "llama")
         )
         if is_decoder and not is_cross:
-            causal = torch.tril(torch.ones(N_q, N_k, device=device, dtype=torch.bool))
+            # FIXED: added diagonal shift for KV cache alignment
+            causal = torch.tril(
+                torch.ones(N_q, N_k, device=device, dtype=torch.bool),
+                diagonal=max(0, N_k - N_q)
+            )
             scores = scores.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
 
-        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+        # FIXED: Removed destructive torch.nan_to_num(..., nan=-1e4) before softmax
         attn = F.softmax(scores, dim=-1).to(dtype)
         attn = torch.nan_to_num(attn, nan=0.0)
         attn = self.dropout(attn)
