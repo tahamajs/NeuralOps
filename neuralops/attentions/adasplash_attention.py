@@ -273,7 +273,7 @@ class AdaSplashAttention(BaseAttention):
             ),
         )
         self.lora_alpha = float(lora_alpha_cfg) if lora_rank_cfg is not None else 16
-            self.num_heads = kwargs.get("num_heads", self.adapter.num_heads or 12)
+        self.num_heads = kwargs.get("num_heads", self.adapter.num_heads or 12)
             self.num_kv_heads = kwargs.get(
                 "num_kv_heads", self.adapter.num_key_value_heads or self.num_heads
             )
