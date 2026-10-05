@@ -548,8 +548,9 @@ class AegisSpectronFP8Attention(BaseAttention):
         self.svd_U_k = nn.Parameter(torch.randn(self.all_head_size, self.rank) * 0.02)
 
         # Linear recurrence parameters (SP-FIX-06: no dead linear_A).
-        self.linear_B = nn.Parameter(torch.ones(self.all_head_size))
-        self.linear_C = nn.Parameter(torch.ones(self.all_head_size))
+        rec_scale = 1.0 / math.sqrt(max(1, config.window_size))
+        self.linear_B = nn.Parameter(torch.full((self.all_head_size,), rec_scale))
+        self.linear_C = nn.Parameter(torch.full((self.all_head_size,), rec_scale))
         self.decay_param = nn.Parameter(torch.zeros(self.all_head_size))
         # SP-FIX-13: per-head gate.
         self.bidir_gate = nn.Parameter(torch.zeros(self.num_heads))
