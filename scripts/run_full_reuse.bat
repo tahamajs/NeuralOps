@@ -6,8 +6,8 @@ set TRANSFORMERS_OFFLINE=1
 set HF_DATASETS_OFFLINE=1
 
 :loop
-echo Running KD Sweep with BS=2 (200 Steps, 45%% VRAM)...
-python scripts\run_kd_reuse_model.py --recovery_steps 200 --batch_size 2 --max_vram_frac 0.45
+echo Running KD Sweep with BS=2 (200 Steps)...
+python scripts\run_kd_reuse_model.py --recovery_steps 200 --batch_size 2
 if %ERRORLEVEL% NEQ 0 (
     if %ERRORLEVEL% EQU 999 goto end
     echo Hard crash detected. Restarting script to skip the bad module...
