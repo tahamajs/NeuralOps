@@ -1,0 +1,32 @@
+{
+  "n_chunks": 800,
+  "seq_len": 128,
+  "vocab_size": 50257,
+  "has_logits": true,
+  "has_hidden": true,
+  "has_attn": false,
+  "logits_file": "teacher_logits.dat",
+  "hidden_file": "teacher_hidden.dat",
+  "attn_file": null,
+  "logits_shape": [
+    800,
+    128,
+    50257
+  ],
+  "hidden_shape": [
+    13,
+    800,
+    128,
+    768
+  ],
+  "attn_shape": null,
+  "logits_size_bytes": 0,
+  "hidden_size_bytes": 0,
+  "attn_size_bytes": 0,
+  "build_time_s": 108.8,
+  "baseline_ppl": 66.07,
+  "eval_max_tokens": 15000,
+  "eval_stride": 128,
+  "eval_seq_len": 128,
+  "test_split_name": "test"
+}
