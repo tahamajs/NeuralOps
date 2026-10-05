@@ -370,9 +370,8 @@ class AdaptiveSparseAttention(BaseAttention):
             self.lora_alpha = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
         else:
             self.lora_rank = kwargs.get("lora_rank", lora_rank)
-        # FIXED: Capacity Bottleneck: Do not freeze base weights when lora_rank > 0
-        # Base projections must remain trainable to adapt during KD phase
-        self.freeze_base: bool = False
+        # The user requested NOT to unfreeze the base weights.
+        self.freeze_base: bool = self.lora_rank > 0
 
         self.q_proj = LoRALinear(
             self.hidden_size,
@@ -736,7 +735,7 @@ class AdaptiveSparseAttention(BaseAttention):
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
 
-        if self.freeze_base:
+        if self.lora_rank > 0 or self.freeze_base:
             self.freeze_base_weights()
 
     def get_sparsity_loss(self) -> torch.Tensor:
@@ -837,9 +836,13 @@ class AdaptiveSparseAttention(BaseAttention):
         )
 
         sparsity_per_head = torch.sigmoid(self.sparsity_logits).clamp(0.0, 0.95)  # [H]
-        k_per_head = torch.clamp(((1.0 - sparsity_per_head) * N_k).long(), min=1, max=N_k)  # [H]
-        k_indices_base = (k_per_head - 1).view(1, H, 1, 1)
-
+        k_float = (1.0 - sparsity_per_head) * N_k
+        k_floor = torch.clamp(k_float.floor().long(), min=1, max=N_k)
+        k_ceil = torch.clamp(k_floor + 1, min=1, max=N_k)
+        alpha_k = (k_float - k_floor.float()).view(1, H, 1, 1)  # [1, H, 1, 1]
+        
+        k_indices_floor = (k_floor - 1).view(1, H, 1, 1)
+        k_indices_ceil = (k_ceil - 1).view(1, H, 1, 1)
         valid_m = None
         if mask is not None and mask.dim() != 4:
             valid_m = get_token_valid_mask(mask, B, N_k, device)
@@ -882,8 +885,11 @@ class AdaptiveSparseAttention(BaseAttention):
             # Vectorized Top-K Thresholding on chunk with differentiable soft sigmoid threshold
             if not is_cross_attention:
                 sorted_scores, _ = torch.sort(scores_chunk, dim=-1, descending=True)
-                k_indices = k_indices_base.expand(B, H, C_q, 1)
-                topk_thresh = torch.gather(sorted_scores, dim=-1, index=k_indices)
+                k_idx_f = k_indices_floor.expand(B, H, C_q, 1)
+                k_idx_c = k_indices_ceil.expand(B, H, C_q, 1)
+                thresh_f = torch.gather(sorted_scores, dim=-1, index=k_idx_f)
+                thresh_c = torch.gather(sorted_scores, dim=-1, index=k_idx_c)
+                topk_thresh = thresh_f * (1.0 - alpha_k) + thresh_c * alpha_k
                 temperature = 0.1
                 soft_mask = torch.sigmoid((scores_chunk - topk_thresh) / temperature)
                 scores_chunk = scores_chunk + torch.log(soft_mask + 1e-8)
