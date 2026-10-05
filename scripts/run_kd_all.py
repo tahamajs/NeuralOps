@@ -136,10 +136,14 @@ def main():
 
     # Deduplicate and skip already run modules
     import json
+    import sys
+    sys.path.insert(0, str(HERE.parent))
+    
     try:
         from neuralops.core.registry import ATTENTION_REGISTRY
         has_reg = True
-    except ImportError:
+    except ImportError as e:
+        LOG.warning(f"Failed to import ATTENTION_REGISTRY: {e}")
         has_reg = False
 
     completed = set()
