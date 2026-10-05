@@ -217,6 +217,31 @@ def compute_perplexity(model: nn.Module, tokenizer, test_dataset, seq_len: int =
     return round(ppl, 2)
 
 
+def eval_ppl(
+    model: nn.Module,
+    tokenizer,
+    test_dataset,
+    args: argparse.Namespace,
+) -> float:
+    """Canonical evaluation wrapper around compute_perplexity to guarantee consistent evaluation protocol.
+
+    Uses identical seq_len, stride, max_eval_tokens, and device across teacher and student evaluations.
+    """
+    stride = getattr(args, "eval_stride", 128)
+    max_eval_tokens = getattr(args, "eval_max_tokens", 15000)
+    seq_len = getattr(args, "seq_len", 256)
+    device = getattr(args, "device", "cuda" if torch.cuda.is_available() else "cpu")
+    return compute_perplexity(
+        model=model,
+        tokenizer=tokenizer,
+        test_dataset=test_dataset,
+        seq_len=seq_len,
+        stride=stride,
+        max_eval_tokens=max_eval_tokens,
+        device=device,
+    )
+
+
 # -----------------------------------------------------------------------------
 # KD Loss Functions & Adapters
 # -----------------------------------------------------------------------------
@@ -315,23 +340,16 @@ def get_cache_hash(model_path: str, tokenizer_name: str, seq_len: int, num_chunk
     return hashlib.sha256(json.dumps(cache_key_data, sort_keys=True).encode()).hexdigest()[:12]
 
 
-def is_cache_valid(
-    cache_dir: Path, expected_chunks: int, expected_seq_len: int, methods: list[str], include_attn: bool = False,
-    expected_eval_max_tokens: int | None = None, expected_eval_stride: int | None = None
-) -> bool:
+def check_cache_tensors_only(
+    cache_dir: Path, expected_chunks: int, expected_seq_len: int, methods: list[str], include_attn: bool = False
+) -> tuple[bool, dict[str, Any] | None]:
     manifest_path = cache_dir / "manifest.json"
     if not manifest_path.exists():
-        return False
+        return False, None
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         if manifest.get("n_chunks") != expected_chunks or manifest.get("seq_len") != expected_seq_len:
-            return False
-        if expected_eval_max_tokens is not None and manifest.get("eval_max_tokens") != expected_eval_max_tokens:
-            return False
-        if expected_eval_stride is not None and manifest.get("eval_stride") != expected_eval_stride:
-            return False
-        if "baseline_ppl" not in manifest:
-            return False
+            return False, None
         methods_set = set(methods)
         need_logits = any(m in methods_set for m in ("A", "C", "D"))
         need_hidden = any(m in methods_set for m in ("B", "C", "D"))
@@ -339,22 +357,47 @@ def is_cache_valid(
 
         if need_logits:
             fname = manifest.get("logits_file")
-            if not manifest.get("has_logits") or not fname or not (cache_dir / fname).exists(): return False
+            if not manifest.get("has_logits") or not fname or not (cache_dir / fname).exists():
+                return False, None
         if need_hidden:
             fname = manifest.get("hidden_file")
-            if not manifest.get("has_hidden") or not fname or not (cache_dir / fname).exists(): return False
+            if not manifest.get("has_hidden") or not fname or not (cache_dir / fname).exists():
+                return False, None
         if need_attn:
             fname = manifest.get("attn_file")
-            if not manifest.get("has_attn") or not fname or not (cache_dir / fname).exists(): return False
-        return True
+            if not manifest.get("has_attn") or not fname or not (cache_dir / fname).exists():
+                return False, None
+        return True, manifest
     except Exception:
+        return False, None
+
+
+def is_cache_valid(
+    cache_dir: Path, expected_chunks: int, expected_seq_len: int, methods: list[str], include_attn: bool = False,
+    expected_eval_max_tokens: int | None = None, expected_eval_stride: int | None = None,
+    expected_eval_seq_len: int | None = None, expected_test_split: str | None = "test"
+) -> bool:
+    tensors_ok, manifest = check_cache_tensors_only(cache_dir, expected_chunks, expected_seq_len, methods, include_attn)
+    if not tensors_ok or manifest is None:
         return False
+    if "baseline_ppl" not in manifest or manifest.get("baseline_ppl") is None:
+        return False
+    if expected_eval_max_tokens is not None and manifest.get("eval_max_tokens") != expected_eval_max_tokens:
+        return False
+    if expected_eval_stride is not None and manifest.get("eval_stride") != expected_eval_stride:
+        return False
+    if expected_eval_seq_len is not None and manifest.get("eval_seq_len") != expected_eval_seq_len:
+        return False
+    if expected_test_split is not None and manifest.get("test_split_name", "test") != expected_test_split:
+        return False
+    return True
 
 
 def build_teacher_cache(
     teacher: nn.Module, tokenizer, train_chunks: torch.Tensor, cache_dir: Path, methods: list[str],
     device: str, seq_len: int, include_attn: bool = False, max_train_texts: int = 1000,
-    baseline_ppl: float | None = None, eval_max_tokens: int | None = None, eval_stride: int | None = None
+    baseline_ppl: float | None = None, eval_max_tokens: int | None = None, eval_stride: int | None = None,
+    eval_seq_len: int | None = None, test_split_name: str = "test"
 ) -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
     n_chunks = len(train_chunks)
@@ -440,6 +483,8 @@ def build_teacher_cache(
         manifest["eval_max_tokens"] = eval_max_tokens
     if eval_stride is not None:
         manifest["eval_stride"] = eval_stride
+    manifest["eval_seq_len"] = eval_seq_len if eval_seq_len is not None else seq_len
+    manifest["test_split_name"] = test_split_name
 
     manifest_path = cache_dir / "manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
@@ -522,8 +567,18 @@ def run_kd_method(
     else:
         student = student.to(device)
 
-    pre_ppl = compute_perplexity(student, tokenizer, test_dataset, seq_len=args.seq_len, stride=128, max_eval_tokens=args.eval_max_tokens, device=device)
+    pre_ppl = eval_ppl(student, tokenizer, test_dataset, args)
+    delta_pre = pre_ppl - baseline_ppl
     LOG.info("Pre-KD PPL for Module %s, Method %s: %.2f", module_name, method_name, pre_ppl)
+    LOG.info(
+        "[SANITY] Teacher baseline PPL = %.2f (dataset=%s, max_tokens=%d, stride=%d, seq_len=%d)",
+        baseline_ppl, getattr(args, "test_split", "test"), getattr(args, "eval_max_tokens", 15000),
+        getattr(args, "eval_stride", 128), args.seq_len
+    )
+    LOG.info("[SANITY] Student pre-KD PPL   = %.2f (same protocol)", pre_ppl)
+    LOG.info("[SANITY] Delta pre-baseline   = %+.2f (should be POSITIVE, e.g. +3 to +30)", delta_pre)
+    if delta_pre <= 0:
+        LOG.warning("[WARN] Student pre-KD PPL <= teacher baseline PPL (delta=%.2f <= 0). This is suspicious — check eval protocol consistency.", delta_pre)
 
     n_trainable = set_train_scope(student, args.train_scope)
     if n_trainable == 0:
@@ -671,11 +726,11 @@ def run_kd_method(
                     LOG.info(f"[{method_name}] Step {step}/{total_steps} | Loss: {final_loss:.4f} | LR: {scheduler.get_last_lr()[0]:.2e}")
 
                 if step % args.eval_every == 0 or step == total_steps:
-                    eval_ppl = compute_perplexity(student, tokenizer, test_dataset, seq_len=current_seq_len, stride=128, max_eval_tokens=args.eval_max_tokens, device=device)
-                    ppl_history[step] = eval_ppl
-                    LOG.info(f"[{method_name}] Step {step} Eval PPL: {eval_ppl:.2f}")
-                    if math.isnan(eval_ppl) or eval_ppl > args.early_stop_ppl:
-                        LOG.warning(f"[{method_name}] Early stop triggered at step {step}: PPL={eval_ppl}")
+                    eval_ppl_val = eval_ppl(student, tokenizer, test_dataset, args)
+                    ppl_history[step] = eval_ppl_val
+                    LOG.info(f"[{method_name}] Step {step} Eval PPL: {eval_ppl_val:.2f}")
+                    if math.isnan(eval_ppl_val) or eval_ppl_val > args.early_stop_ppl:
+                        LOG.warning(f"[{method_name}] Early stop triggered at step {step}: PPL={eval_ppl_val}")
                         break
 
         except torch.cuda.OutOfMemoryError:
@@ -692,11 +747,21 @@ def run_kd_method(
     peak_vram = round(float(torch.cuda.max_memory_allocated() / (1024**2)), 2) if device.startswith("cuda") and torch.cuda.is_available() else 0.0
 
     post_ppl = ppl_history.get(step, float("nan"))
-    if math.isnan(post_ppl) and ppl_history: post_ppl = list(ppl_history.values())[-1]
+    if math.isnan(post_ppl) and ppl_history:
+        post_ppl = list(ppl_history.values())[-1]
+    if math.isnan(post_ppl):
+        post_ppl = eval_ppl(student, tokenizer, test_dataset, args)
     ppl_ratio = round(post_ppl / baseline_ppl, 4) if np.isfinite(post_ppl) and post_ppl > 0 else float("inf")
-    recovery_pct = round(min(100.0, (pre_ppl - post_ppl) / (pre_ppl - baseline_ppl) * 100.0), 2) if np.isfinite(post_ppl) and (pre_ppl - baseline_ppl) > 0 else 0.0
 
-    LOG.info(f"[{method_name}] COMPLETE | Pre: {pre_ppl:.2f} -> Post: {post_ppl:.2f} | Recovery: {recovery_pct}% | VRAM: {peak_vram} MB | Time: {train_time}s")
+    denom = pre_ppl - baseline_ppl
+    if denom <= 0:
+        LOG.warning(f"Invalid recovery denominator: pre={pre_ppl:.2f}, baseline={baseline_ppl:.2f}. Setting recovery=NaN.")
+        recovery_pct = float("nan")
+    else:
+        recovery_pct = round(min(100.0, (pre_ppl - post_ppl) / denom * 100.0), 2)
+
+    rec_str = f"{recovery_pct:.2f}%" if np.isfinite(recovery_pct) else "NaN"
+    LOG.info(f"[{method_name}] COMPLETE | Pre: {pre_ppl:.2f} -> Post: {post_ppl:.2f} | Recovery: {rec_str} | VRAM: {peak_vram} MB | Time: {train_time}s")
 
     total_teacher_params = sum(p.numel() for p in _teacher_ref.parameters())
     total_student_params = sum(p.numel() for p in student.parameters())
@@ -734,7 +799,10 @@ def print_comparison_table(results: list[dict[str, Any]]):
     print(header)
     for r in results:
         m = r["method"]
-        pre, post, rec = f"{r['pre_ppl']:.2f}", f"{r['post_ppl']:.2f}", f"{r['recovery_pct']:.1f}%"
+        pre = f"{r['pre_ppl']:.2f}" if r.get("pre_ppl") is not None and np.isfinite(r["pre_ppl"]) else "NaN"
+        post = f"{r['post_ppl']:.2f}" if r.get("post_ppl") is not None and np.isfinite(r["post_ppl"]) else "NaN"
+        rec_val = r.get("recovery_pct")
+        rec = f"{rec_val:.1f}%" if rec_val is not None and np.isfinite(rec_val) else "NaN"
         t, vram, cached = f"{r['train_time_s']:.1f}", f"{r['peak_vram_mb']:.1f}", "YES" if r.get("cached") else "NO"
         print(f"| {m:<7} | {pre:>8} | {post:>8} | {rec:>8} | {t:>8} | {vram:>8} | {cached:>8} |")
     print("+---------+----------+----------+----------+----------+----------+----------+")
@@ -759,6 +827,8 @@ def main():
     parser.add_argument("--warmup_steps", type=int, default=100)
     parser.add_argument("--eval_every", type=int, default=100)
     parser.add_argument("--eval_max_tokens", type=int, default=15000)
+    parser.add_argument("--eval_stride", type=int, default=128, help="Sliding window stride for evaluation")
+    parser.add_argument("--test_split", type=str, default="test", help="Dataset split for evaluation")
     parser.add_argument("--early_stop_ppl", type=float, default=5000.0)
     parser.add_argument("--no_cosine_lr", action="store_true")
     parser.add_argument("--max_grad_norm", type=float, default=1.0)
@@ -824,6 +894,8 @@ def main():
     teacher = None
     teacher_cache = None
     baseline_ppl = None
+    eval_stride = getattr(args, "eval_stride", 128)
+    test_split_name = getattr(args, "test_split", "test")
     
     if args.use_cache:
         if args.cache_dir:
@@ -832,32 +904,64 @@ def main():
             cache_hash = get_cache_hash(args.model_name, args.model_name, args.seq_len, len(train_chunks), args.methods, args.cache_attn)
             cache_dir = Path("results") / "kd_cache" / f"{args.model_name}_{cache_hash}"
         
-        if is_cache_valid(cache_dir, len(train_chunks), args.seq_len, args.methods, args.cache_attn, args.eval_max_tokens, 128):
+        if is_cache_valid(cache_dir, len(train_chunks), args.seq_len, args.methods, args.cache_attn, args.eval_max_tokens, eval_stride, args.seq_len, test_split_name):
             LOG.info("Loading existing teacher cache from %s. (Skipping teacher model load completely!)", cache_dir)
             teacher_cache = load_teacher_cache(cache_dir)
             baseline_ppl = teacher_cache["manifest"]["baseline_ppl"]
         else:
-            LOG.info("Loading teacher model to build cache: %s", args.model_name)
-            teacher = AutoModelForCausalLM.from_pretrained(args.model_name)
-            teacher.eval()
-            teacher.to(args.device)
-            LOG.info("Computing teacher baseline PPL...")
-            baseline_ppl = compute_perplexity(teacher, tokenizer, dataset["test"], seq_len=args.seq_len, stride=128, max_eval_tokens=args.eval_max_tokens, device=args.device)
-            LOG.info("Building teacher cache at %s", cache_dir)
-            build_teacher_cache(teacher, tokenizer, train_chunks, cache_dir, args.methods, args.device, args.seq_len, args.cache_attn, args.max_train_texts, baseline_ppl, args.eval_max_tokens, 128)
-            teacher_cache = load_teacher_cache(cache_dir)
-            LOG.info("Teacher cache built. Evicting Teacher from VRAM to CPU to save memory...")
-            teacher.cpu()
-            torch.cuda.empty_cache()
+            tensors_ok, manifest = check_cache_tensors_only(cache_dir, len(train_chunks), args.seq_len, args.methods, args.cache_attn)
+            if tensors_ok and manifest is not None:
+                LOG.warning("Cache tensors at %s are valid, but eval protocol fields in manifest are missing or mismatched. Recomputing teacher baseline PPL once and backfilling manifest...", cache_dir)
+                teacher = AutoModelForCausalLM.from_pretrained(args.model_name)
+                teacher.eval()
+                if args.fp16 and args.device.startswith("cuda"):
+                    teacher = teacher.half()
+                teacher.to(args.device)
+                baseline_ppl = eval_ppl(teacher, tokenizer, dataset[test_split_name], args)
+                manifest["baseline_ppl"] = baseline_ppl
+                manifest["eval_max_tokens"] = args.eval_max_tokens
+                manifest["eval_stride"] = eval_stride
+                manifest["eval_seq_len"] = args.seq_len
+                manifest["test_split_name"] = test_split_name
+                (cache_dir / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+                teacher_cache = load_teacher_cache(cache_dir)
+                LOG.info("Backfilled cache manifest with updated baseline PPL: %.2f. Evicting teacher from VRAM.", baseline_ppl)
+                teacher.cpu()
+                torch.cuda.empty_cache()
+            else:
+                LOG.info("Loading teacher model to build cache: %s", args.model_name)
+                teacher = AutoModelForCausalLM.from_pretrained(args.model_name)
+                teacher.eval()
+                if args.fp16 and args.device.startswith("cuda"):
+                    teacher = teacher.half()
+                teacher.to(args.device)
+                LOG.info("Computing teacher baseline PPL...")
+                baseline_ppl = eval_ppl(teacher, tokenizer, dataset[test_split_name], args)
+                LOG.info("Building teacher cache at %s", cache_dir)
+                build_teacher_cache(
+                    teacher, tokenizer, train_chunks, cache_dir, args.methods, args.device, args.seq_len,
+                    args.cache_attn, args.max_train_texts, baseline_ppl, args.eval_max_tokens, eval_stride,
+                    eval_seq_len=args.seq_len, test_split_name=test_split_name
+                )
+                teacher_cache = load_teacher_cache(cache_dir)
+                LOG.info("Teacher cache built. Evicting Teacher from VRAM to CPU to save memory...")
+                teacher.cpu()
+                torch.cuda.empty_cache()
     else:
         LOG.info("Loading teacher model: %s", args.model_name)
         teacher = AutoModelForCausalLM.from_pretrained(args.model_name)
         teacher.eval()
+        if args.fp16 and args.device.startswith("cuda"):
+            teacher = teacher.half()
         teacher.to(args.device)
         LOG.info("Computing teacher baseline PPL...")
-        baseline_ppl = compute_perplexity(teacher, tokenizer, dataset["test"], seq_len=args.seq_len, stride=128, max_eval_tokens=args.eval_max_tokens, device=args.device)
+        baseline_ppl = eval_ppl(teacher, tokenizer, dataset[test_split_name], args)
 
     LOG.info("Using teacher baseline PPL: %.2f", baseline_ppl)
+    LOG.info(
+        "[SANITY] Teacher baseline PPL = %.2f (dataset=%s, max_tokens=%d, stride=%d, seq_len=%d)",
+        baseline_ppl, test_split_name, args.eval_max_tokens, eval_stride, args.seq_len
+    )
     
     # ---- 3. Phase 1: Module Sweep Loop ----
     for idx, module_name in enumerate(args.modules, 1):
