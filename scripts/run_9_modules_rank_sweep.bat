@@ -12,6 +12,6 @@ python neuralops\benchmarks\run_rank_sweeper.py ^
     --model_family gpt ^
     --recovery_steps 500 ^
     --batch_size 8 ^
-    --parallel_ranks 3
+    --parallel_ranks 4
 
 echo Rank sweep complete!
