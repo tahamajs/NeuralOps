@@ -2,12 +2,20 @@
 HymbaTransX: Hybrid Differential Transformer & State Space Model Block.
 
 Differential attention with rotary embeddings coupled with a State Space Model branch.
+
+FIXES in v2:
+  - HX-FIX-02: _uses_rope() no longer returns True for GPT-2 (uses learned pos emb, not RoPE)
+  - HX-FIX-07: diff_lambda init = -2.0 (sigmoid ≈ 0.12, not 0.55)
+  - HX-FIX-01: alpha init = 4.0 (sigmoid ≈ 0.98, attention-dominant)
+  - HX-FIX-06: W_q2/W_k2 = exact copy of W_q1/W_k1 (no noise)
+  - HX-FIX-13: SSM branch disabled by default for GPT-2 decoder
 """
 
 from __future__ import annotations
 
 import logging
 import math
+import os
 from typing import Any
 
 import torch
@@ -21,11 +29,14 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 logger = logging.getLogger(__name__)
 
 
+def _env_flag(name: str, default: bool = False) -> bool:
+    v = os.environ.get(name, "")
+    return v.lower() in ("1", "true", "yes", "on") if v else default
+
+
 # ===========================================================================
 # RoPE helpers
 # ===========================================================================
-
-
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     x1 = x[..., : x.shape[-1] // 2]
     x2 = x[..., x.shape[-1] // 2 :]
@@ -77,8 +88,6 @@ def apply_rotary_pos_emb(
 # ===========================================================================
 # HeadRoPE (internal fallback for encoders without position embeddings)
 # ===========================================================================
-
-
 class HeadRoPE(nn.Module):
     def __init__(self, head_dim: int, max_seq_len: int = 4096, base: float = 10000.0) -> None:
         super().__init__()
@@ -114,8 +123,6 @@ class HeadRoPE(nn.Module):
 # ===========================================================================
 # Decoder detection
 # ===========================================================================
-
-
 def _detect_decoder(config: Any, is_decoder: bool | None, old_attn: nn.Module | None) -> bool:
     if is_decoder is not None:
         return bool(is_decoder)
@@ -154,30 +161,33 @@ def _detect_decoder(config: Any, is_decoder: bool | None, old_attn: nn.Module | 
 
 
 def _uses_rope(config: Any, old_attn: nn.Module | None) -> bool:
-    """Return True if the model expects RoPE (i.e., is a decoder / LLaMA-like)."""
+    """
+    Return True ONLY if the model actually uses RoPE.
+    HX-FIX-02: GPT-2 uses LEARNED absolute position embeddings, NOT RoPE.
+    Do NOT include "gpt2", "gpt_neo", "gpt_neox" here.
+    """
     if config is not None:
         mt = str(getattr(config, "model_type", "")).lower()
+        # Only models that ACTUALLY use RoPE:
         if mt.startswith(
             (
-                "gpt2",
-                "gpt_neo",
-                "gpt_neox",
                 "llama",
-                "qwen",
+                "qwen",       # covers qwen2, qwen3, etc.
                 "mistral",
-                "gemma",
-                "phi",
                 "mixtral",
-                "gemma2",
-                "qwen2",
-                "qwen3",
+                "gemma",      # covers gemma2
+                "phi",
+                "phi3",
+                "deepseek",
+                "yi",
             )
         ):
             return True
         if getattr(config, "position_embedding_type", "") == "rotary":
             return True
     if old_attn is not None:
-        if hasattr(old_attn, "rotary_emb"):
+        # If the source attention module has a rotary_emb attribute, use RoPE.
+        if hasattr(old_attn, "rotary_emb") and getattr(old_attn, "rotary_emb", None) is not None:
             return True
     return False
 
@@ -185,8 +195,6 @@ def _uses_rope(config: Any, old_attn: nn.Module | None) -> bool:
 # ===========================================================================
 # LoRALinear
 # ===========================================================================
-
-
 class LoRALinear(nn.Module):
     def __init__(
         self,
@@ -258,8 +266,6 @@ class LoRALinear(nn.Module):
 # ===========================================================================
 # HymbaTransX block
 # ===========================================================================
-
-
 @ATTENTION_REGISTRY.register(
     "hymba_transx", supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
@@ -368,8 +374,8 @@ class HymbaTransXBlock(BaseAttention):
         self.is_decoder = _detect_decoder(config, is_decoder, source_attn)
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
-        # HX-FIX-02: RoPE only for models that expect it
-        self.use_rope = _uses_rope(config, source_attn) or self.is_decoder
+        # HX-FIX-02: RoPE only for models that actually use it
+        self.use_rope = _uses_rope(config, source_attn)
 
         # LoRA config
         self.lora_rank = int(
@@ -446,27 +452,34 @@ class HymbaTransXBlock(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        # HX-FIX-06: W_q2 and W_k2 are noisy copies of W_q1 and W_k1.
+        # HX-FIX-06: W_q2 and W_k2 are EXACT copies (no noise)
         with torch.no_grad():
-            noise_q = torch.randn_like(self.W_q2.weight) * 0.01
-            noise_k = torch.randn_like(self.W_k2.weight) * 0.01
-            self.W_q2.weight.data.copy_(self.W_q1.weight.data + noise_q)
-            self.W_k2.weight.data.copy_(self.W_k1.weight.data + noise_k)
+            self.W_q2.weight.data.copy_(self.W_q1.weight.data)
+            self.W_k2.weight.data.copy_(self.W_k1.weight.data)
 
-        # HX-FIX-07: differential attention lambda is learnable.
-        self.diff_lambda = nn.Parameter(torch.tensor(0.2))
+        # HX-FIX-07: diff_lambda init = -2.0 (sigmoid ≈ 0.12)
+        self.diff_lambda = nn.Parameter(torch.tensor(-2.0))
 
-        # SSM branch
-        try:
-            from neuralops.attentions.simple_ssm import SimpleSSM
+        # HX-FIX-13: SSM branch DISABLED by default for GPT-2 decoder
+        self.mamba = None
+        use_ssm = not _env_flag("HYMBA_DISABLE_SSM", False)
+        if use_ssm and config is not None:
+            mt = str(getattr(config, "model_type", "")).lower()
+            # Only enable SSM for models where it makes sense (not GPT-2)
+            if not mt.startswith("gpt"):
+                try:
+                    from neuralops.attentions.simple_ssm import SimpleSSM
 
-            self.mamba = SimpleSSM(d_model=self.dim, config=config, is_decoder=self.is_decoder)
-        except ImportError:
-            self.mamba = None
-            logger.warning("HymbaTransX: SimpleSSM not available; SSM branch disabled.")
+                    self.mamba = SimpleSSM(
+                        d_model=self.dim, config=config, is_decoder=self.is_decoder
+                    )
+                except ImportError:
+                    logger.warning("HymbaTransX: SimpleSSM not available; SSM branch disabled.")
+        if self.mamba is None:
+            logger.info("HymbaTransX: SSM branch disabled (GPT-2 or unavailable).")
 
-        # HX-FIX-01: alpha init = +1.0 (attention-dominant)
-        self.alpha = nn.Parameter(torch.tensor(1.0))
+        # HX-FIX-01: alpha init = 4.0 → sigmoid(4.0) ≈ 0.98 (attention-dominant)
+        self.alpha = nn.Parameter(torch.tensor(4.0))
 
         dropout_p = float(
             getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
@@ -728,11 +741,9 @@ class HymbaTransXBlock(BaseAttention):
                         )
                     )
 
-            # HX-FIX-06: W_q2 and W_k2 = noisy copies of W_q1 and W_k1
-            noise_q = torch.randn_like(self.W_q2.weight) * 0.01
-            noise_k = torch.randn_like(self.W_k2.weight) * 0.01
-            self.W_q2.weight.data.copy_(self.W_q1.weight.data + noise_q.to(self.W_q2.weight.dtype))
-            self.W_k2.weight.data.copy_(self.W_k1.weight.data + noise_k.to(self.W_k2.weight.dtype))
+            # HX-FIX-06: W_q2 and W_k2 = EXACT copies (no noise)
+            self.W_q2.weight.data.copy_(self.W_q1.weight.data)
+            self.W_k2.weight.data.copy_(self.W_k1.weight.data)
 
     # ------------------------------------------------------------------
     # Mask helper
@@ -800,13 +811,12 @@ class HymbaTransXBlock(BaseAttention):
         k2 = self.W_k2(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
         v = self.W_v(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
-        # HX-FIX-04: KV-cache.
+        # KV-cache
         past_k1 = past_v = None
         past_k2 = None
         past_len = 0
         if past_key_value is not None:
             if isinstance(past_key_value, (tuple, list)):
-                # Expect (k1, v, k2)
                 if len(past_key_value) >= 3:
                     past_k1, past_v, past_k2 = (
                         past_key_value[0],
@@ -832,7 +842,7 @@ class HymbaTransXBlock(BaseAttention):
 
         N_kv = k1_cat.shape[2]
 
-        # RoPE (HX-FIX-02: only if use_rope)
+        # RoPE (only if use_rope)
         if self.use_rope:
             if position_embeddings is not None:
                 cos, sin = position_embeddings
@@ -857,7 +867,7 @@ class HymbaTransXBlock(BaseAttention):
         scores1 = torch.matmul(q1.float(), k1_cat.float().transpose(-2, -1).contiguous()) * scale
         scores2 = torch.matmul(q2.float(), k2_cat.float().transpose(-2, -1).contiguous()) * scale
 
-        # Causal mask (HX-FIX-03: offset-aware for cache)
+        # Causal mask (offset-aware for cache)
         if self.is_decoder:
             if past_len > 0:
                 abs_q = (past_len + torch.arange(L, device=device)).unsqueeze(1)
@@ -868,7 +878,7 @@ class HymbaTransXBlock(BaseAttention):
             scores1 = scores1.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
             scores2 = scores2.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
 
-        # Padding mask (HX-FIX-12)
+        # Padding mask
         eff_mask = encoder_attention_mask if encoder_hidden_states is not None else attention_mask
         valid_mask = self._prepare_valid_mask(eff_mask, B, N_kv, device)
         if valid_mask is not None:
@@ -881,14 +891,14 @@ class HymbaTransXBlock(BaseAttention):
         attn1 = F.softmax(scores1, dim=-1)
         attn2 = F.softmax(scores2, dim=-1)
 
-        # HX-FIX-07: learnable lambda
+        # Learnable lambda (init sigmoid(-2) ≈ 0.12)
         lam = torch.sigmoid(self.diff_lambda)
         diff_attn = F.relu(attn1 - lam * attn2)
         denom = diff_attn.sum(dim=-1, keepdim=True)
         diff_attn = diff_attn / (denom + 1e-6)
         diff_attn = self.dropout(diff_attn).to(v_cat.dtype)
 
-        # HX-FIX-08: head_mask broadcasting (B, H, 1, 1).
+        # head_mask broadcasting
         if head_mask is not None:
             if head_mask.dim() == 1:
                 head_mask = head_mask.view(1, -1, 1, 1)
@@ -905,7 +915,7 @@ class HymbaTransXBlock(BaseAttention):
             .view(B, L, self.all_head_size)
         )
 
-        # SSM branch
+        # SSM branch (disabled for GPT-2 by default)
         if self.mamba is not None:
             if x.requires_grad:
                 from torch.utils.checkpoint import checkpoint
@@ -931,12 +941,13 @@ class HymbaTransXBlock(BaseAttention):
                     mf = mamba_fwd[0] if isinstance(mamba_fwd, tuple) else mamba_fwd
                     mb = mamba_bwd[0] if isinstance(mamba_bwd, tuple) else mamba_bwd
                     M_out = 0.5 * (mf + torch.flip(mb, dims=[1]))
-        else:
-            M_out = A_out
 
-        # HX-FIX-01: alpha init = +1.0
-        alpha = torch.sigmoid(self.alpha)
-        combined = alpha * A_out + (1.0 - alpha) * M_out
+            # alpha init = 4.0 → sigmoid(4.0) ≈ 0.98 (attention-dominant)
+            alpha = torch.sigmoid(self.alpha)
+            combined = alpha * A_out + (1.0 - alpha) * M_out
+        else:
+            # SSM disabled: pure attention
+            combined = A_out
 
         # Output projection
         if self.is_nested_encoder:
@@ -949,10 +960,8 @@ class HymbaTransXBlock(BaseAttention):
 
 
 # ===========================================================================
-# Injection (HX-FIX-09, HX-FIX-10)
+# Injection
 # ===========================================================================
-
-
 @ATTENTION_REGISTRY.register("hymba_transx_inject")
 @ATTENTION_REGISTRY.register("inject_hymba_transx")
 def inject_hymba_transx(
@@ -1023,7 +1032,7 @@ def inject_hymba_transx(
         if src is None:
             return None
 
-        # HX-FIX-10: double-injection guard
+        # Double-injection guard
         if isinstance(src, HymbaTransXBlock):
             return None
         if "HymbaTransX" in src.__class__.__name__:
