@@ -879,10 +879,21 @@ def set_train_scope(model, train_scope="all"):
     if train_scope == "all":
         for p in model.parameters():
             p.requires_grad = True
-    elif train_scope in ("mamba", "attention", "module"):
-        # FIXED: Failure Mode 4 (Scope Mismatch in bam_umoe & MLP Pruners).
-        # Expand TARGET_ATTRS to include MLP/FFN projection attributes so that
-        # pruned MLP weights (c_fc, c_proj) are not accidentally frozen during module distillation.
+    elif train_scope == "module":
+        MODULE_TRAINABLE_ATTRS = (
+            "forget_gate", "input_gate", "fusion_gate", "g_proj",
+            "lora", "adapter", "state_norm", "output_scale"
+        )
+        n_matched = 0
+        for name, p in model.named_parameters():
+            name_lower = name.lower()
+            if any(attr in name_lower for attr in MODULE_TRAINABLE_ATTRS):
+                p.requires_grad = True
+                n_matched += 1
+            else:
+                p.requires_grad = False
+        LOG.info("set_train_scope (module): matched %d target param tensors", n_matched)
+    elif train_scope in ("mamba", "attention"):
         TARGET_ATTRS = (
             "attn",
             "attention",
@@ -912,13 +923,12 @@ def set_train_scope(model, train_scope="all"):
         n_matched = 0
         for name, p in model.named_parameters():
             has_match = any(attr in name.lower() for attr in TARGET_ATTRS)
-            # If train_scope is "module", also ensure any parameter already marked trainable by an injector stays trainable
-            if has_match or (train_scope == "module" and p.requires_grad):
+            if has_match:
                 p.requires_grad = True
                 n_matched += 1
             else:
                 p.requires_grad = False
-        LOG.info("set_train_scope: matched %d target param tensors", n_matched)
+        LOG.info("set_train_scope (%s): matched %d target param tensors", train_scope, n_matched)
     else:
         raise ValueError(f"Unknown train_scope: {train_scope}")
 

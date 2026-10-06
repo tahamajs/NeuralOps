@@ -578,6 +578,9 @@ def inject_hgrn2_layer(layer=None, model=None, model_config=None, comp_config=No
             layer_list = target.encoder.layer
 
         if layer_list is not None:
+            if kwargs.get("freeze_base", True):
+                for p in target.parameters():
+                    p.requires_grad = False
             num_injected = 0
             tot = len(layer_list)
             for idx, lyr in enumerate(layer_list):
