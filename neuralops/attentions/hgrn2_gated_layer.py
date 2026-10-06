@@ -173,13 +173,13 @@ class HGRN2Layer(BaseAttention):
         self.head_dim = self.d_model // max(1, self.num_heads)
 
         # ---- Projections ----
-        self.q_proj = nn.Linear(self.d_model, self.d_model, bias=False)
-        self.k_proj = nn.Linear(self.d_model, self.d_model, bias=False)
-        self.v_proj_attn = nn.Linear(self.d_model, self.d_model, bias=False)
+        self.q_proj = nn.Linear(self.d_model, self.d_model, bias=True)
+        self.k_proj = nn.Linear(self.d_model, self.d_model, bias=True)
+        self.v_proj_attn = nn.Linear(self.d_model, self.d_model, bias=True)
 
         self.forget_gate = nn.Linear(self.d_model, self.d_model, bias=True)
         self.input_gate = nn.Linear(self.d_model, self.d_model, bias=True)
-        self.v_proj = nn.Linear(self.d_model, self.d_model, bias=False)
+        self.v_proj = nn.Linear(self.d_model, self.d_model, bias=True)
         self.g_proj = nn.Linear(self.d_model, self.d_model, bias=True)
 
         # ---- FIX 2: state_norm init = identity ----
@@ -203,12 +203,16 @@ class HGRN2Layer(BaseAttention):
         nn.init.constant_(self.g_proj.bias, _g_bias)
 
         nn.init.normal_(self.v_proj.weight, mean=0.0, std=0.02)
+        nn.init.zeros_(self.v_proj.bias)
         nn.init.normal_(self.q_proj.weight, mean=0.0, std=0.02)
+        nn.init.zeros_(self.q_proj.bias)
         nn.init.normal_(self.k_proj.weight, mean=0.0, std=0.02)
+        nn.init.zeros_(self.k_proj.bias)
         nn.init.normal_(self.v_proj_attn.weight, mean=0.0, std=0.02)
+        nn.init.zeros_(self.v_proj_attn.bias)
 
-        # ---- FIX 16: output_scale init = 0.1 (was 0.01) ----
-        _out_scale = _env_float("HGRN2_OUTPUT_SCALE", 0.1)
+        # ---- FIX 16: output_scale init = 1.0 (was 0.1/0.01) ----
+        _out_scale = _env_float("HGRN2_OUTPUT_SCALE", 1.0)
         self.output_scale = nn.Parameter(torch.full((1,), _out_scale))
 
         # ---- FIX 18: fusion_gate default = -4.0 (98% local) ----
@@ -450,9 +454,9 @@ class HGRN2Layer(BaseAttention):
         scores = torch.matmul(q, k.transpose(-1, -2)) * scale
 
         idx = torch.arange(L, device=hidden_states.device)
-        window_mask = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs() <= self.window_size
+        window_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
         if self.is_decoder:
-            causal = idx.unsqueeze(0) >= idx.unsqueeze(1)
+            causal = idx.unsqueeze(1) >= idx.unsqueeze(0)
             window_mask = window_mask & causal
         scores = scores.masked_fill(~window_mask.unsqueeze(0).unsqueeze(0), -1e4)
 
