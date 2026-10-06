@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 from neuralops.attentions.gated_delta_net import GatedDeltaNet, LoRALinear
 from neuralops.attentions.hgrn2_gated_deltanet import HGRN2GatedDeltaNet
-from neuralops.attentions.hgrn2_layer import HGRN2Layer
+from neuralops.attentions.hgrn2_gated_layer import HGRN2Layer
 from neuralops.utils.compat import get_recovery_params
 
 
