@@ -1,1 +1,1 @@
-D:\SVD_linear_Attention\results\kd_runs\hgrn2_gated_layer\20261006_224600_bs4_seq128_lr5e-05_C
+D:\SVD_linear_Attention\results\kd_runs\hgrn2_gated_layer\20261007_000133_bs4_seq128_lr5e-06_C
