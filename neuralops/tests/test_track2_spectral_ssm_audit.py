@@ -160,7 +160,7 @@ class TestTrack2Modules(unittest.TestCase):
         self._test_module_lifecycle(m, "GatedDeltaNetBlock")
 
     def test_hgrn2_layer(self):
-        from neuralops.attentions.hgrn2_layer import HGRN2Layer
+        from neuralops.attentions.hgrn2_gated_layer import HGRN2Layer
         m = HGRN2Layer(config=self.config, d_model=768)
         m.copy_weights(self.mock_attn)
         self._test_module_lifecycle(m, "HGRN2Layer")
@@ -173,7 +173,7 @@ class TestTrack2Modules(unittest.TestCase):
         self._test_module_lifecycle(m, "HGRN2GatedDeltaNet")
 
     def test_hgrn2_outer(self):
-        from neuralops.attentions.hgrn2_outer import HGRN2OuterBlock
+        from neuralops.attentions.hgrn2_gated_outer import HGRN2OuterBlock
         m = HGRN2OuterBlock(config=self.config, dim=768, num_heads=12)
         m.copy_weights(self.mock_attn)
         self._test_module_lifecycle(m, "HGRN2OuterBlock")

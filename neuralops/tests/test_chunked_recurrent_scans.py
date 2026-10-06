@@ -13,7 +13,7 @@ from neuralops.attentions.gated_delta_net import (GatedDeltaNet,
                                                   chunked_delta_rule_scan)
 from neuralops.attentions.gated_deltanet_block import GatedDeltaNetBlock
 from neuralops.attentions.hgrn2_gated_deltanet import HGRN2GatedDeltaNet
-from neuralops.attentions.hgrn2_layer import HGRN2Layer
+from neuralops.attentions.hgrn2_gated_layer import HGRN2Layer
 from neuralops.attentions.simple_ssm import SimpleSSM
 
 

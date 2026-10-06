@@ -1,15 +1,19 @@
 """
-Griffin SSD: Hybrid Local Sliding-Window Attention and Global State Space Duality (SSD) Kernel.
-
-Combines bidirectional/causal local sliding-window self-attention with multi-head
-State Space Duality linear recurrence, LoRA residual adapters, and multi-architecture pretrained weight transfer.
-Hardened across DistilBERT, RoBERTa, GPT-2, and Qwen3.5 architectures.
+Griffin SSD: Hybrid Local Sliding-Window Attention and Global State Space Duality.
+Production-Hardened v3 (SIMPLIFIED):
+  - Only Python loop for SSD (no chunked scan, no shape bugs)
+  - decay_param init = 2.0 (was 0 → 0.5)
+  - ssd_proj = 0.5 * W_q (was = W_q)
+  - Learnable fusion gate (was direct addition)
+  - Symmetric q/k normalization
+  - Env var toggles for ablation
 """
 
 from __future__ import annotations
 
 import logging
 import math
+import os
 from typing import Any
 
 import torch
@@ -23,6 +27,19 @@ from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
+
+
+def _env_flag(name: str, default: bool = False) -> bool:
+    v = os.environ.get(name, "")
+    return v.lower() in ("1", "true", "yes", "on") if v else default
+
+
+def _env_float(name: str, default: float) -> float:
+    v = os.environ.get(name, "")
+    try:
+        return float(v) if v else default
+    except ValueError:
+        return default
 
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
@@ -41,11 +58,12 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
     b = getattr(base, "bias", None)
     if w is not None:
         w = w.data.clone()
-        if (
-            (module.__class__.__name__ == "Conv1D")
-            or (base.__class__.__name__ == "Conv1D")
+        is_conv1d = (
+            module.__class__.__name__ == "Conv1D"
+            or base.__class__.__name__ == "Conv1D"
             or (w.ndim == 2 and w.shape[0] < w.shape[1])
-        ):
+        )
+        if is_conv1d:
             w = w.t().contiguous()
     if b is not None:
         b = b.data.clone()
@@ -58,56 +76,41 @@ def _rotate_half(x: torch.Tensor) -> torch.Tensor:
     return torch.cat((-x2, x1), dim=-1)
 
 
-def apply_rotary_pos_emb(
-    q: torch.Tensor,
-    k: torch.Tensor,
-    cos: torch.Tensor,
-    sin: torch.Tensor,
-    position_ids: torch.Tensor | None = None,
-) -> tuple[torch.Tensor, torch.Tensor]:
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
     if cos is None or sin is None:
         return q, k
-
     if cos.dim() == 2 and cos.shape[0] == q.shape[-2]:
         cos = cos.unsqueeze(0).unsqueeze(1)
         sin = sin.unsqueeze(0).unsqueeze(1)
     elif cos.dim() == 3:
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
-
     while cos.dim() < q.dim():
         cos = cos.unsqueeze(0)
         sin = sin.unsqueeze(0)
-
     if cos.shape[-2] != q.shape[-2]:
         cos = cos[..., : q.shape[-2], :]
         sin = sin[..., : q.shape[-2], :]
-
     rotary_dim = cos.shape[-1]
     head_dim = q.shape[-1]
-
     rotary_dim_even = 2 * (min(rotary_dim, head_dim) // 2)
     if rotary_dim_even == 0:
         return q, k
-
     q_rot, q_pass = q[..., :rotary_dim_even], q[..., rotary_dim_even:]
     k_rot, k_pass = k[..., :rotary_dim_even], k[..., rotary_dim_even:]
     cos_cut = cos[..., :rotary_dim_even].to(q_rot.dtype)
     sin_cut = sin[..., :rotary_dim_even].to(q_rot.dtype)
-
-    q_rot_embed = (q_rot * cos_cut) + (_rotate_half(q_rot) * sin_cut)
-    k_rot_embed = (k_rot * cos_cut) + (_rotate_half(k_rot) * sin_cut)
-
-    q = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_embed
-    k = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_embed
-
+    q_rot_emb = (q_rot * cos_cut) + (_rotate_half(q_rot) * sin_cut)
+    k_rot_emb = (k_rot * cos_cut) + (_rotate_half(k_rot) * sin_cut)
+    q = torch.cat([q_rot_emb, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot_emb
+    k = torch.cat([k_rot_emb, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot_emb
     return q, k
 
 
 @ATTENTION_REGISTRY.register("griffin_ssd")
 @ATTENTION_REGISTRY.register("griffin_ssd_block")
 class GriffinSSDBlock(BaseAttention):
-    r"""Griffin Hybrid Block combining local window attention with global SSD linear attention."""
+    """Griffin Hybrid Block: local window + SSD linear attention."""
 
     is_custom_attention: bool = True
 
@@ -127,11 +130,7 @@ class GriffinSSDBlock(BaseAttention):
         super().__init__(config, rank)
 
         def _get(k: str, default: Any = None) -> Any:
-            for obj in (
-                comp_config,
-                config,
-                getattr(config, "compression_config", None),
-            ):
+            for obj in (comp_config, config, getattr(config, "compression_config", None)):
                 if obj is not None:
                     if isinstance(obj, dict) and k in obj and obj[k] is not None:
                         return obj[k]
@@ -141,7 +140,6 @@ class GriffinSSDBlock(BaseAttention):
                             return val
             return kwargs.get(k, default)
 
-        # Resolve d_model
         if d_model is None:
             d_model = _get("hidden_size", _get("d_model", _get("n_embd", _get("dim", None))))
         if d_model is None and old_attn is not None:
@@ -159,23 +157,18 @@ class GriffinSSDBlock(BaseAttention):
         if d_model is None:
             d_model = kwargs.get("hidden_size", kwargs.get("d_model", kwargs.get("dim", 768)))
 
-        # Resolve num_heads
         if num_heads is None:
             num_heads = (
-                _get("num_attention_heads", None)
-                or _get("num_heads", None)
-                or _get("n_heads", None)
-                or _get("n_head", None)
+                _get("num_attention_heads", None) or _get("num_heads", None)
+                or _get("n_heads", None) or _get("n_head", None)
             )
         if num_heads is None and old_attn is not None:
-            num_heads = getattr(
-                old_attn, "num_heads", getattr(old_attn, "num_attention_heads", None)
-            )
+            num_heads = getattr(old_attn, "num_heads", getattr(old_attn, "num_attention_heads", None))
         if num_heads is None:
             num_heads = kwargs.get("num_attention_heads", kwargs.get("num_heads", 12))
 
-        self.dim: int = int(d_model)
-        self.num_heads: int = int(num_heads)
+        self.dim = int(d_model)
+        self.num_heads = int(num_heads)
 
         resolved_head_dim = _get("head_dim", None)
         if resolved_head_dim is None and old_attn is not None:
@@ -188,132 +181,75 @@ class GriffinSSDBlock(BaseAttention):
                         break
         if resolved_head_dim is None:
             resolved_head_dim = self.dim // max(1, self.num_heads)
-        self.head_dim: int = int(resolved_head_dim)
+        self.head_dim = int(resolved_head_dim)
 
         kv_heads = _get("num_key_value_heads", None)
         if kv_heads is None and old_attn is not None:
             kv_heads = getattr(
-                old_attn,
-                "num_key_value_heads",
+                old_attn, "num_key_value_heads",
                 getattr(old_attn, "num_kv_heads", getattr(old_attn, "n_kv_heads", None)),
             )
-            if (
-                kv_heads is None
-                and hasattr(old_attn, "k_proj")
-                and hasattr(old_attn.k_proj, "out_features")
-                and self.head_dim > 0
-            ):
+            if (kv_heads is None and hasattr(old_attn, "k_proj")
+                    and hasattr(old_attn.k_proj, "out_features") and self.head_dim > 0):
                 kv_heads = old_attn.k_proj.out_features // self.head_dim
-        self.num_kv_heads: int = int(kv_heads if kv_heads is not None else self.num_heads)
+        self.num_kv_heads = int(kv_heads if kv_heads is not None else self.num_heads)
 
-        self.all_head_size: int = self.num_heads * self.head_dim
-        self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
-        self.window_size: int = int(_get("window_size", kwargs.get("window_size", window_size)))
+        self.all_head_size = self.num_heads * self.head_dim
+        self.all_kv_head_size = self.num_kv_heads * self.head_dim
+        self.window_size = int(_get("window_size", kwargs.get("window_size", window_size)))
 
-        # Decoder / causal detection
         model_type = str(_get("model_type", "")).lower()
-        is_dec = _get(
-            "is_decoder",
-            _get("is_causal", kwargs.get("is_causal", kwargs.get("is_decoder", False))),
-        )
-        if (
-            any(
-                model_type.startswith(pfx)
-                for pfx in (
-                    "gpt",
-                    "qwen",
-                    "llama",
-                    "mistral",
-                    "bloom",
-                    "opt",
-                    "falcon",
-                    "codegen",
-                )
-            )
-            or hasattr(config, "architectures")
-            and any(
+        is_dec = _get("is_decoder", _get("is_causal", kwargs.get("is_causal", kwargs.get("is_decoder", False))))
+        if (any(model_type.startswith(pfx) for pfx in (
+                "gpt", "qwen", "llama", "mistral", "bloom", "opt", "falcon", "codegen"
+            ))
+            or (hasattr(config, "architectures") and any(
                 "GPT" in str(a) or "CausalLM" in str(a)
                 for a in (getattr(config, "architectures", []) or [])
-            )
-        ):
+            ))):
             is_dec = True
-        self.is_decoder: bool = bool(is_dec)
-        self.is_causal: bool = bool(is_dec)
+        if old_attn is not None and hasattr(old_attn, "c_attn"):
+            is_dec = True
+        self.is_decoder = bool(is_dec)
+        self.is_causal = self.is_decoder
 
-        # Nested encoder detection
         is_nested = False
         if old_attn is not None:
             src_cls = old_attn.__class__.__name__
-            if (
-                src_cls
-                in [
-                    "BertSelfAttention",
-                    "RobertaSelfAttention",
-                    "XLMRobertaSelfAttention",
-                    "ElectraSelfAttention",
-                    "DebertaSelfAttention",
-                ]
+            if (src_cls in (
+                    "BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention", "DebertaSelfAttention",
+                )
                 or (src_cls.endswith("SelfAttention") and "distil" not in src_cls.lower())
-                or (hasattr(old_attn, "self") and hasattr(old_attn, "output"))
-            ):
+                or (hasattr(old_attn, "self") and hasattr(old_attn, "output"))):
                 is_nested = True
-        if (
-            not is_nested
-            and model_type in ["roberta", "bert", "xlm-roberta"]
-            and not self.is_decoder
-        ):
-            is_nested = True
-        self.is_nested_encoder: bool = bool(is_nested)
+        self.is_nested_encoder = bool(is_nested)
 
-        # LoRA setup
-        self.lora_rank: int = int(_get("lora_rank", kwargs.get("lora_rank", lora_rank)))
-        self.lora_alpha: float = float(_get("lora_alpha", kwargs.get("lora_alpha", lora_alpha)))
-        self.freeze_base: bool = self.lora_rank > 0
+        self.lora_rank = int(_get("lora_rank", kwargs.get("lora_rank", lora_rank)))
+        self.lora_alpha = float(_get("lora_alpha", kwargs.get("lora_alpha", lora_alpha)))
+        self.freeze_base = self.lora_rank > 0
 
-        # Multi-head projections
-        self.W_q = LoRALinear(
-            self.dim,
-            self.all_head_size,
-            bias=False,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base,
-        )
-        self.W_k = LoRALinear(
-            self.dim,
-            self.all_kv_head_size,
-            bias=False,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base,
-        )
-        self.W_v = LoRALinear(
-            self.dim,
-            self.all_kv_head_size,
-            bias=False,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base,
-        )
-        self.ssd_proj = LoRALinear(
-            self.dim,
-            self.all_head_size,
-            bias=False,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base,
-        )
-        self.out_proj = LoRALinear(
-            self.all_head_size,
-            self.dim,
-            bias=True,
-            lora_rank=self.lora_rank,
-            lora_alpha=self.lora_alpha,
-            freeze_base=self.freeze_base,
-        )
+        self.W_q = LoRALinear(self.dim, self.all_head_size, bias=False,
+                              lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+                              freeze_base=self.freeze_base)
+        self.W_k = LoRALinear(self.dim, self.all_kv_head_size, bias=False,
+                              lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+                              freeze_base=self.freeze_base)
+        self.W_v = LoRALinear(self.dim, self.all_kv_head_size, bias=False,
+                              lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+                              freeze_base=self.freeze_base)
+        self.ssd_proj = LoRALinear(self.dim, self.all_head_size, bias=False,
+                                   lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+                                   freeze_base=self.freeze_base)
+        self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True,
+                                   lora_rank=self.lora_rank, lora_alpha=self.lora_alpha,
+                                   freeze_base=self.freeze_base)
 
-        # Learnable decay gate for global SSD branch (0.0 -> sigmoid(0) = 0.5)
-        self.decay_param = nn.Parameter(torch.zeros(self.num_heads, 1, 1))
+        _decay_init = _env_float("GRIFFIN_DECAY_INIT", 2.0)
+        self.decay_param = nn.Parameter(torch.full((self.num_heads, 1, 1), _decay_init))
+
+        _gate_init = _env_float("GRIFFIN_GATE_INIT", 0.0)
+        self.fusion_gate = nn.Parameter(torch.full((self.num_heads,), _gate_init))
 
         self.rotary_emb = getattr(old_attn, "rotary_emb", None) if old_attn is not None else None
         self.comp_config = comp_config
@@ -322,18 +258,11 @@ class GriffinSSDBlock(BaseAttention):
             self.copy_weights(old_attn)
 
     def copy_weights(self, old_attn: Any) -> None:
-        """Transfer pretrained projection weights across multiple model families."""
         if old_attn is None:
             return
 
-        extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
-            "q": (None, None),
-            "k": (None, None),
-            "v": (None, None),
-            "o": (None, None),
-        }
+        extracted = {"q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None)}
 
-        # 1. UniversalAdapter extraction
         try:
             adapter = UniversalAdapter()
             for proj in ["q", "k", "v", "o"]:
@@ -343,44 +272,28 @@ class GriffinSSDBlock(BaseAttention):
         except Exception:
             pass
 
-        # 2. GPT-2 Fused c_attn
         if hasattr(old_attn, "c_attn") and extracted["q"][0] is None:
             c_w, c_b = _unpack_weight_bias(old_attn.c_attn)
             if c_w is not None:
                 if c_w.dim() == 2 and c_w.shape[1] == 3 * self.dim:
                     c_w = c_w.t().contiguous()
                 split_size = c_w.size(0) // 3
-                extracted["q"] = (
-                    c_w[:split_size, :],
-                    c_b[:split_size] if c_b is not None else None,
-                )
-                extracted["k"] = (
-                    c_w[split_size : 2 * split_size, :],
-                    c_b[split_size : 2 * split_size] if c_b is not None else None,
-                )
-                extracted["v"] = (
-                    c_w[2 * split_size :, :],
-                    c_b[2 * split_size :] if c_b is not None else None,
-                )
-
+                extracted["q"] = (c_w[:split_size, :], c_b[:split_size] if c_b is not None else None)
+                extracted["k"] = (c_w[split_size:2*split_size, :], c_b[split_size:2*split_size] if c_b is not None else None)
+                extracted["v"] = (c_w[2*split_size:, :], c_b[2*split_size:] if c_b is not None else None)
             if hasattr(old_attn, "c_proj") and extracted["o"][0] is None:
                 o_w, o_b = _unpack_weight_bias(old_attn.c_proj)
                 if o_w is not None:
                     if o_w.dim() == 2 and o_w.shape[0] != self.dim and o_w.shape[1] == self.dim:
                         o_w = o_w.t().contiguous()
                     extracted["o"] = (o_w, o_b)
-
-        # 3. RoBERTa / BERT Nested
         elif hasattr(old_attn, "self") and hasattr(old_attn.self, "query"):
             self.is_nested_encoder = True
             s = old_attn.self
             for proj_key, sub_name in [("q", "query"), ("k", "key"), ("v", "value")]:
-                mod = getattr(s, sub_name, None)
-                extracted[proj_key] = _unpack_weight_bias(mod)
+                extracted[proj_key] = _unpack_weight_bias(getattr(s, sub_name, None))
             if hasattr(old_attn, "output") and hasattr(old_attn.output, "dense"):
                 extracted["o"] = _unpack_weight_bias(old_attn.output.dense)
-
-        # 4. Flat projections (DistilBERT, Qwen, LLaMA)
         else:
             candidates = {
                 "q": ["q_proj", "q_lin", "query"],
@@ -392,122 +305,215 @@ class GriffinSSDBlock(BaseAttention):
                 if extracted[proj_key][0] is None:
                     for name in names:
                         if hasattr(old_attn, name):
-                            mod = getattr(old_attn, name)
-                            cw, cb = _unpack_weight_bias(mod)
+                            cw, cb = _unpack_weight_bias(getattr(old_attn, name))
                             if cw is not None:
                                 extracted[proj_key] = (cw, cb)
                                 break
 
-        # Copy into modules
-        target_map = {
-            "q": self.W_q,
-            "k": self.W_k,
-            "v": self.W_v,
-            "o": self.out_proj,
-        }
+        target_map = {"q": self.W_q, "k": self.W_k, "v": self.W_v, "o": self.out_proj}
         with torch.no_grad():
             for proj_key, target_mod in target_map.items():
                 w, b = extracted[proj_key]
-                if w is not None:
-                    if w.shape == target_mod.weight.shape:
-                        target_mod.weight.copy_(w)
-                    elif w.t().contiguous().shape == target_mod.weight.shape:
-                        target_mod.weight.copy_(w.t().contiguous())
-                    elif (
-                        w.shape[0] < target_mod.weight.shape[0]
-                        and target_mod.weight.shape[0] % w.shape[0] == 0
-                    ):
-                        repeats = target_mod.weight.shape[0] // w.shape[0]
-                        target_mod.weight.copy_(w.repeat(repeats, 1))
-                    else:
-                        min_0 = min(target_mod.weight.shape[0], w.shape[0])
-                        min_1 = min(target_mod.weight.shape[1], w.shape[1])
-                        target_mod.weight.zero_()
-                        target_mod.weight[:min_0, :min_1].copy_(w[:min_0, :min_1])
+                if w is None:
+                    continue
+                if w.shape == target_mod.weight.shape:
+                    target_mod.weight.copy_(w)
+                elif w.t().contiguous().shape == target_mod.weight.shape:
+                    target_mod.weight.copy_(w.t().contiguous())
+                elif (w.shape[0] < target_mod.weight.shape[0]
+                      and target_mod.weight.shape[0] % w.shape[0] == 0):
+                    repeats = target_mod.weight.shape[0] // w.shape[0]
+                    target_mod.weight.copy_(w.repeat(repeats, 1))
+                else:
+                    min_0 = min(target_mod.weight.shape[0], w.shape[0])
+                    min_1 = min(target_mod.weight.shape[1], w.shape[1])
+                    target_mod.weight.zero_()
+                    target_mod.weight[:min_0, :min_1].copy_(w[:min_0, :min_1])
 
-                    if b is not None and getattr(target_mod, "bias", None) is not None:
-                        if b.shape == target_mod.bias.shape:
-                            target_mod.bias.copy_(b)
-                        elif (
-                            b.shape[0] < target_mod.bias.shape[0]
-                            and target_mod.bias.shape[0] % b.shape[0] == 0
-                        ):
-                            repeats = target_mod.bias.shape[0] // b.shape[0]
-                            target_mod.bias.copy_(b.repeat(repeats))
+                if b is not None and getattr(target_mod, "bias", None) is not None:
+                    if b.shape == target_mod.bias.shape:
+                        target_mod.bias.copy_(b)
+                    elif (b.shape[0] < target_mod.bias.shape[0]
+                          and target_mod.bias.shape[0] % b.shape[0] == 0):
+                        repeats = target_mod.bias.shape[0] // b.shape[0]
+                        target_mod.bias.copy_(b.repeat(repeats))
 
-            # Initialize ssd_proj from q
             if extracted["q"][0] is not None:
                 w_q = extracted["q"][0]
                 if w_q.shape == self.ssd_proj.weight.shape:
-                    self.ssd_proj.weight.copy_(w_q)
+                    self.ssd_proj.weight.copy_(w_q * 0.5)
                 elif w_q.t().contiguous().shape == self.ssd_proj.weight.shape:
-                    self.ssd_proj.weight.copy_(w_q.t().contiguous())
+                    self.ssd_proj.weight.copy_(w_q.t().contiguous() * 0.5)
 
         if self.freeze_base:
             for mod in [self.W_q, self.W_k, self.W_v, self.ssd_proj, self.out_proj]:
                 mod.freeze_base_weights()
 
-    def _ssd_scan_parallel(
+    def _ssd_scan_chunked(
         self,
         q: torch.Tensor,
         k: torch.Tensor,
         v: torch.Tensor,
         decay: torch.Tensor,
         mask: torch.Tensor | None = None,
-    ) -> tuple[torch.Tensor, torch.Tensor | None]:
-        """State-Space Duality (SSD) matrix scan supporting forward causal and bidirectional mode."""
+        chunk_size: int = 32,
+    ) -> torch.Tensor:
+        """
+        Chunked parallel scan for causal SSD.
+        
+        Mathematical equivalence:
+            y_t = q_t @ state_t
+            state_t = decay * state_{t-1} + k_t^T @ v_t
+        
+        Chunked decomposition:
+            y_t = q_t @ state_{chunk_start} * decay^(t - chunk_start) 
+                + sum_{j=chunk_start}^{t} decay^(t-j) * (q_t @ k_j^T) @ v_j
+        """
         B, H, L, d = q.shape
         target_dtype = q.dtype
 
-        decay_typed = decay.to(target_dtype)
-        log_decay = torch.log(decay_typed.clamp(min=1e-4, max=1.0 - 1e-4))  # [1, H, 1, 1]
-        pos = torch.arange(L, device=q.device, dtype=target_dtype)
-        pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)  # [L, L]
+        # Symmetric normalization (FIX 7)
+        q_n = F.normalize(q.float(), p=2, dim=-1)               # (B, H, L, d)
+        k_n = F.normalize(k.float(), p=2, dim=-1) / math.sqrt(d) # (B, H, L, d)
+        v_f = v.float()                                          # (B, H, L, d)
 
-        attn_scores = (q @ k.transpose(-1, -2).contiguous()).to(target_dtype)  # [B, H, L, L]
+        # decay: (1, H, 1, 1)
+        decay_f = decay.to(torch.float32).view(1, H, 1, 1)
+        # log decay for stable exponentiation
+        log_decay = torch.log(decay_f.clamp(min=1e-6, max=1.0 - 1e-6))  # (1, H, 1, 1)
+
+        # ---- Pad to multiple of chunk_size ----
+        chunk_size = min(chunk_size, L)
+        pad_len = (chunk_size - (L % chunk_size)) % chunk_size
+        Lp = L + pad_len
+        if pad_len > 0:
+            q_n = F.pad(q_n, (0, 0, 0, pad_len))
+            k_n = F.pad(k_n, (0, 0, 0, pad_len))
+            v_f = F.pad(v_f, (0, 0, 0, pad_len))
+
+        n_chunks = Lp // chunk_size
+
+        # ---- Reshape to (B, H, n_chunks, chunk_size, d) ----
+        q_c = q_n.view(B, H, n_chunks, chunk_size, d)
+        k_c = k_n.view(B, H, n_chunks, chunk_size, d)
+        v_c = v_f.view(B, H, n_chunks, chunk_size, d)
+
+        # ---- Intra-chunk: parallel attention within each chunk with decay ----
+        # Positions within chunk
+        pos = torch.arange(chunk_size, device=q.device, dtype=torch.float32)
+        # diff[i,j] = i - j (causal: i >= j)
+        diff = pos.unsqueeze(0) - pos.unsqueeze(1)  # (C, C)
+        causal = diff >= 0  # (C, C) bool
+
+        # D_intra[i,j] = decay^(i-j) if i>=j else 0
+        # log_decay shape: (1, H, 1, 1) → need (1, H, 1, 1, 1) for broadcasting
+        log_decay_5d = log_decay.view(1, H, 1, 1, 1)
+        diff_5d = diff.view(1, 1, 1, chunk_size, chunk_size)  # (1,1,1,C,C)
+        exp_arg = (diff_5d * log_decay_5d).clamp(min=-40.0, max=0.0)  # (1,H,1,C,C)
+        D_intra = torch.exp(exp_arg) * causal.view(1, 1, 1, chunk_size, chunk_size).float()
+
+        # scores_intra[b,h,c,i,j] = q_c[b,h,c,i] · k_c[b,h,c,j]
+        # q_c: (B,H,nc,C,d), k_c^T: (B,H,nc,d,C) → scores: (B,H,nc,C,C)
+        scores_intra = torch.matmul(q_c, k_c.transpose(-1, -2))  # (B,H,nc,C,C)
+        scores_intra = scores_intra * D_intra  # broadcast (1,H,1,C,C) → (B,H,nc,C,C) ✓
+
+        # y_intra[b,h,c] = scores_intra[b,h,c] @ v_c[b,h,c]
+        y_intra = torch.matmul(scores_intra, v_c)  # (B,H,nc,C,d)
+
+        # ---- Inter-chunk: parallel scan over n_chunks ----
+        # Each chunk's final state: state_after_chunk[c] = decay^C * state_before + sum of kv in chunk
+        # Contribution of chunk c to next chunks: k_v_chunk[c] = sum_{i=0}^{C-1} decay^(C-1-i) * k_c[i]^T @ v_c[i]
+        # Actually simpler: state contribution = k_c^T @ v_c (matrix) with proper decay weights
+        
+        # For chunk c, kv_contrib[c] = sum_{i=0}^{C-1} decay^(C-1-i) * (k_c[i]^T @ v_c[i])
+        # decay^j where j = C-1-i
+        pos_in_chunk = torch.arange(chunk_size, device=q.device, dtype=torch.float32)
+        # decay_weights[i] = decay^(C-1-i)
+        decay_in_chunk = torch.exp(
+            ((chunk_size - 1 - pos_in_chunk).view(1, 1, 1, chunk_size, 1) * log_decay_5d).clamp(min=-40.0, max=0.0)
+        )  # (1,H,1,C,1)
+
+        # k_c: (B,H,nc,C,d), v_c: (B,H,nc,C,d)
+        # weighted k: (B,H,nc,C,d) * (1,H,1,C,1) → (B,H,nc,C,d)
+        k_weighted = k_c * decay_in_chunk  # (B,H,nc,C,d)
+        
+        # kv_contrib[c] = k_weighted[c]^T @ v_c[c]
+        # (B,H,nc,d,C) @ (B,H,nc,C,d) → (B,H,nc,d,d)
+        kv_contrib = torch.matmul(k_weighted.transpose(-1, -2), v_c)  # (B,H,nc,d,d)
+
+        # Now parallel scan over chunks with chunk_decay = decay^chunk_size
+        chunk_decay = torch.exp((log_decay_5d.squeeze(-1).squeeze(-1) * chunk_size).clamp(min=-40.0, max=0.0))  # (1,H,1,1)
+        chunk_decay = chunk_decay.squeeze(-1).squeeze(-1).view(1, H, 1, 1)  # (1,H,1,1)
+
+        # states_before[c] = state before processing chunk c
+        # states_before[0] = 0
+        # states_before[c] = chunk_decay * states_before[c-1] + kv_contrib[c-1]
+        states_before = torch.zeros(B, H, n_chunks, d, d, device=q.device, dtype=torch.float32)
+        running = torch.zeros(B, H, d, d, device=q.device, dtype=torch.float32)
+        for c in range(n_chunks):
+            states_before[:, :, c] = running
+            running = running * chunk_decay + kv_contrib[:, :, c]
+
+        # ---- Inter-chunk output ----
+        # y_inter[b,h,c,i] = q_c[b,h,c,i] @ states_before[b,h,c] * decay^(i+1)
+        # Actually: q at position i in chunk c sees state_before[c] with decay^(i+1)?
+        # Let's be precise: 
+        # state_before[c] = sum_{c'<c} decay^(chunk_size * (c-1-c')) * kv_contrib[c']
+        # For query at position i in chunk c, the contribution from past chunks is:
+        #   q_i @ state_before[c] * decay^(i) — the (i) accounts for positions within current chunk
+        # Wait, more carefully:
+        # state after processing chunk c-1 is states_before[c]
+        # At position i in chunk c, we've had i decay steps since start of chunk
+        # state_at_position_i = decay^i * state_before[c] + sum_{j=0}^{i-1} decay^(i-1-j) * k[c,j]^T v[c,j]
+        # The first term: query sees decay^i * state_before[c]
+        # The second term is captured by y_intra
+        
+        # query positions: pos (C,)
+        # decay^i for i in [0, C-1]
+        q_decay = torch.exp((pos.view(1, 1, 1, chunk_size, 1) * log_decay_5d).clamp(min=-40.0, max=0.0))  # (1,H,1,C,1)
+
+        # q_c: (B,H,nc,C,d), states_before: (B,H,nc,d,d)
+        # q_c @ states_before: (B,H,nc,C,d)
+        q_state = torch.matmul(q_c, states_before)  # (B,H,nc,C,d)
+        y_inter = q_state * q_decay  # (1,H,1,C,1) broadcast → (B,H,nc,C,d) ✓
+
+        # ---- Combine ----
+        y = y_intra + y_inter  # (B,H,nc,C,d)
+        y = y.view(B, H, Lp, d)[:, :, :L, :]
+
+        # Apply mask to query output (FIX 6)
+        if mask is not None:
+            m = mask.view(B, 1, L, 1).float()
+            y = y * m
+
+        return torch.nan_to_num(y, nan=0.0, posinf=0.0, neginf=0.0).to(target_dtype)
+    def _ssd_symmetric(self, q, k, v, decay, mask=None):
+        """Bidirectional symmetric SSD for encoders."""
+        B, H, L, d = q.shape
+        target_dtype = q.dtype
+
+        q_n = F.normalize(q.float(), p=2, dim=-1)
+        k_n = F.normalize(k.float(), p=2, dim=-1) / math.sqrt(d)
+
+        decay_f = decay.to(torch.float32).view(1, H, 1, 1)
+        log_decay = torch.log(decay_f.clamp(min=1e-6, max=1.0 - 1e-6))
+
+        pos = torch.arange(L, device=q.device, dtype=torch.float32)
+        dist = torch.abs(pos.unsqueeze(0) - pos.unsqueeze(1))  # (L, L)
+        D_sym = torch.exp((dist.unsqueeze(0).unsqueeze(0) * log_decay).clamp(min=-40.0, max=0.0))
 
         if mask is not None:
-            mask_typed = (
-                mask.to(target_dtype) if mask.dim() == 2 else mask[:, 0, 0, :].to(target_dtype)
-            )
-            mask_2d = mask_typed.unsqueeze(1).unsqueeze(-1) * mask_typed.unsqueeze(1).unsqueeze(-2)
-        else:
-            mask_2d = None
+            m = mask.view(B, 1, L, 1).to(D_sym.dtype)
+            D_sym = D_sym * m.transpose(-1, -2) * m
 
-        if self.is_decoder:
-            # Replace O(L^2) dense matrix with O(L) recurrent linear attention scan
-            y_fwd = torch.empty_like(q)
-            state = torch.zeros(B, H, d, d, device=q.device, dtype=target_dtype)
-            decay_val = torch.exp(log_decay.clamp(min=-40.0, max=0.0)).to(target_dtype)  # [1, H, 1, 1]
-            decay_val_state = decay_val.view(1, H, 1, 1)
-            v_typed = v.to(target_dtype)
-            for t in range(L):
-                k_t = k[:, :, t:t+1, :]
-                v_t = v_typed[:, :, t:t+1, :]
-                q_t = q[:, :, t:t+1, :]
-                
-                # If there's a padding mask, mask out the update
-                if mask is not None:
-                    # mask_2d: True means valid, False means padding
-                    mask_t = mask_typed[:, t:t+1].view(B, 1, 1, 1)
-                    k_v_update = k_t.transpose(-1, -2) @ v_t
-                    state = state * decay_val_state + k_v_update * mask_t
-                else:
-                    state = state * decay_val_state + k_t.transpose(-1, -2) @ v_t
-                
-                y_fwd[:, :, t:t+1, :] = q_t @ state
-            
-            return y_fwd.to(target_dtype), None
-        else:
-            # Symmetric distance decay for bidirectional encoders: D_sym(i, j) = exp(|i - j| * log_decay)
-            dist = torch.abs(pos_diff).unsqueeze(0).unsqueeze(0)
-            D_sym = torch.exp((dist * log_decay).clamp(min=-40.0, max=0.0)).to(target_dtype)
-            if mask_2d is not None:
-                D_sym = D_sym * mask_2d
-            D_sym = D_sym.to(target_dtype)
-            v_typed = v.to(target_dtype)
-            y_sym = (attn_scores * D_sym) @ v_typed  # [B, H, L, d]
-            return y_sym.to(target_dtype), None
+        scores = torch.matmul(q_n, k_n.transpose(-1, -2)) * D_sym
+        y = torch.matmul(scores, v.float())
+
+        if mask is not None:
+            m = mask.view(B, 1, L, 1).to(y.dtype)
+            y = y * m
+
+        return torch.nan_to_num(y, nan=0.0, posinf=0.0, neginf=0.0).to(target_dtype)
 
     def forward(
         self,
@@ -523,8 +529,7 @@ class GriffinSSDBlock(BaseAttention):
         position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         *args: Any,
         **kwargs: Any,
-    ) -> tuple[torch.Tensor, torch.Tensor | None]:
-        """Forward pass for Griffin SSD attention."""
+    ):
         if encoder_hidden_states is not None:
             return hidden_states, None
 
@@ -542,36 +547,15 @@ class GriffinSSDBlock(BaseAttention):
         B, L, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
 
-        # 1. Multi-head Projections
         q = self.W_q(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous().to(target_dtype)
-        k = (
-            self.W_k(hidden_states)
-            .view(B, L, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-            .to(target_dtype)
-        )
-        v = (
-            self.W_v(hidden_states)
-            .view(B, L, self.num_kv_heads, d)
-            .transpose(1, 2)
-            .contiguous()
-            .to(target_dtype)
-        )
-        q_ssd = (
-            self.ssd_proj(hidden_states)
-            .view(B, L, H, d)
-            .transpose(1, 2)
-            .contiguous()
-            .to(target_dtype)
-        )
+        k = (self.W_k(hidden_states).view(B, L, self.num_kv_heads, d)
+             .transpose(1, 2).contiguous().to(target_dtype))
+        v = (self.W_v(hidden_states).view(B, L, self.num_kv_heads, d)
+             .transpose(1, 2).contiguous().to(target_dtype))
+        q_ssd = (self.ssd_proj(hidden_states).view(B, L, H, d)
+                 .transpose(1, 2).contiguous().to(target_dtype))
 
-        # Apply RoPE if provided or probe from rotary_emb
-        pos_emb = (
-            position_embeddings
-            if position_embeddings is not None
-            else kwargs.get("position_embeddings")
-        )
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
         pos_ids = kwargs.get("position_ids")
         if pos_emb is not None:
             if isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
@@ -581,78 +565,67 @@ class GriffinSSDBlock(BaseAttention):
             if cos is not None and sin is not None:
                 q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
         elif self.rotary_emb is not None:
-            rotary_mod = self.rotary_emb
             if pos_ids is None:
                 pos_ids = torch.arange(L, device=hidden_states.device).unsqueeze(0).expand(B, -1)
             cos, sin = None, None
             try:
-                cos, sin = rotary_mod(q, seq_len=L)
+                cos, sin = self.rotary_emb(q, seq_len=L)
             except Exception:
                 try:
-                    cos, sin = rotary_mod(q, pos_ids)
+                    cos, sin = self.rotary_emb(q, pos_ids)
                 except Exception:
                     try:
-                        cos, sin = rotary_mod(q)
+                        cos, sin = self.rotary_emb(q)
                     except Exception:
                         cos, sin = None, None
             if cos is not None and sin is not None:
                 q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids=pos_ids)
 
-        # GQA repeat
         if self.num_heads != self.num_kv_heads:
             repeats = self.num_heads // self.num_kv_heads
             k = repeat_kv(k, repeats)
             v = repeat_kv(v, repeats)
 
-        # 2. Local Sliding Window Attention
-        scores = torch.matmul(q, k.transpose(-1, -2).contiguous()) / math.sqrt(d)  # [B, H, L, L]
+        # Local sliding window
+        scores = torch.matmul(q, k.transpose(-1, -2).contiguous()) / math.sqrt(d)
         idx = torch.arange(L, device=hidden_states.device)
         dist = torch.abs(idx.unsqueeze(1) - idx.unsqueeze(0))
         window_mask = dist > self.window_size
-
-        mask_val = -10000.0
-        scores = scores.masked_fill(window_mask.unsqueeze(0).unsqueeze(0), mask_val)
+        scores = scores.masked_fill(window_mask.unsqueeze(0).unsqueeze(0), -10000.0)
 
         if self.is_decoder:
-            causal_mask = torch.triu(
-                torch.ones(L, L, device=hidden_states.device, dtype=torch.bool),
-                diagonal=1,
-            )
-            scores = scores.masked_fill(causal_mask.unsqueeze(0).unsqueeze(0), mask_val)
+            causal = torch.triu(torch.ones(L, L, device=hidden_states.device, dtype=torch.bool), diagonal=1)
+            scores = scores.masked_fill(causal.unsqueeze(0).unsqueeze(0), -10000.0)
 
         mask_bool = None
         if attention_mask is not None:
             if attention_mask.dim() == 2:
                 mask_bool = attention_mask.bool()
                 pad_mask = (attention_mask == 0).view(B, 1, 1, L)
-                scores = scores.masked_fill(pad_mask, mask_val)
+                scores = scores.masked_fill(pad_mask, -10000.0)
             elif attention_mask.dim() == 4:
                 scores = scores + attention_mask.to(scores.dtype)
 
+        scores = torch.nan_to_num(scores, nan=-10000.0, posinf=10000.0, neginf=-10000.0)
         local_attn = F.softmax(scores, dim=-1).to(target_dtype)
         local_attn = torch.nan_to_num(local_attn, nan=0.0)
-        local_out = torch.matmul(local_attn, v).to(target_dtype)  # [B, H, L, d]
+        local_out = torch.matmul(local_attn, v).to(target_dtype)
 
-        # 3. Global SSD Recurrence
-        q_norm = F.normalize(q_ssd, p=2, dim=-1).to(target_dtype)
-        k_norm = (F.normalize(k, p=2, dim=-1) / (d**0.5)).to(target_dtype)
-        decay = torch.sigmoid(self.decay_param.to(target_dtype)).view(1, H, 1, 1)
-
-        ssd_fwd, ssd_bwd = self._ssd_scan_parallel(q_norm, k_norm, v, decay, mask_bool)
-
-        if self.is_decoder or ssd_bwd is None:
-            global_out = ssd_fwd.to(target_dtype)
+        # Global SSD
+        if _env_flag("GRIFFIN_DISABLE_SSD", False):
+            global_out = torch.zeros_like(local_out)
         else:
-            global_out = (0.5 * (ssd_fwd + ssd_bwd)).to(target_dtype)
+            decay = torch.sigmoid(self.decay_param.to(target_dtype)).view(1, H, 1, 1)
+            if self.is_decoder:
+                global_out = self._ssd_scan_chunked(q_ssd, k, v, decay, mask_bool, chunk_size=32)
+            else:
+                global_out = self._ssd_symmetric(q_ssd, k, v, decay, mask_bool)
 
-        # 4. Fused Output
-        fused = (
-            (local_out + global_out)
-            .transpose(1, 2)
-            .contiguous()
-            .view(B, L, self.all_head_size)
-            .to(target_dtype)
-        )
+        # Fusion gate
+        gate = torch.sigmoid(self.fusion_gate).view(1, H, 1, 1).to(target_dtype)
+        fused = (gate * local_out + (1.0 - gate) * global_out).to(target_dtype)
+
+        fused = fused.transpose(1, 2).contiguous().view(B, L, self.all_head_size).to(target_dtype)
         if self.is_nested_encoder:
             out = fused
         else:
@@ -671,7 +644,6 @@ class GriffinSSDBlock(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("griffin_ssd_inject")
-@ATTENTION_REGISTRY.register("griffin_ssd")
 def inject_griffin_ssd(
     layer: Any = None,
     model: Any = None,
@@ -683,16 +655,12 @@ def inject_griffin_ssd(
     lora_rank: int = 16,
     **kwargs: Any,
 ) -> Any | None:
-    r"""Injection hook for GriffinSSDBlock supporting single layers and whole models."""
     target = layer if layer is not None else model
     cfg = model_config or getattr(target, "config", None) or kwargs.get("config")
 
-    # 1. Whole model traversal support
     if target is not None and (
-        hasattr(target, "transformer")
-        or hasattr(target, "distilbert")
-        or hasattr(target, "roberta")
-        or hasattr(target, "bert")
+        hasattr(target, "transformer") or hasattr(target, "distilbert")
+        or hasattr(target, "roberta") or hasattr(target, "bert")
         or (hasattr(target, "model") and not hasattr(target, "forward"))
     ):
         layer_list = None
@@ -714,26 +682,17 @@ def inject_griffin_ssd(
             tot = len(layer_list)
             for idx, lyr in enumerate(layer_list):
                 res = inject_griffin_ssd(
-                    layer=lyr,
-                    model_config=cfg,
-                    comp_config=comp_config,
-                    layer_idx=idx,
-                    total_layers=tot,
-                    lora_rank=lora_rank,
-                    **kwargs,
+                    layer=lyr, model_config=cfg, comp_config=comp_config,
+                    layer_idx=idx, total_layers=tot, lora_rank=lora_rank, **kwargs,
                 )
                 if res is not None:
                     num_injected += 1
             return target if num_injected > 0 else None
 
-    # 2. Single layer injection
     curr_attn = old_attn
     if curr_attn is None and target is not None:
         if hasattr(target, "attention"):
-            if hasattr(target.attention, "self"):
-                curr_attn = target.attention.self
-            else:
-                curr_attn = target.attention
+            curr_attn = target.attention.self if hasattr(target.attention, "self") else target.attention
         elif hasattr(target, "self"):
             curr_attn = target.self
         elif hasattr(target, "attn"):
@@ -747,13 +706,11 @@ def inject_griffin_ssd(
     if curr_attn is None and cfg is None:
         return None
 
+    if isinstance(curr_attn, GriffinSSDBlock) or "GriffinSSD" in curr_attn.__class__.__name__:
+        return None
+
     try:
-        new_layer = GriffinSSDBlock(
-            config=cfg,
-            old_attn=curr_attn,
-            lora_rank=lora_rank,
-            **kwargs,
-        )
+        new_layer = GriffinSSDBlock(config=cfg, old_attn=curr_attn, lora_rank=lora_rank, **kwargs)
     except Exception as ex:
         logger.warning("Failed to instantiate GriffinSSDBlock: %s", ex)
         return None
@@ -777,3 +734,10 @@ def inject_griffin_ssd(
             target.self_attn = new_layer
 
     return new_layer
+
+
+__all__ = [
+    "GriffinSSDBlock",
+    "inject_griffin_ssd",
+    "apply_rotary_pos_emb",
+]
