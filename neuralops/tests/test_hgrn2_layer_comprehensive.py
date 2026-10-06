@@ -2,7 +2,7 @@ from .testing_utils import MockConfig, DummyDistilBertAttention
 import pytest
 import torch
 import torch.nn as nn
-from neuralops.attentions.hgrn2_layer import HGRN2Layer, inject_hgrn2_layer
+from neuralops.attentions.hgrn2_gated_layer import HGRN2Layer, inject_hgrn2_layer
 
 class DummyRobertaSelfAttention(nn.Module):
     def __init__(self, dim=64):
