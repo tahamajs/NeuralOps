@@ -1,0 +1,1 @@
+D:\SVD_linear_Attention\results\kd_runs\galerkin\20261006_025956_bs2_seq128_lr5e-06_C
