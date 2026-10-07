@@ -130,8 +130,8 @@ def _detect_decoder(
 
 
 @dataclass
-class AegisConfigV5:
-    """Configuration for AegisAttention V5."""
+class SplitHeadHybridConfig:
+    """Configuration for SplitHeadHybridAttention."""
 
     svd_energy: float = 0.95
     min_rank: int = 4
@@ -526,10 +526,8 @@ def causal_kernel_linear_attention(
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("aegis_v5_module", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("AegisAttention", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("aegis_v5", supports_causal=True, supports_gqa=True)
-class AegisAttention(BaseAttention):
+@ATTENTION_REGISTRY.register("split_head_hybrid", supports_causal=True, supports_gqa=True)
+class SplitHeadHybridAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -1175,9 +1173,7 @@ class AegisAttention(BaseAttention):
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("aegis_v5_fn")
-@ATTENTION_REGISTRY.register("aegis_v5_inject")
-def inject_aegis_v5(
+def inject_split_head_hybrid(
     layer: Any = None,
     model: Any = None,
     model_config: Any = None,
@@ -1308,8 +1304,3 @@ def inject_aegis_v5(
     except Exception as e:
         logger.exception("Failed to inject AEGIS-V5: %s", e)
         return None
-
-
-# Legacy alias preserved for backward compatibility.
-AegisAttentionV5 = AegisAttention
-inject_aegis_into_distilbert = inject_aegis_v5
