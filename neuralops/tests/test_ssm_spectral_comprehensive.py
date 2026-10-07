@@ -3,6 +3,16 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 
 D = 64
 
+import pytest
+
+MODULES_TO_TEST = [
+    "mamba", "mamba_svd_flash", "spectral_mamba", "upi_stuffed_mamba",
+    "simple_ssm", "decay_linear_attention", "gated_linear_attention",
+    "factorised_matrix_state", "soa_fused_attention", "soa_attn",
+    "leka_v1", "leka_v2", "leka_v3"
+]
+
+@pytest.mark.parametrize("module_name", MODULES_TO_TEST)
 def test_module(module_name):
     print(f"Testing {module_name}...")
     try:
