@@ -206,9 +206,8 @@ class FactorizedLoRALinear(nn.Module):
 # ===========================================================================
 # Main LEKAv2 Attention
 # ===========================================================================
-@ATTENTION_REGISTRY.register("leka_v2", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("leka_v2_attention", supports_causal=True, supports_gqa=True)
-class LEKAv2Attention(BaseAttention):
+@ATTENTION_REGISTRY.register("landmark_local", supports_causal=True, supports_gqa=True)
+class LandmarkLocalAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -972,9 +971,7 @@ LEKAV2Attention = LEKAv2Attention
 # ===========================================================================
 # Injection (with recursion guard)
 # ===========================================================================
-@ATTENTION_REGISTRY.register("leka_v2_inject")
-@ATTENTION_REGISTRY.register("inject_leka_v2")
-def inject_leka_v2(
+def inject_landmark_local(
     layer: Any = None,
     model: Any = None,
     model_config: Any = None,
@@ -1099,6 +1096,3 @@ def inject_leka_v2(
     except Exception as e:
         logger.exception("inject_leka_v2 failed at layer %d: %s", layer_idx, e)
         return None
-
-
-leka_v2_inject = inject_leka_v2

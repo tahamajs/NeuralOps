@@ -242,9 +242,8 @@ class FactorizedLoRALinear(nn.Module):
 # ===========================================================================
 # Main LEKAv3 Attention
 # ===========================================================================
-@ATTENTION_REGISTRY.register("leka_v3", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("leka_v3_attention", supports_causal=True, supports_gqa=True)
-class LEKAV3Attention(BaseAttention):
+@ATTENTION_REGISTRY.register("refined_landmark", supports_causal=True, supports_gqa=True)
+class RefinedLandmarkAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -1009,9 +1008,7 @@ LEKAv3Attention = LEKAV3Attention
 # ===========================================================================
 # Injection (with recursion guard)
 # ===========================================================================
-@ATTENTION_REGISTRY.register("leka_v3_inject")
-@ATTENTION_REGISTRY.register("inject_leka_v3")
-def inject_leka_v3(
+def inject_refined_landmark(
     layer: Any = None,
     model: Any = None,
     model_config: Any = None,
@@ -1136,6 +1133,3 @@ def inject_leka_v3(
     except Exception as e:
         logger.exception("inject_leka_v3 failed at layer %d: %s", layer_idx, e)
         return None
-
-
-leka_v3_inject = inject_leka_v3
