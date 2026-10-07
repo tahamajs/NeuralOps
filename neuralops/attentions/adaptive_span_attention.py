@@ -1,15 +1,3 @@
-"""
-Adaptive Span Attention — Final Corrected Implementation.
-Based on: Sukhbaatar et al., 2019 (arXiv:1905.07799)
-
-Math:
-    z_h = sigmoid(logit_h) * S_max
-    g_{z_h}(d) = clamp((R + z_h - d) / R, 0, 1)
-
-    # FIX applied: The mask must be applied INSIDE the softmax
-    A = Softmax(S + log(g_z) + M)
-    O = (A V) W_O
-"""
 
 from __future__ import annotations
 
@@ -57,9 +45,6 @@ def get_total_span_loss(model: nn.Module, lambda_span: float = 0.01) -> torch.Te
     return torch.stack(losses).mean()
 
 
-# =============================================================================
-# RoPE helpers
-# =============================================================================
 
 
 def _rotate_half(x: torch.Tensor) -> torch.Tensor:
@@ -73,7 +58,6 @@ def _gather_cos_sin(
     sin: torch.Tensor,
     position_ids: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Gather cos/sin rows using absolute position_ids (supports cache offsets)."""
     if cos.dim() == 2:
         cos = cos.unsqueeze(0).unsqueeze(0)
         sin = sin.unsqueeze(0).unsqueeze(0)
@@ -152,11 +136,6 @@ def apply_rotary_pos_emb(
     return q, k
 
 
-# =============================================================================
-# Mask utilities
-# =============================================================================
-
-
 def _safe_mask_value(dtype: torch.dtype) -> float:
     if dtype in (torch.float16, torch.bfloat16):
         return -1e4
@@ -182,7 +161,7 @@ def _build_keep_mask(
             q_idx = torch.arange(N_q, device=device).unsqueeze(1) + offset
             k_idx = torch.arange(N_k, device=device).unsqueeze(0)
             causal = k_idx <= q_idx
-        mask = causal.unsqueeze(0).unsqueeze(0)  # [1, 1, N_q, N_k]
+        mask = causal.unsqueeze(0).unsqueeze(0) 
 
     def _combine(am: torch.Tensor) -> torch.Tensor:
         nonlocal mask
@@ -215,11 +194,6 @@ def _build_keep_mask(
         mask = em if mask is None else (mask & em)
 
     return mask
-
-
-# =============================================================================
-# LoRA Linear
-# =============================================================================
 
 
 class LoRALinear(nn.Module):
@@ -300,9 +274,6 @@ class IdentityOutProj(nn.Identity):
         pass
 
 
-# =============================================================================
-# Adaptive Span Attention
-# =============================================================================
 
 
 @ATTENTION_REGISTRY.register("adaptive_span")
@@ -465,7 +436,6 @@ class AdaptiveSpanAttention(BaseAttention):
             getattr(config, "relative_attention_max_distance", 128) if config else 128
         )
 
-        # ---------------- LoRA config ----------------
         if config is not None:
             resolved_lora_rank = getattr(
                 config,
@@ -536,9 +506,6 @@ class AdaptiveSpanAttention(BaseAttention):
                 dtype=target_dtype,
             )
 
-        # =========================================================================
-        # FIX: Initialized to 2.0 to prevent gradient vanishing
-        # =========================================================================
         self.span_logits = nn.Parameter(torch.full((self.num_heads,), 2.0, dtype=torch.float32))
 
         dropout_p = (
@@ -770,9 +737,6 @@ class AdaptiveSpanAttention(BaseAttention):
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
 
-    # -------------------------------------------------------------------------
-    # Forward
-    # -------------------------------------------------------------------------
 
     def forward(
         self,
@@ -903,7 +867,6 @@ class AdaptiveSpanAttention(BaseAttention):
         else:
             K_full, V_full = K, V
 
-        # ---------------- Scores ----------------
         scale = d**-0.5
         scores = torch.matmul(Q, K_full.transpose(-2, -1).contiguous()) * scale
 
@@ -913,9 +876,6 @@ class AdaptiveSpanAttention(BaseAttention):
         if position_bias is not None:
             scores = scores + position_bias.to(scores.dtype)
 
-        # =========================================================================
-        # FIX: Apply Adaptive Span penalty BEFORE softmax to preserve logic & gradient
-        # =========================================================================
         if not is_cross_attention:
             # FIXED: Enforce min_span floor to avoid auto-regressive Markov bigram collapse ("eseseses...")
             span = torch.clamp(torch.sigmoid(self.span_logits) * self.max_span, min=self.min_span)  # [H]
@@ -944,7 +904,6 @@ class AdaptiveSpanAttention(BaseAttention):
             span_mask = torch.log(ramp.clamp(min=1e-9)).to(scores.dtype)
             scores = scores + span_mask.unsqueeze(0)
 
-        # ---------------- Combined boolean mask ----------------
         is_causal = self.is_decoder and not is_cross_attention
         keep_mask = _build_keep_mask(
             B=B,
@@ -977,7 +936,6 @@ class AdaptiveSpanAttention(BaseAttention):
         if fully_masked is not None:
             attn = attn.masked_fill(fully_masked, 0.0)
 
-        # ---------------- Dropout + head mask ----------------
         attn = self.dropout(attn)
         if head_mask is not None:
             if head_mask.dim() == 1:
@@ -988,7 +946,6 @@ class AdaptiveSpanAttention(BaseAttention):
                 head_mask = head_mask.unsqueeze(-1)
             attn = attn * head_mask
 
-        # ---------------- Context ----------------
         context = torch.matmul(attn, V_full)
         context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
 
@@ -1025,11 +982,6 @@ class AdaptiveSpanAttention(BaseAttention):
                 return output, position_bias, attn
             return output, position_bias
         return output, attn, past_kv
-
-
-# =============================================================================
-# Injection factory
-# =============================================================================
 
 
 @ATTENTION_REGISTRY.register("adaptive_span_inject")

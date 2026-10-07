@@ -896,7 +896,8 @@ class MambaSVDFlash(BaseAttention):
         steps = range(L - 1, -1, -1) if reverse else range(L)
 
         for t in steps:
-            v_t = torch.einsum("bdr,bd->br", V_f[:, t], h)  # (B, r)
+            # V_f[:, t] is shape (B, r, D), h is (B, D)
+            v_t = torch.einsum("brd,bd->br", V_f[:, t], h)  # (B, r)
             h_trans = torch.einsum("bdr,br->bd", US[:, t], v_t)  # (B, D)
             h_next = h_trans + bx[:, t]
             if mask is not None:
