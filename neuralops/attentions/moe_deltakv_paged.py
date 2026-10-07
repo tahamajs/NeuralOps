@@ -1053,8 +1053,6 @@ class MoEDeltaKVPagedAttention(nn.Module):
 # ===========================================================================
 # Injection (MDP-FIX-06)
 # ===========================================================================
-@ATTENTION_REGISTRY.register("moe_deltakv_paged_inject")
-@ATTENTION_REGISTRY.register("inject_moe_deltakv_paged")
 def inject_moe_deltakv_paged(
     layer: Any = None,
     model: Any = None,

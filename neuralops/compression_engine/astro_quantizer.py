@@ -298,7 +298,6 @@ class AstroLinear(nn.Module):
         )
 
 
-@COMPRESSOR_REGISTRY.register("astro")
 @COMPRESSOR_REGISTRY.register("astro_quantizer")
 class AstroQuantizer(BaseCompressor):
     """
@@ -771,8 +770,6 @@ class AstroQuantizer(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("astro_factory")
-@COMPRESSOR_REGISTRY.register("astro_quantizer_factory")
 def astro_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Astro compressor factory function."""
     bits = kwargs.pop("bits", _cfg_get(comp_config, "astro_bits", _cfg_get(comp_config, "bits", 8)))

@@ -164,7 +164,6 @@ def _uniform_quantize(t: torch.Tensor, bits: int) -> tuple[torch.Tensor, torch.T
 # Compressor
 # ---------------------------------------------------------------------------
 @COMPRESSOR_REGISTRY.register("uniql_compressor")
-@COMPRESSOR_REGISTRY.register("uniql")
 class UniQLCompressor(BaseCompressor):
     """
     UniQL: Joint Truncated SVD + Uniform Quantization compressor.
@@ -533,7 +532,6 @@ class UniQLCompressor(BaseCompressor):
 # ---------------------------------------------------------------------------
 # Factory
 # ---------------------------------------------------------------------------
-@COMPRESSOR_REGISTRY.register("uniql_factory")
 def uniql_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """UniQL factory."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))

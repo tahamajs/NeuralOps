@@ -931,11 +931,6 @@ class AdaptiveSparseAttention(BaseAttention):
         return output * self.output_scale, (attn if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("adaptive_sparse_attention_inject")
-@ATTENTION_REGISTRY.register("adaptive_sparse_inject")
-@ATTENTION_REGISTRY.register("adaptive_sparse_attn_inject")
-@ATTENTION_REGISTRY.register("inject_adaptive_sparse")
-@ATTENTION_REGISTRY.register("inject_adaptive_sparse_attention")
 def inject_adaptive_sparse(
     layer: Any = None,
     model: Any = None,

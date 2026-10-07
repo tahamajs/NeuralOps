@@ -221,8 +221,6 @@ class LSCPrunedLoRALinear(nn.Module):
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("lsc_class")
-@COMPRESSOR_REGISTRY.register("lsc_compressor_class")
 class LSCCompressor(BaseCompressor):
     # LSC-FIX-01: this is a compressor, not an attention layer.
     is_custom_attention: bool = False
@@ -669,9 +667,7 @@ class LSCCompressor(BaseCompressor):
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("lsc")
 @COMPRESSOR_REGISTRY.register("lsc_compressor")
-@COMPRESSOR_REGISTRY.register("lsc_factory")
 def lsc_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """LSC Fourier spectral compressor factory."""
     rank = _cfg_get(comp_config, "lsc_rank", _cfg_get(comp_config, "rank", kwargs.pop("rank", 32)))

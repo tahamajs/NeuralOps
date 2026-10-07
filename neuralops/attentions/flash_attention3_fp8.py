@@ -971,7 +971,6 @@ class FlashAttention3FP8(BaseAttention):
         return final_out, None
 
 
-@ATTENTION_REGISTRY.register("flash3_fp8_inject")
 def inject_flash3_fp8(
     layer: Any = None,
     model: Any = None,

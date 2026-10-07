@@ -934,8 +934,6 @@ class GoldFinchAHNBlock(BaseAttention):
 # ===========================================================================
 # Injection (unchanged)
 # ===========================================================================
-@ATTENTION_REGISTRY.register("goldfinch_ahn_inject")
-@ATTENTION_REGISTRY.register("inject_goldfinch_ahn")
 def inject_goldfinch_ahn(
     layer: Any = None,
     model: Any = None,

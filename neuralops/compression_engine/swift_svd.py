@@ -29,7 +29,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-@COMPRESSOR_REGISTRY.register("swift_svd_class")
+@COMPRESSOR_REGISTRY.register("swift_svd")
 class SwiftSVDCompressor(BaseCompressor):
     is_custom_attention: bool = True
     """
@@ -501,9 +501,6 @@ class SwiftSVDCompressor(BaseCompressor):
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("swift_svd")
-@COMPRESSOR_REGISTRY.register("swift_svd_factory")
-@COMPRESSOR_REGISTRY.register("swift_svd_compressor")
 def swift_svd_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     """Swift-SVD factory function."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
@@ -522,8 +519,6 @@ def swift_svd_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) 
     return compressed_model
 
 
-@COMPRESSOR_REGISTRY.register("inject_swift_svd")
-@COMPRESSOR_REGISTRY.register("swift_svd_inject")
 def inject_swift_svd(model: Any = None, **kwargs: Any) -> Any:
     """Safe injection hook for Swift-SVD."""
     if model is None:

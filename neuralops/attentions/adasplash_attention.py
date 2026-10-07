@@ -787,9 +787,6 @@ class AdaSplashAttention(BaseAttention):
         return output, (attn if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("adasplash_inject")
-@ATTENTION_REGISTRY.register("adasplash_attention_inject")
-@ATTENTION_REGISTRY.register("inject_adasplash")
 def inject_adasplash(
     layer: Any = None,
     model: Any = None,

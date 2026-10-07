@@ -105,8 +105,6 @@ def _infer_d_model(
 # =========================================================================
 # Mamba Block
 # =========================================================================
-@ATTENTION_REGISTRY.register("mamba")
-@ATTENTION_REGISTRY.register("mamba_attention")
 @ATTENTION_REGISTRY.register("mamba_block")
 class MambaBlock(nn.Module):
     """Faithful S6 / Mamba block, production-hardened."""
@@ -783,9 +781,6 @@ Mamba = MambaBlock
 # =========================================================================
 # Injector (MB-06: no dead `rank`)
 # =========================================================================
-@ATTENTION_REGISTRY.register("mamba_module_inject")
-@ATTENTION_REGISTRY.register("mamba_inject")
-@ATTENTION_REGISTRY.register("inject_mamba")
 def inject_mamba(
     layer: Any = None,
     model: Any = None,

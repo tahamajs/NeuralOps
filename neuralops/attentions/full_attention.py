@@ -578,7 +578,6 @@ class FullAttention(BaseAttention):
 # branch for each architecture. Added idempotency guard and explicit error
 # logging for unknown architectures.
 # ============================================================================
-@ATTENTION_REGISTRY.register("full_attention_inject")
 def inject_full_attention(
     layer: Any = None,
     model: Any = None,

@@ -292,9 +292,7 @@ class LoRALinear(nn.Module):
 # ============================================================================
 
 
-@ATTENTION_REGISTRY.register("tpa", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("tpa_attention", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("tp_attention", supports_causal=True, supports_gqa=True)
 class TPAttention(BaseAttention):
     """
     Tensor Product Attention v2 with asymmetric rank support.
@@ -998,9 +996,6 @@ class TPAttention(BaseAttention):
 # ============================================================================
 
 
-@ATTENTION_REGISTRY.register("tpa_inject")
-@ATTENTION_REGISTRY.register("tp_attention_inject")
-@ATTENTION_REGISTRY.register("inject_tpa")
 def inject_tpa(
     layer: Any = None,
     model: Any = None,

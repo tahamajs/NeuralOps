@@ -30,8 +30,6 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-@COMPRESSOR_REGISTRY.register("cur_moe_class")
-@COMPRESSOR_REGISTRY.register("cur_moe_compressor_class")
 class CURMoECompressor(BaseCompressor):
     """
     Compresses Mixture of Experts (MoE) layers and dense FFN layers using CUR cross-approximation.
@@ -405,10 +403,7 @@ class CURMoECompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("cur_moe")
 @COMPRESSOR_REGISTRY.register("cur_moe_compressor")
-@COMPRESSOR_REGISTRY.register("cur_moe_factory")
-@COMPRESSOR_REGISTRY.register("cur_moe_compressor_factory")
 def cur_moe_factory(
     model: nn.Module,
     comp_config: Any | None = None,

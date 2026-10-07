@@ -180,8 +180,6 @@ class MambaShedderPrunedLinear(nn.Module):
 # ===========================================================================
 # Compressor
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("mamba_shedder_class")
-@COMPRESSOR_REGISTRY.register("mamba_shedder_compressor_class")
 class MambaShedderCompressor(BaseCompressor):
     is_custom_attention: bool = False  # MS-FIX-01
 
@@ -850,8 +848,6 @@ class MambaShedderCompressor(BaseCompressor):
 # Factory
 # ===========================================================================
 @COMPRESSOR_REGISTRY.register("mamba_shedder")
-@COMPRESSOR_REGISTRY.register("mamba_shedder_compressor")
-@COMPRESSOR_REGISTRY.register("mamba_shedder_factory")
 def mamba_shedder_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     sparsity = kwargs.pop(
         "sparsity",

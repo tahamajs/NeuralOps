@@ -199,7 +199,6 @@ class ASTPrunedLoRALinear(nn.Module):
 
 
 @COMPRESSOR_REGISTRY.register("ast_pruner")
-@COMPRESSOR_REGISTRY.register("ast")
 class ASTPruner(BaseCompressor):
     """
     AST Pruner: vectorized semi-structured 2:4 / N:M pruning with empirical
@@ -722,8 +721,6 @@ class ASTPruner(BaseCompressor):
 # ============================================================================
 
 
-@COMPRESSOR_REGISTRY.register("ast_pruner_factory")
-@COMPRESSOR_REGISTRY.register("ast_factory")
 def ast_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     return_tuple = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 

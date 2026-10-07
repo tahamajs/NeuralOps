@@ -46,8 +46,6 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 @COMPRESSOR_REGISTRY.register("swift_svd_act")
-@COMPRESSOR_REGISTRY.register("swift_svd")
-@COMPRESSOR_REGISTRY.register("swift_svd_compressor")
 class SwiftSVDActivationCompressor(BaseCompressor):
     """
     Swift-SVD Activation-Aware Compressor.
@@ -750,7 +748,6 @@ class SwiftSVDActivationCompressor(BaseCompressor):
 # ===========================================================================
 # Factory
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("swift_svd_act_factory")
 def swift_svd_act_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     """Swift-SVD activation-aware factory function."""
     rank = kwargs.pop(

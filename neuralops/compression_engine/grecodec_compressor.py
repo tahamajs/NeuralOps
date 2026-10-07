@@ -242,7 +242,6 @@ class GreCoDeCLinear(nn.Module):
         return grecodec_layer
 
 
-@COMPRESSOR_REGISTRY.register("grecodec_compressor_class")
 class GreCoDeCCompressor(BaseCompressor):
     """
     GreCoDeC Compressor.
@@ -514,10 +513,7 @@ class GreCoDeCCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("grecodec")
 @COMPRESSOR_REGISTRY.register("grecodec_compressor")
-@COMPRESSOR_REGISTRY.register("grecodec_factory")
-@COMPRESSOR_REGISTRY.register("grecodec_compressor_factory")
 def grecodec_compressor_factory(
     model: nn.Module,
     comp_config: Any | None = None,

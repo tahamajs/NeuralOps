@@ -108,7 +108,6 @@ def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
 
 
 @ATTENTION_REGISTRY.register("griffin_ssd")
-@ATTENTION_REGISTRY.register("griffin_ssd_block")
 class GriffinSSDBlock(BaseAttention):
     """Griffin Hybrid Block: local window + SSD linear attention."""
 
@@ -643,7 +642,6 @@ class GriffinSSDBlock(BaseAttention):
         return out.to(target_dtype), None
 
 
-@ATTENTION_REGISTRY.register("griffin_ssd_inject")
 def inject_griffin_ssd(
     layer: Any = None,
     model: Any = None,

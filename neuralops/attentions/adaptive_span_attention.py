@@ -276,7 +276,6 @@ class IdentityOutProj(nn.Identity):
 
 
 
-@ATTENTION_REGISTRY.register("adaptive_span")
 @ATTENTION_REGISTRY.register("adaptive_span_attention")
 class AdaptiveSpanAttention(BaseAttention):
     supports_causal: bool = True
@@ -984,7 +983,6 @@ class AdaptiveSpanAttention(BaseAttention):
         return output, attn, past_kv
 
 
-@ATTENTION_REGISTRY.register("adaptive_span_inject")
 def inject_adaptive_span(
     layer: Any = None,
     model: Any = None,

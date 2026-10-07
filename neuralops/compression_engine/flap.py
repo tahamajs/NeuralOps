@@ -56,7 +56,6 @@ _ATTN_NAMES = {
 
 
 @COMPRESSOR_REGISTRY.register("flap")
-@COMPRESSOR_REGISTRY.register("flap_compressor")
 class FLAPCompressor(BaseCompressor):
     """
     FLAP Compressor: Fluctuation-based Adaptive Structured Pruning.
@@ -513,8 +512,6 @@ class FLAPCompressor(BaseCompressor):
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("flap_factory")
-@COMPRESSOR_REGISTRY.register("flap_compressor_factory")
 def flap_compressor_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for FLAP compressor."""
     sparsity = kwargs.pop(

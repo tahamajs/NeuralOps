@@ -238,8 +238,6 @@ def _unpack_weight_bias(proj: Any) -> tuple[torch.Tensor | None, torch.Tensor | 
 
 
 @ATTENTION_REGISTRY.register("svd_compressed", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("svd_compressed_attention", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("svd_compressed_module", supports_causal=True, supports_gqa=True)
 class SVDCompressedAttention(BaseAttention):
     r"""Multi-head attention with truncated SVD projections, trainable LoRA adapters,
     GQA support, RoPE support, and optional sparse residuals.
@@ -1107,10 +1105,6 @@ def main() -> None:
     log.info("Training completed.")
 
 
-@ATTENTION_REGISTRY.register("svd_compressed_inject")
-@ATTENTION_REGISTRY.register("svd_compressed_attention_inject")
-@ATTENTION_REGISTRY.register("inject_svd_compressed")
-@ATTENTION_REGISTRY.register("inject_svd_compressed_attention")
 def inject_svd_compressed(
     model: nn.Module | None = None,
     layer: nn.Module | None = None,

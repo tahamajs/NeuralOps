@@ -166,7 +166,6 @@ class LoRALinear(nn.Module):
 # ===========================================================================
 # TLinFormer — Fully Corrected
 # ===========================================================================
-@ATTENTION_REGISTRY.register("tlinformer")
 @ATTENTION_REGISTRY.register("tlinformer_attention")
 class TLinFormerAttention(BaseAttention):
     """
@@ -896,8 +895,6 @@ class TLinFormerAttention(BaseAttention):
 # ===========================================================================
 # Injection
 # ===========================================================================
-@ATTENTION_REGISTRY.register("tlinformer_inject")
-@ATTENTION_REGISTRY.register("inject_tlinformer")
 def inject_tlinformer(
     layer: Any = None,
     model: Any = None,

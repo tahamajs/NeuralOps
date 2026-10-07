@@ -170,7 +170,6 @@ class SVDLinearLayer(nn.Module):
 
 
 @COMPRESSOR_REGISTRY.register("svd_linear")
-@COMPRESSOR_REGISTRY.register("svd_linear_compressor")
 class SVDLinearCompressor(BaseCompressor):
     """Compresses model by replacing Linear/Conv1D layers with SVDLinearLayer."""
 
@@ -409,8 +408,6 @@ class SVDLinearCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("svd_linear_factory")
-@COMPRESSOR_REGISTRY.register("svd_linear_compressor_factory")
 def svd_linear_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """SVD Linear compressor factory."""
     return_tuple = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))

@@ -884,10 +884,6 @@ class FactorisedMatrixState(BaseAttention):
         return out, None
 
 
-@ATTENTION_REGISTRY.register("fms_fn")
-@ATTENTION_REGISTRY.register("factorised_matrix_state_fn")
-@ATTENTION_REGISTRY.register("fms_inject")
-@ATTENTION_REGISTRY.register("factorised_matrix_state_inject")
 def inject_factorised_matrix_state(
     layer: Any = None,
     model: Any = None,

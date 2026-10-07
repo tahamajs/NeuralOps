@@ -878,8 +878,6 @@ class FlashAttention3(BaseAttention):
         return final_out, None
 
 
-@ATTENTION_REGISTRY.register("flash3_inject")
-@ATTENTION_REGISTRY.register("flash_attention3_inject")
 def inject_flash_attention3(
     layer: Any = None,
     model: Any = None,

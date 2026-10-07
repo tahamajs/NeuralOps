@@ -192,8 +192,6 @@ class SVDLinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("svd_mamba", supports_causal=True)
-@ATTENTION_REGISTRY.register("SVD-Mamba")
-@ATTENTION_REGISTRY.register("svd-mamba")
 @ATTENTION_REGISTRY.register("SVD_Mamba")
 class SVDMamba(BaseAttention):
     r"""SVD-Mamba module with SVD-factorized projections, causal convolution, and selective SSM."""
@@ -846,10 +844,6 @@ class SVDMamba(BaseAttention):
         return (out, probs if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("svd_mamba_inject")
-@ATTENTION_REGISTRY.register("inject_svd_mamba")
-@ATTENTION_REGISTRY.register("SVD-Mamba_inject")
-@ATTENTION_REGISTRY.register("inject_SVD_Mamba")
 def inject_svd_mamba(
     layer: Any = None,
     model: Any = None,

@@ -225,7 +225,6 @@ _PAIR_CANDIDATES = (
 # ===========================================================================
 # Compressor
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("modegpt")
 @COMPRESSOR_REGISTRY.register("modegpt_compressor")
 class MoDeGPTCompressor(BaseCompressor):
     """
@@ -778,7 +777,6 @@ class MoDeGPTCompressor(BaseCompressor):
 # ===========================================================================
 # Factory
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("modegpt_factory")
 def modegpt_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     rank = kwargs.pop(
         "rank", _cfg_get(comp_config, "modegpt_rank", _cfg_get(comp_config, "rank", 64))

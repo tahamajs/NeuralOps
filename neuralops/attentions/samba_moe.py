@@ -297,8 +297,6 @@ class SambaMoEBlock(BaseAttention):
         return (out.to(target_dtype), attn_w)
 
 
-@ATTENTION_REGISTRY.register("samba_moe_inject")
-@ATTENTION_REGISTRY.register("inject_samba_moe")
 def inject_samba_moe(
     layer: Any = None,
     model: Any = None,

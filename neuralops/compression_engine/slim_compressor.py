@@ -41,7 +41,6 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-@COMPRESSOR_REGISTRY.register("slim")
 @COMPRESSOR_REGISTRY.register("slim_compressor")
 class SLiMCompressor(BaseCompressor):
     is_custom_attention: bool = True
@@ -268,7 +267,6 @@ class SLiMCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("slim_factory")
 def slim_factory(
     model: Any,
     comp_config: Any = None,

@@ -855,12 +855,6 @@ class SelectiveMamba(BaseAttention):
 UPIMambaBlock = SelectiveMamba  # Backward-compatibility alias
 
 
-@ATTENTION_REGISTRY.register("selective_mamba_inject")
-@ATTENTION_REGISTRY.register("inject_selective_mamba")
-@ATTENTION_REGISTRY.register("upi_mamba_inject")  # DEPRECATED alias
-@ATTENTION_REGISTRY.register("inject_upi_mamba")  # DEPRECATED alias
-@ATTENTION_REGISTRY.register("upi_stuffed_mamba_inject")  # DEPRECATED alias
-@ATTENTION_REGISTRY.register("inject_upi_stuffed_mamba")  # DEPRECATED alias
 def inject_selective_mamba(
     layer: Any = None,
     model: Any = None,

@@ -58,7 +58,6 @@ _ATTN_NAMES = {
 }
 
 
-@COMPRESSOR_REGISTRY.register("erc")
 @COMPRESSOR_REGISTRY.register("erc_svd")
 class ERCCompressor(BaseCompressor):
     is_custom_attention: bool = True
@@ -500,9 +499,6 @@ class ERCCompressor(BaseCompressor):
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("erc_factory")
-@COMPRESSOR_REGISTRY.register("erc_svd_factory")
-@COMPRESSOR_REGISTRY.register("erc_svd_compressor_factory")
 def erc_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """ERC factory function."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))

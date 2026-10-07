@@ -176,9 +176,7 @@ class LoRALinear(nn.Module):
 # ===========================================================================
 # Main Attention
 # ===========================================================================
-@ATTENTION_REGISTRY.register("squeezing_heads_distiller", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("squeezing_heads_distill", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("squeezing_heads", supports_causal=True, supports_gqa=True)
 class SqueezingHeadsDistiller(BaseAttention):
     """
     Attention wrapper that keeps only the top-k most important heads
@@ -927,10 +925,6 @@ class SqueezingHeadsDistiller(BaseAttention):
 # ===========================================================================
 # Injection
 # ===========================================================================
-@ATTENTION_REGISTRY.register("squeezing_heads_inject")
-@ATTENTION_REGISTRY.register("squeezing_heads_distill_inject")
-@ATTENTION_REGISTRY.register("squeezing_heads_distiller_inject")
-@ATTENTION_REGISTRY.register("inject_squeezing_heads")
 def inject_squeezing_heads(
     layer: Any = None,
     model: Any = None,

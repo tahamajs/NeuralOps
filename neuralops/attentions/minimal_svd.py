@@ -191,9 +191,6 @@ class FactorisedLinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("minimal_svd", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("minimal_aurora", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("minimal_prism", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("minimal_svd_v2", supports_causal=True, supports_gqa=True)
 class MinimalSVDAttention(BaseAttention):
     r"""
     MinimalSVD: SVD-Factorized Low-Rank Projection Attention.
@@ -715,11 +712,6 @@ class MinimalSVDAttention(BaseAttention):
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
 
 
-@ATTENTION_REGISTRY.register("minimal_svd_inject")
-@ATTENTION_REGISTRY.register("inject_minimal_svd")
-@ATTENTION_REGISTRY.register("inject_minimal_aurora")
-@ATTENTION_REGISTRY.register("inject_minimal_prism")
-@ATTENTION_REGISTRY.register("inject_minimal_svd_v2")
 def inject_minimal_svd(
     layer: Any = None,
     model: Any = None,

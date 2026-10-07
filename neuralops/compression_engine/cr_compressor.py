@@ -498,9 +498,6 @@ class CRCompressor(BaseCompressor):
         return CRLinear.from_linear(linear, rank=self.rank)
 
 
-@COMPRESSOR_REGISTRY.register("cr")
-@COMPRESSOR_REGISTRY.register("cr_factory")
-@COMPRESSOR_REGISTRY.register("cr_compressor_factory")
 def cr_compressor_factory(
     model: nn.Module,
     comp_config: Any | None = None,

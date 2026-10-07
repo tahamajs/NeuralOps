@@ -157,7 +157,6 @@ class RotationalSliceGPTINT4Linear(nn.Module):
 # Compressor
 # ===========================================================================
 @COMPRESSOR_REGISTRY.register("rotational_slicegpt_int4")
-@COMPRESSOR_REGISTRY.register("rotational_slicegpt")
 class RotationalSliceGPTINT4Compressor(BaseCompressor):
     """
     Rotational-SliceGPT-INT4 hybrid compression engine.
@@ -661,8 +660,6 @@ RotationalSliceGPTInt4Compressor = RotationalSliceGPTINT4Compressor
 # ===========================================================================
 # Factory
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("rotational_slicegpt_int4_factory")
-@COMPRESSOR_REGISTRY.register("rotational_slicegpt_factory")
 def rotational_slicegpt_int4_factory(
     model: Any,
     comp_config: Any = None,

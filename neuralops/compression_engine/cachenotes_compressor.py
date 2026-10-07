@@ -396,7 +396,6 @@ class CacheNotesKVCache:
         return self.k_cache, self.v_cache
 
 
-@COMPRESSOR_REGISTRY.register("cachenotes")
 @COMPRESSOR_REGISTRY.register("cachenotes_compressor")
 class CacheNotesCompressor(BaseCompressor):
     is_custom_attention: bool = True
@@ -997,8 +996,6 @@ class CacheNotesCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("cachenotes_factory")
-@COMPRESSOR_REGISTRY.register("cachenotes_compressor_factory")
 def cachenotes_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     """CacheNotes compressor factory function."""
     return_tuple = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))

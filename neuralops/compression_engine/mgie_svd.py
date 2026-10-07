@@ -55,7 +55,6 @@ _ATTN_NAMES = {
 # ===========================================================================
 # Compressor
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("mgie")
 @COMPRESSOR_REGISTRY.register("mgie_svd")
 class MGIECompressor(BaseCompressor):
     """
@@ -455,9 +454,6 @@ class MGIECompressor(BaseCompressor):
 # ===========================================================================
 # Factory
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("mgie_factory")
-@COMPRESSOR_REGISTRY.register("mgie_svd_factory")
-@COMPRESSOR_REGISTRY.register("mgie_svd_compressor_factory")
 def mgie_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """MGIE factory function."""
     rank = kwargs.pop(

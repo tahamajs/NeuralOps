@@ -265,7 +265,6 @@ class FusedQKVSVDLinear(nn.Module):
 # ============================================================================
 # AdaSVD Compressor
 # ============================================================================
-@COMPRESSOR_REGISTRY.register("adasvd")
 @COMPRESSOR_REGISTRY.register("adasvd_compressor")
 class AdaSVDCompressor(BaseCompressor):
     is_custom_attention: bool = False
@@ -1347,8 +1346,6 @@ class AdaSVDCompressor(BaseCompressor):
 # ============================================================================
 # Factory
 # ============================================================================
-@COMPRESSOR_REGISTRY.register("adasvd_factory")
-@COMPRESSOR_REGISTRY.register("adasvd_compressor_factory")
 def adasvd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
 

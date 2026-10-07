@@ -123,7 +123,6 @@ class GFWSLoRALinear(nn.Module):
 
 
 @COMPRESSOR_REGISTRY.register("gfws")
-@COMPRESSOR_REGISTRY.register("gfws_d")
 class GFWSCompressor(BaseCompressor):
     is_custom_attention: bool = True
     """
@@ -575,8 +574,6 @@ class GFWSCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("gfws_factory")
-@COMPRESSOR_REGISTRY.register("gfws_d_factory")
 def gfws_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """GFWS factory."""
     rank = kwargs.pop(

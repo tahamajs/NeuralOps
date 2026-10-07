@@ -941,8 +941,6 @@ class ASVDAttention(BaseAttention):
         return out, attn if output_attentions else None
 
 
-@ATTENTION_REGISTRY.register("asvd_fn")
-@ATTENTION_REGISTRY.register("asvd_inject")
 def inject_asvd(
     layer: Any = None,
     model: Any = None,

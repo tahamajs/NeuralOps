@@ -314,7 +314,6 @@ class LowRankCompressor(BaseCompressor):
 SoKACompressor = LowRankCompressor
 
 
-@COMPRESSOR_REGISTRY.register("soka")
 @COMPRESSOR_REGISTRY.register("soka_compressor")
 def soka_factory(
     model: Any,

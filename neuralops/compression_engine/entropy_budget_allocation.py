@@ -43,7 +43,6 @@ _ATTN_NAMES = {
 }
 
 
-@COMPRESSOR_REGISTRY.register("entropy_budget")
 @COMPRESSOR_REGISTRY.register("entropy_budget_allocation")
 class EntropyBudgetCompressor(BaseCompressor):
     is_custom_attention: bool = True

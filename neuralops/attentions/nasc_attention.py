@@ -155,7 +155,6 @@ class LoRALinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("nasc", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("nasc_attention", supports_causal=True, supports_gqa=True)
 class NASCAttention(BaseAttention):
     r"""NASC: NEXUS-AEGIS Spectral Cascade Attention.
@@ -820,9 +819,6 @@ class NASCAttention(BaseAttention):
         return out, None
 
 
-@ATTENTION_REGISTRY.register("nasc_injection")
-@ATTENTION_REGISTRY.register("inject_nasc")
-@ATTENTION_REGISTRY.register("inject_nasc_attention")
 def inject_nasc(
     layer: nn.Module | None = None,
     model: nn.Module | None = None,

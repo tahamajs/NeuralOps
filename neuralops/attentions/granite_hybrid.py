@@ -211,7 +211,6 @@ class MixtureOfExperts(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("granite_hybrid")
-@ATTENTION_REGISTRY.register("granite_hybrid_block")
 class GraniteHybridBlock(BaseAttention):
     r"""Granite Hybrid Attention-SSM Layer with MoE Feed-Forward and LoRA Adaptation."""
 
@@ -608,8 +607,6 @@ class GraniteHybridBlock(BaseAttention):
         return x, (attn_weights if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("granite_hybrid_inject")
-@ATTENTION_REGISTRY.register("inject_granite_hybrid")
 def inject_granite_hybrid(
     layer: Any = None,
     model: Any = None,

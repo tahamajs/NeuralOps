@@ -905,9 +905,6 @@ class BAMUMoEBlock(BaseAttention):
 # ===========================================================================
 # Injection
 # ===========================================================================
-@ATTENTION_REGISTRY.register("bam_umoe_fn")
-@ATTENTION_REGISTRY.register("bam_umoe_inject")
-@ATTENTION_REGISTRY.register("inject_bam_umoe")
 def inject_bam_umoe(
     layer: Any = None,
     model: Any = None,

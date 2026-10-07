@@ -33,7 +33,6 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-@COMPRESSOR_REGISTRY.register("admm")
 @COMPRESSOR_REGISTRY.register("admm_compressor")
 class ADMMCompressor(BaseCompressor):
     """
@@ -475,8 +474,6 @@ class ADMMCompressor(BaseCompressor):
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("admm_factory")
-@COMPRESSOR_REGISTRY.register("admm_compressor_factory")
 def admm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for ADMM compressor."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))

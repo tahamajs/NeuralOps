@@ -267,7 +267,6 @@ class SubspaceLinear(nn.Module):
 # Compressor
 # ===========================================================================
 @COMPRESSOR_REGISTRY.register("subspace_projection")
-@COMPRESSOR_REGISTRY.register("subspace_projection_compressor")
 class SubspaceProjectionCompressor(BaseCompressor):
     """
     Subspace Projection Compression Engine.
@@ -610,7 +609,6 @@ class SubspaceProjectionCompressor(BaseCompressor):
 # ===========================================================================
 # Factory
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("subspace_projection_factory")
 def subspace_projection_factory(
     model: nn.Module,
     comp_config: Any | None = None,

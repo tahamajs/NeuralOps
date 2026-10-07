@@ -196,9 +196,7 @@ class LoRALinear(nn.Module):
 # ===========================================================================
 # QCQA Attention
 # ===========================================================================
-@ATTENTION_REGISTRY.register("qcqa")
 @ATTENTION_REGISTRY.register("qcqa_attention")
-@ATTENTION_REGISTRY.register("qcqa_attn")
 class QCQAAttention(BaseAttention):
     is_custom_attention: bool = True
 
@@ -840,8 +838,6 @@ class QCQAAttention(BaseAttention):
 # ===========================================================================
 # Injector
 # ===========================================================================
-@ATTENTION_REGISTRY.register("qcqa_inject")
-@ATTENTION_REGISTRY.register("inject_qcqa")
 def inject_qcqa(
     layer: Any = None,
     model: Any = None,

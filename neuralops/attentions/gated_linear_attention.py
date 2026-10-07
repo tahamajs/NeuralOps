@@ -249,7 +249,6 @@ def _resolve_dim_and_heads(config, src_attn, kwargs):
 # Main attention
 # ===========================================================================
 @ATTENTION_REGISTRY.register("gated_linear_attention", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("gated_linear_attn", supports_causal=True, supports_gqa=True)
 class GatedLinearAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
@@ -796,8 +795,6 @@ class GatedLinearAttention(BaseAttention):
 # ===========================================================================
 # Injection (unchanged)
 # ===========================================================================
-@ATTENTION_REGISTRY.register("gated_linear_attention_inject")
-@ATTENTION_REGISTRY.register("inject_gated_linear")
 def inject_gated_linear(layer=None, model=None, model_config=None, comp_config=None,
                         layer_idx=0, total_layers=12, old_attn=None,
                         _depth=0, **kwargs):

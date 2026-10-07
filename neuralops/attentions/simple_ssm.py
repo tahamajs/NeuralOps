@@ -80,7 +80,6 @@ def apply_rotary_pos_emb(
 
 
 @ATTENTION_REGISTRY.register("simple_ssm")
-@ATTENTION_REGISTRY.register("simple_ssm_attention")
 class SimpleSSM(BaseAttention):
     is_custom_attention: bool = True
     supports_causal: bool = True
@@ -310,9 +309,6 @@ class SimpleSSM(BaseAttention):
         return out.to(target_dtype), None
 
 
-@ATTENTION_REGISTRY.register("simple_ssm_inject")
-@ATTENTION_REGISTRY.register("inject_simple_ssm")
-@ATTENTION_REGISTRY.register("inject_simple_ssm_attention")
 def inject_simple_ssm(
     layer: Any = None,
     model: Any = None,

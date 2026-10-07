@@ -609,10 +609,6 @@ class HGRN2GatedOuterBlock(BaseAttention):
 # ===========================================================================
 # Injector
 # ===========================================================================
-@ATTENTION_REGISTRY.register("hgrn2_outer_inject")
-@ATTENTION_REGISTRY.register("hgrn2_gated_outer_inject")
-@ATTENTION_REGISTRY.register("inject_hgrn2_outer")
-@ATTENTION_REGISTRY.register("inject_hgrn2_gated_outer")
 def inject_hgrn2_outer(layer=None, model=None, model_config=None, comp_config=None,
                        layer_idx=0, total_layers=12, old_attn=None,
                        _depth=0, **kwargs):

@@ -38,7 +38,6 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 @ATTENTION_REGISTRY.register("selective_ssm")
-@ATTENTION_REGISTRY.register("mamba_ssm")
 class SelectiveSSM(BaseAttention):
     r"""
     Faithful Mamba-style selective SSM block with hardened execution paths.
@@ -263,10 +262,6 @@ ATTENTION_REGISTRY.register("simple_ssm")(SimpleSSM)
 ATTENTION_REGISTRY.register("simplessm")(SimpleSSM)
 
 
-@ATTENTION_REGISTRY.register("selective_ssm_inject")
-@ATTENTION_REGISTRY.register("inject_selective_ssm")
-@ATTENTION_REGISTRY.register("inject_simple_ssm")
-@ATTENTION_REGISTRY.register("inject_simple_ssm_attention")
 def inject_selective_ssm(layer=None, model=None, model_config=None, old_attn=None, **kwargs):
     target = layer if layer is not None else model
     if target is None:

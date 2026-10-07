@@ -119,7 +119,6 @@ class LoRALinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("hla", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("hla_attention", supports_causal=True, supports_gqa=True)
 class HLAAttention(BaseAttention):
     r"""Hadamard Linear Attention (HLA) Bidirectional / Causal Module.
@@ -531,7 +530,6 @@ class HLAAttention(BaseAttention):
         return (out, None)
 
 
-@ATTENTION_REGISTRY.register("hla_inject")
 def inject_hla(
     layer: Any = None,
     model: Any = None,

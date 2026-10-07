@@ -217,10 +217,7 @@ class SVDProjectionLinear(nn.Module):
 # ===========================================================================
 # SVDProjectionAttention — FIX 2, 3, 4, 5
 # ===========================================================================
-@ATTENTION_REGISTRY.register("svd_proj", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("svd_proj_attn", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("svd_projection_attention", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("svd_projection", supports_causal=True, supports_gqa=True)
 class SVDProjectionAttention(BaseAttention):
     r"""Multi-Head Attention using Factorized SVD Linear Projections.
 
@@ -751,11 +748,6 @@ class SVDProjectionAttention(BaseAttention):
 # ===========================================================================
 # Injection
 # ===========================================================================
-@ATTENTION_REGISTRY.register("svd_projection_attention_inject")
-@ATTENTION_REGISTRY.register("svd_proj_attn_inject")
-@ATTENTION_REGISTRY.register("inject_svd_proj_attn")
-@ATTENTION_REGISTRY.register("inject_svd_projection_attention")
-@ATTENTION_REGISTRY.register("inject_svd_projection")
 def inject_svd_proj_attn(
     layer: Any = None,
     model: Any = None,

@@ -97,7 +97,6 @@ def apply_rotary_pos_emb(
     return q, k
 
 
-@ATTENTION_REGISTRY.register("svd_llm_v2", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("svd_llm_v2_attention")
 class SVDLLMV2Attention(BaseAttention):
     r"""SVD-factorized attention layer with explicit U, Sigma, V^H matrix buffers
@@ -870,8 +869,6 @@ class SVDLLMV2Attention(BaseAttention):
         return out, (probs if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("svd_llm_v2_inject")
-@ATTENTION_REGISTRY.register("inject_svd_llm_v2")
 def inject_svd_llm_v2(
     layer: Any = None,
     model: Any = None,

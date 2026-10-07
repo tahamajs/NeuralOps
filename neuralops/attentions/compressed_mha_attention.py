@@ -596,7 +596,6 @@ class CompressedDistilBertAttention(BaseAttention):
         return out, (attn_probs if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("compressed_mha_inject")
 def inject_compressed_mha(
     layer: Any = None,
     model: Any = None,
@@ -720,7 +719,6 @@ def inject_compressed_mha(
         return None
 
 
-@ATTENTION_REGISTRY.register("compressed_mha_fn")
 def compressed_mha_fn(
     query: torch.Tensor,
     key: torch.Tensor,

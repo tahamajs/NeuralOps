@@ -319,8 +319,6 @@ class HGRN2GatedDeltaNet(BaseAttention):
 # ===========================================================================
 # Injection (same as before)
 # ===========================================================================
-@ATTENTION_REGISTRY.register("hgrn2_gated_deltanet_inject")
-@ATTENTION_REGISTRY.register("inject_hgrn2_gated_deltanet")
 def inject_hgrn2_gated_deltanet(layer=None, model=None, model_config=None,
                                  comp_config=None, layer_idx=0, total_layers=12,
                                  old_attn=None, lora_rank=16, lora_alpha=32.0,

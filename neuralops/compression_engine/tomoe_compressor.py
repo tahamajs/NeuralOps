@@ -391,8 +391,6 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-@COMPRESSOR_REGISTRY.register("tomoe_class")
-@COMPRESSOR_REGISTRY.register("tomoe_compressor_class")
 class ToMoECompressor(BaseCompressor):
     """
     ToMoE Compressor: dynamically replaces dense feed-forward and projection layers
@@ -728,10 +726,7 @@ class ToMoECompressor(BaseCompressor):
         return self.model, self.stats
 
 
-@COMPRESSOR_REGISTRY.register("tomoe")
 @COMPRESSOR_REGISTRY.register("tomoe_compressor")
-@COMPRESSOR_REGISTRY.register("tomoe_factory")
-@COMPRESSOR_REGISTRY.register("tomoe_compressor_factory")
 def tomoe_compressor_factory(
     model: nn.Module,
     comp_config: Any = None,
@@ -761,8 +756,6 @@ def tomoe_compressor_factory(
 tomoe_factory = tomoe_compressor_factory
 
 
-@COMPRESSOR_REGISTRY.register("inject_tomoe")
-@COMPRESSOR_REGISTRY.register("tomoe_inject")
 def inject_tomoe(model: Any = None, **kwargs: Any) -> Any:
     """Safe injection hook for ToMoE."""
     if model is None:

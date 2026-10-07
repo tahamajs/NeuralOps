@@ -816,7 +816,6 @@ class SliceGPTPCACompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("slicegpt_pca_factory")
 def slicegpt_pca_factory(
     model: Any,
     comp_config: Any = None,

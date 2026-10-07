@@ -713,8 +713,6 @@ class LoRAAttention(BaseAttention):
 # ===========================================================================
 # Injection
 # ===========================================================================
-@ATTENTION_REGISTRY.register("lora_attention_inject")
-@ATTENTION_REGISTRY.register("inject_lora_attention")
 def inject_lora_attention(
     layer: Any = None,
     model: Any = None,

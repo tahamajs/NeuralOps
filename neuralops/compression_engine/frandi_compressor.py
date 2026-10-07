@@ -351,7 +351,6 @@ class FRanDILinear(nn.Module):
 # ===========================================================================
 # Compressor
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("frandi_compressor_class")
 class FRanDICompressor(BaseCompressor):
     """
     FRanDI (Feature-Regression aligned SVD) Compressor.
@@ -736,10 +735,7 @@ class FRanDICompressor(BaseCompressor):
 # ===========================================================================
 # Factory
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("frandi")
 @COMPRESSOR_REGISTRY.register("frandi_compressor")
-@COMPRESSOR_REGISTRY.register("frandi_factory")
-@COMPRESSOR_REGISTRY.register("frandi_compressor_factory")
 def frandi_factory(
     model: nn.Module,
     comp_config: Any | None = None,

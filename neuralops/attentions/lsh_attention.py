@@ -222,7 +222,6 @@ class FactorizedLoRALinear(nn.Module):
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("lsh", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("lsh_attention", supports_causal=True, supports_gqa=True)
 class LSHAttention(BaseAttention):
     supports_causal: bool = True
@@ -945,10 +944,6 @@ class LSHAttention(BaseAttention):
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("lsh_attention_inject")
-@ATTENTION_REGISTRY.register("lsh_inject")
-@ATTENTION_REGISTRY.register("inject_lsh_attention")
-@ATTENTION_REGISTRY.register("inject_lsh")
 def inject_lsh_attention(
     layer: Any = None,
     model: Any = None,
