@@ -1137,6 +1137,27 @@ inject_replace_attention = inject_replace
 inject_replace_attention_v2 = inject_replace
 
 
+# ===========================================================================
+# Compatibility wrappers
+# ===========================================================================
+def _replace_bert_attention(
+    layer: nn.Module, inject_fn: Any, model_config: Any = None, **kwargs: Any
+) -> None:
+    _replace_layers([layer], "attention", inject_fn, model_config, kwargs, "bert")
+
+
+def _replace_gpt_attention(
+    layer: nn.Module, inject_fn: Any, model_config: Any = None, **kwargs: Any
+) -> None:
+    _replace_layers([layer], "attn", inject_fn, model_config, kwargs, "gpt2")
+
+
+def _replace_distilbert_attention(
+    layer: nn.Module, inject_fn: Any, model_config: Any = None, **kwargs: Any
+) -> None:
+    _replace_layers([layer], "attention", inject_fn, model_config, kwargs, "distilbert")
+
+
 __all__ = [
     "replace_attention_in_model",
     "build_attention",
@@ -1144,6 +1165,9 @@ __all__ = [
     "Replace",
     "inject_replace",
     "inject_replace_attention",
+    "_replace_bert_attention",
+    "_replace_gpt_attention",
+    "_replace_distilbert_attention",
     "_get_valid_mask",
     "_cfg_get",
 ]

@@ -127,8 +127,8 @@ class _LegacyAttnFinder(MetaPathFinder):
 
 sys.meta_path.insert(0, _LegacyAttnFinder())
 
-# Pre-populate sys.modules aliases
-for _old in list(_LEGACY_MAP.keys()) + list(_RENAMED_MODULES.keys()) + ['replace']:
+# Pre-populate sys.modules aliases (keep 'replace' dynamic on import so it doesn't affect canonical registry keys)
+for _old in list(_LEGACY_MAP.keys()) + list(_RENAMED_MODULES.keys()):
     try:
         _mod = _get_target_module(_old)
         if _mod is not None:
