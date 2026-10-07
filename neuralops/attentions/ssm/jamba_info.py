@@ -23,10 +23,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 try:
-    from neuralops.attentions.simple_ssm import SimpleSSM
-except Exception as e:
-    logging.getLogger(__name__).warning("SimpleSSM import failed: %s", e)
-    SimpleSSM = None  # type: ignore
+    from .simple_ssm import SimpleSSM
+except Exception:
+    try:
+        from neuralops.attentions.ssm.simple_ssm import SimpleSSM
+    except Exception as e:
+        logging.getLogger(__name__).warning("SimpleSSM import failed: %s", e)
+        SimpleSSM = None  # type: ignore
 
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
