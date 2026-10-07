@@ -33,6 +33,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseAttention
+from neuralops.utils.lora import LoRALinear
+
+def _rotate_half(x: torch.Tensor) -> torch.Tensor:
+    x1, x2 = x[..., : x.shape[-1] // 2], x[..., x.shape[-1] // 2 :]
+    return torch.cat((-x2, x1), dim=-1)
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)

@@ -736,8 +736,11 @@ def inject_hgrn2_outer(layer=None, model=None, model_config=None, comp_config=No
         return None
 
 
+HGRN2OuterBlock = HGRN2GatedOuterBlock
+
 __all__ = [
     "HGRN2GatedOuterBlock",
+    "HGRN2OuterBlock",
     "LoRALinear",
     "inject_hgrn2_outer",
     "apply_rotary_pos_emb",
