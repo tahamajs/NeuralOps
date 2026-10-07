@@ -13,55 +13,16 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-_DEPRECATED_ALIASES: dict[str, str] = {
-    # Aegis v1-v4 -> HybridLocalKernelAttention
-    "aegis_v1": "hybrid_local_kernel",
-    "aegis_v2": "hybrid_local_kernel",
-    "aegis_v3": "hybrid_local_kernel",
-    "aegis_v4": "hybrid_local_kernel",
-    "aegis_v1_module": "hybrid_local_kernel",
-    "aegis_v2_inject": "hybrid_local_kernel",
-    "inject_aegis_v1": "hybrid_local_kernel",
-    "inject_aegis_v2": "hybrid_local_kernel",
-    "inject_aegis_v3": "hybrid_local_kernel",
-    "inject_aegis_v4": "hybrid_local_kernel",
-    "inject_aegis_into_distilbert": "hybrid_local_kernel",
-    "inject_aegis_into_distilbert_v2": "hybrid_local_kernel",
-
-    # Aegis v5 -> SplitHeadHybridAttention
-    "aegis_v5": "split_head_hybrid",
-    "aegis_v5_module": "split_head_hybrid",
-    "aegisattention": "split_head_hybrid",
-    "aegis_v5_inject": "split_head_hybrid",
-    "inject_aegis_v5": "split_head_hybrid",
-    "aegis_v5_fn": "split_head_hybrid",
-
-    # Aegis v6 -> GatedHybridKernelAttention
-    "aegis_v6": "gated_hybrid_kernel",
-    "aegis_v6_attn": "gated_hybrid_kernel",
-    "aegis_v6_inject": "gated_hybrid_kernel",
-    "inject_aegis_v6": "gated_hybrid_kernel",
-
-    # LEKA v1 -> PositiveKernelLinearAttention
-    "leka_v1": "positive_kernel_linear",
-    "leka_v1_attention": "positive_kernel_linear",
-    "leka_v1_inject": "positive_kernel_linear",
-    "inject_leka_v1": "positive_kernel_linear",
-
-    # LEKA v2 -> LandmarkLocalAttention
-    "leka_v2": "landmark_local",
-    "leka_v2_attention": "landmark_local",
-    "leka_v2_inject": "landmark_local",
-    "inject_leka_v2": "landmark_local",
-
-    # LEKA v3 -> RefinedLandmarkAttention
-    "leka_v3": "refined_landmark",
-    "leka_v3_attention": "refined_landmark",
-    "leka_v3_inject": "refined_landmark",
-    "inject_leka_v3": "refined_landmark",
-}
-
+import json
+import os
 import warnings
+
+_DEPRECATED_ALIASES_PATH = os.path.join(os.path.dirname(__file__), "deprecated_aliases.json")
+if os.path.exists(_DEPRECATED_ALIASES_PATH):
+    with open(_DEPRECATED_ALIASES_PATH) as _fp:
+        _DEPRECATED_ALIASES: dict[str, str] = json.load(_fp)
+else:
+    _DEPRECATED_ALIASES = {}
 
 def _handle_deprecated(name: str) -> str:
     k = name.lower()
