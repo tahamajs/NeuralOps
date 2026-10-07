@@ -50,6 +50,14 @@ def _env_float(name: str, default: float) -> float:
         return default
 
 
+def _cfg_get(config: Any, attr: str, default: Any = None) -> Any:
+    if config is None:
+        return default
+    if isinstance(config, dict):
+        return config.get(attr, default)
+    return getattr(config, attr, default)
+
+
 # ===========================================================================
 # RoPE — kept for backward compat but NOT used in forward
 # ===========================================================================

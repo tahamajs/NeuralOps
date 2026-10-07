@@ -1,14 +1,3 @@
-"""
-Aegis-Attention V2 .
-
-Hybrid low-rank factorized attention with:
-  * SVD + LoRA projections (FactorisedLinear)
-  * Local sliding-window attention over all heads
-  * Global ELU+1 linear kernel attention with adaptive soft-pruning gate
-  * Data-dependent multi-head fusion gate
-
-"""
-
 import logging
 import math
 from dataclasses import dataclass
