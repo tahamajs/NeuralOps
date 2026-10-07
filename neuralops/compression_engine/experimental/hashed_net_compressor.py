@@ -1,11 +1,4 @@
 """
-HashedNet Compressor — Production-Hardened (v2).
-
-Registered as 'hashed_net', 'hashednets', 'hashednets_compressor',
-              'hashed_linear', 'hashed_net_factory', ...
-
-⚠️  FUNDAMENTAL LIMITATION ⚠️
-
 HashedNet (Chen et al., 2015) compresses a weight matrix W ∈ R^{out×in} by
 storing a compact parameter table w ∈ R^{n_buckets} and reconstructing
 W[i,j] = sign(i,j) · w[h(i,j)]. This is lossy: intra-bucket variance is
