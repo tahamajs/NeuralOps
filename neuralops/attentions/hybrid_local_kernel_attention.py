@@ -121,7 +121,7 @@ def _detect_decoder(
 
 
 @dataclass
-class AegisAttentionConfigV2:
+class HybridLocalKernelConfig:
     hidden_size: int = 768
     num_attention_heads: int = 12
     num_heads: int = 12
@@ -412,12 +412,8 @@ def _global_linear_attention_v2(
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("aegis_v2", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("aegis_v1", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("aegis_v3", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("aegis_v4", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("aegis_v1_module", supports_causal=True, supports_gqa=True)
-class AegisAttentionV2(BaseAttention):
+@ATTENTION_REGISTRY.register("hybrid_local_kernel", supports_causal=True, supports_gqa=True)
+class HybridLocalKernelAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -1061,12 +1057,7 @@ class AegisAttentionV2(BaseAttention):
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("aegis_v2_inject")
-@ATTENTION_REGISTRY.register("inject_aegis_v2")
-@ATTENTION_REGISTRY.register("inject_aegis_v1")
-@ATTENTION_REGISTRY.register("inject_aegis_v3")
-@ATTENTION_REGISTRY.register("inject_aegis_v4")
-def inject_aegis_v2(
+def inject_hybrid_local_kernel(
     layer: Any = None,
     model: Any = None,
     model_config: Any = None,
