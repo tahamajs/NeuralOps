@@ -965,7 +965,8 @@ class LandmarkLocalAttention(BaseAttention):
         return 0.0
 
 
-LEKAV2Attention = LEKAv2Attention
+LEKAv2Attention = LandmarkLocalAttention
+LEKAV2Attention = LandmarkLocalAttention
 
 
 # ===========================================================================
@@ -1059,7 +1060,7 @@ def inject_landmark_local(
         if cfg is None and hasattr(src_attn, "config"):
             cfg = src_attn.config
 
-        new_attn = LEKAv2Attention(
+        new_attn = LandmarkLocalAttention(
             config=cfg,
             comp_config=comp_config,
             layer_idx=layer_idx,
