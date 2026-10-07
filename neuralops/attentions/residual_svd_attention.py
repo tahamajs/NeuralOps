@@ -92,8 +92,8 @@ def apply_rotary_pos_emb(
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("res_svd")
-class ResSVDAttention(BaseAttention):
+@ATTENTION_REGISTRY.register("residual_svd_attention")
+class ResidualSVDAttention(BaseAttention):
     is_custom_attention: bool = True
 
     def __init__(

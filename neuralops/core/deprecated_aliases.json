@@ -634,5 +634,10 @@
   "leka_v3_attention": "refined_landmark",
   "leka_v3_inject": "refined_landmark",
   "inject_leka_v3": "refined_landmark",
-  "mgie_svd_compressor": "mgie_budget"
+  "mgie_svd_compressor": "mgie_budget",
+  "aegis_hybrid": "tri_branch_hybrid",
+  "aegis_hybrid_attn": "tri_branch_hybrid",
+  "aegis_hybrid_attention": "tri_branch_hybrid",
+  "aegis_spectron_fp8": "spectron_fp8",
+  "res_svd": "residual_svd_attention"
 }
