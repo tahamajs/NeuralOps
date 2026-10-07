@@ -30,8 +30,6 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-@COMPRESSOR_REGISTRY.register("sdrm_class")
-@COMPRESSOR_REGISTRY.register("sdrm_compressor_class")
 class SDRMCompressor(BaseCompressor):
     is_custom_attention: bool = True
     """
@@ -476,10 +474,7 @@ class SDRMCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("sdrm")
 @COMPRESSOR_REGISTRY.register("sdrm_compressor")
-@COMPRESSOR_REGISTRY.register("sdrm_factory")
-@COMPRESSOR_REGISTRY.register("sdrm_compressor_factory")
 def sdrm_compressor_factory(
     model: Any,
     comp_config: Any = None,
@@ -533,8 +528,6 @@ def sdrm_compressor_factory(
 sdrm_factory = sdrm_compressor_factory
 
 
-@COMPRESSOR_REGISTRY.register("inject_sdrm")
-@COMPRESSOR_REGISTRY.register("sdrm_inject")
 def inject_sdrm(model: Any = None, **kwargs: Any) -> Any:
     """Safe injection hook for SDRM."""
     if model is None:

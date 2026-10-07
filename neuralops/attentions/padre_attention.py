@@ -154,7 +154,6 @@ class LoRALinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("padre")
 @ATTENTION_REGISTRY.register("padre_attention")
 class PADReAttention(BaseAttention):
     """
@@ -717,7 +716,6 @@ class PADReAttention(BaseAttention):
         return torch.tensor(0.0, device=self.out_proj.weight.device)
 
 
-@ATTENTION_REGISTRY.register("padre_inject")
 def inject_padre(
     layer: Any = None,
     model: Any = None,

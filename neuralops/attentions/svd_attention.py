@@ -170,8 +170,6 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("svd_seq", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("svd_sequence", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("svd_sequence_attention", supports_causal=True, supports_gqa=True)
 class SVDLinearAttention(BaseAttention):
     r"""Low-Rank SVD-Compressed Sequence Attention Mechanism.
     Hardened for production use across diverse transformer architectures.
@@ -854,9 +852,6 @@ class SVDLinearAttention(BaseAttention):
 LowRankSVDSequenceAttention = SVDLinearAttention
 
 
-@ATTENTION_REGISTRY.register("svd_sequence_inject")
-@ATTENTION_REGISTRY.register("svd_sequence_attention_inject")
-@ATTENTION_REGISTRY.register("inject_svd_sequence_attention")
 def inject_svd_linear_attention(
     layer: Any = None,
     model: Any = None,

@@ -280,9 +280,7 @@ class FactorisedLinear(nn.Module):
 # ============================================================================
 
 
-@ATTENTION_REGISTRY.register("orion_module", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("orion", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("orion_attention", supports_causal=True, supports_gqa=True)
 class ORIONAttention(BaseAttention):
     is_custom_attention: bool = True
 
@@ -1033,7 +1031,6 @@ class ORIONAttention(BaseAttention):
 # ============================================================================
 
 
-@ATTENTION_REGISTRY.register("orion_inject")
 def inject_orion(
     layer: Any = None,
     model: Any = None,

@@ -892,8 +892,6 @@ class XAttention(BaseAttention):
 
 
 @ATTENTION_REGISTRY.register("inject_xattention")
-@ATTENTION_REGISTRY.register("xattention_inject")
-@ATTENTION_REGISTRY.register("x_inject")
 def inject_xattention(
     layer: Any = None,
     model: Any = None,

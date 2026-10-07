@@ -137,7 +137,6 @@ class ADMMMaskedLinear(nn.Module):
 
 
 @COMPRESSOR_REGISTRY.register("admm_pruner")
-@COMPRESSOR_REGISTRY.register("admm_pruner_distill")
 class ADMMPruner(BaseCompressor):
     """
     Production-hardened ADMM Pruner with Layer-Wise Reconstruction Distillation,
@@ -849,8 +848,6 @@ class ADMMPruner(BaseCompressor):
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("admm_pruner_factory")
-@COMPRESSOR_REGISTRY.register("admm_pruner_distill_factory")
 def admm_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory for ADMM pruner."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))

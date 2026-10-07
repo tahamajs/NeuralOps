@@ -913,9 +913,6 @@ class EATBlock(BaseAttention):
 # ===========================================================================
 # Injection
 # ===========================================================================
-@ATTENTION_REGISTRY.register("eat_fn")
-@ATTENTION_REGISTRY.register("eat_inject")
-@ATTENTION_REGISTRY.register("inject_eat")
 def inject_eat(
     layer: Any = None,
     model: Any = None,

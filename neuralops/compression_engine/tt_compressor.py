@@ -536,10 +536,7 @@ def _try_svd_fallback(
 # ===========================================================================
 # Compressor
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("tt")
-@COMPRESSOR_REGISTRY.register("tt_linear")
 @COMPRESSOR_REGISTRY.register("tt_compressor")
-@COMPRESSOR_REGISTRY.register("tt_linear_compressor")
 class TTCompressor(BaseCompressor):
     """
     Replaces Linear/Conv1D with TTLinearLayer when TT succeeds; otherwise
@@ -894,9 +891,6 @@ class TTCompressor(BaseCompressor):
 # ===========================================================================
 # Factory
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("tt_factory")
-@COMPRESSOR_REGISTRY.register("tt_compressor_factory")
-@COMPRESSOR_REGISTRY.register("tt_linear_factory")
 def tt_compressor_factory(
     model: nn.Module,
     comp_config: Any | None = None,

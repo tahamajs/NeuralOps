@@ -217,7 +217,6 @@ class LoRALinear(nn.Module):
 # ============================================================================
 
 
-@ATTENTION_REGISTRY.register("hamming", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("hamming_attention", supports_causal=True, supports_gqa=True)
 class HammingAttention(BaseAttention):
     supports_causal: bool = True
@@ -675,10 +674,6 @@ class HammingAttention(BaseAttention):
 # ============================================================================
 
 
-@ATTENTION_REGISTRY.register("hamming_attention_inject")
-@ATTENTION_REGISTRY.register("hamming_inject")
-@ATTENTION_REGISTRY.register("inject_hamming_attention")
-@ATTENTION_REGISTRY.register("inject_hamming")
 def inject_hamming_attention(
     layer: Any = None,
     model: Any = None,

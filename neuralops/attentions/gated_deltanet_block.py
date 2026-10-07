@@ -242,8 +242,6 @@ class GatedDeltaNetBlock(BaseAttention):
             return out, None
 
 
-@ATTENTION_REGISTRY.register("gated_deltanet_block_inject")
-@ATTENTION_REGISTRY.register("inject_gated_deltanet_block")
 def inject_gated_deltanet_block(
     layer: Any = None,
     model: Any = None,

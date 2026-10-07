@@ -170,7 +170,6 @@ class LoRALinear(nn.Module):
 # ===========================================================================
 # MLA Attention
 # ===========================================================================
-@ATTENTION_REGISTRY.register("mla", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("mla_attention", supports_causal=True, supports_gqa=True)
 class MLAAttention(BaseAttention):
     """
@@ -827,8 +826,6 @@ class MLAAttention(BaseAttention):
 # ===========================================================================
 # Injection
 # ===========================================================================
-@ATTENTION_REGISTRY.register("mla_inject")
-@ATTENTION_REGISTRY.register("inject_mla")
 def inject_mla(
     model: nn.Module | None = None,
     layer: nn.Module | None = None,

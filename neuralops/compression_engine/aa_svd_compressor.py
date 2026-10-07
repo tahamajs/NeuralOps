@@ -245,10 +245,6 @@ def _orthogonal_init(t: torch.Tensor) -> None:
 # ===========================================================================
 # Compressor
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("asvd")
-@COMPRESSOR_REGISTRY.register("asvd_compressor")
-@COMPRESSOR_REGISTRY.register("aasvd")
-@COMPRESSOR_REGISTRY.register("aa_svd")
 @COMPRESSOR_REGISTRY.register("aa_svd_compressor")
 class AASVDCompressor(BaseCompressor):
     is_custom_attention: bool = False
@@ -902,11 +898,6 @@ class AASVDCompressor(BaseCompressor):
 # ===========================================================================
 # Factory
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("asvd_factory")
-@COMPRESSOR_REGISTRY.register("asvd_compressor_factory")
-@COMPRESSOR_REGISTRY.register("aasvd_factory")
-@COMPRESSOR_REGISTRY.register("aa_svd_factory")
-@COMPRESSOR_REGISTRY.register("aa_svd_compressor_factory")
 def aasvd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     rank = kwargs.pop(
         "rank", _cfg_get(comp_config, "aasvd_rank", _cfg_get(comp_config, "rank", 64))

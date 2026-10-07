@@ -286,9 +286,7 @@ class LowRankLinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("lola_attn", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("lola_attention", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("lola", supports_causal=True, supports_gqa=True)
 class LoLAAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
@@ -843,10 +841,6 @@ class LoLAAttention(BaseAttention):
         return output, (attn if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("lola_attention_inject")
-@ATTENTION_REGISTRY.register("lola_inject")
-@ATTENTION_REGISTRY.register("inject_lola_attention")
-@ATTENTION_REGISTRY.register("inject_lola")
 def inject_lola_attention(
     layer: Any = None,
     model: Any = None,

@@ -942,28 +942,15 @@ class DynamicEntropySVDCompressor(BaseCompressor):
 
 
 # Register classes under *_class to avoid collision with factory functions
-@COMPRESSOR_REGISTRY.register("dynamic_entropy_svd_class")
-@COMPRESSOR_REGISTRY.register("dynamic_rank_class")
-@COMPRESSOR_REGISTRY.register("dynamic_entropy_class")
 class DynamicEntropySVDCompressorRegistered(DynamicEntropySVDCompressor):
     pass
 
 
-@COMPRESSOR_REGISTRY.register("entropy_rank_allocator_class")
 class EntropyRankAllocatorRegistered(DynamicEntropySVDCompressor):
     pass
 
 
-@COMPRESSOR_REGISTRY.register("dynamic_entropy")
-@COMPRESSOR_REGISTRY.register("dynamic_entropy_svd")
 @COMPRESSOR_REGISTRY.register("dynamic_rank")
-@COMPRESSOR_REGISTRY.register("dynamic_entropy_factory")
-@COMPRESSOR_REGISTRY.register("dynamic_entropy_svd_factory")
-@COMPRESSOR_REGISTRY.register("dynamic_rank_factory")
-@COMPRESSOR_REGISTRY.register("dynamic_entropy_compressor")
-@COMPRESSOR_REGISTRY.register("dynamic_entropy_svd_compressor")
-@COMPRESSOR_REGISTRY.register("dynamic_rank_compressor")
-@COMPRESSOR_REGISTRY.register("entropy_rank_allocator")
 def dynamic_entropy_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Dynamic Entropy SVD factory function."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
@@ -1037,8 +1024,6 @@ def dynamic_entropy_svd_factory(model: Any, comp_config: Any = None, **kwargs: A
         return (model, {}) if return_stats else model
 
 
-@COMPRESSOR_REGISTRY.register("inject_dynamic_entropy")
-@COMPRESSOR_REGISTRY.register("dynamic_entropy_inject")
 def inject_dynamic_entropy(model: Any = None, layer: Any = None, **kwargs: Any) -> Any:
     """Safe injection hook for dynamic_entropy. Returns None on failure."""
     target = layer if layer is not None else model
@@ -1059,8 +1044,6 @@ def dynamic_entropy_inject(model: Any = None, layer: Any = None, **kwargs: Any) 
     return inject_dynamic_entropy(model, layer, **kwargs)
 
 
-@COMPRESSOR_REGISTRY.register("inject_dynamic_rank")
-@COMPRESSOR_REGISTRY.register("dynamic_rank_inject")
 def inject_dynamic_rank(model: Any = None, layer: Any = None, **kwargs: Any) -> Any:
     """Safe injection hook alias for dynamic_rank."""
     return inject_dynamic_entropy(model, layer, **kwargs)

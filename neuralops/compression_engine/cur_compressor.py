@@ -493,8 +493,6 @@ class CURCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("cur")
-@COMPRESSOR_REGISTRY.register("cur_factory")
 def cur_compressor_factory(
     model: nn.Module, comp_config: Any | None = None, rank: int | None = None, **kwargs: Any,
 ) -> nn.Module | tuple[nn.Module, dict[str, Any]]:

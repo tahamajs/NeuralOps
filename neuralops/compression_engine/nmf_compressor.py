@@ -328,7 +328,6 @@ _ATTN_NAMES = {
 # ===========================================================================
 # Compressor
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("nmf")
 @COMPRESSOR_REGISTRY.register("nmf_compressor")
 class NMFCompressor(BaseCompressor):
     """
@@ -601,7 +600,6 @@ class NMFCompressor(BaseCompressor):
 # ===========================================================================
 # Factory
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("nmf_factory")
 def nmf_factory(
     model: nn.Module,
     comp_config: Any | None = None,

@@ -417,8 +417,6 @@ class KroneckerTTLoRALayer(nn.Module):
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("kronecker_tt_lora_class")
-@COMPRESSOR_REGISTRY.register("kronecker_tt_lora_compressor_class")
 class KroneckerTTLoRACompressor(BaseCompressor):
     is_custom_attention: bool = False
 
@@ -832,7 +830,6 @@ class KroneckerTTLoRACompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("kronecker_tt_lora")
-@COMPRESSOR_REGISTRY.register("kronecker_tt_lora_factory")
 def kronecker_tt_lora_factory(
     model: nn.Module,
     comp_config: Any | None = None,

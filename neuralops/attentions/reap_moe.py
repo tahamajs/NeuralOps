@@ -366,8 +366,6 @@ class REAPMoE(nn.Module):
 # REAP-MoE Attention
 # ===========================================================================
 @ATTENTION_REGISTRY.register("reap_moe")
-@ATTENTION_REGISTRY.register("reap_moe_attn")
-@ATTENTION_REGISTRY.register("reap_moe_attention")
 class REAPMoEAttention(BaseAttention):
     is_custom_attention: bool = True
 
@@ -1032,8 +1030,6 @@ class REAPMoEAttention(BaseAttention):
 # ===========================================================================
 # Injection
 # ===========================================================================
-@ATTENTION_REGISTRY.register("reap_moe_inject")
-@ATTENTION_REGISTRY.register("inject_reap_moe")
 def inject_reap_moe(
     model: nn.Module | None = None,
     layer: nn.Module | None = None,

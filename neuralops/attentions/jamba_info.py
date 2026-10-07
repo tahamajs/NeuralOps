@@ -993,8 +993,6 @@ class JambaInfoBlock(BaseAttention):
 # ===========================================================================
 # Injector
 # ===========================================================================
-@ATTENTION_REGISTRY.register("jamba_info_inject")
-@ATTENTION_REGISTRY.register("inject_jamba_info")
 def inject_jamba_info(
     layer: Any = None,
     model: Any = None,

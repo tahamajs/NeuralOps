@@ -239,8 +239,6 @@ class ROASTLinear(nn.Module):
         return roast
 
 
-@COMPRESSOR_REGISTRY.register("roast")
-@COMPRESSOR_REGISTRY.register("roast_compressor")
 @COMPRESSOR_REGISTRY.register("roast_hashed_linear")
 class ROASTCompressor(BaseCompressor):
     """
@@ -536,9 +534,6 @@ class ROASTCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("roast_factory")
-@COMPRESSOR_REGISTRY.register("roast_compressor_factory")
-@COMPRESSOR_REGISTRY.register("roast_hashed_linear_factory")
 def roast_factory(
     model: Any,
     comp_config: Any = None,

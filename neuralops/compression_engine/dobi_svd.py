@@ -142,9 +142,6 @@ _ATTN_NAMES = {
 }
 
 
-@COMPRESSOR_REGISTRY.register("dobi_class")
-@COMPRESSOR_REGISTRY.register("dobi_svd_class")
-@COMPRESSOR_REGISTRY.register("dobi_compressor_class")
 class DobiSVDCompressor(BaseCompressor):
     """
     Dobi-SVD Compressor: Differentiable SVD with learnable spectral gating.
@@ -571,12 +568,7 @@ class DobiSVDCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("dobi")
 @COMPRESSOR_REGISTRY.register("dobi_svd")
-@COMPRESSOR_REGISTRY.register("dobi_compressor")
-@COMPRESSOR_REGISTRY.register("dobi_svd_compressor")
-@COMPRESSOR_REGISTRY.register("dobi_factory")
-@COMPRESSOR_REGISTRY.register("dobi_svd_factory")
 def dobi_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Dobi factory function."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
@@ -639,8 +631,6 @@ def dobi_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         return (model, {}) if return_stats else model
 
 
-@COMPRESSOR_REGISTRY.register("inject_dobi")
-@COMPRESSOR_REGISTRY.register("dobi_inject")
 def inject_dobi(model: Any = None, layer: Any = None, **kwargs: Any) -> Any:
     """Safe injection hook for Dobi-SVD. Returns None on failure."""
     target = layer if layer is not None else model

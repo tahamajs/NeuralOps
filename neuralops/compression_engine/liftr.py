@@ -289,8 +289,6 @@ class _LinearizedAttentionWrapper(nn.Module):
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("liftr_class")
-@COMPRESSOR_REGISTRY.register("liftr_compressor_class")
 class LIFTRCompressor(BaseCompressor):
     # LIFTR-FIX-01: this is a compressor, not an attention.
     is_custom_attention: bool = False
@@ -594,8 +592,6 @@ class LIFTRCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("liftr")
-@COMPRESSOR_REGISTRY.register("liftr_compressor")
-@COMPRESSOR_REGISTRY.register("liftr_factory")
 def liftr_compressor_entry(
     model: nn.Module,
     comp_config: Any = None,

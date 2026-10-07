@@ -332,8 +332,6 @@ class ReplaceMeCompressor(BaseCompressor):
 # ===========================================================================
 # Factory
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("replaceme_factory")
-@COMPRESSOR_REGISTRY.register("replaceme_compressor_factory")
 def replaceme_factory(
     model: Any,
     comp_config: Any = None,

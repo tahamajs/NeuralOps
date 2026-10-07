@@ -350,7 +350,6 @@ _ATTN_NAMES = {
 # ===========================================================================
 # Compressor
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("mlorq")
 @COMPRESSOR_REGISTRY.register("mlorq_compressor")
 class MLoRQCompressor(BaseCompressor):
     """
@@ -820,7 +819,6 @@ class MLoRQCompressor(BaseCompressor):
 # ===========================================================================
 # Factory
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("mlorq_factory")
 def mlorq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     total_budget_mb = kwargs.pop(
         "total_memory_budget_mb",

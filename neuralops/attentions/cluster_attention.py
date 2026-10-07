@@ -952,8 +952,6 @@ class ClusterAttention(BaseAttention):
         return output, attn_ret
 
 
-@ATTENTION_REGISTRY.register("cluster_inject")
-@ATTENTION_REGISTRY.register("cluster_attention_inject")
 def inject_cluster(
     layer: Any = None,
     model: Any = None,

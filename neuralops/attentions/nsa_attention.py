@@ -686,10 +686,6 @@ class NativeSparseAttention(BaseAttention):
         return output, (attn if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("nsa_inject")
-@ATTENTION_REGISTRY.register("inject_nsa")
-@ATTENTION_REGISTRY.register("nsa_attention_inject")
-@ATTENTION_REGISTRY.register("inject_nsa_attention")
 def inject_nsa(
     layer: Any = None,
     model: Any = None,

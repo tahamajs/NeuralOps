@@ -130,7 +130,6 @@ class PrunedChannelLinear(nn.Module):
 # Compressor
 # ===========================================================================
 @COMPRESSOR_REGISTRY.register("flat_llm")
-@COMPRESSOR_REGISTRY.register("flat_llm_compressor")
 class FLATLLMCompressor(BaseCompressor):
     """
     FLAT-LLM compressor: Activation-aware output-channel pruning.
@@ -612,8 +611,6 @@ class FLATLLMCompressor(BaseCompressor):
 # ===========================================================================
 # Factory (FLT-FIX-11)
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("flat_llm_factory")
-@COMPRESSOR_REGISTRY.register("flat_llm_compressor_factory")
 def flat_llm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
     keep_ratio = kwargs.pop(

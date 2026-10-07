@@ -278,7 +278,6 @@ def _write_cache(k: torch.Tensor, v: torch.Tensor, mamba_state: Any | None, past
 # Jamba-2 Block
 # ===========================================================================
 @ATTENTION_REGISTRY.register("jamba", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("jamba2", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class Jamba2Block(BaseAttention):
     is_custom_attention: bool = True
 
@@ -644,10 +643,6 @@ class Jamba2Block(BaseAttention):
         return out
 
 
-@ATTENTION_REGISTRY.register("jamba_inject")
-@ATTENTION_REGISTRY.register("jamba2_inject")
-@ATTENTION_REGISTRY.register("inject_jamba")
-@ATTENTION_REGISTRY.register("inject_jamba2")
 def inject_jamba(layer: Any = None, model: Any = None, model_config: Any = None, comp_config: Any = None, layer_idx: int = 0, total_layers: int = 12, old_attn: nn.Module | None = None, _depth: int = 0, **kwargs: Any) -> Jamba2Block | nn.Module | None:
     if _depth > 8: return None
     target = layer if layer is not None else model

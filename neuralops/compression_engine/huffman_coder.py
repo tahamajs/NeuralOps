@@ -311,7 +311,6 @@ class HuffmanCoder:
         return torch.from_numpy(decoded).reshape(shape).to(device=device)
 
 
-@COMPRESSOR_REGISTRY.register("huffman")
 @COMPRESSOR_REGISTRY.register("huffman_coder")
 class HuffmanCompressor(BaseCompressor):
     """
@@ -594,7 +593,6 @@ class HuffmanCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("huffman")
 @COMPRESSOR_REGISTRY.register("huffman_coder")
 def huffman_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """Huffman compressor factory function."""

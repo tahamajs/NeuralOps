@@ -172,7 +172,6 @@ class LoRALinear(nn.Module):
 # ============================================================================
 
 
-@ATTENTION_REGISTRY.register("galerkin", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("galerkin_attention", supports_causal=True, supports_gqa=True)
 class GalerkinAttention(BaseAttention):
     supports_causal: bool = True
@@ -900,10 +899,6 @@ class GalerkinAttention(BaseAttention):
 # ============================================================================
 
 
-@ATTENTION_REGISTRY.register("galerkin_inject")
-@ATTENTION_REGISTRY.register("inject_galerkin")
-@ATTENTION_REGISTRY.register("galerkin_attention_inject")
-@ATTENTION_REGISTRY.register("inject_galerkin_attention")
 def inject_galerkin(
     layer: Any = None,
     model: Any = None,

@@ -187,8 +187,6 @@ def _is_conv1d(module: nn.Module) -> bool:
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("delta_kv_class")
-@COMPRESSOR_REGISTRY.register("delta_kv_compressor_class")
 class DeltaKVCompressor(BaseCompressor):
     # DKV-FIX-01: this is a compressor, not attention.
     is_custom_attention: bool = False
@@ -562,8 +560,6 @@ class DeltaKVCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("delta_kv")
-@COMPRESSOR_REGISTRY.register("delta_kv_compressor")
-@COMPRESSOR_REGISTRY.register("delta_kv_factory")
 def delta_kv_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """DeltaKV compressor factory."""
     rank = kwargs.pop(

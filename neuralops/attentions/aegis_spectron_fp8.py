@@ -438,7 +438,6 @@ def _state_recurrence_jit(u: torch.Tensor, gamma: torch.Tensor, reverse: bool = 
 
 
 @ATTENTION_REGISTRY.register("aegis_spectron_fp8", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("aegis_spectron_fp8_attn", supports_causal=True, supports_gqa=True)
 class AegisSpectronFP8Attention(BaseAttention):
     is_custom_attention = True
 
@@ -1194,8 +1193,6 @@ class AegisSpectronFP8Attention(BaseAttention):
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("aegis_spectron_fp8_inject")
-@ATTENTION_REGISTRY.register("inject_aegis_spectron_fp8")
 def inject_aegis_spectron_fp8(
     layer: Any = None,
     model: Any = None,

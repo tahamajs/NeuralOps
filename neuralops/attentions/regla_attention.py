@@ -173,8 +173,6 @@ class LoRALinear(nn.Module):
 # ===========================================================================
 # ReGLAAttention
 # ===========================================================================
-@ATTENTION_REGISTRY.register("regla_class")
-@ATTENTION_REGISTRY.register("regla_attention_class")
 class ReGLAAttention(BaseAttention):
     is_custom_attention: bool = True
 
@@ -798,10 +796,7 @@ class ReGLAAttention(BaseAttention):
 # ===========================================================================
 # Injector
 # ===========================================================================
-@ATTENTION_REGISTRY.register("regla")
 @ATTENTION_REGISTRY.register("regla_attention")
-@ATTENTION_REGISTRY.register("regla_inject")
-@ATTENTION_REGISTRY.register("inject_regla")
 def inject_regla(
     model: nn.Module | None = None,
     layer: nn.Module | None = None,

@@ -942,8 +942,6 @@ class DecayLinearAttention(BaseAttention):
         return final_out, None
 
 
-@ATTENTION_REGISTRY.register("decay_linear_attention_inject")
-@ATTENTION_REGISTRY.register("inject_decay_linear_attention")
 def inject_decay_linear(
     layer: Any = None,
     model: Any = None,

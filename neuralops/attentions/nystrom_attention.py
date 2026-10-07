@@ -806,8 +806,6 @@ class NystromAttention(BaseAttention):
 # ===========================================================================
 # Injector
 # ===========================================================================
-@ATTENTION_REGISTRY.register("nystrom_inject")
-@ATTENTION_REGISTRY.register("inject_nystrom")
 def inject_nystrom(
     layer: Any = None,
     model: Any = None,

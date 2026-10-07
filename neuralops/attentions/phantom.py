@@ -290,7 +290,6 @@ def lsh_attention(
 
 
 @ATTENTION_REGISTRY.register("phantom")
-@ATTENTION_REGISTRY.register("phantom_module")
 class PHANTOMAttention(BaseAttention):
     is_custom_attention: bool = True
 
@@ -874,6 +873,5 @@ def inject_phantom(
 
 
 # Aliases and Registry
-@ATTENTION_REGISTRY.register("phantom_inject")
 def inject_phantom_attention(*args: Any, **kwargs: Any) -> PHANTOMAttention | nn.Module | None:
     return inject_phantom(*args, **kwargs)

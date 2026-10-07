@@ -221,8 +221,6 @@ class FactorizedLoRALinear(nn.Module):
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("rpc_class")
-@ATTENTION_REGISTRY.register("rpc_attention_class")
 class RPCAttention(BaseAttention):
     is_custom_attention: bool = True
 
@@ -892,10 +890,7 @@ class RPCAttention(BaseAttention):
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("rpc")
 @ATTENTION_REGISTRY.register("rpc_attention")
-@ATTENTION_REGISTRY.register("rpc_inject")
-@ATTENTION_REGISTRY.register("inject_rpc")
 def inject_rpc(
     layer: Any = None,
     model: Any = None,

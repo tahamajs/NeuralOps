@@ -601,10 +601,6 @@ class CompressedAttentionLayer2(CompressedAttentionLayer):
     pass
 
 
-@ATTENTION_REGISTRY.register("compressed_attention_fn")
-@ATTENTION_REGISTRY.register("compressed_attention_layer_fn")
-@ATTENTION_REGISTRY.register("compressed_attention_inject")
-@ATTENTION_REGISTRY.register("compressed_attention_layer_inject")
 def inject_compressed_attention(
     layer: Any = None,
     model: Any = None,

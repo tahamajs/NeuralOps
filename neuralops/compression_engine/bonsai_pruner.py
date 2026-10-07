@@ -225,7 +225,6 @@ class BonsaiPrunedLoRALinear(nn.Module):
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("bonsai_compressor")
 class BonsaiPruner(BaseCompressor):
     """
     Bonsai Pruner: Progressive Iterative Sparsity Scheduler with
@@ -571,10 +570,7 @@ class BonsaiPruner(BaseCompressor):
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("bonsai")
 @COMPRESSOR_REGISTRY.register("bonsai_pruner")
-@COMPRESSOR_REGISTRY.register("bonsai_factory")
-@COMPRESSOR_REGISTRY.register("bonsai_pruner_factory")
 def bonsai_factory(
     model: Any,
     comp_config: Any = None,

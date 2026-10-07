@@ -306,8 +306,6 @@ def _autocast_off(x: torch.Tensor):
 # 7. SpectronAttention
 # ======================================================================
 @ATTENTION_REGISTRY.register("spectron", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("spectron_attention", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("spectron_attn", supports_causal=True, supports_gqa=True)
 class SpectronAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
@@ -1046,10 +1044,6 @@ def gather_attention_weights(model: Any) -> tuple[list[np.ndarray], list[str]]:
 # ======================================================================
 # 9. Injector
 # ======================================================================
-@ATTENTION_REGISTRY.register("spectron_inject")
-@ATTENTION_REGISTRY.register("spectron_attention_inject")
-@ATTENTION_REGISTRY.register("inject_spectron_attention")
-@ATTENTION_REGISTRY.register("inject_spectron")
 def inject_spectron(
     layer: Any = None,
     model: Any = None,

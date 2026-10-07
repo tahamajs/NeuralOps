@@ -427,7 +427,6 @@ class ResSVDCompressorRegistered(ResSVDCompressor):
     pass
 
 
-@COMPRESSOR_REGISTRY.register("spectral_residual_lora")
 class SpectralResidualLoRARegistered(SpectralResidualLoRA):
     pass
 

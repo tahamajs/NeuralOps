@@ -154,9 +154,7 @@ class LoRALinear(nn.Module):
         return out.to(orig_dtype)
 
 
-@ATTENTION_REGISTRY.register("compression_unified_rope", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("unified_rope", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("unified_rope_attention", supports_causal=True, supports_gqa=True)
 class UnifiedRoPE(BaseAttention):
     r"""Universal Rotary Position Embedding Attention module."""
 
@@ -708,9 +706,6 @@ class UnifiedRoPE(BaseAttention):
         )
 
 
-@ATTENTION_REGISTRY.register("unified_rope_inject")
-@ATTENTION_REGISTRY.register("compression_unified_rope_inject")
-@ATTENTION_REGISTRY.register("inject_unified_rope")
 def inject_unified_rope(
     layer: Any = None,
     model: Any = None,

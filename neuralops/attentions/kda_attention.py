@@ -155,7 +155,6 @@ class LoRALinear(nn.Module):
 # ============================================================================
 
 
-@ATTENTION_REGISTRY.register("kda", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("kda_attention", supports_causal=True, supports_gqa=True)
 class KDAAttention(BaseAttention):
     is_custom_attention: bool = True
@@ -761,8 +760,6 @@ class KDAAttention(BaseAttention):
 # ============================================================================
 
 
-@ATTENTION_REGISTRY.register("kda_inject")
-@ATTENTION_REGISTRY.register("inject_kda")
 def inject_kda(
     layer: Any = None,
     model: Any = None,

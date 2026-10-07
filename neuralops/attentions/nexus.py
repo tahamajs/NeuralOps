@@ -463,8 +463,6 @@ class SpectraformerRectify(nn.Module):
 # 5. NEXUS Attention (full module with Chunked Causal)
 # ===========================================================================
 @ATTENTION_REGISTRY.register("nexus", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("nexus_attention", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("NEXUSAttention", supports_causal=True, supports_gqa=True)
 class NEXUSAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
@@ -1127,10 +1125,6 @@ class NEXUSAttention(BaseAttention):
 # ===========================================================================
 # Injection helper
 # ===========================================================================
-@ATTENTION_REGISTRY.register("inject_nexus")
-@ATTENTION_REGISTRY.register("nexus_inject")
-@ATTENTION_REGISTRY.register("inject_nexus_attention")
-@ATTENTION_REGISTRY.register("nexus_attention_inject")
 def inject_nexus(
     model: nn.Module | None = None,
     layer: nn.Module | None = None,

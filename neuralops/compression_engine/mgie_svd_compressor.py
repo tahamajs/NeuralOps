@@ -580,8 +580,6 @@ class MGIESVDBudgetCompressor(BaseCompressor):
 # ===========================================================================
 # Factory
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("mgie_budget_factory")
-@COMPRESSOR_REGISTRY.register("mgie_svd_budget_factory")
 def mgie_budget_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """MGIE budget factory function."""
     total_rank_budget = kwargs.pop(

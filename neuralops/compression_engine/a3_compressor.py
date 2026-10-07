@@ -227,7 +227,6 @@ def _orthogonal_init(tensor: torch.Tensor) -> None:
 # ===========================================================================
 # Compressor
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("a3")
 @COMPRESSOR_REGISTRY.register("a3_compressor")
 class A3Compressor(BaseCompressor):
     """
@@ -1139,7 +1138,6 @@ class A3Compressor(BaseCompressor):
 # ===========================================================================
 # Factory
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("a3")
 @COMPRESSOR_REGISTRY.register("a3_compressor")
 def a3_compressor_factory(
     model: nn.Module,

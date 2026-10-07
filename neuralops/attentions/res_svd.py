@@ -93,9 +93,6 @@ def apply_rotary_pos_emb(
 
 
 @ATTENTION_REGISTRY.register("res_svd")
-@ATTENTION_REGISTRY.register("ressvd")
-@ATTENTION_REGISTRY.register("res_svd_attention")
-@ATTENTION_REGISTRY.register("spectral_residual_svd")
 class ResSVDAttention(BaseAttention):
     is_custom_attention: bool = True
 
@@ -679,9 +676,6 @@ class ResSVDAttention(BaseAttention):
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("res_svd_inject")
-@ATTENTION_REGISTRY.register("inject_res_svd")
-@ATTENTION_REGISTRY.register("inject_res_svd_attention")
 def inject_res_svd(
     layer: Any = None,
     model: Any = None,

@@ -124,8 +124,6 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-@COMPRESSOR_REGISTRY.register("zerokv_neo")
-@COMPRESSOR_REGISTRY.register("zerokv")
 @COMPRESSOR_REGISTRY.register("zerokv_neo_compressor")
 class ZeroKVNeoCompressor(BaseCompressor):
     """
@@ -455,9 +453,6 @@ class ZeroKVNeoCompressor(BaseCompressor):
         return any(kw in name_lower for kw in qkv_keywords)
 
 
-@COMPRESSOR_REGISTRY.register("zerokv_neo_factory")
-@COMPRESSOR_REGISTRY.register("zerokv_factory")
-@COMPRESSOR_REGISTRY.register("zerokv_neo_compressor_factory")
 def zerokv_neo_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     """ZeroKV-Neo compressor factory function."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))

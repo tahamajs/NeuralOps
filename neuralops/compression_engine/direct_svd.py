@@ -44,7 +44,6 @@ _ATTN_NAMES = {
 
 
 @COMPRESSOR_REGISTRY.register("direct_svd")
-@COMPRESSOR_REGISTRY.register("direct_svd_compressor")
 class DirectSVDCompressor(BaseCompressor):
     is_custom_attention: bool = True
     """
@@ -502,8 +501,6 @@ class DirectSVDCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("direct_svd_factory")
-@COMPRESSOR_REGISTRY.register("direct_svd_compressor_factory")
 def direct_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Direct SVD factory function."""
     return_tuple = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))

@@ -962,8 +962,6 @@ class HymbaTransXBlock(BaseAttention):
 # ===========================================================================
 # Injection
 # ===========================================================================
-@ATTENTION_REGISTRY.register("hymba_transx_inject")
-@ATTENTION_REGISTRY.register("inject_hymba_transx")
 def inject_hymba_transx(
     layer: Any = None,
     model: Any = None,

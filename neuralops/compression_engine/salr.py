@@ -540,8 +540,6 @@ class SALRCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("salr_factory")
-@COMPRESSOR_REGISTRY.register("salr_compressor_factory")
 def salr_factory(
     model: nn.Module,
     comp_config: Any = None,

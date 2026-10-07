@@ -829,9 +829,6 @@ class WeightedGroupedQueryAttention(BaseAttention):
         return output, (attn if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("wgqa_inject")
-@ATTENTION_REGISTRY.register("inject_wgqa")
-@ATTENTION_REGISTRY.register("wgqa_attention_inject")
 def inject_wgqa(
     layer: Any = None,
     model: Any = None,
