@@ -189,7 +189,6 @@ SLOW_MODULE_TIMEOUT_OVERRIDES: dict[str, int] = {
     "mgie_budget": 400,
     "mixattention_moska": 400,
     "modegpt": 400,
-    "nli_softmax": 400,
     "oats": 400,
     "optimal_subspace_projection": 400,
     "rpc": 400,
