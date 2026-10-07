@@ -136,7 +136,7 @@ class HybridLocalKernelConfig:
     is_decoder: bool = False
 
 
-AegisConfigV2 = AegisAttentionConfigV2
+AegisConfigV2 = HybridLocalKernelConfig
 
 
 # ===========================================================================
