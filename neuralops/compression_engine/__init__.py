@@ -1,9 +1,11 @@
 """
-Auto-import all compression_engine modules and export their registered classes.
+Auto-import all compression_engine modules across subpackages and export their registered classes.
 """
 
+import importlib
 import logging
 import os
+import sys
 
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
@@ -11,65 +13,27 @@ logger = logging.getLogger(__name__)
 
 __all__ = ["COMPRESSOR_REGISTRY"]
 
-_curr_dir = os.path.dirname(__file__)
-for file in os.listdir(_curr_dir):
-    if file.endswith(".py") and not file.startswith(".") and not file.startswith("_"):
-        module_name = file[:-3]
-        try:
-            mod = __import__(f"neuralops.compression_engine.{module_name}", fromlist=[module_name])
-            __all__.append(module_name)
-            for attr in dir(mod):
-                if not attr.startswith("_"):
-                    val = getattr(mod, attr)
-                    if isinstance(val, type):
-                        globals()[attr] = val
-                        __all__.append(attr)
-        except Exception as e:
-            logger.warning(f"Skipping compression_engine module '{module_name}' due to: {e}")
+_SUBPACKAGES = ['experimental', 'kv_cache', 'low_rank', 'pruning', 'quantization', 'svd', 'tensor_decomp']
+_LEGACY_MAP = {'liftr': 'experimental.liftr', 'lillama_compressor': 'experimental.lillama_compressor', 'flat_llm': 'experimental.flat_llm', 'hashed_net_compressor': 'experimental.hashed_net_compressor', 'roast_hashed_linear': 'experimental.roast_hashed_linear', 'aatc_xkv_compressor': 'kv_cache.aatc_xkv_compressor', 'delta_kv': 'kv_cache.delta_kv', 'kvtc_compressor': 'kv_cache.kvtc_compressor', 'hybridkv_compressor': 'kv_cache.hybridkv_compressor', 'cachenotes_compressor': 'kv_cache.cachenotes_compressor', 'zerokv_neo_compressor': 'kv_cache.zerokv_neo_compressor', 'rpca_compressor': 'low_rank.rpca_compressor', 'frandi_compressor': 'low_rank.frandi_compressor', 'sdrm_compressor': 'low_rank.sdrm_compressor', 'mgie_svd_compressor': 'low_rank.mgie_svd_compressor', 'cr_compressor': 'low_rank.cr_compressor', 'cur_compressor': 'low_rank.cur_compressor', 'grecodec_compressor': 'low_rank.grecodec_compressor', 'lsc_compressor': 'low_rank.lsc_compressor', 'drone_compressor': 'low_rank.drone_compressor', 'oats_compressor': 'low_rank.oats_compressor', 'salr': 'low_rank.salr', 'uniql_compressor': 'low_rank.uniql_compressor', 'cur_moe_compressor': 'low_rank.cur_moe_compressor', 'soka_compressor': 'low_rank.soka_compressor', 'tomoe_compressor': 'low_rank.tomoe_compressor', 'compot_compressor': 'low_rank.compot_compressor', 'come_compressor': 'low_rank.come_compressor', 'modegpt_compressor': 'low_rank.modegpt_compressor', 'enlighten_compressor': 'low_rank.enlighten_compressor', 'a3_compressor': 'low_rank.a3_compressor', 'slim_compressor': 'low_rank.slim_compressor', 'nmf_compressor': 'low_rank.nmf_compressor', 'mlorq_compressor': 'low_rank.mlorq_compressor', 'svd_llm_compressor': 'low_rank.svd_llm_compressor', 'admm_compressor': 'pruning.admm_compressor', 'mamba_shedder': 'pruning.mamba_shedder', 'ast_pruner': 'pruning.ast_pruner', 'flap': 'pruning.flap', 'proxsparse': 'pruning.proxsparse', 'bonsai_pruner': 'pruning.bonsai_pruner', 'sparsegpt': 'pruning.sparsegpt', 'armor_pruner': 'pruning.armor_pruner', 'admm_pruner': 'pruning.admm_pruner', 'coopq_quantizer': 'quantization.coopq_quantizer', 'slicegpt': 'quantization.slicegpt', 'faq_quantizer': 'quantization.faq_quantizer', 'rotational_slicegpt_int4': 'quantization.rotational_slicegpt_int4', 'kmeans_quantize': 'quantization.kmeans_quantize', 'slicegpt_pca': 'quantization.slicegpt_pca', 'huffman_coder': 'quantization.huffman_coder', 'astro_quantizer': 'quantization.astro_quantizer', 'dynamic_rank': 'svd.dynamic_rank', 'saes_svd_v2': 'svd.saes_svd_v2', 'optimal_subspace_projection': 'svd.optimal_subspace_projection', 'gfws_d_compressor': 'svd.gfws_d_compressor', 'fwsvd_compressor': 'svd.fwsvd_compressor', 'swift_svd': 'svd.swift_svd', 'erc_svd': 'svd.erc_svd', 'aa_svd_compressor': 'svd.aa_svd_compressor', 'subspace_projection': 'svd.subspace_projection', 'entropy_budget_allocation': 'svd.entropy_budget_allocation', 'svd_linear': 'svd.svd_linear', 'swift_svd_act': 'svd.swift_svd_act', 'hybrid_svd_layer': 'svd.hybrid_svd_layer', 'direct_svd': 'svd.direct_svd', 'adaptive_ranks': 'svd.adaptive_ranks', 'residual_svd_compressor': 'svd.residual_svd_compressor', 'dobi_svd': 'svd.dobi_svd', 'adasvd_compressor': 'svd.adasvd_compressor', 'kronecker_compressor': 'tensor_decomp.kronecker_compressor', 'tt_compressor': 'tensor_decomp.tt_compressor', 'kronecker_tt_lora': 'tensor_decomp.kronecker_tt_lora'}
 
-import importlib
-import sys
+# 1. Import all subpackages and re-export classes at top level
+for _sub in _SUBPACKAGES:
+    try:
+        _submod = importlib.import_module(f".{_sub}", __package__)
+        for _attr in dir(_submod):
+            if not _attr.startswith("_"):
+                _val = getattr(_submod, _attr)
+                if isinstance(_val, type):
+                    globals()[_attr] = _val
+                    if _attr not in __all__:
+                        __all__.append(_attr)
+    except Exception as _e:
+        logger.debug(f"Failed importing subpackage {_sub}: {_e}")
 
-_LEGACY_MAP = {
-    "aasvd": "aa_svd_compressor",
-    "adasvd": "adasvd_compressor",
-    "cur_moe": "cur_moe_compressor",
-    "frandi": "frandi_compressor",
-    "grecodec": "grecodec_compressor",
-    "hybridkv": "hybridkv_compressor",
-    "kvtc": "kvtc_compressor",
-    "modegpt": "modegpt_compressor",
-    "oats": "oats_compressor",
-    "proxsparse_pruner": "proxsparse",
-    "rpca": "rpca_compressor",
-    "saes_svd": "saes_svd_v2",
-    "saes_svd_compressor": "saes_svd_v2",
-    "sdrm": "sdrm_compressor",
-    "slicegpt_compressor": "slicegpt",
-    "soka": "soka_compressor",
-    "swift_svd_compressor": "swift_svd_act",
-    "zerokv_neo": "zerokv_neo_compressor",
-    "cur_linear": "cur_compressor",
-    "kronecker_linear": "kronecker_compressor",
-    "tt_linear": "tt_compressor",
-    "hashed_linear": "hashed_net_compressor",
-    "come": "come_compressor",
-    "cure": "cur_moe_compressor",
-    "dobi": "dobi_svd",
-    "dynamic_entropy": "dynamic_rank",
-    "tomoe": "tomoe_compressor",
-    "adaptive_compressor": "adaptive_ranks",
-    "pruning_utils": "neuralops.core.pruning_utils",
-}
-
-
-def __getattr__(name: str):
-    if name in _LEGACY_MAP:
-        target = _LEGACY_MAP[name]
-        if target.startswith("neuralops."):
-            mod = importlib.import_module(target)
-        else:
-            mod = importlib.import_module(f".{target}", __name__)
-        sys.modules[f"{__name__}.{name}"] = mod
-        return mod
-    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+# 2. Backward compatibility shim for sys.modules (old flat import paths -> new subpackages)
+for _old, _new in _LEGACY_MAP.items():
+    try:
+        _target_mod = importlib.import_module(f".{_new}", __package__)
+        sys.modules.setdefault(f"{__name__}.{_old}", _target_mod)
+    except Exception as _e:
+        logger.debug(f"Failed mapping legacy module {_old}: {_e}")
