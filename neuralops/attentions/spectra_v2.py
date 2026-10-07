@@ -179,9 +179,7 @@ class LoRALinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("mha_sdpa")
 @ATTENTION_REGISTRY.register("spectra_v2")
-@ATTENTION_REGISTRY.register("spectra_v2_attention")
 class SpectraV2Attention(BaseAttention):
     """
     MHA wrapper around PyTorch's scaled_dot_product_attention.
@@ -681,9 +679,6 @@ class SpectraV2Attention(BaseAttention):
         return output, (attn_weights if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("mha_sdpa_inject")
-@ATTENTION_REGISTRY.register("spectra_v2_inject")
-@ATTENTION_REGISTRY.register("inject_spectra_v2")
 def inject_spectra_v2(
     layer: Any = None,
     model: Any = None,

@@ -28,7 +28,6 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-@COMPRESSOR_REGISTRY.register("rpca")
 @COMPRESSOR_REGISTRY.register("rpca_compressor")
 class RPCACompressor(BaseCompressor):
     is_custom_attention: bool = True
@@ -431,8 +430,6 @@ class RPCACompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("rpca_factory")
-@COMPRESSOR_REGISTRY.register("rpca_compressor_factory")
 def rpca_compressor_factory(
     model: Any,
     comp_config: Any = None,

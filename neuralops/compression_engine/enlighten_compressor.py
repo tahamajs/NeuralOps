@@ -84,7 +84,6 @@ def unstructured_prune(residual: torch.Tensor, sparsity: float) -> torch.Tensor:
     return residual * mask
 
 
-@COMPRESSOR_REGISTRY.register("enlighten")
 @COMPRESSOR_REGISTRY.register("enlighten_compressor")
 class ENLightenCompressor(BaseCompressor):
     is_custom_attention: bool = True
@@ -442,7 +441,6 @@ class ENLightenCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("enlighten_factory")
 def enlighten_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Enlighten compressor factory function."""
     rank = kwargs.pop(

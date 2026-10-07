@@ -183,8 +183,6 @@ class FactorizedLoRALinear(nn.Module):
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("routing_class")
-@ATTENTION_REGISTRY.register("routing_attention_class")
 class RoutingAttention(BaseAttention):
     is_custom_attention: bool = True
 
@@ -829,10 +827,7 @@ class RoutingAttention(BaseAttention):
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("routing")
 @ATTENTION_REGISTRY.register("routing_attention")
-@ATTENTION_REGISTRY.register("routing_inject")
-@ATTENTION_REGISTRY.register("inject_routing")
 def inject_routing(
     model: nn.Module | None = None,
     layer: nn.Module | None = None,

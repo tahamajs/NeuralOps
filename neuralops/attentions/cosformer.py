@@ -162,7 +162,6 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("cosformer", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("cosformer_attention", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class CosformerAttention(BaseAttention):
     is_custom_attention: bool = True
     triton_kernel = "linear_attn"
@@ -458,8 +457,6 @@ def _is_single_layer(obj):
         hasattr(obj, "attention") and not hasattr(obj, "transformer")
     )
 
-@ATTENTION_REGISTRY.register("cosformer_inject")
-@ATTENTION_REGISTRY.register("inject_cosformer")
 def inject_cosformer(layer=None, model=None, model_config=None, comp_config=None,
                      layer_idx=0, total_layers=12, old_attn=None, **kwargs):
     depth = _get_inject_depth()

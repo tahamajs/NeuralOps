@@ -59,12 +59,8 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
-@COMPRESSOR_REGISTRY.register("pca_asvd")
-@COMPRESSOR_REGISTRY.register("pca_asvd_compressor")
-@COMPRESSOR_REGISTRY.register("activation_aware_svd")
 # Backward-compat aliases (deprecated — will be removed)
 @COMPRESSOR_REGISTRY.register("slicegpt")
-@COMPRESSOR_REGISTRY.register("slicegpt_compressor")
 class PCAActivationAwareSVDCompressor(BaseCompressor):
     """
     Per-Layer Activation-Aware Low-Rank Compression (PCA-ASVD).
@@ -565,9 +561,7 @@ class PCAActivationAwareSVDCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("pca_asvd_factory")
 # Backward-compat alias (deprecated)
-@COMPRESSOR_REGISTRY.register("slicegpt_factory")
 def pca_asvd_factory(
     model: Any,
     comp_config: Any = None,

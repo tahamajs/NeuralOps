@@ -162,9 +162,6 @@ class LoRALinear(nn.Module):
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("template_attention_class")
-@ATTENTION_REGISTRY.register("your_custom_attention_class")
-@ATTENTION_REGISTRY.register("low_rank_modulated_attention_class")
 class YourCustomAttention(BaseAttention):
     r"""Template attention layer with optional low-rank pooling modulation."""
 
@@ -749,11 +746,7 @@ class YourCustomAttention(BaseAttention):
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("custom_attn")
 @ATTENTION_REGISTRY.register("template_attention")
-@ATTENTION_REGISTRY.register("low_rank_modulated_attention")
-@ATTENTION_REGISTRY.register("inject_custom_attn")
-@ATTENTION_REGISTRY.register("inject_template_attention")
 def inject_custom_attn(
     layer: Any = None,
     model: Any = None,

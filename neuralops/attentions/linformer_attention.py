@@ -214,7 +214,6 @@ class FactorizedLoRALinear(nn.Module):
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("linformer", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("linformer_attention", supports_causal=True, supports_gqa=True)
 class LinformerAttention(BaseAttention):
     supports_causal: bool = True
@@ -985,8 +984,6 @@ def _is_single_layer(obj: Any) -> bool:
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("linformer_inject")
-@ATTENTION_REGISTRY.register("inject_linformer")
 def inject_linformer(
     layer: Any = None,
     model: Any = None,

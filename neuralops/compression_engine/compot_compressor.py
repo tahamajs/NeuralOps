@@ -172,7 +172,6 @@ class COMPOTLinear(nn.Module):
         return compot_layer
 
 
-@COMPRESSOR_REGISTRY.register("compot_compressor_class")
 class COMPOTCompressor(BaseCompressor):
     """
     COMPOT (Compressed Orthogonal Dictionary Learning) Compressor.
@@ -453,10 +452,7 @@ class COMPOTCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("compot")
 @COMPRESSOR_REGISTRY.register("compot_compressor")
-@COMPRESSOR_REGISTRY.register("compot_factory")
-@COMPRESSOR_REGISTRY.register("compot_compressor_factory")
 def compot_compressor_factory(
     model: nn.Module,
     comp_config: Any | None = None,

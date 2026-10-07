@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 
 @ATTENTION_REGISTRY.register("svd_linear_decay")
-@ATTENTION_REGISTRY.register("decay_gated_linear_attention")
 class DecayGatedLinearAttention(SVDLinearAttention):
     r"""Decay Gated SVD Linear Attention."""
 

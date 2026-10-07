@@ -217,7 +217,6 @@ _ATTN_NAMES = {
 }
 
 
-@COMPRESSOR_REGISTRY.register("oats")
 @COMPRESSOR_REGISTRY.register("oats_compressor")
 class OATSCompressor(BaseCompressor):
     """
@@ -627,8 +626,6 @@ class OATSCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("oats_factory")
-@COMPRESSOR_REGISTRY.register("oats_compressor_factory")
 def oats_compressor_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for OATS compressor."""
     sparsity = kwargs.pop(

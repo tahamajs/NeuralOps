@@ -1047,8 +1047,6 @@ class GatedDeltaNet(BaseAttention):
 # ===========================================================================
 # Injection
 # ===========================================================================
-@ATTENTION_REGISTRY.register("gated_delta_net_inject")
-@ATTENTION_REGISTRY.register("inject_gated_delta_net")
 def inject_gated_delta_net(
     layer: Any = None,
     model: Any = None,

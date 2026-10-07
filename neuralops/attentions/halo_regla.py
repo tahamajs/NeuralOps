@@ -174,7 +174,6 @@ class LoRALinear(nn.Module):
 # HALOReGLAAttention
 # ============================================================================
 @ATTENTION_REGISTRY.register("halo_regla")
-@ATTENTION_REGISTRY.register("halo_regla_attention")
 class HALOReGLAAttention(BaseAttention):
     """Hybrid Dense Softmax + Linear Attention with adaptive fusion gate."""
 
@@ -582,8 +581,6 @@ class HALOReGLAAttention(BaseAttention):
 # ============================================================================
 # Injection
 # ============================================================================
-@ATTENTION_REGISTRY.register("halo_regla_inject")
-@ATTENTION_REGISTRY.register("inject_halo_regla")
 def inject_halo_regla(layer=None, model=None, model_config=None, comp_config=None,
                       layer_idx=0, total_layers=12, old_attn=None,
                       lora_rank=16, **kwargs):

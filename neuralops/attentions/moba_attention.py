@@ -154,7 +154,6 @@ class LoRALinear(nn.Module):
 # ===========================================================================
 # MoBA
 # ===========================================================================
-@ATTENTION_REGISTRY.register("moba", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("moba_attention", supports_causal=True, supports_gqa=True)
 class MoBAAttention(BaseAttention):
     """
@@ -861,8 +860,6 @@ class MoBAAttention(BaseAttention):
 # ===========================================================================
 # Injection
 # ===========================================================================
-@ATTENTION_REGISTRY.register("moba_inject")
-@ATTENTION_REGISTRY.register("inject_moba")
 def inject_moba(
     layer: Any = None,
     model: Any = None,

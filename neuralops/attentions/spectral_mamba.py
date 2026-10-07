@@ -833,8 +833,6 @@ class SpectralMambaAttention(BaseAttention):
         return out, weights_to_return
 
 
-@ATTENTION_REGISTRY.register("spectral_mamba_inject")
-@ATTENTION_REGISTRY.register("inject_spectral_mamba")
 def inject_spectral_mamba(
     layer: Any = None,
     model: Any = None,

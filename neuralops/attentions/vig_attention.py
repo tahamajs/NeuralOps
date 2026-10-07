@@ -719,9 +719,6 @@ class ViGAttention(BaseAttention):
         return (output, None)
 
 
-@ATTENTION_REGISTRY.register("vig_inject")
-@ATTENTION_REGISTRY.register("vig_attention_inject")
-@ATTENTION_REGISTRY.register("inject_vig")
 def inject_vig(
     layer: Any = None,
     model: Any = None,

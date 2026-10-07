@@ -319,11 +319,7 @@ class KVTCQuantizedLoRALinear(nn.Module):
         return out
 
 
-@COMPRESSOR_REGISTRY.register("kvtc")
 @COMPRESSOR_REGISTRY.register("kvtc_compressor")
-@COMPRESSOR_REGISTRY.register("kvtc_quantizer")
-@COMPRESSOR_REGISTRY.register("pca_quant")
-@COMPRESSOR_REGISTRY.register("pca_quant_compressor")
 class KVTCCompressor(BaseCompressor):
     """
     KVTC: KV Cache Transform Coding compressor (Static Weight PCA + Quantization).
@@ -760,8 +756,6 @@ class KVTCCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("kvtc_factory")
-@COMPRESSOR_REGISTRY.register("pca_quant_factory")
 def kvtc_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> Any:
     """KVTC compressor factory function."""
     cfg = comp_config if comp_config is not None else getattr(model, "config", None)

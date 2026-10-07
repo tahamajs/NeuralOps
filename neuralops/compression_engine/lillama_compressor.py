@@ -70,9 +70,6 @@ def _is_conv1d(module: nn.Module) -> bool:
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("lillama_class")
-@COMPRESSOR_REGISTRY.register("lillama_compressor_class")
-@COMPRESSOR_REGISTRY.register("lillama_distiller_class")
 class LiLLaMADistiller(BaseCompressor):
     # LL-FIX-01: this is a local distillation / weight-rewriter, not standard factorized attention.
     is_custom_attention: bool = False
@@ -641,9 +638,7 @@ class LiLLaMADistiller(BaseCompressor):
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("lillama")
 @COMPRESSOR_REGISTRY.register("lillama_compressor")
-@COMPRESSOR_REGISTRY.register("lillama_factory")
 def lillama_factory(
     model: Any,
     comp_config: Any = None,

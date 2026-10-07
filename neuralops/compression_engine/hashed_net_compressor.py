@@ -431,8 +431,6 @@ _ATTN_NAMES = {
 }
 
 
-@COMPRESSOR_REGISTRY.register("hashed_net_class")
-@COMPRESSOR_REGISTRY.register("hashednets_class")
 class HashedNetCompressor(BaseCompressor):
     """
     Replace target linear/Conv1D layers with HashedLinear.
@@ -872,14 +870,7 @@ class HashedNetCompressor(BaseCompressor):
 # ===========================================================================
 # Factory
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("hashed_linear")
-@COMPRESSOR_REGISTRY.register("hashed_linear_factory")
-@COMPRESSOR_REGISTRY.register("hashed_net")
 @COMPRESSOR_REGISTRY.register("hashed_net_compressor")
-@COMPRESSOR_REGISTRY.register("hashed_net_factory")
-@COMPRESSOR_REGISTRY.register("hashednets")
-@COMPRESSOR_REGISTRY.register("hashednets_factory")
-@COMPRESSOR_REGISTRY.register("hashednets_compressor")
 def hashed_net_factory(
     model: nn.Module,
     comp_config: Any | None = None,

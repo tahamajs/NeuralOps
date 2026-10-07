@@ -208,7 +208,6 @@ class SharedTokenScorer(nn.Module):
 # PTP Attention
 # ===========================================================================
 @ATTENTION_REGISTRY.register("progressive_token_pruning")
-@ATTENTION_REGISTRY.register("ptp")
 class ProgressiveTokenPruning(BaseAttention):
     """
     Progressive Token Pruning attention.

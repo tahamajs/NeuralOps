@@ -539,8 +539,6 @@ _ATTN_NAMES = {
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("kronecker_class")
-@COMPRESSOR_REGISTRY.register("kronecker_compressor_class")
 class KroneckerCompressor(BaseCompressor):
     # KC-FIX-01
     is_custom_attention: bool = False
@@ -964,9 +962,7 @@ class KroneckerCompressor(BaseCompressor):
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("kronecker")
 @COMPRESSOR_REGISTRY.register("kronecker_compressor")
-@COMPRESSOR_REGISTRY.register("kronecker_factory")
 def kronecker_factory(
     model: nn.Module,
     comp_config: Any | None = None,

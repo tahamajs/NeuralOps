@@ -845,9 +845,6 @@ class AdaptiveSVDAttention(BaseAttention):
 # ===========================================================================
 # Injection
 # ===========================================================================
-@ATTENTION_REGISTRY.register("adaptive_svd_attention_inject")
-@ATTENTION_REGISTRY.register("adaptive_svd_inject")
-@ATTENTION_REGISTRY.register("inject_adaptive_svd")
 def inject_adaptive_svd(
     layer: Any = None,
     model: Any = None,

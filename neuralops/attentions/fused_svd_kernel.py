@@ -1125,8 +1125,6 @@ def fused_svd_kernel_factory(config: Any = None, **kwargs: Any) -> nn.Module:
     return FusedSVDKernelAttention(config=config, **kwargs)
 
 
-@ATTENTION_REGISTRY.register("fused_svd_kernel_inject")
-@ATTENTION_REGISTRY.register("inject_fused_svd_kernel")
 def inject_fused_svd_kernel(
     layer: Any = None,
     model: Any = None,

@@ -1158,8 +1158,6 @@ class FUSIONATTN(BaseAttention):
 # ===========================================================================
 # Injection
 # ===========================================================================
-@ATTENTION_REGISTRY.register("fusion_attn_inject")
-@ATTENTION_REGISTRY.register("inject_fusion_attn")
 def inject_fusion_attn(
     layer: Any = None,
     model: Any = None,

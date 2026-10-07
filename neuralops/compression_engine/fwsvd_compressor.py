@@ -55,7 +55,6 @@ DEFAULT_CALIBRATION_CORPUS: list[str] = [
 ]
 
 
-@COMPRESSOR_REGISTRY.register("fwsvd")
 @COMPRESSOR_REGISTRY.register("fwsvd_compressor")
 class FWSVDCompressor(BaseCompressor):
     """

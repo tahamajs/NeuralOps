@@ -218,11 +218,7 @@ class LoRALinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("soa_module", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("soa_attn")
-@ATTENTION_REGISTRY.register("soa_fused_module")
-@ATTENTION_REGISTRY.register("soafusedattention")
-@ATTENTION_REGISTRY.register("soa_fused_attn")
 class SOAAttention(BaseAttention):
     r"""Shared Orthogonal Attention (SOA) with Per-Projection Latent Bottlenecks.
 
@@ -812,12 +808,6 @@ class SOAAttention(BaseAttention):
         return (output, attn_weights if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("soa_attn_inject")
-@ATTENTION_REGISTRY.register("soa_inject")
-@ATTENTION_REGISTRY.register("soa_module_inject")
-@ATTENTION_REGISTRY.register("inject_soa_attn")
-@ATTENTION_REGISTRY.register("inject_soa")
-@ATTENTION_REGISTRY.register("inject_soa_module")
 def inject_soa_attn(
     model: nn.Module | None = None,
     layer: nn.Module | None = None,

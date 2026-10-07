@@ -906,10 +906,6 @@ class VSpecAttention(BaseAttention):
         return (output, (attn_weights if output_attentions else None))
 
 
-@ATTENTION_REGISTRY.register("vspec_inject")
-@ATTENTION_REGISTRY.register("vspec_attention_inject")
-@ATTENTION_REGISTRY.register("inject_vspec")
-@ATTENTION_REGISTRY.register("inject_vspec_attn")
 def inject_vspec_attn(
     layer: Any = None,
     model: Any = None,

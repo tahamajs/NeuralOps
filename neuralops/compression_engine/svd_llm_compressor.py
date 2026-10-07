@@ -228,7 +228,6 @@ class SVDLLMLinear(nn.Module):
         return out
 
 
-@COMPRESSOR_REGISTRY.register("svd_llm")
 @COMPRESSOR_REGISTRY.register("svd_llm_compressor")
 class SVDLLMCompressor(BaseCompressor):
     """

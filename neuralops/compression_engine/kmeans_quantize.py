@@ -400,9 +400,6 @@ class KMeansLinear(nn.Module):
 # ===========================================================================
 # Compressor
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("kmeans_class")
-@COMPRESSOR_REGISTRY.register("kmeans_quantize_class")
-@COMPRESSOR_REGISTRY.register("kmeans_compressor_class")
 class KMeansCompressor(BaseCompressor):
     is_custom_attention: bool = False
 
@@ -798,10 +795,7 @@ class KMeansCompressor(BaseCompressor):
 # ===========================================================================
 # Factory
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("kmeans")
 @COMPRESSOR_REGISTRY.register("kmeans_quantize")
-@COMPRESSOR_REGISTRY.register("kmeans_factory")
-@COMPRESSOR_REGISTRY.register("kmeans_quantize_factory")
 def kmeans_factory(
     model: Any,
     comp_config: Any = None,

@@ -632,7 +632,6 @@ SubspaceProjectionCompressor = OptimalSubspaceProjectionCompressor
 # ===========================================================================
 # Factory
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("optimal_subspace_projection_factory")
 def optimal_subspace_projection_factory(
     model: nn.Module, comp_config: Any = None, **kwargs: Any
 ) -> Any:
@@ -712,8 +711,6 @@ def optimal_subspace_projection_factory(
 # ===========================================================================
 # Injection alias
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("optimal_subspace_projection_inject")
-@COMPRESSOR_REGISTRY.register("inject_optimal_subspace_projection")
 def inject_optimal_subspace_projection(model: Any = None, layer: Any = None, **kwargs: Any) -> Any:
     target = layer if layer is not None else model
     if target is None:

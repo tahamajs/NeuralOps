@@ -977,7 +977,6 @@ class NLISoftmaxCompressor(BaseCompressor):
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("nli_softmax_factory")
 def nli_softmax_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     max_error = kwargs.pop(
         "max_error",

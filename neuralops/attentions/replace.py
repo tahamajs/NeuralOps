@@ -637,8 +637,6 @@ class _FactorizedLinear(nn.Module):
 # ===========================================================================
 # ReplaceAttention
 # ===========================================================================
-@ATTENTION_REGISTRY.register("replace_class")
-@ATTENTION_REGISTRY.register("replace_attention_class")
 class ReplaceAttention(BaseAttention):
     """
     Robust identity / low-rank SVD replacement attention.
@@ -1125,12 +1123,7 @@ Replace = ReplaceAttention
 # ===========================================================================
 # Injector
 # ===========================================================================
-@ATTENTION_REGISTRY.register("replace_inject")
-@ATTENTION_REGISTRY.register("replace_attention_inject")
-@ATTENTION_REGISTRY.register("inject_replace")
-@ATTENTION_REGISTRY.register("inject_replace_attention")
 @ATTENTION_REGISTRY.register("replace")
-@ATTENTION_REGISTRY.register("replace_attention")
 def inject_replace(
     layer: Any = None,
     model: Any = None,

@@ -181,7 +181,6 @@ class LoRALinear(nn.Module):
 # NHA Attention Class
 # ===========================================================================
 @ATTENTION_REGISTRY.register("nha_class")
-@ATTENTION_REGISTRY.register("nha_attention_class")
 class NativeHybridAttention(BaseAttention):
     """
     Native Hybrid Attention: local sliding-window + global RFF, fused by a
@@ -903,10 +902,6 @@ class NativeHybridAttention(BaseAttention):
 # ===========================================================================
 # Injector (NHA-FIX-01, NHA-FIX-10)
 # ===========================================================================
-@ATTENTION_REGISTRY.register("nha")
-@ATTENTION_REGISTRY.register("nha_inject")
-@ATTENTION_REGISTRY.register("inject_nha")
-@ATTENTION_REGISTRY.register("inject_native_hybrid_attention")
 def inject_nha(
     layer: Any = None,
     model: Any = None,

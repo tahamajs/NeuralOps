@@ -196,9 +196,7 @@ class DirectSVDEncoderLayer(nn.Module):
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("hybrid_svd")
 @COMPRESSOR_REGISTRY.register("hybrid_svd_layer")
-@COMPRESSOR_REGISTRY.register("direct_svd_encoder")
 class HybridSVDCompressor(BaseCompressor):
     """
     Weight-based SVD compressor for Linear / Conv1D layers.
@@ -543,10 +541,6 @@ class HybridSVDCompressor(BaseCompressor):
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("hybrid_svd_factory")
-@COMPRESSOR_REGISTRY.register("hybrid_svd_layer_factory")
-@COMPRESSOR_REGISTRY.register("direct_svd_encoder_factory")
-@COMPRESSOR_REGISTRY.register("hybrid_svd_compressor_factory")
 def hybrid_svd_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Hybrid SVD factory function."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))

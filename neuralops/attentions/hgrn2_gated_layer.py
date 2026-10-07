@@ -86,9 +86,7 @@ def _unpack_weight_bias(module: Any):
     return w, b
 
 
-@ATTENTION_REGISTRY.register("hgrn2_layer")
 @ATTENTION_REGISTRY.register("hgrn2_gated_layer")
-@ATTENTION_REGISTRY.register("hgrn2")
 class HGRN2Layer(BaseAttention):
     """HGRN-2 hybrid with local sliding-window attention."""
 
@@ -555,10 +553,6 @@ class HGRN2Layer(BaseAttention):
         return out.to(target_dtype), None
 
 
-@ATTENTION_REGISTRY.register("hgrn2_layer_inject")
-@ATTENTION_REGISTRY.register("hgrn2_gated_layer_inject")
-@ATTENTION_REGISTRY.register("inject_hgrn2_layer")
-@ATTENTION_REGISTRY.register("hgrn2_inject")
 def inject_hgrn2_layer(layer=None, model=None, model_config=None, comp_config=None,
                         layer_idx=0, total_layers=12, old_attn=None,
                         lora_rank=16, lora_alpha=32.0, **kwargs):

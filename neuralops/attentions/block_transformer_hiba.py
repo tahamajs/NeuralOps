@@ -968,8 +968,6 @@ class BlockTransformerHIBA(BaseAttention):
         return final_out, return_attn
 
 
-@ATTENTION_REGISTRY.register("block_transformer_hiba_fn")
-@ATTENTION_REGISTRY.register("block_transformer_hiba_inject")
 def inject_block_transformer_hiba(
     layer: Any = None,
     model: Any = None,

@@ -1056,8 +1056,6 @@ def _is_single_layer(obj: Any) -> bool:
     return has_attn and not has_model
 
 
-@ATTENTION_REGISTRY.register("performer_inject")
-@ATTENTION_REGISTRY.register("inject_performer")
 def inject_performer(
     layer: Any = None,
     model: Any = None,

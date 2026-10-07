@@ -256,10 +256,7 @@ def _compute_energy_rank(
     return max(min_r, min(r, max_r))
 
 
-@ATTENTION_REGISTRY.register("salt_f_attention", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("salt_f", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("salt_attention", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("salt", supports_causal=True, supports_gqa=True)
 class SALTAttention(BaseAttention):
     r"""
     SALT Attention module replacing standard linear projections with SALTLinear.
@@ -823,13 +820,7 @@ class SALTAttention(BaseAttention):
         return out, (attn if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("salt_f")
-@ATTENTION_REGISTRY.register("salt_f_attention")
-@ATTENTION_REGISTRY.register("salt")
 @ATTENTION_REGISTRY.register("salt_attention")
-@ATTENTION_REGISTRY.register("salt_inject")
-@ATTENTION_REGISTRY.register("salt_attention_inject")
-@ATTENTION_REGISTRY.register("inject_salt_attention")
 def inject_salt_attention(
     model: nn.Module | None = None,
     layer: Any | None = None,

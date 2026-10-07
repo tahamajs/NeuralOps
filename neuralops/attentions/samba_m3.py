@@ -762,8 +762,6 @@ class SAMBAM3Block(nn.Module):
         return out, (present_key_value if output_attentions is False else (out, present_key_value))
 
 
-@ATTENTION_REGISTRY.register("samba_m3_inject")
-@ATTENTION_REGISTRY.register("inject_samba_m3")
 def inject_samba_m3(
     layer: Any = None,
     model: Any = None,

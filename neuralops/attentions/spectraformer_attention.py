@@ -154,7 +154,6 @@ class LoRALinear(nn.Module):
         return out
 
 
-@ATTENTION_REGISTRY.register("spectraformer")
 @ATTENTION_REGISTRY.register("spectraformer_attention")
 class SpectraformerAttention(BaseAttention):
     """
@@ -691,8 +690,6 @@ class SpectraformerAttention(BaseAttention):
         return (output, None)
 
 
-@ATTENTION_REGISTRY.register("spectraformer_inject")
-@ATTENTION_REGISTRY.register("spectraformer_attention_inject")
 def inject_spectraformer(
     layer: Any = None,
     model: Any = None,

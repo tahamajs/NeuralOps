@@ -1234,8 +1234,6 @@ class MambaSVDFlash(BaseAttention):
 # ===========================================================================
 # Injector
 # ===========================================================================
-@ATTENTION_REGISTRY.register("mamba_svd_flash_inject")
-@ATTENTION_REGISTRY.register("inject_mamba_svd_flash")
 def inject_mamba_svd_flash(
     layer: Any = None,
     model: Any = None,

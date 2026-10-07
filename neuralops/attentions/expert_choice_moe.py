@@ -915,7 +915,6 @@ class ExpertChoiceMoEAttention(BaseAttention):
         return out, (probs if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("expert_choice_moe_inject")
 def inject_expert_choice_moe(
     layer: Any = None,
     model: Any = None,

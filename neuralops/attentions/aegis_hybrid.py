@@ -1052,9 +1052,6 @@ class AegisHybridAttention(BaseAttention):
 # ===========================================================================
 # Injector
 # ===========================================================================
-@ATTENTION_REGISTRY.register("aegis_hybrid_fn")
-@ATTENTION_REGISTRY.register("aegis_hybrid_inject")
-@ATTENTION_REGISTRY.register("inject_aegis_hybrid")
 def inject_aegis_hybrid(
     layer: Any = None,
     model: Any = None,

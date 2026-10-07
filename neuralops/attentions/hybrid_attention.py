@@ -190,8 +190,6 @@ def _apply_rope(q, k, cos, sin):
 
 
 @ATTENTION_REGISTRY.register("hybrid_attention", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("weighted_ensemble", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("smart_weighted_ensemble", supports_causal=True, supports_gqa=True)
 class HybridAttention(BaseAttention):
     """
     Hybrid softmax + linear attention with per-head dynamic gated fusion.
@@ -731,11 +729,6 @@ SmartWeightedEnsembleAttention = HybridAttention
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("weighted_ensemble_module_inject")
-@ATTENTION_REGISTRY.register("weighted_ensemble_inject")
-@ATTENTION_REGISTRY.register("inject_weighted_ensemble")
-@ATTENTION_REGISTRY.register("hybrid_attention_inject")
-@ATTENTION_REGISTRY.register("inject_hybrid_attention")
 def inject_weighted_ensemble(
     layer: Any = None,
     model: Any = None,

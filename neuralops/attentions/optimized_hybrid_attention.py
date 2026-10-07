@@ -187,9 +187,7 @@ class LoRALinear(nn.Module):
 # ===========================================================================
 # Main attention
 # ===========================================================================
-@ATTENTION_REGISTRY.register("oha", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("optimized_hybrid_attention", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("oha_attention", supports_causal=True, supports_gqa=True)
 class OptimizedHybridAttention(BaseAttention):
     is_custom_attention: bool = True
 
@@ -789,8 +787,6 @@ class OptimizedHybridAttention(BaseAttention):
 # ===========================================================================
 # Injection (OHA-FIX-04)
 # ===========================================================================
-@ATTENTION_REGISTRY.register("oha_inject")
-@ATTENTION_REGISTRY.register("inject_oha")
 def inject_oha(
     layer=None,
     model=None,

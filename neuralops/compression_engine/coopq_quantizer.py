@@ -639,7 +639,6 @@ class CoopQQuantizer(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("coopq")
 @COMPRESSOR_REGISTRY.register("coopq_quantizer")
 def coopq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """CoopQ compressor factory function."""

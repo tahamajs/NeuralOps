@@ -142,8 +142,6 @@ class LoRALinear(nn.Module):
 # ===========================================================================
 # Main attention
 # ===========================================================================
-@ATTENTION_REGISTRY.register("fasa", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("fasa_attention", supports_causal=True, supports_gqa=True)
 @ATTENTION_REGISTRY.register("mixattention_moska", supports_causal=True, supports_gqa=True)
 class MixAttentionMoSKA(BaseAttention):
     """
@@ -883,10 +881,6 @@ class MixAttentionMoSKA(BaseAttention):
 # ===========================================================================
 # Injection
 # ===========================================================================
-@ATTENTION_REGISTRY.register("fasa_inject")
-@ATTENTION_REGISTRY.register("mixattention_moska_inject")
-@ATTENTION_REGISTRY.register("inject_mixattention_moska")
-@ATTENTION_REGISTRY.register("inject_fasa")
 def inject_mixattention_moska(
     layer: Any = None,
     model: Any = None,

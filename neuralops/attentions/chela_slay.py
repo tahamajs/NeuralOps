@@ -1151,8 +1151,6 @@ class ChelaSlayAttention(BaseAttention):
 # ===========================================================================
 # Injector
 # ===========================================================================
-@ATTENTION_REGISTRY.register("chela_slay_inject")
-@ATTENTION_REGISTRY.register("inject_chela_slay")
 def inject_chela_slay(
     layer: Any = None,
     model: Any = None,

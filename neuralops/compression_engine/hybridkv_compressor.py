@@ -180,7 +180,6 @@ class HybridKVCache:
         return out_k, out_v
 
 
-@COMPRESSOR_REGISTRY.register("hybridkv_class")
 @COMPRESSOR_REGISTRY.register("hybridkv_compressor")
 class HybridKVCompressor(BaseCompressor):
     """
@@ -358,9 +357,6 @@ class HybridKVCompressor(BaseCompressor):
         return self.model, stats
 
 
-@COMPRESSOR_REGISTRY.register("hybridkv")
-@COMPRESSOR_REGISTRY.register("hybridkv_factory")
-@COMPRESSOR_REGISTRY.register("hybridkv_compressor_factory")
 def hybridkv_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """HybridKV compressor factory function."""
     budget = kwargs.pop(

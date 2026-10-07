@@ -24,7 +24,6 @@ from neuralops.utils.compat import get_dynamic_compression_rank, should_compress
 logger = logging.getLogger(__name__)
 
 
-@COMPRESSOR_REGISTRY.register("drone")
 @COMPRESSOR_REGISTRY.register("drone_compressor")
 class DRONECompressor(BaseCompressor):
     """

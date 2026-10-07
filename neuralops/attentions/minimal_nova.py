@@ -737,8 +737,6 @@ class MinimalNOVAAttention(BaseAttention):
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
 
 
-@ATTENTION_REGISTRY.register("minimal_nova_inject")
-@ATTENTION_REGISTRY.register("inject_minimal_nova")
 def inject_minimal_nova(
     layer: nn.Module | None = None,
     model: nn.Module | None = None,

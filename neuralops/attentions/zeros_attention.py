@@ -645,8 +645,6 @@ class ZeroSAttention(BaseAttention):
         return output, attn_map
 
 
-@ATTENTION_REGISTRY.register("zeros_attention_inject")
-@ATTENTION_REGISTRY.register("zeros_inject")
 def inject_zeros_attention(
     layer: Any = None,
     model: Any = None,

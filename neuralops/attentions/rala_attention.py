@@ -154,9 +154,7 @@ class LoRALinear(nn.Module):
 # ============================================================================
 
 
-@ATTENTION_REGISTRY.register("rala")
 @ATTENTION_REGISTRY.register("rala_attention")
-@ATTENTION_REGISTRY.register("rala_linear_attention")
 class RALALinearAttention(BaseAttention):
     is_custom_attention: bool = True
 
@@ -675,8 +673,6 @@ class RALALinearAttention(BaseAttention):
 # ============================================================================
 
 
-@ATTENTION_REGISTRY.register("rala_inject")
-@ATTENTION_REGISTRY.register("inject_rala")
 def inject_rala(
     model: nn.Module | None = None,
     layer: nn.Module | None = None,

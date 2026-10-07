@@ -239,8 +239,6 @@ class ARMORLinear(nn.Module):
 
 
 @COMPRESSOR_REGISTRY.register("armor_pruner")
-@COMPRESSOR_REGISTRY.register("armor")
-@COMPRESSOR_REGISTRY.register("armor_compressor")
 class ARMORPruner(BaseCompressor):
     """Production-hardened ARMOR Pruner."""
 
@@ -864,9 +862,6 @@ class ARMORPruner(BaseCompressor):
 # ===========================================================================
 
 
-@COMPRESSOR_REGISTRY.register("armor_pruner_factory")
-@COMPRESSOR_REGISTRY.register("armor_factory")
-@COMPRESSOR_REGISTRY.register("armor_compressor_factory")
 def armor_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for ARMOR pruner."""
     return_stats = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))

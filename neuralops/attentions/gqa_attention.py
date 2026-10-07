@@ -839,8 +839,6 @@ class GroupedQueryAttention(BaseAttention):
 # ===========================================================================
 # Injection (GQA-FIX-16: propagate rank → num_kv_heads)
 # ===========================================================================
-@ATTENTION_REGISTRY.register("gqa_inject")
-@ATTENTION_REGISTRY.register("inject_gqa")
 def inject_gqa(
     layer: Any = None,
     model: Any = None,

@@ -1454,8 +1454,6 @@ class SVDLinearAttention(BaseAttention):
 # ===========================================================================
 # Injector
 # ===========================================================================
-@ATTENTION_REGISTRY.register("svd_linear_inject")
-@ATTENTION_REGISTRY.register("inject_svd_linear_attention")
 def inject_svd_linear_attention(
     layer: Any = None,
     model: Any = None,

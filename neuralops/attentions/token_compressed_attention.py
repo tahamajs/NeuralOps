@@ -173,7 +173,6 @@ class LoRALinear(nn.Module):
 # ===========================================================================
 # Main attention
 # ===========================================================================
-@ATTENTION_REGISTRY.register("token_compressed")
 @ATTENTION_REGISTRY.register("token_compressed_attention")
 class TokenCompressedAttention(BaseAttention):
     """
@@ -931,8 +930,6 @@ class TokenCompressedAttention(BaseAttention):
 # ===========================================================================
 # Injector
 # ===========================================================================
-@ATTENTION_REGISTRY.register("inject_token_compressed_attn")
-@ATTENTION_REGISTRY.register("token_compressed_inject")
 def inject_token_compressed_attn(
     layer=None,
     model=None,

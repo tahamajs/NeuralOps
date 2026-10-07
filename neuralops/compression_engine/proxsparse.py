@@ -201,8 +201,6 @@ class ProxSparsePrunedLoRALinear(nn.Module):
 # Compressor
 # ===========================================================================
 @COMPRESSOR_REGISTRY.register("proxsparse")
-@COMPRESSOR_REGISTRY.register("proxsparse_pruner")
-@COMPRESSOR_REGISTRY.register("proxsparse_compressor")
 class ProxSparsePruner(BaseCompressor):
     """
     ProxSparse: proximal gradient sparsity with structured / 2:4 / percentile
@@ -628,9 +626,6 @@ ProxSparseCompressor = ProxSparsePruner
 # ===========================================================================
 # Factory
 # ===========================================================================
-@COMPRESSOR_REGISTRY.register("proxsparse_factory")
-@COMPRESSOR_REGISTRY.register("proxsparse_pruner_factory")
-@COMPRESSOR_REGISTRY.register("proxsparse_compressor_factory")
 def proxsparse_factory(
     model: Any,
     comp_config: Any = None,

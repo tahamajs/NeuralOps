@@ -318,7 +318,6 @@ class CoMeLoRALinear(nn.Module):
 # ---------------------------------------------------------------------------
 # CoMeCompressor — main class
 # ---------------------------------------------------------------------------
-@COMPRESSOR_REGISTRY.register("come")
 @COMPRESSOR_REGISTRY.register("come_compressor")
 class CoMeCompressor(BaseCompressor):
     """
@@ -976,8 +975,6 @@ class CoMeCompressor(BaseCompressor):
 # ---------------------------------------------------------------------------
 # Factory
 # ---------------------------------------------------------------------------
-@COMPRESSOR_REGISTRY.register("come_factory")
-@COMPRESSOR_REGISTRY.register("come_compressor_factory")
 def come_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for the CoMe compressor."""
     return_tuple = kwargs.pop("return_stats", kwargs.pop("return_tuple", False))
