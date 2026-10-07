@@ -224,9 +224,8 @@ class FactorizedLoRALinear(nn.Module):
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("leka_v1", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("leka_v1_attention", supports_causal=True, supports_gqa=True)
-class LEKAV1Attention(BaseAttention):
+@ATTENTION_REGISTRY.register("positive_kernel_linear", supports_causal=True, supports_gqa=True)
+class PositiveKernelLinearAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -905,9 +904,7 @@ class LEKAV1Attention(BaseAttention):
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("leka_v1_inject")
-@ATTENTION_REGISTRY.register("inject_leka_v1")
-def inject_leka_v1(
+def inject_positive_kernel_linear(
     layer: Any = None,
     model: Any = None,
     model_config: Any = None,
