@@ -1002,7 +1002,8 @@ class RefinedLandmarkAttention(BaseAttention):
         return 0.0
 
 
-LEKAv3Attention = LEKAV3Attention
+LEKAv3Attention = RefinedLandmarkAttention
+LEKAV3Attention = RefinedLandmarkAttention
 
 
 # ===========================================================================
@@ -1096,7 +1097,7 @@ def inject_refined_landmark(
         if cfg is None and hasattr(src_attn, "config"):
             cfg = src_attn.config
 
-        new_attn = LEKAV3Attention(
+        new_attn = RefinedLandmarkAttention(
             config=cfg,
             comp_config=comp_config,
             layer_idx=layer_idx,
