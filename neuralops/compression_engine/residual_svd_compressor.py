@@ -421,9 +421,9 @@ class SpectralResidualLoRA(ResSVDCompressor):
         self.name = "spectral_residual_lora"
 
 
-# Register under both canonical and alias names
-@COMPRESSOR_REGISTRY.register("res_svd")
-class ResSVDCompressorRegistered(ResSVDCompressor):
+# Register under canonical name
+@COMPRESSOR_REGISTRY.register("residual_svd_compressor")
+class ResidualSVDCompressor(ResSVDCompressor):
     pass
 
 

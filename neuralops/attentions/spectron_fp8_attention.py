@@ -437,8 +437,8 @@ def _state_recurrence_jit(u: torch.Tensor, gamma: torch.Tensor, reverse: bool = 
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("aegis_spectron_fp8", supports_causal=True, supports_gqa=True)
-class AegisSpectronFP8Attention(BaseAttention):
+@ATTENTION_REGISTRY.register("spectron_fp8", supports_causal=True, supports_gqa=True)
+class SpectronFP8Attention(BaseAttention):
     is_custom_attention = True
 
     def __init__(

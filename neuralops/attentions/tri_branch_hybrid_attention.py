@@ -512,18 +512,9 @@ def _causal_linear_attention(
 # Main attention
 # ===========================================================================
 @ATTENTION_REGISTRY.register(
-    "aegis_hybrid", supports_causal=True, supports_gqa=True, supports_rope=True
+    "tri_branch_hybrid", supports_causal=True, supports_gqa=True, supports_rope=True
 )
-@ATTENTION_REGISTRY.register(
-    "aegis_hybrid_attn", supports_causal=True, supports_gqa=True, supports_rope=True
-)
-@ATTENTION_REGISTRY.register(
-    "aegis_hybrid_attention",
-    supports_causal=True,
-    supports_gqa=True,
-    supports_rope=True,
-)
-class AegisHybridAttention(BaseAttention):
+class TriBranchHybridAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
     supports_rope: bool = True
