@@ -13,6 +13,68 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+_DEPRECATED_ALIASES: dict[str, str] = {
+    # Aegis v1-v4 -> HybridLocalKernelAttention
+    "aegis_v1": "hybrid_local_kernel",
+    "aegis_v2": "hybrid_local_kernel",
+    "aegis_v3": "hybrid_local_kernel",
+    "aegis_v4": "hybrid_local_kernel",
+    "aegis_v1_module": "hybrid_local_kernel",
+    "aegis_v2_inject": "hybrid_local_kernel",
+    "inject_aegis_v1": "hybrid_local_kernel",
+    "inject_aegis_v2": "hybrid_local_kernel",
+    "inject_aegis_v3": "hybrid_local_kernel",
+    "inject_aegis_v4": "hybrid_local_kernel",
+    "inject_aegis_into_distilbert": "hybrid_local_kernel",
+    "inject_aegis_into_distilbert_v2": "hybrid_local_kernel",
+
+    # Aegis v5 -> SplitHeadHybridAttention
+    "aegis_v5": "split_head_hybrid",
+    "aegis_v5_module": "split_head_hybrid",
+    "aegisattention": "split_head_hybrid",
+    "aegis_v5_inject": "split_head_hybrid",
+    "inject_aegis_v5": "split_head_hybrid",
+    "aegis_v5_fn": "split_head_hybrid",
+
+    # Aegis v6 -> GatedHybridKernelAttention
+    "aegis_v6": "gated_hybrid_kernel",
+    "aegis_v6_attn": "gated_hybrid_kernel",
+    "aegis_v6_inject": "gated_hybrid_kernel",
+    "inject_aegis_v6": "gated_hybrid_kernel",
+
+    # LEKA v1 -> PositiveKernelLinearAttention
+    "leka_v1": "positive_kernel_linear",
+    "leka_v1_attention": "positive_kernel_linear",
+    "leka_v1_inject": "positive_kernel_linear",
+    "inject_leka_v1": "positive_kernel_linear",
+
+    # LEKA v2 -> LandmarkLocalAttention
+    "leka_v2": "landmark_local",
+    "leka_v2_attention": "landmark_local",
+    "leka_v2_inject": "landmark_local",
+    "inject_leka_v2": "landmark_local",
+
+    # LEKA v3 -> RefinedLandmarkAttention
+    "leka_v3": "refined_landmark",
+    "leka_v3_attention": "refined_landmark",
+    "leka_v3_inject": "refined_landmark",
+    "inject_leka_v3": "refined_landmark",
+}
+
+import warnings
+
+def _handle_deprecated(name: str) -> str:
+    k = name.lower()
+    if k in _DEPRECATED_ALIASES:
+        new_name = _DEPRECATED_ALIASES[k]
+        warnings.warn(
+            f"'{name}' is deprecated. Use '{new_name}' instead.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        return new_name
+    return name
+
 _ATTENTION_FILE_MAP: dict[str, str] = {
     "gqa": "gqa_attention",
     "galerkin": "galerkin_attention",
@@ -26,9 +88,12 @@ _ATTENTION_FILE_MAP: dict[str, str] = {
     "cosformer_inject": "cosformer",
     "hla_inject": "hla_attention",
     "kda_inject": "kda_attention",
-    "leka_v1_inject": "leka_v1",
-    "leka_v2_inject": "leka_v2",
-    "leka_v3_inject": "leka_v3",
+    "hybrid_local_kernel": "hybrid_local_kernel_attention",
+    "split_head_hybrid": "split_head_hybrid_attention",
+    "gated_hybrid_kernel": "gated_hybrid_kernel_attention",
+    "positive_kernel_linear": "positive_kernel_linear_attention",
+    "landmark_local": "landmark_local_attention",
+    "refined_landmark": "refined_landmark_attention",
     "mamba_attention": "mamba_block",
     "moba": "moba_attention",
     "nha_compressor": "nha_attention",
@@ -200,18 +265,20 @@ class Registry:
 
     def get(self, key: str) -> Callable | None:
         """Safely retrieve a registered component, or None if not found."""
-        self._try_lazy_load(key)
-        return self._dict.get(key.lower())
+        k = _handle_deprecated(key)
+        self._try_lazy_load(k)
+        return self._dict.get(k.lower())
 
     def resolve(self, key: str) -> Callable:
         """Retrieve a registered component and raise a descriptive error if missing."""
-        self._try_lazy_load(key)
-        k = key.lower()
-        if k not in self._dict:
+        k = _handle_deprecated(key)
+        self._try_lazy_load(k)
+        k_lower = k.lower()
+        if k_lower not in self._dict:
             raise KeyError(
                 f"Unknown {self.name.rstrip('s')} '{key}'. Available: {list(self._dict.keys())}"
             )
-        return self._dict[k]
+        return self._dict[k_lower]
 
     def _load_all(self) -> None:
         """Attempt to load all modules in the associated package."""
