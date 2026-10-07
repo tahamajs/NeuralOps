@@ -67,7 +67,7 @@ def apply_rotary_pos_emb(q, k, cos, sin):
 # ===========================================================================
 
 
-class AegisConfigV3:
+class GatedHybridKernelConfig:
     def __init__(self, **kwargs: Any):
         self.hidden_size = kwargs.get("hidden_size")
         self.num_heads = kwargs.get("num_heads", kwargs.get("num_attention_heads"))
@@ -383,9 +383,8 @@ class ContextFusionGate(nn.Module):
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("aegis_v6", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("aegis_v6_attn", supports_causal=True, supports_gqa=True)
-class AegisAttentionV3(BaseAttention):
+@ATTENTION_REGISTRY.register("gated_hybrid_kernel", supports_causal=True, supports_gqa=True)
+class GatedHybridKernelAttention(BaseAttention):
     supports_causal: bool = True
     supports_gqa: bool = True
     is_custom_attention: bool = True
@@ -1214,9 +1213,7 @@ class AegisAttentionV3(BaseAttention):
 # ===========================================================================
 
 
-@ATTENTION_REGISTRY.register("aegis_v6_inject")
-@ATTENTION_REGISTRY.register("inject_aegis_v6")
-def inject_aegis_v6(
+def inject_gated_hybrid_kernel(
     layer=None,
     model=None,
     model_config=None,
@@ -1371,6 +1368,3 @@ def inject_aegis_v6(
     except Exception as e:
         logger.error(f"Failed to inject AEGIS-V6: {e}")
         return None
-
-
-AegisAttentionV6 = AegisAttentionV3
