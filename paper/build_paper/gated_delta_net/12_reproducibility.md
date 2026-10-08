@@ -132,11 +132,11 @@ For a fast implementation, use:
 
 ## 12.11 Reproduction Checklist
 
-- [ ] GPU printed
-- [ ] `chunk_size` logged
-- [ ] `use_gradient_checkpointing` logged
-- [ ] Per-step timing measured
-- [ ] Peak VRAM measured
-- [ ] OOM errors captured
+- [x] GPU printed
+- [x] `chunk_size` logged
+- [x] `use_gradient_checkpointing` logged
+- [x] Per-step timing measured
+- [x] Peak VRAM measured
+- [x] OOM errors captured
 
 ---

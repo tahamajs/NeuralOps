@@ -120,11 +120,11 @@ To reproduce the FP8 path, you need:
 
 ## 12.10 Reproducibility Checklist
 
-- [ ] Hardware printed via `torch.cuda.get_device_name(0)`
-- [ ] `hasattr(torch, "float8_e4m3fn")` result logged
-- [ ] `flash_attn` import attempt logged
-- [ ] FP8 path taken or not taken logged
-- [ ] SDPA backend logged
+- [x] Hardware printed via `torch.cuda.get_device_name(0)`
+- [x] `hasattr(torch, "float8_e4m3fn")` result logged
+- [x] `flash_attn` import attempt logged
+- [x] FP8 path taken or not taken logged
+- [x] SDPA backend logged
 
 ## 12.11 Data Availability
 
