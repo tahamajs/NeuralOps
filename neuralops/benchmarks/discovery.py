@@ -123,8 +123,16 @@ def discover_all_modules() -> list[ModuleMetadata]:
     return discovered
 
 
+def discover_modules() -> dict[str, ModuleMetadata]:
+    """Discover all registered modules and return a mapping of name to ModuleMetadata."""
+    modules = discover_all_modules()
+    return {m.name: m for m in modules}
+
+
 __all__ = [
     "ModuleMetadata",
     "inspect_module_capabilities",
     "discover_all_modules",
+    "discover_modules",
 ]
+
