@@ -1,60 +1,37 @@
-# NeuralOps Troubleshooting Guide
+# Troubleshooting Guide
 
-Frequently encountered issues, root cause explanations, and verified resolutions.
-
----
-
-## 1. CUDA Out of Memory (OOM) During Long Sequence Benchmarks
-
-### Symptom
-`torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate...`
-
-### Resolution
-1. **Reduce Batch Size / Gradient Accumulation**:
-   Add `--batch-size 4` or use gradient checkpointing.
-2. **Enable Low-Rank Bottlenecks**:
-   Specify `--rank 64` or `--rank 32` when injecting low-rank or SVD linear projections.
-3. **Empty CUDA Cache**:
-   ```python
-   import torch
-   torch.cuda.empty_cache()
-   ```
+Common issues and resolutions when deploying NeuralOps.
 
 ---
 
-## 2. Triton Kernel Compilation Failure on Headless or CPU Environments
+## 1. Triton Not Available on macOS / CPU
 
-### Symptom
-`ModuleNotFoundError: No module named 'triton'` or kernel JIT compiler failure.
-
-### Resolution
-NeuralOps imports shared Triton definitions safely from `neuralops.core.triton_kernels._types.py` without triggering hardware kernel compilation on CPU nodes.
-When deploying Triton fused kernels on GPU:
-```bash
-pip install triton
-```
+**Issue:** `ModuleNotFoundError: No module named 'triton'` or `HAS_TRITON == False`.  
+**Resolution:** This is completely normal on macOS, Windows, or CPU-only Linux machines. NeuralOps provides **100% pure PyTorch fallbacks** for all 19 Triton kernels. No action is needed; your code will execute transparently using standard PyTorch autograd.
 
 ---
 
-## 3. Deprecation Warnings on Registry Access
+## 2. CUDA Out of Memory (OOM)
 
-### Symptom
-`DeprecationWarning: 'adaptive_svd' is deprecated. Use 'adaptive_svd_attention' instead.`
-
-### Resolution
-NeuralOps v1.0.0 maps all 641 historical aliases to canonical names. Update your experiment configurations to use snake_case canonical identifiers (`adaptive_svd_attention`, `cosformer`, `svd_linear`).
+**Issue:** `torch.cuda.OutOfMemoryError` during evaluation sweeps.  
+**Resolution:**
+- Decrease the batch size: `--batch_size 16` or `--batch_size 8`.
+- Enable activation checkpointing or 8-bit inference.
+- Use subquadratic attention layers (`svd_linear_attention`, `cosformer`, `sliding_window_attention`).
 
 ---
 
-## 4. Corrupted Cached Tensors
+## 3. Deprecation Warnings
 
-### Symptom
-`RuntimeError: PytorchStreamReader failed reading zip archive...`
+**Issue:** `DeprecationWarning: Module alias ... is deprecated.`  
+**Resolution:** Check [`docs/RENAME_MAP.md`](RENAME_MAP.md) for the canonical name and update your imports or registry keys. Legacy names remain functional throughout the v1.x series.
 
-### Resolution
-Purge corrupted tensor cache files and rebuild:
-```bash
-rm -rf ~/.cache/neuralops/
-# or pass custom clean directory
-python -m neuralops.benchmarks run --cache-dir /tmp/clean_cache
-```
+---
+
+## 4. Package Installation Extras
+
+**Issue:** Missing optional dependencies for evaluation or benchmarking.  
+**Resolution:** Install the matching extras:
+- For evaluation: `pip install neuralops[eval]`
+- For benchmarking: `pip install neuralops[benchmark]`
+- For complete setup: `pip install neuralops[all]`
