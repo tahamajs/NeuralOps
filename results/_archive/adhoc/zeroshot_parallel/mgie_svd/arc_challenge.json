@@ -1,8 +1,0 @@
-{
-  "task": "arc_challenge",
-  "accuracy": 19.2,
-  "correct_samples": 96,
-  "total_samples": 500,
-  "elapsed_seconds": 21.22,
-  "batch_size": 8
-}
