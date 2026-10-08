@@ -86,10 +86,6 @@ exclude = [
 [tool.setuptools.package-data]
 neuralops = [
     "core/*.json",
-    "data/**/*.json",
-    "data/**/*.arrow",
     "benchmarks/*.json",
-    "**/*.yaml",
-    "**/*.yml",
     "**/py.typed",
 ]
