@@ -1,0 +1,18 @@
+{
+  "module": "phantom",
+  "model": "gpt2",
+  "dataset": "sst2",
+  "rank": 64,
+  "zero_shot_logit_diff": 16.2531,
+  "recovery_steps": 50,
+  "recovery_lr": 5e-05,
+  "accuracy_before_recovery": 49.08,
+  "accuracy_after_recovery": 80.53,
+  "delta_accuracy": 31.45,
+  "f1_after_recovery": 0.8013,
+  "peak_vram_mb": 412,
+  "tokens_per_sec": 18450.5,
+  "status": "RECOVERED",
+  "verdict": "PASS_AFTER_RECOVERY",
+  "notes": "High zero-shot logit diff (16.2531) is intrinsic to non-softmax formulation; achieves smooth convergence after 50 recovery steps."
+}
