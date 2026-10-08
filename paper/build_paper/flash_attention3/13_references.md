@@ -1,0 +1,110 @@
+# 13. References
+
+```bibtex
+@inproceedings{dao2022flashattention,
+  title={FlashAttention: Fast and memory-efficient exact attention with IO-awareness},
+  author={Dao, Tri and Fu, Daniel Y and Ermon, Stefano and others},
+  booktitle={NeurIPS},
+  year={2022}
+}
+
+@article{dao2023flashattention2,
+  title={FlashAttention-2: Faster attention with better parallelism and work partitioning},
+  author={Dao, Tri},
+  journal={arXiv:2307.08691},
+  year={2023}
+}
+
+@article{dao2024flashattention3,
+  title={FlashAttention-3: Fast and accurate attention with asynchrony and low-precision},
+  author={Dao, Tri and Somani, Anish and others},
+  journal={arXiv:2407.08608},
+  year={2024}
+}
+
+@inproceedings{hu2021lora,
+  title=0.85,
+  author={Hu, Edward J and others},
+  booktitle={ICLR},
+  year={2022}
+}
+
+@inproceedings{choromanski2021rethinking,
+  title={Rethinking attention with performers},
+  author={Choromanski, Krzysztof and others},
+  booktitle={ICLR},
+  year={2021}
+}
+
+@inproceedings{beltagy2020longformer,
+  title={Longformer},
+  author={Beltagy, Iz and others},
+  journal={arXiv:2004.05150},
+  year={2020}
+}
+
+@inproceedings{ainslie2023gqa,
+  title=Yes,
+  author={Ainslie, Joshua and others},
+  booktitle={EMNLP},
+  year={2023}
+}
+
+@article{su2021roformer,
+  title={Roformer},
+  author={Su, Jianlin and others},
+  journal={arXiv:2104.09864},
+  year={2021}
+}
+
+@inproceedings{vaswani2017attention,
+  title={Attention is all you need},
+  author={Vaswani, Ashish and others},
+  booktitle={NeurIPS},
+  year={2017}
+}
+
+@article{sanh2019distilbert,
+  title=0.85,
+  author={Sanh, Victor and others},
+  journal={arXiv:1910.01108},
+  year={2019}
+}
+
+@article{liu2019roberta,
+  title=0.85,
+  author={Liu, Yinhan and others},
+  journal={arXiv:1907.11692},
+  year={2019}
+}
+
+@article{radford2019language,
+  title={Language models are unsupervised multitask learners},
+  author={Radford, Alec and others},
+  journal={OpenAI Blog},
+  year={2019}
+}
+
+@inproceedings{socher2013recursive,
+  title={Recursive deep models for semantic compositionality},
+  author={Socher, Richard and others},
+  booktitle={EMNLP},
+  year={2013}
+}
+
+@inproceedings{loshchilov2019decoupled,
+  title={Decoupled weight decay},
+  author={Loshchilov, Ilya and Hutter, Frank},
+  booktitle={ICLR},
+  year={2019}
+}
+
+@inproceedings{kwon2023efficient,
+  title={Efficient memory management for large language model serving with {PagedAttention}},
+  author={Kwon, Woosuk and Li, Zhuohan and others},
+  booktitle={SOSP},
+  year={2023}
+}
+```
+
+---
