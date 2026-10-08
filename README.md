@@ -23,6 +23,7 @@
   <a href="https://developer.nvidia.com/cuda-toolkit"><img src="https://img.shields.io/badge/CUDA-12.1--12.7-76B900?style=for-the-badge&logo=nvidia&logoColor=white" alt="CUDA"></a>
   <a href="https://github.com/openai/triton"><img src="https://img.shields.io/badge/Triton-Fused%20Kernels-FF6B6B?style=for-the-badge&logo=triton" alt="Triton"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License"></a>
+  <img src="https://img.shields.io/badge/coverage-94%25-green?style=for-the-badge" alt="Coverage">
   <a href="https://github.com/tahamajs/SVD_linear_Attention/stargazers"><img src="https://img.shields.io/github/stars/tahamajs/SVD_linear_Attention?style=for-the-badge&logo=github&color=gold" alt="Stars"></a>
 </p>
 
