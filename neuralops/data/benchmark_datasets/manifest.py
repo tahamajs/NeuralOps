@@ -80,9 +80,8 @@ class BenchmarkDatasetRegistry:
         return cls.list_benchmarks()
 
 
-def _register_all_benchmarks() -> None:
-    """Register default set of 12+ standard benchmarks."""
-    # 1. WikiText-2 & WikiText-103
+def _register_lm_benchmarks() -> None:
+    """Register language modeling benchmarks."""
     BenchmarkDatasetRegistry.register(
         BenchmarkDatasetInfo(
             name="wikitext2",
@@ -96,16 +95,10 @@ def _register_all_benchmarks() -> None:
             description="WikiText-2 raw language modeling benchmark.",
         )
     )
-
     BenchmarkDatasetRegistry.register(
         BenchmarkDatasetInfo(
             name="wikitext103",
-            aliases=[
-                "wikitext-103",
-                "wikitext_103",
-                "wikitext-103-raw-v1",
-                "wikitext103rawv1",
-            ],
+            aliases=["wikitext-103", "wikitext_103", "wikitext-103-raw-v1", "wikitext103rawv1"],
             category="language_modeling",
             default_hf_path="Salesforce/wikitext",
             default_subset="wikitext-103-raw-v1",
@@ -115,8 +108,6 @@ def _register_all_benchmarks() -> None:
             description="WikiText-103 raw language modeling benchmark.",
         )
     )
-
-    # 2. C4 (Colossal Clean Crawled Corpus)
     BenchmarkDatasetRegistry.register(
         BenchmarkDatasetInfo(
             name="c4",
@@ -130,8 +121,6 @@ def _register_all_benchmarks() -> None:
             description="C4 (Colossal Clean Crawled Corpus) English split.",
         )
     )
-
-    # 3. Penn Treebank (PTB)
     BenchmarkDatasetRegistry.register(
         BenchmarkDatasetInfo(
             name="ptb",
@@ -145,8 +134,6 @@ def _register_all_benchmarks() -> None:
             description="Penn Treebank language modeling dataset.",
         )
     )
-
-    # 4. PG-19 (Project Gutenberg 1919)
     BenchmarkDatasetRegistry.register(
         BenchmarkDatasetInfo(
             name="pg19",
@@ -160,8 +147,36 @@ def _register_all_benchmarks() -> None:
             description="PG-19 long-context book language modeling benchmark.",
         )
     )
+    BenchmarkDatasetRegistry.register(
+        BenchmarkDatasetInfo(
+            name="pile",
+            aliases=["pile_val", "pileval", "the_pile", "thepile", "monology/pile-uncopyrighted"],
+            category="language_modeling",
+            default_hf_path="monology/pile-uncopyrighted",
+            default_subset=None,
+            default_split="train",
+            text_formatter=lambda r: {"text": r.get("text", "")},
+            synthetic_generator=_generate_synthetic_pile,
+            description="The Pile diverse pretraining & evaluation corpus.",
+        )
+    )
+    BenchmarkDatasetRegistry.register(
+        BenchmarkDatasetInfo(
+            name="lambada",
+            aliases=["lambada_openai", "eleutherai/lambada_openai"],
+            category="language_modeling",
+            default_hf_path="lambada",
+            default_subset=None,
+            default_split="test",
+            text_formatter=lambda r: {"text": r.get("text", "")},
+            synthetic_generator=_generate_synthetic_lambada,
+            description="LAMBADA word prediction and narrative understanding benchmark.",
+        )
+    )
 
-    # 5. GSM8K (Grade School Math 8K)
+
+def _register_reasoning_benchmarks() -> None:
+    """Register QA, code, and commonsense reasoning benchmarks."""
     BenchmarkDatasetRegistry.register(
         BenchmarkDatasetInfo(
             name="gsm8k",
@@ -179,8 +194,6 @@ def _register_all_benchmarks() -> None:
             description="GSM8K Grade School Math reasoning benchmark.",
         )
     )
-
-    # 6. HumanEval
     BenchmarkDatasetRegistry.register(
         BenchmarkDatasetInfo(
             name="humaneval",
@@ -201,8 +214,6 @@ def _register_all_benchmarks() -> None:
             description="HumanEval code generation benchmark.",
         )
     )
-
-    # 7. MMLU (Massive Multitask Language Understanding)
     BenchmarkDatasetRegistry.register(
         BenchmarkDatasetInfo(
             name="mmlu",
@@ -222,29 +233,6 @@ def _register_all_benchmarks() -> None:
             description="MMLU multi-subject reasoning benchmark.",
         )
     )
-
-    # 8. The Pile / Pile Val
-    BenchmarkDatasetRegistry.register(
-        BenchmarkDatasetInfo(
-            name="pile",
-            aliases=[
-                "pile_val",
-                "pileval",
-                "the_pile",
-                "thepile",
-                "monology/pile-uncopyrighted",
-            ],
-            category="language_modeling",
-            default_hf_path="monology/pile-uncopyrighted",
-            default_subset=None,
-            default_split="train",
-            text_formatter=lambda r: {"text": r.get("text", "")},
-            synthetic_generator=_generate_synthetic_pile,
-            description="The Pile diverse pretraining & evaluation corpus.",
-        )
-    )
-
-    # 9. ARC (AI2 Reasoning Challenge: Easy & Challenge)
     BenchmarkDatasetRegistry.register(
         BenchmarkDatasetInfo(
             name="arc",
@@ -264,7 +252,6 @@ def _register_all_benchmarks() -> None:
             description="AI2 Reasoning Challenge (ARC-Easy).",
         )
     )
-
     BenchmarkDatasetRegistry.register(
         BenchmarkDatasetInfo(
             name="arc_challenge",
@@ -284,8 +271,6 @@ def _register_all_benchmarks() -> None:
             description="AI2 Reasoning Challenge (ARC-Challenge).",
         )
     )
-
-    # 10. HellaSwag
     BenchmarkDatasetRegistry.register(
         BenchmarkDatasetInfo(
             name="hellaswag",
@@ -305,22 +290,9 @@ def _register_all_benchmarks() -> None:
         )
     )
 
-    # 11. LAMBADA
-    BenchmarkDatasetRegistry.register(
-        BenchmarkDatasetInfo(
-            name="lambada",
-            aliases=["lambada_openai", "eleutherai/lambada_openai"],
-            category="language_modeling",
-            default_hf_path="lambada",
-            default_subset=None,
-            default_split="test",
-            text_formatter=lambda r: {"text": r.get("text", "")},
-            synthetic_generator=_generate_synthetic_lambada,
-            description="LAMBADA word prediction and narrative understanding benchmark.",
-        )
-    )
 
-    # 12. GLUE Benchmarks (all 9 tasks)
+def _register_glue_benchmarks() -> None:
+    """Register GLUE classification benchmarks."""
     glue_tasks = ["sst2", "mrpc", "qqp", "mnli", "qnli", "rte", "wnli", "cola", "stsb"]
     for task in glue_tasks:
         BenchmarkDatasetRegistry.register(
@@ -339,6 +311,13 @@ def _register_all_benchmarks() -> None:
                 description=f"GLUE benchmark task: {task.upper()}.",
             )
         )
+
+
+def _register_all_benchmarks() -> None:
+    """Register all standard benchmark datasets."""
+    _register_lm_benchmarks()
+    _register_reasoning_benchmarks()
+    _register_glue_benchmarks()
 
 
 _register_all_benchmarks()
