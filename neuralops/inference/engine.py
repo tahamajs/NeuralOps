@@ -1,6 +1,6 @@
 """Production-grade LLM inference engine supporting sampling, speculative decoding, beam search, and continuous batching."""
 from __future__ import annotations
-from typing import Generator, Any, List, Optional
+from typing import Generator, Any
 from dataclasses import dataclass, field
 import torch
 import torch.nn as nn
@@ -171,7 +171,7 @@ def beam_search_generate(
     length_penalty: float = 1.0,
 ) -> torch.Tensor:
     """Production beam search decoder with length normalization."""
-    B = input_ids.shape[0]
+    _B = input_ids.shape[0]
     beams = input_ids.repeat(beam_size, 1)
     scores = torch.zeros(beam_size, device=input_ids.device)
     scores[1:] = float("-inf")

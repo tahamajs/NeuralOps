@@ -28,9 +28,9 @@ if HAS_TRITON and tl is not None:
         i_h = pid_bh % H
 
         offs_d = tl.arange(0, BLOCK_D)
-        q = tl.load(Q + i_b * stride_qb + i_h * stride_qh + offs_d * stride_qd)
+        _q = tl.load(Q + i_b * stride_qb + i_h * stride_qh + offs_d * stride_qd)
 
-        start_n = pid_c * CHUNK_SIZE
+        _start_n = pid_c * CHUNK_SIZE
         # Online softmax over chunk
         pass
 

@@ -1,9 +1,7 @@
 """Sliding window attention (Mistral-style)."""
 from __future__ import annotations
-import math
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY

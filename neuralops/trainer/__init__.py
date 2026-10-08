@@ -75,6 +75,7 @@ __all__ = [
     "plot_training_curves",
     "HuggingFaceTrainer",
     "CustomLoopTrainer",
+    "OPTIMIZER_REGISTRY",
     "RiemannianStiefelOptimizer",
     "project_stiefel_gradient",
     "stiefel_qr_retraction",

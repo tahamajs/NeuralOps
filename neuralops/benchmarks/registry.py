@@ -31,13 +31,11 @@ class BenchmarkRegistry:
     @staticmethod
     def get_attention_modules() -> list[str]:
         """Return sorted list of all registered attention modules."""
-        import neuralops.attentions  # Ensure registration
         return sorted(list(ATTENTION_REGISTRY.keys()))
 
     @staticmethod
     def get_compressor_modules() -> list[str]:
         """Return sorted list of all registered compressor modules."""
-        import neuralops.compression_engine  # Ensure registration
         return sorted(list(COMPRESSOR_REGISTRY.keys()))
 
     @staticmethod
