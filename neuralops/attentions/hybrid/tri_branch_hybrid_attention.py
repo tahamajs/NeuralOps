@@ -1194,9 +1194,15 @@ def inject_aegis_hybrid(
     return new_attn
 
 
+# Backward-compatibility aliases for tests and external callers
+AegisHybridAttention = TriBranchHybridAttention
+TriBranchHybridConfig = AegisHybridConfig
+
 __all__ = [
+    "TriBranchHybridAttention",
     "AegisHybridAttention",
     "AegisHybridConfig",
+    "TriBranchHybridConfig",
     "FactorizedLinear",
     "KernelFeatureMap",
     "inject_aegis_hybrid",

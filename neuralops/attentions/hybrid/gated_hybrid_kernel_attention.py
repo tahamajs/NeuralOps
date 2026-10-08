@@ -1368,3 +1368,10 @@ def inject_gated_hybrid_kernel(
     except Exception as e:
         logger.error(f"Failed to inject AEGIS-V6: {e}")
         return None
+
+
+# Backward-compatibility aliases for tests and external callers
+AegisAttentionV3 = GatedHybridKernelAttention
+AegisConfigV3 = GatedHybridKernelConfig
+inject_aegis_v6 = inject_gated_hybrid_kernel
+
