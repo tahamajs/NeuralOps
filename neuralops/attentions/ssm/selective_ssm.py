@@ -259,7 +259,6 @@ class SelectiveSSM(BaseAttention):
 
 SimpleSSM = SelectiveSSM
 ATTENTION_REGISTRY.register("simple_ssm")(SimpleSSM)
-ATTENTION_REGISTRY.register("simplessm")(SimpleSSM)
 
 
 def inject_selective_ssm(layer=None, model=None, model_config=None, old_attn=None, **kwargs):
