@@ -16,6 +16,7 @@ import torch.nn.functional as F
 
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.rope import _rotate_half
 
 try:
     from neuralops.core.triton_kernels.gdn_scan import MAX_REGISTER_DIM, gdn_scan_triton
@@ -45,12 +46,6 @@ def _cfg_get(cfg, key, default=None):
     if isinstance(cfg, dict):
         return cfg.get(key, default)
     return getattr(cfg, key, default)
-
-
-def _rotate_half(x):
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
 
 
 def _delta_chunk_forward(S, q_i, k_i, v_i, beta_i, alpha_i):
