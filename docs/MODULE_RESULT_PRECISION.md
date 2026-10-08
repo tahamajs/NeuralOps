@@ -2,240 +2,234 @@
 
 | Type | Module | Result Count | Status |
 |:---|:---|---:|:---:|
-| attention |  | 29 | OK |
-| attention |  | 20 | OK |
-| attention |  | 14 | OK |
-| attention |  | 7 | OK |
-| attention |  | 0 | MISSING |
-| attention |  | 11 | OK |
-| attention |  | 21 | OK |
-| attention |  | 2 | OK |
-| attention |  | 16 | OK |
-| attention |  | 13 | OK |
-| attention |  | 22 | OK |
-| attention |  | 19 | OK |
-| attention |  | 31 | OK |
-| attention |  | 36 | OK |
-| attention |  | 30 | OK |
-| attention |  | 1 | OK |
-| attention |  | 21 | OK |
-| attention |  | 11 | OK |
-| attention |  | 21 | OK |
-| attention |  | 10 | OK |
-| attention |  | 11 | OK |
-| attention |  | 21 | OK |
-| attention |  | 4 | OK |
-| attention |  | 58 | OK |
-| attention |  | 31 | OK |
-| attention |  | 10 | OK |
-| attention |  | 25 | OK |
-| attention |  | 1 | OK |
-| attention |  | 31 | OK |
-| attention |  | 1 | OK |
-| attention |  | 23 | OK |
-| attention |  | 22 | OK |
-| attention |  | 18 | OK |
-| attention |  | 18 | OK |
-| attention |  | 4 | OK |
-| attention |  | 19 | OK |
-| attention |  | 261 | OK |
-| attention |  | 15 | OK |
-| attention |  | 30 | OK |
-| attention |  | 0 | MISSING |
-| attention |  | 1 | OK |
-| attention |  | 45 | OK |
-| attention |  | 46 | OK |
-| attention |  | 19 | OK |
-| attention |  | 15 | OK |
-| attention |  | 40 | OK |
-| attention |  | 35 | OK |
-| attention |  | 9 | OK |
-| attention |  | 18 | OK |
-| attention |  | 30 | OK |
-| attention |  | 12 | OK |
-| attention |  | 21 | OK |
-| attention |  | 30 | OK |
-| attention |  | 0 | MISSING |
-| attention |  | 32 | OK |
-| attention |  | 29 | OK |
-| attention |  | 15 | OK |
-| attention |  | 39 | OK |
-| attention |  | 0 | MISSING |
-| attention |  | 17 | OK |
-| attention |  | 20 | OK |
-| attention |  | 14 | OK |
-| attention |  | 104 | OK |
-| attention |  | 23 | OK |
-| attention |  | 0 | MISSING |
-| attention |  | 0 | MISSING |
-| attention |  | 0 | MISSING |
-| attention |  | 0 | MISSING |
-| attention |  | 20 | OK |
-| attention |  | 21 | OK |
-| attention |  | 33 | OK |
-| attention |  | 26 | OK |
-| attention |  | 35 | OK |
-| attention |  | 10 | OK |
-| attention |  | 17 | OK |
-| attention |  | 5 | OK |
-| attention |  | 10 | OK |
-| attention |  | 29 | OK |
-| attention |  | 21 | OK |
-| attention |  | 5 | OK |
-| attention |  | 22 | OK |
-| attention |  | 38 | OK |
-| attention |  | 19 | OK |
-| attention |  | 26 | OK |
-| attention |  | 23 | OK |
-| attention |  | 6 | OK |
-| attention |  | 18 | OK |
-| attention |  | 25 | OK |
-| attention |  | 14 | OK |
-| attention |  | 5 | OK |
-| attention |  | 7 | OK |
-| attention |  | 13 | OK |
-| attention |  | 8 | OK |
-| attention |  | 19 | OK |
-| attention |  | 17 | OK |
-| attention |  | 8 | OK |
-| attention |  | 18 | OK |
-| attention |  | 14 | OK |
-| attention |  | 37 | OK |
-| attention |  | 23 | OK |
-| attention |  | 18 | OK |
-| attention |  | 17 | OK |
-| attention |  | 5 | OK |
-| attention |  | 11 | OK |
-| attention |  | 22 | OK |
-| attention |  | 3 | OK |
-| attention |  | 21 | OK |
-| attention |  | 26 | OK |
-| attention |  | 31 | OK |
-| attention |  | 23 | OK |
-| attention |  | 21 | OK |
-| attention |  | 12 | OK |
-| attention |  | 7 | OK |
-| attention |  | 20 | OK |
-| attention |  | 15 | OK |
-| attention |  | 0 | MISSING |
-| attention |  | 3 | OK |
-| attention |  | 27 | OK |
-| attention |  | 0 | MISSING |
-| attention |  | 11 | OK |
-| attention |  | 9 | OK |
-| attention |  | 14 | OK |
-| attention |  | 8 | OK |
-| attention |  | 14 | OK |
-| attention |  | 22 | OK |
-| attention |  | 37 | OK |
-| attention |  | 39 | OK |
-| attention |  | 32 | OK |
-| attention |  | 12 | OK |
-| attention |  | 25 | OK |
-| attention |  | 28 | OK |
-| attention |  | 0 | MISSING |
-| attention |  | 4 | OK |
-| attention |  | 17 | OK |
-| attention |  | 17 | OK |
-| attention |  | 16 | OK |
-| attention |  | 6 | OK |
-| attention |  | 20 | OK |
-| attention |  | 10 | OK |
-| attention |  | 16 | OK |
-| attention |  | 10 | OK |
-| attention |  | 27 | OK |
-| attention |  | 7 | OK |
-| attention |  | 0 | MISSING |
-| attention |  | 6 | OK |
-| attention |  | 0 | MISSING |
-| attention |  | 10 | OK |
-| attention |  | 7 | OK |
-| attention |  | 10 | OK |
-| attention |  | 7 | OK |
-| attention |  | 3 | OK |
-| attention |  | 13 | OK |
-| attention |  | 6 | OK |
-| attention |  | 8 | OK |
-| attention |  | 2 | OK |
-| attention |  | 0 | MISSING |
-| attention |  | 11 | OK |
-| attention |  | 6 | OK |
-| attention |  | 2 | OK |
-| compressor |  | 76 | OK |
-| compressor |  | 50 | OK |
-| compressor |  | 10 | OK |
-| compressor |  | 57 | OK |
-| compressor |  | 73 | OK |
-| compressor |  | 32 | OK |
-| compressor |  | 16 | OK |
-| compressor |  | 26 | OK |
-| compressor |  | 18 | OK |
-| compressor |  | 17 | OK |
-| compressor |  | 21 | OK |
-| compressor |  | 16 | OK |
-| compressor |  | 54 | OK |
-| compressor |  | 39 | OK |
-| compressor |  | 26 | OK |
-| compressor |  | 36 | OK |
-| compressor |  | 45 | OK |
-| compressor |  | 51 | OK |
-| compressor |  | 25 | OK |
-| compressor |  | 46 | OK |
-| compressor |  | 48 | OK |
-| compressor |  | 11 | OK |
-| compressor |  | 55 | OK |
-| compressor |  | 21 | OK |
-| compressor |  | 16 | OK |
-| compressor |  | 49 | OK |
-| compressor |  | 16 | OK |
-| compressor |  | 25 | OK |
-| compressor |  | 25 | OK |
-| compressor |  | 65 | OK |
-| compressor |  | 11 | OK |
-| compressor |  | 10 | OK |
-| compressor |  | 68 | OK |
-| compressor |  | 25 | OK |
-| compressor |  | 9 | OK |
-| compressor |  | 27 | OK |
-| compressor |  | 28 | OK |
-| compressor |  | 33 | OK |
-| compressor |  | 28 | OK |
-| compressor |  | 40 | OK |
-| compressor |  | 33 | OK |
-| compressor |  | 22 | OK |
-| compressor |  | 20 | OK |
-| compressor |  | 31 | OK |
-| compressor |  | 27 | OK |
-| compressor |  | 9 | OK |
-| compressor |  | 25 | OK |
-| compressor |  | 51 | OK |
-| compressor |  | 25 | OK |
-| compressor |  | 42 | OK |
-| compressor |  | 4 | OK |
-| compressor |  | 24 | OK |
-| compressor |  | 13 | OK |
-| compressor |  | 14 | OK |
-| compressor |  | 34 | OK |
-| compressor |  | 65 | OK |
-| compressor |  | 125 | OK |
-| compressor |  | 46 | OK |
-| compressor |  | 15 | OK |
-| compressor |  | 102 | OK |
-| compressor |  | 32 | OK |
-| compressor |  | 28 | OK |
-| compressor |  | 19 | OK |
-| compressor |  | 20 | OK |
-| compressor |  | 28 | OK |
-| compressor |  | 25 | OK |
-| compressor |  | 45 | OK |
-| compressor |  | 15 | OK |
-| compressor |  | 87 | OK |
-| compressor |  | 21 | OK |
-| compressor |  | 64 | OK |
-| compressor |  | 25 | OK |
-| compressor |  | 22 | OK |
-
-## Summary
-- **Total canonical modules**: 232
-- **With verified benchmark results**: 218
-- **Missing results**: 14
+| attention | `adaptive_span_attention` | 77 | OK |
+| attention | `adaptive_sparse` | 40 | OK |
+| attention | `adaptive_sparse_attention` | 24 | OK |
+| attention | `adaptive_sparse_attention_attention` | 19 | OK |
+| attention | `adaptive_sparse_attn` | 2 | OK |
+| attention | `adaptive_svd` | 0 | MISSING |
+| attention | `adaptive_svd_attention` | 109 | OK |
+| attention | `adaptive_svd_attn` | 20 | OK |
+| attention | `adasplash` | 54 | OK |
+| attention | `adasplash_attention` | 30 | OK |
+| attention | `asvd` | 0 | MISSING |
+| attention | `asvd_attention` | 106 | OK |
+| attention | `bam_umoe` | 65 | OK |
+| attention | `block_transformer_hiba` | 76 | OK |
+| attention | `chela_slay` | 64 | OK |
+| attention | `chela_slay_attention` | 3 | OK |
+| attention | `cluster` | 59 | OK |
+| attention | `cluster_attention` | 26 | OK |
+| attention | `compressed_attention` | 41 | OK |
+| attention | `compressed_attention_layer` | 28 | OK |
+| attention | `compressed_attention_layer_energy` | 44 | OK |
+| attention | `compressed_mha` | 49 | OK |
+| attention | `compressed_mha_attention` | 9 | OK |
+| attention | `cosformer` | 120 | OK |
+| attention | `decay_linear_attention` | 51 | OK |
+| attention | `decay_linear_attn` | 22 | OK |
+| attention | `eat` | 50 | OK |
+| attention | `eat_attention` | 2 | OK |
+| attention | `expert_choice_moe` | 59 | OK |
+| attention | `expert_choice_moe_attention` | 3 | OK |
+| attention | `factorised_matrix_state` | 47 | OK |
+| attention | `flash3` | 61 | OK |
+| attention | `flash3_fp8` | 46 | OK |
+| attention | `flash_attention3` | 33 | OK |
+| attention | `flash_attention3_fp8` | 11 | OK |
+| attention | `fms` | 33 | OK |
+| attention | `full` | 1205 | OK |
+| attention | `full_attention` | 20 | OK |
+| attention | `fused_svd_kernel` | 71 | OK |
+| attention | `fused_svd_kernel_attention` | 2 | OK |
+| attention | `fusion_attention` | 3 | OK |
+| attention | `fusion_attn` | 98 | OK |
+| attention | `galerkin_attention` | 103 | OK |
+| attention | `gated_delta_net` | 37 | OK |
+| attention | `gated_deltanet_block` | 26 | OK |
+| attention | `gated_hybrid_kernel` | 133 | OK |
+| attention | `gated_linear_attention` | 51 | OK |
+| attention | `goldfinch` | 18 | OK |
+| attention | `goldfinch_ahn` | 44 | OK |
+| attention | `gqa` | 56 | OK |
+| attention | `gqa_attention` | 29 | OK |
+| attention | `granite_hybrid` | 37 | OK |
+| attention | `griffin_ssd` | 66 | OK |
+| attention | `grouped_query_attention` | 2 | OK |
+| attention | `halo_regla` | 64 | OK |
+| attention | `hamming_attention` | 64 | OK |
+| attention | `hgrn2_gated_deltanet` | 26 | OK |
+| attention | `hgrn2_gated_layer` | 74 | OK |
+| attention | `hgrn2_gated_outer` | 0 | MISSING |
+| attention | `hgrn2_outer` | 22 | OK |
+| attention | `hla_attention` | 56 | OK |
+| attention | `hybrid_attention` | 35 | OK |
+| attention | `hybrid_local_kernel` | 276 | OK |
+| attention | `hymba_transx` | 43 | OK |
+| attention | `hymba_transx_attn` | 0 | MISSING |
+| attention | `inject_triton_cosformer` | 0 | MISSING |
+| attention | `inject_triton_svd_linear_attention` | 0 | MISSING |
+| attention | `inject_xattention` | 0 | MISSING |
+| attention | `jamba` | 29 | OK |
+| attention | `jamba_info` | 42 | OK |
+| attention | `kda_attention` | 58 | OK |
+| attention | `landmark_local` | 56 | OK |
+| attention | `linformer_attention` | 68 | OK |
+| attention | `lola_attention` | 66 | OK |
+| attention | `lora_attention` | 40 | OK |
+| attention | `lora_attn` | 25 | OK |
+| attention | `lsh_attention` | 34 | OK |
+| attention | `mamba_block` | 56 | OK |
+| attention | `mamba_svd_flash` | 36 | OK |
+| attention | `minimal_nova` | 53 | OK |
+| attention | `minimal_svd` | 277 | OK |
+| attention | `mixattention_moska` | 71 | OK |
+| attention | `mla_attention` | 40 | OK |
+| attention | `moba_attention` | 58 | OK |
+| attention | `moe_deltakv_paged` | 39 | OK |
+| attention | `naive_svd` | 22 | OK |
+| attention | `nasc_attention` | 60 | OK |
+| attention | `nexus` | 51 | OK |
+| attention | `nha_class` | 46 | OK |
+| attention | `nsa` | 18 | OK |
+| attention | `nsa_attention` | 20 | OK |
+| attention | `nystrom` | 43 | OK |
+| attention | `nystrom_attention` | 14 | OK |
+| attention | `optimized_hybrid_attention` | 48 | OK |
+| attention | `orion` | 75 | OK |
+| attention | `padre_attention` | 24 | OK |
+| attention | `performer` | 45 | OK |
+| attention | `performer_attention` | 30 | OK |
+| attention | `phantom` | 71 | OK |
+| attention | `positive_kernel_linear` | 44 | OK |
+| attention | `primal_attention` | 45 | OK |
+| attention | `progressive_token_pruning` | 35 | OK |
+| attention | `projection_factorized_attn` | 50 | OK |
+| attention | `qcqa_attention` | 19 | OK |
+| attention | `rala_attention` | 46 | OK |
+| attention | `rala_compressor` | 9 | OK |
+| attention | `reap_moe` | 38 | OK |
+| attention | `refined_landmark` | 52 | OK |
+| attention | `regla_attention` | 64 | OK |
+| attention | `residual_svd_attention` | 92 | OK |
+| attention | `routing_attention` | 41 | OK |
+| attention | `rpc_attention` | 54 | OK |
+| attention | `salt_attention` | 56 | OK |
+| attention | `samba_m3` | 39 | OK |
+| attention | `samba_moe` | 26 | OK |
+| attention | `selective_mamba` | 0 | MISSING |
+| attention | `selective_ssm` | 3 | OK |
+| attention | `simple_ssm` | 49 | OK |
+| attention | `simplessm` | 0 | MISSING |
+| attention | `soa_attn` | 92 | OK |
+| attention | `span_expanded_attention` | 33 | OK |
+| attention | `spectra_v2` | 40 | OK |
+| attention | `spectraformer_attention` | 16 | OK |
+| attention | `spectral_mamba` | 28 | OK |
+| attention | `spectron` | 80 | OK |
+| attention | `spectron_fp8` | 73 | OK |
+| attention | `split_head_hybrid` | 120 | OK |
+| attention | `squeezing_heads_distill` | 86 | OK |
+| attention | `svd_compressed` | 70 | OK |
+| attention | `svd_linear` | 93 | OK |
+| attention | `svd_linear_attention` | 52 | OK |
+| attention | `svd_linear_attn` | 12 | OK |
+| attention | `svd_linear_decay` | 44 | OK |
+| attention | `svd_llm_v2_attention` | 64 | OK |
+| attention | `svd_mamba` | 20 | OK |
+| attention | `svd_projection_attention` | 96 | OK |
+| attention | `svd_seq` | 16 | OK |
+| attention | `template_attention` | 42 | OK |
+| attention | `tlinformer_attention` | 21 | OK |
+| attention | `token_compressed_attention` | 41 | OK |
+| attention | `tpa_attention` | 28 | OK |
+| attention | `tri_branch_hybrid` | 136 | OK |
+| attention | `triton_cosformer` | 14 | OK |
+| attention | `triton_cosformer_inject` | 0 | MISSING |
+| attention | `triton_svd_linear_attention` | 22 | OK |
+| attention | `triton_svd_linear_attention_inject` | 0 | MISSING |
+| attention | `unified_rope` | 35 | OK |
+| attention | `upi_mamba` | 12 | OK |
+| attention | `upi_stuffed_mamba` | 14 | OK |
+| attention | `vig` | 15 | OK |
+| attention | `vig_attention` | 7 | OK |
+| attention | `vspec` | 51 | OK |
+| attention | `vspec_attention` | 6 | OK |
+| attention | `wgqa` | 24 | OK |
+| attention | `wgqa_attention` | 6 | OK |
+| attention | `x_attention` | 0 | MISSING |
+| attention | `xattention` | 36 | OK |
+| attention | `zeros` | 19 | OK |
+| attention | `zeros_attention` | 5 | OK |
+| compressor | `a3_compressor` | 267 | OK |
+| compressor | `aa_svd_compressor` | 219 | OK |
+| compressor | `aatc_xkv_compressor` | 29 | OK |
+| compressor | `adaptive_ranks` | 219 | OK |
+| compressor | `adasvd_compressor` | 260 | OK |
+| compressor | `admm_compressor` | 109 | OK |
+| compressor | `admm_pruner` | 68 | OK |
+| compressor | `armor_pruner` | 101 | OK |
+| compressor | `ast_pruner` | 54 | OK |
+| compressor | `astro_quantizer` | 65 | OK |
+| compressor | `bonsai_pruner` | 48 | OK |
+| compressor | `cachenotes_compressor` | 67 | OK |
+| compressor | `come_compressor` | 199 | OK |
+| compressor | `compot_compressor` | 96 | OK |
+| compressor | `coopq_quantizer` | 69 | OK |
+| compressor | `cr_compressor` | 143 | OK |
+| compressor | `cur_compressor` | 235 | OK |
+| compressor | `cur_moe_compressor` | 174 | OK |
+| compressor | `delta_kv` | 83 | OK |
+| compressor | `direct_svd` | 149 | OK |
+| compressor | `dobi_svd` | 145 | OK |
+| compressor | `drone_compressor` | 38 | OK |
+| compressor | `dynamic_rank` | 165 | OK |
+| compressor | `enlighten_compressor` | 83 | OK |
+| compressor | `entropy_budget_allocation` | 57 | OK |
+| compressor | `erc_svd` | 144 | OK |
+| compressor | `faq_quantizer` | 46 | OK |
+| compressor | `flap` | 76 | OK |
+| compressor | `flat_llm` | 84 | OK |
+| compressor | `frandi_compressor` | 183 | OK |
+| compressor | `fwsvd_compressor` | 38 | OK |
+| compressor | `gfws` | 41 | OK |
+| compressor | `grecodec_compressor` | 195 | OK |
+| compressor | `hashed_net_compressor` | 96 | OK |
+| compressor | `huffman_coder` | 37 | OK |
+| compressor | `hybrid_svd_layer` | 125 | OK |
+| compressor | `hybridkv_compressor` | 89 | OK |
+| compressor | `kmeans_quantize` | 144 | OK |
+| compressor | `kronecker_compressor` | 142 | OK |
+| compressor | `kronecker_tt_lora` | 102 | OK |
+| compressor | `kvtc_compressor` | 100 | OK |
+| compressor | `liftr` | 62 | OK |
+| compressor | `lillama_compressor` | 42 | OK |
+| compressor | `lsc_compressor` | 88 | OK |
+| compressor | `mamba_shedder` | 55 | OK |
+| compressor | `mgie_budget` | 59 | OK |
+| compressor | `mlorq_compressor` | 77 | OK |
+| compressor | `modegpt_compressor` | 124 | OK |
+| compressor | `nmf_compressor` | 67 | OK |
+| compressor | `oats_compressor` | 122 | OK |
+| compressor | `optimal_subspace_projection` | 21 | OK |
+| compressor | `proxsparse` | 65 | OK |
+| compressor | `residual_svd_compressor` | 51 | OK |
+| compressor | `roast_hashed_linear` | 45 | OK |
+| compressor | `rotational_slicegpt_int4` | 90 | OK |
+| compressor | `rpca_compressor` | 157 | OK |
+| compressor | `saes_svd_v2` | 316 | OK |
+| compressor | `salr` | 114 | OK |
+| compressor | `sdrm_compressor` | 34 | OK |
+| compressor | `slicegpt` | 248 | OK |
+| compressor | `slicegpt_pca` | 80 | OK |
+| compressor | `slim_compressor` | 78 | OK |
+| compressor | `soka_compressor` | 54 | OK |
+| compressor | `sparsegpt` | 48 | OK |
+| compressor | `subspace_projection` | 76 | OK |
+| compressor | `svd_llm_compressor` | 142 | OK |
+| compressor | `swift_svd` | 108 | OK |
+| compressor | `swift_svd_act` | 214 | OK |
+| compressor | `tomoe_compressor` | 72 | OK |
+| compressor | `tt_compressor` | 205 | OK |
+| compressor | `uniql_compressor` | 70 | OK |
+| compressor | `zerokv_neo_compressor` | 56 | OK |
