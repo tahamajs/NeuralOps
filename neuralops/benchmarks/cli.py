@@ -135,6 +135,8 @@ def handle_plan(args: argparse.Namespace) -> None:
 
 def handle_verify(args: argparse.Namespace) -> None:
     import torch
+    import neuralops.attentions
+    import neuralops.compression_engine
     print("System Environment Verification:")
     print(f"  Platform:         {platform.platform()}")
     print(f"  Python Version:   {platform.python_version()}")
@@ -146,6 +148,7 @@ def handle_verify(args: argparse.Namespace) -> None:
     print(f"  MPS Available:    {torch.backends.mps.is_available()}")
     print(f"  Attention Reg:    {len(ATTENTION_REGISTRY)} modules")
     print(f"  Compressor Reg:   {len(COMPRESSOR_REGISTRY)} modules")
+
 
 
 def handle_results(args: argparse.Namespace) -> None:
