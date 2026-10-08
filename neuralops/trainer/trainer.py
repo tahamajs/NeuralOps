@@ -267,4 +267,4 @@ def create_trainer(
 
 # Backward-compatible aliases
 CompressionTrainer = SVDAwareTrainer
-from neuralops.trainer.metrics import get_task_metrics as get_compute_metrics
+from neuralops.trainer.metrics import get_task_metrics as get_compute_metrics  # noqa: F401

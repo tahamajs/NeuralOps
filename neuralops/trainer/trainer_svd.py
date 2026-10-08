@@ -9,7 +9,9 @@ from sklearn.metrics import accuracy_score
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from neuralops.utils.helpers import count_parameters
+from neuralops.utils.helpers import count_parameters  # noqa: F401
+
+__all__ = ["train_model", "benchmark_model", "count_parameters"]
 
 
 def train_model(
