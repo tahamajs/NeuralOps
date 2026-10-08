@@ -1,7 +1,0 @@
-rank,module_name,status,accuracy_pct,f1_score,val_loss,peak_vram_mb,compression_rate,compression_ratio_pct,num_compressed_layers,num_fallback_layers,elapsed_s,total_params_before,total_params_after
-16,all,DRY_RUN,0.0,,,,,,,,0.0,,
-32,all,DRY_RUN,0.0,,,,,,,,0.0,,
-64,all,DRY_RUN,0.0,,,,,,,,0.0,,
-128,all,DRY_RUN,0.0,,,,,,,,0.0,,
-256,all,DRY_RUN,0.0,,,,,,,,0.0,,
-384,all,DRY_RUN,0.0,,,,,,,,0.0,,

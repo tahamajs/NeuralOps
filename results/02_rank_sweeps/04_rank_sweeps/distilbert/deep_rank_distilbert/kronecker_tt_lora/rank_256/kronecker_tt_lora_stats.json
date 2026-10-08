@@ -1,6 +1,0 @@
-{
-  "num_compressed": 24,
-  "num_fallback": 0,
-  "compression_method": "kronecker_tt_lora",
-  "effective_parameter_ratio": 1.128413524057217
-}
