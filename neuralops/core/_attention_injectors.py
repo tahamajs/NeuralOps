@@ -23,7 +23,7 @@ from neuralops.core.adapters import get_adapter
 from neuralops.core.architecture import detect_architecture, get_attention_modules
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.utils.model_family import ModelAdapter, detect_family
+from neuralops.core.model_family import ModelAdapter, detect_family
 from neuralops.utils.qwen_compat import QwenIncompatibleError
 from neuralops.utils.replace_attention import UniversalAttentionWrapper
 
