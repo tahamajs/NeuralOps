@@ -12,10 +12,10 @@ __all__ = ["paged_attention_kernel", "paged_attention_pytorch"]
 if HAS_TRITON and tl is not None:
     @triton.jit
     def paged_attention_fwd_kernel(
-        Q, KCACHE, VCACHE, BLOCK_TABLE, SEQ_LENS, OUT,
+        Q, _KCACHE, _VCACHE, BLOCK_TABLE, SEQ_LENS, OUT,
         stride_qb, stride_qh, stride_qd,
-        stride_kblk, stride_kidx, stride_kh, stride_kd,
-        stride_vblk, stride_vidx, stride_vh, stride_vd,
+        _stride_kblk, _stride_kidx, stride_kh, stride_kd,
+        _stride_vblk, _stride_vidx, stride_vh, stride_vd,
         stride_ob, stride_oh, stride_od,
         BLOCK_SIZE: tl.constexpr,
         BLOCK_D: tl.constexpr,

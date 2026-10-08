@@ -11,13 +11,13 @@ __all__ = ["fused_rope_triton", "fused_rope_embedding_kernel"]
 if HAS_TRITON and tl is not None:
     @triton.jit
     def fused_rope_fwd_kernel(
-        Q, K, COS, SIN, OUT_Q, OUT_K,
+        Q, K, COS, SIN, OUT_Q, _OUT_K,
         stride_qb, stride_qh, stride_qn, stride_qd,
         stride_kb, stride_kh, stride_kn, stride_kd,
-        stride_cos_b, stride_cos_n, stride_cos_d,
-        stride_sin_b, stride_sin_n, stride_sin_d,
+        _stride_cos_b, stride_cos_n, stride_cos_d,
+        _stride_sin_b, stride_sin_n, stride_sin_d,
         stride_oqb, stride_oqh, stride_oqn, stride_oqd,
-        stride_okb, stride_okh, stride_okn, stride_okd,
+        _stride_okb, _stride_okh, _stride_okn, _stride_okd,
         H, N, D: tl.constexpr, HALF_D: tl.constexpr,
         BLOCK_M: tl.constexpr,
     ):

@@ -127,7 +127,7 @@ def determine_sub_category(mod_name: str, mod_type: str, cat: str) -> str:
     return "Unknown"
 
 
-def determine_fix_priority(cat: str, mod_type: str, sub_cat: str) -> str:
+def determine_fix_priority(cat: str, mod_type: str, _sub_cat: str) -> str:
     """Determine issue fix priority (P0 to P3, or NONE)."""
     if cat == "BROKEN":
         return "P0"

@@ -111,7 +111,7 @@ def _get_target_module(leaf):
 class _LegacyAttnLoader(Loader):
     def __init__(self, leaf):
         self.leaf = leaf
-    def create_module(self, spec):
+    def create_module(self, _spec):
         return _get_target_module(self.leaf)
     def exec_module(self, module):
         pass
