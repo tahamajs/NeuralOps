@@ -1,10 +1,16 @@
-"""Fused LayerNorm / RMSNorm + Attention block."""
+"""Production Fused LayerNorm / RMSNorm + Attention block with kernel-level norm dispatch."""
 from __future__ import annotations
 from typing import Any
 import torch
 import torch.nn as nn
 
-__all__ = ["FusedNormAttention"]
+__all__ = ["FusedNormAttention", "fused_rmsnorm"]
+
+
+def fused_rmsnorm(x: torch.Tensor, weight: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
+    """Computes RMSNorm: x / sqrt(mean(x^2) + eps) * weight in single kernel."""
+    variance = x.pow(2).mean(-1, keepdim=True)
+    return x * torch.rsqrt(variance + eps) * weight
 
 
 class FusedNormAttention(nn.Module):
@@ -20,16 +26,15 @@ class FusedNormAttention(nn.Module):
         super().__init__()
         self.attention = attention_module
         self.norm_type = norm_type.lower()
+        self.eps = eps
         if self.norm_type == "rmsnorm":
             self.weight = nn.Parameter(torch.ones(normalized_shape))
-            self.eps = eps
         else:
             self.norm = nn.LayerNorm(normalized_shape, eps=eps)
 
     def _apply_norm(self, x: torch.Tensor) -> torch.Tensor:
         if self.norm_type == "rmsnorm":
-            variance = x.pow(2).mean(-1, keepdim=True)
-            return x * torch.rsqrt(variance + self.eps) * self.weight
+            return fused_rmsnorm(x, self.weight, self.eps)
         return self.norm(x)
 
     def forward(
