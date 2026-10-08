@@ -16,32 +16,13 @@ import torch.nn.functional as F
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
-
-try:
-    from .progressive_token_pruning import ProgressiveTokenPruning
-except Exception:
-    ProgressiveTokenPruning = None
+from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
 
 
-# ===========================================================================
-# RoPE
-# ===========================================================================
-def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    d = x.shape[-1]
-    even_d = (d // 2) * 2
-    x_rot = x[..., :even_d]
-    half = even_d // 2
-    x1 = x_rot[..., :half]
-    x2 = x_rot[..., half:]
-    rotated = torch.cat((-x2, x1), dim=-1)
-    if even_d < d:
-        return torch.cat([rotated, x[..., even_d:]], dim=-1)
-    return rotated
-
-
 def _broadcast_cos_sin(cos: torch.Tensor, sin: torch.Tensor, q: torch.Tensor):
+
     """EAT-FIX-02: broadcast cos/sin to q's shape correctly."""
     if cos.dim() == 2:
         cos = cos.unsqueeze(0).unsqueeze(0)
