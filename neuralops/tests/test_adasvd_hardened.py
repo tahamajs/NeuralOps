@@ -3,9 +3,6 @@ import sys
 from pathlib import Path
 
 # Add project Codes directory
-repo_root = Path(__file__).resolve().parents[2]
-if str(repo_root) not in sys.path:
-
 import pytest
 import torch
 import torch.nn as nn
