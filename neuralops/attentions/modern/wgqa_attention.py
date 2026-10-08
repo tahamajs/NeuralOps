@@ -176,9 +176,6 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register(
-    "wgqa", supports_causal=True, supports_bidirectional=True, supports_gqa=True
-)
-@ATTENTION_REGISTRY.register(
     "wgqa_attention",
     supports_causal=True,
     supports_bidirectional=True,

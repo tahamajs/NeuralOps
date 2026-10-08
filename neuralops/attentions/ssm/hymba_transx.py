@@ -269,12 +269,6 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register(
     "hymba_transx", supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
-@ATTENTION_REGISTRY.register(
-    "hymba_transx_attn",
-    supports_causal=True,
-    supports_bidirectional=True,
-    supports_gqa=True,
-)
 class HymbaTransXBlock(BaseAttention):
     r"""HymbaTransX: Hybrid Differential Transformer & State Space Model Block."""
 
