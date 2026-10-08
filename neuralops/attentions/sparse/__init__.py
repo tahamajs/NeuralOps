@@ -1,6 +1,6 @@
 """Subpackage exports."""
 
-import sys, importlib
+import importlib
 
 __all__ = []
 

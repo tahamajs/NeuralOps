@@ -239,7 +239,7 @@ class GatedRecurrentMemory(nn.Module):
         log_omg = torch.log(omg)
 
         # cum_log_omg[c] = sum_{j<=c} log(1-g_j)
-        cum_log_omg = torch.cumsum(log_omg, dim=1)  # (B, n_chunks, D)
+        _cum_log_omg = torch.cumsum(log_omg, dim=1)  # (B, n_chunks, D)
 
         # h_carry_in[c] = sum_{c' < c} exp(cum_log_omg[c] - cum_log_omg[c']) * chunk_out[c']
         # We use a sequential scan over chunks only (n_chunks ~ 8 for L=128, chunk=16)

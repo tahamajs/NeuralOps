@@ -1,6 +1,6 @@
 """CUDA Graphs execution runner for latency-critical static shape decoding."""
 from __future__ import annotations
-from typing import Callable, Any
+from typing import Callable
 import torch
 
 __all__ = ["CUDAGraphRunner"]

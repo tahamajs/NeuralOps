@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 from types import SimpleNamespace
-from typing import Any, Callable
+from typing import Any
 
 import torch
 import torch.nn as nn

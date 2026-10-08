@@ -33,7 +33,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.base import BaseAttention
-from neuralops.utils.lora import LoRALinear
 
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half

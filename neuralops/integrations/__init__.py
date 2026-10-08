@@ -12,4 +12,6 @@ __all__ = [
     "register_hf_automodel",
     "AutoNeuralOpsModel",
     "compile_attention_module",
+    "get_deepspeed_config",
+    "apply_fsdp_wrapping",
 ]

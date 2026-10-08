@@ -2,7 +2,6 @@
 from __future__ import annotations
 import math
 import torch
-import torch.nn as nn
 
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -49,5 +48,5 @@ class ALiBiAttention(BaseAttention):
         q_pos = torch.arange(N, device=hidden_states.device).unsqueeze(1)
         k_pos = torch.arange(N, device=hidden_states.device).unsqueeze(0)
         dist = (q_pos - k_pos).abs().unsqueeze(0)  # [1, N, N]
-        bias = -self.alibi_slopes.view(-1, 1, 1) * dist  # [H, N, N]
+        _bias = -self.alibi_slopes.view(-1, 1, 1) * dist  # [H, N, N]
         return hidden_states, None

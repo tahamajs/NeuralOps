@@ -1,12 +1,6 @@
 """
-Cosformer v4 — Production-Hardened (Hybrid Local Attention + Fixed Math).
+Cosformer — Production-Hardened (Hybrid Local Attention + Fixed Math).
 
-FIXES in v4:
-  - FIX 1: Fixed Dynamic M Bug in Cos/Sin generation. M is now strictly constant (16384).
-  - FIX 2: Added Local Sliding-Window Attention branch to capture GPT-2's sharp local peaks.
-  - FIX 3: Added Fusion Gate (Linear(d_model, 1)) to blend Global Cosformer and Local Attention.
-  - FIX 4: Q is scaled by 1/sqrt(d), K is unscaled (prevents variance collapse).
-  - FIX 5: Corrected local causal mask (idx >= jdx) logic.
 """
 
 from __future__ import annotations
@@ -15,7 +9,6 @@ import logging
 import math
 import os
 import threading
-from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +16,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
@@ -47,6 +39,9 @@ def _get_inject_depth() -> int:
 
 def _set_inject_depth(depth: int) -> None:
     _inject_state.depth = depth
+def _neg_inf(dtype: torch.dtype) -> float:
+    """Return the smallest finite value representable in `dtype`."""
+    return torch.finfo(dtype).min
 
 
 def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
@@ -249,7 +244,6 @@ class CosformerAttention(BaseAttention):
         self.is_causal = bool(is_dec)
         self.is_nested_encoder = bool(kwargs.get("is_nested_encoder", False))
 
-        # Core Projections
         self.q_proj = LoRALinear(self.dim, self.all_head_size, bias=True,
                                   lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         self.k_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True,
@@ -257,14 +251,12 @@ class CosformerAttention(BaseAttention):
         self.v_proj = LoRALinear(self.dim, self.all_kv_head_size, bias=True,
                                   lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
         
-        # FIX 2: V Projection for Local Attention
         self.v_proj_attn = LoRALinear(self.dim, self.all_kv_head_size, bias=True,
                                        lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
         self.out_proj = LoRALinear(self.all_head_size, self.dim, bias=True,
                                     lora_rank=self.lora_rank, lora_alpha=self.lora_alpha, freeze_base=self.freeze_base)
 
-        # FIX 3: Fusion Gate between Global Cosformer and Local Attention
         self.fusion_gate = nn.Linear(self.dim, 1, bias=True)
         with torch.no_grad():
             nn.init.zeros_(self.fusion_gate.weight)
@@ -323,66 +315,130 @@ class CosformerAttention(BaseAttention):
                 
                 targets_list = targets if isinstance(targets, list) else [targets]
                 for target_mod in targets_list:
-                    if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
-                        w = w.t().contiguous()
-                    out_d = min(target_mod.weight.size(0), w.size(0))
-                    in_d = min(target_mod.weight.size(1), w.size(1))
-                    target_mod.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(target_mod.weight.dtype))
-                    if b is not None and target_mod.bias is not None:
-                        min_b = min(target_mod.bias.numel(), b.numel())
-                        target_mod.bias.data[:min_b].copy_(b[:min_b].to(target_mod.bias.dtype))
-                    
-                    if self.freeze_base:
-                        target_mod.freeze_base_weights()
+                    w_to_use = w
+                    tw = target_mod.weight
+                    if w_to_use.shape != tw.shape:
+                        if tw.shape == w_to_use.t().contiguous().shape:
+                            w_to_use = w_to_use.t().contiguous()
+                        else:
+                            can_slice = (
+                                w_to_use.size(0) >= tw.size(0)
+                                or w_to_use.size(1) >= tw.size(1)
+                            )
+                            if not can_slice:
+                                raise ValueError(
+                                    f"[CosformerAttention.copy_weights] Cannot reconcile shapes: "
+                                    f"source {tuple(w_to_use.shape)} vs target {tuple(tw.shape)}. "
+                                    f"Check the source architecture."
+                                )
+                            logger.warning(
+                                "copy_weights: shape mismatch %s vs %s — slicing.",
+                                tuple(w_to_use.shape), tuple(tw.shape),
+                            )
+                    out_d = min(tw.size(0), w_to_use.size(0))
+                    in_d = min(tw.size(1), w_to_use.size(1))
+                    tw.data[:out_d, :in_d].copy_(w_to_use[:out_d, :in_d].to(tw.dtype))
 
-    # ------------------------------------------------------------------
-    # FIX 1: Strict, Immutable M to prevent representation shift
-    # ------------------------------------------------------------------
     def _get_cos_sin_weights(self, seq_len, device, dtype):
         pos = torch.arange(seq_len, device=device, dtype=torch.float32)
-        # Constant maximum length ensures stable positional logic
         m = max(16384, self.max_seq_len)
         angles = (math.pi / 2.0 / m) * pos
         cos_weight = torch.cos(angles).view(1, 1, seq_len, 1).to(dtype=dtype)
         sin_weight = torch.sin(angles).view(1, 1, seq_len, 1).to(dtype=dtype)
         return cos_weight, sin_weight
 
-    # ------------------------------------------------------------------
-    # FIX 2 & 5: Local Sliding Window Attention
-    # ------------------------------------------------------------------
-    def _local_attention(self, Q, K, V_local, seq_len, device, dtype):
+    
+    def _build_padding_mask(self, attention_mask, L, device, dtype):
+        """Convert (B, L) padding mask to additive (B, 1, 1, L) mask.
+        Returns None if attention_mask is None.
+        """
+        if attention_mask is None:
+            return None
+        am = attention_mask
+        if am.dim() == 4:
+            return am.to(device=device, dtype=dtype)
+        if am.dim() == 3:
+            am = am.unsqueeze(2)
+        elif am.dim() == 2:
+            am = am[:, None, None, :]
+        else:
+            raise ValueError(f"Unexpected attention_mask shape: {tuple(am.shape)}")
+        return (1.0 - am.to(dtype=dtype)) * _neg_inf(dtype)
+
+    def _local_attention(self, Q, K, V_local, padding_mask, seq_len, device, dtype):
         B, H, L, d = Q.shape
-        scale = 1.0 / math.sqrt(d)
-        scores = torch.matmul(Q, K.transpose(-1, -2)) * scale
+        neg_inf = _neg_inf(dtype)
 
         idx = torch.arange(L, device=device)
-        window_mask = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs() <= self.window_size
-        
+        window_bool = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs() <= self.window_size
         if self.is_decoder:
-            causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
-            window_mask = window_mask & causal_mask
-            
-        scores = scores.masked_fill(~window_mask.unsqueeze(0).unsqueeze(0), -1e4)
-        attn = F.softmax(scores, dim=-1)
-        out = torch.matmul(attn, V_local)
-        return out
+            causal_bool = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
+            window_bool = window_bool & causal_bool
 
-    # ------------------------------------------------------------------
-    # Fast Path Causal Cosformer
-    # ------------------------------------------------------------------
-    def _forward_causal(self, Q_cos, Q_sin, K_cos, K_sin, V, B, H, d, N, device, dtype):
+        window_additive = torch.where(
+            window_bool,
+            torch.zeros((), device=device, dtype=dtype),
+            torch.full((), neg_inf, device=device, dtype=dtype),
+        ).unsqueeze(0).unsqueeze(0)
+
+        additive_mask = window_additive
+        if padding_mask is not None:
+            additive_mask = additive_mask + padding_mask
+
+        if hasattr(F, "scaled_dot_product_attention"):
+            return F.scaled_dot_product_attention(
+                Q, K, V_local, attn_mask=additive_mask, dropout_p=0.0, is_causal=False,
+            )
+
+        scale = 1.0 / math.sqrt(d)
+        scores = torch.matmul(Q, K.transpose(-1, -2)) * scale + additive_mask
+        attn = F.softmax(scores, dim=-1)
+        return torch.matmul(attn, V_local)
+
+
+    def _forward_causal(self, Q_cos, Q_sin, K_cos, K_sin, V, padding_mask, B, H, d, N, device, dtype):
         if N <= 2048:
-            causal_mask = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
             score_c = torch.matmul(Q_cos, K_cos.transpose(-1, -2))
             score_s = torch.matmul(Q_sin, K_sin.transpose(-1, -2))
-            scores = (score_c + score_s).masked_fill(~causal_mask, 0.0)
+            scores = score_c + score_s
+
+            if self.is_decoder:
+                causal_bool = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
+                scores = scores.masked_fill(~causal_bool, 0.0)
+
+            if padding_mask is not None:
+                # Zero contribution from padded keys.
+                scores = scores * (padding_mask == 0).to(dtype)
+
             num = torch.matmul(scores, V)
             denom = scores.sum(dim=-1, keepdim=True).clamp(min=1e-4)
             return (num / denom).to(dtype)
 
-        # Basic fallback for massive sequences
-        return torch.zeros(B, H, N, d, device=device, dtype=dtype)
-
+        logger.warning(
+            "CosformerAttention._forward_causal: N=%d > 2048, using chunked accumulation.",
+            N,
+        )
+        chunk = 1024
+        out = torch.zeros(B, H, N, d, device=device, dtype=dtype)
+        for start in range(0, N, chunk):
+            end = min(start + chunk, N)
+            Qc = Q_cos[:, :, start:end]
+            Qs = Q_sin[:, :, start:end]
+            sc = torch.matmul(Qc, K_cos.transpose(-1, -2))
+            ss = torch.matmul(Qs, K_sin.transpose(-1, -2))
+            s = sc + ss
+            if self.is_decoder:
+                rows = torch.arange(start, end, device=device)
+                cols = torch.arange(N, device=device)
+                allowed = rows.unsqueeze(1) >= cols.unsqueeze(0)
+                s = s.masked_fill(~allowed, 0.0)
+            if padding_mask is not None:
+                s = s * (padding_mask == 0).to(dtype)
+            num = torch.matmul(s, V)
+            denom = s.sum(dim=-1, keepdim=True).clamp(min=1e-4)
+            out[:, :, start:end] = num / denom
+        return out
+    
     def forward(self, hidden_states, attention_mask=None, head_mask=None,
                 encoder_hidden_states=None, encoder_attention_mask=None,
                 position_ids=None, position_embeddings=None, *args, **kwargs):
@@ -402,7 +458,6 @@ class CosformerAttention(BaseAttention):
             V_global = repeat_kv(V_global, self.kv_repeat)
             V_local = repeat_kv(V_local, self.kv_repeat)
 
-        # FIX 4: Only Scale Q (Preserve K magnitude for Cosformer math)
         scale = 1.0 / math.sqrt(d)
         Q_scaled = Q_raw * scale
         
@@ -419,31 +474,31 @@ class CosformerAttention(BaseAttention):
         K_cos = K_k * cos_w
         K_sin = K_k * sin_w
 
-        # Global Cosformer Branch
-        global_out = self._forward_causal(Q_cos, Q_sin, K_cos, K_sin, V_global.float(), B, H, d, N, device, torch.float32)
+        padding_mask = self._build_padding_mask(
+            attention_mask, N, device, dtype=torch.float32,
+        )
 
-        # Local Attention Branch
-        local_out = self._local_attention(Q_raw.float(), K_raw.float(), V_local.float(), N, device, torch.float32)
+        global_out = self._forward_causal(
+            Q_cos, Q_sin, K_cos, K_sin, V_global.float(),
+            padding_mask, B, H, d, N, device, torch.float32,
+        )
 
-        # FIX 3: Fusion Gate (Learn to balance global context vs sharp local context)
+        local_out = self._local_attention(
+            Q_raw.float(), K_raw.float(), V_local.float(),
+            padding_mask, N, device, torch.float32,
+        )
+
         gate = torch.sigmoid(self.fusion_gate(hidden_states)).to(torch.float32)
         gate_expanded = gate.view(B, N, 1, 1).transpose(1, 2)
-        
+
         context = (gate_expanded * global_out) + ((1.0 - gate_expanded) * local_out)
 
         context = context.to(input_dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+        context = self.dropout(context)
         final_out = self.out_proj(context)
 
         return final_out.to(input_dtype), None
 
-
-# Injection
-def _is_single_layer(obj):
-    if obj is None: return False
-    cls_name = getattr(obj, "__class__", type(obj)).__name__
-    return cls_name in ["TransformerBlock", "BertLayer", "RobertaLayer", "GPT2Block"] or (
-        hasattr(obj, "attention") and not hasattr(obj, "transformer")
-    )
 
 def inject_cosformer(layer=None, model=None, model_config=None, comp_config=None,
                      layer_idx=0, total_layers=12, old_attn=None, **kwargs):
@@ -455,27 +510,81 @@ def inject_cosformer(layer=None, model=None, model_config=None, comp_config=None
         target = layer if layer is not None else model
         if target is None: return None
 
+        _BLOCK_PATHS = (
+            ("transformer", "h"),
+            ("encoder", "layer"),
+            ("model", "layers"),
+            ("model", "decoder", "layers"),
+            ("decoder", "layers"),
+        )
+        _ATTN_ATTRS = ("attn", "attention", "self_attn")
+        _INNER_ATTRS = ("self", "attention")
+
         layer_list = None
-        if hasattr(target, "transformer") and hasattr(target.transformer, "h"):
-            layer_list = target.transformer.h
+        for path in _BLOCK_PATHS:
+            obj = target
+            ok = True
+            for attr in path:
+                obj = getattr(obj, attr, None)
+                if obj is None:
+                    ok = False
+                    break
+            if ok and isinstance(obj, (list, nn.ModuleList)):
+                layer_list = obj
+                break
 
         if layer_list is not None:
             num_injected = 0
             for idx, lyr in enumerate(layer_list):
-                res = inject_cosformer(layer=lyr, model_config=model_config, layer_idx=idx, **kwargs)
-                if res is not None: num_injected += 1
-            return target if num_injected > 0 else None
+                res = inject_cosformer(
+                    layer=lyr, model_config=model_config,
+                    comp_config=comp_config, layer_idx=idx, **kwargs,
+                )
+                if res is not None:
+                    num_injected += 1
+            if num_injected == 0:
+                logger.warning(
+                    "inject_cosformer: found block list but injected 0 layers."
+                )
+                return None
+            return target
 
-        src_attn = old_attn
-        if src_attn is None and hasattr(target, "attn"): src_attn = target.attn
+        container, inner, src_attn = None, None, old_attn
+        for attr in _ATTN_ATTRS:
+            sub = getattr(target, attr, None)
+            if sub is None:
+                continue
+            for inner_attr in _INNER_ATTRS:
+                inner_sub = getattr(sub, inner_attr, None)
+                if inner_sub is not None and not isinstance(inner_sub, nn.ModuleList):
+                    container, inner = sub, inner_attr
+                    if src_attn is None:
+                        src_attn = inner_sub
+                    break
+            if container is None:
+                container, inner = target, attr
+                if src_attn is None:
+                    src_attn = sub
+            break
+
+        if container is None:
+            logger.warning(
+                "inject_cosformer: no attention attribute on %s",
+                type(target).__name__,
+            )
+            return None
 
         new_attn = CosformerAttention(
             config=model_config, comp_config=comp_config,
-            layer_idx=layer_idx, old_attn=src_attn, **kwargs
+            layer_idx=layer_idx, old_attn=src_attn, **kwargs,
         )
 
-        if hasattr(target, "attn"): target.attn = new_attn
+        if inner:
+            setattr(container, inner, new_attn)
+        else:
+            setattr(target, container, new_attn)
         return new_attn
+        
     finally:
         _set_inject_depth(depth)
 

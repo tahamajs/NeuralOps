@@ -13,7 +13,6 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-import torch
 import torch.nn as nn
 
 from neuralops.core._attention_extractors import (
@@ -25,12 +24,10 @@ from neuralops.core._attention_helpers import (
     _attach_new_attention,
     _build_attention_from_registry,
     _cfg_get,
-    _get_attn_submodule,
     _get_valid_mask,
     _replace_layers,
 )
 from neuralops.core._attention_wrapper import Replace, ReplaceAttention
-from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.common import FactorizedLinear
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.svd_utils import randomized_svd

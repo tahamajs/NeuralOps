@@ -1,7 +1,6 @@
 """Normalize model names in master summary to 7 canonical names."""
 import csv
 import re
-from collections import defaultdict
 
 # Canonical models
 CANONICAL_MODELS = {
