@@ -69,7 +69,7 @@ AGGREGATE_FIELDS: list[str] = [
 def discover_modules(category: str = "all") -> list[str]:
     """Discover all compatible attention and compressor modules."""
     try:
-        from neuralops.benchmarks.run_gpt2_sweep import get_all_decoder_modules
+        from neuralops.benchmarks._legacy.run_gpt2_sweep import get_all_decoder_modules
 
         return get_all_decoder_modules(category)
     except Exception:
