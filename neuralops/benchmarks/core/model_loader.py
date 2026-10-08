@@ -61,6 +61,7 @@ def load_model_and_tokenizer(
     dtype: str = "float32",
     num_labels: int | None = None,
     is_causal: bool = False,
+    task: str | None = None,
     trust_remote_code: bool = True,
 ) -> tuple[nn.Module, Any, Any]:
     """
@@ -69,6 +70,11 @@ def load_model_and_tokenizer(
     Returns:
         Tuple of (model, tokenizer, config)
     """
+    if task == "lm":
+        is_causal = True
+    elif task == "classification" and num_labels is None:
+        num_labels = 2
+
     torch_dtype = {
         "float32": torch.float32,
         "float16": torch.float16,
