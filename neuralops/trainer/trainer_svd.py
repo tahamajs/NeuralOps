@@ -9,6 +9,10 @@ from sklearn.metrics import accuracy_score
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+from neuralops.utils.helpers import count_parameters  # noqa: F401
+
+__all__ = ["train_model", "benchmark_model", "count_parameters"]
+
 
 def train_model(
     model: nn.Module,
@@ -127,6 +131,3 @@ def benchmark_model(model: nn.Module, data_loader: DataLoader, device: torch.dev
     }
 
 
-def count_parameters(model: nn.Module) -> int:
-    """Count parameters."""
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)

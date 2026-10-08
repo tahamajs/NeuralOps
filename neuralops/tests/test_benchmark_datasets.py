@@ -84,3 +84,20 @@ def test_custom_registration():
     res = load_benchmark_dataset("my_math", use_synthetic=True, max_samples=4, return_dataloader=False)
     assert len(res) == 4
     assert res[0]["text"] == "Math prob #0"
+
+
+def test_manifest_and_torch_dataset():
+    from neuralops.data.benchmark_datasets.manifest import BenchmarkDatasetRegistry
+    from neuralops.data.benchmark_datasets.loaders import BenchmarkTorchDataset
+    from neuralops.data.benchmark_datasets.synthetic import _generate_synthetic_wikitext
+    
+    info = BenchmarkDatasetRegistry.get("wikitext2")
+    assert info is not None
+    assert info.category == "language_modeling"
+
+    samples = _generate_synthetic_wikitext(5)
+    assert len(samples) == 5
+    ds = BenchmarkTorchDataset(samples)
+    assert len(ds) == 5
+    item = ds[0]
+    assert "text" in item

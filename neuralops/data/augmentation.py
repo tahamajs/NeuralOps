@@ -25,9 +25,3 @@ def random_mask_augment(dataset, mask_prob=0.15) -> Any:
 
     return dataset.map(mask_tokens)
 
-
-@AUGMENTATION_REGISTRY.register("back_translation")
-def dummy_back_translation(dataset):
-    # Placeholder – replace with actual back‑translation logic
-    """Dummy back translation."""
-    return dataset
