@@ -72,4 +72,41 @@ def apply_rotary_pos_emb(
     return q, k
 
 
-__all__ = ["_rotate_half", "apply_rotary_pos_emb"]
+def apply_rope_after_up_projection(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+    position_ids: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Applies Rotary Position Embeddings (RoPE) AFTER low-rank up-projection to full
+    head dimensions, preserving spatial coordinate geometry and relative frequency angles.
+
+    Args:
+        q: Query tensor of shape [B, H, N, D_head]
+        k: Key tensor of shape [B, H, N, D_head]
+        cos: Cosine rotary embedding tensor
+        sin: Sine rotary embedding tensor
+        position_ids: Optional token position indices
+
+    Returns:
+        Tuple of (q_embedded, k_embedded) with RoPE relative rotation applied.
+    """
+    if position_ids is not None and cos.dim() == 2:
+        cos = cos[position_ids].unsqueeze(1)
+        sin = sin[position_ids].unsqueeze(1)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+    elif cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(1)
+        sin = sin.unsqueeze(0).unsqueeze(1)
+
+    q_embed = (q * cos) + (_rotate_half(q) * sin)
+    k_embed = (k * cos) + (_rotate_half(k) * sin)
+    return q_embed, k_embed
+
+
+__all__ = ["_rotate_half", "apply_rotary_pos_emb", "apply_rope_after_up_projection"]
+
