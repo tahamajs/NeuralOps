@@ -118,7 +118,8 @@ neuralops/
 
 ### Import Styles & Backward Compatibility
 
-Both legacy flat imports and domain subpackage imports are first-class and fully supported via PEP 451 dynamic meta path finders:
+
+Both new subpackage imports and legacy flat imports are first-class and fully supported via PEP 451 dynamic meta path finders:
 
 ```python
 # 1. New Subpackage Imports (Recommended)
@@ -128,14 +129,38 @@ from neuralops.compression_engine.svd import DirectSVDCompressor
 # 2. Legacy Flat Imports (Fully Supported)
 from neuralops.attentions.svd_linear_attention import SVDLinearAttention
 from neuralops.compression_engine.direct_svd import DirectSVDCompressor
-
-# 3. Dynamic Registry Resolution
-from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-
-attention_cls = ATTENTION_REGISTRY.get("svd_linear_attention")
-compressor_cls = COMPRESSOR_REGISTRY.get("direct_svd")
 ```
 
+### Registry Usage & Deprecated Aliases
+
+NeuralOps maintains a strictly hardened registry architecture that decouples clean canonical keys from legacy aliases:
+- **Canonical Keys**: Exactly **159 attention keys** in `ATTENTION_REGISTRY` and **73 compressor keys** in `COMPRESSOR_REGISTRY`.
+- **Deprecated Aliases**: Exactly **641 historical aliases** loaded dynamically from `neuralops/core/deprecated_aliases.json`.
+- **Deprecation Warnings**: Accessing an alias via `REGISTRY.get("old_key")` emits a standard `DeprecationWarning` pointing to the canonical name while returning the identical class/factory object.
+
+```python
+
+from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+
+# 1. Querying Canonical Keys (159 Attention + 73 Compressor Keys)
+svd_cls = ATTENTION_REGISTRY.get("svd_linear_attention")
+direct_svd_cls = COMPRESSOR_REGISTRY.get("direct_svd")
+
+# 2. Querying Deprecated Aliases (Emits DeprecationWarning, returns canonical object)
+# e.g., 'aegis_hybrid' -> maps to canonical 'tri_branch_hybrid'
+hybrid_cls = ATTENTION_REGISTRY.get("aegis_hybrid")
+
+# 3. Listing Canonical Keys
+all_attentions = ATTENTION_REGISTRY.keys()   # 159 keys
+all_compressors = COMPRESSOR_REGISTRY.keys() # 73 keys
+```
+
+### Git Branch Structure
+
+The official repository maintains a streamlined branch structure:
+- **`main`**: The stable primary production branch containing all verified refactoring, unified implementations, and release checkpoints.
+- **`ablation`**: The active research and ablation development branch, kept synchronized with `main`.
+- **`gh-pages`**: Automated documentation and static site deployment branch for GitHub Pages.
 
 ---
 
