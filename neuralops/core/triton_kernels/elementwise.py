@@ -198,5 +198,4 @@ def fused_rmsnorm(
 #  Backward-compatibility aliases
 # ═══════════════════════════════════════════════════════════════════
 
-# Old name → new name. Kept so existing imports do not break.
 fused_fast_gelu = fast_gelu
