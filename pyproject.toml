@@ -1,0 +1,95 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neuralops"
+version = "1.0.0"
+description = "A Production-Grade Framework for Subquadratic Attention, Model Compression, and Hardware-Aware Transformer Optimization"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Taha Majs", email = "tahamaj4@gmail.com" }
+]
+keywords = [
+    "attention", "transformer", "compression", "svd",
+    "linear-attention", "quantization", "pruning",
+    "triton", "pytorch", "deep-learning"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "torch>=2.2.0",
+    "transformers>=4.40.0",
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "scipy>=1.11.0",
+    "datasets>=2.18.0",
+    "einops>=0.7.0",
+    "tqdm>=4.66.0",
+    "pyyaml>=6.0",
+    "safetensors>=0.4.0",
+    "packaging>=23.0",
+]
+
+[project.optional-dependencies]
+triton = ["triton>=2.3.0"]
+eval = [
+    "scikit-learn>=1.3.0",
+    "evaluate>=0.4.0",
+]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-xdist>=3.5.0",
+    "ruff>=0.4.0",
+    "black>=24.0.0",
+    "isort>=5.13.0",
+    "twine>=5.0.0",
+    "build>=1.2.0",
+]
+
+[project.scripts]
+neuralops = "neuralops.benchmarks.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/tahamajs/SVD_linear_Attention"
+Repository = "https://github.com/tahamajs/SVD_linear_Attention"
+Issues = "https://github.com/tahamajs/SVD_linear_Attention/issues"
+Documentation = "https://github.com/tahamajs/SVD_linear_Attention#readme"
+Changelog = "https://github.com/tahamajs/SVD_linear_Attention/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["neuralops*"]
+exclude = [
+    "neuralops.tests*",
+    "neuralops.benchmarks._legacy*",
+    "neuralops._archive*",
+    "neuralops.core._archive*",
+    "neuralops.attentions._legacy*",
+    "neuralops.compression_engine._legacy*",
+]
+
+[tool.setuptools.package-data]
+neuralops = [
+    "core/*.json",
+    "data/**/*.json",
+    "data/**/*.arrow",
+    "benchmarks/*.json",
+    "**/*.yaml",
+    "**/*.yml",
+    "**/py.typed",
+]

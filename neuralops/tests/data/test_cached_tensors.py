@@ -60,3 +60,18 @@ class TestCachedTensorDataset:
             cache_dir=tmp_path,
         )
         assert res1 is res2
+
+    def test_cache_corrupt_or_missing_raises_or_recovers(self, tmp_path):
+        corrupt_file = tmp_path / "mrpc_distilbert_len64.pt"
+        with open(corrupt_file, "wb") as f:
+            f.write(b"not a valid torch file")
+
+        # Loading corrupt cache without download source should gracefully handle or raise
+        with pytest.raises(Exception):
+            get_cached_tokenized_dataset(
+                dataset_name="mrpc",
+                model_family="distilbert",
+                seq_len=64,
+                cache_dir=tmp_path,
+            )
+

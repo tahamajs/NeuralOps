@@ -12,6 +12,11 @@ build/
 eggs/
 *.egg
 audit/
+results/_tmp/
+results/_archive/
+results/**/*.bak
+results/**/*.err
+
 
 # Virtual environments
 venv/
