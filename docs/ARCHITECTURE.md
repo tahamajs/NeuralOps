@@ -1,55 +1,11 @@
-# NeuralOps System Architecture (v1.0.0)
+# NeuralOps Architecture Reference (v1.1.0)
 
-This document formalizes the architectural layer model and strict boundaries governing the NeuralOps framework.
+NeuralOps is organized into decoupled layers:
 
----
-
-## Layer Boundary Model
-
-The framework enforces strict directional dependencies to eliminate circular imports and preserve testability. Lower layers never import from upper layers.
-
-```
-       ┌────────────────────────────────────────────────────────┐
-       │                Application & CLI Layer                 │
-       │       (neuralops.benchmarks.cli, scripts/)            │
-       └───────────────────────────┬────────────────────────────┘
-                                   │
-       ┌───────────────────────────▼────────────────────────────┐
-       │               Runners & Orchestration                  │
-       │       (neuralops.runners, run_autonomous_pipeline)     │
-       └───────────────────────────┬────────────────────────────┘
-                                   │
-       ┌───────────────────────────▼────────────────────────────┐
-       │              Evaluation & Analysis Layer               │
-       │       (neuralops.evaluation, neuralops.analysis)       │
-       └───────────────────────────┬────────────────────────────┘
-                                   │
-       ┌───────────────────────────▼────────────────────────────┐
-       │              Model & Operations Domain                 │
-       │       (attentions, compression_engine, trainer)        │
-       └───────────────────────────┬────────────────────────────┘
-                                   │
-       ┌───────────────────────────▼────────────────────────────┐
-       │                 Data & Config Layer                    │
-       │       (neuralops.data, neuralops.config)               │
-       └───────────────────────────┬────────────────────────────┘
-                                   │
-       ┌───────────────────────────▼────────────────────────────┐
-       │                  Core Infrastructure                   │
-       │    (neuralops.core, registry, triton_kernels, utils)   │
-       └────────────────────────────────────────────────────────┘
-```
-
----
-
-## Module Boundary Rules
-
-1. **Core Infrastructure Boundary**:
-   - `neuralops.core` must never import from `attentions`, `compression_engine`, `trainer`, `evaluation`, or `runners`.
-   - Shared Triton types reside in `neuralops.core.triton_kernels._types.py` without requiring Triton GPU runtime imports.
-
-2. **Domain Isolation**:
-   - `neuralops.attentions` and `neuralops.compression_engine` are mutually isolated. They communicate only through `neuralops.core.registry`.
-
-3. **Lazy Import Pattern**:
-   - Registry instances lazily resolve target modules on instantiation to maintain cold start import latency under 3 seconds.
+1. **`core`**: Base attention/compressor abstractions, dynamic registry (`ATTENTION_REGISTRY`, `COMPRESSOR_REGISTRY`), Rotary embeddings, GQA utilities, numerical stability tools, and Triton GPU kernels with PyTorch fallback dispatch.
+2. **`attentions`**: 145 registered attention mechanism modules across families (dense, linear, sparse, modern, ssm, svd, adaptive, fast_kernels, hybrid, gated).
+3. **`compression_engine`**: 73 model compression techniques (quantization, pruning, SVD factorization, low-rank adaptations including GPTQ, AWQ, SmoothQuant, Wanda, QLoRA, DoRA).
+4. **`inference`**: Continuous batcher, paged KV cache, speculative decoder, streaming generator, and inference engine.
+5. **`integrations`**: Direct connectors for HuggingFace AutoModel, vLLM, TGI, DeepSpeed, and PyTorch dynamic compilation.
+6. **`training`**: Selective gradient checkpointing, MixedPrecisionTrainer with gradient accumulation, and Curriculum learning.
+7. **`benchmarks`**: Comprehensive speed, memory, accuracy, and scaling evaluation harnesses.
