@@ -24,7 +24,6 @@ import torch.nn.functional as F
 HERE = Path(__file__).resolve().parent
 CODES_DIR = HERE.parent.parent
 if str(CODES_DIR) not in sys.path:
-    sys.path.insert(0, str(CODES_DIR))
 
 from neuralops.compression_engine.armor_pruner import (ARMORLinear,
                                                        ARMORPruner,

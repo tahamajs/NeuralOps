@@ -19,7 +19,6 @@ import torch.nn as nn
 # Ensure framework is in path
 FRAMEWORK_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if FRAMEWORK_ROOT not in sys.path:
-    sys.path.insert(0, FRAMEWORK_ROOT)
 
 from neuralops.attentions.adaptive_svd_attention import (AdaptiveSVDAttention,
                                                          AdaptiveSVDLinear)

@@ -4,7 +4,6 @@ import warnings
 import torch
 import torch.nn as nn
 
-sys.path.insert(0, ".")
 
 
 def test_legacy_import_works():

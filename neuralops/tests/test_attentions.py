@@ -7,7 +7,6 @@ import torch.nn as nn
 
 _FRAMEWORK_PARENT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if _FRAMEWORK_PARENT not in sys.path:
-    sys.path.insert(0, _FRAMEWORK_PARENT)
 
 import neuralops.attentions
 from neuralops.core.registry import ATTENTION_REGISTRY
