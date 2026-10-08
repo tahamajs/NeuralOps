@@ -540,3 +540,6 @@ def fms_scan_triton(
         raise ValueError(f"decay shape {decay.shape} does not match H={H}")
 
     return _FMSScanFn.apply(q, k, v, decay)
+
+
+__all__ = ['fms_scan_triton']

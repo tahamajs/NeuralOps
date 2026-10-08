@@ -498,3 +498,6 @@ def gdn_scan_triton(q, k, v, beta, alpha):
     alpha = alpha.contiguous()
 
     return _GatedDeltaNetScanFn.apply(q, k, v, beta, alpha)
+
+
+__all__ = ['gdn_scan_triton']
