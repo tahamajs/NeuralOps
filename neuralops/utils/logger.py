@@ -27,7 +27,7 @@ def setup_logger(
     return logger
 
 
-def get_logger(name: str) -> logging.Logger:
+def get_logger(name: str = "neuralops") -> logging.Logger:
     """Return the logger."""
     return logging.getLogger(name)
 
