@@ -17,6 +17,12 @@ from neuralops.benchmarks.config import (
 )
 from neuralops.benchmarks.result import BenchmarkResult
 
+from neuralops.benchmarks.eval_suite import (
+    LMEvalAdapter,
+    RULERBenchmark,
+    CustomEvaluationSuite,
+)
+
 __all__ = [
     "benchmark",
     "Runner",
@@ -32,4 +38,7 @@ __all__ = [
     "GPT2SweepConfig",
     "KDTestConfig",
     "main",
+    "LMEvalAdapter",
+    "RULERBenchmark",
+    "CustomEvaluationSuite",
 ]
