@@ -42,9 +42,6 @@ def _cfg_get(config: Any, key: str, default: Any = None) -> Any:
     return val if val is not None else default
 
 
-# ==============================================================================
-# 2. Attention Tensor Helpers
-# ==============================================================================
 
 
 def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
@@ -112,9 +109,14 @@ def _apply_rope(
     """
     Applies Rotary Position Embedding (RoPE) to Query and Key tensors.
     """
-    if cos.dim() < q.dim():
+    if cos.dim() == 2 and q.dim() == 4:
+        # (N, D) → (1, 1, N, D) to broadcast against (B, H, N, D)
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() < q.dim():
         cos = cos.unsqueeze(1)
         sin = sin.unsqueeze(1)
+
 
     def rotate_half(x: torch.Tensor) -> torch.Tensor:
         x1 = x[..., : x.shape[-1] // 2]
@@ -125,10 +127,6 @@ def _apply_rope(
     k_embed = (k * cos) + (rotate_half(k) * sin)
     return q_embed.type_as(q), k_embed.type_as(k)
 
-
-# ==============================================================================
-# 3. Parameter-Efficient / Decomposed Layers
-# ==============================================================================
 
 
 class LoRALinear(nn.Module):
@@ -281,46 +279,37 @@ class LoRALinear(nn.Module):
     def from_linear(
         cls,
         layer: nn.Linear,
-        base_rank: int = 32,
-        residual_rank: int = 8,
-        scaling: float = 1.0,
-        factorize_base: bool = True,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        lora_dropout: float = 0.0,
         freeze_base: bool = True,
-    ) -> "ResSVDLinear":
-        """Instantiate ResSVDLinear decomposing an existing nn.Linear layer."""
-        w = layer.weight.data
-        b = layer.bias.data if layer.bias is not None else None
-        out_f, in_f = w.shape
+    ) -> "LoRALinear":
+        """Wrap an existing nn.Linear layer with a LoRA adapter.
+
+        The base weight is copied and (optionally) frozen; only the LoRA
+        A/B matrices will be trained.
+        """
+        if not isinstance(layer, nn.Linear):
+            raise TypeError(f"from_linear expects nn.Linear, got {type(layer).__name__}")
+
         mod = cls(
-            in_features=in_f,
-            out_features=out_f,
-            base_rank=base_rank,
-            residual_rank=residual_rank,
-            scaling=scaling,
-            factorize_base=factorize_base,
-            bias=(b is not None),
-            dtype=w.dtype,
-            device=w.device,
+            in_features=layer.in_features,
+            out_features=layer.out_features,
+            bias=(layer.bias is not None),
+            lora_rank=lora_rank,
+            lora_alpha=lora_alpha,
+            lora_dropout=lora_dropout,
+            freeze_base=freeze_base,
+            dtype=layer.weight.dtype,
+            device=layer.weight.device,
         )
         with torch.no_grad():
-            if factorize_base:
-                # Truncated SVD decomposition of base
-                U, S, Vh = torch.linalg.svd(w.float(), full_matrices=False)
-                r = min(mod.base_rank, len(S))
-                sqrt_s = torch.diag(torch.sqrt(S[:r]))
-                u_mat = (U[:, :r] @ sqrt_s).to(dtype=w.dtype)
-                v_mat = (sqrt_s @ Vh[:r, :]).to(dtype=w.dtype)
-                mod.base_U.data[:out_f, :r].copy_(u_mat)
-                mod.base_V.data[:r, :in_f].copy_(v_mat)
-                mod.base_U.requires_grad = not freeze_base
-                mod.base_V.requires_grad = not freeze_base
-            else:
-                mod.base_weight.data.copy_(w)
-                mod.base_weight.requires_grad = not freeze_base
-            if b is not None and mod.bias is not None:
-                mod.bias.data.copy_(b)
+            mod.weight.data.copy_(layer.weight.data)
+            if layer.bias is not None and mod.bias is not None:
+                mod.bias.data.copy_(layer.bias.data)
         return mod
 
+    
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.is_wrapper:
             res = self.base_layer(x)
@@ -419,83 +408,67 @@ class FactorizedLinear(nn.Module):
             self.lora_A.requires_grad = True
             self.lora_B.requires_grad = True
 
-    @property
-    def weight(self) -> torch.Tensor:
+    def effective_weight(self) -> torch.Tensor:
+        """Reconstruct the effective weight W = W2 @ W1 + B @ A.
+
+        NOTE: This is O(out × in × rank) and rebuilds the tensor on every
+        call. Cache it if you need it in a hot loop.
+        """
         w = torch.matmul(self.lin2.weight, self.lin1.weight)
         if self.lora_A is not None:
             w = w + torch.matmul(self.lora_B, self.lora_A)
         return w
 
-    @property
-    def bias(self) -> torch.Tensor | None:
+    def effective_bias(self) -> torch.Tensor | None:
+        """Return the bias vector (if any)."""
         return self.lin2.bias
-
     @classmethod
     def from_linear(
         cls,
         layer: nn.Linear,
-        base_rank: int = 32,
-        residual_rank: int = 8,
-        scaling: float = 1.0,
-        factorize_base: bool = True,
+        rank: int = 128,
+        lora_rank: int = 32,
         freeze_base: bool = True,
-    ) -> "ResSVDLinear":
-        """Instantiate ResSVDLinear decomposing an existing nn.Linear layer."""
+    ) -> "FactorizedLinear":
+        """Factorise an existing nn.Linear layer as W ≈ W2 @ W1 via truncated SVD,
+        plus an optional LoRA residual branch.
+        """
+        if not isinstance(layer, nn.Linear):
+            raise TypeError(f"from_linear expects nn.Linear, got {type(layer).__name__}")
+
         w = layer.weight.data
-        b = layer.bias.data if layer.bias is not None else None
         out_f, in_f = w.shape
         mod = cls(
             in_features=in_f,
             out_features=out_f,
-            base_rank=base_rank,
-            residual_rank=residual_rank,
-            scaling=scaling,
-            factorize_base=factorize_base,
-            bias=(b is not None),
+            rank=rank,
+            lora_rank=lora_rank,
+            bias=(layer.bias is not None),
             dtype=w.dtype,
             device=w.device,
         )
+
         with torch.no_grad():
-            if factorize_base:
-                # Truncated SVD decomposition of base
-                U, S, Vh = torch.linalg.svd(w.float(), full_matrices=False)
-                r = min(mod.base_rank, len(S))
-                sqrt_s = torch.diag(torch.sqrt(S[:r]))
-                u_mat = (U[:, :r] @ sqrt_s).to(dtype=w.dtype)
-                v_mat = (sqrt_s @ Vh[:r, :]).to(dtype=w.dtype)
-                mod.base_U.data[:out_f, :r].copy_(u_mat)
-                mod.base_V.data[:r, :in_f].copy_(v_mat)
-                mod.base_U.requires_grad = not freeze_base
-                mod.base_V.requires_grad = not freeze_base
-            else:
-                mod.base_weight.data.copy_(w)
-                mod.base_weight.requires_grad = not freeze_base
-            if b is not None and mod.bias is not None:
-                mod.bias.data.copy_(b)
+            # Truncated SVD: W ≈ U_r S_r Vh_r, then split S into two halves
+            # so lin1 = S_r^{1/2} Vh_r and lin2 = U_r S_r^{1/2}.
+            U, S, Vh = torch.linalg.svd(w.float(), full_matrices=False)
+            r = min(mod.rank, len(S))
+            sqrt_s = torch.diag(torch.sqrt(S[:r]))
+            w1 = (sqrt_s @ Vh[:r, :]).to(dtype=w.dtype)   # (r, in_f)
+            w2 = (U[:, :r] @ sqrt_s).to(dtype=w.dtype)    # (out_f, r)
+
+            mod.lin1.weight.data.copy_(w1)
+            mod.lin2.weight.data.copy_(w2)
+            if layer.bias is not None and mod.lin2.bias is not None:
+                mod.lin2.bias.data.copy_(layer.bias.data)
+
+            if not freeze_base:
+                mod.lin1.weight.requires_grad = True
+                mod.lin2.weight.requires_grad = True
+                if mod.lin2.bias is not None:
+                    mod.lin2.bias.requires_grad = True
+
         return mod
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if HAS_TRITON_COMMON and triton_dispatch is not None and x.is_cuda:
-            try:
-                out = triton_dispatch(
-                    "low_rank", x, self.lin2.weight, self.lin1.weight, bias=self.lin2.bias
-                )
-            except Exception:
-                out = self.lin2(self.lin1(x))
-        else:
-            out = self.lin2(self.lin1(x))
-
-        if self.lora_A is not None:
-            if HAS_TRITON_COMMON and triton_dispatch is not None and x.is_cuda:
-                try:
-                    lora_out = triton_dispatch("low_rank", x, self.lora_B, self.lora_A, bias=None)
-                    out = out + lora_out
-                except Exception:
-                    out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
-            else:
-                out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
-        return out
-
 
 _FactorizedLinear = FactorizedLinear
 
