@@ -29,7 +29,6 @@ import torch.nn.functional as F
 # Ensure neuralops/ is in sys.path
 sys_path_codes = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if sys_path_codes not in sys.path:
-    sys.path.insert(0, sys_path_codes)
 
 from neuralops.attentions.adaptive_svd_attention import (AdaptiveSVDAttention,
                                                          AdaptiveSVDLinear)
