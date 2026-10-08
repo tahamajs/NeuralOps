@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `rpca_compressor`
+**Legacy Folder Name:** `rpca` (standardized in v1.2.0)
+
 # Rpca: Formal Architectural Specification and Empirical Benchmark Evaluation
 
 **Module Name**: `rpca`  
