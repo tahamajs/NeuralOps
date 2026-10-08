@@ -818,26 +818,6 @@ class BenchmarkTorchDataset(Dataset):
         return data
 
 
-def _collate_benchmark_batch(batch: list[dict[str, Any]]) -> dict[str, Any]:
-    """Collates a list of sample dicts into batch tensors or lists."""
-    if not batch:
-        return {}
-
-    first = batch[0]
-    out: dict[str, Any] = {}
-
-    for key in first.keys():
-        vals = [b[key] for b in batch]
-        if isinstance(vals[0], torch.Tensor):
-            out[key] = torch.stack(vals, dim=0)
-        elif isinstance(vals[0], (int, float)):
-            out[key] = torch.tensor(vals)
-        else:
-            out[key] = vals
-
-    return out
-
-
 # -----------------------------------------------------------------------------
 # Main Unified Loader API
 # -----------------------------------------------------------------------------
