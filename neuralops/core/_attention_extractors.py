@@ -46,6 +46,16 @@ def _resolve_class_name(inject_fn: Any, model_type: str = "") -> str:
 
 
 def _infer_hidden_size(old_attn: nn.Module, attn_attr: str = "", model_type: str = "") -> int:
+    for attr in ("hidden_size", "embed_dim", "d_model"):
+        val = getattr(old_attn, attr, None)
+        if isinstance(val, int) and val > 0:
+            return val
+    cfg = getattr(old_attn, "config", None)
+    if cfg is not None:
+        for attr in ("hidden_size", "embed_dim", "d_model"):
+            val = getattr(cfg, attr, None)
+            if isinstance(val, int) and val > 0:
+                return val
     for attr_path in ("query", "q_lin", "q_proj", "c_attn", "self.query"):
         obj = old_attn
         for part in attr_path.split("."):
