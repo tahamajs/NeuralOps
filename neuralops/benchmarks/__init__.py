@@ -1,8 +1,10 @@
-"""NeuralOps Benchmark Suite: Unified infrastructure, CLI, and runners."""
+"""neuralops benchmarking suite."""
 from __future__ import annotations
 
+from neuralops.benchmarks.api import Runner, benchmark
 from neuralops.benchmarks.cli import main
 from neuralops.benchmarks.config import (
+    BenchmarkConfig,
     BenchmarkRunConfig,
     GPT2SweepConfig,
     KDTestConfig,
@@ -13,13 +15,13 @@ from neuralops.benchmarks.config import (
     RulerConfig,
     SeqLenScalingConfig,
 )
-from neuralops.benchmarks.runner import BaseRunner
-from neuralops.benchmarks.writers import BenchmarkResult
+from neuralops.benchmarks.result import BenchmarkResult
 
 __all__ = [
-    "main",
-    "BaseRunner",
+    "benchmark",
+    "Runner",
     "BenchmarkResult",
+    "BenchmarkConfig",
     "BenchmarkRunConfig",
     "QualitySweepConfig",
     "RankSweepConfig",
@@ -29,4 +31,5 @@ __all__ = [
     "RulerConfig",
     "GPT2SweepConfig",
     "KDTestConfig",
+    "main",
 ]

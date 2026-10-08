@@ -6,7 +6,6 @@ import logging
 from typing import Any, Dict, Optional
 
 import torch
-from torch.utils.data import DataLoader
 
 from neuralops.benchmarks.core.data_loader import (
     get_dataset_metadata,
@@ -26,7 +25,8 @@ from neuralops.benchmarks.core.model_loader import (
     get_model_metadata,
     load_model_and_tokenizer,
 )
-from neuralops.benchmarks.result import BenchmarkResult, DatasetMetadata, ModelMetadata
+from neuralops.benchmarks.result import DatasetMetadata, ModelMetadata
+
 
 logger = logging.getLogger(__name__)
 
@@ -72,13 +72,13 @@ class PerplexityAdapter:
         """Load causal LM / masked LM model, tokenizer, and tokenized dataset."""
         torch.manual_seed(self.seed)
 
-        self.model, self.tokenizer, _ = load_model_and_tokenizer(
+        self.model, self.tokenizer, model_cfg = load_model_and_tokenizer(
             self.model_name,
             device=self.device,
             dtype=self.dtype,
             task="lm",
         )
-        self.model_meta = get_model_metadata(self.model, model_name=self.model_name)
+        self.model_meta = get_model_metadata(self.model, model_cfg)
 
         # Load validation / test split
         eval_split = "validation"

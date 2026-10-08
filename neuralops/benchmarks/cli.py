@@ -1,184 +1,223 @@
-"""Unified CLI dispatcher for all neuralops benchmarks."""
+"""Unified CLI for neuralops benchmarking suite."""
 from __future__ import annotations
 
 import argparse
+import platform
 import sys
-from typing import Any
 
-from neuralops.benchmarks.core.arguments import (
-    add_common_args,
-    add_compression_args,
-    add_dataset_args,
-    add_model_args,
-)
+from neuralops.benchmarks.api import Runner
+from neuralops.benchmarks.discovery import discover_all_modules
+from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 
 
-def list_benchmarks(args: argparse.Namespace) -> int:
-    """Print available benchmark suites."""
-    print("Available NeuralOps Benchmark Commands:")
-    print("  quality-sweep   : Full GLUE & classification accuracy recovery sweep")
-    print("  rank-sweep      : SVD rank vs accuracy Pareto curve evaluation")
-    print("  multi-mode      : Multi-mode structural transformer benchmark")
-    print("  multiseed       : Multi-seed statistical significance & variance testing")
-    print("  seqlen-scaling  : Long-context sequence length latency & VRAM scaling")
-    print("  ruler           : Long-context Needle-in-a-Haystack (RULER) benchmark")
-    print("  gpt2-sweep      : Autoregressive LM perplexity sweep on Wikitext")
-    print("  kd-test         : Quick knowledge distillation recovery test")
-    print("  verify          : Verify GPU, model, and dataset readiness")
-    return 0
 
-
-def verify_setup(args: argparse.Namespace) -> int:
-    """Verify system readiness for benchmarking."""
-    import torch
-
-    print("Checking NeuralOps Benchmarking Environment:")
-    cuda_avail = torch.cuda.is_available()
-    print(f"  PyTorch version : {torch.__version__}")
-    print(f"  CUDA available  : {cuda_avail}")
-    if cuda_avail:
-        print(f"  Device name     : {torch.cuda.get_device_name(0)}")
-        print(f"  Device count    : {torch.cuda.device_count()}")
-    else:
-        print("  Running in CPU/macOS simulation mode.")
-    return 0
-
-
-def _dispatch_quality_sweep(args: argparse.Namespace) -> int:
-    from neuralops.benchmarks.run_quality_sweep import main as qs_main
-
-    return qs_main()
-
-
-def _dispatch_rank_sweep(args: argparse.Namespace) -> int:
-    from neuralops.benchmarks.run_rank_sweeper import main as rs_main
-
-    return rs_main()
-
-
-def _dispatch_multi_mode(args: argparse.Namespace) -> int:
-    from neuralops.benchmarks.multi_mode_benchmark import main as mm_main
-
-    return mm_main()
-
-
-def _dispatch_multiseed(args: argparse.Namespace) -> int:
-    from neuralops.benchmarks.run_multiseed import main as ms_main
-
-    return ms_main()
-
-
-def _dispatch_seqlen_scaling(args: argparse.Namespace) -> int:
-    from neuralops.benchmarks.run_seqlen_scaling_bench import main as ss_main
-
-    return ss_main()
-
-
-def _dispatch_ruler(args: argparse.Namespace) -> int:
-    from neuralops.benchmarks.run_ruler_benchmark import main as ruler_main
-
-    return ruler_main()
-
-
-def _dispatch_gpt2_sweep(args: argparse.Namespace) -> int:
-    from neuralops.benchmarks.run_gpt2_sweep import main as gpt2_main
-
-    return gpt2_main()
-
-
-def _dispatch_kd_test(args: argparse.Namespace) -> int:
-    from neuralops.benchmarks.kd_quick_test import main as kd_main
-
-    return kd_main()
-
-
-def build_parser() -> argparse.ArgumentParser:
-    """Build unified CLI argument parser with lazy-loading subcommands."""
+def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="neuralops.benchmarks",
-        description="Unified NeuralOps Benchmarking Command Line Interface",
+        description="Unified benchmarking tool for 232 attention & compressor modules.",
     )
-    sub = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest="subcommand", help="Subcommand to run")
 
-    # 1. quality-sweep
-    p_qs = sub.add_parser("quality-sweep", help="Run quality sweep across modules")
-    add_common_args(p_qs)
-    add_model_args(p_qs)
-    add_dataset_args(p_qs)
-    add_compression_args(p_qs)
-    p_qs.set_defaults(func=_dispatch_quality_sweep)
+    # 1. run
+    run_p = subparsers.add_parser("run", help="Run benchmark(s)")
+    run_p.add_argument("--module", type=str, default=None, help="Single module name")
+    run_p.add_argument("--modules", type=str, default=None, help="Comma-separated module names")
+    run_p.add_argument("--all-attention", action="store_true", help="Run all 159 attention modules")
+    run_p.add_argument("--all-compressors", action="store_true", help="Run all 73 compressors")
+    run_p.add_argument("--all", action="store_true", help="Run all 232 modules")
+    run_p.add_argument("--no-compression", action="store_true", help="Run baseline uncompressed model")
+    run_p.add_argument("--model", type=str, default="distilbert-base-uncased", help="Target model")
+    run_p.add_argument("--models", type=str, default=None, help="Comma-separated target models")
+    run_p.add_argument("--all-models", action="store_true", help="Benchmark all supported models")
+    run_p.add_argument("--dataset", type=str, default="sst2", help="Target dataset")
+    run_p.add_argument("--datasets", type=str, default=None, help="Comma-separated target datasets")
+    run_p.add_argument("--all-datasets", action="store_true", help="Benchmark all supported datasets")
+    run_p.add_argument("--rank", type=int, default=64, help="Rank for low-rank attention/compressor")
+    run_p.add_argument("--ranks", type=str, default=None, help="Comma-separated ranks")
+    run_p.add_argument("--device", type=str, default="cuda", help="Hardware device (cuda/mps/cpu)")
+    run_p.add_argument("--epochs", type=int, default=3, help="Fine-tuning epochs")
+    run_p.add_argument("--batch-size", type=int, default=32, help="Batch size")
+    run_p.add_argument("--lr", type=float, default=2e-5, help="Learning rate")
+    run_p.add_argument("--seq-len", type=int, default=128, help="Sequence length")
+    run_p.add_argument("--parallel", type=int, default=1, help="Parallel worker count")
+    run_p.add_argument("--output-dir", type=str, default="results", help="Directory to store outputs")
+    run_p.add_argument("--timeout-s", type=int, default=1800, help="Timeout in seconds")
+    run_p.add_argument("--eval-only", action="store_true", help="Skip fine-tuning")
 
-    # 2. rank-sweep
-    p_rs = sub.add_parser("rank-sweep", help="Run rank vs quality sweep")
-    add_common_args(p_rs)
-    add_model_args(p_rs)
-    add_dataset_args(p_rs)
-    add_compression_args(p_rs)
-    p_rs.set_defaults(func=_dispatch_rank_sweep)
+    # 2. resume
+    res_p = subparsers.add_parser("resume", help="Resume interrupted sweep")
+    res_p.add_argument("--output-dir", type=str, default="results", help="Output directory of interrupted run")
+    res_p.add_argument("--run-id", type=str, default=None, help="Run ID to resume")
 
-    # 3. multi-mode
-    p_mm = sub.add_parser("multi-mode", help="Run multi-mode benchmark")
-    add_common_args(p_mm)
-    add_model_args(p_mm)
-    add_dataset_args(p_mm)
-    p_mm.set_defaults(func=_dispatch_multi_mode)
+    # 3. plan
+    plan_p = subparsers.add_parser("plan", help="Dry-run and estimate execution grid")
+    plan_p.add_argument("--module", type=str, default=None)
+    plan_p.add_argument("--modules", type=str, default=None)
+    plan_p.add_argument("--all-attention", action="store_true")
+    plan_p.add_argument("--all-compressors", action="store_true")
+    plan_p.add_argument("--all", action="store_true")
+    plan_p.add_argument("--model", type=str, default="distilbert-base-uncased")
+    plan_p.add_argument("--models", type=str, default=None)
+    plan_p.add_argument("--all-models", action="store_true")
+    plan_p.add_argument("--dataset", type=str, default="sst2")
+    plan_p.add_argument("--datasets", type=str, default=None)
+    plan_p.add_argument("--all-datasets", action="store_true")
+    plan_p.add_argument("--rank", type=int, default=64)
+    plan_p.add_argument("--ranks", type=str, default=None)
+    plan_p.add_argument("--yes", action="store_true", help="Confirm execution without prompt")
 
-    # 4. multiseed
-    p_ms = sub.add_parser("multiseed", help="Run multi-seed statistical significance")
-    add_common_args(p_ms)
-    add_model_args(p_ms)
-    add_dataset_args(p_ms)
-    add_compression_args(p_ms)
-    p_ms.set_defaults(func=_dispatch_multiseed)
+    # 4. list
+    list_p = subparsers.add_parser("list", help="List registered modules with capability filters")
+    list_p.add_argument("--type", choices=["attention", "compressor", "all"], default="all")
+    list_p.add_argument("--supports", choices=["causal", "gqa", "rope", "cuda"], default=None)
 
-    # 5. seqlen-scaling
-    p_ss = sub.add_parser("seqlen-scaling", help="Run sequence length scaling")
-    add_common_args(p_ss)
-    add_model_args(p_ss)
-    add_dataset_args(p_ss)
-    add_compression_args(p_ss)
-    p_ss.set_defaults(func=_dispatch_seqlen_scaling)
+    # 5. verify
+    subparsers.add_parser("verify", help="Check system hardware and package requirements")
 
-    # 6. ruler
-    p_ru = sub.add_parser("ruler", help="Run long-context RULER benchmark")
-    add_common_args(p_ru)
-    add_model_args(p_ru)
-    add_dataset_args(p_ru)
-    p_ru.set_defaults(func=_dispatch_ruler)
-
-    # 7. gpt2-sweep
-    p_gpt = sub.add_parser("gpt2-sweep", help="Run GPT-2 language model perplexity sweep")
-    add_common_args(p_gpt)
-    add_model_args(p_gpt)
-    add_dataset_args(p_gpt)
-    add_compression_args(p_gpt)
-    p_gpt.set_defaults(func=_dispatch_gpt2_sweep)
-
-    # 8. kd-test
-    p_kd = sub.add_parser("kd-test", help="Run quick KD validation test")
-    add_common_args(p_kd)
-    add_model_args(p_kd)
-    add_dataset_args(p_kd)
-    add_compression_args(p_kd)
-    p_kd.set_defaults(func=_dispatch_kd_test)
-
-    # 9. list
-    p_list = sub.add_parser("list", help="List all registered benchmarks")
-    p_list.set_defaults(func=list_benchmarks)
-
-    # 10. verify
-    p_ver = sub.add_parser("verify", help="Verify model, dataset, and GPU readiness")
-    p_ver.set_defaults(func=verify_setup)
+    # 6. results
+    res_show = subparsers.add_parser("results", help="Inspect and summarize benchmark results")
+    res_show.add_argument("--output-dir", type=str, default="results", help="Output directory")
+    res_show.add_argument("--summary", action="store_true", help="Display summary table")
+    res_show.add_argument("--latest", action="store_true", help="Show latest result details")
 
     return parser
 
 
+def handle_list(args: argparse.Namespace) -> None:
+    modules = discover_all_modules()
+    if args.type in ("attention", "compressor"):
+        modules = [m for m in modules if m.type == args.type]
+
+    if args.supports:
+        flag = f"supports_{args.supports}" if args.supports != "cuda" else "requires_cuda"
+        modules = [m for m in modules if getattr(m, flag, False)]
+
+    print(f"Discovered {len(modules)} matching modules:")
+    for m in modules:
+        print(f"  [{m.type:10s}] {m.name:36s} (causal={m.supports_causal}, gqa={m.supports_gqa}, rope={m.supports_rope}, cuda={m.requires_cuda})")
+
+
+def handle_plan(args: argparse.Namespace) -> None:
+    # Resolve modules count
+    mod_count = 1
+    if args.all:
+        mod_count = len(ATTENTION_REGISTRY) + len(COMPRESSOR_REGISTRY)
+    elif args.all_attention:
+        mod_count = len(ATTENTION_REGISTRY)
+    elif args.all_compressors:
+        mod_count = len(COMPRESSOR_REGISTRY)
+    elif args.modules:
+        mod_count = len(args.modules.split(","))
+
+    models_count = 10 if args.all_models else (len(args.models.split(",")) if args.models else 1)
+    datasets_count = 22 if args.all_datasets else (len(args.datasets.split(",")) if args.datasets else 1)
+    ranks_count = len(args.ranks.split(",")) if args.ranks else 1
+
+    total_runs = mod_count * models_count * datasets_count * ranks_count
+    est_seconds = total_runs * 180  # Assume ~3 mins per run average on 1 GPU
+    est_hours = est_seconds / 3600.0
+
+    print("═════════════════════════════════════════════════════")
+    print(f"Benchmark Plan Summary:")
+    print(f"  Modules:  {mod_count}")
+    print(f"  Models:   {models_count}")
+    print(f"  Datasets: {datasets_count}")
+    print(f"  Ranks:    {ranks_count}")
+    print(f"  Total planned runs: {total_runs}")
+    print(f"  Estimated duration: ~{est_hours:.1f} hours on 1 GPU")
+    print("═════════════════════════════════════════════════════")
+
+    if total_runs > 500 and not args.yes:
+        print("⚠️  Grid size exceeds 500 runs. Use --yes to confirm.")
+
+
+def handle_verify(args: argparse.Namespace) -> None:
+    import torch
+    import neuralops.attentions
+    import neuralops.compression_engine
+    print("System Environment Verification:")
+    print(f"  Platform:         {platform.platform()}")
+    print(f"  Python Version:   {platform.python_version()}")
+    print(f"  PyTorch Version:  {torch.__version__}")
+    print(f"  CUDA Available:   {torch.cuda.is_available()}")
+    if torch.cuda.is_available():
+        print(f"  Device Name:      {torch.cuda.get_device_name(0)}")
+        print(f"  Device Count:     {torch.cuda.device_count()}")
+    print(f"  MPS Available:    {torch.backends.mps.is_available()}")
+    print(f"  Attention Reg:    {len(ATTENTION_REGISTRY)} modules")
+    print(f"  Compressor Reg:   {len(COMPRESSOR_REGISTRY)} modules")
+
+
+
+def handle_results(args: argparse.Namespace) -> None:
+    runner = Runner(output_dir=args.output_dir)
+    df = runner.summary()
+    if df.empty:
+        print(f"No results found in {args.output_dir}")
+        return
+    print(df.to_string(index=False))
+
+
+def handle_run(args: argparse.Namespace) -> None:
+    mods = "all"
+    if args.no_compression:
+        mods = "baseline"
+    elif args.module:
+        mods = [args.module]
+    elif args.modules:
+        mods = [m.strip() for m in args.modules.split(",")]
+    elif args.all_attention:
+        mods = "all-attention"
+    elif args.all_compressors:
+        mods = "all-compressors"
+
+    ranks = [int(r.strip()) for r in args.ranks.split(",")] if args.ranks else args.rank
+    models = [m.strip() for m in args.models.split(",")] if args.models else args.model
+    datasets = [d.strip() for d in args.datasets.split(",")] if args.datasets else args.dataset
+
+    runner = Runner(
+        modules=mods,
+        models=models,
+        datasets=datasets,
+        ranks=ranks,
+        parallel=args.parallel,
+        output_dir=args.output_dir,
+        epochs=args.epochs,
+        batch_size=args.batch_size,
+        lr=args.lr,
+        seq_len=args.seq_len,
+        device=args.device,
+        timeout_s=args.timeout_s,
+        eval_only=args.eval_only,
+    )
+    for res in runner.stream():
+        status_symbol = "✓" if res.status == "success" else "✗"
+        print(f"{status_symbol} [{res.status.upper()}] {res.module.get('name')} on {res.model.get('name')}/{res.dataset.get('name')}")
+
+
 def main(argv: list[str] | None = None) -> int:
-    """CLI entrypoint."""
-    parser = build_parser()
+    parser = _build_parser()
     args = parser.parse_args(argv)
-    res: Any = args.func(args)
-    return int(res) if isinstance(res, int) else 0
+
+    if not args.subcommand:
+        parser.print_help()
+        return 0
+
+    if args.subcommand == "list":
+        handle_list(args)
+    elif args.subcommand == "plan":
+        handle_plan(args)
+    elif args.subcommand == "verify":
+        handle_verify(args)
+    elif args.subcommand == "results":
+        handle_results(args)
+    elif args.subcommand == "run":
+        handle_run(args)
+    elif args.subcommand == "resume":
+        runner = Runner(output_dir=args.output_dir, resume=True)
+        runner.resume()
+
+    return 0
 
 
 if __name__ == "__main__":
