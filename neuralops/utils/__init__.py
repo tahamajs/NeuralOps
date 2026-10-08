@@ -27,6 +27,7 @@ __all__ = [
     "paths",
     "profiler",
     "replace_attention",
+    "results_saver",
     "ResultsSaver",
     "seed",
 ]

@@ -1,6 +1,6 @@
 """DeepSpeed, FSDP, and torch.compile integrations."""
 from __future__ import annotations
-from typing import Callable, Any
+from typing import Any
 import torch
 import torch.nn as nn
 

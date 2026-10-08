@@ -1,9 +1,6 @@
 """Generate API documentation for neuralops public interfaces."""
 import inspect
-import sys
-from pathlib import Path
 
-import neuralops
 from neuralops.core import registry
 from neuralops.inference import engine
 from neuralops.compression_engine.quantization import gptq, awq, smoothquant

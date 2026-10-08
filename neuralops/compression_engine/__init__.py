@@ -4,7 +4,6 @@ Auto-import all compression_engine modules across subpackages and export their r
 
 import importlib
 import logging
-import os
 import sys
 
 from neuralops.core.registry import COMPRESSOR_REGISTRY

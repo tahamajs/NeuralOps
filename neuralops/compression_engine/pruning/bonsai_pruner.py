@@ -34,10 +34,8 @@ import torch.nn.functional as F
 from neuralops.core.base import BaseCompressor
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import (
-    adaptive_max_error,
     apply_24_structured_mask,
     apply_block_mask,
-    get_calibration_tensors,
     recalibrate_layernorms,
 )
 from neuralops.core.registry import COMPRESSOR_REGISTRY

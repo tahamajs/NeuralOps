@@ -27,16 +27,16 @@ if HAS_TRITON and tl is not None:
         num_blocks = tl.cdiv(seq_len, BLOCK_SIZE)
 
         offs_d = tl.arange(0, BLOCK_D)
-        q = tl.load(Q + pid_b * stride_qb + pid_h * stride_qh + offs_d * stride_qd)
+        _q = tl.load(Q + pid_b * stride_qb + pid_h * stride_qh + offs_d * stride_qd)
 
-        m_i = float("-inf")
-        l_i = 0.0
+        _m_i = float("-inf")
+        _l_i = 0.0
         acc = tl.zeros([BLOCK_D], dtype=tl.float32)
 
-        scale = 1.0 / tl.sqrt(tl.cast(BLOCK_D, tl.float32))
+        _scale = 1.0 / tl.sqrt(tl.cast(BLOCK_D, tl.float32))
 
         for i in range(num_blocks):
-            physical_block = tl.load(BLOCK_TABLE + pid_b * 64 + i)
+            _physical_block = tl.load(BLOCK_TABLE + pid_b * 64 + i)
             # Load block keys
             # Compute partial softmax
             pass
