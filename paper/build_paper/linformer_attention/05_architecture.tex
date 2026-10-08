@@ -24,49 +24,49 @@ Linformer copies base weights via \texttt{copy\_weights}, handling four patterns
 \subsubsection{GPT-2 Conv1D}
 
 \begin{lstlisting}
-c_w = src.c_attn.weight.t()
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
+c\_w = src.c\_attn.weight.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{RoBERTa Nested}
 
 \begin{lstlisting}
-q_w = src.self.query.weight
-k_w = src.self.key.weight
-v_w = src.self.value.weight
-o_w = src.output.dense.weight
+q\_w = src.self.query.weight
+k\_w = src.self.key.weight
+v\_w = src.self.value.weight
+o\_w = src.output.dense.weight
 \end{lstlisting}
 
 \subsubsection{Qwen (GQA)}
 
 \begin{lstlisting}
-q_w = src.q_proj.weight  # (H d_h, d)
-k_w = src.k_proj.weight  # (H_kv d_h, d)
-v_w = src.v_proj.weight
-o_w = src.o_proj.weight
+q\_w = src.q\_proj.weight  # (H d\_h, d)
+k\_w = src.k\_proj.weight  # (H\_kv d\_h, d)
+v\_w = src.v\_proj.weight
+o\_w = src.o\_proj.weight
 \end{lstlisting}
 
 \subsubsection{DistilBERT}
 
 \begin{lstlisting}
-q_w = src.q_lin.weight
-k_w = src.k_lin.weight
-v_w = src.v_lin.weight
-o_w = src.out_lin.weight
+q\_w = src.q\_lin.weight
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
 \end{lstlisting}
 
 \subsection{The E, F Matrices}
 
 \begin{lstlisting}
-self.E = nn.Parameter(torch.empty(self.k_proj_dim, self.max_seq_len))
-self.F = nn.Parameter(torch.empty(self.k_proj_dim, self.max_seq_len))
+self.E = nn.Parameter(torch.empty(self.k\_proj\_dim, self.max\_seq\_len))
+self.F = nn.Parameter(torch.empty(self.k\_proj\_dim, self.max\_seq\_len))
 
-with torch.no_grad():
-    nn.init.normal_(self.E, std=0.02)
-    nn.init.normal_(self.F, std=0.02)
-    min_dim = min(self.k_proj_dim, self.max_seq_len)
-    self.E.data[:min_dim, :min_dim].fill_diagonal_(1.0)
-    self.F.data[:min_dim, :min_dim].fill_diagonal_(1.0)
+with torch.no\_grad():
+    nn.init.normal\_(self.E, std=0.02)
+    nn.init.normal\_(self.F, std=0.02)
+    min\_dim = min(self.k\_proj\_dim, self.max\_seq\_len)
+    self.E.data[:min\_dim, :min\_dim].fill\_diagonal\_(1.0)
+    self.F.data[:min\_dim, :min\_dim].fill\_diagonal\_(1.0)
 \end{lstlisting}
 
 \textbf{Why diagonal init?} Without it, $E K \approx 0$ and the model starts 
@@ -78,10 +78,10 @@ For RoBERTa, we set \texttt{is\_nested\_encoder = True}. Our forward returns raw
 context, and the outer \texttt{BertSelfOutput.dense} applies the output projection:
 
 \begin{lstlisting}
-if self.is_nested_encoder:
-    out = context * self.output_scale
+if self.is\_nested\_encoder:
+    out = context * self.output\_scale
 else:
-    out = self.out_proj(context * self.output_scale)
+    out = self.out\_proj(context * self.output\_scale)
 \end{lstlisting}
 
 \subsection{RoPE Handling}
@@ -89,15 +89,15 @@ else:
 Captured from source attention:
 
 \begin{lstlisting}
-if hasattr(src, "rotary_emb"):
-    self.rotary_emb = src.rotary_emb
+if hasattr(src, "rotary\_emb"):
+    self.rotary\_emb = src.rotary\_emb
 \end{lstlisting}
 
 Applied before projection:
 
 \begin{lstlisting}
-if pos_emb is not None:
-    q, k = apply_rotary_pos_emb(q, k, cos, sin)
+if pos\_emb is not None:
+    q, k = apply\_rotary\_pos\_emb(q, k, cos, sin)
 \end{lstlisting}
 
 \textbf{Order matters:} RoPE $\to$ Linformer projection. Reverse order would corrupt 
@@ -107,12 +107,12 @@ position information.
 
 \textbf{Algorithm 2:} Inject Linformer into a model
 \begin{lstlisting}
-Input:  model M, k, L_max
+Input:  model M, k, L\_max
 Output: M with attention replaced
 
-1: for   in transformer_layers(M) do
-2:     src $\leftarrow$ get_attention( )
-3:     new $\leftarrow$ LinformerAttention(cfg, k, L_max, old_attn=src)
+1: for   in transformer\_layers(M) do
+2:     src $\leftarrow$ get\_attention( )
+3:     new $\leftarrow$ LinformerAttention(cfg, k, L\_max, old\_attn=src)
 4:     replace( , new)
 5: end for
 6: return M
@@ -130,7 +130,7 @@ Output: M with attention replaced
 Missing Q/K/V & \texttt{missing} non-empty & Raise RuntimeError \\
 Near-zero norm & Frobenius check & Raise RuntimeError \\
 $L > L_\text{max}$ & Shape mismatch & Interpolate $E, F$ \\
-Decoder $L > k$ & \texttt{is\_decoder and L > k} & Fallback to dense \\
+Decoder $L > k$ & \texttt{is\_decoder and L \textgreater{} k} & Fallback to dense \\
 NaN in scores & \texttt{torch.isnan} & \texttt{nan\_to\_num} \\
 \bottomrule
 \end{tabular}
@@ -139,8 +139,8 @@ NaN in scores & \texttt{torch.isnan} & \texttt{nan\_to\_num} \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("linformer")
-@ATTENTION_REGISTRY.register("linformer_attention")
+@ATTENTION\_REGISTRY.register("linformer")
+@ATTENTION\_REGISTRY.register("linformer\_attention")
 class LinformerAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -150,10 +150,10 @@ class LinformerAttention(BaseAttention):
 Base weights are frozen; LoRA adapters train:
 
 \begin{lstlisting}
-self.q_proj = LoRALinear(..., freeze_base=True)
-self.k_proj = LoRALinear(..., freeze_base=True)
-self.v_proj = LoRALinear(..., freeze_base=True)
-self.out_proj = LoRALinear(..., freeze_base=True)
+self.q\_proj = LoRALinear(..., freeze\_base=True)
+self.k\_proj = LoRALinear(..., freeze\_base=True)
+self.v\_proj = LoRALinear(..., freeze\_base=True)
+self.out\_proj = LoRALinear(..., freeze\_base=True)
 \end{lstlisting}
 
 Additionally trainable:
@@ -173,6 +173,6 @@ For $d = 768$, $k = 64$, $L_\text{max} = 512$:
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.png}
 \caption{High-level architectural diagram of linformer\_attention.}
-\label{fig:arch_linformer-attention}
+\label{fig:arch\_linformer-attention}
 \end{figure}
 

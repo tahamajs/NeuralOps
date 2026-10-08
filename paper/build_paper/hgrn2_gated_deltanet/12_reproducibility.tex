@@ -3,8 +3,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -29,10 +29,10 @@ datasets & 1.0.0 \\
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_hgrn2_gated_deltanet.py \
+python run\_all\_4\_hgrn2\_gated\_deltanet.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \textbf{Warning:} RoBERTa may OOM on 8 GB GPUs. Use \texttt{--batch\_size 4} if needed.
@@ -40,30 +40,30 @@ python run_all_4_hgrn2_gated_deltanet.py \
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --model_family bert \
-    --modules full,hgrn2_gated_deltanet \
-    --recovery_steps 50 \
-    --lora_rank 8
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --model\_family bert \
+    --modules full,hgrn2\_gated\_deltanet \
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1 (Main)}
 \begin{lstlisting}
-python run_all_4_hgrn2_gated_deltanet.py
+python run\_all\_4\_hgrn2\_gated\_deltanet.py
 \end{lstlisting}
 
 \subsubsection{Table 7.3 (Speed vs L)}
 \begin{lstlisting}
-python scripts/benchmark_inference.py --seq_lens 128 256 512 1024 2048
+python scripts/benchmark\_inference.py --seq\_lens 128 256 512 1024 2048
 \end{lstlisting}
 
 \subsubsection{Table 7.6 (Branch Ablation)}
 \begin{lstlisting}
-python run_all_4_hgrn2_gated_deltanet.py --use_hgrn true --use_deltanet false
-python run_all_4_hgrn2_gated_deltanet.py --use_hgrn false --use_deltanet true
+python run\_all\_4\_hgrn2\_gated\_deltanet.py --use\_hgrn true --use\_deltanet false
+python run\_all\_4\_hgrn2\_gated\_deltanet.py --use\_hgrn false --use\_deltanet true
 \end{lstlisting}
 
 \subsection{Seeds}
@@ -73,8 +73,8 @@ import random, numpy as np, torch
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}

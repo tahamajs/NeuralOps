@@ -34,16 +34,16 @@ dominant signal.
 \begin{itemize}
 \item \textbf{Short sequences} ($L < 32$): LSH overhead dominates
 \item \textbf{Latency-critical} applications: 4 rounds = 4$\times$ attention compute
-\item \textbf{Very small models} (<10M): overhead too large
+\item \textbf{Very small models} (\textless{}10M): overhead too large
 
 \end{itemize}
 \subsection{Decision Flowchart}
 
 \begin{lstlisting}
-Target sequence length > 256? --- Yes --- Use PHANTOM
+Target sequence length \textgreater{} 256? --- Yes --- Use PHANTOM
   | No
    
-Attention sparsity high (>90%)? --- Yes --- Use PHANTOM
+Attention sparsity high (\textgreater{}90\%)? --- Yes --- Use PHANTOM
   | No
    
 Storage reduction critical? --- Yes --- Use PHANTOM (CUR only)

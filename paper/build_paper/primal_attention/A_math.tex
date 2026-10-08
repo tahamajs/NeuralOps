@@ -23,9 +23,9 @@ Select $m$ query landmarks $Q_\text{land}$ and $m$ key landmarks $K_\text{land}$
 Define:
 
 \[
-F_1 = Q K_\text{land}^\top, \quad
-F_2 = Q_\text{land} K_\text{land}^\top, \quad
-F_3 = Q_\text{land} K^\top
+F\_1 = Q K\_\text{land}^\top, \quad
+F\_2 = Q\_\text{land} K\_\text{land}^\top, \quad
+F\_3 = Q\_\text{land} K^\top
 \]
 
 \subsubsection{A.1.3 Exactness}
@@ -33,7 +33,7 @@ F_3 = Q_\text{land} K^\top
 If the landmarks span the row and column spaces of $QK^\top$, then:
 
 \[
-Q K^\top = F_1 F_2^{-1} F_3
+Q K^\top = F\_1 F\_2^{-1} F\_3
 \]
 
 \textbf{Proof.} Let $Q = Q_\text{land} P_Q + Q_\perp$ where $P_Q$ is a 
@@ -41,7 +41,7 @@ projection matrix. Similarly for $K$. Under the span assumption,
 $Q_\perp$ and $K_\perp$ are in the null space of $QK^\top$. Then:
 
 \[
-QK^\top = (Q_\text{land} P_Q)(K_\text{land} P_K)^\top = Q_\text{land} P_Q P_K^\top K_\text{land}^\top
+QK^\top = (Q\_\text{land} P\_Q)(K\_\text{land} P\_K)^\top = Q\_\text{land} P\_Q P\_K^\top K\_\text{land}^\top
 \]
 
 Since $Q_\text{land} = Q_\text{land} P_Q$ (landmarks are in span), we have 
@@ -57,22 +57,22 @@ if $\|I - F_2 X_0\| < 1$.
 \textbf{Proof.} Define $E_t = I - F_2 X_t$. Then:
 
 \[
-E_{t+1} = I - F_2 X_{t+1} = I - F_2 X_t (2I - F_2 X_t)
+E\_{t+1} = I - F\_2 X\_{t+1} = I - F\_2 X\_t (2I - F\_2 X\_t)
 \]
 
 Substituting $X_t = F_2^{-1}(I - E_t)$:
 
 \[
-E_{t+1} = I - F_2 F_2^{-1}(I - E_t) (2I - F_2 F_2^{-1}(I - E_t))
+E\_{t+1} = I - F\_2 F\_2^{-1}(I - E\_t) (2I - F\_2 F\_2^{-1}(I - E\_t))
 \]
 \[
-= I - (I - E_t)(2I - (I - E_t)) = I - (I - E_t)(I + E_t) = I - (I - E_t^2) = E_t^2
+= I - (I - E\_t)(2I - (I - E\_t)) = I - (I - E\_t)(I + E\_t) = I - (I - E\_t^2) = E\_t^2
 \]
 
 So $E_{t+1} = E_t^2$. By induction, $E_K = E_0^{2^K}$. If $\|E_0\| \le \rho < 1$:
 
 \[
-\|E_K\| \le \rho^{2^K}
+\|E\_K\| \le \rho^{2^K}
 \]
 
 which decays double-exponentially. $\square$
@@ -97,7 +97,7 @@ Total: $\mathcal{O}(L m d_h + m^2 d_h)$, linear in $L$. $\square$
 \textbf{Proposition.} For $A = QK^\top$ with singular values $\sigma_1 \ge \sigma_2 \ge \cdots$:
 
 \[
-\|A - \tilde{A}\|_F \leq \sqrt{\sum_{i > m} \sigma_i^2} + \epsilon_\text{landmark}
+\|A - \tilde{A}\|\_F \leq \sqrt{\sum\_{i \textgreater{} m} \sigma\_i^2} + \epsilon\_\text{landmark}
 \]
 
 where $\epsilon_\text{landmark}$ depends on how well the landmarks span the 
@@ -114,7 +114,7 @@ $\square$
 For causal attention with mask $M$:
 
 \[
-\|A_\text{causal} - \tilde{A}_\text{causal}\|_F \leq \|A - \tilde{A}\|_F + \|\tilde{A}_\text{upper}\|_F
+\|A\_\text{causal} - \tilde{A}\_\text{causal}\|\_F \leq \|A - \tilde{A}\|\_F + \|\tilde{A}\_\text{upper}\|\_F
 \]
 
 where $\tilde{A}_\text{upper}$ is the upper-triangular part of $\tilde{A}$ 

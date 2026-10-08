@@ -17,7 +17,7 @@ with $\sigma_1 \geq \sigma_2 \geq \dots \geq 0$.
 \textbf{Truncated SVD.} The best rank-$r$ approximation in Frobenius norm is:
 
 \[
-W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
+W\_r = U\_{:, :r} \Sigma\_{:r, :r} V\_{:r, :}^\top
 \tag{3.2}
 \]
 
@@ -26,8 +26,8 @@ with $\|W - W_r\|_F^2 = \sum_{i > r} \sigma_i^2$.
 \textbf{Symmetric factorization.} Distributing $\Sigma^{1/2}$ between factors:
 
 \[
-U_r = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad
-V_r = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top
+U\_r = U\_{:, :r} \Sigma\_{:r, :r}^{1/2}, \quad
+V\_r = \Sigma\_{:r, :r}^{1/2} V\_{:r, :}^\top
 \tag{3.3}
 \]
 
@@ -39,7 +39,7 @@ and improved numerical stability for FP16 computation.
 Define the cumulative squared energy at rank $r$:
 
 \[
-\mathcal{E}(r) = \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_{j=1}^{\min(m,n)} \sigma_j^2}
+\mathcal{E}(r) = \frac{\sum\_{i=1}^{r} \sigma\_i^2}{\sum\_{j=1}^{\min(m,n)} \sigma\_j^2}
 \tag{3.4}
 \]
 
@@ -61,7 +61,7 @@ r^*(\tau) = \min\{r : \mathcal{E}(r) \geq \tau\}
 At this rank:
 
 \[
-\|W - W_{r^*}\|_F^2 = (1 - \mathcal{E}(r^*)) \|W\|_F^2 \leq (1 - \tau) \|W\|_F^2
+\|W - W\_{r^*}\|\_F^2 = (1 - \mathcal{E}(r^*)) \|W\|\_F^2 \leq (1 - \tau) \|W\|\_F^2
 \tag{3.6}
 \]
 
@@ -86,7 +86,7 @@ The difference in decay rate justifies per-layer rank selection.
 LoRA (Hu et al., 2021) parameterizes a weight update as:
 
 \[
-\Delta W = \frac{\alpha}{r_L} B A
+\Delta W = \frac{\alpha}{r\_L} B A
 \tag{3.7}
 \]
 
@@ -96,7 +96,7 @@ The initialization $B = 0$ ensures $\Delta W = 0$ at step 0.
 \textbf{Applied to factorized layers.} The full forward:
 
 \[
-y = x (U V)^\top + \frac{\alpha}{r_L} x (B A)^\top
+y = x (U V)^\top + \frac{\alpha}{r\_L} x (B A)^\top
 \tag{3.8}
 \]
 
@@ -116,7 +116,7 @@ The bucket function is:
 
 \[
 \text{bucket}(d) = \begin{cases}
-d & \text{if } |d| < \text{max\_exact} \\
+d & \text{if } |d| \textless{} \text{max\_exact} \\
 \text{max\_exact} + \text{sign}(d) \cdot \lfloor \log(|d| / \text{max\_exact}) \cdot \text{scale} \rfloor & \text{otherwise}
 \end{cases}
 \tag{3.10}
@@ -130,7 +130,7 @@ to attention scores before softmax. Adaptive SVD preserves this bias.
 Modern models (Qwen, LLaMA) use GQA where $H_{kv} < H$:
 
 \[
-K, V \in \mathbb{R}^{B \times L \times H_{kv} d_h}, \quad H_\text{repeat} = H / H_{kv}
+K, V \in \mathbb{R}^{B \times L \times H\_{kv} d\_h}, \quad H\_\text{repeat} = H / H\_{kv}
 \tag{3.11}
 \]
 
@@ -142,7 +142,7 @@ preserves GQA structure.
 RoPE (Su et al., 2021) rotates $Q, K$ by position-dependent angles:
 
 \[
-\tilde{Q}_i = Q_i \cos(\theta_i) + \mathrm{rot}(Q_i) \sin(\theta_i)
+\tilde{Q}\_i = Q\_i \cos(\theta\_i) + \mathrm{rot}(Q\_i) \sin(\theta\_i)
 \tag{3.12}
 \]
 

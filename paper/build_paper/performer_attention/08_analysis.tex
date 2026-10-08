@@ -102,7 +102,7 @@ Code: \texttt{raise RuntimeError(f"Injection failed")}.
 
 \begin{lstlisting}
 except Exception as e:
-    logger.warning("PerformerAttention construction failed: %s", e)
+    logger.warning("PerformerAttention construction failed: \%s", e)
     return None
 \end{lstlisting}
 
@@ -111,7 +111,7 @@ except Exception as e:
 \texttt{LoRALinear.forward}:
 
 \begin{lstlisting}
-return out * self.output_scale
+return out * self.output\_scale
 \end{lstlisting}
 
 \textbf{Impact.}

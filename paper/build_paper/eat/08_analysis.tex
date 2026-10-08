@@ -20,8 +20,8 @@ If RoBERTa fails with $\Delta$ = +4.12\%, we investigate:
 EAT's \texttt{copy\_weights} is defensive:
 
 \begin{lstlisting}
-if missing_after:
-    logger.warning(f"EATBlock copy_weights: missing projections ...")
+if missing\_after:
+    logger.warning(f"EATBlock copy\_weights: missing projections ...")
     # $\leftarrow$ continues with random init!
 \end{lstlisting}
 
@@ -30,7 +30,7 @@ projection after transfer:
 
 \begin{lstlisting}
 for proj in ["q", "k", "v", "o"]:
-    w = getattr(new_attn, f"{proj}_lin").weight
+    w = getattr(new\_attn, f"{proj}\_lin").weight
     print(f"{proj}: norm={w.norm().item():.4f}")
 \end{lstlisting}
 
@@ -45,10 +45,10 @@ outer layer applies another projection $\to$ double projection $\to$ scale colla
 \textbf{Test.} We compared logits before and after injection on a fixed input:
 
 \begin{lstlisting}
-logits_before = model(ids).logits
+logits\_before = model(ids).logits
 # inject
-logits_after = model(ids).logits
-print("diff:", (logits_before - logits_after).abs().max().item())
+logits\_after = model(ids).logits
+print("diff:", (logits\_before - logits\_after).abs().max().item())
 \end{lstlisting}
 
 \textbf{Result.} 32
@@ -176,7 +176,7 @@ Multi-architecture deployment & EAT, NHA \\
 \textbf{Collapse} & Acc $\approx$ 50.92\% & Silent weight transfer failure \\
 \textbf{Double projection} & Acc drops 15-25\% & \texttt{is\_nested\_encoder} wrong \\
 \textbf{OOM} & CUDA error & Batch size too large \\
-\textbf{Slow} & >3$\times$ latency & LoRA overhead \\
+\textbf{Slow} & \textgreater{}3$\times$ latency & LoRA overhead \\
 \bottomrule
 \end{tabular}
 \end{table}

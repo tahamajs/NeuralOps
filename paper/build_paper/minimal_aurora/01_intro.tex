@@ -28,7 +28,7 @@ smallest rank $r$ such that the top-$r$ singular values capture at least
 $\varepsilon$ of the total spectral energy:
 
 \[
-E(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{\min(m,n)} \sigma_i^2} \geq \varepsilon
+E(r) = \frac{\sum\_{i=1}^r \sigma\_i^2}{\sum\_{i=1}^{\min(m,n)} \sigma\_i^2} \geq \varepsilon
 \tag{1.1}
 \]
 
@@ -55,7 +55,7 @@ we seek a compressed model $\mathcal{M}'$ such that:
 MinimalAURORA replaces each projection with:
 
 \[
-W \approx \underbrace{U V^\top}_{\text{frozen SVD}} + \underbrace{\frac{\alpha}{r_L} B A}_{\text{trainable LoRA}}
+W \approx \underbrace{U V^\top}\_{\text{frozen SVD}} + \underbrace{\frac{\alpha}{r\_L} B A}\_{\text{trainable LoRA}}
 \tag{1.2}
 \]
 

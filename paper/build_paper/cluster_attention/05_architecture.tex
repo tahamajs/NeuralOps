@@ -21,27 +21,27 @@ Qwen3.5 & GQA+RoPE & No & Yes & Yes & partial \\
 
 \subsubsection{DistilBERT (Flat)}
 \begin{lstlisting}
-q_w = src.q_lin.weight
-k_w = src.k_lin.weight
-v_w = src.v_lin.weight
-o_w = src.out_lin.weight
-is_nested_encoder = False
+q\_w = src.q\_lin.weight
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
+is\_nested\_encoder = False
 \end{lstlisting}
 
 \subsubsection{RoBERTa (Nested)}
 \begin{lstlisting}
-q_w = src.self.query.weight
-k_w = src.self.key.weight
-v_w = src.self.value.weight
+q\_w = src.self.query.weight
+k\_w = src.self.key.weight
+v\_w = src.self.value.weight
 # output.dense applied by outer module
-is_nested_encoder = True
+is\_nested\_encoder = True
 \end{lstlisting}
 
 \subsubsection{GPT-2 (Conv1D)}
 \begin{lstlisting}
-w = src.c_attn.weight.T
-q_w, k_w, v_w = w.chunk(3, dim=0)
-o_w = src.c_proj.weight.T
+w = src.c\_attn.weight.T
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.T
 \end{lstlisting}
 
 \subsubsection{Qwen (GQA + RoPE)}
@@ -50,14 +50,14 @@ Direct copy with GQA-aware dims.
 \subsection{Injection}
 
 \begin{lstlisting}
-def inject_cluster(layer, cfg, comp_config, old_attn):
+def inject\_cluster(layer, cfg, comp\_config, old\_attn):
     new = ClusterAttention(
         config=cfg,
-        comp_config=comp_config,
-        pretrained_attn=old_attn,
-        num_clusters=16,
-        n_iters=3,
-        window_size=32,
+        comp\_config=comp\_config,
+        pretrained\_attn=old\_attn,
+        num\_clusters=16,
+        n\_iters=3,
+        window\_size=32,
     )
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
@@ -72,9 +72,9 @@ def inject_cluster(layer, cfg, comp_config, old_attn):
 For decoders, ClusterFormer uses \textbf{exact causal attention}, not clustering:
 
 \begin{lstlisting}
-if is_decoder:
-    scores = Q @ K.T / sqrt(d_h)
-    scores = scores.masked_fill(~causal_tril, -10000)
+if is\_decoder:
+    scores = Q @ K.T / sqrt(d\_h)
+    scores = scores.masked\_fill(~causal\_tril, -10000)
     attn = softmax(scores)
     out = attn @ V
 \end{lstlisting}
@@ -85,22 +85,22 @@ use standard exact attention for decoder paths.
 
 \subsection{RoPE}
 
-Partial RoPE (Qwen3.5 with rotary\_dim < head\_dim) is supported via slicing 
+Partial RoPE (Qwen3.5 with rotary\_dim \textless{} head\_dim) is supported via slicing 
 the first \texttt{rotary\_dim} coordinates.
 
 \subsection{GQA}
 
 \begin{lstlisting}
-if self.kv_repeat > 1:
-    K = repeat_kv(K, self.kv_repeat)
-    V = repeat_kv(V, self.kv_repeat)
+if self.kv\_repeat \textgreater{} 1:
+    K = repeat\_kv(K, self.kv\_repeat)
+    V = repeat\_kv(V, self.kv\_repeat)
 \end{lstlisting}
 
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("cluster")
-@ATTENTION_REGISTRY.register("cluster_attention")
+@ATTENTION\_REGISTRY.register("cluster")
+@ATTENTION\_REGISTRY.register("cluster\_attention")
 class ClusterAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -117,7 +117,7 @@ class ClusterAttention(BaseAttention):
 Missing weights & \texttt{copy\_weights} raises & Return None \\
 Empty clusters & \texttt{counts == 0} & Mask logit to -inf \\
 NaN in cdist & \texttt{torch.nan\_to\_num} & Replace with 0 \\
-Zero Frobenius & Check < 1e-4 & Raise error \\
+Zero Frobenius & Check \textless{} 1e-4 & Raise error \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,6 +133,6 @@ Zero Frobenius & Check < 1e-4 & Raise error \\
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of cluster.}
-\label{fig:arch_cluster}
+\label{fig:arch\_cluster}
 \end{figure}
 

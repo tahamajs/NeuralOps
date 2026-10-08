@@ -3,8 +3,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -13,39 +13,39 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_mamba.py \
+python run\_all\_4\_mamba.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
     --modules full,mamba \
-    --recovery_steps 50
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1}
 \begin{lstlisting}
-python run_all_4_mamba.py
+python run\_all\_4\_mamba.py
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (Preservation gate ablation)}
 \begin{lstlisting}
-python run_all_4_mamba.py --pres_gate_init 0.0 --output_suffix g0
-python run_all_4_mamba.py --pres_gate_init 2.0 --output_suffix g2
-python run_all_4_mamba.py --pres_gate_init 4.0 --output_suffix g4
+python run\_all\_4\_mamba.py --pres\_gate\_init 0.0 --output\_suffix g0
+python run\_all\_4\_mamba.py --pres\_gate\_init 2.0 --output\_suffix g2
+python run\_all\_4\_mamba.py --pres\_gate\_init 4.0 --output\_suffix g4
 \end{lstlisting}
 
 \subsubsection{Table 7.8 (Scaling)}
 \begin{lstlisting}
 for L in 64 128 256 512; do
-    python run_all_4_mamba.py --max_seq_len $L --output_suffix L$L
+    python run\_all\_4\_mamba.py --max\_seq\_len $L --output_suffix L$L
 done
 \end{lstlisting}
 
@@ -55,7 +55,7 @@ done
 import random, numpy as np, torch
 seed = 42
 random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}

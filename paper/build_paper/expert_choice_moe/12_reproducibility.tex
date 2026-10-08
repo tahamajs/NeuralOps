@@ -3,8 +3,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -29,42 +29,42 @@ datasets & 1.0.0 \\
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_expert_choice_moe.py \
+python run\_all\_4\_expert\_choice\_moe.py \
     --models distilbert,roberta,gpt2 \
-    --n_experts 8 \
-    --capacity_factor 1.25 \
-    --recovery_steps 50
+    --n\_experts 8 \
+    --capacity\_factor 1.25 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --model_family bert \
-    --modules full,expert_choice_moe \
-    --recovery_steps 50 \
-    --lora_rank 8
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --model\_family bert \
+    --modules full,expert\_choice\_moe \
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1 (Main)}
 \begin{lstlisting}
-python run_all_4_expert_choice_moe.py
+python run\_all\_4\_expert\_choice\_moe.py
 \end{lstlisting}
 
 \subsubsection{Table 7.5 (Expert Count)}
 \begin{lstlisting}
 for e in 4 8 16; do
-    python run_all_4_expert_choice_moe.py --n_experts $e --output_suffix e$e
+    python run\_all\_4\_expert\_choice\_moe.py --n\_experts $e --output_suffix e$e
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.6 (Capacity Factor)}
 \begin{lstlisting}
 for cf in 0.5 1.0 1.5 2.0; do
-    python run_all_4_expert_choice_moe.py --capacity_factor $cf --output_suffix cf$cf
+    python run\_all\_4\_expert\_choice\_moe.py --capacity\_factor $cf --output_suffix cf$cf
 done
 \end{lstlisting}
 
@@ -75,8 +75,8 @@ import random, numpy as np, torch
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}

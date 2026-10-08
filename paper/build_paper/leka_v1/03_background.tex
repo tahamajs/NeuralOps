@@ -5,7 +5,7 @@
 Standard softmax attention:
 
 \[
-\text{Attn}(Q, K, V) = \frac{\exp(QK^\top / \sqrt{d_h}) V}{\exp(QK^\top / \sqrt{d_h}) \mathbf{1}}
+\text{Attn}(Q, K, V) = \frac{\exp(QK^\top / \sqrt{d\_h}) V}{\exp(QK^\top / \sqrt{d\_h}) \mathbf{1}}
 \tag{3.1}
 \]
 
@@ -13,7 +13,7 @@ If we can decompose the kernel $\kappa(q, k) = \exp(q^\top k / \sqrt{d_h})$
 as $\phi(q)^\top \phi(k)$, then:
 
 \[
-\text{Attn}(Q, K, V)_i \approx \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\text{Attn}(Q, K, V)\_i \approx \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \tag{3.2}
 \]
 
@@ -42,15 +42,15 @@ p(\omega) = (2\pi)^{-d/2} \exp(-\|\omega\|^2 / 2) = \mathcal{N}(0, I)
 \textbf{Estimator.} Sampling $\omega_1, \dots, \omega_F \sim \mathcal{N}(0, I)$:
 
 \[
-\kappa(x - y) \approx \frac{1}{F} \sum_{i=1}^F \cos(\omega_i^\top (x - y))
-= \frac{1}{F} \sum_{i=1}^F \left[\cos(\omega_i^\top x)\cos(\omega_i^\top y) + \sin(\omega_i^\top x)\sin(\omega_i^\top y)\right]
+\kappa(x - y) \approx \frac{1}{F} \sum\_{i=1}^F \cos(\omega\_i^\top (x - y))
+= \frac{1}{F} \sum\_{i=1}^F \left[\cos(\omega\_i^\top x)\cos(\omega\_i^\top y) + \sin(\omega\_i^\top x)\sin(\omega\_i^\top y)\right]
 \tag{3.5}
 \]
 
 \textbf{Feature map.} Define:
 
 \[
-\phi(x) = \frac{1}{\sqrt{F}} [\cos(\omega_1^\top x), \dots, \cos(\omega_F^\top x), \sin(\omega_1^\top x), \dots, \sin(\omega_F^\top x)]
+\phi(x) = \frac{1}{\sqrt{F}} [\cos(\omega\_1^\top x), \dots, \cos(\omega\_F^\top x), \sin(\omega\_1^\top x), \dots, \sin(\omega\_F^\top x)]
 \tag{3.6}
 \]
 
@@ -63,14 +63,14 @@ estimator with variance $\mathcal{O}(1/F)$. A common trick is to
 \textbf{orthogonalize} the sampled vectors:
 
 \[
-[\omega_1, \dots, \omega_F] = Q \in \mathbb{R}^{d \times F}, \quad Q^\top Q = I_F
+[\omega\_1, \dots, \omega\_F] = Q \in \mathbb{R}^{d \times F}, \quad Q^\top Q = I\_F
 \tag{3.7}
 \]
 
 This reduces variance (Yu et al., 2016). We use QR:
 
 \[
-G \sim \mathcal{N}(0, I_{d \times F}), \quad G = Q R, \quad \omega_i = Q_{:, i}
+G \sim \mathcal{N}(0, I\_{d \times F}), \quad G = Q R, \quad \omega\_i = Q\_{:, i}
 \tag{3.8}
 \]
 
@@ -81,8 +81,8 @@ causal: at position $i$, only $j \leq i$. This is achieved with a
 cumulative sum:
 
 \[
-\text{KV}_i = \sum_{j \leq i} \phi(k_j) v_j^\top, \quad
-\text{Z}_i = \sum_{j \leq i} \phi(k_j)
+\text{KV}\_i = \sum\_{j \leq i} \phi(k\_j) v\_j^\top, \quad
+\text{Z}\_i = \sum\_{j \leq i} \phi(k\_j)
 \tag{3.9}
 \]
 

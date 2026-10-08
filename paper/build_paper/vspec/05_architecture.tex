@@ -24,20 +24,20 @@ UniversalAdapter first, then fallback patterns:
 \subsubsection{GPT-2 Fused Conv1D}
 
 \begin{lstlisting}
-c_w = src.c_attn.weight
-if c_w.shape[0] < c_w.shape[1]: c_w = c_w.t()
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
-o_w = src.c_proj.weight.t()
+c\_w = src.c\_attn.weight
+if c\_w.shape[0] \textless{} c\_w.shape[1]: c\_w = c\_w.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.t()
 \end{lstlisting}
 
 \subsubsection{RoBERTa Nested}
 
 \begin{lstlisting}
 s = src.self
-q_w = s.query.weight
-k_w = s.key.weight
-v_w = s.value.weight
-o_w = src.output.dense.weight
+q\_w = s.query.weight
+k\_w = s.key.weight
+v\_w = s.value.weight
+o\_w = src.output.dense.weight
 \end{lstlisting}
 
 \subsubsection{Flat}
@@ -67,9 +67,9 @@ RoPE is applied after projection. Since tokens are routed, we must
 \textbf{gather the position embeddings} corresponding to selected indices:
 
 \begin{lstlisting}
-cos_routed = torch.gather(cos_b, 1, idx.unsqueeze(-1).expand(...))
-sin_routed = torch.gather(sin_b, 1, idx.unsqueeze(-1).expand(...))
-Q, K = apply_rotary_pos_emb(Q, K, cos_routed, sin_routed)
+cos\_routed = torch.gather(cos\_b, 1, idx.unsqueeze(-1).expand(...))
+sin\_routed = torch.gather(sin\_b, 1, idx.unsqueeze(-1).expand(...))
+Q, K = apply\_rotary\_pos\_emb(Q, K, cos\_routed, sin\_routed)
 \end{lstlisting}
 
 \subsection{Head Gate Application}
@@ -90,17 +90,17 @@ through unchanged.
 
 \textbf{Algorithm 2:} Inject VSpec++ into a model
 \begin{lstlisting}
-Input:  model M, config c, rank r, lora_rank r_L
+Input:  model M, config c, rank r, lora\_rank r\_L
 Output: M with attention replaced
 
-1: for layer in transformer_layers(M):
-2:     src $\leftarrow$ extract_attention(layer)
-3:     if src is None or is_already_injected: continue
+1: for layer in transformer\_layers(M):
+2:     src $\leftarrow$ extract\_attention(layer)
+3:     if src is None or is\_already\_injected: continue
 4:     try:
-5:         new $\leftarrow$ VSpecAttention(c, rank=r, lora_rank=r_L, pretrained_attn=src)
+5:         new $\leftarrow$ VSpecAttention(c, rank=r, lora\_rank=r\_L, pretrained\_attn=src)
 6:         replace(layer, new)
 7:     except Exception as e:
-8:         log_error; continue
+8:         log\_error; continue
 9: return M
 \end{lstlisting}
 
@@ -108,7 +108,7 @@ Output: M with attention replaced
 
 \begin{lstlisting}
 if isinstance(src, VSpecAttention): return None
-if "VSpec" in src.__class__.__name__: return None
+if "VSpec" in src.\_\_class\_\_.\_\_name\_\_: return None
 \end{lstlisting}
 
 \subsection{Cross-Attention}
@@ -118,8 +118,8 @@ Not supported. Raises \texttt{NotImplementedError}.
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("vspec")
-@ATTENTION_REGISTRY.register("vspec_attention")
+@ATTENTION\_REGISTRY.register("vspec")
+@ATTENTION\_REGISTRY.register("vspec\_attention")
 class VSpecAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -130,6 +130,6 @@ class VSpecAttention(BaseAttention):
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.png}
 \caption{High-level architectural diagram of vspec.}
-\label{fig:arch_vspec}
+\label{fig:arch\_vspec}
 \end{figure}
 

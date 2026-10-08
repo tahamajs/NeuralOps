@@ -126,12 +126,12 @@ Peak VRAM & 800 MB \\
 
 \begin{lstlisting}
 {
-  "squeezing_heads": {
+  "squeezing\_heads": {
     "distilbert": {
-      "lora_rank": 16,
-      "head_dim_reduction": 1.0,
-      "accuracy_pct": 90.25,
-      "trainable_params": 589824
+      "lora\_rank": 16,
+      "head\_dim\_reduction": 1.0,
+      "accuracy\_pct": 90.25,
+      "trainable\_params": 589824
     },
     "roberta": {...},
     "gpt2": {...}
@@ -143,11 +143,11 @@ Peak VRAM & 800 MB \\
 
 \begin{lstlisting}
 # Main
-python run_all_4_squeezing_heads.py --lora_rank 16
+python run\_all\_4\_squeezing\_heads.py --lora\_rank 16
 
 # Rank sweep
 for r in 4 8 16 32; do
-    python run_all_4_squeezing_heads.py --lora_rank $r
+    python run\_all\_4\_squeezing\_heads.py --lora\_rank $r
 done
 
 # Head-dim reduction sweep

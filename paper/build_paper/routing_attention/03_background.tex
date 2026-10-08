@@ -6,12 +6,12 @@
 Standard MHSA:
 
 \[
-\text{head}_h = \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d}}\right) V_h
+\text{head}\_h = \text{softmax}\!\left(\frac{Q\_h K\_h^\top}{\sqrt{d}}\right) V\_h
 \tag{3.1}
 \]
 
 \[
-\text{MHSA}(X) = \text{Concat}(\text{head}_1, \dots, \text{head}_H) W_O
+\text{MHSA}(X) = \text{Concat}(\text{head}\_1, \dots, \text{head}\_H) W\_O
 \tag{3.2}
 \]
 
@@ -21,7 +21,7 @@ A sparse attention restricts the softmax to a subset $\mathcal{S}_i$ of keys
 for each query $i$:
 
 \[
-\text{SparseAttn}_i = \frac{\sum_{j \in \mathcal{S}_i} e^{q_i^\top k_j / \sqrt{d}} v_j}{\sum_{j \in \mathcal{S}_i} e^{q_i^\top k_j / \sqrt{d}}}
+\text{SparseAttn}\_i = \frac{\sum\_{j \in \mathcal{S}\_i} e^{q\_i^\top k\_j / \sqrt{d}} v\_j}{\sum\_{j \in \mathcal{S}\_i} e^{q\_i^\top k\_j / \sqrt{d}}}
 \tag{3.3}
 \]
 
@@ -38,7 +38,7 @@ Given $N$ points $\{x_i\} \subset \mathbb{R}^d$ and $K$ clusters, k-means
 minimizes:
 
 \[
-\mathcal{L}(\mathcal{C}, \mu) = \sum_{k=1}^{K} \sum_{i \in \mathcal{C}_k} \|x_i - \mu_k\|_2^2
+\mathcal{L}(\mathcal{C}, \mu) = \sum\_{k=1}^{K} \sum\_{i \in \mathcal{C}\_k} \|x\_i - \mu\_k\|\_2^2
 \tag{3.4}
 \]
 
@@ -58,7 +58,7 @@ Routing decides which tokens attend to which. Content-aware routing uses
 the token representations themselves:
 
 \[
-\mathcal{S}_i = \{j : c_i = c_j\}
+\mathcal{S}\_i = \{j : c\_i = c\_j\}
 \tag{3.5}
 \]
 

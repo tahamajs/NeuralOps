@@ -7,12 +7,12 @@ signature:
 
 \begin{lstlisting}
 ResSVDLinear(
-    in_features: int,
-    out_features: int,
-    base_rank: int,
-    residual_rank: int,
+    in\_features: int,
+    out\_features: int,
+    base\_rank: int,
+    residual\_rank: int,
     scaling: float = 1.0,
-    factorize_base: bool = True,
+    factorize\_base: bool = True,
     bias: bool = True,
 )
 \end{lstlisting}
@@ -21,30 +21,30 @@ The \texttt{from\_linear} class method decomposes a given \texttt{nn.Linear}:
 
 \begin{lstlisting}
 @classmethod
-def from_linear(cls, linear, base_rank, residual_rank, ...):
+def from\_linear(cls, linear, base\_rank, residual\_rank, ...):
     W = linear.weight.data.float()
     
     # Base SVD
-    U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-    U_b = U[:, :base_rank]
-    S_b = S[:base_rank]
-    Vt_b = Vt[:base_rank, :]
+    U, S, Vt = torch.linalg.svd(W, full\_matrices=False)
+    U\_b = U[:, :base\_rank]
+    S\_b = S[:base\_rank]
+    Vt\_b = Vt[:base\_rank, :]
     
     # Residual
-    W_b = (U_b * S_b) @ Vt_b
-    R = W - W_b
-    U_r, S_r, Vt_r = torch.linalg.svd(R, full_matrices=False)
+    W\_b = (U\_b * S\_b) @ Vt\_b
+    R = W - W\_b
+    U\_r, S\_r, Vt\_r = torch.linalg.svd(R, full\_matrices=False)
     
     # LoRA init
-    S_r_sqrt = torch.sqrt(S_r[:residual_rank])
-    B_init = U_r[:, :residual_rank] * S_r_sqrt
-    A_init = S_r_sqrt[:, None] * Vt_r[:residual_rank, :]
+    S\_r\_sqrt = torch.sqrt(S\_r[:residual\_rank])
+    B\_init = U\_r[:, :residual\_rank] * S\_r\_sqrt
+    A\_init = S\_r\_sqrt[:, None] * Vt\_r[:residual\_rank, :]
     
     layer = cls(...)
-    layer.U_base.data = U_b
-    layer.V_base.data = Vt_b
-    layer.lora_B.data = B_init
-    layer.lora_A.data = A_init
+    layer.U\_base.data = U\_b
+    layer.V\_base.data = Vt\_b
+    layer.lora\_B.data = B\_init
+    layer.lora\_A.data = A\_init
     if linear.bias is not None:
         layer.bias.data = linear.bias.data
     return layer
@@ -55,21 +55,21 @@ def from_linear(cls, linear, base_rank, residual_rank, ...):
 \begin{lstlisting}
 def forward(self, x):
     # Base
-    h_b = F.linear(x, self.V_base)
-    y_b = F.linear(h_b, self.U_base)
+    h\_b = F.linear(x, self.V\_base)
+    y\_b = F.linear(h\_b, self.U\_base)
     
     # Residual
-    h_r = F.linear(x, self.lora_A)
-    y_r = F.linear(h_r, self.lora_B)
+    h\_r = F.linear(x, self.lora\_A)
+    y\_r = F.linear(h\_r, self.lora\_B)
     
-    return y_b + self.scaling * y_r + self.bias
+    return y\_b + self.scaling * y\_r + self.bias
 \end{lstlisting}
 
 \subsection{B.3 Base Freezing}
 
 \begin{lstlisting}
-self.U_base.requires_grad = False
-self.V_base.requires_grad = False
+self.U\_base.requires\_grad = False
+self.V\_base.requires\_grad = False
 \end{lstlisting}
 
 Only \texttt{lora\_A}, \texttt{lora\_B}, and \texttt{bias} (optional) receive gradient.
@@ -89,11 +89,11 @@ For each of Q, K, V, O:
 \textbf{Verification.} After loading:
 
 \begin{lstlisting}
-sample_x = torch.eye(min(target.in_features, 64), target.in_features)
-y = target(sample_x)
+sample\_x = torch.eye(min(target.in\_features, 64), target.in\_features)
+y = target(sample\_x)
 fnorm = torch.linalg.norm(y.float()).item()
-if fnorm < 1e-4:
-    raise RuntimeError(f"Weight copy failed for {proj_key}")
+if fnorm \textless{} 1e-4:
+    raise RuntimeError(f"Weight copy failed for {proj\_key}")
 \end{lstlisting}
 
 \subsection{B.5 Nested Encoder Special Case}
@@ -101,12 +101,12 @@ if fnorm < 1e-4:
 For RoBERTa, the output projection is initialized to \textbf{identity}:
 
 \begin{lstlisting}
-if proj_key == "o" and self.is_nested_encoder:
-    temp_linear = nn.Linear(target.in_features, target.out_features)
-    nn.init.eye_(temp_linear.weight)
-    nn.init.zeros_(temp_linear.bias)
-    new_layer = ResSVDLinear.from_linear(temp_linear, ...)
-    target.load_state_dict(new_layer.state_dict())
+if proj\_key == "o" and self.is\_nested\_encoder:
+    temp\_linear = nn.Linear(target.in\_features, target.out\_features)
+    nn.init.eye\_(temp\_linear.weight)
+    nn.init.zeros\_(temp\_linear.bias)
+    new\_layer = ResSVDLinear.from\_linear(temp\_linear, ...)
+    target.load\_state\_dict(new\_layer.state\_dict())
 \end{lstlisting}
 
 This makes the output projection a pass-through, so the outer 
@@ -114,7 +114,7 @@ This makes the output projection a pass-through, so the outer
 
 \subsection{B.6 Common Pitfalls}
 
-\subsubsection{B.6.1 base\_rank + residual\_rank > min(d\_in, d\_out)}
+\subsubsection{B.6.1 base\_rank + residual\_rank \textgreater{} min(d\_in, d\_out)}
 
 If base\_rank + residual\_rank exceeds the matrix rank, the residual SVD 
 will have zero singular values beyond the original rank. This is fine 

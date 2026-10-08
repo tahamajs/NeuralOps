@@ -5,46 +5,46 @@ The module implementation is maintained in \texttt{Codes/framework/attentions/mi
 The module implements a complete execution pipeline designed for zero runtime crash guarantees and rigorous fallback integrity:
 \begin{lstlisting}[language=Python]
 class StructuredModuleWrapper(nn.Module):
-    def __init__(self, layer, config):
-        super().__init__()
+    def \_\_init\_\_(self, layer, config):
+        super().\_\_init\_\_()
         self.layer = layer
         self.config = config
-        self.in_features = layer.in_features
-        self.out_features = layer.out_features
+        self.in\_features = layer.in\_features
+        self.out\_features = layer.out\_features
         
         # Allocate low-rank buffers
-        self.register_buffer('U', torch.zeros(self.out_features, config.rank))
-        self.register_buffer('V', torch.zeros(config.rank, self.in_features))
+        self.register\_buffer('U', torch.zeros(self.out\_features, config.rank))
+        self.register\_buffer('V', torch.zeros(config.rank, self.in\_features))
         
         # Trainable residual LoRA adapters
-        self.lora_A = nn.Parameter(torch.empty(config.residual_rank, self.in_features))
-        self.lora_B = nn.Parameter(torch.zeros(self.out_features, config.residual_rank))
-        nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        self.lora\_A = nn.Parameter(torch.empty(config.residual\_rank, self.in\_features))
+        self.lora\_B = nn.Parameter(torch.zeros(self.out\_features, config.residual\_rank))
+        nn.init.kaiming\_uniform\_(self.lora\_A, a=math.sqrt(5))
         
     def forward(self, x):
         # Base factorized transformation
-        base_out = F.linear(F.linear(x, self.V), self.U)
+        base\_out = F.linear(F.linear(x, self.V), self.U)
         # Residual adaptation pathway
         if self.training:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.config.scaling
-            return base_out + lora_out
-        return base_out
+            lora\_out = F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.config.scaling
+            return base\_out + lora\_out
+        return base\_out
 \end{lstlisting}
 
 \subsection*{B.2 Hardware-Aligned Tensor Slicing}
 Handling cross-architecture variations requires careful slicing across attention dimensions:
 \begin{lstlisting}[language=Python]
-def extract_qkv_projections(module, model_type='distilbert'):
-    if model_type == 'distilbert':
-        return module.q_lin.weight, module.k_lin.weight, module.v_lin.weight
-    elif model_type == 'gpt2':
-        fused = module.c_attn.weight.T
+def extract\_qkv\_projections(module, model\_type='distilbert'):
+    if model\_type == 'distilbert':
+        return module.q\_lin.weight, module.k\_lin.weight, module.v\_lin.weight
+    elif model\_type == 'gpt2':
+        fused = module.c\_attn.weight.T
         dim = fused.size(0) // 3
         return fused[:dim, :], fused[dim:2*dim, :], fused[2*dim:, :]
-    elif model_type == 'roberta':
+    elif model\_type == 'roberta':
         return module.query.weight, module.key.weight, module.value.weight
     else:
-        raise ValueError(f'Unsupported model architecture: {model_type}')
+        raise ValueError(f'Unsupported model architecture: {model\_type}')
 \end{lstlisting}
 
 \subsection*{B.3 Layer-Wise PyTorch Dispatch Engine}
@@ -52,22 +52,22 @@ The following listing demonstrates the production execution engine dispatched ac
 \begin{lstlisting}[language=Python]
 class DispatchEngine:
     @staticmethod
-    def attach_compressed_modules(model, config):
-        replaced_count = 0
-        for name, module in model.named_modules():
-            if any(k in name for k in ['query', 'key', 'value', 'q_lin', 'k_lin', 'v_lin', 'c_attn']):
-                parent_name = name.rsplit('.', 1)[0]
-                attr_name = name.rsplit('.', 1)[-1]
-                parent = model.get_submodule(parent_name)
-                orig_weight = module.weight.data
-                compressed_layer = StructuredModuleWrapper(
-                    orig_weight,
+    def attach\_compressed\_modules(model, config):
+        replaced\_count = 0
+        for name, module in model.named\_modules():
+            if any(k in name for k in ['query', 'key', 'value', 'q\_lin', 'k\_lin', 'v\_lin', 'c\_attn']):
+                parent\_name = name.rsplit('.', 1)[0]
+                attr\_name = name.rsplit('.', 1)[-1]
+                parent = model.get\_submodule(parent\_name)
+                orig\_weight = module.weight.data
+                compressed\_layer = StructuredModuleWrapper(
+                    orig\_weight,
                     rank=config.rank,
-                    residual_rank=config.residual_rank
+                    residual\_rank=config.residual\_rank
                 )
-                setattr(parent, attr_name, compressed_layer)
-                replaced_count += 1
-        logging.info(f'Successfully attached {replaced_count} compressed modules.')
+                setattr(parent, attr\_name, compressed\_layer)
+                replaced\_count += 1
+        logging.info(f'Successfully attached {replaced\_count} compressed modules.')
         return model
 \end{lstlisting}
 
@@ -75,15 +75,15 @@ class DispatchEngine:
 During forward and backward sweeps, PyTorch CUDA memory caching is monitored via standard hooks:
 \begin{lstlisting}[language=Python]
 class GPUMonitor:
-    def __init__(self):
-        torch.cuda.reset_peak_memory_stats()
-        self.start_mem = torch.cuda.memory_allocated()
+    def \_\_init\_\_(self):
+        torch.cuda.reset\_peak\_memory\_stats()
+        self.start\_mem = torch.cuda.memory\_allocated()
         
     def report(self):
-        peak_mem = torch.cuda.max_memory_allocated()
+        peak\_mem = torch.cuda.max\_memory\_allocated()
         return {
-            'initial_mb': self.start_mem / (1024 ** 2),
-            'peak_mb': peak_mem / (1024 ** 2),
-            'overhead_mb': (peak_mem - self.start_mem) / (1024 ** 2)
+            'initial\_mb': self.start\_mem / (1024 ** 2),
+            'peak\_mb': peak\_mem / (1024 ** 2),
+            'overhead\_mb': (peak\_mem - self.start\_mem) / (1024 ** 2)
         }
 \end{lstlisting}

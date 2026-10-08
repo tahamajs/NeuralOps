@@ -4,8 +4,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -14,21 +14,21 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_orion.py \
+python run\_all\_4\_orion.py \
     --models distilbert,roberta,gpt2 \
-    --svd_energy 95\% \
-    --svd_max_rank 64 \
-    --rff_features 64 \
-    --recovery_steps 50
+    --svd\_energy 95\% \
+    --svd\_max\_rank 64 \
+    --rff\_features 64 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"efficiency-lab/svd-linear-attention-{model}-orion",
+    path = hf\_hub\_download(
+        repo\_id=f"efficiency-lab/svd-linear-attention-{model}-orion",
         filename="weights.pt",
     )
 \end{lstlisting}
@@ -38,22 +38,22 @@ for model in ["distilbert", "roberta", "gpt2"]:
 \subsubsection{Main Results}
 
 \begin{lstlisting}
-python run_all_4_orion.py --models distilbert,roberta,gpt2
+python run\_all\_4\_orion.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{SVD Energy Ablation}
 
 \begin{lstlisting}
 for e in 0.90 0.95 0.99; do
-    python run_all_4_orion.py --svd_energy $e --output_suffix e$e
+    python run\_all\_4\_orion.py --svd\_energy $e --output_suffix e$e
 done
 \end{lstlisting}
 
 \subsubsection{Head Split Ablation}
 
 \begin{lstlisting}
-for split in "half" "23_13" "34_14" "all_kernel" "all_full"; do
-    python run_all_4_orion.py --head_split $split --output_suffix $split
+for split in "half" "23\_13" "34\_14" "all\_kernel" "all\_full"; do
+    python run\_all\_4\_orion.py --head\_split $split --output_suffix $split
 done
 \end{lstlisting}
 
@@ -61,8 +61,8 @@ done
 
 \begin{lstlisting}
 seed = 42
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -86,9 +86,9 @@ GPT-2 & 50.92\% $\pm$ 2\% & 46.0\%$\times$ \\
 \subsubsection{Check Parameter Count}
 
 \begin{lstlisting}
-for name, mod in model.named_modules():
+for name, mod in model.named\_modules():
     if hasattr(mod, 'down') and hasattr(mod, 'up'):
-        orig = mod.in_features * mod.out_features
+        orig = mod.in\_features * mod.out\_features
         new = mod.down.weight.numel() + mod.up.weight.numel()
         print(f"{name}: {orig} $\to$ {new} ({orig/new:.1f}$\times$)")
 \end{lstlisting}
@@ -96,15 +96,15 @@ for name, mod in model.named_modules():
 \subsubsection{Check Head Split}
 
 \begin{lstlisting}
-print(f"Kernel heads: {model.num_kernel_heads}")
-print(f"Full heads: {model.num_full_heads}")
+print(f"Kernel heads: {model.num\_kernel\_heads}")
+print(f"Full heads: {model.num\_full\_heads}")
 \end{lstlisting}
 
 \subsubsection{Check rff\_proj Persistence}
 
 \begin{lstlisting}
-sd = model.state_dict()
-assert any('rff_proj' in k for k in sd), "rff_proj NOT in state_dict!"  # This will FAIL
+sd = model.state\_dict()
+assert any('rff\_proj' in k for k in sd), "rff\_proj NOT in state\_dict!"  # This will FAIL
 \end{lstlisting}
 
 \subsection{Known Issues}

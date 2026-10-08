@@ -6,7 +6,7 @@
 For $Q, K, V \in \mathbb{R}^{L \times d_h}$:
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V \in \mathbb{R}^{L \times d_h}
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V \in \mathbb{R}^{L \times d\_h}
 \tag{3.1}
 \]
 
@@ -18,7 +18,7 @@ Restrict attention to a subset $\mathcal{T} \subseteq \{1, \dots, L\}$
 of \textbf{retained tokens}:
 
 \[
-\text{Attn}_\text{pruned}(Q, K, V) = \text{softmax}\!\left(\frac{Q_\mathcal{T} K_\mathcal{T}^\top}{\sqrt{d_h}}\right) V_\mathcal{T}
+\text{Attn}\_\text{pruned}(Q, K, V) = \text{softmax}\!\left(\frac{Q\_\mathcal{T} K\_\mathcal{T}^\top}{\sqrt{d\_h}}\right) V\_\mathcal{T}
 \tag{3.2}
 \]
 
@@ -75,7 +75,7 @@ aggregated sequence representation. Dropping it breaks classification.
 \textbf{PTP guarantees [CLS] retention} by setting $s_0 = 10^4$ before top-$k$:
 
 \[
-s_0 \leftarrow 10^4
+s\_0 \leftarrow 10^4
 \tag{3.5}
 \]
 
@@ -86,7 +86,7 @@ This is a soft guarantee (no runtime branching required).
 Padding tokens have zero or invalid content. They must be excluded:
 
 \[
-s_i \leftarrow -10^4 \quad \text{if token } i \text{ is padding}
+s\_i \leftarrow -10^4 \quad \text{if token } i \text{ is padding}
 \tag{3.6}
 \]
 
@@ -96,7 +96,7 @@ For decoder models, position $i$ cannot attend to $j > i$. After pruning,
 we must preserve this by comparing \textbf{original} positions:
 
 \[
-\text{mask}_{ij} = \mathbb{1}[\text{orig}(j) > i]
+\text{mask}\_{ij} = \mathbb{1}[\text{orig}(j) \textgreater{} i]
 \tag{3.7}
 \]
 
@@ -105,7 +105,7 @@ we must preserve this by comparing \textbf{original} positions:
 RoPE (Su et al., 2021) applies position-dependent rotation:
 
 \[
-\tilde{Q}_i = Q_i \cos(\theta_i) + \text{rot}(Q_i) \sin(\theta_i)
+\tilde{Q}\_i = Q\_i \cos(\theta\_i) + \text{rot}(Q\_i) \sin(\theta\_i)
 \tag{3.8}
 \]
 

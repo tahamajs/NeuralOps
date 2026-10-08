@@ -18,7 +18,7 @@ Then blends them via an adaptive gate.
        |
    +---+---------------+
                         
-   W_q W_k W_v    (gate)
+   W\_q W\_k W\_v    (gate)
    |   |   |         |
                       
    Q   K   V          g
@@ -34,7 +34,7 @@ Then blends them via an adaptive gate.
    g dense + (1-g) linear
        |
         
-    W_o (output proj)
+    W\_o (output proj)
        |
         
     Output Y
@@ -45,7 +45,7 @@ Then blends them via an adaptive gate.
 Standard softmax attention:
 
 \[
-O^\text{dense} = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}} + M\right) V
+O^\text{dense} = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}} + M\right) V
 \]
 
 where $M$ is the attention mask (padding or causal).
@@ -75,11 +75,11 @@ where $\Omega \in \mathbb{R}^{d_h \times F}$ is a fixed random projection.
 
 \[
 KV = \phi(\hat{K})^\top V, \quad
-Z = \sum_j \phi(\hat{K}_j)
+Z = \sum\_j \phi(\hat{K}\_j)
 \]
 
 \[
-O^\text{linear}_i = \frac{\phi(\hat{Q}_i) KV}{\phi(\hat{Q}_i) Z + \epsilon}
+O^\text{linear}\_i = \frac{\phi(\hat{Q}\_i) KV}{\phi(\hat{Q}\_i) Z + \epsilon}
 \]
 
 \subsubsection{Linear Attention (Causal)}
@@ -87,12 +87,12 @@ O^\text{linear}_i = \frac{\phi(\hat{Q}_i) KV}{\phi(\hat{Q}_i) Z + \epsilon}
 For decoders, we use a \textbf{cumulative sum} over the sequence:
 
 \[
-S_t = \sum_{j \leq t} \phi(\hat{K}_j)^\top V_j, \quad
-Z_t = \sum_{j \leq t} \phi(\hat{K}_j)
+S\_t = \sum\_{j \leq t} \phi(\hat{K}\_j)^\top V\_j, \quad
+Z\_t = \sum\_{j \leq t} \phi(\hat{K}\_j)
 \]
 
 \[
-O^\text{linear}_t = \frac{\phi(\hat{Q}_t) S_t}{\phi(\hat{Q}_t) Z_t + \epsilon}
+O^\text{linear}\_t = \frac{\phi(\hat{Q}\_t) S\_t}{\phi(\hat{Q}\_t) Z\_t + \epsilon}
 \]
 
 \textbf{Implementation.} We materialize $\phi(\hat{K})^\top V$ as a 
@@ -100,8 +100,8 @@ $(\text{B}, \text{H}, L, 2F, d_h)$ tensor and apply \texttt{torch.cumsum} along
 the sequence dimension:
 
 \begin{lstlisting}
-outer_prod = k_feat.unsqueeze(-1) * v.unsqueeze(-2)  # (B, H, L, 2F, d_h)
-S = torch.cumsum(outer_prod, dim=2)
+outer\_prod = k\_feat.unsqueeze(-1) * v.unsqueeze(-2)  # (B, H, L, 2F, d\_h)
+S = torch.cumsum(outer\_prod, dim=2)
 \end{lstlisting}
 
 \textbf{Memory warning.} This intermediate is \texttt{B \textit{ H } L \textit{ 2F } d\_h} floats. 
@@ -112,7 +112,7 @@ For B=8, H=12, L=128, 2F=256, d\_h=64: ~2 billion floats (8 GB at FP32).
 A per-head, per-token gate:
 
 \[
-g = \sigma(W_g X + b_g) \in \mathbb{R}^{B \times L \times H}
+g = \sigma(W\_g X + b\_g) \in \mathbb{R}^{B \times L \times H}
 \]
 
 \textbf{Initialization.} $W_g = 0$, $b_g = 5.0$.
@@ -135,45 +135,45 @@ O = g \odot O^\text{dense} + (1 - g) \odot O^\text{linear}
 Then apply output projection:
 
 \[
-Y = W_O O + b_O
+Y = W\_O O + b\_O
 \]
 
 \subsection{Algorithm}
 
 \textbf{Algorithm 1:} CHELA-SLAY forward pass
 \begin{lstlisting}
-Input:  X, attention_mask, position_embeddings
+Input:  X, attention\_mask, position\_embeddings
 Output: Y
 
- 1: Q $\leftarrow$ W_q X                          LoRA
- 2: K $\leftarrow$ W_k X
- 3: V $\leftarrow$ W_v X
+ 1: Q $\leftarrow$ W\_q X                          LoRA
+ 2: K $\leftarrow$ W\_k X
+ 3: V $\leftarrow$ W\_v X
  4: if RoPE: Q, K $\leftarrow$ rotary(Q, K)
- 5: if GQA: K, V $\leftarrow$ repeat_kv(...)
+ 5: if GQA: K, V $\leftarrow$ repeat\_kv(...)
  6:
  7: # Dense stream
- 8: S_dense $\leftarrow$ Q K^T / $\sqrt{}$d_h
- 9: S_dense = mask(S_dense)
-10: O_dense $\leftarrow$ softmax(S_dense) V
+ 8: S\_dense $\leftarrow$ Q K^T / $\sqrt{}$d\_h
+ 9: S\_dense = mask(S\_dense)
+10: O\_dense $\leftarrow$ softmax(S\_dense) V
 11:
 12: # Linear stream
 13: Q  $\leftarrow$ normalize(Q)
 14: K  $\leftarrow$ normalize(K)
-15:  _Q $\leftarrow$ YatKernel(Q )
-16:  _K $\leftarrow$ YatKernel(K )
+15:  \_Q $\leftarrow$ YatKernel(Q )
+16:  \_K $\leftarrow$ YatKernel(K )
 17: if causal:
-18:     S_cum $\leftarrow$ cumsum( _K^T V)
-19:     Z_cum $\leftarrow$ cumsum( _K)
-20:     O_linear $\leftarrow$  _Q S_cum / ( _Q Z_cum + $\epsilon$)
+18:     S\_cum $\leftarrow$ cumsum( \_K^T V)
+19:     Z\_cum $\leftarrow$ cumsum( \_K)
+20:     O\_linear $\leftarrow$  \_Q S\_cum / ( \_Q Z\_cum + $\epsilon$)
 21: else:
-22:     KV $\leftarrow$  _K^T V
-23:     Z $\leftarrow$ sum( _K)
-24:     O_linear $\leftarrow$  _Q KV / ( _Q Z + $\epsilon$)
+22:     KV $\leftarrow$  \_K^T V
+23:     Z $\leftarrow$ sum( \_K)
+24:     O\_linear $\leftarrow$  \_Q KV / ( \_Q Z + $\epsilon$)
 25:
 26: # Gate + fuse
-27: g $\leftarrow$ sigmoid(W_g X + b_g)
-28: O $\leftarrow$ g O_dense + (1-g) O_linear
-29: Y $\leftarrow$ W_o O
+27: g $\leftarrow$ sigmoid(W\_g X + b\_g)
+28: O $\leftarrow$ g O\_dense + (1-g) O\_linear
+29: Y $\leftarrow$ W\_o O
 30: return Y
 \end{lstlisting}
 

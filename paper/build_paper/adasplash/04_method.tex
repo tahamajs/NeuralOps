@@ -28,14 +28,14 @@ four modifications:
     |    1. Project with frozen base + LoRA    |
     |    2. Apply splash mask                  |
     |    3. Apply $\alpha$-entmax                     |
-    |    4. Compute context, apply out_proj    |
+    |    4. Compute context, apply out\_proj    |
     +------------------+-----------------------+
                        |
                         
     +------------------------------------------+
     |  Compressed attention with:              |
     |    - Frozen base weights (exact copy)    |
-    |    - Trainable LoRA adapters (rank r_L)  |
+    |    - Trainable LoRA adapters (rank r\_L)  |
     |    - $\alpha$-entmax sparse activations         |
     |    - Local splash window                 |
     +------------------------------------------+
@@ -48,7 +48,7 @@ four modifications:
 Given scores $s \in \mathbb{R}^{L}$, compute:
 
 \[
-p_i = \max(0, (\alpha - 1) s_i - \tau)^{1/(\alpha - 1)}
+p\_i = \max(0, (\alpha - 1) s\_i - \tau)^{1/(\alpha - 1)}
 \tag{4.1}
 \]
 
@@ -58,36 +58,36 @@ with $\tau$ chosen so that $\sum_i p_i = 1$.
 
 \textbf{Algorithm 1:} $\alpha$-Entmax via bisection
 \begin{lstlisting}
-Input: scores s $\in$ R^{B$\times$H$\times$L_q$\times$L_k}, $\alpha$, valid_mask, n_iter
-Output: p $\in$ R^{B$\times$H$\times$L_q$\times$L_k} with sum_i p_i = 1
+Input: scores s $\in$ R^{B$\times$H$\times$L\_q$\times$L\_k}, $\alpha$, valid\_mask, n\_iter
+Output: p $\in$ R^{B$\times$H$\times$L\_q$\times$L\_k} with sum\_i p\_i = 1
 
-1:  if |$\alpha$ - 1| < $\epsilon$:                          Softmax case
+1:  if |$\alpha$ - 1| \textless{} $\epsilon$:                          Softmax case
 2:      return softmax(s, masked)
 3:
-4:  s_masked $\leftarrow$ mask_invalid(s, -10000)
-5:  s_shift $\leftarrow$ s_masked - max(s_masked)
-6:  scaled $\leftarrow$ s_shift * ($\alpha$ - 1)
+4:  s\_masked $\leftarrow$ mask\_invalid(s, -10000)
+5:  s\_shift $\leftarrow$ s\_masked - max(s\_masked)
+6:  scaled $\leftarrow$ s\_shift * ($\alpha$ - 1)
 7:
-8:  $\tau$_lo $\leftarrow$ min(scaled) - 1
-9:  $\tau$_hi $\leftarrow$ 0
+8:  $\tau$\_lo $\leftarrow$ min(scaled) - 1
+9:  $\tau$\_hi $\leftarrow$ 0
 10:
-11: for _ in range(n_iter):
-12:     $\tau$ $\leftarrow$ ($\tau$_lo + $\tau$_hi) / 2
+11: for \_ in range(n\_iter):
+12:     $\tau$ $\leftarrow$ ($\tau$\_lo + $\tau$\_hi) / 2
 13:     p $\leftarrow$ max(0, scaled - $\tau$)^{1/($\alpha$-1)}
-14:     p $\leftarrow$ mask_invalid(p, 0)
-15:     sum_p $\leftarrow$ sum(p)
-16:     if sum_p > 1:
-17:         $\tau$_lo $\leftarrow$ $\tau$
+14:     p $\leftarrow$ mask\_invalid(p, 0)
+15:     sum\_p $\leftarrow$ sum(p)
+16:     if sum\_p \textgreater{} 1:
+17:         $\tau$\_lo $\leftarrow$ $\tau$
 18:     else:
-19:         $\tau$_hi $\leftarrow$ $\tau$
+19:         $\tau$\_hi $\leftarrow$ $\tau$
 20:
-21: $\tau$ $\leftarrow$ ($\tau$_lo + $\tau$_hi) / 2
+21: $\tau$ $\leftarrow$ ($\tau$\_lo + $\tau$\_hi) / 2
 22: p $\leftarrow$ max(0, scaled - $\tau$)^{1/($\alpha$-1)}
-23: p $\leftarrow$ mask_invalid(p, 0)
+23: p $\leftarrow$ mask\_invalid(p, 0)
 24: p $\leftarrow$ p / sum(p)                            Normalize
 25:
-26: if sum(p) < $\epsilon$:                             Support empty
-27:     p $\leftarrow$ softmax(s_masked)                   Fallback
+26: if sum(p) \textless{} $\epsilon$:                             Support empty
+27:     p $\leftarrow$ softmax(s\_masked)                   Fallback
 28:
 29: return p
 \end{lstlisting}
@@ -137,7 +137,7 @@ plus the first $S$ sink tokens:
 \[
 \text{splash}(i, j) = \begin{cases}
 1 & \text{if } 0 \leq i - j \leq W \\
-1 & \text{if } j < S \\
+1 & \text{if } j \textless{} S \\
 0 & \text{otherwise}
 \end{cases}
 \tag{4.2}
@@ -187,14 +187,14 @@ also frozen if present.
 For each projection, we add a rank-$r_L$ adapter:
 
 \[
-\Delta W_P = B_P A_P, \quad A_P \in \mathbb{R}^{r_L \times d_\text{in}}, \quad B_P \in \mathbb{R}^{d_\text{out} \times r_L}
+\Delta W\_P = B\_P A\_P, \quad A\_P \in \mathbb{R}^{r\_L \times d\_\text{in}}, \quad B\_P \in \mathbb{R}^{d\_\text{out} \times r\_L}
 \tag{4.3}
 \]
 
 with initialization:
 
 \[
-A_P \sim \mathcal{N}(0, \sigma^2), \quad B_P = 0
+A\_P \sim \mathcal{N}(0, \sigma^2), \quad B\_P = 0
 \tag{4.4}
 \]
 
@@ -204,12 +204,12 @@ pretrained model exactly.
 \subsubsection{Forward Pass}
 
 \[
-\text{Proj}_P(x) = x W_P^\top + x (B_P A_P)^\top + b_P
+\text{Proj}\_P(x) = x W\_P^\top + x (B\_P A\_P)^\top + b\_P
 \tag{4.5}
 \]
 
 \[
-\text{Proj}_P(x) = x W_P^\top + (x A_P^\top) B_P^\top + b_P
+\text{Proj}\_P(x) = x W\_P^\top + (x A\_P^\top) B\_P^\top + b\_P
 \tag{4.6}
 \]
 
@@ -241,7 +241,7 @@ parameters. Across 4 projections $\times$ $N_l$ layers: significant addition.
 
 \begin{lstlisting}
 # Nested encoder detection
-is_nested = (
+is\_nested = (
     hasattr(src, "self") and hasattr(src, "output") and
     hasattr(src.self, "query")
 )
@@ -255,7 +255,7 @@ For nested encoders, we extract $Q, K, V$ from \texttt{src.self} and set
 After copying, we verify:
 
 \[
-\|W_P\|_F > 10^{-4} \quad \forall P \in \{Q, K, V\}
+\|W\_P\|\_F \textgreater{} 10^{-4} \quad \forall P \in \{Q, K, V\}
 \tag{4.7}
 \]
 
@@ -265,34 +265,34 @@ If a projection has near-zero norm, we raise an error and skip injection.
 
 \textbf{Algorithm 2:} AdaSplash forward pass
 \begin{lstlisting}
-Input:  hidden_states X $\in$ R^{B$\times$L$\times$d}
-        attention_mask, position_embeddings
-        hyperparameters $\alpha$, W, S, r_L
+Input:  hidden\_states X $\in$ R^{B$\times$L$\times$d}
+        attention\_mask, position\_embeddings
+        hyperparameters $\alpha$, W, S, r\_L
 Output: output Y $\in$ R^{B$\times$L$\times$d}
 
- 1: Q $\leftarrow$ X W_Q^T + (X A_Q^T) B_Q^T
- 2: K $\leftarrow$ X W_K^T + (X A_K^T) B_K^T
- 3: V $\leftarrow$ X W_V^T + (X A_V^T) B_V^T
+ 1: Q $\leftarrow$ X W\_Q^T + (X A\_Q^T) B\_Q^T
+ 2: K $\leftarrow$ X W\_K^T + (X A\_K^T) B\_K^T
+ 3: V $\leftarrow$ X W\_V^T + (X A\_V^T) B\_V^T
  4:
- 5: if position_embeddings: (Q, K) $\leftarrow$ apply_rotary(Q, K, cos, sin)
- 6: if H_kv < H: K, V $\leftarrow$ repeat_kv(K, V)
+ 5: if position\_embeddings: (Q, K) $\leftarrow$ apply\_rotary(Q, K, cos, sin)
+ 6: if H\_kv \textless{} H: K, V $\leftarrow$ repeat\_kv(K, V)
  7:
- 8: S $\leftarrow$ (Q @ K^T) / $\sqrt{}$d_h
- 9: S $\leftarrow$ apply_attention_mask(S, mask)
+ 8: S $\leftarrow$ (Q @ K^T) / $\sqrt{}$d\_h
+ 9: S $\leftarrow$ apply\_attention\_mask(S, mask)
 10:
-11: if is_decoder:
-12:     causal_mask $\leftarrow$ tril(ones(L, L))
-13:     splash_mask $\leftarrow$ (0 $\le$ i - j $\le$ W) | (j < S)
-14:     S $\leftarrow$ S.masked_fill(~(causal \& splash), -10000)
+11: if is\_decoder:
+12:     causal\_mask $\leftarrow$ tril(ones(L, L))
+13:     splash\_mask $\leftarrow$ (0 $\le$ i - j $\le$ W) | (j \textless{} S)
+14:     S $\leftarrow$ S.masked\_fill(~(causal \& splash), -10000)
 15:
-16: A $\leftarrow$ $\alpha$_entmax(S, $\alpha$)
+16: A $\leftarrow$ $\alpha$\_entmax(S, $\alpha$)
 17: A $\leftarrow$ dropout(A)
 18:
 19: C $\leftarrow$ A @ V
-20: C $\leftarrow$ C.view(B, L, H   d_h)
+20: C $\leftarrow$ C.view(B, L, H   d\_h)
 21:
-22: if is_nested: Y $\leftarrow$ C
-23: else:        Y $\leftarrow$ C W_O^T + (C A_O^T) B_O^T + b_O
+22: if is\_nested: Y $\leftarrow$ C
+23: else:        Y $\leftarrow$ C W\_O^T + (C A\_O^T) B\_O^T + b\_O
 24:
 25: return Y
 \end{lstlisting}

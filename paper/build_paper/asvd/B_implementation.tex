@@ -5,26 +5,26 @@
 
 \begin{lstlisting}
 class ASVDLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank, bias=True,
-                 lora_rank=0, freeze_base=False):
-        super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
+    def \_\_init\_\_(self, in\_features, out\_features, rank, bias=True,
+                 lora\_rank=0, freeze\_base=False):
+        super().\_\_init\_\_()
+        self.in\_features = in\_features
+        self.out\_features = out\_features
         self.rank = rank
         
-        self.U = nn.Parameter(torch.empty(out_features, rank))
+        self.U = nn.Parameter(torch.empty(out\_features, rank))
         self.S = nn.Parameter(torch.empty(rank))
-        self.V = nn.Parameter(torch.empty(rank, in_features))
+        self.V = nn.Parameter(torch.empty(rank, in\_features))
         
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
+            self.bias = nn.Parameter(torch.empty(out\_features))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.zeros(out\_features, lora\_rank))
         
-        self.reset_parameters()
-        if freeze_base:
-            self.freeze_base_weights()
+        self.reset\_parameters()
+        if freeze\_base:
+            self.freeze\_base\_weights()
     
     def forward(self, x):
         Vx = F.linear(x, self.V)          # x @ V^T
@@ -32,58 +32,58 @@ class ASVDLinear(nn.Module):
         out = F.linear(SVx, self.U)        # @ U^T
         if self.bias is not None:
             out = out + self.bias
-        if self.lora_rank > 0:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
-        return out * self.output_scale
+        if self.lora\_rank \textgreater{} 0:
+            out = out + F.linear(F.linear(x, self.lora\_A), self.lora\_B)
+        return out * self.output\_scale
 \end{lstlisting}
 
 \subsection{B.2 Energy-Based Rank Selection}
 
 \begin{lstlisting}
-def _decompose_and_set(self, target, src_weight, src_bias, proj_name):
-    W = src_weight.detach().float()
-    U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+def \_decompose\_and\_set(self, target, src\_weight, src\_bias, proj\_name):
+    W = src\_weight.detach().float()
+    U, S, Vt = torch.linalg.svd(W, full\_matrices=False)
     
     # Cumulative energy
-    total_energy = torch.sum(S ** 2)
-    cum_energy = torch.cumsum(S ** 2, dim=0) / (total_energy + 1e-12)
+    total\_energy = torch.sum(S ** 2)
+    cum\_energy = torch.cumsum(S ** 2, dim=0) / (total\_energy + 1e-12)
     
     # Select rank
-    target_energy = max(self.energy_threshold, 
-                       1.0 - self.error_threshold ** 2)
-    indices = (cum_energy >= target_energy).nonzero()
-    r = indices[0].item() + 1 if len(indices) > 0 else min(U.size(1), Vt.size(0))
+    target\_energy = max(self.energy\_threshold, 
+                       1.0 - self.error\_threshold ** 2)
+    indices = (cum\_energy \textgreater{}= target\_energy).nonzero()
+    r = indices[0].item() + 1 if len(indices) \textgreater{} 0 else min(U.size(1), Vt.size(0))
     
-    if self.dynamic_rank:
+    if self.dynamic\_rank:
         r = max(16, min(r, U.size(1), Vt.size(0)))
     else:
         r = min(self.rank, U.size(1), Vt.size(0))
     
     # Validate
-    w_rec = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
-    rel_err = float((torch.norm(W - w_rec) / (torch.norm(W) + 1e-9)).item())
+    w\_rec = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
+    rel\_err = float((torch.norm(W - w\_rec) / (torch.norm(W) + 1e-9)).item())
     
-    if rel_err > self.error_threshold:
+    if rel\_err \textgreater{} self.error\_threshold:
         raise RuntimeError(...)
     
-    target.set_svd_factors(U[:, :r], Vt[:r, :], S[:r], bias=src_bias)
-    return rel_err
+    target.set\_svd\_factors(U[:, :r], Vt[:r, :], S[:r], bias=src\_bias)
+    return rel\_err
 \end{lstlisting}
 
 \subsection{B.3 The `set\_identity` Method}
 
 \begin{lstlisting}
-def set_identity(self):
-    with torch.no_grad():
-        self.U.data.zero_()
-        self.V.data.zero_()
-        self.S.data.fill_(1.0)
-        r = min(self.rank, self.in_features, self.out_features)
-        self.U.data[:r, :r].fill_diagonal_(1.0)
-        self.V.data[:r, :r].fill_diagonal_(1.0)
+def set\_identity(self):
+    with torch.no\_grad():
+        self.U.data.zero\_()
+        self.V.data.zero\_()
+        self.S.data.fill\_(1.0)
+        r = min(self.rank, self.in\_features, self.out\_features)
+        self.U.data[:r, :r].fill\_diagonal\_(1.0)
+        self.V.data[:r, :r].fill\_diagonal\_(1.0)
         if self.bias is not None:
-            self.bias.data.zero_()
-        self.freeze_base_weights()
+            self.bias.data.zero\_()
+        self.freeze\_base\_weights()
 \end{lstlisting}
 
 \subsection{B.4 Pre-Flight Extraction}
@@ -92,10 +92,10 @@ In \texttt{inject\_asvd}:
 
 \begin{lstlisting}
 try:
-    new_attn = ASVDAttention(target_config, rank=rank,
-                              pretrained_attn=old_attn, **kwargs)
-    replace_attention(layer, new_attn)
-    return new_attn
+    new\_attn = ASVDAttention(target\_config, rank=rank,
+                              pretrained\_attn=old\_attn, **kwargs)
+    replace\_attention(layer, new\_attn)
+    return new\_attn
 except RuntimeError as err:
     logger.warning(f"Pre-flight extraction failed: {err}. Aborting.")
 \end{lstlisting}

@@ -4,7 +4,7 @@
 \subsection{Scaled Dot-Product Attention}
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_h}}\right)V
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d\_h}}\right)V
 \tag{3.1}
 \]
 
@@ -16,7 +16,7 @@ matmul $AV$ is $O(B H L^2 d_h)$.
 Replace $K, V$ with subsets $K_{\mathcal{S}}, V_{\mathcal{S}}$:
 
 \[
-\text{Attn}'(Q, K, V) = \text{softmax}\!\left(\frac{QK_{\mathcal{S}}^\top}{\sqrt{d_h}}\right)V_{\mathcal{S}}
+\text{Attn}'(Q, K, V) = \text{softmax}\!\left(\frac{QK\_{\mathcal{S}}^\top}{\sqrt{d\_h}}\right)V\_{\mathcal{S}}
 \tag{3.2}
 \]
 
@@ -28,7 +28,7 @@ for the value matmul. With $|\mathcal{S}| = rL$, cost reduces by factor $r$.
 For a token's key vector $k \in \mathbb{R}^{d_h}$:
 
 \[
-\text{Var}(k) = \frac{1}{d_h} \sum_{j=1}^{d_h} (k_j - \bar{k})^2
+\text{Var}(k) = \frac{1}{d\_h} \sum\_{j=1}^{d\_h} (k\_j - \bar{k})^2
 \tag{3.3}
 \]
 
@@ -57,7 +57,7 @@ importance[:, 0] = 1e9
 LoRA (Hu et al., 2021):
 
 \[
-W_{\text{eff}} = W_{\text{frozen}} + \frac{\alpha}{r_L} BA
+W\_{\text{eff}} = W\_{\text{frozen}} + \frac{\alpha}{r\_L} BA
 \tag{3.4}
 \]
 
@@ -82,7 +82,7 @@ $r_L$ & LoRA rank \\
 \bottomrule
 \end{tabular}
 \end{table}
-</parameter>
+\textless{}/parameter\textgreater{}
 \begin{lstlisting}
 
 ---

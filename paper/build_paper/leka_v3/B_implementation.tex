@@ -3,11 +3,11 @@
 \subsection{B.1 Kernel Feature Map}
 
 \begin{lstlisting}
-def kernel_feature_map(self, x):
+def kernel\_feature\_map(self, x):
     proj1 = self.proj1.to(device=x.device, dtype=x.dtype)
     f1 = torch.matmul(x, proj1)
     f1 = torch.clamp(f1, min=-10.0, max=10.0)
-    return torch.cat([torch.cos(f1), torch.sin(f1)], dim=-1) / math.sqrt(self.feature_dim)
+    return torch.cat([torch.cos(f1), torch.sin(f1)], dim=-1) / math.sqrt(self.feature\_dim)
 \end{lstlisting}
 
 The \texttt{clamp} prevents overflow in \texttt{cos}/\texttt{sin} for extreme inputs.
@@ -15,75 +15,75 @@ The \texttt{clamp} prevents overflow in \texttt{cos}/\texttt{sin} for extreme in
 \subsection{B.2 Landmark Selection}
 
 \begin{lstlisting}
-def select_landmarks(self, K_features, V, valid_mask=None, num_landmarks=None, return_indices=False):
-    B, H, N, feat_dim = K_features.shape
-    target_landmarks = num_landmarks or self.num_landmarks
-    L = min(target_landmarks, N)
+def select\_landmarks(self, K\_features, V, valid\_mask=None, num\_landmarks=None, return\_indices=False):
+    B, H, N, feat\_dim = K\_features.shape
+    target\_landmarks = num\_landmarks or self.num\_landmarks
+    L = min(target\_landmarks, N)
     
-    scores = self.landmark_scorer(K_features)[..., 0]  # (B, H, N)
+    scores = self.landmark\_scorer(K\_features)[..., 0]  # (B, H, N)
     
-    if valid_mask is not None:
-        pad = (~valid_mask).unsqueeze(1)
-        scores = scores.masked_fill(pad.bool(), -1e4)
+    if valid\_mask is not None:
+        pad = (~valid\_mask).unsqueeze(1)
+        scores = scores.masked\_fill(pad.bool(), -1e4)
     
-    anchor_boost = torch.zeros_like(scores)
-    anchor_boost[:, :, 0] = 1e4
-    scores = scores + anchor_boost
+    anchor\_boost = torch.zeros\_like(scores)
+    anchor\_boost[:, :, 0] = 1e4
+    scores = scores + anchor\_boost
     
-    _, idx = scores.topk(L, dim=-1)
+    \_, idx = scores.topk(L, dim=-1)
     idx[:, :, 0] = 0  # Force [CLS]
     
-    K_land = torch.gather(K_features, 2, idx.unsqueeze(-1).expand(-1, -1, -1, feat_dim))
-    V_land = torch.gather(V, 2, idx.unsqueeze(-1).expand(-1, -1, -1, V.shape[-1]))
+    K\_land = torch.gather(K\_features, 2, idx.unsqueeze(-1).expand(-1, -1, -1, feat\_dim))
+    V\_land = torch.gather(V, 2, idx.unsqueeze(-1).expand(-1, -1, -1, V.shape[-1]))
     
-    if return_indices:
-        return K_land, V_land, idx
-    return K_land, V_land
+    if return\_indices:
+        return K\_land, V\_land, idx
+    return K\_land, V\_land
 \end{lstlisting}
 
 \subsection{B.3 Forward Pass}
 
 \begin{lstlisting}
-def forward(self, hidden_states, attention_mask=None, ...):
-    B, N, D = hidden_states.shape
-    H = self.num_heads
+def forward(self, hidden\_states, attention\_mask=None, ...):
+    B, N, D = hidden\_states.shape
+    H = self.num\_heads
     
-    valid_mask = get_token_valid_mask(attention_mask, B, N, hidden_states.device)
+    valid\_mask = get\_token\_valid\_mask(attention\_mask, B, N, hidden\_states.device)
     
-    q = self.query(hidden_states).view(B, N, H, self.head_dim).transpose(1, 2)
-    k = self.key(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
-    v = self.value(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2)
+    q = self.query(hidden\_states).view(B, N, H, self.head\_dim).transpose(1, 2)
+    k = self.key(hidden\_states).view(B, N, self.num\_kv\_heads, self.head\_dim).transpose(1, 2)
+    v = self.value(hidden\_states).view(B, N, self.num\_kv\_heads, self.head\_dim).transpose(1, 2)
     
-    if position_embeddings is not None:
-        q, k = apply_rotary_pos_emb(q, k, cos, sin)
+    if position\_embeddings is not None:
+        q, k = apply\_rotary\_pos\_emb(q, k, cos, sin)
     
-    if self.kv_repeat > 1:
-        k = repeat_kv(k, self.kv_repeat)
-        v = repeat_kv(v, self.kv_repeat)
+    if self.kv\_repeat \textgreater{} 1:
+        k = repeat\_kv(k, self.kv\_repeat)
+        v = repeat\_kv(v, self.kv\_repeat)
     
-    Q_features = self.kernel_feature_map(q)
-    K_features = self.kernel_feature_map(k)
+    Q\_features = self.kernel\_feature\_map(q)
+    K\_features = self.kernel\_feature\_map(k)
     
-    effective_landmarks = min(N, max(self.num_landmarks, N // 2))
-    K_land, V_land, land_idx = self.select_landmarks(
-        K_features, v, valid_mask, num_landmarks=effective_landmarks, return_indices=True
+    effective\_landmarks = min(N, max(self.num\_landmarks, N // 2))
+    K\_land, V\_land, land\_idx = self.select\_landmarks(
+        K\_features, v, valid\_mask, num\_landmarks=effective\_landmarks, return\_indices=True
     )
     
-    W = self.W_corr.unsqueeze(0).expand(B, -1, -1, -1)
-    V_land_adj = torch.matmul(V_land, W)
+    W = self.W\_corr.unsqueeze(0).expand(B, -1, -1, -1)
+    V\_land\_adj = torch.matmul(V\_land, W)
     
-    attn_weights = torch.matmul(Q_features.float(), K_land.transpose(-2, -1).float())
+    attn\_weights = torch.matmul(Q\_features.float(), K\_land.transpose(-2, -1).float())
     # ... (masking, softpick, etc.)
 \end{lstlisting}
 
 \subsection{B.4 Causal Mask for Landmarks}
 
 \begin{lstlisting}
-if self.is_decoder:
-    q_pos = torch.arange(N).view(1, 1, N, 1)
-    k_land_pos = land_idx.unsqueeze(2)
-    causal_land_mask = (k_land_pos <= q_pos)
-    attn_weights = attn_weights.masked_fill(~causal_land_mask, -1e4)
+if self.is\_decoder:
+    q\_pos = torch.arange(N).view(1, 1, N, 1)
+    k\_land\_pos = land\_idx.unsqueeze(2)
+    causal\_land\_mask = (k\_land\_pos \textless{}= q\_pos)
+    attn\_weights = attn\_weights.masked\_fill(~causal\_land\_mask, -1e4)
 \end{lstlisting}
 
 Note: \texttt{land\_idx} contains \textbf{original positions} of landmarks.

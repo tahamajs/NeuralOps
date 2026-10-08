@@ -5,50 +5,50 @@
 
 \begin{lstlisting}
 class GroupedQueryAttention(BaseAttention):
-    def __init__(
+    def \_\_init\_\_(
         self, config=None, rank=None,
-        dim=None, num_heads=None, num_kv_heads=None,
-        lora_rank=16, lora_alpha=32.0,
-        pretrained_attn=None, old_attn=None, **kwargs,
+        dim=None, num\_heads=None, num\_kv\_heads=None,
+        lora\_rank=16, lora\_alpha=32.0,
+        pretrained\_attn=None, old\_attn=None, **kwargs,
     ):
-        super().__init__(config, rank)
-        src_attn = pretrained_attn or old_attn
+        super().\_\_init\_\_(config, rank)
+        src\_attn = pretrained\_attn or old\_attn
         
-        # Resolve dim, num_heads, num_kv_heads
-        self.hidden_size = ...
-        self.num_heads = ...
-        self.num_kv_heads = min(self.num_heads, max(1, num_kv_heads))
+        # Resolve dim, num\_heads, num\_kv\_heads
+        self.hidden\_size = ...
+        self.num\_heads = ...
+        self.num\_kv\_heads = min(self.num\_heads, max(1, num\_kv\_heads))
         
-        self.head_dim = self.hidden_size // self.num_heads
-        self.kv_repeat = self.num_heads // self.num_kv_heads
+        self.head\_dim = self.hidden\_size // self.num\_heads
+        self.kv\_repeat = self.num\_heads // self.num\_kv\_heads
         
         # Projections
-        self.query = LoRALinear(self.hidden_size, self.all_head_size, ...)
-        self.key = LoRALinear(self.hidden_size, self.kv_head_size, ...)
-        self.value = LoRALinear(self.hidden_size, self.kv_head_size, ...)
-        self.out_proj = LoRALinear(self.all_head_size, self.hidden_size, ...)
+        self.query = LoRALinear(self.hidden\_size, self.all\_head\_size, ...)
+        self.key = LoRALinear(self.hidden\_size, self.kv\_head\_size, ...)
+        self.value = LoRALinear(self.hidden\_size, self.kv\_head\_size, ...)
+        self.out\_proj = LoRALinear(self.all\_head\_size, self.hidden\_size, ...)
         
-        if src_attn is not None:
-            self.copy_weights(src_attn)
+        if src\_attn is not None:
+            self.copy\_weights(src\_attn)
 \end{lstlisting}
 
 \subsection{B.2 `copy\_weights`}
 
 \begin{lstlisting}
-def copy_weights(self, src):
+def copy\_weights(self, src):
     extracted = {"q": (None, None), "k": None, "v": None, "o": None}
     
     # Extract from various architectures
-    if hasattr(src, "c_attn"):  # GPT-2
-        w, b = _unpack_weight_bias(src.c_attn)
+    if hasattr(src, "c\_attn"):  # GPT-2
+        w, b = \_unpack\_weight\_bias(src.c\_attn)
         w = w.t()  # Conv1D transpose
-        q_w, k_w, v_w = w.chunk(3, dim=0)
+        q\_w, k\_w, v\_w = w.chunk(3, dim=0)
         ...
     elif hasattr(src, "self"):  # RoBERTa nested
-        q_w, b_q = _unpack_weight_bias(src.self.query)
+        q\_w, b\_q = \_unpack\_weight\_bias(src.self.query)
         ...
-    elif hasattr(src, "q_lin"):  # DistilBERT
-        q_w, b_q = _unpack_weight_bias(src.q_lin)
+    elif hasattr(src, "q\_lin"):  # DistilBERT
+        q\_w, b\_q = \_unpack\_weight\_bias(src.q\_lin)
         ...
     
     # Handle MHA $\to$ GQA conversion
@@ -56,66 +56,66 @@ def copy_weights(self, src):
     # K, V: group-average
     
     # Copy into projections
-    with torch.no_grad():
-        for proj_key, target in [("q", self.query), ("k", self.key), ...]:
-            w, b = extracted[proj_key]
+    with torch.no\_grad():
+        for proj\_key, target in [("q", self.query), ("k", self.key), ...]:
+            w, b = extracted[proj\_key]
             if w is not None:
                 # Shape-aware copy
                 ...
-                target.freeze_base_weights()
+                target.freeze\_base\_weights()
 \end{lstlisting}
 
 \subsection{B.3 Group Averaging}
 
 \begin{lstlisting}
-def group_average(w_mha, H_src, G_tgt, d_h):
+def group\_average(w\_mha, H\_src, G\_tgt, d\_h):
     """Average KV heads into G groups."""
-    r = H_src // G_tgt
-    w_grouped = w_mha.view(d_h * G_tgt, r, ...).mean(dim=1)
-    return w_grouped
+    r = H\_src // G\_tgt
+    w\_grouped = w\_mha.view(d\_h * G\_tgt, r, ...).mean(dim=1)
+    return w\_grouped
 \end{lstlisting}
 
 \subsection{B.4 `repeat\_kv`}
 
 \begin{lstlisting}
-def repeat_kv(x, n_rep):
-    if n_rep == 1:
+def repeat\_kv(x, n\_rep):
+    if n\_rep == 1:
         return x
-    B, G, L, d_h = x.shape
-    x = x[:, :, None, :, :].expand(B, G, n_rep, L, d_h)
-    return x.reshape(B, G * n_rep, L, d_h)
+    B, G, L, d\_h = x.shape
+    x = x[:, :, None, :, :].expand(B, G, n\_rep, L, d\_h)
+    return x.reshape(B, G * n\_rep, L, d\_h)
 \end{lstlisting}
 
 \subsection{B.5 Forward Pass}
 
 \begin{lstlisting}
-def forward(self, hidden_states, attention_mask=None, ...):
-    B, N_q, D = hidden_states.shape
+def forward(self, hidden\_states, attention\_mask=None, ...):
+    B, N\_q, D = hidden\_states.shape
     
-    Q = self.query(hidden_states).view(B, N_q, H, d).transpose(1, 2)
-    K = self.key(hidden_states).view(B, N_q, G, d).transpose(1, 2)
-    V = self.value(hidden_states).view(B, N_q, G, d).transpose(1, 2)
+    Q = self.query(hidden\_states).view(B, N\_q, H, d).transpose(1, 2)
+    K = self.key(hidden\_states).view(B, N\_q, G, d).transpose(1, 2)
+    V = self.value(hidden\_states).view(B, N\_q, G, d).transpose(1, 2)
     
     if RoPE:
-        Q, K = apply_rotary_pos_emb(Q, K, ...)
+        Q, K = apply\_rotary\_pos\_emb(Q, K, ...)
     
-    if self.kv_repeat > 1:
-        K = repeat_kv(K, self.kv_repeat)
-        V = repeat_kv(V, self.kv_repeat)
+    if self.kv\_repeat \textgreater{} 1:
+        K = repeat\_kv(K, self.kv\_repeat)
+        V = repeat\_kv(V, self.kv\_repeat)
     
     scores = Q @ K.transpose(-2, -1) / sqrt(d)
     
     if causal:
-        scores = scores.masked_fill(~causal_tril, -10000.0)
+        scores = scores.masked\_fill(~causal\_tril, -10000.0)
     
     attn = softmax(scores)
     context = attn @ V
-    context = context.transpose(1, 2).view(B, N_q, H * d)
+    context = context.transpose(1, 2).view(B, N\_q, H * d)
     
-    if self.is_nested_encoder:
+    if self.is\_nested\_encoder:
         return context, None
     
-    output = self.out_proj(context)
+    output = self.out\_proj(context)
     return output, None
 \end{lstlisting}
 
@@ -125,10 +125,10 @@ def forward(self, hidden_states, attention_mask=None, ...):
 
 \begin{lstlisting}
 # WRONG
-w = src.c_attn.weight  # (in, out) -- no transpose
+w = src.c\_attn.weight  # (in, out) -- no transpose
 
 # RIGHT
-w = src.c_attn.weight.t()  # (out, in)
+w = src.c\_attn.weight.t()  # (out, in)
 \end{lstlisting}
 
 \subsubsection{B.6.2 Missing Divide Check}

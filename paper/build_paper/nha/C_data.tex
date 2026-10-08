@@ -171,11 +171,11 @@ Inference time & 2.3 s s \\
 {
   "nha": {
     "distilbert": {
-      "window_size": 128,
-      "rff_features": 64,
-      "accuracy_pct": 86.4,
-      "mean_gate": 0.94,
-      "peak_vram_mb": 380 MB
+      "window\_size": 128,
+      "rff\_features": 64,
+      "accuracy\_pct": 86.4,
+      "mean\_gate": 0.94,
+      "peak\_vram\_mb": 380 MB
     },
     "roberta": {...},
     "gpt2": {...}
@@ -187,11 +187,11 @@ Inference time & 2.3 s s \\
 
 \begin{lstlisting}
 # Main
-python run_all_4_nha.py --window_size 64 --rff_features 128 --gate_init_bias 3.0
+python run\_all\_4\_nha.py --window\_size 64 --rff\_features 128 --gate\_init\_bias 3.0
 
 # Window sweep
 for w in 16 32 64 128; do
-    python run_all_4_nha.py --window_size $w
+    python run\_all\_4\_nha.py --window\_size $w
 done
 \end{lstlisting}
 \begin{lstlisting}

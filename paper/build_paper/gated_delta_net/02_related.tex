@@ -7,7 +7,7 @@
 with a kernel function $\phi$:
 
 \[
-y_t = \frac{\sum_{s \leq t} \phi(q_t)^\top \phi(k_s) v_s}{\sum_{s \leq t} \phi(q_t)^\top \phi(k_s)}
+y\_t = \frac{\sum\_{s \leq t} \phi(q\_t)^\top \phi(k\_s) v\_s}{\sum\_{s \leq t} \phi(q\_t)^\top \phi(k\_s)}
 \tag{2.1}
 \]
 
@@ -21,7 +21,7 @@ $\phi$. Same linear state but with better kernel approximation.
 
 \textbf{RetNet} (Sun et al., 2023). Introduces exponential decay:
 \[
-S_t = \gamma S_{t-1} + k_t v_t^\top
+S\_t = \gamma S\_{t-1} + k\_t v\_t^\top
 \tag{2.2}
 \]
 with fixed (not input-dependent) $\gamma$.
@@ -36,7 +36,7 @@ but does not use the Delta Rule.
 \textbf{DeltaNet} (Schlag et al., 2021). Introduces the Delta Rule to linear 
 attention:
 \[
-S_t = S_{t-1} + \beta_t k_t^\top (v_t - k_t S_{t-1})
+S\_t = S\_{t-1} + \beta\_t k\_t^\top (v\_t - k\_t S\_{t-1})
 \tag{2.3}
 \]
 

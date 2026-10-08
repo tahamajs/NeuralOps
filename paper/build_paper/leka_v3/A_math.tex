@@ -5,7 +5,7 @@
 For $x \in \mathbb{R}^{d_h}$:
 
 \[
-\phi(x) = \frac{1}{\sqrt{d_\text{feat}}} \begin{pmatrix} \cos(W_1 x) \\ \sin(W_1 x) \end{pmatrix}
+\phi(x) = \frac{1}{\sqrt{d\_\text{feat}}} \begin{pmatrix} \cos(W\_1 x) \\ \sin(W\_1 x) \end{pmatrix}
 \tag{A.1}
 \]
 
@@ -14,14 +14,14 @@ with $W_1 \in \mathbb{R}^{d_h \times d_\text{feat}/2}$.
 \textbf{Kernel approximation:}
 
 \[
-\phi(x)^\top \phi(y) = \frac{1}{d_\text{feat}} \sum_{k=1}^{d_\text{feat}/2} [\cos(w_k \cdot x) \cos(w_k \cdot y) + \sin(w_k \cdot x) \sin(w_k \cdot y)]
+\phi(x)^\top \phi(y) = \frac{1}{d\_\text{feat}} \sum\_{k=1}^{d\_\text{feat}/2} [\cos(w\_k \cdot x) \cos(w\_k \cdot y) + \sin(w\_k \cdot x) \sin(w\_k \cdot y)]
 \tag{A.2}
 \]
 
 Using $\cos(a)\cos(b) + \sin(a)\sin(b) = \cos(a - b)$:
 
 \[
-\phi(x)^\top \phi(y) = \frac{1}{d_\text{feat}} \sum_k \cos(w_k \cdot (x - y))
+\phi(x)^\top \phi(y) = \frac{1}{d\_\text{feat}} \sum\_k \cos(w\_k \cdot (x - y))
 \tag{A.3}
 \]
 
@@ -32,21 +32,21 @@ By Bochner's theorem, this approximates $e^{-\|x-y\|^2/2}$, the Gaussian kernel.
 For query $q_i$ and landmark set $\mathcal{L}$:
 
 \[
-\text{Out}_\text{land}[i] = \frac{\sum_{j \in \mathcal{L}} \phi(q_i)^\top \phi(k_j) \cdot V_j}{\sum_{j \in \mathcal{L}} \phi(q_i)^\top \phi(k_j)}
+\text{Out}\_\text{land}[i] = \frac{\sum\_{j \in \mathcal{L}} \phi(q\_i)^\top \phi(k\_j) \cdot V\_j}{\sum\_{j \in \mathcal{L}} \phi(q\_i)^\top \phi(k\_j)}
 \tag{A.4}
 \]
 
 Define:
 
 \[
-S = \sum_{j \in \mathcal{L}} \phi(k_j) V_j^\top, \quad Z = \sum_{j \in \mathcal{L}} \phi(k_j)
+S = \sum\_{j \in \mathcal{L}} \phi(k\_j) V\_j^\top, \quad Z = \sum\_{j \in \mathcal{L}} \phi(k\_j)
 \tag{A.5}
 \]
 
 Then:
 
 \[
-\text{Out}_\text{land}[i] = \frac{\phi(q_i)^\top S}{\phi(q_i)^\top Z}
+\text{Out}\_\text{land}[i] = \frac{\phi(q\_i)^\top S}{\phi(q\_i)^\top Z}
 \tag{A.6}
 \]
 
@@ -75,7 +75,7 @@ per token: $128 d_\text{feat} + 64$. For $L$ tokens: $\mathcal{O}(L d_\text{feat
 attention:
 
 \[
-V_\mathcal{L}^\text{adj} = V_\mathcal{L} W_\text{corr}
+V\_\mathcal{L}^\text{adj} = V\_\mathcal{L} W\_\text{corr}
 \tag{A.7}
 \]
 

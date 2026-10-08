@@ -19,7 +19,7 @@ inference.
 $\phi(\cdot)$ such that the attention can be decomposed:
 
 \[
-\text{Attn}(Q_i, K, V) \approx \frac{\phi(Q_i)^\top \sum_j \phi(K_j) V_j^\top}{\phi(Q_i)^\top \sum_j \phi(K_j)}
+\text{Attn}(Q\_i, K, V) \approx \frac{\phi(Q\_i)^\top \sum\_j \phi(K\_j) V\_j^\top}{\phi(Q\_i)^\top \sum\_j \phi(K\_j)}
 \]
 
 The sums $\sum_j \phi(K_j) V_j^\top$ and $\sum_j \phi(K_j)$ can be computed 
@@ -36,14 +36,14 @@ Qin et al. (2022) propose Cosformer, which recovers locality by
 \textbf{reweighting} the key and query features with cosine/sine of position:
 
 \[
-\tilde{q}_i = \phi(q_i) \cdot \cos\!\left(\frac{\pi i}{2 L}\right), \quad
-\tilde{q}'_i = \phi(q_i) \cdot \sin\!\left(\frac{\pi i}{2 L}\right)
+\tilde{q}\_i = \phi(q\_i) \cdot \cos\!\left(\frac{\pi i}{2 L}\right), \quad
+\tilde{q}'\_i = \phi(q\_i) \cdot \sin\!\left(\frac{\pi i}{2 L}\right)
 \]
 
 The attention output becomes:
 
 \[
-\text{Attn}(Q_i, K, V) = \frac{\sum_j \tilde{q}_i^\top \tilde{k}_j V_j + \sum_j \tilde{q}_i'^\top \tilde{k}_j' V_j}{\sum_j \tilde{q}_i^\top \tilde{k}_j + \sum_j \tilde{q}_i'^\top \tilde{k}_j'}
+\text{Attn}(Q\_i, K, V) = \frac{\sum\_j \tilde{q}\_i^\top \tilde{k}\_j V\_j + \sum\_j \tilde{q}\_i'^\top \tilde{k}\_j' V\_j}{\sum\_j \tilde{q}\_i^\top \tilde{k}\_j + \sum\_j \tilde{q}\_i'^\top \tilde{k}\_j'}
 \]
 
 The cosine/sine weights decay with position, giving nearby tokens higher 
@@ -112,7 +112,7 @@ $C$ & Chunk size & 4.4 \\
 \bottomrule
 \end{tabular}
 \end{table}
-</parameter>
+\textless{}/parameter\textgreater{}
 \begin{lstlisting}
 
 ---

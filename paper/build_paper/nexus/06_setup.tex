@@ -78,7 +78,7 @@ WD & 0.01 \\
 \end{itemize}
 \subsection{Quality Gate}
 
-PASS $\ge$ 56\%, PASS\_LOW $\ge$ 50.92\%, FAIL < 50.92\%.
+PASS $\ge$ 56\%, PASS\_LOW $\ge$ 50.92\%, FAIL \textless{} 50.92\%.
 
 \subsection{Hardware}
 
@@ -87,7 +87,7 @@ RTX 4070 Laptop, 8 GB.
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_nexus.py --models distilbert,roberta,gpt2 --recovery_steps 50
+python run\_all\_4\_nexus.py --models distilbert,roberta,gpt2 --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}

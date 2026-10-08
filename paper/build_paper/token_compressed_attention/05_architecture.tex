@@ -25,37 +25,37 @@ handles four patterns:
 \subsubsection{Pattern 1: GPT-2 Conv1D}
 
 \begin{lstlisting}
-c_w = src.c_attn.weight.t()  # Conv1D stores (in, out); transpose
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
+c\_w = src.c\_attn.weight.t()  # Conv1D stores (in, out); transpose
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{Pattern 2: RoBERTa Nested}
 
 \begin{lstlisting}
 if hasattr(src, "self") and hasattr(src, "output"):
-    self.is_nested_encoder = True
-    q_w = src.self.query.weight
-    k_w = src.self.key.weight
-    v_w = src.self.value.weight
-    o_w = src.output.dense.weight
+    self.is\_nested\_encoder = True
+    q\_w = src.self.query.weight
+    k\_w = src.self.key.weight
+    v\_w = src.self.value.weight
+    o\_w = src.output.dense.weight
 \end{lstlisting}
 
 \subsubsection{Pattern 3: Qwen/LLaMA (GQA)}
 
 \begin{lstlisting}
-q_w = src.q_proj.weight  # (H d_h, d)
-k_w = src.k_proj.weight  # (H_kv d_h, d)
-v_w = src.v_proj.weight
-o_w = src.o_proj.weight
+q\_w = src.q\_proj.weight  # (H d\_h, d)
+k\_w = src.k\_proj.weight  # (H\_kv d\_h, d)
+v\_w = src.v\_proj.weight
+o\_w = src.o\_proj.weight
 \end{lstlisting}
 
 \subsubsection{Pattern 4: DistilBERT}
 
 \begin{lstlisting}
-q_w = src.q_lin.weight
-k_w = src.k_lin.weight
-v_w = src.v_lin.weight
-o_w = src.out_lin.weight
+q\_w = src.q\_lin.weight
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
 \end{lstlisting}
 
 \subsubsection{Pattern 5: UniversalAdapter Fallback}
@@ -72,10 +72,10 @@ raw context and the outer \texttt{BertSelfOutput.dense} applies the output proje
 The most delicate part. For decoders:
 
 \begin{lstlisting}
-q_pos = torch.arange(L).view(1, 1, L, 1)
-k_orig_pos = top_idx.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, k)
-causal_mask = (k_orig_pos > q_pos)
-scores = scores.masked_fill(causal_mask, float("-inf"))
+q\_pos = torch.arange(L).view(1, 1, L, 1)
+k\_orig\_pos = top\_idx.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, k)
+causal\_mask = (k\_orig\_pos \textgreater{} q\_pos)
+scores = scores.masked\_fill(causal\_mask, float("-inf"))
 \end{lstlisting}
 
 \textbf{Why this is correct.} Even though compressed keys are indexed $0..k-1$, 
@@ -90,25 +90,25 @@ inputs $\leq i$ by computing gradients.
 Padding tokens are masked out of the score:
 
 \begin{lstlisting}
-total_importance = total_importance.masked_fill(mask == 0, -10000.0)
+total\_importance = total\_importance.masked\_fill(mask == 0, -10000.0)
 \end{lstlisting}
 
 After selection, the compressed mask is gathered:
 
 \begin{lstlisting}
-comp_mask = torch.gather(mask, 1, top_indices)
+comp\_mask = torch.gather(mask, 1, top\_indices)
 \end{lstlisting}
 
 \subsection{Injection Algorithm}
 
 \textbf{Algorithm 2:} Inject TCA into a model
 \begin{lstlisting}
-Input:  model M, compression_ratio  
+Input:  model M, compression\_ratio  
 Output: M with attention replaced
 
-1: for   in transformer_layers(M) do
-2:     src $\leftarrow$ get_attention( )
-3:     new $\leftarrow$ TokenCompressedAttention(config,  , pretrained_attn=src)
+1: for   in transformer\_layers(M) do
+2:     src $\leftarrow$ get\_attention( )
+3:     new $\leftarrow$ TokenCompressedAttention(config,  , pretrained\_attn=src)
 4:     replace( , new)
 5: end for
 6: return M
@@ -117,7 +117,7 @@ Output: M with attention replaced
 \subsection{The `score\_net` Module}
 
 \begin{lstlisting}
-self.score_net = nn.Sequential(
+self.score\_net = nn.Sequential(
     nn.Linear(self.dim, 64),
     nn.GELU(),
     nn.Linear(64, 1),
@@ -148,9 +148,9 @@ Causal leak & Grad check & Not observed \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("token_compressed")
-@ATTENTION_REGISTRY.register("token_compressed_attention")
-@ATTENTION_REGISTRY.register("token_compressed_module")
+@ATTENTION\_REGISTRY.register("token\_compressed")
+@ATTENTION\_REGISTRY.register("token\_compressed\_attention")
+@ATTENTION\_REGISTRY.register("token\_compressed\_module")
 class TokenCompressedAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -163,6 +163,6 @@ class TokenCompressedAttention(BaseAttention):
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.png}
 \caption{High-level architectural diagram of token\_compressed\_attention.}
-\label{fig:arch_token-compressed-attention}
+\label{fig:arch\_token-compressed-attention}
 \end{figure}
 

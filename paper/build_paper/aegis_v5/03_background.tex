@@ -5,11 +5,11 @@
 For input $X \in \mathbb{R}^{B \times L \times d}$:
 
 \[
-Q = X W_Q, \quad K = X W_K, \quad V = X W_V
+Q = X W\_Q, \quad K = X W\_K, \quad V = X W\_V
 \]
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \]
 
 Complexity: $\mathcal{O}(L^2 d_h)$ for scores.
@@ -20,7 +20,7 @@ Local window attention restricts each query to a window of size $W$ around
 it:
 
 \[
-\text{Attn}_\text{local}(q_i, K, V) = \sum_{j : |i - j| \leq W/2} \alpha_{ij} v_j
+\text{Attn}\_\text{local}(q\_i, K, V) = \sum\_{j : |i - j| \leq W/2} \alpha\_{ij} v\_j
 \]
 
 Complexity: $\mathcal{O}(L \cdot W \cdot d_h)$.
@@ -28,7 +28,7 @@ Complexity: $\mathcal{O}(L \cdot W \cdot d_h)$.
 For decoders, the causal variant restricts to $j \leq i$:
 
 \[
-\text{Attn}_\text{local, causal}(q_i, K, V) = \sum_{j : i - W/2 \leq j \leq i} \alpha_{ij} v_j
+\text{Attn}\_\text{local, causal}(q\_i, K, V) = \sum\_{j : i - W/2 \leq j \leq i} \alpha\_{ij} v\_j
 \]
 
 \subsection{Kernel Linear Attention}
@@ -42,7 +42,7 @@ e^{q \cdot k} \approx \phi(q)^\top \phi(k)
 The output becomes:
 
 \[
-\text{Out}_\text{kernel}(q_i, K, V) = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\text{Out}\_\text{kernel}(q\_i, K, V) = \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \]
 
 Complexity: $\mathcal{O}(L \cdot F \cdot d_h)$ where $F$ is the feature 
@@ -53,7 +53,7 @@ dimension.
 For RFF:
 
 \[
-\phi(x) = \frac{1}{\sqrt{F}} \exp\!\left(W_\text{rff} x\right)
+\phi(x) = \frac{1}{\sqrt{F}} \exp\!\left(W\_\text{rff} x\right)
 \]
 
 where $W_\text{rff} \in \mathbb{R}^{d_h \times F}$ is a random projection.
@@ -73,12 +73,12 @@ This improves the approximation for positive-definite kernels.
 For decoders, the cumulative sum formulation:
 
 \[
-S_i = \sum_{j \leq i} \phi(k_j) v_j^\top, \quad
-Z_i = \sum_{j \leq i} \phi(k_j)
+S\_i = \sum\_{j \leq i} \phi(k\_j) v\_j^\top, \quad
+Z\_i = \sum\_{j \leq i} \phi(k\_j)
 \]
 
 \[
-\text{Out}_i = \frac{\phi(q_i)^\top S_i}{\phi(q_i)^\top Z_i}
+\text{Out}\_i = \frac{\phi(q\_i)^\top S\_i}{\phi(q\_i)^\top Z\_i}
 \]
 
 \subsection{Singular Value Decomposition}
@@ -92,7 +92,7 @@ W = U \Sigma V^\top
 Truncated at rank $r$:
 
 \[
-W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
+W\_r = U\_{:, :r} \Sigma\_{:r, :r} V\_{:r, :}^\top
 \]
 
 \subsection{Energy-Based Rank Selection}
@@ -100,7 +100,7 @@ W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
 The \textbf{energy fraction} captured by rank $r$:
 
 \[
-\text{Energy}(r) = \frac{\sum_{i \leq r} \sigma_i^2}{\sum_i \sigma_i^2}
+\text{Energy}(r) = \frac{\sum\_{i \leq r} \sigma\_i^2}{\sum\_i \sigma\_i^2}
 \]
 
 We select $r^* = \min \{ r : \text{Energy}(r) \geq \eta \}$.
@@ -112,7 +112,7 @@ For $\eta = 0.95$: $r^*$ captures 95\% of the weight energy.
 LoRA parameterizes weight updates:
 
 \[
-\Delta W = \frac{\alpha}{r_L} B A, \quad B \in \mathbb{R}^{d \times r_L}, \quad A \in \mathbb{R}^{r_L \times k}
+\Delta W = \frac{\alpha}{r\_L} B A, \quad B \in \mathbb{R}^{d \times r\_L}, \quad A \in \mathbb{R}^{r\_L \times k}
 \]
 
 with $B = 0$ at initialization.
@@ -122,7 +122,7 @@ with $B = 0$ at initialization.
 Modern models (Qwen, LLaMA) use $H_{kv} < H$:
 
 \[
-K, V \in \mathbb{R}^{B \times L \times H_{kv} \times d_h}
+K, V \in \mathbb{R}^{B \times L \times H\_{kv} \times d\_h}
 \]
 
 Expanded to $H$ via \texttt{repeat\_kv}.
@@ -132,7 +132,7 @@ Expanded to $H$ via \texttt{repeat\_kv}.
 RoPE rotates $Q, K$:
 
 \[
-\tilde{q}_i = q_i \cos(\theta_i) + \text{rot}(q_i) \sin(\theta_i)
+\tilde{q}\_i = q\_i \cos(\theta\_i) + \text{rot}(q\_i) \sin(\theta\_i)
 \]
 
 \subsection{Softpick (Fixed)}
@@ -140,7 +140,7 @@ RoPE rotates $Q, K$:
 The original AEGIS used a ReLU-based softpick:
 
 \[
-\text{softpick}(x)_i = \text{ReLU}\!\left(e^{(x_i - m)/T} - e^{-m/T}\right)
+\text{softpick}(x)\_i = \text{ReLU}\!\left(e^{(x\_i - m)/T} - e^{-m/T}\right)
 \]
 
 where $m = \max_j x_j$. \textbf{Problem:} When $m \leq 0$ (all-masked rows), 
@@ -149,7 +149,7 @@ this returns all zeros, causing attention collapse.
 AEGIS-V5 replaces this with a stable softmax:
 
 \[
-\text{softpick}(x)_i = \frac{e^{x_i / T}}{\sum_j e^{x_j / T}}
+\text{softpick}(x)\_i = \frac{e^{x\_i / T}}{\sum\_j e^{x\_j / T}}
 \]
 
 which is always numerically stable.

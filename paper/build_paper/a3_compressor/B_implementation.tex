@@ -7,33 +7,33 @@
 class A3FactorizedLinear(nn.Module):
     """Factorized linear layer: y = (xV^T)U^T + b + LoRA"""
     
-    def __init__(self, in_features, out_features, rank, ...):
-        super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
+    def \_\_init\_\_(self, in\_features, out\_features, rank, ...):
+        super().\_\_init\_\_()
+        self.in\_features = in\_features
+        self.out\_features = out\_features
         self.rank = rank
-        self.lora_rank = lora_rank
+        self.lora\_rank = lora\_rank
         
         # Base factors (frozen after copy)
-        self.V = nn.Parameter(torch.empty(rank, in_features))
-        self.U = nn.Parameter(torch.empty(out_features, rank))
+        self.V = nn.Parameter(torch.empty(rank, in\_features))
+        self.U = nn.Parameter(torch.empty(out\_features, rank))
         
         # Bias
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
+            self.bias = nn.Parameter(torch.empty(out\_features))
         
         # Optional LoRA
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.empty(out\_features, lora\_rank))
         
-        self.reset_parameters()
+        self.reset\_parameters()
     
     def forward(self, x):
         latent = F.linear(x, self.V)
         out = F.linear(latent, self.U)
-        if self.lora_rank > 0:
-            out += F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        if self.lora\_rank \textgreater{} 0:
+            out += F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
         if self.bias is not None:
             out += self.bias
         return out
@@ -44,96 +44,96 @@ class A3FactorizedLinear(nn.Module):
 \begin{lstlisting}
 def compress(self):
     # 1. Collect statistics
-    cov_map, fisher_map = self._collect_activations_and_fisher()
+    cov\_map, fisher\_map = self.\_collect\_activations\_and\_fisher()
     
     # 2. For each layer
-    for name, module in self.model.named_modules():
-        if not self._is_target(module, name):
+    for name, module in self.model.named\_modules():
+        if not self.\_is\_target(module, name):
             continue
         
-        cov = cov_map.get(name)
-        fisher = fisher_map.get(name)
+        cov = cov\_map.get(name)
+        fisher = fisher\_map.get(name)
         
-        factorized, err, rank = self.compress_linear(
+        factorized, err, rank = self.compress\_linear(
             module, name=name, cov=cov, fisher=fisher
         )
         
         if factorized is not None:
             # Replace
-            if hasattr(module, 'base_layer'):
-                module.base_layer = factorized
+            if hasattr(module, 'base\_layer'):
+                module.base\_layer = factorized
                 replacement = module
             else:
                 replacement = factorized
-            replace_module(self.model, name, replacement)
+            replace\_module(self.model, name, replacement)
         # else: fallback, keep original
     
     # 3. LN recalibration
-    if self.recalibrate_ln:
-        recalibrate_layernorms(self.model, ...)
+    if self.recalibrate\_ln:
+        recalibrate\_layernorms(self.model, ...)
     
-    return self.model, self.get_stats()
+    return self.model, self.get\_stats()
 \end{lstlisting}
 
 \subsection{B.3 Streaming Statistics}
 
 \begin{lstlisting}
-def _collect_activations_and_fisher(self):
-    cov_running = {}
-    fisher_running = {}
-    count_running = {}
+def \_collect\_activations\_and\_fisher(self):
+    cov\_running = {}
+    fisher\_running = {}
+    count\_running = {}
     
-    def make_hook(name):
+    def make\_hook(name):
         def hook(module, inp, outp):
-            with torch.no_grad():
+            with torch.no\_grad():
                 x = inp[0].detach().float().reshape(-1, inp[0].shape[-1])
-                mask = x.abs().sum(dim=-1) > 1e-5
-                x_valid = x[mask]
-                if x_valid.size(0) > 0:
-                    c = torch.matmul(x_valid.T, x_valid)
-                    f = x_valid.pow(2).sum(dim=0)
-                    if name not in cov_running:
-                        cov_running[name] = c.cpu()
-                        fisher_running[name] = f.cpu()
-                        count_running[name] = x_valid.size(0)
+                mask = x.abs().sum(dim=-1) \textgreater{} 1e-5
+                x\_valid = x[mask]
+                if x\_valid.size(0) \textgreater{} 0:
+                    c = torch.matmul(x\_valid.T, x\_valid)
+                    f = x\_valid.pow(2).sum(dim=0)
+                    if name not in cov\_running:
+                        cov\_running[name] = c.cpu()
+                        fisher\_running[name] = f.cpu()
+                        count\_running[name] = x\_valid.size(0)
                     else:
-                        cov_running[name] += c.cpu()
-                        fisher_running[name] += f.cpu()
-                        count_running[name] += x_valid.size(0)
+                        cov\_running[name] += c.cpu()
+                        fisher\_running[name] += f.cpu()
+                        count\_running[name] += x\_valid.size(0)
         return hook
     
     hooks = []
-    for name, module in self.model.named_modules():
+    for name, module in self.model.named\_modules():
         if isinstance(module, nn.Linear):
-            hooks.append(module.register_forward_hook(make_hook(name)))
+            hooks.append(module.register\_forward\_hook(make\_hook(name)))
     
     # Run calibration
     self.model.eval()
-    with torch.no_grad():
-        for batch in self.calibration_loader:
+    with torch.no\_grad():
+        for batch in self.calibration\_loader:
             self.model(**batch)
     
     for h in hooks:
         h.remove()
     
     # Normalize
-    cov_map = {n: cov_running[n] / count_running[n] for n in cov_running}
-    fisher_map = {n: fisher_running[n] / count_running[n] for n in fisher_running}
+    cov\_map = {n: cov\_running[n] / count\_running[n] for n in cov\_running}
+    fisher\_map = {n: fisher\_running[n] / count\_running[n] for n in fisher\_running}
     
-    return cov_map, fisher_map
+    return cov\_map, fisher\_map
 \end{lstlisting}
 
 \subsection{B.4 Weighted SVD}
 
 \begin{lstlisting}
-def compress_linear(self, module, name, cov=None, fisher=None):
+def compress\_linear(self, module, name, cov=None, fisher=None):
     W = module.weight.data.float()
     
     # Extract shape
-    out_f, in_f = W.shape[0], W.shape[1]
+    out\_f, in\_f = W.shape[0], W.shape[1]
     
     # Compute weighting
-    if self.use_fisher and fisher is not None:
+    if self.use\_fisher and fisher is not None:
         scale = torch.sqrt(fisher.clamp(min=1e-8) + 1e-6)
     elif cov is not None:
         scale = torch.sqrt(torch.diag(cov).clamp(min=1e-8) + 1e-6)
@@ -142,79 +142,79 @@ def compress_linear(self, module, name, cov=None, fisher=None):
     
     # Weighted matrix
     if scale is not None:
-        if self.normalize_scale:
-            rms = torch.norm(scale) / math.sqrt(in_f)
+        if self.normalize\_scale:
+            rms = torch.norm(scale) / math.sqrt(in\_f)
             scale = scale / (rms + 1e-8)
         scale = scale.clamp(min=1e-3, max=1e3)
-        W_w = W * scale.unsqueeze(0)
+        W\_w = W * scale.unsqueeze(0)
     else:
-        W_w = W
+        W\_w = W
     
     # SVD
-    U, S, Vt = torch.linalg.svd(W_w, full_matrices=False)
+    U, S, Vt = torch.linalg.svd(W\_w, full\_matrices=False)
     
     # Retry loop
-    norm_orig = torch.linalg.norm(W).item()
-    best_err = float('inf')
-    best_factors = None
+    norm\_orig = torch.linalg.norm(W).item()
+    best\_err = float('inf')
+    best\_factors = None
     
-    for r in adaptive_ranks:
-        sqrt_S = torch.sqrt(S[:r].clamp(min=1e-12))
-        U_r = U[:, :r] * sqrt_S.unsqueeze(0)
-        V_r = sqrt_S.unsqueeze(1) * Vt[:r, :]
+    for r in adaptive\_ranks:
+        sqrt\_S = torch.sqrt(S[:r].clamp(min=1e-12))
+        U\_r = U[:, :r] * sqrt\_S.unsqueeze(0)
+        V\_r = sqrt\_S.unsqueeze(1) * Vt[:r, :]
         if scale is not None:
-            V_r = V_r / scale.unsqueeze(0)
+            V\_r = V\_r / scale.unsqueeze(0)
         
-        W_rec = U_r @ V_r
-        err = torch.linalg.norm(W - W_rec).item() / (norm_orig + 1e-8)
+        W\_rec = U\_r @ V\_r
+        err = torch.linalg.norm(W - W\_rec).item() / (norm\_orig + 1e-8)
         
-        if err < best_err:
-            best_err = err
-            best_factors = (U_r, V_r)
+        if err \textless{} best\_err:
+            best\_err = err
+            best\_factors = (U\_r, V\_r)
         
-        if err <= self.max_error:
+        if err \textless{}= self.max\_error:
             break
     
-    if best_err > self.max_error and self.fallback_to_original:
-        return None, best_err, 0
+    if best\_err \textgreater{} self.max\_error and self.fallback\_to\_original:
+        return None, best\_err, 0
     
     return A3FactorizedLinear(
-        in_features=in_f, out_features=out_f, rank=best_r,
-        U_factor=best_factors[0], V_factor=best_factors[1]
-    ), best_err, best_r
+        in\_features=in\_f, out\_features=out\_f, rank=best\_r,
+        U\_factor=best\_factors[0], V\_factor=best\_factors[1]
+    ), best\_err, best\_r
 \end{lstlisting}
 
 \subsection{B.5 LayerNorm Recalibration}
 
 \begin{lstlisting}
-def recalibrate_layernorms(model, tokenizer, calibration_loader, ...):
+def recalibrate\_layernorms(model, tokenizer, calibration\_loader, ...):
     # 1. Record target std
-    target_stds = {}
+    target\_stds = {}
     hooks = []
-    for name, module in model.named_modules():
+    for name, module in model.named\_modules():
         if isinstance(module, nn.LayerNorm):
-            def make_hook(n):
+            def make\_hook(n):
                 def hook(mod, inp, outp):
                     x = inp[0].detach().float()
-                    target_stds[n] = x.std(dim=-1).mean().item()
+                    target\_stds[n] = x.std(dim=-1).mean().item()
                 return hook
-            hooks.append(module.register_forward_hook(make_hook(name)))
+            hooks.append(module.register\_forward\_hook(make\_hook(name)))
     
     # Forward pass
-    with torch.no_grad():
-        for batch in calibration_loader:
+    with torch.no\_grad():
+        for batch in calibration\_loader:
             model(**batch)
     for h in hooks: h.remove()
     
     # 2. Compute current std (after compression)
-    current_stds = {}
+    current\_stds = {}
     # (same procedure)
     
     # 3. Rescale
-    for name, module in model.named_modules():
-        if isinstance(module, nn.LayerNorm) and name in target_stds:
-            ratio = current_stds[name] / (target_stds[name] + 1e-8)
-            with torch.no_grad():
+    for name, module in model.named\_modules():
+        if isinstance(module, nn.LayerNorm) and name in target\_stds:
+            ratio = current\_stds[name] / (target\_stds[name] + 1e-8)
+            with torch.no\_grad():
                 module.weight.data *= ratio
 \end{lstlisting}
 
@@ -224,8 +224,8 @@ def recalibrate_layernorms(model, tokenizer, calibration_loader, ...):
 
 \begin{lstlisting}
 # RIGHT
-self.V.requires_grad = False
-self.U.requires_grad = False
+self.V.requires\_grad = False
+self.U.requires\_grad = False
 # LoRA stays trainable
 \end{lstlisting}
 
@@ -234,8 +234,8 @@ self.U.requires_grad = False
 GPT-2's \texttt{Conv1D} stores \texttt{(in, out)}, but \texttt{nn.Linear} stores \texttt{(out, in)}:
 
 \begin{lstlisting}
-if "conv1d" in cls_name or hasattr(module, "nf"):
-    W = raw_w.t()  # transpose!
+if "conv1d" in cls\_name or hasattr(module, "nf"):
+    W = raw\_w.t()  # transpose!
 \end{lstlisting}
 
 \subsubsection{B.6.3 Missing Padding Filter}
@@ -243,8 +243,8 @@ if "conv1d" in cls_name or hasattr(module, "nf"):
 Without filtering padding tokens, the Fisher estimate is biased:
 
 \begin{lstlisting}
-mask = x.abs().sum(dim=-1) > 1e-5
-x_valid = x[mask]
+mask = x.abs().sum(dim=-1) \textgreater{} 1e-5
+x\_valid = x[mask]
 \end{lstlisting}
 
 \subsubsection{B.6.4 Numerical Overflow in Weighting}
@@ -256,66 +256,66 @@ scale = scale.clamp(min=1e-3, max=1e3)
 \end{lstlisting}
 
 \subsection{B.7 Full Pseudocode for End-to-End Compression}
-\label{sec:app_algorithm1}
+\label{sec:app\_algorithm1}
 
 \textbf{Algorithm 1:} A3 End-to-End Compression Pipeline
 \begin{lstlisting}
 Input:  Pretrained model M, initial rank r, threshold $\tau$, calibration dataset D
 Output: Compressed model M', compression statistics
 
- 1: for layer in linear_layers(M) do
- 2:     F^(layer), C_X^(layer) $\leftarrow$ running_accumulate(layer, D)
+ 1: for layer in linear\_layers(M) do
+ 2:     F^(layer), C\_X^(layer) $\leftarrow$ running\_accumulate(layer, D)
  3: end for
- 4: $\sigma$_target $\leftarrow$ record_layernorm_scales(M, D)
+ 4: $\sigma$\_target $\leftarrow$ record\_layernorm\_scales(M, D)
  5:
- 6: for layer in linear_layers(M) do
+ 6: for layer in linear\_layers(M) do
  7:     W $\leftarrow$ layer.weight.data.clone()
- 8:     r_curr $\leftarrow$ r
- 9:     for attempt in 0..max_retries do
-10:         s $\leftarrow$ normalize_scale(sqrt(F^(layer) + $\epsilon$)).clamp(1e-3, 1e3)
-11:         W_weighted $\leftarrow$ W * diag(s)
-12:         U_r, $\Sigma$_r, V_r $\leftarrow$ cpu_fp32_svd(W_weighted, r_curr)
-13:         V_r $\leftarrow$ V_r * diag(1 / s)
-14:         err $\leftarrow$ norm(W - U_r * V_r, 'fro') / (norm(W, 'fro') + 1e-8)
+ 8:     r\_curr $\leftarrow$ r
+ 9:     for attempt in 0..max\_retries do
+10:         s $\leftarrow$ normalize\_scale(sqrt(F^(layer) + $\epsilon$)).clamp(1e-3, 1e3)
+11:         W\_weighted $\leftarrow$ W * diag(s)
+12:         U\_r, $\Sigma$\_r, V\_r $\leftarrow$ cpu\_fp32\_svd(W\_weighted, r\_curr)
+13:         V\_r $\leftarrow$ V\_r * diag(1 / s)
+14:         err $\leftarrow$ norm(W - U\_r * V\_r, 'fro') / (norm(W, 'fro') + 1e-8)
 15:         if err $\le$ $\tau$: break
-16:         r_curr $\leftarrow$ escalate_rank(r_curr, r_ceiling=256, attempt)
+16:         r\_curr $\leftarrow$ escalate\_rank(r\_curr, r\_ceiling=256, attempt)
 17:     end for
 18:     if err $\le$ $\tau$:
-19:         replace_with_factorized(M, layer, U_r, V_r)
+19:         replace\_with\_factorized(M, layer, U\_r, V\_r)
 20:     else:
-21:         retain_dense_fallback(M, layer)
+21:         retain\_dense\_fallback(M, layer)
 22:     end if
 23: end for
 24:
-25: if recalibrate_ln:
-26:     $\sigma$_current $\leftarrow$ record_layernorm_scales(M', D)
+25: if recalibrate\_ln:
+26:     $\sigma$\_current $\leftarrow$ record\_layernorm\_scales(M', D)
 27:     for ln in layernorms(M') do
-28:         ln.weight.data *= ($\sigma$_current[ln] / ($\sigma$_target[ln] + 1e-8))
+28:         ln.weight.data *= ($\sigma$\_current[ln] / ($\sigma$\_target[ln] + 1e-8))
 29:     end for
 30: end if
 31: return M'
 \end{lstlisting}
 
 \subsection{B.8 LoRALinear Wrapper Integration and Injection Algorithm}
-\label{sec:app_lora_wrapper}
+\label{sec:app\_lora\_wrapper}
 
 \begin{lstlisting}
 class LoRALinear(nn.Module):
-    def __init__(self, base_layer, lora_rank=16, lora_alpha=32):
-        super().__init__()
-        self.base_layer = base_layer
-        self.lora_A = nn.Parameter(torch.empty(lora_rank, base_layer.in_features))
-        self.lora_B = nn.Parameter(torch.zeros(base_layer.out_features, lora_rank))
-        self.scaling = lora_alpha / lora_rank
+    def \_\_init\_\_(self, base\_layer, lora\_rank=16, lora\_alpha=32):
+        super().\_\_init\_\_()
+        self.base\_layer = base\_layer
+        self.lora\_A = nn.Parameter(torch.empty(lora\_rank, base\_layer.in\_features))
+        self.lora\_B = nn.Parameter(torch.zeros(base\_layer.out\_features, lora\_rank))
+        self.scaling = lora\_alpha / lora\_rank
         
     def forward(self, x):
-        return self.base_layer(x) + (x @ self.lora_A.T @ self.lora_B.T) * self.scaling
+        return self.base\_layer(x) + (x @ self.lora\_A.T @ self.lora\_B.T) * self.scaling
 \end{lstlisting}
 
 \subsection{B.9 Defensive Exception Handling and Fallback Architecture}
-\label{sec:app_defensive_handling}
+\label{sec:app\_defensive\_handling}
 
-Table~\ref{tab:app_failure_responses} catalogs the defensive exceptions handled by the production A3 runtime.
+Table~\ref{tab:app\_failure\_responses} catalogs the defensive exceptions handled by the production A3 runtime.
 
 \begin{table}[H]
 \centering
@@ -333,19 +333,19 @@ NaN/Inf in factorized tensor & \texttt{torch.isnan} assertion & Abort factorizat
 \bottomrule
 \end{tabular}
 \caption{Comprehensive taxonomy of defensive exception handling implemented within the A3 engine.}
-\label{tab:app_failure_responses}
+\label{tab:app\_failure\_responses}
 \end{table}
 
 \subsection{B.10 Complete Environment, Reproduction Protocols, and Verification}
-\label{sec:app_full_reproduction}
+\label{sec:app\_full\_reproduction}
 
 To ensure complete scientific and engineering reproducibility, all software dependencies, environment setup commands, and execution scripts are fully specified.
 
 \subsubsection{Environment Setup}
 
 \begin{lstlisting}[language=bash]
-git clone https://github.com/your-org/SVD_Project
-cd SVD_Project
+git clone https://github.com/your-org/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 pip install -r requirements.txt
@@ -368,7 +368,7 @@ pandas & 2.2.2 \\
 \bottomrule
 \end{tabular}
 \caption{Production software dependencies and pinned runtime library versions.}
-\label{tab:app_dependencies}
+\label{tab:app\_dependencies}
 \end{table}
 
 \subsubsection{Execution and Sweep Commands}
@@ -377,29 +377,29 @@ The end-to-end benchmark suite across all three architectures is invoked via:
 
 \begin{lstlisting}[language=bash]
 # Run full A3 benchmark sweep across DistilBERT, RoBERTa, and GPT-2
-python run_all_4_a3.py \
+python run\_all\_4\_a3.py \
     --models distilbert,roberta,gpt2 \
     --rank 128 \
-    --recovery_steps 50 \
-    --lora_rank 16 \
-    --batch_size 8
+    --recovery\_steps 50 \
+    --lora\_rank 16 \
+    --batch\_size 8
 \end{lstlisting}
 
 Individual model evaluation with fine-grained logging:
 
 \begin{lstlisting}[language=bash]
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --model_family bert \
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --model\_family bert \
     --dataset sst2 \
-    --dataset_dir Codes/framework/data/glue_data/sst2 \
-    --output_dir results/unified_a3/distilbert \
-    --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
+    --dataset\_dir Codes/framework/data/glue\_data/sst2 \
+    --output\_dir results/unified\_a3/distilbert \
+    --parent\_checkpoint results/unified\_asvd/distilbert/finetuned\_model.pt \
     --modules full,a3 \
-    --batch_size 8 \
-    --recovery_steps 50 \
-    --learning_rate 2e-4 \
-    --lora_rank 16 \
+    --batch\_size 8 \
+    --recovery\_steps 50 \
+    --learning\_rate 2e-4 \
+    --lora\_rank 16 \
     --rank 128 \
     --precision fp16
 \end{lstlisting}
@@ -409,11 +409,11 @@ python Codes/framework/run_quality_sweep.py \
 \begin{lstlisting}[language=python]
 import random, numpy as np, torch
 
-def seed_everything(seed=42):
+def seed\_everything(seed=42):
     random.seed(seed)
     np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
+    torch.manual\_seed(seed)
+    torch.cuda.manual\_seed\_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 \end{lstlisting}
@@ -433,5 +433,5 @@ GPT-2      & 63.19\% $\pm$ 1.0\% & FAIL ($\Delta > 15\%$) (+0.53M params saved) 
 \bottomrule
 \end{tabular}
 \caption{Expected benchmark results under the production configuration ($r_{\mathrm{ceiling}} \le 256, \tau=0.40$).}
-\label{tab:app_repro_expected}
+\label{tab:app\_repro\_expected}
 \end{table}

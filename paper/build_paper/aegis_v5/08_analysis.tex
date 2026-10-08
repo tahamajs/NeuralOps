@@ -48,7 +48,7 @@ matrices have slowly decaying singular values.
 \textbf{Key finding.} With default \texttt{max\_rank=384} and \texttt{d=768}:
 
 \[
-r(d + d_h) = 384 \cdot (768 + 768) = 589,824 = d \cdot d
+r(d + d\_h) = 384 \cdot (768 + 768) = 589,824 = d \cdot d
 \]
 
 \textbf{SVD provides no compression} when $r = d/2$.
@@ -94,9 +94,9 @@ The original AEGIS softpick:
 def softpick(x, dim, temperature):
     m = x.max(dim=dim, keepdim=True).values
     z = x - m
-    exp_z = torch.exp((z / temperature).clamp(min=-50, max=50))
-    exp_neg_m = torch.exp(((-m) / temperature).clamp(min=-50, max=50))
-    p = F.relu(exp_z - exp_neg_m)  # $\leftarrow$ can be all zeros
+    exp\_z = torch.exp((z / temperature).clamp(min=-50, max=50))
+    exp\_neg\_m = torch.exp(((-m) / temperature).clamp(min=-50, max=50))
+    p = F.relu(exp\_z - exp\_neg\_m)  # $\leftarrow$ can be all zeros
     s = p.sum(dim=dim, keepdim=True)
     return p / s.clamp(min=1e-8)
 \end{lstlisting}
@@ -108,8 +108,8 @@ V5 uses stable softmax:
 
 \begin{lstlisting}
 def softpick(x, dim, temperature):
-    x_f = x.float()
-    return F.softmax(x_f / temperature, dim=dim)
+    x\_f = x.float()
+    return F.softmax(x\_f / temperature, dim=dim)
 \end{lstlisting}
 
 \subsection{Failure Modes}
@@ -135,7 +135,7 @@ Low acc \& None \& N/A \\
 \item \textbf{SVD does not help} at default \texttt{max\_rank=384}.
 \item \textbf{Softpick fix prevents collapse.}
 \item \textbf{Decoder fallback is essential} for causality.
-\item \textbf{For real compression, use \texttt{max\_rank < d/2}.}
+\item \textbf{For real compression, use \texttt{max\_rank \textless{} d/2}.}
 \end{enumerate}
 \begin{lstlisting}
 

@@ -9,7 +9,7 @@ infeasible in memory. Linear attention approximates softmax by reordering
 the computation:
 
 \[
-\text{Attn}(Q_i, K, V) = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\text{Attn}(Q\_i, K, V) = \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \tag{1.1}
 \]
 
@@ -60,7 +60,7 @@ But the code:
 
 \begin{lstlisting}
 except Exception as e:
-    logger.warning("PerformerAttention construction/weight copying failed: %s", e)
+    logger.warning("PerformerAttention construction/weight copying failed: \%s", e)
     raise RuntimeError(f"Injection failed")  # $\leftarrow$ raises!
 \end{lstlisting}
 
@@ -71,13 +71,13 @@ in production.
 
 \begin{lstlisting}
 class LoRALinear(nn.Module):
-    def __init__(self, ...):
-        if not hasattr(self, 'output_scale'):
-            self.output_scale = nn.Parameter(torch.ones(1))
+    def \_\_init\_\_(self, ...):
+        if not hasattr(self, 'output\_scale'):
+            self.output\_scale = nn.Parameter(torch.ones(1))
     
     def forward(self, x):
         ...
-        return out * self.output_scale
+        return out * self.output\_scale
 \end{lstlisting}
 
 This parameter is not present in the baseline checkpoint. On reload, it 

@@ -68,7 +68,7 @@ Unlike other modules, \texttt{inject\_nasc} raises on failure. This breaks the
 
 \begin{lstlisting}
 except Exception as e:
-    logger.error("inject_nasc failed: %s", e)
+    logger.error("inject\_nasc failed: \%s", e)
     return None  # instead of raise
 \end{lstlisting}
 

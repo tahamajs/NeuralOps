@@ -5,104 +5,104 @@
 
 \begin{lstlisting}
 class FactorisedLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank=64, bias=True,
-                 energy=0.95, lora_rank=16, lora_alpha=32.0, ...):
-        super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.rank = min(rank, in_features, out_features)
+    def \_\_init\_\_(self, in\_features, out\_features, rank=64, bias=True,
+                 energy=0.95, lora\_rank=16, lora\_alpha=32.0, ...):
+        super().\_\_init\_\_()
+        self.in\_features = in\_features
+        self.out\_features = out\_features
+        self.rank = min(rank, in\_features, out\_features)
         self.energy = energy
-        self.lora_rank = lora_rank
-        self.lora_scaling = lora_alpha / lora_rank if lora_rank > 0 else 1.0
+        self.lora\_rank = lora\_rank
+        self.lora\_scaling = lora\_alpha / lora\_rank if lora\_rank \textgreater{} 0 else 1.0
         
-        self.down = nn.Linear(in_features, self.rank, bias=False)
-        self.up = nn.Linear(self.rank, out_features, bias=bias)
+        self.down = nn.Linear(in\_features, self.rank, bias=False)
+        self.up = nn.Linear(self.rank, out\_features, bias=bias)
         
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.randn(lora_rank, in_features) * 0.01)
-            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.randn(lora\_rank, in\_features) * 0.01)
+            self.lora\_B = nn.Parameter(torch.zeros(out\_features, lora\_rank))
         
-        self.reset_parameters()
+        self.reset\_parameters()
     
     def forward(self, x):
         out = self.up(self.down(x))
-        if self.lora_rank > 0:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        if self.lora\_rank \textgreater{} 0:
+            out = out + F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
         return out
 \end{lstlisting}
 
 \subsection{B.2 The `decompose\_from\_weight` Method}
 
 \begin{lstlisting}
-def decompose_from_weight(self, weight, bias=None, energy=None):
-    with torch.no_grad():
+def decompose\_from\_weight(self, weight, bias=None, energy=None):
+    with torch.no\_grad():
         W = weight.float()
         
         # Handle KV dimension matching for GQA
-        if W.shape[0] < self.out_features and self.out_features % W.shape[0] == 0:
-            rep = self.out_features // W.shape[0]
+        if W.shape[0] \textless{} self.out\_features and self.out\_features \% W.shape[0] == 0:
+            rep = self.out\_features // W.shape[0]
             W = W.repeat(rep, 1)
-        elif W.shape[0] > self.out_features and W.shape[0] % self.out_features == 0:
-            rep = W.shape[0] // self.out_features
-            W = W.view(self.out_features, rep, -1).mean(dim=1)
+        elif W.shape[0] \textgreater{} self.out\_features and W.shape[0] \% self.out\_features == 0:
+            rep = W.shape[0] // self.out\_features
+            W = W.view(self.out\_features, rep, -1).mean(dim=1)
         
         # SVD
-        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        U, S, Vt = torch.linalg.svd(W, full\_matrices=False)
         
         # Energy-based rank selection
-        target_energy = energy if energy is not None else self.energy
-        total_energy = (S ** 2).sum()
-        cum_energy = torch.cumsum(S ** 2, dim=0) / (total_energy + 1e-12)
-        calc_rank = int((cum_energy < target_energy).sum().item()) + 1
-        r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
+        target\_energy = energy if energy is not None else self.energy
+        total\_energy = (S ** 2).sum()
+        cum\_energy = torch.cumsum(S ** 2, dim=0) / (total\_energy + 1e-12)
+        calc\_rank = int((cum\_energy \textless{} target\_energy).sum().item()) + 1
+        r = min(self.rank, calc\_rank, U.size(1), Vt.size(0))
         r = max(1, r)
         
         # Symmetric factorization
-        sqrt_s = torch.sqrt(S[:r])
-        A = (U[:, :r] * sqrt_s).to(self.up.weight.dtype)
-        B = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype)
+        sqrt\_s = torch.sqrt(S[:r])
+        A = (U[:, :r] * sqrt\_s).to(self.up.weight.dtype)
+        B = (sqrt\_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype)
         
         # Store
-        self.up.weight.data.zero_()
-        self.down.weight.data.zero_()
+        self.up.weight.data.zero\_()
+        self.down.weight.data.zero\_()
         self.up.weight.data[:, :r] = A
         self.down.weight.data[:r, :] = B
         
-        self.freeze_base_weights()
+        self.freeze\_base\_weights()
 \end{lstlisting}
 
 \subsection{B.3 The Main Injection Loop}
 
 \begin{lstlisting}
-def inject_minimal_nova(layer=None, model=None, ...):
+def inject\_minimal\_nova(layer=None, model=None, ...):
     target = layer if layer is not None else model
     
     # Whole model traversal
     if hasattr(target, "distilbert"):
-        layer_list = target.distilbert.transformer.layer
+        layer\_list = target.distilbert.transformer.layer
     elif hasattr(target, "roberta"):
-        layer_list = target.roberta.encoder.layer
+        layer\_list = target.roberta.encoder.layer
     elif hasattr(target, "transformer"):
-        layer_list = target.transformer.h
+        layer\_list = target.transformer.h
     # ...
     
-    if layer_list is not None:
+    if layer\_list is not None:
         # Pre-test on first layer
-        test_src = layer_list[0].attention
-        test_module = MinimalNOVAAttention(config=cfg)
-        test_module.copy_weights(test_src)
+        test\_src = layer\_list[0].attention
+        test\_module = MinimalNOVAAttention(config=cfg)
+        test\_module.copy\_weights(test\_src)
         
         # Inject all layers
-        for idx, lyr in enumerate(layer_list):
-            inject_minimal_nova(layer=lyr, ...)
+        for idx, lyr in enumerate(layer\_list):
+            inject\_minimal\_nova(layer=lyr, ...)
         return target
     
     # Single layer injection
-    src_attn = get_attention(target)
-    new_attn = MinimalNOVAAttention(config=cfg)
-    new_attn.copy_weights(src_attn)
-    replace_attention(target, new_attn)
-    return new_attn
+    src\_attn = get\_attention(target)
+    new\_attn = MinimalNOVAAttention(config=cfg)
+    new\_attn.copy\_weights(src\_attn)
+    replace\_attention(target, new\_attn)
+    return new\_attn
 \end{lstlisting}
 
 \subsection{B.4 The `copy\_weights` Method}
@@ -110,20 +110,20 @@ def inject_minimal_nova(layer=None, model=None, ...):
 Handles four architecture families:
 
 \begin{lstlisting}
-def copy_weights(self, src):
+def copy\_weights(self, src):
     extracted = {"q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None)}
     
     # 1. UniversalAdapter
     for proj in ["q", "k", "v", "o"]:
         try:
-            w, b = UniversalAdapter.get_weight_bias(src, proj)
+            w, b = UniversalAdapter.get\_weight\_bias(src, proj)
             if w is not None:
                 extracted[proj] = (w, b)
         except Exception as e:
             logger.debug(f"UA failed for {proj}: {e}")
     
-    # 2. GPT-2 fused c_attn
-    if hasattr(src, "c_attn") and extracted["q"][0] is None:
+    # 2. GPT-2 fused c\_attn
+    if hasattr(src, "c\_attn") and extracted["q"][0] is None:
         # ... split logic
     
     # 3. RoBERTa nested
@@ -131,56 +131,56 @@ def copy_weights(self, src):
         # ... extract from self.query, self.key, self.value
     
     # 4. Modern decoders (Qwen, DistilBERT)
-    for proj, names in named_map.items():
-        # ... extract from q_proj, q_lin, query
+    for proj, names in named\_map.items():
+        # ... extract from q\_proj, q\_lin, query
     
     # Detect nested encoder
-    is_nested = ...
-    self.is_nested_encoder = is_nested
+    is\_nested = ...
+    self.is\_nested\_encoder = is\_nested
     
     # Factorize each projection
-    for proj_key, target in [("q", self.q_proj), ...]:
-        w, b = extracted[proj_key]
+    for proj\_key, target in [("q", self.q\_proj), ...]:
+        w, b = extracted[proj\_key]
         if w is not None:
-            target.decompose_from_weight(w, b, self.energy)
-        elif proj_key == "o" and self.is_nested_encoder:
+            target.decompose\_from\_weight(w, b, self.energy)
+        elif proj\_key == "o" and self.is\_nested\_encoder:
             eye = torch.eye(...)
-            target.decompose_from_weight(eye, None, self.energy)
+            target.decompose\_from\_weight(eye, None, self.energy)
 \end{lstlisting}
 
 \subsection{B.5 Handling GPT-2 Conv1D}
 
 \begin{lstlisting}
-if hasattr(src, "c_attn"):
-    c_attn_mod = src.c_attn
-    base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
-    weight = base_c.weight.data.clone()
+if hasattr(src, "c\_attn"):
+    c\_attn\_mod = src.c\_attn
+    base\_c = getattr(c\_attn\_mod, "base\_layer", c\_attn\_mod)
+    weight = base\_c.weight.data.clone()
     
     # Conv1D stores (in, out)
-    is_conv1d = (
-        "Conv1D" in type(c_attn_mod).__name__
-        or "Conv1D" in type(base_c).__name__
-        or hasattr(c_attn_mod, "nf")
-        or hasattr(base_c, "nf")
+    is\_conv1d = (
+        "Conv1D" in type(c\_attn\_mod).\_\_name\_\_
+        or "Conv1D" in type(base\_c).\_\_name\_\_
+        or hasattr(c\_attn\_mod, "nf")
+        or hasattr(base\_c, "nf")
     )
-    if is_conv1d:
+    if is\_conv1d:
         weight = weight.t()   # (out, in)
     
-    split_size = weight.shape[0] // 3
-    q_w = weight[:split_size, :]
-    k_w = weight[split_size:2*split_size, :]
-    v_w = weight[2*split_size:, :]
+    split\_size = weight.shape[0] // 3
+    q\_w = weight[:split\_size, :]
+    k\_w = weight[split\_size:2*split\_size, :]
+    v\_w = weight[2*split\_size:, :]
 \end{lstlisting}
 
 \subsection{B.6 Nested Encoder Bypass}
 
 \begin{lstlisting}
 # In forward:
-if self.is_nested_encoder:
-    return context, attn_weights   # No out_proj
+if self.is\_nested\_encoder:
+    return context, attn\_weights   # No out\_proj
 else:
-    output = self.out_proj(context)
-    return output, attn_weights
+    output = self.out\_proj(context)
+    return output, attn\_weights
 \end{lstlisting}
 
 \subsection{B.7 Common Pitfalls}
@@ -189,10 +189,10 @@ else:
 
 \begin{lstlisting}
 # WRONG
-w = src.c_attn.weight    # shape (in, out) -- wrong orientation
+w = src.c\_attn.weight    # shape (in, out) -- wrong orientation
 
 # RIGHT
-if is_conv1d:
+if is\_conv1d:
     w = w.t()    # (out, in)
 \end{lstlisting}
 
@@ -200,17 +200,17 @@ if is_conv1d:
 
 \begin{lstlisting}
 # WRONG (RoBERTa)
-self.is_nested_encoder = False   # out_proj applied twice $\to$ collapse
+self.is\_nested\_encoder = False   # out\_proj applied twice $\to$ collapse
 
 # RIGHT
-self.is_nested_encoder = True
+self.is\_nested\_encoder = True
 \end{lstlisting}
 
 \subsubsection{B.7.3 Missing Near-Zero Check}
 
 \begin{lstlisting}
-w_norm = torch.linalg.norm(w.float())
-if w_norm < 1e-4:
+w\_norm = torch.linalg.norm(w.float())
+if w\_norm \textless{} 1e-4:
     raise RuntimeError(f"Near-zero weight on {proj}")
 \end{lstlisting}
 
@@ -218,10 +218,10 @@ if w_norm < 1e-4:
 
 \begin{lstlisting}
 # WRONG
-self.lora_B = nn.Parameter(torch.randn(...))
+self.lora\_B = nn.Parameter(torch.randn(...))
 
 # RIGHT
-self.lora_B = nn.Parameter(torch.zeros(...))   # B = 0 at init
+self.lora\_B = nn.Parameter(torch.zeros(...))   # B = 0 at init
 \end{lstlisting}
 \begin{lstlisting}
 

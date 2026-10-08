@@ -6,7 +6,7 @@
 \textbf{Test.} We removed the long-memory branch and replaced it with zero:
 
 \begin{lstlisting}
-long_out = torch.zeros_like(x)
+long\_out = torch.zeros\_like(x)
 \end{lstlisting}
 
 \textbf{Result:}
@@ -70,7 +70,7 @@ eliminates head specialization in the gating mechanism.
 
 \begin{lstlisting}
 gate = torch.sigmoid(self.gate(x)).transpose(1, 2).unsqueeze(-1)  # (B, H, L, 1)
-fused = gate * short_out.view(B, H, L, d) + (1 - gate) * long_out.view(B, H, L, d)
+fused = gate * short\_out.view(B, H, L, d) + (1 - gate) * long\_out.view(B, H, L, d)
 \end{lstlisting}
 
 We did not implement this variant, but it is a natural extension.

@@ -23,26 +23,26 @@ Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & (causal) \\
 \subsubsection{GPT-2 Conv1D}
 
 \begin{lstlisting}
-c_w = src.c_attn.weight.data
-is_conv1d = "Conv1D" in cls_name or c_w.shape[0] < c_w.shape[1]
-if is_conv1d:
-    c_w = c_w.t()
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
+c\_w = src.c\_attn.weight.data
+is\_conv1d = "Conv1D" in cls\_name or c\_w.shape[0] \textless{} c\_w.shape[1]
+if is\_conv1d:
+    c\_w = c\_w.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{RoBERTa Nested}
 
 \begin{lstlisting}
-q_w = src.self.query.weight.data
-k_w = src.self.key.weight.data
-v_w = src.self.value.weight.data
-o_w = src.output.dense.weight.data
+q\_w = src.self.query.weight.data
+k\_w = src.self.key.weight.data
+v\_w = src.self.value.weight.data
+o\_w = src.output.dense.weight.data
 \end{lstlisting}
 
 \subsubsection{DistilBERT Flat}
 
 \begin{lstlisting}
-q_w = src.q_lin.weight.data
+q\_w = src.q\_lin.weight.data
 # ... etc
 \end{lstlisting}
 
@@ -51,14 +51,14 @@ q_w = src.q_lin.weight.data
 For the K/V projections with $H_{kv} < H$:
 
 \begin{lstlisting}
-if src_out == out_d:
-    target_w.data.copy_(w_oriented)
-elif src_out > out_d and src_out % out_d == 0:
-    rep = src_out // out_d
-    target_w.data.copy_(w_oriented.view(out_d, rep, -1).mean(dim=1))
-elif src_out < out_d and out_d % src_out == 0:
-    rep = out_d // src_out
-    target_w.data.copy_(w_oriented.repeat(rep, 1))
+if src\_out == out\_d:
+    target\_w.data.copy\_(w\_oriented)
+elif src\_out \textgreater{} out\_d and src\_out \% out\_d == 0:
+    rep = src\_out // out\_d
+    target\_w.data.copy\_(w\_oriented.view(out\_d, rep, -1).mean(dim=1))
+elif src\_out \textless{} out\_d and out\_d \% src\_out == 0:
+    rep = out\_d // src\_out
+    target\_w.data.copy\_(w\_oriented.repeat(rep, 1))
 \end{lstlisting}
 
 This handles GQA pooling (mean) or expansion (repeat) as needed.
@@ -67,15 +67,15 @@ This handles GQA pooling (mean) or expansion (repeat) as needed.
 
 \textbf{Algorithm 2:} Inject FASA
 \begin{lstlisting}
-Input:  layer  , config, old_attn
+Input:  layer  , config, old\_attn
 Output: new attention in  
 
-1: new $\leftarrow$ MixAttentionMoSKA(config, old=old_attn, fasa_keep_ratio=r)
-2: if copy_weights fails: return None
+1: new $\leftarrow$ MixAttentionMoSKA(config, old=old\_attn, fasa\_keep\_ratio=r)
+2: if copy\_weights fails: return None
 3: if   has .attention.self:
-4:      .attention.self $\leftarrow$ new; is_nested $\leftarrow$ True
-5: elif   has .self:  .self $\leftarrow$ new; is_nested $\leftarrow$ True
-6: elif   has .self_attn:  .self_attn $\leftarrow$ new
+4:      .attention.self $\leftarrow$ new; is\_nested $\leftarrow$ True
+5: elif   has .self:  .self $\leftarrow$ new; is\_nested $\leftarrow$ True
+6: elif   has .self\_attn:  .self\_attn $\leftarrow$ new
 7: elif   has .attn:  .attn $\leftarrow$ new
 8: return new
 \end{lstlisting}
@@ -85,7 +85,7 @@ Output: new attention in
 For the pruned path, the padding mask is gathered:
 
 \begin{lstlisting}
-pruned_mask = mask_2d.gather(1, idx)
+pruned\_mask = mask\_2d.gather(1, idx)
 \end{lstlisting}
 
 For the causal path, the padding mask is applied directly to the full 
@@ -94,18 +94,18 @@ attention.
 \subsection{Nested Encoder Detection}
 
 \begin{lstlisting}
-has_out = any(hasattr(src, x) for x in ["dense", "out_proj", "out_lin", "c_proj", "o_proj"])
-is_nested = cls_name in ["BertSelfAttention", "RobertaSelfAttention", ...]
+has\_out = any(hasattr(src, x) for x in ["dense", "out\_proj", "out\_lin", "c\_proj", "o\_proj"])
+is\_nested = cls\_name in ["BertSelfAttention", "RobertaSelfAttention", ...]
 if hasattr(src, "self") and hasattr(src, "output"):
-    is_nested = True
+    is\_nested = True
 \end{lstlisting}
 
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("fasa")
-@ATTENTION_REGISTRY.register("fasa_attention")
-@ATTENTION_REGISTRY.register("mixattention_moska")
+@ATTENTION\_REGISTRY.register("fasa")
+@ATTENTION\_REGISTRY.register("fasa\_attention")
+@ATTENTION\_REGISTRY.register("mixattention\_moska")
 class MixAttentionMoSKA(BaseAttention):
     ...
 \end{lstlisting}
@@ -127,8 +127,8 @@ composition changes. Not a bug, but worth documenting.
 
 \begin{lstlisting}
 mask = kwargs.get("mask", None)
-if attention_mask is None and mask is not None:
-    attention_mask = mask
+if attention\_mask is None and mask is not None:
+    attention\_mask = mask
 \end{lstlisting}
 
 Silent fallback. Not harmful but non-obvious.
@@ -141,6 +141,6 @@ Silent fallback. Not harmful but non-obvious.
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.png}
 \caption{High-level architectural diagram of mixattention\_moska.}
-\label{fig:arch_mixattention-moska}
+\label{fig:arch\_mixattention-moska}
 \end{figure}
 

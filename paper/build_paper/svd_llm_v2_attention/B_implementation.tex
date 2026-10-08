@@ -5,76 +5,76 @@
 
 \begin{lstlisting}
 class SVDLLMV2Attention(BaseAttention):
-    def __init__(self, config, old_attn=None, rank=64, energy_threshold=0.95,
-                 lora_rank=16, lora_alpha=32.0, **kwargs):
+    def \_\_init\_\_(self, config, old\_attn=None, rank=64, energy\_threshold=0.95,
+                 lora\_rank=16, lora\_alpha=32.0, **kwargs):
         # Resolve dimensions
-        self.hidden_size = ...
-        self.num_heads = ...
-        self.head_dim = ...
-        self.num_kv_heads = ...
+        self.hidden\_size = ...
+        self.num\_heads = ...
+        self.head\_dim = ...
+        self.num\_kv\_heads = ...
         
         # Explicit factor buffers
-        self.query_u  = nn.Parameter(...)   # (q_head_size, rank)
-        self.query_s  = nn.Parameter(...)   # (rank,)
-        self.query_vh = nn.Parameter(...)   # (rank, hidden_size)
-        self.query_bias = nn.Parameter(...)
-        # ... same for key, value, out_proj
+        self.query\_u  = nn.Parameter(...)   # (q\_head\_size, rank)
+        self.query\_s  = nn.Parameter(...)   # (rank,)
+        self.query\_vh = nn.Parameter(...)   # (rank, hidden\_size)
+        self.query\_bias = nn.Parameter(...)
+        # ... same for key, value, out\_proj
         
         # LoRA per projection
-        if lora_rank > 0:
-            self.q_lora_A = nn.Parameter(...)
-            self.q_lora_B = nn.Parameter(...)
+        if lora\_rank \textgreater{} 0:
+            self.q\_lora\_A = nn.Parameter(...)
+            self.q\_lora\_B = nn.Parameter(...)
             # ...
         
-        self._init_random()
+        self.\_init\_random()
         
         # Freeze base weights
-        for p in (self.query_u, self.query_s, self.query_vh, self.query_bias,
+        for p in (self.query\_u, self.query\_s, self.query\_vh, self.query\_bias,
                   ...):
-            p.requires_grad = False
+            p.requires\_grad = False
         
-        if old_attn is not None:
-            self.copy_weights(old_attn)
+        if old\_attn is not None:
+            self.copy\_weights(old\_attn)
 \end{lstlisting}
 
 \subsection{B.2 The `\_project` Helper}
 
 \begin{lstlisting}
-def _project(self, x, vh, s, u, b, lora_A, lora_B):
-    base_out = ((x @ vh.t()) * s.to(dtype=x.dtype)) @ u.t() + b
-    if self.lora_rank > 0 and lora_A is not None and lora_B is not None:
-        lora_out = F.linear(F.linear(x, lora_A), lora_B) * self.scaling
-        base_out = base_out + lora_out
-    return base_out
+def \_project(self, x, vh, s, u, b, lora\_A, lora\_B):
+    base\_out = ((x @ vh.t()) * s.to(dtype=x.dtype)) @ u.t() + b
+    if self.lora\_rank \textgreater{} 0 and lora\_A is not None and lora\_B is not None:
+        lora\_out = F.linear(F.linear(x, lora\_A), lora\_B) * self.scaling
+        base\_out = base\_out + lora\_out
+    return base\_out
 \end{lstlisting}
 
 \subsection{B.3 The `\_decompose\_and\_set` Method}
 
 \begin{lstlisting}
-def _decompose_and_set(self, u_param, s_param, vh_param, bias_param,
+def \_decompose\_and\_set(self, u\_param, s\_param, vh\_param, bias\_param,
                        weight, bias):
-    with torch.no_grad():
+    with torch.no\_grad():
         W = weight.float()
         # Pad or truncate to expected shape
-        if W.shape != (u_param.shape[0], vh_param.shape[1]):
-            padded_W = torch.zeros(u_param.shape[0], vh_param.shape[1], ...)
-            padded_W[:min(...), :min(...)] = W[:min(...), :min(...)]
-            W = padded_W
+        if W.shape != (u\_param.shape[0], vh\_param.shape[1]):
+            padded\_W = torch.zeros(u\_param.shape[0], vh\_param.shape[1], ...)
+            padded\_W[:min(...), :min(...)] = W[:min(...), :min(...)]
+            W = padded\_W
         
-        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-        total_energy = (S ** 2).sum().clamp(min=1e-12)
-        cum_energy = torch.cumsum(S ** 2, dim=0) / total_energy
-        r_energy = int((cum_energy < self.energy_threshold).sum().item()) + 1
-        r = max(1, min(r_energy, self.rank, len(S)))
+        U, S, Vt = torch.linalg.svd(W, full\_matrices=False)
+        total\_energy = (S ** 2).sum().clamp(min=1e-12)
+        cum\_energy = torch.cumsum(S ** 2, dim=0) / total\_energy
+        r\_energy = int((cum\_energy \textless{} self.energy\_threshold).sum().item()) + 1
+        r = max(1, min(r\_energy, self.rank, len(S)))
         
-        u_param.data.zero_()
-        s_param.data.zero_()
-        vh_param.data.zero_()
-        u_param.data[:, :r] = U[:, :r].to(u_param.dtype)
-        s_param.data[:r] = S[:r].to(s_param.dtype)
-        vh_param.data[:r, :] = Vt[:r, :].to(vh_param.dtype)
+        u\_param.data.zero\_()
+        s\_param.data.zero\_()
+        vh\_param.data.zero\_()
+        u\_param.data[:, :r] = U[:, :r].to(u\_param.dtype)
+        s\_param.data[:r] = S[:r].to(s\_param.dtype)
+        vh\_param.data[:r, :] = Vt[:r, :].to(vh\_param.dtype)
         if bias is not None:
-            bias_param.data.copy_(bias.to(bias_param.dtype))
+            bias\_param.data.copy\_(bias.to(bias\_param.dtype))
 \end{lstlisting}
 
 \subsection{B.4 Weight Transfer}
@@ -82,105 +82,105 @@ def _decompose_and_set(self, u_param, s_param, vh_param, bias_param,
 SVD-LLM V2 handles four patterns:
 
 \begin{lstlisting}
-def copy_weights(self, old_attn):
-    src = old_attn
-    if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
-        src = old_attn.self
-        if hasattr(old_attn.output, "dense"):
-            w_o, b_o = _unpack_weight_bias(old_attn.output.dense)
+def copy\_weights(self, old\_attn):
+    src = old\_attn
+    if hasattr(old\_attn, "self") and hasattr(old\_attn, "output"):
+        src = old\_attn.self
+        if hasattr(old\_attn.output, "dense"):
+            w\_o, b\_o = \_unpack\_weight\_bias(old\_attn.output.dense)
     
-    # 1. GPT-2 Fused c_attn
-    if hasattr(src, "c_attn") and hasattr(src, "c_proj"):
-        c_attn_w, c_attn_b = _unpack_weight_bias(src.c_attn)
-        split_size = c_attn_w.size(0) // 3
-        w_q = c_attn_w[:split_size, :]
-        w_k = c_attn_w[split_size:2*split_size, :]
-        w_v = c_attn_w[2*split_size:, :]
+    # 1. GPT-2 Fused c\_attn
+    if hasattr(src, "c\_attn") and hasattr(src, "c\_proj"):
+        c\_attn\_w, c\_attn\_b = \_unpack\_weight\_bias(src.c\_attn)
+        split\_size = c\_attn\_w.size(0) // 3
+        w\_q = c\_attn\_w[:split\_size, :]
+        w\_k = c\_attn\_w[split\_size:2*split\_size, :]
+        w\_v = c\_attn\_w[2*split\_size:, :]
         # ...
     
     # 2. RoBERTa / BERT
     elif hasattr(src, "query") and hasattr(src, "key") and hasattr(src, "value"):
-        w_q, b_q = _unpack_weight_bias(src.query)
+        w\_q, b\_q = \_unpack\_weight\_bias(src.query)
         # ...
     
     # 3. Qwen / LLaMA
-    elif hasattr(src, "q_proj") and hasattr(src, "k_proj") and hasattr(src, "v_proj"):
+    elif hasattr(src, "q\_proj") and hasattr(src, "k\_proj") and hasattr(src, "v\_proj"):
         # ...
     
     # 4. DistilBERT
-    elif hasattr(src, "q_lin") and hasattr(src, "k_lin") and hasattr(src, "v_lin"):
+    elif hasattr(src, "q\_lin") and hasattr(src, "k\_lin") and hasattr(src, "v\_lin"):
         # ...
     
     # Fallback: UniversalAdapter
-    if w_q is None or w_k is None or w_v is None:
-        adapter = UniversalAdapter(old_attn)
-        extracted = adapter.extract_qkv_out()
+    if w\_q is None or w\_k is None or w\_v is None:
+        adapter = UniversalAdapter(old\_attn)
+        extracted = adapter.extract\_qkv\_out()
         # ...
     
     # GQA pooling for K and V
-    if w_k.shape[0] != self.kv_head_size:
-        rep = w_k.shape[0] // self.kv_head_size
-        w_k_pooled = (
-            w_k.view(self.num_kv_heads, rep, self.head_dim, -1)
+    if w\_k.shape[0] != self.kv\_head\_size:
+        rep = w\_k.shape[0] // self.kv\_head\_size
+        w\_k\_pooled = (
+            w\_k.view(self.num\_kv\_heads, rep, self.head\_dim, -1)
             .mean(dim=1)
-            .view(self.kv_head_size, -1)
+            .view(self.kv\_head\_size, -1)
         )
         # ...
     
     # Decompose and set
-    self._decompose_and_set(self.query_u, ..., w_q, b_q)
-    self._decompose_and_set(self.key_u, ..., w_k_pooled, b_k_pooled)
-    self._decompose_and_set(self.value_u, ..., w_v_pooled, b_v_pooled)
-    if w_o is not None and not self.is_nested_encoder:
-        self._decompose_and_set(self.out_proj_u, ..., w_o, b_o)
+    self.\_decompose\_and\_set(self.query\_u, ..., w\_q, b\_q)
+    self.\_decompose\_and\_set(self.key\_u, ..., w\_k\_pooled, b\_k\_pooled)
+    self.\_decompose\_and\_set(self.value\_u, ..., w\_v\_pooled, b\_v\_pooled)
+    if w\_o is not None and not self.is\_nested\_encoder:
+        self.\_decompose\_and\_set(self.out\_proj\_u, ..., w\_o, b\_o)
 \end{lstlisting}
 
 \subsection{B.5 Injection Hook}
 
 \begin{lstlisting}
-def inject_svd_llm_v2(layer=None, model=None, model_config=None,
-                      comp_config=None, ...):
+def inject\_svd\_llm\_v2(layer=None, model=None, model\_config=None,
+                      comp\_config=None, ...):
     target = layer if layer is not None else model
     
     # Whole-model traversal
-    layer_list = ...
-    if layer_list is not None:
+    layer\_list = ...
+    if layer\_list is not None:
         # Pre-test
-        test_src = getattr(layer_list[0], "attention", None)
-        if test_src is not None:
+        test\_src = getattr(layer\_list[0], "attention", None)
+        if test\_src is not None:
             try:
-                SVDLLMV2Attention(cfg, old_attn=test_src, ...)
+                SVDLLMV2Attention(cfg, old\_attn=test\_src, ...)
             except Exception as e:
                 logger.warning(f"Pre-test failed: {e}")
                 return None
         
         # Inject each layer
         count = 0
-        for idx, lyr in enumerate(layer_list):
-            res = inject_svd_llm_v2(layer=lyr, ...)
+        for idx, lyr in enumerate(layer\_list):
+            res = inject\_svd\_llm\_v2(layer=lyr, ...)
             if res is not None:
                 count += 1
-        return target if count > 0 else None
+        return target if count \textgreater{} 0 else None
     
     # Single-layer injection
-    src = get_attention(target)
+    src = get\_attention(target)
     
     # Double-injection guard
     if isinstance(src, SVDLLMV2Attention):
         return None
     
-    new_attn = SVDLLMV2Attention(cfg, old_attn=src, ...)
+    new\_attn = SVDLLMV2Attention(cfg, old\_attn=src, ...)
     
     # Set nested flag and replace
-    for attr in ("attention", "attn", "self_attn", "self"):
+    for attr in ("attention", "attn", "self\_attn", "self"):
         if hasattr(target, attr):
             if attr == "attention" and hasattr(target.attention, "self"):
-                new_attn.is_nested_encoder = True
-                target.attention.self = new_attn
+                new\_attn.is\_nested\_encoder = True
+                target.attention.self = new\_attn
             else:
-                new_attn.is_nested_encoder = False
-                setattr(target, attr, new_attn)
-            return new_attn
+                new\_attn.is\_nested\_encoder = False
+                setattr(target, attr, new\_attn)
+            return new\_attn
 \end{lstlisting}
 
 \subsection{B.6 Common Pitfalls}
@@ -190,7 +190,7 @@ def inject_svd_llm_v2(layer=None, model=None, model_config=None,
 \texttt{\_unpack\_weight\_bias} handles this:
 
 \begin{lstlisting}
-if "Conv1D" in type(module).__name__ or hasattr(module, "nf"):
+if "Conv1D" in type(module).\_\_name\_\_ or hasattr(module, "nf"):
     w = w.t()
 \end{lstlisting}
 
@@ -198,18 +198,18 @@ if "Conv1D" in type(module).__name__ or hasattr(module, "nf"):
 
 \begin{lstlisting}
 # WRONG (RoBERTa)
-self.is_nested_encoder = False   # out_proj applied twice
+self.is\_nested\_encoder = False   # out\_proj applied twice
 
 # RIGHT
 if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-    self.is_nested_encoder = True
+    self.is\_nested\_encoder = True
 \end{lstlisting}
 
 \subsubsection{B.6.3 LoRA B Not Zeroed}
 
 \begin{lstlisting}
-for p_b in (self.q_lora_B, self.k_lora_B, self.v_lora_B, self.out_lora_B):
-    nn.init.zeros_(p_b)
+for p\_b in (self.q\_lora\_B, self.k\_lora\_B, self.v\_lora\_B, self.out\_lora\_B):
+    nn.init.zeros\_(p\_b)
 \end{lstlisting}
 
 \subsubsection{B.6.4 Missing GQA Pooling}

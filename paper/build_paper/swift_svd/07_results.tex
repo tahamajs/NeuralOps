@@ -14,17 +14,17 @@ We evaluate \texttt{swift\_svd} across three canonical language understanding ta
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
 DistilBERT & \textbf{Swift Svd} & \textbf{90.71\%} & +0.23\% & PASS & 0.9101 & 2 & \textbf{1.00$\times$} & 335.5 MB & 18.6 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Swift Svd} & \textbf{50.92\%} & -24.19\% & PASS_LOW & 0.6748 & 14 & \textbf{1.00$\times$} & 629.7 MB & 29.3 & -- \\
+RoBERTa & \textbf{Swift Svd} & \textbf{50.92\%} & -24.19\% & PASS\_LOW & 0.6748 & 14 & \textbf{1.00$\times$} & 629.7 MB & 29.3 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Swift Svd} & \textbf{50.92\%} & -9.86\% & PASS_LOW & 0.6748 & 8 & \textbf{1.00$\times$} & 755.6 MB & 25.7 & -- \\
+GPT-2 & \textbf{Swift Svd} & \textbf{50.92\%} & -9.86\% & PASS\_LOW & 0.6748 & 8 & \textbf{1.00$\times$} & 755.6 MB & 25.7 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main_sst2}
+\label{tab:main\_sst2}
 \end{table*}
 
 \subsection{Parameter Scaling and Compression Dynamics}
-Table~\ref{tab:params_swift_svd} compiles parameter profiles before and after transformation, detailing parameter counts, recovery parameters, and net compression ratios.
+Table~\ref{tab:params\_swift\_svd} compiles parameter profiles before and after transformation, detailing parameter counts, recovery parameters, and net compression ratios.
 
 \begin{table*}[t]
 \centering
@@ -39,7 +39,7 @@ AG News & 66,956,548 & 46,465,540 & -20,491,008 (-30.60\%) & 635,140 & 0 & 0 \\
 \bottomrule
 \end{tabular}
 \caption{Parameter allocation and layer decomposition for \texttt{swift\_svd}.}
-\label{tab:params_swift_svd}
+\label{tab:params\_swift\_svd}
 \end{table*}
 
 \subsection{Inference Efficiency and Memory Footprint}
@@ -48,7 +48,7 @@ Execution profiling demonstrates that \texttt{swift\_svd} executes within the ha
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/swift_svd_distilbert_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{swift_svd}.}
-\label{fig:results_swift_svd}
+\includegraphics[width=0.85\linewidth]{figures/swift\_svd\_distilbert\_radar\_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{swift\_svd}.}
+\label{fig:results\_swift\_svd}
 \end{figure}

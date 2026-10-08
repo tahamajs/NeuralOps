@@ -88,16 +88,16 @@ FlashAttention & 84.5 \\
 \end{itemize}
 \subsection{Quality Gate}
 
-PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL < 50.92\%.
+PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL \textless{} 50.92\%.
 
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_flash3.py \
+python run\_all\_4\_flash3.py \
     --models distilbert,roberta,gpt2 \
-    --use_fp8 True \
-    --lora_rank 8 \
-    --recovery_steps 50
+    --use\_fp8 True \
+    --lora\_rank 8 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}

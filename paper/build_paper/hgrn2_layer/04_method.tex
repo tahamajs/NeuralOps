@@ -10,7 +10,7 @@ The pipeline is:
               |
        +------+------+
                       
-    f_gate  i_gate  v_proj
+    f\_gate  i\_gate  v\_proj
        |      |      |
        +------+------+
               |
@@ -23,17 +23,17 @@ The pipeline is:
     +---------+---------+
               |
                
-       h_ctx = scan(f, g)
+       h\_ctx = scan(f, g)
               |
                
     +-------------------+
-    | h_norm = LayerNorm|
+    | h\_norm = LayerNorm|
     | gated = (0.5v +   |
-    |   0.5h_norm)*silu(z)|
+    |   0.5h\_norm)*silu(z)|
     +---------+---------+
               |
                
-        out_proj
+        out\_proj
               |
                
            Output Y
@@ -44,17 +44,17 @@ The pipeline is:
 \textbf{Forget gate:}
 
 \[
-\log f_t = -\text{softplus}(W_f x_t + b_f)
+\log f\_t = -\text{softplus}(W\_f x\_t + b\_f)
 \tag{4.1}
 \]
 
 \[
-\log f_t \leftarrow \text{clamp}(\log f_t, -3, -10^{-4})
+\log f\_t \leftarrow \text{clamp}(\log f\_t, -3, -10^{-4})
 \tag{4.2}
 \]
 
 \[
-f_t = \exp(\log f_t) \in [e^{-3}, 1] \approx [0.05, 1]
+f\_t = \exp(\log f\_t) \in [e^{-3}, 1] \approx [0.05, 1]
 \tag{4.3}
 \]
 
@@ -65,21 +65,21 @@ $\text{softplus}(-2.5) \approx 0.076$, so $f_0 \approx e^{-0.076} \approx 0.93$
 \textbf{Input gate:}
 
 \[
-i_t = \sigma(W_i x_t + b_i)
+i\_t = \sigma(W\_i x\_t + b\_i)
 \tag{4.4}
 \]
 
 \textbf{Value:}
 
 \[
-v_t = W_v x_t
+v\_t = W\_v x\_t
 \tag{4.5}
 \]
 
 \textbf{Input contribution:}
 
 \[
-g_t = (1 - f_t) \odot i_t \odot v_t
+g\_t = (1 - f\_t) \odot i\_t \odot v\_t
 \tag{4.6}
 \]
 
@@ -91,14 +91,14 @@ we compute the intra-chunk recurrence in parallel:
 \textbf{Step 1:} Compute cumulative log-forget within the chunk:
 
 \[
-A_k = \sum_{j=1}^{k} \log f_j
+A\_k = \sum\_{j=1}^{k} \log f\_j
 \tag{4.7}
 \]
 
 \textbf{Step 2:} Compute pairwise decay:
 
 \[
-D_{k,j} = \exp(A_k - A_j) \quad \text{for } j \leq k
+D\_{k,j} = \exp(A\_k - A\_j) \quad \text{for } j \leq k
 \tag{4.8}
 \]
 
@@ -107,21 +107,21 @@ Zero for $j > k$.
 \textbf{Step 3:} Intra-chunk state:
 
 \[
-h_k^\text{intra} = \sum_{j=1}^{k} D_{k,j} \cdot g_j
+h\_k^\text{intra} = \sum\_{j=1}^{k} D\_{k,j} \cdot g\_j
 \tag{4.9}
 \]
 
 \textbf{Step 4:} Combine with previous chunk state:
 
 \[
-h_k^\text{chunk} = h_\text{prev} \cdot \exp(A_k) + h_k^\text{intra}
+h\_k^\text{chunk} = h\_\text{prev} \cdot \exp(A\_k) + h\_k^\text{intra}
 \tag{4.10}
 \]
 
 \textbf{Step 5:} Clip for stability:
 
 \[
-h_k^\text{chunk} \leftarrow \text{clamp}(h_k^\text{chunk}, -30, 30)
+h\_k^\text{chunk} \leftarrow \text{clamp}(h\_k^\text{chunk}, -30, 30)
 \tag{4.11}
 \]
 
@@ -132,17 +132,17 @@ h_k^\text{chunk} \leftarrow \text{clamp}(h_k^\text{chunk}, -30, 30)
 For encoders, we compute both forward and backward scans:
 
 \[
-h_t^\text{fwd} = \text{scan}(f_{1:L}, g_{1:L})_t
+h\_t^\text{fwd} = \text{scan}(f\_{1:L}, g\_{1:L})\_t
 \tag{4.12}
 \]
 
 \[
-h_t^\text{bwd} = \text{scan}(\text{flip}(f), \text{flip}(g))_{L-t+1}
+h\_t^\text{bwd} = \text{scan}(\text{flip}(f), \text{flip}(g))\_{L-t+1}
 \tag{4.13}
 \]
 
 \[
-h_t = h_t^\text{fwd} + h_t^\text{bwd}
+h\_t = h\_t^\text{fwd} + h\_t^\text{bwd}
 \tag{4.14}
 \]
 
@@ -153,17 +153,17 @@ For decoders (causal), we use only the forward scan.
 The raw state $h_t$ is normalized and gated:
 
 \[
-h_t^\text{norm} = \text{LayerNorm}(h_t)
+h\_t^\text{norm} = \text{LayerNorm}(h\_t)
 \tag{4.15}
 \]
 
 \[
-\text{combined}_t = 0.5 \cdot v_t + 0.5 \cdot h_t^\text{norm}
+\text{combined}\_t = 0.5 \cdot v\_t + 0.5 \cdot h\_t^\text{norm}
 \tag{4.16}
 \]
 
 \[
-\text{gated}_t = \text{combined}_t \odot \text{SiLU}(z_t)
+\text{gated}\_t = \text{combined}\_t \odot \text{SiLU}(z\_t)
 \tag{4.17}
 \]
 
@@ -179,7 +179,7 @@ model to suppress or amplify the recurrence.
 \subsection{Output Projection}
 
 \[
-\text{out} = W_o \text{gated} + b_o + \text{LoRA}(\text{gated})
+\text{out} = W\_o \text{gated} + b\_o + \text{LoRA}(\text{gated})
 \tag{4.18}
 \]
 
@@ -187,24 +187,24 @@ model to suppress or amplify the recurrence.
 
 \textbf{Algorithm 1:} HGRN2Layer forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
-        chunk_size C = 32
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask
+        chunk\_size C = 32
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
- 1: f $\leftarrow$ exp(clamp(-softplus(W_f X + b_f), -3, -1e-4))
- 2: i $\leftarrow$ sigmoid(W_i X + b_i)
- 3: v $\leftarrow$ W_v X
- 4: z $\leftarrow$ W_g X + b_g
+ 1: f $\leftarrow$ exp(clamp(-softplus(W\_f X + b\_f), -3, -1e-4))
+ 2: i $\leftarrow$ sigmoid(W\_i X + b\_i)
+ 3: v $\leftarrow$ W\_v X
+ 4: z $\leftarrow$ W\_g X + b\_g
  5: g $\leftarrow$ (1 - f)   i   v
- 6: h_fwd $\leftarrow$ chunked_scan(f, g, C)
- 7: if not is_decoder:
- 8:     h_bwd $\leftarrow$ flip(chunked_scan(flip(f), flip(g), C))
- 9:     h $\leftarrow$ h_fwd + h_bwd
+ 6: h\_fwd $\leftarrow$ chunked\_scan(f, g, C)
+ 7: if not is\_decoder:
+ 8:     h\_bwd $\leftarrow$ flip(chunked\_scan(flip(f), flip(g), C))
+ 9:     h $\leftarrow$ h\_fwd + h\_bwd
 10: else:
-11:     h $\leftarrow$ h_fwd
-12: h_norm $\leftarrow$ LayerNorm(h)
-13: gated $\leftarrow$ (0.5 v + 0.5 h_norm)   SiLU(z)
-14: Y $\leftarrow$ W_o gated + b_o + LoRA(gated)
+11:     h $\leftarrow$ h\_fwd
+12: h\_norm $\leftarrow$ LayerNorm(h)
+13: gated $\leftarrow$ (0.5 v + 0.5 h\_norm)   SiLU(z)
+14: Y $\leftarrow$ W\_o gated + b\_o + LoRA(gated)
 15: return Y
 \end{lstlisting}
 

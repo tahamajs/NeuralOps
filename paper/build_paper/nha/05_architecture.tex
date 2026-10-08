@@ -33,8 +33,8 @@ Extract from inner \texttt{self}. \texttt{is\_nested\_encoder = True}; skip own 
 Split fused \texttt{c\_attn}:
 
 \begin{lstlisting}
-w = src.c_attn.weight.t()  # Conv1D transpose
-q_w, k_w, v_w = w.chunk(3, dim=0)
+w = src.c\_attn.weight.t()  # Conv1D transpose
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{Qwen3.5 (GQA + RoPE)}
@@ -61,7 +61,7 @@ For RoBERTa/BERT, \texttt{is\_nested\_encoder = True}:
 RoPE applied to Q, K \textbf{before} both streams:
 
 \begin{lstlisting}
-Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids)
+Q, K = apply\_rotary\_pos\_emb(Q, K, cos, sin, position\_ids)
 \end{lstlisting}
 
 \subsection{Padding Handling}
@@ -79,11 +79,11 @@ Both streams handle padding:
 Input:  model M, config c
 Output: M with NHA attention
 
-1:  for   in transformer_layers(M) do
-2:      src $\leftarrow$ extract_attention( )
+1:  for   in transformer\_layers(M) do
+2:      src $\leftarrow$ extract\_attention( )
 3:      if src is None: continue
-4:      new $\leftarrow$ NativeHybridAttention(config=c, pretrained_attn=src)
-5:      replace_attention( , new)
+4:      new $\leftarrow$ NativeHybridAttention(config=c, pretrained\_attn=src)
+5:      replace\_attention( , new)
 6: end for
 \end{lstlisting}
 
@@ -93,9 +93,9 @@ Output: M with NHA attention
 
 \begin{lstlisting}
 try:
-    new_attn = NativeHybridAttention(...)
+    new\_attn = NativeHybridAttention(...)
 except Exception as e:
-    logger.error("NHA construction failed: %s", e)
+    logger.error("NHA construction failed: \%s", e)
     return None
 \end{lstlisting}
 
@@ -121,8 +121,8 @@ RFF buffer & $d_h m$ (not trainable) \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("nha")
-@ATTENTION_REGISTRY.register("nha_attention")
+@ATTENTION\_REGISTRY.register("nha")
+@ATTENTION\_REGISTRY.register("nha\_attention")
 class NativeHybridAttention(BaseAttention): ...
 \end{lstlisting}
 
@@ -137,6 +137,6 @@ class NativeHybridAttention(BaseAttention): ...
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of nha.}
-\label{fig:arch_nha}
+\label{fig:arch\_nha}
 \end{figure}
 

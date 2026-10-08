@@ -109,7 +109,7 @@ Precision \& FP16 \\
 \midrule
 PASS & $\ge$ 56\% \\
 PASS\_LOW & 50.92--56\% \\
-FAIL & < 50.92\% \\
+FAIL & \textless{} 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -134,11 +134,11 @@ PyTorch & 2.4.0 \\
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_aegis_v5.py \
+python run\_all\_4\_aegis\_v5.py \
     --models distilbert,roberta,gpt2 \
-    --svd_energy 0.95 \
-    --max_rank 128 \
-    --recovery_steps 50
+    --svd\_energy 0.95 \
+    --max\_rank 128 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}

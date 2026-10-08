@@ -203,17 +203,17 @@ Step  Loss
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
-    "params_after": 22000000,
+    "params\_before": 66955010,
+    "params\_after": 22000000,
     "ratio": 3.0,
-    "accuracy_pct": 88.0,
-    "energy_threshold": 0.92,
-    "residual_rank": 16,
-    "min_rank_obs": 64,
-    "max_rank_obs": 150,
-    "layer_ranks": {
-      "layer_0_q": 128,
-      "layer_0_k": 128,
+    "accuracy\_pct": 88.0,
+    "energy\_threshold": 0.92,
+    "residual\_rank": 16,
+    "min\_rank\_obs": 64,
+    "max\_rank\_obs": 150,
+    "layer\_ranks": {
+      "layer\_0\_q": 128,
+      "layer\_0\_k": 128,
       "...": "..."
     }
   },
@@ -226,15 +226,15 @@ Step  Loss
 
 \begin{lstlisting}
 # Main
-python run_all_4_adaptive_svd.py --models distilbert,roberta,gpt2
+python run\_all\_4\_adaptive\_svd.py --models distilbert,roberta,gpt2
 
 # Energy threshold sweep
 for tau in 0.85 0.90 0.92 0.95 0.99; do
-    python run_all_4_adaptive_svd.py --energy_threshold $tau --output_suffix tau_$tau
+    python run\_all\_4\_adaptive\_svd.py --energy\_threshold $tau --output_suffix tau_$tau
 done
 
 # Residual rank sweep
 for rl in 0 4 8 16 32 64; do
-    python run_all_4_adaptive_svd.py --residual_rank $rl --output_suffix rl_$rl
+    python run\_all\_4\_adaptive\_svd.py --residual\_rank $rl --output_suffix rl_$rl
 done
 \end{lstlisting}

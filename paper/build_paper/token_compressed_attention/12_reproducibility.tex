@@ -3,8 +3,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -29,42 +29,42 @@ datasets & 1.0.0 \\
 \subsection{Running TCA}
 
 \begin{lstlisting}
-python run_all_4_token_compressed.py \
+python run\_all\_4\_token\_compressed.py \
     --models distilbert,roberta,gpt2 \
-    --compression_ratio 50\% \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --compression\_ratio 50\% \
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --modules full,token_compressed \
-    --compression_ratio 50\% \
-    --recovery_steps 50 \
-    --lora_rank 8
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --modules full,token\_compressed \
+    --compression\_ratio 50\% \
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1 (Main)}
 \begin{lstlisting}
-python run_all_4_token_compressed.py
+python run\_all\_4\_token\_compressed.py
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (  Ablation)}
 \begin{lstlisting}
 for r in 0.9 0.7 0.5 0.3 0.1; do
-    python run_all_4_token_compressed.py --compression_ratio $r --output_suffix r$r
+    python run\_all\_4\_token\_compressed.py --compression\_ratio $r --output_suffix r$r
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.5 (Score Net Ablation)}
 \begin{lstlisting}
-python run_all_4_token_compressed.py --use_score_net true  --output_suffix learn
-python run_all_4_token_compressed.py --use_score_net false --output_suffix norm
+python run\_all\_4\_token\_compressed.py --use\_score\_net true  --output\_suffix learn
+python run\_all\_4\_token\_compressed.py --use\_score\_net false --output\_suffix norm
 \end{lstlisting}
 
 \subsection{Seeds}
@@ -74,8 +74,8 @@ import random, numpy as np, torch
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}

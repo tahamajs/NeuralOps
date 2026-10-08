@@ -26,7 +26,7 @@ Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & No \\
 \begin{lstlisting}
 for proj in ["q", "k", "v", "o"]:
     try:
-        w, b = UniversalAdapter.get_weight_bias(src, proj)
+        w, b = UniversalAdapter.get\_weight\_bias(src, proj)
         if w is not None:
             extracted[proj] = (w, b)
     except Exception as e:
@@ -38,10 +38,10 @@ Note: failures are \textbf{logged and continued}, not raised.
 \subsubsection{Tier 2: GPT-2 Conv1D}
 
 \begin{lstlisting}
-weight = src.c_attn.weight.data
-if weight.shape[1] == 3 * hidden_size:
+weight = src.c\_attn.weight.data
+if weight.shape[1] == 3 * hidden\_size:
     weight = weight.t()
-q_w, k_w, v_w = weight.chunk(3, dim=0)
+q\_w, k\_w, v\_w = weight.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{Tier 3: RoBERTa Nested}
@@ -49,19 +49,19 @@ q_w, k_w, v_w = weight.chunk(3, dim=0)
 \begin{lstlisting}
 if hasattr(src, "self"):
     s = src.self
-    q_w = s.query.weight.data
-    k_w = s.key.weight.data
-    v_w = s.value.weight.data
+    q\_w = s.query.weight.data
+    k\_w = s.key.weight.data
+    v\_w = s.value.weight.data
 \end{lstlisting}
 
 \subsubsection{Tier 4: Named Projections}
 
 \begin{lstlisting}
-named_map = {
-    "q": ["q_proj", "q_lin", "query"],
-    "k": ["k_proj", "k_lin", "key"],
-    "v": ["v_proj", "v_lin", "value"],
-    "o": ["o_proj", "out_proj", "out_lin", "dense"],
+named\_map = {
+    "q": ["q\_proj", "q\_lin", "query"],
+    "k": ["k\_proj", "k\_lin", "key"],
+    "v": ["v\_proj", "v\_lin", "value"],
+    "o": ["o\_proj", "out\_proj", "out\_lin", "dense"],
 }
 \end{lstlisting}
 
@@ -70,19 +70,19 @@ named_map = {
 The \textbf{critical fix} -- check \texttt{out\_lin} before nested structure:
 
 \begin{lstlisting}
-has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o", "proj"))
+has\_out\_proj = any(hasattr(src, attr) for attr in ("dense", "out\_proj", "c\_proj", "out\_lin", "o\_proj", "wo", "o", "proj"))
 
 # PRIORITY 1: flat models with explicit output projections
-if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
-    self.is_nested_encoder = False
+if hasattr(src, "out\_lin") or hasattr(src, "c\_proj") or hasattr(src, "o\_proj"):
+    self.is\_nested\_encoder = False
 # PRIORITY 2: nested models (self + output.dense)
 elif (hasattr(src, "self") and hasattr(src, "output") and hasattr(src.output, "dense")):
-    self.is_nested_encoder = True
+    self.is\_nested\_encoder = True
 # PRIORITY 3: class name heuristic (as last resort)
-elif cls_name in ("BertSelfAttention", "RobertaSelfAttention"):
-    self.is_nested_encoder = True
+elif cls\_name in ("BertSelfAttention", "RobertaSelfAttention"):
+    self.is\_nested\_encoder = True
 else:
-    self.is_nested_encoder = False
+    self.is\_nested\_encoder = False
 \end{lstlisting}
 
 \textbf{Why this matters.} DistilBERT's \texttt{MultiHeadSelfAttention} ends with 
@@ -95,30 +95,30 @@ double projection $\to$ 50.92\% collapse. \textbf{Fixed in this version.}
 \subsubsection{Stacking Q, K, V}
 
 \begin{lstlisting}
-w_q = _orient(extracted["q"][0].float(), self.hidden_size)
-w_k = _orient(extracted["k"][0].float(), self.hidden_size)
-w_v = _orient(extracted["v"][0].float(), self.hidden_size)
-w_qkv = torch.cat([w_q, w_k, w_v], dim=0)
+w\_q = \_orient(extracted["q"][0].float(), self.hidden\_size)
+w\_k = \_orient(extracted["k"][0].float(), self.hidden\_size)
+w\_v = \_orient(extracted["v"][0].float(), self.hidden\_size)
+w\_qkv = torch.cat([w\_q, w\_k, w\_v], dim=0)
 \end{lstlisting}
 
 \subsubsection{SVD}
 
 \begin{lstlisting}
-U, S, Vh = torch.linalg.svd(w_qkv, full_matrices=False)
-r_qkv = min(self.rank_qkv, U.size(1), Vh.size(0))
+U, S, Vh = torch.linalg.svd(w\_qkv, full\_matrices=False)
+r\_qkv = min(self.rank\_qkv, U.size(1), Vh.size(0))
 
-self.U_qkv.data[:min(qkv_out_dim, U.size(0)), :r_qkv].copy_(U[...])
-self.S_qkv.data[:r_qkv].copy_(S[:r_qkv])
-self.Vh_qkv.data[:r_qkv, :min(self.hidden_size, Vh.size(1))].copy_(Vh[...])
+self.U\_qkv.data[:min(qkv\_out\_dim, U.size(0)), :r\_qkv].copy\_(U[...])
+self.S\_qkv.data[:r\_qkv].copy\_(S[:r\_qkv])
+self.Vh\_qkv.data[:r\_qkv, :min(self.hidden\_size, Vh.size(1))].copy\_(Vh[...])
 \end{lstlisting}
 
 \subsubsection{Rank Defaults}
 
 \begin{lstlisting}
-rank_val = rank or kwargs.get("rank_qkv", rank_qkv)
-if rank is None and "rank_qkv" not in kwargs:
-    rank_val = max(rank_qkv, min(384, all_head_size + 2 * kv_head_size, hidden_size))
-self.rank_qkv = min(rank_val, all_head_size + 2 * kv_head_size, hidden_size)
+rank\_val = rank or kwargs.get("rank\_qkv", rank\_qkv)
+if rank is None and "rank\_qkv" not in kwargs:
+    rank\_val = max(rank\_qkv, min(384, all\_head\_size + 2 * kv\_head\_size, hidden\_size))
+self.rank\_qkv = min(rank\_val, all\_head\_size + 2 * kv\_head\_size, hidden\_size)
 \end{lstlisting}
 
 \textbf{Default behavior:} If no explicit rank, promotes to \texttt{min(384, all\_head + 2*kv\_head, hidden)}. 
@@ -127,39 +127,39 @@ For $d = 768$, $d_h = 64$, $H = 12$: rank = \texttt{min(384, 768 + 2*768, 768) =
 \subsection{Output SVD}
 
 \begin{lstlisting}
-w_o = _orient(extracted["o"][0].float(), self.all_head_size)
-U_o, S_o, Vh_o = torch.linalg.svd(w_o, full_matrices=False)
-r_out = min(self.rank_out, U_o.size(1), Vh_o.size(0))
+w\_o = \_orient(extracted["o"][0].float(), self.all\_head\_size)
+U\_o, S\_o, Vh\_o = torch.linalg.svd(w\_o, full\_matrices=False)
+r\_out = min(self.rank\_out, U\_o.size(1), Vh\_o.size(0))
 \end{lstlisting}
 
 \subsection{Nested Encoder Bypass}
 
 \begin{lstlisting}
-if self.is_nested_encoder:
+if self.is\_nested\_encoder:
     out = context
 else:
-    out_proj = torch.matmul(context, self.Vh_out.t()) * self.S_out.unsqueeze(0).unsqueeze(0)
-    out = torch.matmul(out_proj, self.U_out.t()) + self.bias_out
-    if self.lora_rank > 0 and self.lora_A_out is not None:
-        lora_out = F.linear(F.linear(context, self.lora_A_out), self.lora_B_out) * self.lora_scaling
-        out = out + lora_out
+    out\_proj = torch.matmul(context, self.Vh\_out.t()) * self.S\_out.unsqueeze(0).unsqueeze(0)
+    out = torch.matmul(out\_proj, self.U\_out.t()) + self.bias\_out
+    if self.lora\_rank \textgreater{} 0 and self.lora\_A\_out is not None:
+        lora\_out = F.linear(F.linear(context, self.lora\_A\_out), self.lora\_B\_out) * self.lora\_scaling
+        out = out + lora\_out
 \end{lstlisting}
 
 \subsection{Injection Algorithm}
 
 \textbf{Algorithm 2:} Inject Compressed MHA
 \begin{lstlisting}
-Input:  model M, rank_qkv, rank_out
+Input:  model M, rank\_qkv, rank\_out
 Output: M with attention replaced
 
-1: for   in transformer_layers(M) do
-2:     src $\leftarrow$ get_attention( )
+1: for   in transformer\_layers(M) do
+2:     src $\leftarrow$ get\_attention( )
 3:     try:
-4:         new $\leftarrow$ CompressedDistilBertAttention(cfg, rank_qkv, rank_out, 
-5:                                                pretrained_attn=src)
-6:         replace_attention( , new)
+4:         new $\leftarrow$ CompressedDistilBertAttention(cfg, rank\_qkv, rank\_out, 
+5:                                                pretrained\_attn=src)
+6:         replace\_attention( , new)
 7:     except Exception as e:
-8:         logger.error(f"inject_compressed_mha: failed: {e}")
+8:         logger.error(f"inject\_compressed\_mha: failed: {e}")
 9:         continue  # Skip this layer
 10: end for
 11: return M
@@ -190,8 +190,8 @@ Wrong nested flag & Detection order & \textbf{Fixed in this version} \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("compressed_mha")
-@ATTENTION_REGISTRY.register("compressed_mha_attention")
+@ATTENTION\_REGISTRY.register("compressed\_mha")
+@ATTENTION\_REGISTRY.register("compressed\_mha\_attention")
 class CompressedDistilBertAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -228,6 +228,6 @@ For RoBERTa (12 layers): ~884,736 trainable.
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of compressed\_mha.}
-\label{fig:arch_compressed-mha}
+\label{fig:arch\_compressed-mha}
 \end{figure}
 

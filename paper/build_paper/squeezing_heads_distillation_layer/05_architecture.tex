@@ -23,7 +23,7 @@ Qwen3.5 \& Causal + RoPE \& Yes \& Yes \& not tested \\
 \subsubsection{DistilBERT (Flat)}
 
 \begin{lstlisting}
-q_lin, k_lin, v_lin, out_lin
+q\_lin, k\_lin, v\_lin, out\_lin
 \end{lstlisting}
 
 Direct copy with head-dim slicing. \texttt{is\_nested\_encoder = False}.
@@ -40,14 +40,14 @@ Extract from inner \texttt{self}. \texttt{is\_nested\_encoder = True}; skip own 
 \subsubsection{GPT-2 (Causal)}
 
 \begin{lstlisting}
-c_attn (fused), c_proj
+c\_attn (fused), c\_proj
 \end{lstlisting}
 
 Split fused \texttt{c\_attn}:
 
 \begin{lstlisting}
-w = src.c_attn.weight.t()  # Conv1D transpose
-q_w, k_w, v_w = w.chunk(3, dim=0)
+w = src.c\_attn.weight.t()  # Conv1D transpose
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{Qwen3.5 (GQA + RoPE)}
@@ -55,9 +55,9 @@ q_w, k_w, v_w = w.chunk(3, dim=0)
 GQA with pooling:
 
 \begin{lstlisting}
-if w_k.shape[0] > self.kv_head_size:
-    rep = w_k.shape[0] // self.kv_head_size
-    w_k_pooled = w_k.view(self.num_kv_heads, rep, self.head_dim, -1).mean(dim=1)
+if w\_k.shape[0] \textgreater{} self.kv\_head\_size:
+    rep = w\_k.shape[0] // self.kv\_head\_size
+    w\_k\_pooled = w\_k.view(self.num\_kv\_heads, rep, self.head\_dim, -1).mean(dim=1)
 \end{lstlisting}
 
 \subsection{Handling Nested Encoders}
@@ -73,8 +73,8 @@ For RoBERTa/BERT, \texttt{is\_nested\_encoder = True}:
 Standard causal masking in forward:
 
 \begin{lstlisting}
-causal_mask = torch.triu(torch.full((L, L), -inf), diagonal=1)
-scores = scores + causal_mask
+causal\_mask = torch.triu(torch.full((L, L), -inf), diagonal=1)
+scores = scores + causal\_mask
 \end{lstlisting}
 
 \subsection{GQA Handling}
@@ -82,9 +82,9 @@ scores = scores + causal_mask
 For Qwen/LLaMA with $H_{kv} < H$, use \texttt{repeat\_kv}:
 
 \begin{lstlisting}
-if self.num_kv_heads < self.num_heads:
-    k = repeat_kv(k, self.kv_repeat)
-    v = repeat_kv(v, self.kv_repeat)
+if self.num\_kv\_heads \textless{} self.num\_heads:
+    k = repeat\_kv(k, self.kv\_repeat)
+    v = repeat\_kv(v, self.kv\_repeat)
 \end{lstlisting}
 
 \subsection{Head-Dim Reduction}
@@ -93,8 +93,8 @@ If the target head\_dim $d_h' < d_h$, slice the leading rows of $W_Q, W_K, W_V$
 and leading columns of $W_O$:
 
 \begin{lstlisting}
-m_q_out = min(self.q_head_size, w_q.shape[0])  # = d_h' * H
-self.q_proj.weight[:m_q_out, :m_q_in].copy_(w_q[:m_q_out, :m_q_in])
+m\_q\_out = min(self.q\_head\_size, w\_q.shape[0])  # = d\_h' * H
+self.q\_proj.weight[:m\_q\_out, :m\_q\_in].copy\_(w\_q[:m\_q\_out, :m\_q\_in])
 \end{lstlisting}
 
 \subsection{Injection Algorithm}
@@ -104,11 +104,11 @@ self.q_proj.weight[:m_q_out, :m_q_in].copy_(w_q[:m_q_out, :m_q_in])
 Input:  model M, config c
 Output: M with LoRA-wrapped attention
 
-1:  for   in transformer_layers(M) do
-2:      src $\leftarrow$ extract_attention( )
+1:  for   in transformer\_layers(M) do
+2:      src $\leftarrow$ extract\_attention( )
 3:      if src is None: continue
-4:      new $\leftarrow$ SqueezingHeadsDistiller(config=c, old_attn=src)
-5:      replace_attention( , new)
+4:      new $\leftarrow$ SqueezingHeadsDistiller(config=c, old\_attn=src)
+5:      replace\_attention( , new)
 6: end for
 \end{lstlisting}
 
@@ -118,9 +118,9 @@ Output: M with LoRA-wrapped attention
 
 \begin{lstlisting}
 try:
-    new_attn = SqueezingHeadsDistiller(...)
+    new\_attn = SqueezingHeadsDistiller(...)
 except Exception as e:
-    logger.error("Failed to instantiate at layer %d: %s", layer_idx, e)
+    logger.error("Failed to instantiate at layer \%d: \%s", layer\_idx, e)
     return None
 \end{lstlisting}
 
@@ -143,8 +143,8 @@ LoRA adapters & 0 & $4 r_L d$ \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("squeezing_heads")
-@ATTENTION_REGISTRY.register("squeezing_heads_distiller")
+@ATTENTION\_REGISTRY.register("squeezing\_heads")
+@ATTENTION\_REGISTRY.register("squeezing\_heads\_distiller")
 class SqueezingHeadsDistiller(BaseAttention): ...
 \end{lstlisting}
 
@@ -159,6 +159,6 @@ class SqueezingHeadsDistiller(BaseAttention): ...
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of SqueezingHeadsAttentionDistillationLayer.}
-\label{fig:arch_SqueezingHeadsAttentionDistillationLayer}
+\label{fig:arch\_SqueezingHeadsAttentionDistillationLayer}
 \end{figure}
 

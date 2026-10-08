@@ -14,26 +14,26 @@ $\mathcal{N}(0, 1/d_h)$ entries, and for any vectors $Q, K \in \mathbb{R}^{d_h}$
 \textbf{Proof.} Let $\Omega_{ij}$ be the entries. Then:
 
 \[
-(Q\Omega)_j = \sum_i Q_i \Omega_{ij}
+(Q\Omega)\_j = \sum\_i Q\_i \Omega\_{ij}
 \]
 
 So:
 
 \[
-(Q\Omega)(K\Omega)^\top = \sum_j \left(\sum_i Q_i \Omega_{ij}\right) \left(\sum_{i'} K_{i'} \Omega_{i'j}\right)
-= \sum_{i, i'} Q_i K_{i'} \sum_j \Omega_{ij} \Omega_{i'j}
+(Q\Omega)(K\Omega)^\top = \sum\_j \left(\sum\_i Q\_i \Omega\_{ij}\right) \left(\sum\_{i'} K\_{i'} \Omega\_{i'j}\right)
+= \sum\_{i, i'} Q\_i K\_{i'} \sum\_j \Omega\_{ij} \Omega\_{i'j}
 \]
 
 Taking expectations:
 
 \[
-\mathbb{E}[\Omega_{ij} \Omega_{i'j}] = \frac{1}{d_h} \delta_{ii'}
+\mathbb{E}[\Omega\_{ij} \Omega\_{i'j}] = \frac{1}{d\_h} \delta\_{ii'}
 \]
 
 So:
 
 \[
-\mathbb{E}[(Q\Omega)(K\Omega)^\top] = \sum_{i, i'} Q_i K_{i'} \frac{1}{d_h} \delta_{ii'} \cdot r = \frac{r}{d_h} Q K^\top
+\mathbb{E}[(Q\Omega)(K\Omega)^\top] = \sum\_{i, i'} Q\_i K\_{i'} \frac{1}{d\_h} \delta\_{ii'} \cdot r = \frac{r}{d\_h} Q K^\top
 \]
 
 \textbf{Correction.} With scaling $1/d_h$, we get $\frac{r}{d_h} Q K^\top$, not $Q K^\top$. To get the correct scale, entries should have variance $1/r$. Let me redo:
@@ -41,11 +41,11 @@ So:
 With $\text{Var}[\Omega_{ij}] = 1/r$:
 
 \[
-\mathbb{E}[\Omega_{ij} \Omega_{i'j}] = \frac{1}{r} \delta_{ii'}
+\mathbb{E}[\Omega\_{ij} \Omega\_{i'j}] = \frac{1}{r} \delta\_{ii'}
 \]
 
 \[
-\mathbb{E}[(Q\Omega)(K\Omega)^\top] = \sum_{i, i'} Q_i K_{i'} \frac{1}{r} \delta_{ii'} \cdot r = Q K^\top \qquad \square
+\mathbb{E}[(Q\Omega)(K\Omega)^\top] = \sum\_{i, i'} Q\_i K\_{i'} \frac{1}{r} \delta\_{ii'} \cdot r = Q K^\top \qquad \square
 \]
 
 So the correct variance is $1/r$, not $1/d_h$. The code uses $(d_h)^{-1/2}$ for the standard deviation, giving variance $1/d_h$. This means the RPC scores are scaled by $r/d_h$, which is then compensated by the $1/\sqrt{r}$ scale.
@@ -55,7 +55,7 @@ So the correct variance is $1/r$, not $1/d_h$. The code uses $(d_h)^{-1/2}$ for 
 \textbf{Claim.} For $Q, K \in \mathbb{R}^{d_h}$ and $\Omega$ with variance $1/d_h$:
 
 \[
-\text{Var}[(Q\Omega)(K\Omega)^\top] = \frac{1}{d_h} \left(\|Q\|_2^2 \|K\|_2^2 + (Q \cdot K)^2\right)
+\text{Var}[(Q\Omega)(K\Omega)^\top] = \frac{1}{d\_h} \left(\|Q\|\_2^2 \|K\|\_2^2 + (Q \cdot K)^2\right)
 \tag{A.2}
 \]
 

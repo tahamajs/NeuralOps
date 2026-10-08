@@ -4,59 +4,59 @@
 \subsection{B.1 The Pruning Function}
 
 \begin{lstlisting}
-def _fasa_prune(self, k, v, mask=None):
-    B, H, L, D_h = k.shape
-    if L <= 8:
+def \_fasa\_prune(self, k, v, mask=None):
+    B, H, L, D\_h = k.shape
+    if L \textless{}= 8:
         return k, v, mask, None
     
-    if self.importance_method == "l2":
+    if self.importance\_method == "l2":
         importance = torch.norm(k.float(), p=2, dim=-1).mean(dim=1)  # (B, L)
     else:
         importance = k.float().var(dim=-1).mean(dim=1)  # (B, L)
     
     if mask is not None:
-        mask_2d = get_token_valid_mask(mask, B, L, k.device)
-        importance = importance.masked_fill(~mask_2d, -10000.0)
+        mask\_2d = get\_token\_valid\_mask(mask, B, L, k.device)
+        importance = importance.masked\_fill(~mask\_2d, -10000.0)
     
-    if self.protect_first_token:
+    if self.protect\_first\_token:
         importance[:, 0] = 1e9
     
-    keep = max(8, min(L, int(L * self.fasa_keep_ratio)))
-    _, idx = torch.topk(importance, keep, dim=-1)
-    idx, _ = torch.sort(idx, dim=-1)
+    keep = max(8, min(L, int(L * self.fasa\_keep\_ratio)))
+    \_, idx = torch.topk(importance, keep, dim=-1)
+    idx, \_ = torch.sort(idx, dim=-1)
     
-    idx_exp = idx.unsqueeze(1).unsqueeze(-1).expand(-1, H, -1, D_h)
-    k_pruned = k.gather(2, idx_exp)
-    v_pruned = v.gather(2, idx_exp)
+    idx\_exp = idx.unsqueeze(1).unsqueeze(-1).expand(-1, H, -1, D\_h)
+    k\_pruned = k.gather(2, idx\_exp)
+    v\_pruned = v.gather(2, idx\_exp)
     
-    pruned_mask = None
+    pruned\_mask = None
     if mask is not None:
-        mask_2d = get_token_valid_mask(mask, B, L, k.device)
-        pruned_mask = mask_2d.gather(1, idx)
+        mask\_2d = get\_token\_valid\_mask(mask, B, L, k.device)
+        pruned\_mask = mask\_2d.gather(1, idx)
     
-    return k_pruned, v_pruned, pruned_mask, idx
+    return k\_pruned, v\_pruned, pruned\_mask, idx
 \end{lstlisting}
 
 \subsection{B.2 The Forward Path}
 
 \begin{lstlisting}
-is_causal = bool(self.is_decoder and not is_cross and L > 1)
+is\_causal = bool(self.is\_decoder and not is\_cross and L \textgreater{} 1)
 
-if is_causal or is_cross:
+if is\_causal or is\_cross:
     # Standard full attention -- no pruning
     scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
-    if is_causal:
-        causal_mask = torch.triu(torch.full((L, L_kv), float("-inf"), ...), diagonal=1).unsqueeze(0).unsqueeze(0)
-        scores = scores + causal_mask
+    if is\_causal:
+        causal\_mask = torch.triu(torch.full((L, L\_kv), float("-inf"), ...), diagonal=1).unsqueeze(0).unsqueeze(0)
+        scores = scores + causal\_mask
     # ... apply mask, softmax, etc.
 else:
     # FASA pruning
-    k_p, v_p, p_mask, kept_idx = self._fasa_prune(k, v, eff_mask)
-    attn_scores = torch.matmul(q.float(), k_p.float().transpose(-2, -1)) * scale
-    if p_mask is not None:
-        attn_scores = attn_scores.masked_fill((p_mask == 0).unsqueeze(1).unsqueeze(2), -10000.0)
-    attn_weights = F.softmax(attn_scores, dim=-1).to(dtype)
-    out = torch.matmul(attn_weights, v_p).permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+    k\_p, v\_p, p\_mask, kept\_idx = self.\_fasa\_prune(k, v, eff\_mask)
+    attn\_scores = torch.matmul(q.float(), k\_p.float().transpose(-2, -1)) * scale
+    if p\_mask is not None:
+        attn\_scores = attn\_scores.masked\_fill((p\_mask == 0).unsqueeze(1).unsqueeze(2), -10000.0)
+    attn\_weights = F.softmax(attn\_scores, dim=-1).to(dtype)
+    out = torch.matmul(attn\_weights, v\_p).permute(0, 2, 1, 3).contiguous().view(B, L, self.all\_head\_size)
 \end{lstlisting}
 
 \subsection{B.3 Weight Transfer}
@@ -64,15 +64,15 @@ else:
 Standard four-architecture handling with additional GQA pooling logic:
 
 \begin{lstlisting}
-if proj_key in ("k", "v"):
-    if src_out == out_d:
-        target_w.data.copy_(w_oriented)
-    elif src_out > out_d and src_out % out_d == 0:
-        rep = src_out // out_d
-        target_w.data.copy_(w_oriented.view(out_d, rep, -1).mean(dim=1))
-    elif src_out < out_d and out_d % src_out == 0:
-        rep = out_d // src_out
-        target_w.data.copy_(w_oriented.repeat(rep, 1))
+if proj\_key in ("k", "v"):
+    if src\_out == out\_d:
+        target\_w.data.copy\_(w\_oriented)
+    elif src\_out \textgreater{} out\_d and src\_out \% out\_d == 0:
+        rep = src\_out // out\_d
+        target\_w.data.copy\_(w\_oriented.view(out\_d, rep, -1).mean(dim=1))
+    elif src\_out \textless{} out\_d and out\_d \% src\_out == 0:
+        rep = out\_d // src\_out
+        target\_w.data.copy\_(w\_oriented.repeat(rep, 1))
     else:
         # Partial copy
         ...
@@ -114,8 +114,8 @@ accuracy collapse. This is a foot-gun.
 \subsubsection{Count Kept Tokens}
 
 \begin{lstlisting}
-with torch.no_grad():
-    _, _, _, idx = model._fasa_prune(k, v)
+with torch.no\_grad():
+    \_, \_, \_, idx = model.\_fasa\_prune(k, v)
     print(f"Kept: {idx.shape[-1]} / {k.shape[2]}")
 \end{lstlisting}
 
@@ -134,9 +134,9 @@ plt.show()
 \subsection{B.6 Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("fasa")
-@ATTENTION_REGISTRY.register("fasa_attention")
-@ATTENTION_REGISTRY.register("mixattention_moska")
+@ATTENTION\_REGISTRY.register("fasa")
+@ATTENTION\_REGISTRY.register("fasa\_attention")
+@ATTENTION\_REGISTRY.register("mixattention\_moska")
 class MixAttentionMoSKA(BaseAttention):
     ...
 \end{lstlisting}

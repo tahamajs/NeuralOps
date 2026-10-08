@@ -69,7 +69,7 @@ Each projection $W$ is decomposed via SVD, and the rank $r$ is chosen to
 capture a target \textbf{energy} fraction:
 
 \[
-r^* = \min \left\{ r : \frac{\sum_{i \leq r} \sigma_i^2}{\sum_i \sigma_i^2} \geq \eta \right\}
+r^* = \min \left\{ r : \frac{\sum\_{i \leq r} \sigma\_i^2}{\sum\_i \sigma\_i^2} \geq \eta \right\}
 \]
 
 where $\eta = 0.95$ by default.
@@ -80,7 +80,7 @@ The SVD factors $(U_r, V_r)$ are frozen; LoRA adapters provide trainable
 capacity:
 
 \[
-\Delta W = \frac{\alpha}{r_L} B A
+\Delta W = \frac{\alpha}{r\_L} B A
 \]
 
 \subsubsection{Per-Head Adaptive Gating}
@@ -88,7 +88,7 @@ capacity:
 The local and global outputs are combined with a learnable per-head gate:
 
 \[
-\text{Out} = \sigma(g_h) \cdot \text{Out}_\text{local} + (1 - \sigma(g_h)) \cdot \text{Out}_\text{global}
+\text{Out} = \sigma(g\_h) \cdot \text{Out}\_\text{local} + (1 - \sigma(g\_h)) \cdot \text{Out}\_\text{global}
 \]
 
 Gate bias is initialized to $+2.0$, giving $\sigma(2.0) \approx 0.88$ 

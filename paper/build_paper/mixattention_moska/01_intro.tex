@@ -22,7 +22,7 @@ $V \in \mathbb{R}^{B \times H \times L \times d_h}$, select a subset
 $\mathcal{S} \subset \{1, \ldots, L\}$ with $|\mathcal{S}| = r L$ such that:
 
 \[
-\text{Attn}(Q, K_{\mathcal{S}}, V_{\mathcal{S}}) \approx \text{Attn}(Q, K, V)
+\text{Attn}(Q, K\_{\mathcal{S}}, V\_{\mathcal{S}}) \approx \text{Attn}(Q, K, V)
 \tag{1.1}
 \]
 
@@ -33,7 +33,7 @@ while computing the left-hand side at a fraction $r$ of the cost.
 FASA ranks tokens by the mean-over-heads variance of their key vectors:
 
 \[
-\text{imp}_i = \frac{1}{H} \sum_{h=1}^{H} \text{Var}_d(K_{i,h,d})
+\text{imp}\_i = \frac{1}{H} \sum\_{h=1}^{H} \text{Var}\_d(K\_{i,h,d})
 \tag{1.2}
 \]
 
@@ -86,7 +86,7 @@ $\mathcal{S}$ & Selected subset & 1.2 \\
 \bottomrule
 \end{tabular}
 \end{table}
-</parameter>
+\textless{}/parameter\textgreater{}
 \begin{lstlisting}
 
 ---

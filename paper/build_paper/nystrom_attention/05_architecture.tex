@@ -25,18 +25,18 @@ Nystr m branch only activates for $N > 128$.
 
 \begin{lstlisting}
 distilbert.transformer.layer.0.attention
-+-- q_lin
-+-- k_lin
-+-- v_lin
-+-- out_lin
++-- q\_lin
++-- k\_lin
++-- v\_lin
++-- out\_lin
 \end{lstlisting}
 
 \textbf{Extraction:}
 \begin{lstlisting}
-w_q = src.q_lin.weight.data
-w_k = src.k_lin.weight.data
-w_v = src.v_lin.weight.data
-w_o = src.out_lin.weight.data
+w\_q = src.q\_lin.weight.data
+w\_k = src.k\_lin.weight.data
+w\_v = src.v\_lin.weight.data
+w\_o = src.out\_lin.weight.data
 \end{lstlisting}
 
 \texttt{is\_nested\_encoder = False}.
@@ -54,7 +54,7 @@ roberta.encoder.layer.0.attention
 \textbf{Nested detection:}
 \begin{lstlisting}
 if hasattr(src, "self") and hasattr(src, "output"):
-    is_nested = True
+    is\_nested = True
 \end{lstlisting}
 
 \texttt{is\_nested\_encoder = True}. The outer \texttt{output.dense} applies projection.
@@ -63,16 +63,16 @@ if hasattr(src, "self") and hasattr(src, "output"):
 
 \begin{lstlisting}
 transformer.h.0.attn
-+-- c_attn  (Conv1D)
-+-- c_proj  (Conv1D)
++-- c\_attn  (Conv1D)
++-- c\_proj  (Conv1D)
 \end{lstlisting}
 
 \textbf{Split c\_attn:}
 \begin{lstlisting}
-c_w = src.c_attn.weight.data
-if "Conv1D" in type(src.c_attn).__name__ or c_w.shape[0] < c_w.shape[1]:
-    c_w = c_w.t()
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
+c\_w = src.c\_attn.weight.data
+if "Conv1D" in type(src.c\_attn).\_\_name\_\_ or c\_w.shape[0] \textless{} c\_w.shape[1]:
+    c\_w = c\_w.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
 \end{lstlisting}
 
 \textbf{Causal decoder detection:} \texttt{self.is\_decoder = True} $\to$ dense causal 
@@ -81,11 +81,11 @@ attention.
 \subsection{Qwen3.5 (GQA + RoPE)}
 
 \begin{lstlisting}
-model.layers.0.self_attn
-+-- q_proj
-+-- k_proj
-+-- v_proj
-+-- o_proj
+model.layers.0.self\_attn
++-- q\_proj
++-- k\_proj
++-- v\_proj
++-- o\_proj
 \end{lstlisting}
 
 \textbf{GQA:} \texttt{repeat\_kv} during forward.
@@ -97,50 +97,50 @@ model.layers.0.self_attn
 \subsection{Nested Encoder Bypass}
 
 \begin{lstlisting}
-context = torch.matmul(attn_weights, V)
+context = torch.matmul(attn\_weights, V)
 context = context.transpose(1, 2).contiguous().view(...)
 
-if self.is_nested_encoder:
-    return context, None    # Skip out_proj
+if self.is\_nested\_encoder:
+    return context, None    # Skip out\_proj
 else:
-    return self.out_proj(context), None
+    return self.out\_proj(context), None
 \end{lstlisting}
 
 \subsection{Injection Hook}
 
 \begin{lstlisting}
-def inject_nystrom(layer, model_config, comp_config, old_attn=None, **kwargs):
-    src_attn = old_attn or layer.attention...
+def inject\_nystrom(layer, model\_config, comp\_config, old\_attn=None, **kwargs):
+    src\_attn = old\_attn or layer.attention...
     
     # Extract dimensions
-    hidden_size = getattr(src_attn, 'hidden_size', ...)
-    num_heads = getattr(src_attn, 'num_heads', ...)
+    hidden\_size = getattr(src\_attn, 'hidden\_size', ...)
+    num\_heads = getattr(src\_attn, 'num\_heads', ...)
     
     try:
-        landmarks = getattr(comp_config, "num_landmarks", 32) if comp_config else 32
-        new_attn = NystromAttention(
-            config=model_config,
-            num_landmarks=landmarks,
-            comp_config=comp_config,
-            old_attn=src_attn,
-            hidden_size=hidden_size,
-            num_heads=num_heads,
+        landmarks = getattr(comp\_config, "num\_landmarks", 32) if comp\_config else 32
+        new\_attn = NystromAttention(
+            config=model\_config,
+            num\_landmarks=landmarks,
+            comp\_config=comp\_config,
+            old\_attn=src\_attn,
+            hidden\_size=hidden\_size,
+            num\_heads=num\_heads,
         )
-        if src_attn is not None:
-            new_attn.copy_weights(src_attn)
+        if src\_attn is not None:
+            new\_attn.copy\_weights(src\_attn)
         
         # Replace
         if hasattr(layer, "attention"):
             if hasattr(layer.attention, "self"):
-                layer.attention.self = new_attn
-                new_attn.is_nested_encoder = True
+                layer.attention.self = new\_attn
+                new\_attn.is\_nested\_encoder = True
             else:
-                layer.attention = new_attn
+                layer.attention = new\_attn
         elif hasattr(layer, "self"):
-            layer.self = new_attn
+            layer.self = new\_attn
         elif hasattr(layer, "attn"):
-            layer.attn = new_attn
-        return new_attn
+            layer.attn = new\_attn
+        return new\_attn
     except Exception as e:
         logger.error(f"injection failed: {e}")
         return None
@@ -159,7 +159,7 @@ original attention.
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
 Missing weights & \texttt{copy\_weights} raises & Abort \\
-Near-zero Frobenius & Norm check < 1e-4 & Raise \\
+Near-zero Frobenius & Norm check \textless{} 1e-4 & Raise \\
 Cross-attention & Not supported & Raise \\
 Short sequence & $N \leq 128$ & Dense \\
 Causal & \texttt{is\_decoder = True} & Dense causal \\
@@ -170,14 +170,14 @@ Causal & \texttt{is\_decoder = True} & Dense causal \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("nystrom")
-@ATTENTION_REGISTRY.register("nystrom_attention")
+@ATTENTION\_REGISTRY.register("nystrom")
+@ATTENTION\_REGISTRY.register("nystrom\_attention")
 class NystromAttention(BaseAttention):
     ...
 
-@ATTENTION_REGISTRY.register("nystrom_inject")
-@ATTENTION_REGISTRY.register("inject_nystrom")
-def inject_nystrom(...):
+@ATTENTION\_REGISTRY.register("nystrom\_inject")
+@ATTENTION\_REGISTRY.register("inject\_nystrom")
+def inject\_nystrom(...):
     ...
 \end{lstlisting}
 
@@ -205,6 +205,6 @@ Base weights ($W_Q, W_K, W_V, W_O$) are frozen. Only LoRA adapters trained.
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of nystrom\_attention.}
-\label{fig:arch_nystrom-attention}
+\label{fig:arch\_nystrom-attention}
 \end{figure}
 

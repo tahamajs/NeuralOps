@@ -7,8 +7,8 @@
 
 \begin{lstlisting}
 except Exception as e:
-    print(f'copy_weights failed: {e}')
-    raise RuntimeError(f"copy_weights failed: {e}")
+    print(f'copy\_weights failed: {e}')
+    raise RuntimeError(f"copy\_weights failed: {e}")
 \end{lstlisting}
 
 This matches the pattern in \texttt{aegis\_v4\_module.py}, \texttt{aegis\_v5\_module.py}, 
@@ -40,7 +40,7 @@ has its own try/except.
 \subsection{The `rff\_proj` Persistence Bug}
 
 \begin{lstlisting}
-self.register_buffer("rff_proj", torch.randn(...), persistent=False)
+self.register\_buffer("rff\_proj", torch.randn(...), persistent=False)
 \end{lstlisting}
 
 \textbf{Problem.} \texttt{persistent=False} means \texttt{rff\_proj} is \textbf{not saved} in 
@@ -54,18 +54,18 @@ behavior.
 
 \begin{lstlisting}
 model1 = ORIONAttention(...)
-sd = model1.state_dict()
-# rff_proj not in sd
+sd = model1.state\_dict()
+# rff\_proj not in sd
 
 model2 = ORIONAttention(...)
-model2.load_state_dict(sd, strict=False)
-# model2.rff_proj is different from model1.rff_proj
+model2.load\_state\_dict(sd, strict=False)
+# model2.rff\_proj is different from model1.rff\_proj
 \end{lstlisting}
 
 \textbf{Fix.} Set \texttt{persistent=True}:
 
 \begin{lstlisting}
-self.register_buffer("rff_proj", torch.randn(...), persistent=True)
+self.register\_buffer("rff\_proj", torch.randn(...), persistent=True)
 \end{lstlisting}
 
 \subsection{Head Bifurcation Analysis}
@@ -95,7 +95,7 @@ self.register_buffer("rff_proj", torch.randn(...), persistent=True)
 For ORION's softpick:
 
 \[
-\text{softpick}(x)_i = \frac{\text{ReLU}(e^{x_i} - 1)}{\sum_j \text{ReLU}(e^{x_j} - 1) + \epsilon}
+\text{softpick}(x)\_i = \frac{\text{ReLU}(e^{x\_i} - 1)}{\sum\_j \text{ReLU}(e^{x\_j} - 1) + \epsilon}
 \]
 
 \textbf{Test.} Compare softpick vs softmax on masked rows.
@@ -122,7 +122,7 @@ while ORION softpick's denominator can be zero if all keys are masked.
 
 \begin{lstlisting}
 denom = p.sum(dim=dim, keepdim=True)
-p = torch.where(denom > 1e-8, p / denom, F.softmax(x, dim=dim))
+p = torch.where(denom \textgreater{} 1e-8, p / denom, F.softmax(x, dim=dim))
 \end{lstlisting}
 
 \subsection{Parameter Reduction Analysis}

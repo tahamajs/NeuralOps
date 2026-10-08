@@ -5,116 +5,116 @@
 
 \begin{lstlisting}
 class FactorisedLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank=64, bias=True,
-                 energy=0.95, lora_rank=16, lora_alpha=32.0):
-        super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.rank = min(rank, in_features, out_features)
+    def \_\_init\_\_(self, in\_features, out\_features, rank=64, bias=True,
+                 energy=0.95, lora\_rank=16, lora\_alpha=32.0):
+        super().\_\_init\_\_()
+        self.in\_features = in\_features
+        self.out\_features = out\_features
+        self.rank = min(rank, in\_features, out\_features)
         self.energy = energy
-        self.lora_rank = lora_rank
-        self.lora_scaling = lora_alpha / lora_rank if lora_rank > 0 else 1.0
+        self.lora\_rank = lora\_rank
+        self.lora\_scaling = lora\_alpha / lora\_rank if lora\_rank \textgreater{} 0 else 1.0
         
-        self.down = nn.Linear(in_features, self.rank, bias=False)
-        self.up = nn.Linear(self.rank, out_features, bias=bias)
+        self.down = nn.Linear(in\_features, self.rank, bias=False)
+        self.up = nn.Linear(self.rank, out\_features, bias=bias)
         
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.randn(lora_rank, in_features) * 0.01)
-            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.randn(lora\_rank, in\_features) * 0.01)
+            self.lora\_B = nn.Parameter(torch.zeros(out\_features, lora\_rank))
         
-        self.reset_parameters()
+        self.reset\_parameters()
     
     def forward(self, x):
         out = self.up(self.down(x))
-        if self.lora_rank > 0:
-            out += F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        if self.lora\_rank \textgreater{} 0:
+            out += F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
         return out
 \end{lstlisting}
 
 \subsection{B.2 `decompose\_from\_weight`}
 
 \begin{lstlisting}
-def decompose_from_weight(self, weight, bias=None, energy=None):
-    with torch.no_grad():
+def decompose\_from\_weight(self, weight, bias=None, energy=None):
+    with torch.no\_grad():
         W = weight.float()
         
         # Handle GQA dimension mismatch
-        if W.shape[0] < self.out_features and self.out_features % W.shape[0] == 0:
-            rep = self.out_features // W.shape[0]
+        if W.shape[0] \textless{} self.out\_features and self.out\_features \% W.shape[0] == 0:
+            rep = self.out\_features // W.shape[0]
             W = W.repeat(rep, 1)
-        elif W.shape[0] > self.out_features and W.shape[0] % self.out_features == 0:
-            rep = W.shape[0] // self.out_features
-            W = W.view(self.out_features, rep, -1).mean(dim=1)
+        elif W.shape[0] \textgreater{} self.out\_features and W.shape[0] \% self.out\_features == 0:
+            rep = W.shape[0] // self.out\_features
+            W = W.view(self.out\_features, rep, -1).mean(dim=1)
         
         # SVD
-        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        U, S, Vt = torch.linalg.svd(W, full\_matrices=False)
         
         # Energy-based rank
-        target_energy = energy if energy is not None else self.energy
-        total_energy = (S ** 2).sum()
-        cum_energy = torch.cumsum(S ** 2, dim=0) / (total_energy + 1e-12)
-        calc_rank = int((cum_energy < target_energy).sum().item()) + 1
-        r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
+        target\_energy = energy if energy is not None else self.energy
+        total\_energy = (S ** 2).sum()
+        cum\_energy = torch.cumsum(S ** 2, dim=0) / (total\_energy + 1e-12)
+        calc\_rank = int((cum\_energy \textless{} target\_energy).sum().item()) + 1
+        r = min(self.rank, calc\_rank, U.size(1), Vt.size(0))
         r = max(1, r)
         
         # Symmetric distribution
-        sqrt_s = torch.sqrt(S[:r])
-        A = (U[:, :r] * sqrt_s).to(self.up.weight.dtype)
-        B = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype)
+        sqrt\_s = torch.sqrt(S[:r])
+        A = (U[:, :r] * sqrt\_s).to(self.up.weight.dtype)
+        B = (sqrt\_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype)
         
         # Store
-        self.up.weight.data.zero_()
-        self.down.weight.data.zero_()
+        self.up.weight.data.zero\_()
+        self.down.weight.data.zero\_()
         self.up.weight.data[:, :r] = A
         self.down.weight.data[:r, :] = B
         
-        self.freeze_base_weights()
+        self.freeze\_base\_weights()
 \end{lstlisting}
 
 \subsection{B.3 The Injection Hook (Minimal)}
 
 \begin{lstlisting}
-def inject_minimal_svd(layer, model_config, comp_config=None,
-                       layer_idx=0, total_layers=1, old_attn=None, **kwargs):
-    if model_config is None:
-        model_config = type('Cfg', (), {'hidden_size': 64, 'num_heads': 4, 'rank': 32})()
+def inject\_minimal\_svd(layer, model\_config, comp\_config=None,
+                       layer\_idx=0, total\_layers=1, old\_attn=None, **kwargs):
+    if model\_config is None:
+        model\_config = type('Cfg', (), {'hidden\_size': 64, 'num\_heads': 4, 'rank': 32})()
     
-    energy = getattr(comp_config, "svd_energy", 0.95) if comp_config else 0.95
-    dropout = getattr(comp_config, "dropout", 0.1) if comp_config else 0.1
+    energy = getattr(comp\_config, "svd\_energy", 0.95) if comp\_config else 0.95
+    dropout = getattr(comp\_config, "dropout", 0.1) if comp\_config else 0.1
     
-    new_attn = MinimalSVDAttention(
-        model_config=model_config,
+    new\_attn = MinimalSVDAttention(
+        model\_config=model\_config,
         energy=energy,
         dropout=dropout,
     )
     
-    src_attn = old_attn if old_attn is not None else \
+    src\_attn = old\_attn if old\_attn is not None else \
                getattr(layer, "attention", getattr(layer, "self", None))
     
-    if src_attn is not None:
+    if src\_attn is not None:
         try:
-            new_attn.copy_weights(src_attn)
+            new\_attn.copy\_weights(src\_attn)
         except Exception as e:
-            logger.error(f"copy_weights failed: {e}")
+            logger.error(f"copy\_weights failed: {e}")
             return None
-        p = next(src_attn.parameters(), None)
+        p = next(src\_attn.parameters(), None)
         if p is not None:
-            new_attn.to(device=p.device, dtype=p.dtype)
+            new\_attn.to(device=p.device, dtype=p.dtype)
     
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
-            layer.attention.self = new_attn
-            new_attn.is_nested_encoder = True
+            layer.attention.self = new\_attn
+            new\_attn.is\_nested\_encoder = True
         else:
-            layer.attention = new_attn
-            new_attn.is_nested_encoder = False
+            layer.attention = new\_attn
+            new\_attn.is\_nested\_encoder = False
     elif hasattr(layer, "self"):
-        layer.self = new_attn
-        new_attn.is_nested_encoder = True
+        layer.self = new\_attn
+        new\_attn.is\_nested\_encoder = True
     else:
-        new_attn.is_nested_encoder = False
+        new\_attn.is\_nested\_encoder = False
     
-    return new_attn
+    return new\_attn
 \end{lstlisting}
 
 \textbf{Note.} This function is intentionally minimal:
@@ -130,42 +130,42 @@ def inject_minimal_svd(layer, model_config, comp_config=None,
 The caller must traverse the model:
 
 \begin{lstlisting}
-model = DistilBertForSequenceClassification.from_pretrained("...")
+model = DistilBertForSequenceClassification.from\_pretrained("...")
 
 # DistilBERT
 for layer in model.distilbert.transformer.layer:
-    inject_minimal_svd(layer, model.config, energy=0.95)
+    inject\_minimal\_svd(layer, model.config, energy=0.95)
 
 # RoBERTa
 for layer in model.roberta.encoder.layer:
-    inject_minimal_svd(layer, model.config, energy=0.95)
+    inject\_minimal\_svd(layer, model.config, energy=0.95)
 
 # GPT-2
 for layer in model.transformer.h:
-    inject_minimal_svd(layer, model.config, energy=0.95)
+    inject\_minimal\_svd(layer, model.config, energy=0.95)
 \end{lstlisting}
 
 \subsection{B.5 Handling GPT-2 Conv1D}
 
 \begin{lstlisting}
-if hasattr(src, "c_attn"):
-    c_attn_mod = src.c_attn
-    base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
-    weight = base_c.weight.data.clone()
+if hasattr(src, "c\_attn"):
+    c\_attn\_mod = src.c\_attn
+    base\_c = getattr(c\_attn\_mod, "base\_layer", c\_attn\_mod)
+    weight = base\_c.weight.data.clone()
     
-    is_conv1d = (
-        "Conv1D" in type(c_attn_mod).__name__
-        or "Conv1D" in type(base_c).__name__
-        or hasattr(c_attn_mod, "nf")
-        or hasattr(base_c, "nf")
+    is\_conv1d = (
+        "Conv1D" in type(c\_attn\_mod).\_\_name\_\_
+        or "Conv1D" in type(base\_c).\_\_name\_\_
+        or hasattr(c\_attn\_mod, "nf")
+        or hasattr(base\_c, "nf")
     )
-    if is_conv1d:
+    if is\_conv1d:
         weight = weight.t()
     
-    split_size = weight.shape[0] // 3
-    q_w = weight[:split_size, :]
-    k_w = weight[split_size:2*split_size, :]
-    v_w = weight[2*split_size:, :]
+    split\_size = weight.shape[0] // 3
+    q\_w = weight[:split\_size, :]
+    k\_w = weight[split\_size:2*split\_size, :]
+    v\_w = weight[2*split\_size:, :]
 \end{lstlisting}
 
 \subsection{B.6 Nested Encoder Detection}
@@ -175,29 +175,29 @@ MinimalSVD sets \texttt{is\_nested\_encoder} in \textbf{two places}:
 \textbf{In \texttt{\_\_init\_\_}:}
 
 \begin{lstlisting}
-model_type = getattr(cfg, "model_type", "").lower() if cfg else ""
-self.is_nested_encoder = (
-    getattr(cfg, "is_nested_encoder", False)
-    or model_type in ("roberta", "bert", "xlm-roberta")
+model\_type = getattr(cfg, "model\_type", "").lower() if cfg else ""
+self.is\_nested\_encoder = (
+    getattr(cfg, "is\_nested\_encoder", False)
+    or model\_type in ("roberta", "bert", "xlm-roberta")
 )
 \end{lstlisting}
 
 \textbf{In \texttt{copy\_weights}:}
 
 \begin{lstlisting}
-cls_name = src.__class__.__name__
-has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj"))
+cls\_name = src.\_\_class\_\_.\_\_name\_\_
+has\_out\_proj = any(hasattr(src, attr) for attr in ("dense", "out\_proj", "c\_proj", "out\_lin", "o\_proj"))
 
-is_nested = False
+is\_nested = False
 if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-    is_nested = True
+    is\_nested = True
 elif (
-    cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
-    or (cls_name.endswith("SelfAttention") and not has_out_proj)
+    cls\_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
+    or (cls\_name.endswith("SelfAttention") and not has\_out\_proj)
 ):
-    is_nested = True
+    is\_nested = True
 
-self.is_nested_encoder = is_nested
+self.is\_nested\_encoder = is\_nested
 \end{lstlisting}
 
 \textbf{Note.} \texttt{copy\_weights} overrides the \texttt{\_\_init\_\_} value. This is important 
@@ -210,10 +210,10 @@ actual module.
 
 \begin{lstlisting}
 # WRONG
-w = src.c_attn.weight
+w = src.c\_attn.weight
 
 # RIGHT
-if is_conv1d:
+if is\_conv1d:
     w = w.t()
 \end{lstlisting}
 
@@ -221,27 +221,27 @@ if is_conv1d:
 
 \begin{lstlisting}
 # WRONG (RoBERTa)
-self.is_nested_encoder = False   # out_proj applied twice
+self.is\_nested\_encoder = False   # out\_proj applied twice
 
 # RIGHT
-self.is_nested_encoder = True
+self.is\_nested\_encoder = True
 \end{lstlisting}
 
 \subsubsection{B.7.3 LoRA B Not Zeroed}
 
 \begin{lstlisting}
 # WRONG
-self.lora_B = nn.Parameter(torch.randn(...))
+self.lora\_B = nn.Parameter(torch.randn(...))
 
 # RIGHT
-self.lora_B = nn.Parameter(torch.zeros(...))
+self.lora\_B = nn.Parameter(torch.zeros(...))
 \end{lstlisting}
 
 \subsubsection{B.7.4 Missing Near-Zero Check}
 
 \begin{lstlisting}
-w_norm = torch.linalg.norm(w.float())
-if w_norm < 1e-4:
+w\_norm = torch.linalg.norm(w.float())
+if w\_norm \textless{} 1e-4:
     raise RuntimeError(f"Near-zero weight on {proj}")
 \end{lstlisting}
 

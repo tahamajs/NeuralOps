@@ -15,13 +15,13 @@
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
 DistilBERT & \textbf{Svd Llm V2} & \textbf{81.88\%} & -8.60\% & PASS & 0.8260 & 0 & \textbf{1.23$\times$} & 288.5 MB & 6.4 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Svd Llm V2} & \textbf{50.92\%} & -24.19\% & PASS_LOW & 0.6748 & 0 & \textbf{1.17$\times$} & 338.6 MB & 10.2 & -- \\
+RoBERTa & \textbf{Svd Llm V2} & \textbf{50.92\%} & -24.19\% & PASS\_LOW & 0.6748 & 0 & \textbf{1.17$\times$} & 338.6 MB & 10.2 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Svd Llm V2} & \textbf{50.92\%} & -9.86\% & PASS_LOW & 0.6748 & 0 & \textbf{1.25$\times$} & 477.9 MB & 12.7 & -- \\
+GPT-2 & \textbf{Svd Llm V2} & \textbf{50.92\%} & -9.86\% & PASS\_LOW & 0.6748 & 0 & \textbf{1.25$\times$} & 477.9 MB & 12.7 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main_sst2}
+\label{tab:main\_sst2}
 \end{table*}
 
 \subsection{Parameter Analysis}
@@ -286,7 +286,7 @@ GPT-2 & 0.85 s & 84.5 s & 0.85 s & \textbf{0.85 s} \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/svd_llm_v2_gpt2_radar_metrics.png}
+\includegraphics[width=0.85\linewidth]{figures/svd\_llm\_v2\_gpt2\_radar\_metrics.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{svd\_llm\_v2\_attention}.}
-\label{fig:results_svd_llm_v2_attention}
+\label{fig:results\_svd\_llm\_v2\_attention}
 \end{figure}

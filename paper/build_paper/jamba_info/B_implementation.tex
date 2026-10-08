@@ -4,73 +4,73 @@
 
 \begin{lstlisting}
 class InfoMambaConceptBottleneck(nn.Module):
-    def __init__(self, dim, bottleneck_dim=64):
-        super().__init__()
-        self.W_down = nn.Linear(dim, bottleneck_dim, bias=False)
-        self.W_up = nn.Linear(bottleneck_dim, dim, bias=False)
+    def \_\_init\_\_(self, dim, bottleneck\_dim=64):
+        super().\_\_init\_\_()
+        self.W\_down = nn.Linear(dim, bottleneck\_dim, bias=False)
+        self.W\_up = nn.Linear(bottleneck\_dim, dim, bias=False)
     
     def forward(self, x):
-        return self.W_up(F.gelu(self.W_down(x)))
+        return self.W\_up(F.gelu(self.W\_down(x)))
 \end{lstlisting}
 
 \subsection{B.2 Forward Pass}
 
 \begin{lstlisting}
-def forward(self, x, attention_mask=None, position_embeddings=None):
+def forward(self, x, attention\_mask=None, position\_embeddings=None):
     B, L, D = x.shape
     
     # Differential attention branch
-    q1 = self.W_q1(x).view(B, L, H, Dh).transpose(1, 2)
-    k1 = self.W_k1(x).view(B, L, Hkv, Dh).transpose(1, 2)
-    q2 = self.W_q2(x).view(B, L, H, Dh).transpose(1, 2)
-    k2 = self.W_k2(x).view(B, L, Hkv, Dh).transpose(1, 2)
-    v = self.W_v(x).view(B, L, Hkv, Dh).transpose(1, 2)
+    q1 = self.W\_q1(x).view(B, L, H, Dh).transpose(1, 2)
+    k1 = self.W\_k1(x).view(B, L, Hkv, Dh).transpose(1, 2)
+    q2 = self.W\_q2(x).view(B, L, H, Dh).transpose(1, 2)
+    k2 = self.W\_k2(x).view(B, L, Hkv, Dh).transpose(1, 2)
+    v = self.W\_v(x).view(B, L, Hkv, Dh).transpose(1, 2)
     
-    if position_embeddings is not None:
-        cos, sin = position_embeddings
-        q1, k1 = apply_rotary_pos_emb(q1, k1, cos, sin)
-        q2, k2 = apply_rotary_pos_emb(q2, k2, cos, sin)
+    if position\_embeddings is not None:
+        cos, sin = position\_embeddings
+        q1, k1 = apply\_rotary\_pos\_emb(q1, k1, cos, sin)
+        q2, k2 = apply\_rotary\_pos\_emb(q2, k2, cos, sin)
     
-    if self.kv_repeat > 1:
-        k1 = repeat_kv(k1, self.kv_repeat)
-        k2 = repeat_kv(k2, self.kv_repeat)
-        v = repeat_kv(v, self.kv_repeat)
+    if self.kv\_repeat \textgreater{} 1:
+        k1 = repeat\_kv(k1, self.kv\_repeat)
+        k2 = repeat\_kv(k2, self.kv\_repeat)
+        v = repeat\_kv(v, self.kv\_repeat)
     
     scores1 = torch.matmul(q1.float(), k1.float().transpose(-2, -1)) * scale
     scores2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1)) * scale
     
     # masks
-    if self.is_decoder:
+    if self.is\_decoder:
         causal = torch.tril(...)
-        scores1 = scores1.masked_fill(~causal, -1e4)
-        scores2 = scores2.masked_fill(~causal, -1e4)
-    if attention_mask is not None:
+        scores1 = scores1.masked\_fill(~causal, -1e4)
+        scores2 = scores2.masked\_fill(~causal, -1e4)
+    if attention\_mask is not None:
         ...
     
     attn1 = F.softmax(scores1, dim=-1)
     attn2 = F.softmax(scores2, dim=-1)
-    diff_attn = F.relu(attn1 - 0.2 * attn2)
-    diff_attn = diff_attn / (diff_attn.sum(dim=-1, keepdim=True) + 1e-8)
+    diff\_attn = F.relu(attn1 - 0.2 * attn2)
+    diff\_attn = diff\_attn / (diff\_attn.sum(dim=-1, keepdim=True) + 1e-8)
     
-    attn_out = torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+    attn\_out = torch.matmul(diff\_attn, v).transpose(1, 2).contiguous().view(B, L, self.all\_head\_size)
     
     # Concept-bottlenecked SSM
     z = self.bottleneck(x)  # (B, L, D)
-    if self.is_decoder:
-        ssm_branch = self.ssm(z, attention_mask=attention_mask)[0]
+    if self.is\_decoder:
+        ssm\_branch = self.ssm(z, attention\_mask=attention\_mask)[0]
     else:
-        z_rev = torch.flip(z, dims=[1])
-        M_fwd = self.ssm(z, attention_mask=attention_mask)[0]
-        M_bwd = self.ssm(z_rev, attention_mask=attention_mask)[0]
-        ssm_branch = 0.5 * (M_fwd + torch.flip(M_bwd, dims=[1]))
+        z\_rev = torch.flip(z, dims=[1])
+        M\_fwd = self.ssm(z, attention\_mask=attention\_mask)[0]
+        M\_bwd = self.ssm(z\_rev, attention\_mask=attention\_mask)[0]
+        ssm\_branch = 0.5 * (M\_fwd + torch.flip(M\_bwd, dims=[1]))
     
     # Fusion
-    alpha = torch.sigmoid(self.alpha_raw)
-    combined = (1 - alpha) * attn_out + alpha * ssm_branch
+    alpha = torch.sigmoid(self.alpha\_raw)
+    combined = (1 - alpha) * attn\_out + alpha * ssm\_branch
     
-    if self.is_nested_encoder:
+    if self.is\_nested\_encoder:
         return combined, None
-    return self.out_proj(combined), None
+    return self.out\_proj(combined), None
 \end{lstlisting}
 
 \subsection{B.3 Bottleneck Dimension}
@@ -101,9 +101,9 @@ and the fusion order are tied.
 
 \begin{lstlisting}
 # After init
-assert self.bottleneck.W_down.weight.shape == (b, d)
-assert self.bottleneck.W_up.weight.shape == (d, b)
-assert abs(self.alpha.item() - 0.12) < 0.01
+assert self.bottleneck.W\_down.weight.shape == (b, d)
+assert self.bottleneck.W\_up.weight.shape == (d, b)
+assert abs(self.alpha.item() - 0.12) \textless{} 0.01
 \end{lstlisting}
 \begin{lstlisting}
 

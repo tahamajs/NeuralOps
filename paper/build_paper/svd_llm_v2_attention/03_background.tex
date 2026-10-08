@@ -17,14 +17,14 @@ $\sigma_1 \geq \sigma_2 \geq \dots \geq 0$.
 \textbf{Truncated SVD.} Keeping the top-$r$:
 
 \[
-W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^H
+W\_r = U\_{:, :r} \Sigma\_{:r, :r} V\_{:r, :}^H
 \tag{3.2}
 \]
 
 \textbf{Optimality.} By Eckart--Young, $W_r$ minimizes $\|W - W_r\|_F$. Error:
 
 \[
-\|W - W_r\|_F = \sqrt{\sum_{i > r} \sigma_i^2}
+\|W - W\_r\|\_F = \sqrt{\sum\_{i \textgreater{} r} \sigma\_i^2}
 \tag{3.3}
 \]
 
@@ -32,7 +32,7 @@ W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^H
 $\Sigma^{1/2}V^H$ for FP16 stability:
 
 \[
-W_r = \underbrace{U_{:, :r}\Sigma_{:r, :r}^{1/2}}_{\text{factor 1}} \cdot \underbrace{\Sigma_{:r, :r}^{1/2}V_{:r, :}^H}_{\text{factor 2}}
+W\_r = \underbrace{U\_{:, :r}\Sigma\_{:r, :r}^{1/2}}\_{\text{factor 1}} \cdot \underbrace{\Sigma\_{:r, :r}^{1/2}V\_{:r, :}^H}\_{\text{factor 2}}
 \tag{3.4}
 \]
 
@@ -40,7 +40,7 @@ W_r = \underbrace{U_{:, :r}\Sigma_{:r, :r}^{1/2}}_{\text{factor 1}} \cdot \under
 \textbf{separately}:
 
 \[
-W_r = U_{:, :r} \cdot \Sigma_{:r, :r} \cdot V_{:r, :}^H
+W\_r = U\_{:, :r} \cdot \Sigma\_{:r, :r} \cdot V\_{:r, :}^H
 \tag{3.5}
 \]
 
@@ -49,7 +49,7 @@ This is less numerically stable but \textbf{interpretable}.
 \subsection{Cumulative Spectral Energy}
 
 \[
-E(r) = \frac{\sum_{i \leq r} \sigma_i^2}{\sum_i \sigma_i^2}
+E(r) = \frac{\sum\_{i \leq r} \sigma\_i^2}{\sum\_i \sigma\_i^2}
 \tag{3.6}
 \]
 
@@ -58,7 +58,7 @@ $E(r)$ is monotonically increasing from $0$ to $1$.
 \textbf{Energy threshold.} Given $\eta$:
 
 \[
-r_\text{eff} = \min\{r : E(r) \geq \eta\}
+r\_\text{eff} = \min\{r : E(r) \geq \eta\}
 \tag{3.7}
 \]
 
@@ -68,9 +68,9 @@ For input $X \in \mathbb{R}^{B \times L \times d}$:
 
 \[
 \begin{aligned}
-Q &= X W_Q, \quad K = X W_K, \quad V = X W_V \\
-\text{head}_h &= \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_h \\
-\text{MHSA}(X) &= \text{Concat}(\text{head}_1, \dots, \text{head}_H) W_O
+Q &= X W\_Q, \quad K = X W\_K, \quad V = X W\_V \\
+\text{head}\_h &= \text{softmax}\!\left(\frac{Q\_h K\_h^\top}{\sqrt{d\_h}}\right) V\_h \\
+\text{MHSA}(X) &= \text{Concat}(\text{head}\_1, \dots, \text{head}\_H) W\_O
 \end{aligned}
 \tag{3.8}
 \]
@@ -86,7 +86,7 @@ When the source model has more KV heads than the target dimension, we
 \textbf{mean-pool} per group:
 
 \[
-(W_K^{\text{pooled}})_{h, :} = \frac{1}{|G_h|} \sum_{g \in G_h} W_{g, :}
+(W\_K^{\text{pooled}})\_{h, :} = \frac{1}{|G\_h|} \sum\_{g \in G\_h} W\_{g, :}
 \tag{3.9}
 \]
 
@@ -98,7 +98,7 @@ used when loading a checkpoint trained with a different head count.
 RoPE (Su et al., 2021) rotates $Q, K$:
 
 \[
-\tilde{Q}_i = Q_i \cos(\theta_i) + \text{rot}(Q_i) \sin(\theta_i)
+\tilde{Q}\_i = Q\_i \cos(\theta\_i) + \text{rot}(Q\_i) \sin(\theta\_i)
 \tag{3.10}
 \]
 
@@ -109,7 +109,7 @@ SVD-LLM V2 applies RoPE after projection, preserving structure.
 LoRA (Hu et al., 2021):
 
 \[
-\Delta W = \frac{\alpha}{r_L} B A
+\Delta W = \frac{\alpha}{r\_L} B A
 \tag{3.11}
 \]
 

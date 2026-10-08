@@ -5,59 +5,59 @@
 
 \begin{lstlisting}
 class SVDLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank, bias=True, ...):
-        super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.rank = max(1, min(rank, in_features, out_features))
+    def \_\_init\_\_(self, in\_features, out\_features, rank, bias=True, ...):
+        super().\_\_init\_\_()
+        self.in\_features = in\_features
+        self.out\_features = out\_features
+        self.rank = max(1, min(rank, in\_features, out\_features))
         
         # Base factors
-        self.V = nn.Parameter(torch.empty(self.rank, in_features))
-        self.U = nn.Parameter(torch.empty(out_features, self.rank))
+        self.V = nn.Parameter(torch.empty(self.rank, in\_features))
+        self.U = nn.Parameter(torch.empty(out\_features, self.rank))
         
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
+            self.bias = nn.Parameter(torch.empty(out\_features))
         
         # Optional LoRA
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.zeros(out\_features, lora\_rank))
         
-        self.reset_parameters()
+        self.reset\_parameters()
     
     def forward(self, x):
         latent = F.linear(x, self.V)
         out = F.linear(latent, self.U)
-        if self.lora_rank > 0:
-            out += F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        if self.lora\_rank \textgreater{} 0:
+            out += F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
         if self.bias is not None:
             out += self.bias
-        return out * self.output_scale
+        return out * self.output\_scale
 \end{lstlisting}
 
 \subsection{B.2 Streaming EMA Calibration}
 
 \begin{lstlisting}
-def make_hook(name):
+def make\_hook(name):
     def hook(module, inp, outp):
         x = inp[0].detach()
-        with torch.autocast(device_type=x.device.type, enabled=False):
-            x_fp32 = x.float()
-            x_flat = x_fp32.reshape(-1, in_f)
-            mask = x_flat.abs().sum(dim=-1) > 1e-5
-            x_active = x_flat[mask]
-            if x_active.size(0) == 0:
+        with torch.autocast(device\_type=x.device.type, enabled=False):
+            x\_fp32 = x.float()
+            x\_flat = x\_fp32.reshape(-1, in\_f)
+            mask = x\_flat.abs().sum(dim=-1) \textgreater{} 1e-5
+            x\_active = x\_flat[mask]
+            if x\_active.size(0) == 0:
                 return
-            batch_cov = (
-                torch.matmul(x_active.T, x_active) / max(1, x_active.size(0))
+            batch\_cov = (
+                torch.matmul(x\_active.T, x\_active) / max(1, x\_active.size(0))
             ).cpu()
         
         if name not in covariances:
-            covariances[name] = batch_cov
+            covariances[name] = batch\_cov
         else:
             covariances[name] = (
-                self.ema_beta * covariances[name]
-                + (1.0 - self.ema_beta) * batch_cov
+                self.ema\_beta * covariances[name]
+                + (1.0 - self.ema\_beta) * batch\_cov
             )
     return hook
 \end{lstlisting}
@@ -73,64 +73,64 @@ def make_hook(name):
 \subsection{B.3 Eigendecomposition with Regularization}
 
 \begin{lstlisting}
-def compute_sqrt_and_inv(cov, device):
+def compute\_sqrt\_and\_inv(cov, device):
     cov = cov.to(device=device, dtype=torch.float32)
-    cov_sym = 0.5 * (cov + cov.T)
-    eigvals, eigvecs = torch.linalg.eigh(cov_sym)
+    cov\_sym = 0.5 * (cov + cov.T)
+    eigvals, eigvecs = torch.linalg.eigh(cov\_sym)
     
     # Regularize
     eps = 1e-6 * torch.max(eigvals).clamp(min=1e-12) + 1e-8
-    eigvals_reg = eigvals.clamp(min=eps)
+    eigvals\_reg = eigvals.clamp(min=eps)
     
-    sqrt_eigvals = torch.sqrt(eigvals_reg)
-    inv_sqrt_eigvals = 1.0 / sqrt_eigvals
+    sqrt\_eigvals = torch.sqrt(eigvals\_reg)
+    inv\_sqrt\_eigvals = 1.0 / sqrt\_eigvals
     
-    cov_sqrt = eigvecs @ torch.diag(sqrt_eigvals) @ eigvecs.T
-    cov_inv_sqrt = eigvecs @ torch.diag(inv_sqrt_eigvals) @ eigvecs.T
+    cov\_sqrt = eigvecs @ torch.diag(sqrt\_eigvals) @ eigvecs.T
+    cov\_inv\_sqrt = eigvecs @ torch.diag(inv\_sqrt\_eigvals) @ eigvecs.T
     
-    return cov_sqrt, cov_inv_sqrt
+    return cov\_sqrt, cov\_inv\_sqrt
 \end{lstlisting}
 
 \subsection{B.4 Weighted SVD}
 
 \begin{lstlisting}
-def compress_linear(self, layer, cov_factors=None):
+def compress\_linear(self, layer, cov\_factors=None):
     W = weight(layer).float()
     
-    if cov_factors is not None:
-        cov_sqrt, cov_inv_sqrt = cov_factors
-        W_weighted = W @ cov_sqrt
+    if cov\_factors is not None:
+        cov\_sqrt, cov\_inv\_sqrt = cov\_factors
+        W\_weighted = W @ cov\_sqrt
     else:
-        W_weighted = W
+        W\_weighted = W
     
-    U, S, Vt = torch.linalg.svd(W_weighted, full_matrices=False)
+    U, S, Vt = torch.linalg.svd(W\_weighted, full\_matrices=False)
     
     # Truncate
     r = min(self.rank, ...)
-    sqrt_S = torch.sqrt(S[:r].clamp(min=1e-12))
-    U_r = U[:, :r] * sqrt_S.unsqueeze(0)
-    V_r = sqrt_S.unsqueeze(1) * Vt[:r, :]
+    sqrt\_S = torch.sqrt(S[:r].clamp(min=1e-12))
+    U\_r = U[:, :r] * sqrt\_S.unsqueeze(0)
+    V\_r = sqrt\_S.unsqueeze(1) * Vt[:r, :]
     
     # Unweight
-    if cov_inv_sqrt is not None:
-        V_r = V_r @ cov_inv_sqrt
+    if cov\_inv\_sqrt is not None:
+        V\_r = V\_r @ cov\_inv\_sqrt
     
     # Validate
-    W_rec = U_r @ V_r
-    err = torch.norm(W - W_rec).item() / max(torch.norm(W).item(), 1e-12)
+    W\_rec = U\_r @ V\_r
+    err = torch.norm(W - W\_rec).item() / max(torch.norm(W).item(), 1e-12)
     
-    return SVDLinear.from_factors(U_r, V_r), err, r
+    return SVDLinear.from\_factors(U\_r, V\_r), err, r
 \end{lstlisting}
 
 \subsection{B.5 Rank Cap Constraint}
 
 \begin{lstlisting}
-max_allowed_rank = max(1, min(
-    in_features,
-    out_features,
-    int(0.75 * (in_features * out_features) / (in_features + out_features))
+max\_allowed\_rank = max(1, min(
+    in\_features,
+    out\_features,
+    int(0.75 * (in\_features * out\_features) / (in\_features + out\_features))
 ))
-r = min(r, max_allowed_rank)
+r = min(r, max\_allowed\_rank)
 \end{lstlisting}
 
 This ensures $r(d_\text{in} + d_\text{out}) < 0.75 d_\text{in} d_\text{out}$, 
@@ -139,10 +139,10 @@ guaranteeing at least 25\% parameter reduction per layer.
 \subsection{B.6 Handling Conv1D}
 
 \begin{lstlisting}
-if "conv1d" in cls_name or hasattr(module, "nf"):
-    W = raw_w.t().float()  # (in, out) $\to$ (out, in)
+if "conv1d" in cls\_name or hasattr(module, "nf"):
+    W = raw\_w.t().float()  # (in, out) $\to$ (out, in)
 else:
-    W = raw_w.float()
+    W = raw\_w.float()
 \end{lstlisting}
 
 \subsection{B.7 Common Pitfalls}

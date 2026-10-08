@@ -7,29 +7,29 @@
 class AdaptiveSVDLinear(nn.Module):
     """Linear layer as SVD base + residual adapter."""
     
-    def __init__(self, in_features, out_features, svd_rank, residual_rank=16, ...):
-        super().__init__()
-        self.svd_rank = min(svd_rank, in_features, out_features)
-        self.residual_rank = min(residual_rank, in_features, out_features)
+    def \_\_init\_\_(self, in\_features, out\_features, svd\_rank, residual\_rank=16, ...):
+        super().\_\_init\_\_()
+        self.svd\_rank = min(svd\_rank, in\_features, out\_features)
+        self.residual\_rank = min(residual\_rank, in\_features, out\_features)
         
         # Frozen SVD base
-        self.U = nn.Parameter(torch.empty(out_features, self.svd_rank), requires_grad=False)
-        self.V = nn.Parameter(torch.empty(self.svd_rank, in_features), requires_grad=False)
+        self.U = nn.Parameter(torch.empty(out\_features, self.svd\_rank), requires\_grad=False)
+        self.V = nn.Parameter(torch.empty(self.svd\_rank, in\_features), requires\_grad=False)
         
         # Trainable residual
-        if self.residual_rank > 0:
-            self.lora_B = nn.Parameter(torch.empty(out_features, self.residual_rank))
-            self.lora_A = nn.Parameter(torch.empty(self.residual_rank, in_features))
+        if self.residual\_rank \textgreater{} 0:
+            self.lora\_B = nn.Parameter(torch.empty(out\_features, self.residual\_rank))
+            self.lora\_A = nn.Parameter(torch.empty(self.residual\_rank, in\_features))
         else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
+            self.register\_parameter("lora\_A", None)
+            self.register\_parameter("lora\_B", None)
         
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
+            self.bias = nn.Parameter(torch.empty(out\_features))
         else:
-            self.register_parameter("bias", None)
+            self.register\_parameter("bias", None)
         
-        self.reset_parameters()
+        self.reset\_parameters()
 \end{lstlisting}
 
 \subsection{B.2 Forward Pass}
@@ -38,12 +38,12 @@ class AdaptiveSVDLinear(nn.Module):
 def forward(self, x):
     # SVD base
     Vx = F.linear(x, self.V)      # (B, L, rank)
-    out = F.linear(Vx, self.U)     # (B, L, out_features)
+    out = F.linear(Vx, self.U)     # (B, L, out\_features)
     
     # Residual adapter
-    if self.lora_A is not None and self.lora_B is not None:
-        Ax = F.linear(x, self.lora_A)      # (B, L, residual_rank)
-        out = out + F.linear(Ax, self.lora_B)
+    if self.lora\_A is not None and self.lora\_B is not None:
+        Ax = F.linear(x, self.lora\_A)      # (B, L, residual\_rank)
+        out = out + F.linear(Ax, self.lora\_B)
     
     # Bias
     if self.bias is not None:
@@ -55,81 +55,81 @@ def forward(self, x):
 \subsection{B.3 Energy-Thresholded Rank Selection}
 
 \begin{lstlisting}
-def _compute_energy_rank(self, S, max_rank, min_rank=16):
+def \_compute\_energy\_rank(self, S, max\_rank, min\_rank=16):
     """
-    Find smallest rank r with cumulative energy >= $\tau$.
+    Find smallest rank r with cumulative energy \textgreater{}= $\tau$.
     
     Args:
         S: Singular values (descending), 1D tensor
-        max_rank: Upper bound on rank
-        min_rank: Lower bound on rank
+        max\_rank: Upper bound on rank
+        min\_rank: Lower bound on rank
     
     Returns:
-        Rank r $\in$ [min_rank, max_rank]
+        Rank r $\in$ [min\_rank, max\_rank]
     """
-    s_squared = S ** 2
-    total_energy = s_squared.sum()
+    s\_squared = S ** 2
+    total\_energy = s\_squared.sum()
     
-    if total_energy <= 1e-12:
-        return max(1, min(min_rank, max_rank))
+    if total\_energy \textless{}= 1e-12:
+        return max(1, min(min\_rank, max\_rank))
     
-    cum_energy = torch.cumsum(s_squared, dim=0) / total_energy
-    idx = torch.where(cum_energy >= self.energy_threshold)[0]
-    r = int(idx[0].item()) + 1 if len(idx) > 0 else max_rank
-    return max(1, min(max(r, min_rank), max_rank))
+    cum\_energy = torch.cumsum(s\_squared, dim=0) / total\_energy
+    idx = torch.where(cum\_energy \textgreater{}= self.energy\_threshold)[0]
+    r = int(idx[0].item()) + 1 if len(idx) \textgreater{} 0 else max\_rank
+    return max(1, min(max(r, min\_rank), max\_rank))
 \end{lstlisting}
 
 \subsection{B.4 SVD Initialization}
 
 \begin{lstlisting}
-def _init_svd_part(self, adap_linear, W_data, bias_data):
-    with torch.no_grad():
-        W = W_data.float()  # FP32 for SVD
-        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+def \_init\_svd\_part(self, adap\_linear, W\_data, bias\_data):
+    with torch.no\_grad():
+        W = W\_data.float()  # FP32 for SVD
+        U, S, Vt = torch.linalg.svd(W, full\_matrices=False)
         
-        max_r = min(adap_linear.svd_rank, U.size(1), Vt.size(0))
-        r = self._compute_energy_rank(S, max_rank=max_r)
+        max\_r = min(adap\_linear.svd\_rank, U.size(1), Vt.size(0))
+        r = self.\_compute\_energy\_rank(S, max\_rank=max\_r)
         
         # Symmetric factor distribution
-        sqrt_s = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-        U_r = (U[:, :r] * sqrt_s.unsqueeze(0)).to(
-            dtype=adap_linear.U.dtype,
-            device=adap_linear.U.device
+        sqrt\_s = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+        U\_r = (U[:, :r] * sqrt\_s.unsqueeze(0)).to(
+            dtype=adap\_linear.U.dtype,
+            device=adap\_linear.U.device
         )
-        V_r = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(
-            dtype=adap_linear.V.dtype,
-            device=adap_linear.V.device
+        V\_r = (sqrt\_s.unsqueeze(1) * Vt[:r, :]).to(
+            dtype=adap\_linear.V.dtype,
+            device=adap\_linear.V.device
         )
         
         # Set factors
-        adap_linear.set_svd_factors(U_r, V_r)
+        adap\_linear.set\_svd\_factors(U\_r, V\_r)
         
         # Copy bias
-        if adap_linear.bias is not None and bias_data is not None:
-            adap_linear.bias.data.copy_(bias_data)
+        if adap\_linear.bias is not None and bias\_data is not None:
+            adap\_linear.bias.data.copy\_(bias\_data)
 \end{lstlisting}
 
 \subsection{B.5 Adapter Initialization}
 
 \begin{lstlisting}
-def reset_parameters(self):
-    with torch.no_grad():
-        # Orthogonal init for U, V (used only if trainable_svd=True)
+def reset\_parameters(self):
+    with torch.no\_grad():
+        # Orthogonal init for U, V (used only if trainable\_svd=True)
         for param in (self.U, self.V):
             if param.dtype in (torch.float16, torch.bfloat16):
-                tmp = torch.empty_like(param, dtype=torch.float32, device="cpu")
-                nn.init.orthogonal_(tmp)
-                param.copy_(tmp.to(dtype=param.dtype, device=param.device))
+                tmp = torch.empty\_like(param, dtype=torch.float32, device="cpu")
+                nn.init.orthogonal\_(tmp)
+                param.copy\_(tmp.to(dtype=param.dtype, device=param.device))
             else:
-                nn.init.orthogonal_(param)
+                nn.init.orthogonal\_(param)
         
         # LoRA: A random, B zero
-        if self.lora_A is not None and self.lora_B is not None:
-            nn.init.kaiming_uniform_(self.lora_B, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_A)
+        if self.lora\_A is not None and self.lora\_B is not None:
+            nn.init.kaiming\_uniform\_(self.lora\_B, a=math.sqrt(5))
+            nn.init.zeros\_(self.lora\_A)
         
         if self.bias is not None:
-            nn.init.zeros_(self.bias)
+            nn.init.zeros\_(self.bias)
 \end{lstlisting}
 
 \textbf{Note.} This implementation uses $B$ random and $A$ zero (opposite of LoRA 
@@ -138,7 +138,7 @@ convention but equivalent).
 \subsection{B.6 Weight Extraction (Multi-Architecture)}
 
 \begin{lstlisting}
-def copy_weights(self, src):
+def copy\_weights(self, src):
     extracted = {}
     
     for proj in ["q", "k", "v", "o"]:
@@ -146,117 +146,117 @@ def copy_weights(self, src):
         
         # Try UniversalAdapter first
         try:
-            w, b = UniversalAdapter.get_weight_bias(src, proj)
+            w, b = UniversalAdapter.get\_weight\_bias(src, proj)
         except Exception:
             pass
         
         # Manual fallbacks
         if w is None:
-            # GPT-2 Fused c_attn
-            if hasattr(src, "c_attn") and proj in ["q", "k", "v"]:
-                fused_w = src.c_attn.weight.T  # (3D, D)
-                fused_b = getattr(src.c_attn, "bias", None)
-                split = fused_w.size(0) // 3
+            # GPT-2 Fused c\_attn
+            if hasattr(src, "c\_attn") and proj in ["q", "k", "v"]:
+                fused\_w = src.c\_attn.weight.T  # (3D, D)
+                fused\_b = getattr(src.c\_attn, "bias", None)
+                split = fused\_w.size(0) // 3
                 idx = {"q": 0, "k": 1, "v": 2}[proj]
-                w = fused_w[idx*split:(idx+1)*split, :]
-                b = fused_b[idx*split:(idx+1)*split] if fused_b is not None else None
-            elif hasattr(src, "c_proj") and proj == "o":
-                w = src.c_proj.weight.T
-                b = getattr(src.c_proj, "bias", None)
+                w = fused\_w[idx*split:(idx+1)*split, :]
+                b = fused\_b[idx*split:(idx+1)*split] if fused\_b is not None else None
+            elif hasattr(src, "c\_proj") and proj == "o":
+                w = src.c\_proj.weight.T
+                b = getattr(src.c\_proj, "bias", None)
             # RoBERTa/BERT nested
             elif hasattr(src, "self") and hasattr(src.self, "query"):
-                name_map = {"q": "query", "k": "key", "v": "value"}
-                if proj in name_map:
-                    mod = getattr(src.self, name_map[proj])
+                name\_map = {"q": "query", "k": "key", "v": "value"}
+                if proj in name\_map:
+                    mod = getattr(src.self, name\_map[proj])
                     w = mod.weight
                     b = getattr(mod, "bias", None)
             # DistilBERT flat
-            elif hasattr(src, "q_lin") and proj == "q":
-                w = src.q_lin.weight
-                b = getattr(src.q_lin, "bias", None)
+            elif hasattr(src, "q\_lin") and proj == "q":
+                w = src.q\_lin.weight
+                b = getattr(src.q\_lin, "bias", None)
             # ... more cases
         
         extracted[proj] = (w, b)
     
     # Detect nested encoder
-    is_nested = (
+    is\_nested = (
         hasattr(src, "self") and hasattr(src, "output") and
         hasattr(src.self, "query")
     )
-    self.is_nested_encoder = is_nested
+    self.is\_nested\_encoder = is\_nested
     
     # Initialize SVD for each projection
-    for proj, target in [("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out_proj)]:
+    for proj, target in [("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out\_proj)]:
         w, b = extracted[proj]
         if w is not None:
-            self._init_svd_part(target, w, b)
+            self.\_init\_svd\_part(target, w, b)
             # Freeze base, unfreeze adapter
-            target.U.requires_grad = False
-            target.V.requires_grad = False
+            target.U.requires\_grad = False
+            target.V.requires\_grad = False
             if target.bias is not None:
-                target.bias.requires_grad = False
-            if target.lora_A is not None:
-                target.lora_A.requires_grad = True
-            if target.lora_B is not None:
-                target.lora_B.requires_grad = True
+                target.bias.requires\_grad = False
+            if target.lora\_A is not None:
+                target.lora\_A.requires\_grad = True
+            if target.lora\_B is not None:
+                target.lora\_B.requires\_grad = True
 \end{lstlisting}
 
 \subsection{B.7 T5 Relative Attention Bias}
 
 \begin{lstlisting}
-def _relative_position_bucket(self, relative_position, bidirectional=True, num_buckets=32, max_distance=128):
-    relative_buckets = 0
+def \_relative\_position\_bucket(self, relative\_position, bidirectional=True, num\_buckets=32, max\_distance=128):
+    relative\_buckets = 0
     if bidirectional:
-        num_buckets //= 2
-        relative_buckets += (relative_position > 0).to(torch.long) * num_buckets
-        relative_position = torch.abs(relative_position)
+        num\_buckets //= 2
+        relative\_buckets += (relative\_position \textgreater{} 0).to(torch.long) * num\_buckets
+        relative\_position = torch.abs(relative\_position)
     else:
-        relative_position = -torch.min(relative_position, torch.zeros_like(relative_position))
+        relative\_position = -torch.min(relative\_position, torch.zeros\_like(relative\_position))
     
-    max_exact = num_buckets // 2
-    is_small = relative_position < max_exact
+    max\_exact = num\_buckets // 2
+    is\_small = relative\_position \textless{} max\_exact
     
-    relative_position_if_large = max_exact + (
-        torch.log(relative_position.float() / max_exact)
-        / math.log(max_distance / max_exact)
-        * (num_buckets - max_exact)
+    relative\_position\_if\_large = max\_exact + (
+        torch.log(relative\_position.float() / max\_exact)
+        / math.log(max\_distance / max\_exact)
+        * (num\_buckets - max\_exact)
     ).to(torch.long)
     
-    relative_position_if_large = torch.min(
-        relative_position_if_large,
-        torch.full_like(relative_position_if_large, num_buckets - 1)
+    relative\_position\_if\_large = torch.min(
+        relative\_position\_if\_large,
+        torch.full\_like(relative\_position\_if\_large, num\_buckets - 1)
     )
     
-    relative_buckets += torch.where(is_small, relative_position, relative_position_if_large)
-    return relative_buckets
+    relative\_buckets += torch.where(is\_small, relative\_position, relative\_position\_if\_large)
+    return relative\_buckets
 \end{lstlisting}
 
 \subsection{B.8 Handling RoPE}
 
 \begin{lstlisting}
-def apply_rotary(self, Q, K, cos, sin):
-    def _rotate_half(x):
+def apply\_rotary(self, Q, K, cos, sin):
+    def \_rotate\_half(x):
         return torch.cat((-x[..., x.shape[-1]//2:], x[..., :x.shape[-1]//2]), dim=-1)
     
     if cos.dim() == 3:
         cos, sin = cos.unsqueeze(1), sin.unsqueeze(1)
-    while cos.dim() < Q.dim():
+    while cos.dim() \textless{} Q.dim():
         cos, sin = cos.unsqueeze(0), sin.unsqueeze(0)
     if cos.shape[-2] != Q.shape[-2]:
         cos, sin = cos[..., :Q.shape[-2], :], sin[..., :Q.shape[-2], :]
     
-    rotary_dim = cos.shape[-1]
-    if rotary_dim <= Q.shape[-1]:
-        q_rot, q_pass = Q[..., :rotary_dim], Q[..., rotary_dim:]
-        k_rot, k_pass = K[..., :rotary_dim], K[..., rotary_dim:]
-        q_rot = (q_rot * cos.to(q_rot.dtype)) + (_rotate_half(q_rot) * sin.to(q_rot.dtype))
-        k_rot = (k_rot * cos.to(k_rot.dtype)) + (_rotate_half(k_rot) * sin.to(k_rot.dtype))
-        Q = torch.cat([q_rot, q_pass], dim=-1) if q_pass.numel() > 0 else q_rot
-        K = torch.cat([k_rot, k_pass], dim=-1) if k_pass.numel() > 0 else k_rot
+    rotary\_dim = cos.shape[-1]
+    if rotary\_dim \textless{}= Q.shape[-1]:
+        q\_rot, q\_pass = Q[..., :rotary\_dim], Q[..., rotary\_dim:]
+        k\_rot, k\_pass = K[..., :rotary\_dim], K[..., rotary\_dim:]
+        q\_rot = (q\_rot * cos.to(q\_rot.dtype)) + (\_rotate\_half(q\_rot) * sin.to(q\_rot.dtype))
+        k\_rot = (k\_rot * cos.to(k\_rot.dtype)) + (\_rotate\_half(k\_rot) * sin.to(k\_rot.dtype))
+        Q = torch.cat([q\_rot, q\_pass], dim=-1) if q\_pass.numel() \textgreater{} 0 else q\_rot
+        K = torch.cat([k\_rot, k\_pass], dim=-1) if k\_pass.numel() \textgreater{} 0 else k\_rot
     else:
-        cos_cut, sin_cut = cos[..., :Q.shape[-1]], sin[..., :Q.shape[-1]]
-        Q = (Q * cos_cut.to(Q.dtype)) + (_rotate_half(Q) * sin_cut.to(Q.dtype))
-        K = (K * cos_cut.to(K.dtype)) + (_rotate_half(K) * sin_cut.to(K.dtype))
+        cos\_cut, sin\_cut = cos[..., :Q.shape[-1]], sin[..., :Q.shape[-1]]
+        Q = (Q * cos\_cut.to(Q.dtype)) + (\_rotate\_half(Q) * sin\_cut.to(Q.dtype))
+        K = (K * cos\_cut.to(K.dtype)) + (\_rotate\_half(K) * sin\_cut.to(K.dtype))
     
     return Q, K
 \end{lstlisting}
@@ -292,17 +292,17 @@ hidden states directly is wrong.
 After injection, verify:
 
 \begin{lstlisting}
-from framework.attentions.adaptive_svd_attn import AdaptiveSVDAttention
+from framework.attentions.adaptive\_svd\_attn import AdaptiveSVDAttention
 
 # Check attention class
-for name, mod in model.named_modules():
-    if "attention" in name.lower() and name.count(".") <= 5:
-        print(name, type(mod).__name__)
+for name, mod in model.named\_modules():
+    if "attention" in name.lower() and name.count(".") \textless{}= 5:
+        print(name, type(mod).\_\_name\_\_)
 
 # Check factors
-for name, mod in model.named_modules():
+for name, mod in model.named\_modules():
     if isinstance(mod, AdaptiveSVDLinear):
-        print(f"{name}: U={mod.U.shape}, V={mod.V.shape}, lora_A={mod.lora_A.shape}")
+        print(f"{name}: U={mod.U.shape}, V={mod.V.shape}, lora\_A={mod.lora\_A.shape}")
 \end{lstlisting}
 
 \subsection{B.11 Complete Source Code}
@@ -310,7 +310,7 @@ for name, mod in model.named_modules():
 The full source is at:
 
 \begin{lstlisting}
-framework/attentions/adaptive_svd_attn.py
+framework/attentions/adaptive\_svd\_attn.py
 \end{lstlisting}
 
 Key entry points:

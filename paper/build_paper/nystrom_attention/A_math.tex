@@ -8,7 +8,7 @@ eigenvalues $\lambda_1 \geq \lambda_2 \geq \dots$, the Nystr m
 approximation $\tilde{K} = K_{:, m} K_{m, m}^+ K_{m, :}$ satisfies:
 
 \[
-\|K - \tilde{K}\|_F^2 \leq \|K\|_F^2 - \sum_{i=1}^{m} \lambda_i^2
+\|K - \tilde{K}\|\_F^2 \leq \|K\|\_F^2 - \sum\_{i=1}^{m} \lambda\_i^2
 \tag{A.1}
 \]
 
@@ -20,7 +20,7 @@ approximation $\tilde{K} = K_{:, m} K_{m, m}^+ K_{m, :}$ satisfies:
 then:
 
 \[
-A = A_{:, m} A_{m, m}^{-1} A_{m, :}
+A = A\_{:, m} A\_{m, m}^{-1} A\_{m, :}
 \tag{A.2}
 \]
 
@@ -34,14 +34,14 @@ where $A_{:, m}$ is columns at landmarks, etc.
 the iteration $V_{k+1} = V_k (2I - A V_k)$ with $V_0 = A^\top$ satisfies:
 
 \[
-\|I - A V_{k+1}\|_2 \leq \|I - A V_k\|_2^2
+\|I - A V\_{k+1}\|\_2 \leq \|I - A V\_k\|\_2^2
 \tag{A.3}
 \]
 
 \textbf{Proof.} Let $E_k = I - A V_k$. Then:
 
 \[
-E_{k+1} = I - A V_{k+1} = I - A V_k (2I - A V_k) = (I - A V_k)^2 = E_k^2
+E\_{k+1} = I - A V\_{k+1} = I - A V\_k (2I - A V\_k) = (I - A V\_k)^2 = E\_k^2
 \tag{A.4}
 \]
 
@@ -54,14 +54,14 @@ Taking norms: $\|E_{k+1}\| \leq \|E_k\|^2$. $\square$
 For general $A$ with $\|A\|_2 \geq 1$, precondition:
 
 \[
-\alpha = \frac{1}{\|A\|_1 \|A\|_\infty + \epsilon}
+\alpha = \frac{1}{\|A\|\_1 \|A\|\_\infty + \epsilon}
 \tag{A.5}
 \]
 
 Then $\|\alpha A\|_2 \leq 1$ by Gelfand's formula. Iterate on $\alpha A$:
 
 \[
-V_0 = (\alpha A)^\top, \quad V_{k+1} = V_k (2I - \alpha A V_k)
+V\_0 = (\alpha A)^\top, \quad V\_{k+1} = V\_k (2I - \alpha A V\_k)
 \tag{A.6}
 \]
 
@@ -73,7 +73,7 @@ The approximate pinv is $\alpha V_k \to A^+$.
 $F_1 (\text{pinv}(F_2) (F_3 V))$ has complexity:
 
 \[
-\mathcal{O}(N m d_h + m^2 d_h + N m d_h) = \mathcal{O}(N m d_h + m^2 d_h)
+\mathcal{O}(N m d\_h + m^2 d\_h + N m d\_h) = \mathcal{O}(N m d\_h + m^2 d\_h)
 \tag{A.7}
 \]
 

@@ -17,7 +17,7 @@ intact. The modification consists of four components:
 \textbf{Figure 4.1} shows the difference between MHA, GQA, and MQA at $H = 8$.
 
 \begin{lstlisting}
-    MHA (H_KV = 8)          GQA (H_KV = 4)          MQA (H_KV = 1)
+    MHA (H\_KV = 8)          GQA (H\_KV = 4)          MQA (H\_KV = 1)
 
     Q1 -- K1 V1             Q1 -- K1 V1             Q1 -- K1 V1
     Q2 -- K2 V2             Q2 -- +                 Q2 -- +
@@ -45,9 +45,9 @@ Our default is $G = H / 2$ to balance quality and memory.
 For a target model with hidden size $d$ and per-head dimension $d_h$:
 
 \[
-W_Q \in \mathbb{R}^{d \times H d_h}, \qquad
-W_K, W_V \in \mathbb{R}^{d \times G d_h}, \qquad
-W_O \in \mathbb{R}^{H d_h \times d}
+W\_Q \in \mathbb{R}^{d \times H d\_h}, \qquad
+W\_K, W\_V \in \mathbb{R}^{d \times G d\_h}, \qquad
+W\_O \in \mathbb{R}^{H d\_h \times d}
 \tag{4.1}
 \]
 
@@ -63,13 +63,13 @@ $W_K^{(\text{MHA})}, W_V^{(\text{MHA})} \in \mathbb{R}^{d \times H d_h}$, we
 initialize GQA weights as:
 
 \[
-W_Q^{(\text{GQA})} = W_Q^{(\text{MHA})}
+W\_Q^{(\text{GQA})} = W\_Q^{(\text{MHA})}
 \tag{4.2}
 \]
 
 \[
-W_K^{(\text{GQA})}_g = \text{mean}\!\left(W_K^{(\text{MHA})}_{h \in g}\right), \quad
-W_V^{(\text{GQA})}_g = \text{mean}\!\left(W_V^{(\text{MHA})}_{h \in g}\right)
+W\_K^{(\text{GQA})}\_g = \text{mean}\!\left(W\_K^{(\text{MHA})}\_{h \in g}\right), \quad
+W\_V^{(\text{GQA})}\_g = \text{mean}\!\left(W\_V^{(\text{MHA})}\_{h \in g}\right)
 \tag{4.3}
 \]
 
@@ -85,7 +85,7 @@ If the source is already GQA with $G_\text{src}$ groups and we want
 $G_\text{tgt} < G_\text{src}$, we group the source KV heads:
 
 \[
-W_K^{(\text{tgt})}_g = \text{mean}\!\left(W_K^{(\text{src})}_{g' \in g}\right)
+W\_K^{(\text{tgt})}\_g = \text{mean}\!\left(W\_K^{(\text{src})}\_{g' \in g}\right)
 \tag{4.4}
 \]
 
@@ -95,32 +95,32 @@ If $G_\text{tgt} = G_\text{src}$, the copy is exact.
 
 \textbf{Algorithm 1:} \texttt{copy\_weights} for GQA
 \begin{lstlisting}
-Input:  src_attn (MHA or GQA)
-        H, G, d_h
+Input:  src\_attn (MHA or GQA)
+        H, G, d\_h
 Output: GQA weights
 
 1:  # Query weights are always copied verbatim
-2:  W_Q $\leftarrow$ extract_q(src_attn)
-3:  copy(W_Q_gqa, W_Q)
+2:  W\_Q $\leftarrow$ extract\_q(src\_attn)
+3:  copy(W\_Q\_gqa, W\_Q)
 4:
 5:  # KV weights are grouped
-6:  W_K_src $\leftarrow$ extract_k(src_attn)   # shape (d, H * d_h) for MHA
-7:  W_V_src $\leftarrow$ extract_v(src_attn)
+6:  W\_K\_src $\leftarrow$ extract\_k(src\_attn)   # shape (d, H * d\_h) for MHA
+7:  W\_V\_src $\leftarrow$ extract\_v(src\_attn)
 8:
-9:  H_src $\leftarrow$ W_K_src.shape[1] // d_h
-10: r $\leftarrow$ H_src // G
+9:  H\_src $\leftarrow$ W\_K\_src.shape[1] // d\_h
+10: r $\leftarrow$ H\_src // G
 11:
 12: for g in 0..G-1 do
-13:     heads_in_g $\leftarrow$ src heads [g*r, (g+1)*r)
-14:     W_K_gqa[g] $\leftarrow$ mean(W_K_src[heads_in_g])
-15:     W_V_gqa[g] $\leftarrow$ mean(W_V_src[heads_in_g])
+13:     heads\_in\_g $\leftarrow$ src heads [g*r, (g+1)*r)
+14:     W\_K\_gqa[g] $\leftarrow$ mean(W\_K\_src[heads\_in\_g])
+15:     W\_V\_gqa[g] $\leftarrow$ mean(W\_V\_src[heads\_in\_g])
 16: end for
 17:
 18: # Output projection unchanged
-19: W_O_gqa $\leftarrow$ extract_o(src_attn)
+19: W\_O\_gqa $\leftarrow$ extract\_o(src\_attn)
 20:
 21: copy all projections into modules
-22: freeze_base_weights()
+22: freeze\_base\_weights()
 \end{lstlisting}
 
 \subsection{Forward Pass}
@@ -128,28 +128,28 @@ Output: GQA weights
 \textbf{Algorithm 2:} GQA forward
 \begin{lstlisting}
 Input:  X $\in$ R^{B $\times$ N $\times$ d}
-        attention_mask
+        attention\_mask
 Output: Y $\in$ R^{B $\times$ N $\times$ d}
 
-1:  Q $\leftarrow$ X W_Q            # (B, N, H, d_h)
-2:  K $\leftarrow$ X W_K            # (B, N, G, d_h)
-3:  V $\leftarrow$ X W_V            # (B, N, G, d_h)
+1:  Q $\leftarrow$ X W\_Q            # (B, N, H, d\_h)
+2:  K $\leftarrow$ X W\_K            # (B, N, G, d\_h)
+3:  V $\leftarrow$ X W\_V            # (B, N, G, d\_h)
 4:
-5:  if RoPE: (Q, K) $\leftarrow$ apply_rotary(Q, K)
+5:  if RoPE: (Q, K) $\leftarrow$ apply\_rotary(Q, K)
 6:
 7:  # Repeat KV heads to match Q heads
 8:  r $\leftarrow$ H // G
-9:  K $\leftarrow$ repeat_kv(K, r)     # (B, N, H, d_h)
-10: V $\leftarrow$ repeat_kv(V, r)
+9:  K $\leftarrow$ repeat\_kv(K, r)     # (B, N, H, d\_h)
+10: V $\leftarrow$ repeat\_kv(V, r)
 11:
 12: # Standard scaled dot-product attention
-13: scores $\leftarrow$ Q K^T / $\sqrt{}$d_h
-14: scores $\leftarrow$ apply_causal_mask(scores)   # if decoder
-15: scores $\leftarrow$ apply_padding_mask(scores)
+13: scores $\leftarrow$ Q K^T / $\sqrt{}$d\_h
+14: scores $\leftarrow$ apply\_causal\_mask(scores)   # if decoder
+15: scores $\leftarrow$ apply\_padding\_mask(scores)
 16: attn $\leftarrow$ softmax(scores)
 17: context $\leftarrow$ attn V
 18:
-19: Y $\leftarrow$ out_proj(context)
+19: Y $\leftarrow$ out\_proj(context)
 20: return Y
 \end{lstlisting}
 
@@ -160,12 +160,12 @@ Output: Y $\in$ R^{B $\times$ N $\times$ d}
 For a single layer at sequence position $t$:
 
 \[
-\text{KV}^{(t)}_\text{MHA} = 2 H d_h \cdot \text{bytes}
+\text{KV}^{(t)}\_\text{MHA} = 2 H d\_h \cdot \text{bytes}
 \tag{4.5}
 \]
 
 \[
-\text{KV}^{(t)}_\text{GQA} = 2 G d_h \cdot \text{bytes} = \frac{H}{G} \cdot \text{KV}^{(t)}_\text{MHA}
+\text{KV}^{(t)}\_\text{GQA} = 2 G d\_h \cdot \text{bytes} = \frac{H}{G} \cdot \text{KV}^{(t)}\_\text{MHA}
 \tag{4.6}
 \]
 
@@ -174,7 +174,7 @@ For a single layer at sequence position $t$:
 For sequence length $L$ and batch size $B$ across $N_l$ layers:
 
 \[
-\text{KV}_\text{total} = N_l \cdot L \cdot B \cdot 2 G d_h \cdot \text{bytes}
+\text{KV}\_\text{total} = N\_l \cdot L \cdot B \cdot 2 G d\_h \cdot \text{bytes}
 \tag{4.7}
 \]
 

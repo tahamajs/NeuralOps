@@ -24,7 +24,7 @@
 
 \textbf{Result.} No parameter reduction.
 
-\textbf{Conclusion.} Use \texttt{max\_rank < d/2}.
+\textbf{Conclusion.} Use \texttt{max\_rank \textless{} d/2}.
 
 \subsubsection{D.1.4 No Decoder Fallback}
 
@@ -100,8 +100,8 @@ Sweet spot: 2.0.
 
 \begin{enumerate}
 \item \textbf{Stable softmax is essential.}
-\item \textbf{Warning + fallback > abort.}
-\item \textbf{\texttt{max\_rank < d/2} for real compression.}
+\item \textbf{Warning + fallback \textgreater{} abort.}
+\item \textbf{\texttt{max\_rank \textless{} d/2} for real compression.}
 \item \textbf{Decoder fallback matters.}
 \item \textbf{Split-head helps.}
 \end{enumerate}

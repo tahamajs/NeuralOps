@@ -3,98 +3,98 @@
 \subsection{B.1 K-Means Implementation}
 
 \begin{lstlisting}
-def _kmeans_cluster(self, Q, K_num, iters=3, valid_mask=None):
+def \_kmeans\_cluster(self, Q, K\_num, iters=3, valid\_mask=None):
     B, H, L, d = Q.shape
-    K = min(K_num, L)
+    K = min(K\_num, L)
     
     # Padding-aware initialization
-    if valid_mask is not None:
-        valid_f = valid_mask.float()
-        num_valid = valid_f.sum(dim=-1, keepdim=True).clamp(min=1.0)
-        step = (num_valid / K).clamp(min=1.0)
-        k_idx = torch.arange(K, device=Q.device, dtype=torch.float32).unsqueeze(0)
-        target_ranks = (k_idx * step).clamp(max=num_valid - 1.0).long()
+    if valid\_mask is not None:
+        valid\_f = valid\_mask.float()
+        num\_valid = valid\_f.sum(dim=-1, keepdim=True).clamp(min=1.0)
+        step = (num\_valid / K).clamp(min=1.0)
+        k\_idx = torch.arange(K, device=Q.device, dtype=torch.float32).unsqueeze(0)
+        target\_ranks = (k\_idx * step).clamp(max=num\_valid - 1.0).long()
         
-        ranks = (valid_f.cumsum(dim=-1) - 1.0) * valid_f
-        is_valid_3d = valid_mask.unsqueeze(1)
-        rank_diff = torch.where(
-            is_valid_3d,
-            (ranks.unsqueeze(1) - target_ranks.unsqueeze(-1)).abs(),
+        ranks = (valid\_f.cumsum(dim=-1) - 1.0) * valid\_f
+        is\_valid\_3d = valid\_mask.unsqueeze(1)
+        rank\_diff = torch.where(
+            is\_valid\_3d,
+            (ranks.unsqueeze(1) - target\_ranks.unsqueeze(-1)).abs(),
             torch.tensor(1e6, device=Q.device),
         )
-        chosen_indices = torch.argmin(rank_diff, dim=-1)
-        idx_expanded = chosen_indices.unsqueeze(1).unsqueeze(-1).expand(B, H, K, d)
-        centroids = torch.gather(Q, 2, idx_expanded).clone()
+        chosen\_indices = torch.argmin(rank\_diff, dim=-1)
+        idx\_expanded = chosen\_indices.unsqueeze(1).unsqueeze(-1).expand(B, H, K, d)
+        centroids = torch.gather(Q, 2, idx\_expanded).clone()
     else:
         step = max(1, L // K)
-        init_indices = torch.arange(0, L, step, device=Q.device)[:K]
-        centroids = Q[:, :, init_indices, :].clone()
+        init\_indices = torch.arange(0, L, step, device=Q.device)[:K]
+        centroids = Q[:, :, init\_indices, :].clone()
     
     # Lloyd iterations
-    cluster_ids = torch.zeros(B, H, L, dtype=torch.long, device=Q.device)
+    cluster\_ids = torch.zeros(B, H, L, dtype=torch.long, device=Q.device)
     counts = torch.ones(B, H, K, 1, dtype=Q.dtype, device=Q.device)
-    Q_f = Q.float()
+    Q\_f = Q.float()
     
-    for _ in range(iters):
-        centroids_f = centroids.float()
-        dist = torch.cdist(Q_f, centroids_f)
-        if valid_mask is not None:
-            dist = dist.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(-1), 1e6)
-        cluster_ids = torch.argmin(dist, dim=-1)
+    for \_ in range(iters):
+        centroids\_f = centroids.float()
+        dist = torch.cdist(Q\_f, centroids\_f)
+        if valid\_mask is not None:
+            dist = dist.masked\_fill(~valid\_mask.unsqueeze(1).unsqueeze(-1), 1e6)
+        cluster\_ids = torch.argmin(dist, dim=-1)
         
-        one_hot = F.one_hot(cluster_ids, num_classes=K).to(dtype=Q.dtype)
-        if valid_mask is not None:
-            one_hot = one_hot * valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype=Q.dtype)
+        one\_hot = F.one\_hot(cluster\_ids, num\_classes=K).to(dtype=Q.dtype)
+        if valid\_mask is not None:
+            one\_hot = one\_hot * valid\_mask.unsqueeze(1).unsqueeze(-1).to(dtype=Q.dtype)
         
-        counts = one_hot.sum(dim=2).unsqueeze(-1)
-        counts_clamped = counts.clamp(min=1.0)
-        sum_q = torch.einsum("bhlk,bhld->bhkd", one_hot, Q)
-        centroids = torch.where(counts > 0, sum_q / (counts_clamped + 1e-8), centroids)
-        centroids = torch.nan_to_num(centroids, nan=0.0)
+        counts = one\_hot.sum(dim=2).unsqueeze(-1)
+        counts\_clamped = counts.clamp(min=1.0)
+        sum\_q = torch.einsum("bhlk,bhld-\textgreater{}bhkd", one\_hot, Q)
+        centroids = torch.where(counts \textgreater{} 0, sum\_q / (counts\_clamped + 1e-8), centroids)
+        centroids = torch.nan\_to\_num(centroids, nan=0.0)
     
-    return centroids, cluster_ids, counts
+    return centroids, cluster\_ids, counts
 \end{lstlisting}
 
 \subsection{B.2 Centroid-to-Key Attention}
 
 \begin{lstlisting}
 # Centroid scores
-scores_cent = torch.matmul(centroids, K.transpose(-2, -1)) * scale
-scores_cent = scores_cent.masked_fill(~key_valid_4d, -10000.0)
-attn_cent = torch.nan_to_num(F.softmax(scores_cent.float(), dim=-1), nan=0.0).to(dtype)
-attn_cent = self.dropout(attn_cent)
-V_cent = torch.matmul(attn_cent, V)  # [B, H, K, Dh]
+scores\_cent = torch.matmul(centroids, K.transpose(-2, -1)) * scale
+scores\_cent = scores\_cent.masked\_fill(~key\_valid\_4d, -10000.0)
+attn\_cent = torch.nan\_to\_num(F.softmax(scores\_cent.float(), dim=-1), nan=0.0).to(dtype)
+attn\_cent = self.dropout(attn\_cent)
+V\_cent = torch.matmul(attn\_cent, V)  # [B, H, K, Dh]
 \end{lstlisting}
 
 \subsection{B.3 Soft Assignment}
 
 \begin{lstlisting}
-scores_assign = torch.matmul(Q, centroids.transpose(-2, -1)) * scale
-empty_clusters = (counts == 0).squeeze(-1).unsqueeze(2)
-scores_assign = scores_assign.masked_fill(empty_clusters, -10000.0)
-temp_clamped = self.temp.abs().clamp(min=0.1, max=10.0)
-attn_assign = torch.nan_to_num(
-    F.softmax((scores_assign / temp_clamped).float(), dim=-1),
+scores\_assign = torch.matmul(Q, centroids.transpose(-2, -1)) * scale
+empty\_clusters = (counts == 0).squeeze(-1).unsqueeze(2)
+scores\_assign = scores\_assign.masked\_fill(empty\_clusters, -10000.0)
+temp\_clamped = self.temp.abs().clamp(min=0.1, max=10.0)
+attn\_assign = torch.nan\_to\_num(
+    F.softmax((scores\_assign / temp\_clamped).float(), dim=-1),
     nan=0.0
 ).to(dtype)
-assign_denom = attn_assign.sum(dim=-1, keepdim=True).clamp(min=1.0)
-attn_assign = attn_assign / assign_denom
-global_context = torch.matmul(attn_assign, V_cent)
+assign\_denom = attn\_assign.sum(dim=-1, keepdim=True).clamp(min=1.0)
+attn\_assign = attn\_assign / assign\_denom
+global\_context = torch.matmul(attn\_assign, V\_cent)
 \end{lstlisting}
 
 \subsection{B.4 Local Window}
 
 \begin{lstlisting}
 idx = torch.arange(L, device=device)
-band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
-band_mask_4d = band_mask.unsqueeze(0).unsqueeze(0) & key_valid_4d
-scores_loc = torch.matmul(Q, K.transpose(-2, -1)) * scale
-scores_loc = scores_loc.masked_fill(~band_mask_4d, -10000.0)
-attn_loc = torch.nan_to_num(F.softmax(scores_loc.float(), dim=-1), nan=0.0).to(dtype)
-attn_loc = self.dropout(attn_loc)
-local_context = torch.matmul(attn_loc, V)
-alpha = torch.sigmoid(self.local_residual)
-out_context = (1.0 - alpha) * global_context + alpha * local_context
+band\_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() \textless{}= self.window\_size
+band\_mask\_4d = band\_mask.unsqueeze(0).unsqueeze(0) & key\_valid\_4d
+scores\_loc = torch.matmul(Q, K.transpose(-2, -1)) * scale
+scores\_loc = scores\_loc.masked\_fill(~band\_mask\_4d, -10000.0)
+attn\_loc = torch.nan\_to\_num(F.softmax(scores\_loc.float(), dim=-1), nan=0.0).to(dtype)
+attn\_loc = self.dropout(attn\_loc)
+local\_context = torch.matmul(attn\_loc, V)
+alpha = torch.sigmoid(self.local\_residual)
+out\_context = (1.0 - alpha) * global\_context + alpha * local\_context
 \end{lstlisting}
 
 \subsection{B.5 Common Pitfalls}

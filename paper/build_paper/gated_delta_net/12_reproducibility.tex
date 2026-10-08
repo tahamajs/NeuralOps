@@ -4,8 +4,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 source .venv/bin/activate  # or .venv\Scripts\activate
 pip install -r requirements.txt
@@ -15,13 +15,13 @@ pip install -r requirements.txt
 
 \begin{lstlisting}
 # Full run (may timeout on RoBERTa/GPT-2)
-python run_all_4_gated_delta_net.py \
+python run\_all\_4\_gated\_delta\_net.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --recovery\_steps 50 \
+    --lora\_rank 8
 
 # DistilBERT only (fastest)
-python run_all_4_gated_delta_net.py --models distilbert
+python run\_all\_4\_gated\_delta\_net.py --models distilbert
 \end{lstlisting}
 
 \subsection{Expected Runtime}
@@ -34,8 +34,8 @@ python run_all_4_gated_delta_net.py --models distilbert
 \textbf{Model} & \textbf{Expected runtime} \\
 \midrule
 DistilBERT & ~2.3 s min \\
-RoBERTa & OOM or >60 min \\
-GPT-2 & OOM or >60 min \\
+RoBERTa & OOM or \textgreater{}60 min \\
+GPT-2 & OOM or \textgreater{}60 min \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -49,11 +49,11 @@ import time
 
 # Wrap 5 training steps
 start = time.time()
-for _ in range(5):
+for \_ in range(5):
     ...  # training step
 elapsed = time.time() - start
-per_step = elapsed / 5
-print(f"Per-step: {per_step:.2f} s")
+per\_step = elapsed / 5
+print(f"Per-step: {per\_step:.2f} s")
 \end{lstlisting}
 
 \subsection{Common Failure Modes}
@@ -63,7 +63,7 @@ print(f"Per-step: {per_step:.2f} s")
 Reduce batch size:
 
 \begin{lstlisting}
-python run_all_4_gated_delta_net.py --batch_size 2 --recovery_steps 10
+python run\_all\_4\_gated\_delta\_net.py --batch\_size 2 --recovery\_steps 10
 \end{lstlisting}
 
 \subsubsection{Timeout}
@@ -71,7 +71,7 @@ python run_all_4_gated_delta_net.py --batch_size 2 --recovery_steps 10
 Increase timeout:
 
 \begin{lstlisting}
-python run_all_4_gated_delta_net.py --timeout 7200
+python run\_all\_4\_gated\_delta\_net.py --timeout 7200
 \end{lstlisting}
 
 \subsubsection{Chunk Size Mismatch}
@@ -79,7 +79,7 @@ python run_all_4_gated_delta_net.py --timeout 7200
 If \texttt{chunk\_size} does not divide \texttt{L}, padding is applied. Verify:
 
 \begin{lstlisting}
-assert L % chunk_size == 0 or padding_ok
+assert L \% chunk\_size == 0 or padding\_ok
 \end{lstlisting}
 
 \subsection{Seeds}
@@ -88,7 +88,7 @@ assert L % chunk_size == 0 or padding_ok
 import random, numpy as np, torch
 seed = 42
 random.seed(seed); np.random.seed(seed)
-torch.manual_seed(seed); torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed); torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Verification}
@@ -103,9 +103,9 @@ S = torch.zeros(1, 1, 64, 64)
 beta = torch.tensor([[[0.9]]])
 alpha = torch.tensor([[[0.5]]])
 
-from framework.attentions.gated_delta_net import _delta_chunk_forward
-y, S_new = _delta_chunk_forward(S, k, k, v, beta, alpha)
-# Verify: S_new $\approx$ beta * S + alpha * k^T (v - k S)
+from framework.attentions.gated\_delta\_net import \_delta\_chunk\_forward
+y, S\_new = \_delta\_chunk\_forward(S, k, k, v, beta, alpha)
+# Verify: S\_new $\approx$ beta * S + alpha * k^T (v - k S)
 \end{lstlisting}
 
 \subsection{Data Availability}

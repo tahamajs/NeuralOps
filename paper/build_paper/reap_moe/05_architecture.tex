@@ -28,65 +28,65 @@ experiments, we accept the duplication as part of the re-architecture cost.
 \subsubsection{DistilBERT (Flat)}
 
 \begin{lstlisting}
-target.q_lin.weight.copy_(src.q_lin.weight)
-target.k_lin.weight.copy_(src.k_lin.weight)
-target.v_lin.weight.copy_(src.v_lin.weight)
-target.out_lin.weight.copy_(src.out_lin.weight)
+target.q\_lin.weight.copy\_(src.q\_lin.weight)
+target.k\_lin.weight.copy\_(src.k\_lin.weight)
+target.v\_lin.weight.copy\_(src.v\_lin.weight)
+target.out\_lin.weight.copy\_(src.out\_lin.weight)
 \end{lstlisting}
 
 \subsubsection{RoBERTa (Nested)}
 
 \begin{lstlisting}
-target.q_lin.weight.copy_(src.self.query.weight)
-target.k_lin.weight.copy_(src.self.key.weight)
-target.v_lin.weight.copy_(src.self.value.weight)
-# out_lin skipped if nested
+target.q\_lin.weight.copy\_(src.self.query.weight)
+target.k\_lin.weight.copy\_(src.self.key.weight)
+target.v\_lin.weight.copy\_(src.self.value.weight)
+# out\_lin skipped if nested
 \end{lstlisting}
 
 \subsubsection{GPT-2 (Conv1D)}
 
 \begin{lstlisting}
-w = src.c_attn.weight.t()
+w = src.c\_attn.weight.t()
 q, k, v = w.chunk(3, dim=0)
-target.q_lin.weight.copy_(q)
-target.k_lin.weight.copy_(k)
-target.v_lin.weight.copy_(v)
-target.out_lin.weight.copy_(src.c_proj.weight.t())
+target.q\_lin.weight.copy\_(q)
+target.k\_lin.weight.copy\_(k)
+target.v\_lin.weight.copy\_(v)
+target.out\_lin.weight.copy\_(src.c\_proj.weight.t())
 \end{lstlisting}
 
 \subsection{The `REAPMoE` Module}
 
 \begin{lstlisting}
 class REAPMoE(nn.Module):
-    def __init__(self, d_model, n_experts, top_k, noise_std, use_svd):
-        self.router = nn.Linear(d_model, n_experts)
+    def \_\_init\_\_(self, d\_model, n\_experts, top\_k, noise\_std, use\_svd):
+        self.router = nn.Linear(d\_model, n\_experts)
         self.experts = nn.ModuleList([
             nn.Sequential(
-                SVDLinear(d_model, 2*d_model, rank=d_model//4),
+                SVDLinear(d\_model, 2*d\_model, rank=d\_model//4),
                 nn.GELU(),
-                SVDLinear(2*d_model, d_model, rank=d_model//4),
+                SVDLinear(2*d\_model, d\_model, rank=d\_model//4),
             )
-            for _ in range(n_experts)
+            for \_ in range(n\_experts)
         ])
     
     def forward(self, x):
-        logits = self.router(self.router_ln(x))
+        logits = self.router(self.router\_ln(x))
         if self.training:
-            logits = logits + torch.randn_like(logits) * self.noise_std
-        topk_w, topk_i = torch.topk(logits, self.top_k, dim=-1)
-        topk_w = F.softmax(topk_w, dim=-1)
+            logits = logits + torch.randn\_like(logits) * self.noise\_std
+        topk\_w, topk\_i = torch.topk(logits, self.top\_k, dim=-1)
+        topk\_w = F.softmax(topk\_w, dim=-1)
         
         # Load balancing
-        router_probs = F.softmax(logits, dim=-1)
-        expert_mask = F.one_hot(topk_i, num_classes=self.n_experts).float()
-        density = expert_mask.sum(dim=2).mean(dim=(0, 1))
-        prob_mean = router_probs.mean(dim=(0, 1))
-        self.aux_loss = self.n_experts * torch.sum(density * prob_mean)
+        router\_probs = F.softmax(logits, dim=-1)
+        expert\_mask = F.one\_hot(topk\_i, num\_classes=self.n\_experts).float()
+        density = expert\_mask.sum(dim=2).mean(dim=(0, 1))
+        prob\_mean = router\_probs.mean(dim=(0, 1))
+        self.aux\_loss = self.n\_experts * torch.sum(density * prob\_mean)
         
         # Expert computation
-        experts_out = torch.stack([e(x) for e in self.experts], dim=2)
-        gathered = torch.gather(experts_out, 2, topk_i.unsqueeze(-1).expand(-1, -1, -1, x.shape[-1]))
-        return torch.sum(gathered * topk_w.unsqueeze(-1), dim=2), None
+        experts\_out = torch.stack([e(x) for e in self.experts], dim=2)
+        gathered = torch.gather(experts\_out, 2, topk\_i.unsqueeze(-1).expand(-1, -1, -1, x.shape[-1]))
+        return torch.sum(gathered * topk\_w.unsqueeze(-1), dim=2), None
 \end{lstlisting}
 
 \subsection{The `REAPMoEAttention` Module}
@@ -94,20 +94,20 @@ class REAPMoE(nn.Module):
 Combines attention + MoE with pre-LayerNorm:
 
 \begin{lstlisting}
-def forward(self, x, attention_mask=None):
+def forward(self, x, attention\_mask=None):
     # Attention
-    q = self.q_lin(x).view(B, L, H, d_h).transpose(1, 2)
-    k = self.k_lin(x).view(B, L, H_kv, d_h).transpose(1, 2)
-    v = self.v_lin(x).view(B, L, H_kv, d_h).transpose(1, 2)
+    q = self.q\_lin(x).view(B, L, H, d\_h).transpose(1, 2)
+    k = self.k\_lin(x).view(B, L, H\_kv, d\_h).transpose(1, 2)
+    v = self.v\_lin(x).view(B, L, H\_kv, d\_h).transpose(1, 2)
     # ... attention computation ...
-    attn_out = self.out_lin(context)
+    attn\_out = self.out\_lin(context)
     
     # Pre-norm
-    h1 = self.norm1(x + self.dropout(attn_out))
+    h1 = self.norm1(x + self.dropout(attn\_out))
     
     # MoE
-    moe_out, _ = self.moe(h1)
-    out = self.norm2(h1 + self.dropout(moe_out))
+    moe\_out, \_ = self.moe(h1)
+    out = self.norm2(h1 + self.dropout(moe\_out))
     
     return out, None
 \end{lstlisting}
@@ -116,11 +116,11 @@ def forward(self, x, attention_mask=None):
 
 \begin{lstlisting}
 class SVDLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank):
-        self.U = nn.Parameter(torch.randn(out_features, rank) * 0.02)
+    def \_\_init\_\_(self, in\_features, out\_features, rank):
+        self.U = nn.Parameter(torch.randn(out\_features, rank) * 0.02)
         self.S = nn.Parameter(torch.ones(rank))
-        self.V = nn.Parameter(torch.randn(in_features, rank) * 0.02)
-        self.bias = nn.Parameter(torch.zeros(out_features))
+        self.V = nn.Parameter(torch.randn(in\_features, rank) * 0.02)
+        self.bias = nn.Parameter(torch.zeros(out\_features))
     
     def forward(self, x):
         return (x @ self.V) * self.S @ self.U.t() + self.bias
@@ -133,9 +133,9 @@ class SVDLinear(nn.Module):
 \begin{lstlisting}
 for exp in self.experts:
     final = exp[-1]
-    nn.init.zeros_(final.U)
-    nn.init.zeros_(final.S)
-    nn.init.zeros_(final.bias)
+    nn.init.zeros\_(final.U)
+    nn.init.zeros\_(final.S)
+    nn.init.zeros\_(final.bias)
 \end{lstlisting}
 
 This ensures MoE output is 0 at step 0, preserving the residual path.
@@ -173,7 +173,7 @@ Router collapse & Increase aux loss weight \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("reap_moe")
+@ATTENTION\_REGISTRY.register("reap\_moe")
 class REAPMoEAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -200,6 +200,6 @@ future work and report results as-is.
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.png}
 \caption{High-level architectural diagram of reap\_moe.}
-\label{fig:arch_reap-moe}
+\label{fig:arch\_reap-moe}
 \end{figure}
 

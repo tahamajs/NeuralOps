@@ -4,73 +4,73 @@
 
 \begin{lstlisting}
 class LoRALinear(nn.Module):
-    def __init__(self, in_features, out_features, bias=True,
-                 lora_rank=16, lora_alpha=32.0, freeze_base=False):
-        super().__init__()
-        self.weight = nn.Parameter(torch.empty(out_features, in_features))
+    def \_\_init\_\_(self, in\_features, out\_features, bias=True,
+                 lora\_rank=16, lora\_alpha=32.0, freeze\_base=False):
+        super().\_\_init\_\_()
+        self.weight = nn.Parameter(torch.empty(out\_features, in\_features))
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
+            self.bias = nn.Parameter(torch.empty(out\_features))
         
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.empty(out\_features, lora\_rank))
         else:
-            self.register_parameter("lora_A", None)
-            self.register_parameter("lora_B", None)
+            self.register\_parameter("lora\_A", None)
+            self.register\_parameter("lora\_B", None)
         
-        self.reset_parameters()
-        if freeze_base:
-            self.freeze_base_weights()
+        self.reset\_parameters()
+        if freeze\_base:
+            self.freeze\_base\_weights()
     
-    def reset_parameters(self):
-        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+    def reset\_parameters(self):
+        nn.init.kaiming\_uniform\_(self.weight, a=math.sqrt(5))
         if self.bias is not None:
-            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
-            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-            nn.init.uniform_(self.bias, -bound, bound)
+            fan\_in, \_ = nn.init.\_calculate\_fan\_in\_and\_fan\_out(self.weight)
+            bound = 1 / math.sqrt(fan\_in) if fan\_in \textgreater{} 0 else 0
+            nn.init.uniform\_(self.bias, -bound, bound)
         
-        if self.lora_rank > 0:
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B)
+        if self.lora\_rank \textgreater{} 0:
+            nn.init.kaiming\_uniform\_(self.lora\_A, a=math.sqrt(5))
+            nn.init.zeros\_(self.lora\_B)
     
-    def freeze_base_weights(self):
-        self.weight.requires_grad = False
+    def freeze\_base\_weights(self):
+        self.weight.requires\_grad = False
         if self.bias is not None:
-            self.bias.requires_grad = False
-        if self.lora_rank > 0:
-            self.lora_A.requires_grad = True
-            self.lora_B.requires_grad = True
+            self.bias.requires\_grad = False
+        if self.lora\_rank \textgreater{} 0:
+            self.lora\_A.requires\_grad = True
+            self.lora\_B.requires\_grad = True
     
     def forward(self, x):
         out = F.linear(x, self.weight, self.bias)
-        if self.lora_rank > 0:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out * self.output_scale
+        if self.lora\_rank \textgreater{} 0:
+            out = out + F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
+        return out * self.output\_scale
 \end{lstlisting}
 
 \subsection{B.2 Weight Extraction}
 
 \begin{lstlisting}
-def copy_weights(self, src):
+def copy\_weights(self, src):
     extracted = {"q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None)}
     
     # 1. UniversalAdapter
     for proj in ["q", "k", "v", "o"]:
         try:
-            w, b = UniversalAdapter.get_weight_bias(src, proj)
+            w, b = UniversalAdapter.get\_weight\_bias(src, proj)
             if w is not None:
                 extracted[proj] = (w, b)
         except Exception as e:
-            print(f'copy_weights failed: {e}')
-            raise RuntimeError(f"copy_weights failed: {e}")
+            print(f'copy\_weights failed: {e}')
+            raise RuntimeError(f"copy\_weights failed: {e}")
     
     # 2. GPT-2 Conv1D
-    if hasattr(src, "c_attn") and (extracted["q"][0] is None or ...):
-        weight = src.c_attn.weight.data
-        if weight.shape[1] == 3 * self.hidden_size:
+    if hasattr(src, "c\_attn") and (extracted["q"][0] is None or ...):
+        weight = src.c\_attn.weight.data
+        if weight.shape[1] == 3 * self.hidden\_size:
             weight = weight.t()
-        q_w, k_w, v_w = weight.chunk(3, dim=0)
-        extracted["q"] = (q_w, ...)
+        q\_w, k\_w, v\_w = weight.chunk(3, dim=0)
+        extracted["q"] = (q\_w, ...)
         ...
     
     # 3. RoBERTa nested
@@ -80,11 +80,11 @@ def copy_weights(self, src):
         ...
     
     # 4. Named projections
-    named_map = {"q": ["q_proj", "q_lin", "query"], ...}
+    named\_map = {"q": ["q\_proj", "q\_lin", "query"], ...}
     
     # Nested detection
     if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-        self.is_nested_encoder = True
+        self.is\_nested\_encoder = True
     ...
 \end{lstlisting}
 

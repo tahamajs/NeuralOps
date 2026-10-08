@@ -6,7 +6,7 @@
 The rank-$r$ SVD approximation satisfies:
 
 \[
-\|W - W_r\|_F = \sqrt{\sum_{i > r} \sigma_i^2}
+\|W - W\_r\|\_F = \sqrt{\sum\_{i \textgreater{} r} \sigma\_i^2}
 \tag{A.1}
 \]
 
@@ -17,7 +17,7 @@ This is optimal (Eckart-Young).
 We define:
 
 \[
-W_\text{SALT}(\gamma, A, B) = U_r \text{diag}(\Sigma_r \odot \gamma) V_r + AB
+W\_\text{SALT}(\gamma, A, B) = U\_r \text{diag}(\Sigma\_r \odot \gamma) V\_r + AB
 \tag{A.2}
 \]
 
@@ -33,7 +33,7 @@ At init:
 So:
 
 \[
-W_\text{SALT}(\mathbf{1}, A, 0) = U_r \Sigma_r V_r + A \cdot 0 = W_r
+W\_\text{SALT}(\mathbf{1}, A, 0) = U\_r \Sigma\_r V\_r + A \cdot 0 = W\_r
 \tag{A.3}
 \]
 
@@ -87,14 +87,14 @@ Full W = 589,824. Ratio = 11.99$\times$.
 \subsubsection{Naive Forward}
 
 \[
-T_\text{naive} = T_\text{reconstruct} + T_\text{matmul} = \mathcal{O}(d_\text{out} r d_\text{in}) + \mathcal{O}(BL d_\text{out} d_\text{in})
+T\_\text{naive} = T\_\text{reconstruct} + T\_\text{matmul} = \mathcal{O}(d\_\text{out} r d\_\text{in}) + \mathcal{O}(BL d\_\text{out} d\_\text{in})
 \tag{A.5}
 \]
 
 \subsubsection{Fused Forward}
 
 \[
-T_\text{fused} = \mathcal{O}(BL r (d_\text{out} + d_\text{in}))
+T\_\text{fused} = \mathcal{O}(BL r (d\_\text{out} + d\_\text{in}))
 \tag{A.6}
 \]
 
@@ -107,7 +107,7 @@ from the matmul, not reconstruction).
 For $H_{kv} < H$, the source has more KV heads. We pool:
 
 \[
-W_{k,\text{pooled}}[i, :] = \frac{1}{\text{rep}} \sum_{j=1}^{\text{rep}} W_{k}[i \cdot \text{rep} + j, :]
+W\_{k,\text{pooled}}[i, :] = \frac{1}{\text{rep}} \sum\_{j=1}^{\text{rep}} W\_{k}[i \cdot \text{rep} + j, :]
 \tag{A.7}
 \]
 

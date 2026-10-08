@@ -91,11 +91,11 @@ enable future real compression, not a deployment-ready compression method.
 Verified via gradient check:
 
 \begin{lstlisting}
-X = torch.randn(1, 128, d, requires_grad=True)
+X = torch.randn(1, 128, d, requires\_grad=True)
 Y = model(X)
 loss = Y[0, 100].sum()
 loss.backward()
-assert X.grad[0, 101:].abs().max() < 1e-6
+assert X.grad[0, 101:].abs().max() \textless{} 1e-6
 \end{lstlisting}
 
 Passes on GPT-2.

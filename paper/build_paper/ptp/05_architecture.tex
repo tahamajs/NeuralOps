@@ -33,8 +33,8 @@ Extract from inner \texttt{self}. \texttt{is\_nested\_encoder = True}; skip own 
 Split fused \texttt{c\_attn}:
 
 \begin{lstlisting}
-w = src.c_attn.weight.t()  # Conv1D transpose
-q_w, k_w, v_w = w.chunk(3, dim=0)
+w = src.c\_attn.weight.t()  # Conv1D transpose
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{Qwen3.5 (GQA + RoPE)}
@@ -75,10 +75,10 @@ Padding tokens are excluded in three places:
 For Qwen/LLaMA with $H_{kv} < H$, we repeat KV heads before pruning:
 
 \begin{lstlisting}
-if self.num_heads != self.num_kv_heads:
-    repeats = self.num_heads // self.num_kv_heads
-    k_all = repeat_kv(k_all, repeats)
-    v_all = repeat_kv(v_all, repeats)
+if self.num\_heads != self.num\_kv\_heads:
+    repeats = self.num\_heads // self.num\_kv\_heads
+    k\_all = repeat\_kv(k\_all, repeats)
+    v\_all = repeat\_kv(v\_all, repeats)
 \end{lstlisting}
 
 \subsection{Injection Algorithm}
@@ -88,11 +88,11 @@ if self.num_heads != self.num_kv_heads:
 Input:  model M, config c,  
 Output: M with PTP attention
 
-1:  for   in transformer_layers(M) do
-2:      src $\leftarrow$ extract_attention( )
+1:  for   in transformer\_layers(M) do
+2:      src $\leftarrow$ extract\_attention( )
 3:      if src is None: continue
-4:      new $\leftarrow$ ProgressiveTokenPruning(config=c, pretrained_attn=src, keep_ratio= )
-5:      replace_attention( , new)
+4:      new $\leftarrow$ ProgressiveTokenPruning(config=c, pretrained\_attn=src, keep\_ratio= )
+5:      replace\_attention( , new)
 6: end for
 \end{lstlisting}
 
@@ -102,9 +102,9 @@ Output: M with PTP attention
 
 \begin{lstlisting}
 try:
-    new_attn = ProgressiveTokenPruning(...)
+    new\_attn = ProgressiveTokenPruning(...)
 except Exception:
-    raise RuntimeError("copy_weights failed")
+    raise RuntimeError("copy\_weights failed")
 \end{lstlisting}
 
 \subsection{Parameter Count}
@@ -127,8 +127,8 @@ LoRA & 0 & $2 r_L \cdot 4 d$ \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("ptp")
-@ATTENTION_REGISTRY.register("progressive_token_pruning")
+@ATTENTION\_REGISTRY.register("ptp")
+@ATTENTION\_REGISTRY.register("progressive\_token\_pruning")
 class ProgressiveTokenPruning(BaseAttention): ...
 \end{lstlisting}
 
@@ -142,7 +142,7 @@ class ProgressiveTokenPruning(BaseAttention): ...
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
 Missing weights & \texttt{copy\_weights} raises & Injection aborts \\
-\texttt{k > L} & Clamped to L & Skip pruning \\
+\texttt{k \textgreater{} L} & Clamped to L & Skip pruning \\
 Empty mask & Empty valid\_mask & Use all tokens \\
 NaN scores & \texttt{torch.isnan} & Fallback to uniform \\
 Wrong nested flag & Shape mismatch & Fallback \\

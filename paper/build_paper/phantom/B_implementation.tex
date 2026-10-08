@@ -4,88 +4,88 @@
 \subsection{B.1 The `FactorisedLinear\_CUR` Module}
 
 \begin{lstlisting}
-class FactorisedLinear_CUR(nn.Module):
-    def __init__(self, in_features, out_features, cur_rank=16, ...):
-        super().__init__()
-        self.down = nn.Linear(in_features, cur_rank, bias=False)
-        self.up = nn.Linear(cur_rank, out_features, bias=True)
+class FactorisedLinear\_CUR(nn.Module):
+    def \_\_init\_\_(self, in\_features, out\_features, cur\_rank=16, ...):
+        super().\_\_init\_\_()
+        self.down = nn.Linear(in\_features, cur\_rank, bias=False)
+        self.up = nn.Linear(cur\_rank, out\_features, bias=True)
         # LoRA (optional)
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
-        self.output_scale = nn.Parameter(torch.ones(1))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.zeros(out\_features, lora\_rank))
+        self.output\_scale = nn.Parameter(torch.ones(1))
     
     def forward(self, x):
         out = self.up(self.down(x))
-        if self.lora_rank > 0:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out * self.output_scale
+        if self.lora\_rank \textgreater{} 0:
+            out = out + F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
+        return out * self.output\_scale
 \end{lstlisting}
 
 \subsection{B.2 The `copy\_cur` Method}
 
 \begin{lstlisting}
-def copy_cur(self, weight, bias):
-    with torch.no_grad():
+def copy\_cur(self, weight, bias):
+    with torch.no\_grad():
         W = weight.float()
         # SVD
-        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        U, S, Vt = torch.linalg.svd(W, full\_matrices=False)
         # Leverage
-        col_lev = (Vt ** 2).sum(dim=0)
-        row_lev = (U ** 2).sum(dim=1)
+        col\_lev = (Vt ** 2).sum(dim=0)
+        row\_lev = (U ** 2).sum(dim=1)
         # Top-r selection
-        rank = min(self.cur_rank, W.shape[0], W.shape[1])
-        col_idx = torch.topk(col_lev, k=rank).indices
-        row_idx = torch.topk(row_lev, k=rank).indices
+        rank = min(self.cur\_rank, W.shape[0], W.shape[1])
+        col\_idx = torch.topk(col\_lev, k=rank).indices
+        row\_idx = torch.topk(row\_lev, k=rank).indices
         # CUR factors
-        C = W[:, col_idx]
-        R = W[row_idx, :]
-        W_int = W[row_idx][:, col_idx]
-        U_int_pinv = torch.linalg.pinv(W_int)
+        C = W[:, col\_idx]
+        R = W[row\_idx, :]
+        W\_int = W[row\_idx][:, col\_idx]
+        U\_int\_pinv = torch.linalg.pinv(W\_int)
         # Assign
-        self.down.weight.data.zero_()
-        self.down.weight.data[:rank].copy_(R)
-        self.up.weight.data.zero_()
-        self.up.weight.data[:, :rank].copy_(C @ U_int_pinv)
+        self.down.weight.data.zero\_()
+        self.down.weight.data[:rank].copy\_(R)
+        self.up.weight.data.zero\_()
+        self.up.weight.data[:, :rank].copy\_(C @ U\_int\_pinv)
         if bias is not None:
-            self.up.bias.data.copy_(bias)
-    if self.freeze_base:
-        self.freeze_base_weights()
+            self.up.bias.data.copy\_(bias)
+    if self.freeze\_base:
+        self.freeze\_base\_weights()
 \end{lstlisting}
 
 \subsection{B.3 LSH Attention}
 
 \begin{lstlisting}
-def lsh_attention(Q, K, V, rounds, bucket_size, softpick_temp, ...):
+def lsh\_attention(Q, K, V, rounds, bucket\_size, softpick\_temp, ...):
     B, H, N, D = Q.shape
     scale = D ** -0.5
-    n_bits = max(1, min(bucket_size, 8))
-    bit_shifts = torch.tensor([2**i for i in range(n_bits)], device=Q.device)
+    n\_bits = max(1, min(bucket\_size, 8))
+    bit\_shifts = torch.tensor([2**i for i in range(n\_bits)], device=Q.device)
     
-    Q_norm = F.normalize(Q, p=2, dim=-1, eps=1e-5)
-    K_norm = F.normalize(K, p=2, dim=-1, eps=1e-5)
+    Q\_norm = F.normalize(Q, p=2, dim=-1, eps=1e-5)
+    K\_norm = F.normalize(K, p=2, dim=-1, eps=1e-5)
     
     scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
     # mask padding
-    if token_valid is not None:
-        scores = scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), -1e4)
+    if token\_valid is not None:
+        scores = scores.masked\_fill(~token\_valid.unsqueeze(1).unsqueeze(2), -1e4)
     # causal
-    if is_causal:
+    if is\_causal:
         causal = torch.triu(torch.ones(N, N, device=Q.device, dtype=torch.bool), diagonal=1)
-        scores = scores.masked_fill(causal.unsqueeze(0).unsqueeze(0), -1e4)
+        scores = scores.masked\_fill(causal.unsqueeze(0).unsqueeze(0), -1e4)
     
-    accum = torch.zeros_like(V)
-    for _ in range(rounds):
-        proj = F.normalize(torch.randn(D, n_bits, device=Q.device, dtype=Q.dtype), p=2, dim=0)
-        hq = (torch.matmul(Q_norm, proj) > 0).float() @ bit_shifts
-        hk = (torch.matmul(K_norm, proj) > 0).float() @ bit_shifts
+    accum = torch.zeros\_like(V)
+    for \_ in range(rounds):
+        proj = F.normalize(torch.randn(D, n\_bits, device=Q.device, dtype=Q.dtype), p=2, dim=0)
+        hq = (torch.matmul(Q\_norm, proj) \textgreater{} 0).float() @ bit\_shifts
+        hk = (torch.matmul(K\_norm, proj) \textgreater{} 0).float() @ bit\_shifts
         match = (hq.unsqueeze(-1) == hk.unsqueeze(-2))
         eye = torch.eye(N, device=Q.device, dtype=torch.bool)
         match = match | eye
-        if is_causal:
+        if is\_causal:
             match = (match & ~causal.unsqueeze(0).unsqueeze(0)) | eye
-        scores_r = scores.masked_fill(~match, -1e4)
-        attn = softpick(scores_r, dim=-1, temperature=softpick_temp).to(Q.dtype)
+        scores\_r = scores.masked\_fill(~match, -1e4)
+        attn = softpick(scores\_r, dim=-1, temperature=softpick\_temp).to(Q.dtype)
         if dropout is not None:
             attn = dropout(attn)
         accum += torch.matmul(attn, V)
@@ -102,27 +102,27 @@ def softpick(x, dim=-1, temperature=1.0):
     m = x.max(dim=dim, keepdim=True).values
     temp = max(temperature, 1e-4)
     e = torch.exp((x - m) / temp)
-    m_scaled = torch.clamp(-m / temp, max=80.0)
-    denom = e - torch.exp(m_scaled)
+    m\_scaled = torch.clamp(-m / temp, max=80.0)
+    denom = e - torch.exp(m\_scaled)
     p = F.relu(denom)
-    p_sum = p.sum(dim=dim, keepdim=True)
+    p\_sum = p.sum(dim=dim, keepdim=True)
     fallback = F.softmax(x / temp, dim=dim)
-    res = torch.where(p_sum > 1e-5, p / torch.clamp(p_sum, min=1e-5), fallback)
+    res = torch.where(p\_sum \textgreater{} 1e-5, p / torch.clamp(p\_sum, min=1e-5), fallback)
     return res.to(orig)
 \end{lstlisting}
 
 \subsection{B.5 Handling Conv1D (GPT-2)}
 
 \begin{lstlisting}
-if "conv1d" in cls_name or hasattr(module, "nf"):
-    c_w = c_w.t()  # (in, out) $\to$ (out, in)
+if "conv1d" in cls\_name or hasattr(module, "nf"):
+    c\_w = c\_w.t()  # (in, out) $\to$ (out, in)
 \end{lstlisting}
 
 \subsection{B.6 Handling Nested Encoder (RoBERTa)}
 
 \begin{lstlisting}
 if hasattr(src, "self") and hasattr(src, "output"):
-    self.is_nested_encoder = True
+    self.is\_nested\_encoder = True
     # Extract from src.self.query, key, value
     # Do NOT extract output.dense
 \end{lstlisting}
@@ -130,10 +130,10 @@ if hasattr(src, "self") and hasattr(src, "output"):
 \subsection{B.7 Handling GQA}
 
 \begin{lstlisting}
-if self.num_heads != self.num_kv_heads:
-    repeats = self.num_heads // self.num_kv_heads
-    K = repeat_kv(K, repeats)
-    V = repeat_kv(V, repeats)
+if self.num\_heads != self.num\_kv\_heads:
+    repeats = self.num\_heads // self.num\_kv\_heads
+    K = repeat\_kv(K, repeats)
+    V = repeat\_kv(V, repeats)
 \end{lstlisting}
 
 \subsection{B.8 Common Pitfalls}
@@ -143,7 +143,7 @@ if self.num_heads != self.num_kv_heads:
 LSH requires normalized vectors for angular hashing:
 
 \begin{lstlisting}
-Q_norm = F.normalize(Q, p=2, dim=-1, eps=1e-5)
+Q\_norm = F.normalize(Q, p=2, dim=-1, eps=1e-5)
 \end{lstlisting}
 
 \subsubsection{B.8.2 Wrong Bit Shifts}
@@ -151,7 +151,7 @@ Q_norm = F.normalize(Q, p=2, dim=-1, eps=1e-5)
 Bits must be weighted by powers of 2:
 
 \begin{lstlisting}
-bit_shifts = torch.tensor([2**i for i in range(n_bits)])
+bit\_shifts = torch.tensor([2**i for i in range(n\_bits)])
 \end{lstlisting}
 
 \subsubsection{B.8.3 No Diagonal Mask}
@@ -176,9 +176,9 @@ match = match & ~causal.unsqueeze(0).unsqueeze(0)
 To verify injection:
 
 \begin{lstlisting}
-for name, mod in model.named_modules():
+for name, mod in model.named\_modules():
     if "attention" in name and "self" in name:
-        print(name, type(mod).__name__)
+        print(name, type(mod).\_\_name\_\_)
         break
 \end{lstlisting}
 

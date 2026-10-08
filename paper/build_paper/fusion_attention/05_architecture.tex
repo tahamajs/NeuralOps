@@ -22,26 +22,26 @@ T5 & Enc-Dec & No & No & No & Yes \\
 
 \subsubsection{DistilBERT (Flat)}
 \begin{lstlisting}
-q_w = src.q_lin.weight
-k_w = src.k_lin.weight
-v_w = src.v_lin.weight
-o_w = src.out_lin.weight
+q\_w = src.q\_lin.weight
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
 \end{lstlisting}
 
 \subsubsection{RoBERTa (Nested)}
 \begin{lstlisting}
-q_w = src.self.query.weight
-k_w = src.self.key.weight
-v_w = src.self.value.weight
-o_w = src.output.dense.weight
-is_nested_encoder = True
+q\_w = src.self.query.weight
+k\_w = src.self.key.weight
+v\_w = src.self.value.weight
+o\_w = src.output.dense.weight
+is\_nested\_encoder = True
 \end{lstlisting}
 
 \subsubsection{GPT-2 (Conv1D)}
 \begin{lstlisting}
-w = src.c_attn.weight.T
-q_w, k_w, v_w = w.chunk(3, dim=0)
-o_w = src.c_proj.weight.T
+w = src.c\_attn.weight.T
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.T
 \end{lstlisting}
 
 \subsubsection{Qwen (GQA + RoPE)}
@@ -50,13 +50,13 @@ Direct copy with GQA-aware dims.
 \subsection{Injection}
 
 \begin{lstlisting}
-def inject_fusion_attn(layer, cfg, comp_config, old_attn):
+def inject\_fusion\_attn(layer, cfg, comp\_config, old\_attn):
     new = FUSIONATTN(
         config=cfg,
-        comp_config=comp_config,
-        old_attn=old_attn,
-        block_size=64,
-        top_k_blocks=4,
+        comp\_config=comp\_config,
+        old\_attn=old\_attn,
+        block\_size=64,
+        top\_k\_blocks=4,
     )
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
@@ -73,19 +73,19 @@ For RoBERTa, \texttt{out\_proj} is not applied; outer \texttt{BertSelfOutput.den
 \subsection{GQA}
 
 \begin{lstlisting}
-if self.kv_repeat > 1:
-    k = repeat_kv(k, self.kv_repeat)
-    v = repeat_kv(v, self.kv_repeat)
+if self.kv\_repeat \textgreater{} 1:
+    k = repeat\_kv(k, self.kv\_repeat)
+    v = repeat\_kv(v, self.kv\_repeat)
 \end{lstlisting}
 
 \subsection{RoPE}
 
-Supports partial RoPE (Qwen3.5 with rotary\_dim < head\_dim).
+Supports partial RoPE (Qwen3.5 with rotary\_dim \textless{} head\_dim).
 
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("fusion_attn")
+@ATTENTION\_REGISTRY.register("fusion\_attn")
 class FUSIONATTN(BaseAttention):
     ...
 \end{lstlisting}
@@ -99,7 +99,7 @@ class FUSIONATTN(BaseAttention):
 \toprule
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
-Missing weights & Frobenius < 1e-4 & \textbf{raise RuntimeError} \\
+Missing weights & Frobenius \textless{} 1e-4 & \textbf{raise RuntimeError} \\
 Zero Frobenius & Same & \textbf{raise RuntimeError} \\
 Empty blocks & Padding mask & -inf \\
 NaN in scores & nan\_to\_num & Replace 0 \\
@@ -135,6 +135,6 @@ Output & Model dtype \\
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of fusion.}
-\label{fig:arch_fusion}
+\label{fig:arch\_fusion}
 \end{figure}
 

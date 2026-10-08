@@ -16,7 +16,7 @@ $\sigma_1 \geq \sigma_2 \geq \dots \geq 0$.
 \textbf{Truncated SVD.} Keeping the top-$r$ singular values gives:
 
 \[
-W_r = U_{:, :r} \Sigma_{:r, :r} V_{:r, :}^\top
+W\_r = U\_{:, :r} \Sigma\_{:r, :r} V\_{:r, :}^\top
 \]
 
 with error $\|W - W_r\|_F = \sqrt{\sum_{i > r} \sigma_i^2}$.
@@ -30,7 +30,7 @@ $m = n = 768$ and $r = 64$: 98,368 vs 589,824 -- a \textbf{6$\times$} reduction.
 For a linear layer $y = Wx + b$, the reconstruction error is:
 
 \[
-\mathbb{E}_x[\|Wx - W_r x\|_2^2] = \text{Tr}[(W - W_r) C_X (W - W_r)^\top]
+\mathbb{E}\_x[\|Wx - W\_r x\|\_2^2] = \text{Tr}[(W - W\_r) C\_X (W - W\_r)^\top]
 \]
 
 where $C_X = \mathbb{E}[x x^\top]$ is the input covariance.
@@ -38,13 +38,13 @@ where $C_X = \mathbb{E}[x x^\top]$ is the input covariance.
 Under a \textbf{diagonal} assumption $C_X = \text{diag}(F_1, \dots, F_n)$:
 
 \[
-\mathbb{E}_x[\|Wx - W_r x\|_2^2] = \|(W - W_r) \text{diag}(\sqrt{F})\|_F^2
+\mathbb{E}\_x[\|Wx - W\_r x\|\_2^2] = \|(W - W\_r) \text{diag}(\sqrt{F})\|\_F^2
 \]
 
 So the weighted problem reduces to unweighted SVD on the transformed matrix:
 
 \[
-W_\text{weighted} = W \cdot \text{diag}(\sqrt{F})
+W\_\text{weighted} = W \cdot \text{diag}(\sqrt{F})
 \]
 
 \textbf{Energy proxy.} We estimate $F_i = \mathbb{E}[x_i^2]$ from calibration 
@@ -56,7 +56,7 @@ Given singular values $\sigma_1 \geq \sigma_2 \geq \dots$, the cumulative
 energy at rank $r$ is:
 
 \[
-E(r) = \frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{\min(m, n)} \sigma_i^2}
+E(r) = \frac{\sum\_{i=1}^r \sigma\_i^2}{\sum\_{i=1}^{\min(m, n)} \sigma\_i^2}
 \]
 
 \textbf{Energy thresholding.} Choose the minimal $r$ such that $E(r) \geq \varepsilon$. 
@@ -70,7 +70,7 @@ less compression.
 For validation:
 
 \[
-\text{err}(W, U, \Sigma, V) = \frac{\|W - U \Sigma V^\top\|_F}{\|W\|_F + \epsilon}
+\text{err}(W, U, \Sigma, V) = \frac{\|W - U \Sigma V^\top\|\_F}{\|W\|\_F + \epsilon}
 \]
 
 Threshold $\tau$: typically 0.10 (tight) to 0.50 (permissive). ASVD 
@@ -81,7 +81,7 @@ defaults to $\tau = 0.20$.
 LoRA (Hu et al., 2021) parameterizes weight updates as:
 
 \[
-\Delta W = \frac{\alpha}{r_L} B A
+\Delta W = \frac{\alpha}{r\_L} B A
 \]
 
 with $A \in \mathbb{R}^{r_L \times n}$, $B \in \mathbb{R}^{m \times r_L}$, 

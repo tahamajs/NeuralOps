@@ -5,26 +5,26 @@
 Two projections:
 
 \[
-W_1 \in \mathbb{R}^{d_h \times F}, \quad W_2 \in \mathbb{R}^{d_h \times F/2}
+W\_1 \in \mathbb{R}^{d\_h \times F}, \quad W\_2 \in \mathbb{R}^{d\_h \times F/2}
 \tag{A.1}
 \]
 
 Feature map:
 
 \[
-\phi(x) = [\phi_1(x) \| \phi_2(x)]
+\phi(x) = [\phi\_1(x) \| \phi\_2(x)]
 \tag{A.2}
 \]
 
 where:
 
 \[
-\phi_1(x) = \frac{1}{\sqrt{F}} [\cos(xW_1) \| \sin(xW_1)]
+\phi\_1(x) = \frac{1}{\sqrt{F}} [\cos(xW\_1) \| \sin(xW\_1)]
 \tag{A.3}
 \]
 
 \[
-\phi_2(x) = \frac{1}{\sqrt{F/2}} [\cos(xW_2) \| \sin(xW_2)]
+\phi\_2(x) = \frac{1}{\sqrt{F/2}} [\cos(xW\_2) \| \sin(xW\_2)]
 \tag{A.4}
 \]
 
@@ -35,14 +35,14 @@ Output dimension: $2F + F = 3F$.
 Score for token $i$:
 
 \[
-s_i = \text{MLP}(\text{LN}(\phi(k_i)))
+s\_i = \text{MLP}(\text{LN}(\phi(k\_i)))
 \tag{A.5}
 \]
 
 Selection:
 
 \[
-\mathcal{S}_\text{land} = \text{TopK}(\{s_i\}, L_\text{max})
+\mathcal{S}\_\text{land} = \text{TopK}(\{s\_i\}, L\_\text{max})
 \tag{A.6}
 \]
 
@@ -53,14 +53,14 @@ Guarantee: $s_0 \leftarrow 10^4$.
 For scores $\text{scores}_{ij}$ and row max $m_i$:
 
 \[
-p_{ij} = \text{ReLU}\!\left(e^{(\text{scores}_{ij} - m_i)/T} - e^{-m_i/T}\right)
+p\_{ij} = \text{ReLU}\!\left(e^{(\text{scores}\_{ij} - m\_i)/T} - e^{-m\_i/T}\right)
 \tag{A.7}
 \]
 
 Normalize:
 
 \[
-\tilde{p}_{ij} = \frac{p_{ij}}{\sum_j p_{ij} + \epsilon}
+\tilde{p}\_{ij} = \frac{p\_{ij}}{\sum\_j p\_{ij} + \epsilon}
 \tag{A.8}
 \]
 
@@ -69,7 +69,7 @@ Normalize:
 \textbf{Property.} For all $j$ with $\text{scores}_{ij} \leq 0$:
 
 \[
-e^{(\text{scores}_{ij} - m_i)/T} \leq e^{-m_i/T} \implies p_{ij} = 0
+e^{(\text{scores}\_{ij} - m\_i)/T} \leq e^{-m\_i/T} \implies p\_{ij} = 0
 \tag{A.9}
 \]
 
@@ -78,7 +78,7 @@ e^{(\text{scores}_{ij} - m_i)/T} \leq e^{-m_i/T} \implies p_{ij} = 0
 Window mask:
 
 \[
-\text{mask}_{ij} = \mathbb{1}\{|i - j| \leq W/2\}
+\text{mask}\_{ij} = \mathbb{1}\{|i - j| \leq W/2\}
 \tag{A.10}
 \]
 
@@ -87,21 +87,21 @@ Window mask:
 Per-head gate:
 
 \[
-g_h = \sigma(w_h)
+g\_h = \sigma(w\_h)
 \tag{A.11}
 \]
 
 Fusion:
 
 \[
-\text{out}_h = (1 - g_h) \text{Local}_h + g_h \text{Global}_h
+\text{out}\_h = (1 - g\_h) \text{Local}\_h + g\_h \text{Global}\_h
 \tag{A.12}
 \]
 
 \subsection{A.6 Correction Matrix}
 
 \[
-V_\text{land}^\text{adj} = V_\text{land} \cdot W_\text{corr}
+V\_\text{land}^\text{adj} = V\_\text{land} \cdot W\_\text{corr}
 \tag{A.13}
 \]
 
@@ -134,7 +134,7 @@ Output proj & $O(L d^2)$ \\
 For $L_\text{max} = \rho L$:
 
 \[
-\text{Total} = O(L d^2 + \rho L^2 F + L W d_h)
+\text{Total} = O(L d^2 + \rho L^2 F + L W d\_h)
 \]
 
 \textbf{Quadratic unless $\rho = O(1/L)$.}

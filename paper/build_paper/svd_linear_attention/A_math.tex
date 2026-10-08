@@ -6,14 +6,14 @@
 \textbf{Claim.} Kernelized linear attention is exact for any feature map $\phi$:
 
 \[
-\text{Attn}(Q, K, V)_t = \frac{\phi(Q_t) \sum_j \phi(K_j) V_j^\top}{\phi(Q_t) \sum_j \phi(K_j)}
+\text{Attn}(Q, K, V)\_t = \frac{\phi(Q\_t) \sum\_j \phi(K\_j) V\_j^\top}{\phi(Q\_t) \sum\_j \phi(K\_j)}
 \tag{A.1}
 \]
 
 \textbf{Proof.} Expand:
 
 \[
-\text{softmax}(Q_t K^\top) V \approx \frac{\phi(Q_t) \phi(K)^\top V}{\phi(Q_t) \phi(K)^\top \mathbf{1}}
+\text{softmax}(Q\_t K^\top) V \approx \frac{\phi(Q\_t) \phi(K)^\top V}{\phi(Q\_t) \phi(K)^\top \mathbf{1}}
 \]
 
 The numerator is $\phi(Q_t) (\phi(K)^\top V)$ where the product 
@@ -29,14 +29,14 @@ recovers the sequential recurrence.
 \textbf{Proof.} Define $\log \gamma_i = \sum_{j \leq i} \log \lambda_j$. Then:
 
 \[
-S_i = e^{\log \gamma_i} \sum_{j \leq i} e^{-\log \gamma_j} \phi(K_j) V_j^\top
+S\_i = e^{\log \gamma\_i} \sum\_{j \leq i} e^{-\log \gamma\_j} \phi(K\_j) V\_j^\top
 \tag{A.2}
 \]
 
 For a chunk $c$ starting at position $s_c$:
 
 \[
-S_{c, i} = \underbrace{e^{\log \gamma_{c, i}} \sum_{j=s_c}^{s_c+i} e^{-\log \gamma_{c, j}} \phi(K_j) V_j^\top}_{\text{intra}} + \underbrace{e^{\log \gamma_{c, i}} S_{c-1, C}}_{\text{inter}}
+S\_{c, i} = \underbrace{e^{\log \gamma\_{c, i}} \sum\_{j=s\_c}^{s\_c+i} e^{-\log \gamma\_{c, j}} \phi(K\_j) V\_j^\top}\_{\text{intra}} + \underbrace{e^{\log \gamma\_{c, i}} S\_{c-1, C}}\_{\text{inter}}
 \tag{A.3}
 \]
 
@@ -80,7 +80,7 @@ $\mathcal{O}(N C d_h + N d_h^2)$ for chunked causal.
 \textbf{Claim.} SVD-Linear's per-layer parameters are:
 
 \[
-P = r(d_\text{in}^Q + d_\text{out}^Q) + r(d_\text{in}^K + d_\text{out}^K) + r(d_\text{in}^V + d_\text{out}^V) + r(d_\text{in}^O + d_\text{out}^O) + 2 d_h r_L
+P = r(d\_\text{in}^Q + d\_\text{out}^Q) + r(d\_\text{in}^K + d\_\text{out}^K) + r(d\_\text{in}^V + d\_\text{out}^V) + r(d\_\text{in}^O + d\_\text{out}^O) + 2 d\_h r\_L
 \]
 
 \textbf{Proof.} Direct sum. For DistilBERT with $d = 768$, $r = 32$:
@@ -122,14 +122,14 @@ the target decay time $\tau_h$.
 \textbf{Proof.} The actual decay is:
 
 \[
-\lambda_h = e^{-\text{softplus}(b_h)} = \frac{1}{1 + e^{b_h}}
+\lambda\_h = e^{-\text{softplus}(b\_h)} = \frac{1}{1 + e^{b\_h}}
 \tag{A.4}
 \]
 
 Setting $b_h = -\log \tau_h$:
 
 \[
-\lambda_h = \frac{1}{1 + 1/\tau_h} = \frac{\tau_h}{1 + \tau_h}
+\lambda\_h = \frac{1}{1 + 1/\tau\_h} = \frac{\tau\_h}{1 + \tau\_h}
 \tag{A.5}
 \]
 

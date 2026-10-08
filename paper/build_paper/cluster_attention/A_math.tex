@@ -44,7 +44,7 @@ is bounded below by 0, the algorithm converges. $\square$
 The soft assignment with temperature $\tau$:
 
 \[
-\text{assign}_{i,k} = \frac{\exp(Q_i \cdot C_k / (\sqrt{d_h} \tau))}{\sum_{k'} \exp(Q_i \cdot C_{k'} / (\sqrt{d_h} \tau))}
+\text{assign}\_{i,k} = \frac{\exp(Q\_i \cdot C\_k / (\sqrt{d\_h} \tau))}{\sum\_{k'} \exp(Q\_i \cdot C\_{k'} / (\sqrt{d\_h} \tau))}
 \]
 
 \textbf{Limit.} As $\tau \to 0$, this becomes a hard assignment (one-hot). As 
@@ -55,7 +55,7 @@ $\tau \to \infty$, it becomes uniform.
 \textbf{Statement.} The approximation error of ClusterFormer satisfies:
 
 \[
-\|\text{Output}_\text{CF} - \text{Output}_\text{exact}\|_F \leq f(\text{K-means distortion})
+\|\text{Output}\_\text{CF} - \text{Output}\_\text{exact}\|\_F \leq f(\text{K-means distortion})
 \]
 
 where $f$ is monotone increasing. We do not provide a tight bound; see 
@@ -68,7 +68,7 @@ empirical analysis in Section 8.
 \textbf{Proof.} We use exact causal attention for decoders (Section 5.4):
 
 \[
-\text{Attn}_i = \sum_{j \leq i} \alpha_{ij} V_j
+\text{Attn}\_i = \sum\_{j \leq i} \alpha\_{ij} V\_j
 \]
 
 Only keys with $j \leq i$ contribute. Causality is preserved. $\square$

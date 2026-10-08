@@ -35,7 +35,7 @@ LEKAv3 replaces standard attention with a two-branch mechanism:
 We map each head vector $x \in \mathbb{R}^{d_h}$ to feature space:
 
 \[
-\phi(x) = \frac{1}{\sqrt{d_\text{feat}}} \begin{pmatrix} \cos(W_1 x) \\ \sin(W_1 x) \end{pmatrix}
+\phi(x) = \frac{1}{\sqrt{d\_\text{feat}}} \begin{pmatrix} \cos(W\_1 x) \\ \sin(W\_1 x) \end{pmatrix}
 \tag{4.1}
 \]
 
@@ -56,7 +56,7 @@ of the softmax kernel without the exploding variance of pure RFF.
 A small MLP scores each key-feature:
 
 \[
-s_i = f_\theta(K_\text{feat}[i]) \in \mathbb{R}
+s\_i = f\_\theta(K\_\text{feat}[i]) \in \mathbb{R}
 \tag{4.2}
 \]
 
@@ -67,21 +67,21 @@ where $f_\theta$ is: Linear($2 d_\text{feat}$, 64) $\to$ GELU $\to$ Linear(64, 1
 We retain the top-$L_\text{land}$ indices:
 
 \[
-\mathcal{L} = \text{TopK}(s, L_\text{land})
+\mathcal{L} = \text{TopK}(s, L\_\text{land})
 \tag{4.3}
 \]
 
 with the constraint that index 0 is always included:
 
 \[
-s_0 \leftarrow 10^4
+s\_0 \leftarrow 10^4
 \tag{4.4}
 \]
 
 Padding tokens are masked:
 
 \[
-s_i \leftarrow -10^4 \quad \text{for padding}
+s\_i \leftarrow -10^4 \quad \text{for padding}
 \tag{4.5}
 \]
 
@@ -90,7 +90,7 @@ s_i \leftarrow -10^4 \quad \text{for padding}
 To balance compute and accuracy across sequence lengths:
 
 \[
-L_\text{land} = \min(N, \max(L_0, \lceil N/2 \rceil))
+L\_\text{land} = \min(N, \max(L\_0, \lceil N/2 \rceil))
 \tag{4.6}
 \]
 
@@ -108,7 +108,7 @@ where $L_0$ is the base budget (default 64). This means:
 Gather landmark features and values:
 
 \[
-K_\mathcal{L} = K_\text{feat}[\mathcal{L}], \qquad V_\mathcal{L} = V[\mathcal{L}]
+K\_\mathcal{L} = K\_\text{feat}[\mathcal{L}], \qquad V\_\mathcal{L} = V[\mathcal{L}]
 \tag{4.7}
 \]
 
@@ -117,7 +117,7 @@ K_\mathcal{L} = K_\text{feat}[\mathcal{L}], \qquad V_\mathcal{L} = V[\mathcal{L}
 LEKAv3 applies a per-head learnable correlation:
 
 \[
-V_\mathcal{L}^\text{adj} = V_\mathcal{L} \cdot W_\text{corr}
+V\_\mathcal{L}^\text{adj} = V\_\mathcal{L} \cdot W\_\text{corr}
 \tag{4.8}
 \]
 
@@ -127,14 +127,14 @@ identity. This lets each head adjust the landmark values.
 \subsubsection{Attention}
 
 \[
-\text{attn}_{ij} = \text{softpick}\!\left(\phi(q_i) \cdot \phi(k_{\mathcal{L}_j})\right)
+\text{attn}\_{ij} = \text{softpick}\!\left(\phi(q\_i) \cdot \phi(k\_{\mathcal{L}\_j})\right)
 \tag{4.9}
 \]
 
 The output:
 
 \[
-\text{Out}_\text{land}[i] = \sum_j \text{attn}_{ij} \cdot V_\mathcal{L}^\text{adj}[j]
+\text{Out}\_\text{land}[i] = \sum\_j \text{attn}\_{ij} \cdot V\_\mathcal{L}^\text{adj}[j]
 \tag{4.10}
 \]
 
@@ -143,7 +143,7 @@ The output:
 For decoders:
 
 \[
-\text{attn}_{ij} \leftarrow -\infty \quad \text{if } \mathcal{L}_j > i
+\text{attn}\_{ij} \leftarrow -\infty \quad \text{if } \mathcal{L}\_j \textgreater{} i
 \tag{4.11}
 \]
 
@@ -163,21 +163,21 @@ The mask uses original positions from \texttt{land\_idx}.
 Standard scaled dot-product:
 
 \[
-\text{scores}_{ij} = \frac{q_i \cdot k_j}{\sqrt{d_h}} \cdot \mathbb{1}[\text{window}(i,j)]
+\text{scores}\_{ij} = \frac{q\_i \cdot k\_j}{\sqrt{d\_h}} \cdot \mathbb{1}[\text{window}(i,j)]
 \tag{4.13}
 \]
 
 For decoders, additionally mask $j > i$:
 
 \[
-\text{scores}_{ij} \leftarrow -\infty \quad \text{if } j > i
+\text{scores}\_{ij} \leftarrow -\infty \quad \text{if } j \textgreater{} i
 \tag{4.14}
 \]
 
 \subsubsection{Output}
 
 \[
-\text{Out}_\text{local} = \text{softmax}(\text{scores}) \cdot V
+\text{Out}\_\text{local} = \text{softmax}(\text{scores}) \cdot V
 \tag{4.15}
 \]
 
@@ -186,7 +186,7 @@ For decoders, additionally mask $j > i$:
 The final output combines the two branches:
 
 \[
-\text{Out} = \sigma(g) \cdot \text{Out}_\text{land} + (1 - \sigma(g)) \cdot \text{Out}_\text{local}
+\text{Out} = \sigma(g) \cdot \text{Out}\_\text{land} + (1 - \sigma(g)) \cdot \text{Out}\_\text{local}
 \tag{4.16}
 \]
 
@@ -202,27 +202,27 @@ shift toward local.
 
 \textbf{Algorithm 1:} LEKAv3 forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
-1:  Q $\leftarrow$ X W_Q; K $\leftarrow$ X W_K; V $\leftarrow$ X W_V
+1:  Q $\leftarrow$ X W\_Q; K $\leftarrow$ X W\_K; V $\leftarrow$ X W\_V
 2:  if RoPE: Q, K $\leftarrow$ RoPE(Q, K)
-3:  if GQA: K, V $\leftarrow$ repeat_kv(K, V)
-4:  Q_feat $\leftarrow$  (Q); K_feat $\leftarrow$  (K)
-5:  s $\leftarrow$ landmark_scorer(K_feat)
+3:  if GQA: K, V $\leftarrow$ repeat\_kv(K, V)
+4:  Q\_feat $\leftarrow$  (Q); K\_feat $\leftarrow$  (K)
+5:  s $\leftarrow$ landmark\_scorer(K\_feat)
 6:  s[0] $\leftarrow$ 1e4; s[padding] $\leftarrow$ -1e4
-7:  L $\leftarrow$ TopK(s, L_land)
-8:  K_L $\leftarrow$ K_feat[L]; V_L $\leftarrow$ V[L]
-9:  attn_land $\leftarrow$ softpick(Q_feat @ K_L^T)
-10: if causal: attn_land $\leftarrow$ mask(attn_land, L > i)
-11: Out_land $\leftarrow$ attn_land @ (V_L @ W_corr)
-12: scores_local $\leftarrow$ Q @ K^T / $\sqrt{}$d_h
-13: scores_local $\leftarrow$ mask_window(scores_local)
-14: if causal: scores_local $\leftarrow$ mask_causal(scores_local)
-15: Out_local $\leftarrow$ softmax(scores_local) @ V
+7:  L $\leftarrow$ TopK(s, L\_land)
+8:  K\_L $\leftarrow$ K\_feat[L]; V\_L $\leftarrow$ V[L]
+9:  attn\_land $\leftarrow$ softpick(Q\_feat @ K\_L^T)
+10: if causal: attn\_land $\leftarrow$ mask(attn\_land, L \textgreater{} i)
+11: Out\_land $\leftarrow$ attn\_land @ (V\_L @ W\_corr)
+12: scores\_local $\leftarrow$ Q @ K^T / $\sqrt{}$d\_h
+13: scores\_local $\leftarrow$ mask\_window(scores\_local)
+14: if causal: scores\_local $\leftarrow$ mask\_causal(scores\_local)
+15: Out\_local $\leftarrow$ softmax(scores\_local) @ V
 16: g $\leftarrow$ $\sigma$(gate)
-17: Out $\leftarrow$ g   Out_land + (1-g)   Out_local
-18: Y $\leftarrow$ Out_proj(Out)
+17: Out $\leftarrow$ g   Out\_land + (1-g)   Out\_local
+18: Y $\leftarrow$ Out\_proj(Out)
 19: return Y
 \end{lstlisting}
 
@@ -312,7 +312,7 @@ LEKAv3 \textbf{increases} parameter count by ~7.5\% per layer.
 Under the RFF guarantee (Rahimi \& Recht, 2007):
 
 \[
-\sup_{x, y} |\phi(x)^\top \phi(y) - e^{x \cdot y}| \leq \epsilon
+\sup\_{x, y} |\phi(x)^\top \phi(y) - e^{x \cdot y}| \leq \epsilon
 \tag{4.17}
 \]
 

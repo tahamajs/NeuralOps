@@ -23,18 +23,18 @@ T5 & \texttt{block[i].layer[0]} & No & No & No & Yes \\
 \subsubsection{GPT-2 Conv1D}
 
 \begin{lstlisting}
-c_w = c_attn.weight.t()
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
-o_w = c_proj.weight.t()
+c\_w = c\_attn.weight.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+o\_w = c\_proj.weight.t()
 \end{lstlisting}
 
 \subsubsection{RoBERTa Nested}
 
 \begin{lstlisting}
-q_w = src.self.query.weight
-k_w = src.self.key.weight
-v_w = src.self.value.weight
-o_w = src.output.dense.weight
+q\_w = src.self.query.weight
+k\_w = src.self.key.weight
+v\_w = src.self.value.weight
+o\_w = src.output.dense.weight
 \end{lstlisting}
 
 \subsubsection{Flat Modules}
@@ -50,7 +50,7 @@ If any projection is missing.
 The MoE operates on \texttt{all\_head\_size = num\_heads * head\_dim}. This equals the 
 hidden dimension for standard attention.
 
-\textbf{For GQA models}, \texttt{kv\_head\_size < all\_head\_size}. But the attention output 
+\textbf{For GQA models}, \texttt{kv\_head\_size \textless{} all\_head\_size}. But the attention output 
 is always \texttt{all\_head\_size} (Q heads $\times$ head dim). So the MoE input dimension 
 is always \texttt{all\_head\_size = d}.
 
@@ -60,13 +60,13 @@ If the incoming hidden size differs from the router's input size, a
 \textbf{dynamic router} is created on-the-fly:
 
 \begin{lstlisting}
-if D == self.d_model:
-    logits = self.router(self.router_ln(x_flat))
+if D == self.d\_model:
+    logits = self.router(self.router\_ln(x\_flat))
 else:
-    normed = F.layer_norm(x_flat, (D,))
-    if not hasattr(self, "_dynamic_router") or self._dynamic_router.in_features != D:
-        self._dynamic_router = nn.Linear(D, self.n_experts, bias=False)...
-    logits = self._dynamic_router(normed)
+    normed = F.layer\_norm(x\_flat, (D,))
+    if not hasattr(self, "\_dynamic\_router") or self.\_dynamic\_router.in\_features != D:
+        self.\_dynamic\_router = nn.Linear(D, self.n\_experts, bias=False)...
+    logits = self.\_dynamic\_router(normed)
 \end{lstlisting}
 
 This handles cross-attention where the input dimension may differ.
@@ -76,11 +76,11 @@ This handles cross-attention where the input dimension may differ.
 For RoBERTa, \texttt{is\_nested\_encoder = True}:
 
 \begin{lstlisting}
-if self.is_nested_encoder:
-    if enriched_attn.shape[-1] != self.dim:
-        out = self.out_lin(enriched_attn)
+if self.is\_nested\_encoder:
+    if enriched\_attn.shape[-1] != self.dim:
+        out = self.out\_lin(enriched\_attn)
     else:
-        out = enriched_attn
+        out = enriched\_attn
 \end{lstlisting}
 
 The outer \texttt{attention.output.dense} handles the projection.
@@ -90,9 +90,9 @@ The outer \texttt{attention.output.dense} handles the projection.
 For decoders, causal masking is applied to attention scores:
 
 \begin{lstlisting}
-if self.is_decoder and not is_cross_attention:
-    causal_mask = torch.triu(torch.full((L, kv_len), -inf, ...), diagonal=1)
-    scores = scores + causal_mask.unsqueeze(0).unsqueeze(1)
+if self.is\_decoder and not is\_cross\_attention:
+    causal\_mask = torch.triu(torch.full((L, kv\_len), -inf, ...), diagonal=1)
+    scores = scores + causal\_mask.unsqueeze(0).unsqueeze(1)
 \end{lstlisting}
 
 The MoE operates on the attention output, which is already causal.
@@ -101,17 +101,17 @@ The MoE operates on the attention output, which is already causal.
 
 \textbf{Algorithm 2:} Inject ExpertChoiceMoEAttention
 \begin{lstlisting}
-Input:  model M, config c, n_experts, capacity_factor
+Input:  model M, config c, n\_experts, capacity\_factor
 Output: M with attention replaced
 
 1: for each layer:
-2:     src $\leftarrow$ extract_attention(layer)
+2:     src $\leftarrow$ extract\_attention(layer)
 3:     if src is None: continue
 4:     try:
-5:         new $\leftarrow$ ExpertChoiceMoEAttention(c, n_experts=E, ...)
+5:         new $\leftarrow$ ExpertChoiceMoEAttention(c, n\_experts=E, ...)
 6:         replace(layer, new)
 7:     except Exception:
-8:         raise RuntimeError("copy_weights failed")
+8:         raise RuntimeError("copy\_weights failed")
 9: return M
 \end{lstlisting}
 
@@ -123,8 +123,8 @@ MoE injection is complex.
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("expert_choice_moe")
-@ATTENTION_REGISTRY.register("expert_choice_moe_attention")
+@ATTENTION\_REGISTRY.register("expert\_choice\_moe")
+@ATTENTION\_REGISTRY.register("expert\_choice\_moe\_attention")
 class ExpertChoiceMoEAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -135,6 +135,6 @@ class ExpertChoiceMoEAttention(BaseAttention):
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of expert\_choice\_moe.}
-\label{fig:arch_expert-choice-moe}
+\label{fig:arch\_expert-choice-moe}
 \end{figure}
 

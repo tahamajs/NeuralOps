@@ -56,7 +56,7 @@ $B_s$ (default 16).
 Sub-sampled queries and keys compute coarse block-to-block scores:
 
 \[
-S_{b_i, b_j} = \frac{1}{|B_i| |B_j|} \sum_{i \in B_i, j \in B_j} \frac{q_i \cdot k_j}{\sqrt{d_h}}
+S\_{b\_i, b\_j} = \frac{1}{|B\_i| |B\_j|} \sum\_{i \in B\_i, j \in B\_j} \frac{q\_i \cdot k\_j}{\sqrt{d\_h}}
 \tag{1.2}
 \]
 
@@ -67,7 +67,7 @@ Top-$k$ key blocks are retained per query block.
 A learnable bottleneck network predicts per-head block budgets:
 
 \[
-g_h = \sigma(W_q \bar{Q}_h \cdot W_k \bar{K}_h^T)
+g\_h = \sigma(W\_q \bar{Q}\_h \cdot W\_k \bar{K}\_h^T)
 \tag{1.3}
 \]
 
@@ -87,7 +87,7 @@ attention to adjacent stripe groups.
 A rectified softmax:
 
 \[
-\text{softpick}(x)_i = \frac{\text{ReLU}(e^{x_i/T} - 1)}{\sum_j \text{ReLU}(e^{x_j/T} - 1)}
+\text{softpick}(x)\_i = \frac{\text{ReLU}(e^{x\_i/T} - 1)}{\sum\_j \text{ReLU}(e^{x\_j/T} - 1)}
 \tag{1.4}
 \]
 

@@ -25,11 +25,11 @@ The \texttt{copy\_weights} method handles three patterns:
 \subsubsection{GPT-2 (Fused Conv1D)}
 
 \begin{lstlisting}
-if hasattr(src, "c_attn"):
-    w = src.c_attn.weight.data
-    if isinstance(src.c_attn, Conv1D):
+if hasattr(src, "c\_attn"):
+    w = src.c\_attn.weight.data
+    if isinstance(src.c\_attn, Conv1D):
         w = w.t()  # (in, out) $\to$ (out, in)
-    q_w, k_w, v_w = w.chunk(3, dim=0)
+    q\_w, k\_w, v\_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{RoBERTa (Nested)}
@@ -46,10 +46,10 @@ elif hasattr(src, "self") and hasattr(src.self, "query"):
 
 \begin{lstlisting}
 else:
-    extracted["q"] = src.q_lin.weight.data
-    extracted["k"] = src.k_lin.weight.data
-    extracted["v"] = src.v_lin.weight.data
-    extracted["o"] = src.out_lin.weight.data
+    extracted["q"] = src.q\_lin.weight.data
+    extracted["k"] = src.k\_lin.weight.data
+    extracted["v"] = src.v\_lin.weight.data
+    extracted["o"] = src.out\_lin.weight.data
 \end{lstlisting}
 
 \subsection{Nested Encoder Bypass}
@@ -58,9 +58,9 @@ For RoBERTa, \texttt{out\_lin} is outside the attention. We set
 \texttt{is\_nested\_encoder = True} and skip \texttt{out\_proj} in the forward pass.
 
 \begin{lstlisting}
-if self.is_nested_encoder:
+if self.is\_nested\_encoder:
     return out, None
-output = self.out_proj(out)
+output = self.out\_proj(out)
 \end{lstlisting}
 
 For DistilBERT, \texttt{out\_lin} is inside; \texttt{is\_nested\_encoder = False}.
@@ -70,10 +70,10 @@ For DistilBERT, \texttt{out\_lin} is inside; \texttt{is\_nested\_encoder = False
 For Qwen3.5 with $H_{kv} < H$:
 
 \begin{lstlisting}
-if self.num_heads != self.num_kv_heads:
-    repeats = self.num_heads // self.num_kv_heads
-    k = repeat_kv(k, repeats)
-    v = repeat_kv(v, repeats)
+if self.num\_heads != self.num\_kv\_heads:
+    repeats = self.num\_heads // self.num\_kv\_heads
+    k = repeat\_kv(k, repeats)
+    v = repeat\_kv(v, repeats)
 \end{lstlisting}
 
 \subsection{RoPE Support}
@@ -81,29 +81,29 @@ if self.num_heads != self.num_kv_heads:
 We support partial RoPE:
 
 \begin{lstlisting}
-if position_embeddings is not None:
-    cos, sin = position_embeddings
-    q, k = apply_rotary_pos_emb(q, k, cos, sin)
+if position\_embeddings is not None:
+    cos, sin = position\_embeddings
+    q, k = apply\_rotary\_pos\_emb(q, k, cos, sin)
 \end{lstlisting}
 
-\texttt{apply\_rotary\_pos\_emb} handles cases where \texttt{rotary\_dim < head\_dim}.
+\texttt{apply\_rotary\_pos\_emb} handles cases where \texttt{rotary\_dim \textless{} head\_dim}.
 
 \subsection{Injection Algorithm}
 
 \textbf{Algorithm 2:} Inject RALA into a layer
 \begin{lstlisting}
-Input:  layer, config, old_attn
+Input:  layer, config, old\_attn
 Output: new attention module
 
-1: new $\leftarrow$ RALALinearAttention(config, old_attn=old_attn)
-2: if copy_weights failed:
+1: new $\leftarrow$ RALALinearAttention(config, old\_attn=old\_attn)
+2: if copy\_weights failed:
 3:     log warning
 4: if layer.attention.self:
-5:     layer.attention.self $\leftarrow$ new; new.is_nested_encoder $\leftarrow$ True
+5:     layer.attention.self $\leftarrow$ new; new.is\_nested\_encoder $\leftarrow$ True
 6: elif layer.attention:
 7:     layer.attention $\leftarrow$ new
-8: elif layer.self_attn:
-9:     layer.self_attn $\leftarrow$ new
+8: elif layer.self\_attn:
+9:     layer.self\_attn $\leftarrow$ new
 10: return new
 \end{lstlisting}
 
@@ -112,9 +112,9 @@ Output: new attention module
 We check for prior injection:
 
 \begin{lstlisting}
-if isinstance(src_attn, RALALinearAttention):
+if isinstance(src\_attn, RALALinearAttention):
     return None
-if "RALA" in src_attn.__class__.__name__:
+if "RALA" in src\_attn.\_\_class\_\_.\_\_name\_\_:
     return None
 \end{lstlisting}
 
@@ -124,7 +124,7 @@ Some Qwen layers use GatedDeltaNet, which is incompatible with RALA. We
 skip these:
 
 \begin{lstlisting}
-if "DeltaNet" in c_name or "LinearAttention" in c_name:
+if "DeltaNet" in c\_name or "LinearAttention" in c\_name:
     return None
 \end{lstlisting}
 
@@ -170,6 +170,6 @@ FP32 for $L > 512$.
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.png}
 \caption{High-level architectural diagram of rala\_attention.}
-\label{fig:arch_rala-attention}
+\label{fig:arch\_rala-attention}
 \end{figure}
 

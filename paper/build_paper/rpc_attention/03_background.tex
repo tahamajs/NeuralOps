@@ -7,7 +7,7 @@ For $X \in \mathbb{R}^{B \times L \times d}$:
 
 \[
 S = Q K^\top, \qquad
-P = \text{softmax}\!\left(\frac{S}{\sqrt{d_h}}\right), \qquad
+P = \text{softmax}\!\left(\frac{S}{\sqrt{d\_h}}\right), \qquad
 \text{out} = P V
 \tag{3.1}
 \]
@@ -23,7 +23,7 @@ $\Omega : \mathbb{R}^d \to \mathbb{R}^r$ with
 $r = \mathcal{O}(\log N / \epsilon^2)$ such that:
 
 \[
-(1 - \epsilon) \|x_i - x_j\|_2^2 \leq \|\Omega x_i - \Omega x_j\|_2^2 \leq (1 + \epsilon) \|x_i - x_j\|_2^2
+(1 - \epsilon) \|x\_i - x\_j\|\_2^2 \leq \|\Omega x\_i - \Omega x\_j\|\_2^2 \leq (1 + \epsilon) \|x\_i - x\_j\|\_2^2
 \tag{3.2}
 \]
 
@@ -31,14 +31,14 @@ $r = \mathcal{O}(\log N / \epsilon^2)$ such that:
 $\mathcal{N}(0, 1/r)$ entries. Then:
 
 \[
-\mathbb{E}[\|\Omega x\|_2^2] = \|x\|_2^2
+\mathbb{E}[\|\Omega x\|\_2^2] = \|x\|\_2^2
 \tag{3.3}
 \]
 
 and inner products are preserved:
 
 \[
-\mathbb{E}[(x_i \Omega)(x_j \Omega)^\top] = x_i x_j^\top
+\mathbb{E}[(x\_i \Omega)(x\_j \Omega)^\top] = x\_i x\_j^\top
 \tag{3.4}
 \]
 
@@ -47,7 +47,7 @@ and inner products are preserved:
 By the JL lemma, if $\Omega$ is a Gaussian matrix with variance $1/r$, then:
 
 \[
-|\tilde{Q}_i \tilde{K}_j^\top - Q_i K_j^\top| \leq \epsilon \|Q_i\|_2 \|K_j\|_2
+|\tilde{Q}\_i \tilde{K}\_j^\top - Q\_i K\_j^\top| \leq \epsilon \|Q\_i\|\_2 \|K\_j\|\_2
 \tag{3.5}
 \]
 
@@ -63,7 +63,7 @@ Standard attention scales by $1/\sqrt{d_h}$ to prevent softmax saturation.
 RPC scales by $1/\sqrt{r}$:
 
 \[
-s_{ij} = \frac{\tilde{Q}_i \tilde{K}_j^\top}{\sqrt{r}}
+s\_{ij} = \frac{\tilde{Q}\_i \tilde{K}\_j^\top}{\sqrt{r}}
 \tag{3.6}
 \]
 

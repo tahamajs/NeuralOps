@@ -3,55 +3,55 @@
 \subsection{B.1 Core Forward}
 
 \begin{lstlisting}
-def forward(self, hidden_states, attention_mask=None, ...):
-    B, N, _ = hidden_states.shape
+def forward(self, hidden\_states, attention\_mask=None, ...):
+    B, N, \_ = hidden\_states.shape
     
-    q = self.q_proj(hidden_states).view(B, N, H, d).transpose(1, 2)
-    k = self.k_proj(hidden_states).view(B, N, H_kv, d).transpose(1, 2)
-    v = self.v_proj(hidden_states).view(B, N, H_kv, d).transpose(1, 2)
+    q = self.q\_proj(hidden\_states).view(B, N, H, d).transpose(1, 2)
+    k = self.k\_proj(hidden\_states).view(B, N, H\_kv, d).transpose(1, 2)
+    v = self.v\_proj(hidden\_states).view(B, N, H\_kv, d).transpose(1, 2)
     
-    if position_embeddings is not None:
-        q, k = apply_rotary_pos_emb(q, k, cos, sin)
+    if position\_embeddings is not None:
+        q, k = apply\_rotary\_pos\_emb(q, k, cos, sin)
     
-    if self.num_heads != self.num_kv_heads:
-        k = repeat_kv(k, self.num_heads // self.num_kv_heads)
-        v = repeat_kv(v, self.num_heads // self.num_kv_heads)
+    if self.num\_heads != self.num\_kv\_heads:
+        k = repeat\_kv(k, self.num\_heads // self.num\_kv\_heads)
+        v = repeat\_kv(v, self.num\_heads // self.num\_kv\_heads)
     
-    scale = 1.0 / math.sqrt(self.head_dim)
+    scale = 1.0 / math.sqrt(self.head\_dim)
     scores = torch.matmul(q, k.transpose(-2, -1)) * scale
     
-    invalid_mask = torch.zeros(B, 1, N, N, dtype=torch.bool)
-    if attention_mask is not None:
-        valid_tok = get_token_valid_mask(attention_mask, B, N)
-        invalid_mask = invalid_mask | (~valid_tok.unsqueeze(1).unsqueeze(2))
+    invalid\_mask = torch.zeros(B, 1, N, N, dtype=torch.bool)
+    if attention\_mask is not None:
+        valid\_tok = get\_token\_valid\_mask(attention\_mask, B, N)
+        invalid\_mask = invalid\_mask | (~valid\_tok.unsqueeze(1).unsqueeze(2))
     
-    if self.is_decoder:
+    if self.is\_decoder:
         causal = torch.tril(torch.ones(N, N, dtype=torch.bool))
-        invalid_mask = invalid_mask | (~causal.unsqueeze(0).unsqueeze(0))
+        invalid\_mask = invalid\_mask | (~causal.unsqueeze(0).unsqueeze(0))
     
-    fill_val = -1e4 if scores.dtype in (torch.float16, torch.bfloat16) else -1e9
-    masked = scores.masked_fill(invalid_mask, fill_val)
-    max_scores = masked.max(dim=-1, keepdim=True).values
+    fill\_val = -1e4 if scores.dtype in (torch.float16, torch.bfloat16) else -1e9
+    masked = scores.masked\_fill(invalid\_mask, fill\_val)
+    max\_scores = masked.max(dim=-1, keepdim=True).values
     
     thresh = -5e3 if scores.dtype in (torch.float16, torch.bfloat16) else -1e8
-    max_scores = torch.where(max_scores <= thresh, torch.zeros_like(max_scores), max_scores)
+    max\_scores = torch.where(max\_scores \textless{}= thresh, torch.zeros\_like(max\_scores), max\_scores)
     
-    centered = (scores - max_scores) / max(self.temperature, 1e-6)
+    centered = (scores - max\_scores) / max(self.temperature, 1e-6)
     base = torch.clamp(1.0 + centered / self.order, min=0.0)
     attn = base ** self.order
-    attn = attn.masked_fill(invalid_mask, 0.0)
+    attn = attn.masked\_fill(invalid\_mask, 0.0)
     attn = attn / (attn.sum(dim=-1, keepdim=True) + 1e-8)
     
-    if head_mask is not None:
-        attn = attn * head_mask
+    if head\_mask is not None:
+        attn = attn * head\_mask
     
     attn = self.dropout(attn)
     context = torch.matmul(attn, v)
-    context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+    context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all\_head\_size)
     
-    if self.is_nested_encoder:
+    if self.is\_nested\_encoder:
         return context, None
-    return self.out_proj(context), None
+    return self.out\_proj(context), None
 \end{lstlisting}
 
 \subsection{B.2 Common Pitfalls}

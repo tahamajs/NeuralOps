@@ -16,7 +16,7 @@ $\|W - W_r\|_F^2 = \sum_{i > r} \sigma_i^2$.
 
 LoRA (Hu et al., 2021) parameterizes weight updates as:
 \[
-\Delta W = \frac{\alpha}{r} B A, \quad A \in \mathbb{R}^{r \times d_\text{in}}, \quad B \in \mathbb{R}^{d_\text{out} \times r}
+\Delta W = \frac{\alpha}{r} B A, \quad A \in \mathbb{R}^{r \times d\_\text{in}}, \quad B \in \mathbb{R}^{d\_\text{out} \times r}
 \tag{3.2}
 \]
 with $B = 0$ at init, so $\Delta W = 0$.
@@ -31,14 +31,14 @@ base model but with no residual capacity.
 \textbf{PiSSA (Meng et al., 2024):} $B, A$ are initialized from the \textbf{top} 
 singular directions of $W$, and the base is set to the residual:
 \[
-W = W_\text{residual} + B A \quad \text{where} \quad B A = U_{:, :r} \Sigma_{:r} V_{:r, :}^\top
+W = W\_\text{residual} + B A \quad \text{where} \quad B A = U\_{:, :r} \Sigma\_{:r} V\_{:r, :}^\top
 \tag{3.3}
 \]
 
 \textbf{Res-SVD:} the \textbf{complement} -- base is the top singular directions, 
 residual is the next ones:
 \[
-W = W_b + R \quad \text{where} \quad W_b = U_{:, :r_b} \Sigma_{:r_b} V_{:r_b, :}^\top, \quad R = U_{:, r_b:r_b+r_r} \Sigma_{:r_b+r_r} V_{:r_b+r_r, :}^\top
+W = W\_b + R \quad \text{where} \quad W\_b = U\_{:, :r\_b} \Sigma\_{:r\_b} V\_{:r\_b, :}^\top, \quad R = U\_{:, r\_b:r\_b+r\_r} \Sigma\_{:r\_b+r\_r} V\_{:r\_b+r\_r, :}^\top
 \tag{3.4}
 \]
 
@@ -50,7 +50,7 @@ orthogonal directions.
 
 \textbf{Proof sketch.} $U$ has orthogonal columns, so:
 \[
-U_{:, :r_b} \Sigma_{:r_b} V_{:r_b, :}^\top + U_{:, r_b:r_b+r_r} \Sigma_{:r_b+r_r} V_{:r_b+r_r, :}^\top = U_{:, :r_b+r_r} \Sigma_{:r_b+r_r} V_{:r_b+r_r, :}^\top
+U\_{:, :r\_b} \Sigma\_{:r\_b} V\_{:r\_b, :}^\top + U\_{:, r\_b:r\_b+r\_r} \Sigma\_{:r\_b+r\_r} V\_{:r\_b+r\_r, :}^\top = U\_{:, :r\_b+r\_r} \Sigma\_{:r\_b+r\_r} V\_{:r\_b+r\_r, :}^\top
 \tag{3.5}
 \]
 

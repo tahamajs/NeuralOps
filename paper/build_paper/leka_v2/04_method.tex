@@ -32,7 +32,7 @@ LEKAv2 replaces standard attention with a hybrid pipeline:
        |  Scorer    |
        |      |      |
        |             |
-       |  K_land, V_land
+       |  K\_land, V\_land
        |      |      |
        +------+------+
                
@@ -45,14 +45,14 @@ LEKAv2 replaces standard attention with a hybrid pipeline:
       +-------+-------+
                        
     Local   Global   Gate
-    Attn    Attn    ($\sigma$(w_h))
+    Attn    Attn    ($\sigma$(w\_h))
       |       |       |
       +-------+-------+
                
       (1-g)Local + g Global
               |
                
-          out_proj
+          out\_proj
               |
                
            Output Y
@@ -63,7 +63,7 @@ LEKAv2 replaces standard attention with a hybrid pipeline:
 Two projections:
 
 \[
-W_1 \in \mathbb{R}^{d_h \times F}, \quad W_2 \in \mathbb{R}^{d_h \times F/2}
+W\_1 \in \mathbb{R}^{d\_h \times F}, \quad W\_2 \in \mathbb{R}^{d\_h \times F/2}
 \tag{4.1}
 \]
 
@@ -72,7 +72,7 @@ Both initialized as $\mathcal{N}(0, 1/\sqrt{d_h})$ (scaled Gaussian).
 \textbf{Feature map:}
 
 \[
-\phi(x) = \frac{1}{\sqrt{F}} [\cos(x W_1) \| \sin(x W_1)] \| \frac{1}{\sqrt{F/2}} [\cos(x W_2) \| \sin(x W_2)]
+\phi(x) = \frac{1}{\sqrt{F}} [\cos(x W\_1) \| \sin(x W\_1)] \| \frac{1}{\sqrt{F/2}} [\cos(x W\_2) \| \sin(x W\_2)]
 \tag{4.2}
 \]
 
@@ -86,7 +86,7 @@ bands, similar to multi-resolution analysis.
 \textbf{Scorer.} A small MLP:
 
 \[
-s_\theta(\phi(k)) = \text{MLP}(\text{LN}(\phi(k))) \in \mathbb{R}
+s\_\theta(\phi(k)) = \text{MLP}(\text{LN}(\phi(k))) \in \mathbb{R}
 \tag{4.3}
 \]
 
@@ -95,12 +95,12 @@ with architecture: LayerNorm($3F$) $\to$ Linear($3F$, 64) $\to$ GELU $\to$ Linea
 \textbf{Selection.}
 
 \[
-L_\text{max} = \min\!\left(\max(L_\text{min}, \lceil \rho L \rceil), L\right)
+L\_\text{max} = \min\!\left(\max(L\_\text{min}, \lceil \rho L \rceil), L\right)
 \tag{4.4}
 \]
 
 \[
-\mathcal{S}_\text{land} = \text{TopK}(s_\theta, L_\text{max})
+\mathcal{S}\_\text{land} = \text{TopK}(s\_\theta, L\_\text{max})
 \tag{4.5}
 \]
 
@@ -114,7 +114,7 @@ retention.
 Per-head learnable correction applied to landmark values:
 
 \[
-V_\text{land}^\text{adj} = V_\text{land} \cdot W_\text{corr}^h
+V\_\text{land}^\text{adj} = V\_\text{land} \cdot W\_\text{corr}^h
 \tag{4.6}
 \]
 
@@ -129,7 +129,7 @@ during recovery.
 \textbf{Scores.}
 
 \[
-\text{scores}_{ij} = \phi(q_i)^\top \phi(K_\text{land})_j^\top
+\text{scores}\_{ij} = \phi(q\_i)^\top \phi(K\_\text{land})\_j^\top
 \tag{4.7}
 \]
 
@@ -138,8 +138,8 @@ during recovery.
 \textbf{Softpick.}
 
 \[
-m_i = \max_j \text{scores}_{ij}, \quad
-p_{ij} = \text{ReLU}\!\left(e^{(\text{scores}_{ij} - m_i)/T} - e^{-m_i/T}\right)
+m\_i = \max\_j \text{scores}\_{ij}, \quad
+p\_{ij} = \text{ReLU}\!\left(e^{(\text{scores}\_{ij} - m\_i)/T} - e^{-m\_i/T}\right)
 \tag{4.8}
 \]
 
@@ -148,7 +148,7 @@ with $T = 1.0$ and fallback to uniform when $\sum_j p_{ij} < 10^{-6}$.
 \textbf{Global context.}
 
 \[
-A_\text{global} = \sum_j p_{ij} V_{\text{land}, j}^\text{adj}
+A\_\text{global} = \sum\_j p\_{ij} V\_{\text{land}, j}^\text{adj}
 \tag{4.9}
 \]
 
@@ -157,14 +157,14 @@ A_\text{global} = \sum_j p_{ij} V_{\text{land}, j}^\text{adj}
 \textbf{Window mask.}
 
 \[
-\text{mask}_{ij} = \begin{cases} 1 & |i - j| \leq W/2 \\ 0 & \text{otherwise} \end{cases}
+\text{mask}\_{ij} = \begin{cases} 1 & |i - j| \leq W/2 \\ 0 & \text{otherwise} \end{cases}
 \tag{4.10}
 \]
 
 \textbf{Local scores.} Standard scaled dot-product:
 
 \[
-\text{local}_{ij} = \frac{q_i \cdot k_j}{\sqrt{d_h}} \cdot \text{mask}_{ij}
+\text{local}\_{ij} = \frac{q\_i \cdot k\_j}{\sqrt{d\_h}} \cdot \text{mask}\_{ij}
 \tag{4.11}
 \]
 
@@ -173,7 +173,7 @@ Then causal + padding masks.
 \textbf{Local attention.}
 
 \[
-A_\text{local} = \text{softmax}(\text{local}) \cdot V
+A\_\text{local} = \text{softmax}(\text{local}) \cdot V
 \tag{4.12}
 \]
 
@@ -182,14 +182,14 @@ A_\text{local} = \text{softmax}(\text{local}) \cdot V
 Per-head gate:
 
 \[
-g_h = \sigma(w_h), \quad w_h^{(0)} = -2
+g\_h = \sigma(w\_h), \quad w\_h^{(0)} = -2
 \tag{4.13}
 \]
 
 \textbf{Fusion.}
 
 \[
-\text{out}_h = (1 - g_h) \cdot A_\text{local}^h + g_h \cdot A_\text{global}^h
+\text{out}\_h = (1 - g\_h) \cdot A\_\text{local}^h + g\_h \cdot A\_\text{global}^h
 \tag{4.14}
 \]
 
@@ -199,26 +199,26 @@ With $g_h^{(0)} \approx 0.12$, the local branch dominates initially.
 
 \textbf{Algorithm 1:} LEKAv2 forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, position\_embeddings
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
  1: Q $\leftarrow$ query(X);  K $\leftarrow$ key(X);  V $\leftarrow$ value(X)
- 2: reshape to (B, H, L, d_h)
+ 2: reshape to (B, H, L, d\_h)
  3: if RoPE: Q, K $\leftarrow$ rotary(Q, K)
- 4: if GQA:  K, V $\leftarrow$ repeat_kv
- 5:  _Q $\leftarrow$ dual_rff(Q)                   (B, H, L, 3F)
- 6:  _K $\leftarrow$ dual_rff(K)
- 7: L_max $\leftarrow$ max(min_landmarks,   L)
- 8: scores $\leftarrow$ landmark_scorer( _K)       (B, H, L)
+ 4: if GQA:  K, V $\leftarrow$ repeat\_kv
+ 5:  \_Q $\leftarrow$ dual\_rff(Q)                   (B, H, L, 3F)
+ 6:  \_K $\leftarrow$ dual\_rff(K)
+ 7: L\_max $\leftarrow$ max(min\_landmarks,   L)
+ 8: scores $\leftarrow$ landmark\_scorer( \_K)       (B, H, L)
  9: scores[:, :, 0] $\leftarrow$ 1e4
-10: idx $\leftarrow$ topk(scores, L_max)
-11: K_land $\leftarrow$ gather( _K, idx); V_land $\leftarrow$ gather(V, idx)
-12: V_land_adj $\leftarrow$ V_land   W_corr
-13: A_glob $\leftarrow$ softpick( _Q @ K_land^T) @ V_land_adj
-14: A_loc $\leftarrow$ softmax(masked(QK^T)) @ V    window + causal
-15: g $\leftarrow$ sigmoid(local_gate)              (H,)
-16: out $\leftarrow$ (1-g) A_loc + g A_glob
-17: reshape to (B, L, d); out_proj
+10: idx $\leftarrow$ topk(scores, L\_max)
+11: K\_land $\leftarrow$ gather( \_K, idx); V\_land $\leftarrow$ gather(V, idx)
+12: V\_land\_adj $\leftarrow$ V\_land   W\_corr
+13: A\_glob $\leftarrow$ softpick( \_Q @ K\_land^T) @ V\_land\_adj
+14: A\_loc $\leftarrow$ softmax(masked(QK^T)) @ V    window + causal
+15: g $\leftarrow$ sigmoid(local\_gate)              (H,)
+16: out $\leftarrow$ (1-g) A\_loc + g A\_glob
+17: reshape to (B, L, d); out\_proj
 18: return Y
 \end{lstlisting}
 

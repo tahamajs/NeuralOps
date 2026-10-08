@@ -4,104 +4,104 @@
 \subsection{B.1 Module Structure}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("infini")
+@ATTENTION\_REGISTRY.register("infini")
 class InfiniAttention(BaseAttention):
-    def __init__(self, config, rank=64, compress_dim=128,
-                 local_window=128, pretrained_attn=None, **kwargs):
-        super().__init__(config, rank)
+    def \_\_init\_\_(self, config, rank=64, compress\_dim=128,
+                 local\_window=128, pretrained\_attn=None, **kwargs):
+        super().\_\_init\_\_(config, rank)
         
         # Dimensions
         self.dim = 768
-        self.num_heads = 12
-        self.head_dim = 64
-        self.all_head_size = 768
-        self.compress_dim = 128
-        self.local_window = 128
+        self.num\_heads = 12
+        self.head\_dim = 64
+        self.all\_head\_size = 768
+        self.compress\_dim = 128
+        self.local\_window = 128
         
         # Projections with LoRA
-        self.q_proj = LoRALinear(768, 768, lora_rank=16)
-        self.k_proj = LoRALinear(768, 768, lora_rank=16)
-        self.v_proj = LoRALinear(768, 768, lora_rank=16)
-        self.out_proj = LoRALinear(768, 768, lora_rank=16)
+        self.q\_proj = LoRALinear(768, 768, lora\_rank=16)
+        self.k\_proj = LoRALinear(768, 768, lora\_rank=16)
+        self.v\_proj = LoRALinear(768, 768, lora\_rank=16)
+        self.out\_proj = LoRALinear(768, 768, lora\_rank=16)
         
         # Compressive memory
         self.memory = nn.Parameter(torch.randn(1, 12, 128, 64) * 0.001)
         self.beta = nn.Parameter(torch.tensor([-5.0]))
         
-        if pretrained_attn is not None:
-            self.copy_weights(pretrained_attn)
+        if pretrained\_attn is not None:
+            self.copy\_weights(pretrained\_attn)
 \end{lstlisting}
 
 \subsection{B.2 Forward Pass}
 
 \begin{lstlisting}
-def forward(self, hidden_states, attention_mask=None, **kwargs):
-    B, L, D = hidden_states.shape
-    H, Dh = self.num_heads, self.head_dim
+def forward(self, hidden\_states, attention\_mask=None, **kwargs):
+    B, L, D = hidden\_states.shape
+    H, Dh = self.num\_heads, self.head\_dim
     
     # 1. Projections
-    q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2)
-    k = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).transpose(1, 2)
-    v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, Dh).transpose(1, 2)
+    q = self.q\_proj(hidden\_states).view(B, L, H, Dh).transpose(1, 2)
+    k = self.k\_proj(hidden\_states).view(B, L, self.num\_kv\_heads, Dh).transpose(1, 2)
+    v = self.v\_proj(hidden\_states).view(B, L, self.num\_kv\_heads, Dh).transpose(1, 2)
     
     # 2. RoPE
-    if position_embeddings is not None:
-        cos, sin = position_embeddings
-        q, k = apply_rotary_pos_emb(q, k, cos, sin)
+    if position\_embeddings is not None:
+        cos, sin = position\_embeddings
+        q, k = apply\_rotary\_pos\_emb(q, k, cos, sin)
     
     # 3. GQA
-    if self.kv_repeat > 1:
-        k = repeat_kv(k, self.kv_repeat)
-        v = repeat_kv(v, self.kv_repeat)
+    if self.kv\_repeat \textgreater{} 1:
+        k = repeat\_kv(k, self.kv\_repeat)
+        v = repeat\_kv(v, self.kv\_repeat)
     
     # 4. Memory attention
-    mem = self.memory.expand(B, -1, -1, -1)  # (B, H, d_c, Dh)
-    mem_scores = torch.matmul(q.float(), mem.float().transpose(-2, -1)) / math.sqrt(Dh)
-    mem_attn = torch.softmax(mem_scores, dim=-1)
-    mem_out = torch.matmul(mem_attn, mem.float()).to(v.dtype)
+    mem = self.memory.expand(B, -1, -1, -1)  # (B, H, d\_c, Dh)
+    mem\_scores = torch.matmul(q.float(), mem.float().transpose(-2, -1)) / math.sqrt(Dh)
+    mem\_attn = torch.softmax(mem\_scores, dim=-1)
+    mem\_out = torch.matmul(mem\_attn, mem.float()).to(v.dtype)
     
     # 5. Local attention
     scale = 1.0 / math.sqrt(Dh)
     scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
     
     # Sliding window mask
-    if self.is_decoder or self.is_causal:
+    if self.is\_decoder or self.is\_causal:
         idx = torch.arange(L, device=q.device)
-        causal = idx.unsqueeze(1) >= idx.unsqueeze(0)
-        window = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() < self.local_window
-        window_mask = causal & window
-        scores = scores.masked_fill(~window_mask.unsqueeze(0).unsqueeze(0), -1e4)
+        causal = idx.unsqueeze(1) \textgreater{}= idx.unsqueeze(0)
+        window = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() \textless{} self.local\_window
+        window\_mask = causal & window
+        scores = scores.masked\_fill(~window\_mask.unsqueeze(0).unsqueeze(0), -1e4)
     
     # Padding mask
-    if attention_mask is not None:
-        if attention_mask.dim() == 2:
-            valid_mask = get_token_valid_mask(attention_mask, B, L, hidden_states.device)
-            scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
-        elif attention_mask.dim() == 4:
-            scores = scores + attention_mask.clamp(min=-1e4)
+    if attention\_mask is not None:
+        if attention\_mask.dim() == 2:
+            valid\_mask = get\_token\_valid\_mask(attention\_mask, B, L, hidden\_states.device)
+            scores = scores.masked\_fill(~valid\_mask.unsqueeze(1).unsqueeze(2), -1e4)
+        elif attention\_mask.dim() == 4:
+            scores = scores + attention\_mask.clamp(min=-1e4)
     
-    attn_local = F.softmax(scores, dim=-1).to(v.dtype)
-    attn_local = torch.nan_to_num(attn_local, nan=0.0)
-    attn_local = self.dropout(attn_local)
+    attn\_local = F.softmax(scores, dim=-1).to(v.dtype)
+    attn\_local = torch.nan\_to\_num(attn\_local, nan=0.0)
+    attn\_local = self.dropout(attn\_local)
     
-    local_out = torch.matmul(attn_local, v)
+    local\_out = torch.matmul(attn\_local, v)
     
     # 6. Gated fusion
     beta = torch.sigmoid(self.beta)
-    combined = local_out + beta * mem_out
-    combined = combined.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+    combined = local\_out + beta * mem\_out
+    combined = combined.transpose(1, 2).contiguous().view(B, L, self.all\_head\_size)
     
     # 7. Output projection
-    if self.is_nested_encoder:
+    if self.is\_nested\_encoder:
         return combined, None
-    out = self.out_proj(combined)
+    out = self.out\_proj(combined)
     return out, None
 \end{lstlisting}
 
 \subsection{B.3 Memory Initialization}
 
 \begin{lstlisting}
-self.memory = nn.Parameter(torch.randn(1, H, d_c, d_h) * 0.001)
+self.memory = nn.Parameter(torch.randn(1, H, d\_c, d\_h) * 0.001)
 \end{lstlisting}
 
 The scale factor \texttt{0.001} ensures the memory's initial output magnitude is 
@@ -114,7 +114,7 @@ negligible.
 self.beta = nn.Parameter(torch.tensor([-5.0]))
 \end{lstlisting}
 
-At $\beta = -5$: $\sigma(-5) \approx 0.0067$, so memory contributes <1\% 
+At $\beta = -5$: $\sigma(-5) \approx 0.0067$, so memory contributes \textless{}1\% 
 initially.
 
 \subsection{B.5 Sliding Window Mask}
@@ -123,8 +123,8 @@ For causal models:
 
 \begin{lstlisting}
 idx = torch.arange(L, device=q.device)
-causal = idx.unsqueeze(1) >= idx.unsqueeze(0)  # j <= i
-window = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() < W
+causal = idx.unsqueeze(1) \textgreater{}= idx.unsqueeze(0)  # j \textless{}= i
+window = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() \textless{} W
 mask = causal & window
 \end{lstlisting}
 

@@ -4,8 +4,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -14,12 +14,12 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_routing.py \
+python run\_all\_4\_routing.py \
     --models distilbert,roberta,gpt2 \
-    --num_clusters 16 \
-    --n_iters 10 \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --num\_clusters 16 \
+    --n\_iters 10 \
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \textbf{Runtime:} ~PyTorch 2.0 minutes.
@@ -27,11 +27,11 @@ python run_all_4_routing.py \
 \subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"efficiency-lab/svd-linear-attention-{model}-routing",
+    path = hf\_hub\_download(
+        repo\_id=f"efficiency-lab/svd-linear-attention-{model}-routing",
         filename="weights.pt",
     )
 \end{lstlisting}
@@ -41,14 +41,14 @@ for model in ["distilbert", "roberta", "gpt2"]:
 \subsubsection{Table 7.1}
 
 \begin{lstlisting}
-python run_all_4_routing.py --models distilbert,roberta,gpt2
+python run\_all\_4\_routing.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (num\_clusters ablation)}
 
 \begin{lstlisting}
 for K in 4 8 16 32; do
-    python run_all_4_routing.py --num_clusters $K --output_suffix K$K
+    python run\_all\_4\_routing.py --num\_clusters $K --output_suffix K$K
 done
 \end{lstlisting}
 
@@ -57,8 +57,8 @@ done
 \begin{lstlisting}
 import random, numpy as np, torch
 seed = 42
-random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+random.seed(seed); np.random.seed(seed); torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}

@@ -6,7 +6,7 @@
 \textbf{Problem.} Solve:
 
 \[
-p^* = \arg\max_{p \in \Delta^{d-1}} \langle p, s \rangle + H_\alpha^T(p)
+p^* = \arg\max\_{p \in \Delta^{d-1}} \langle p, s \rangle + H\_\alpha^T(p)
 \tag{A.1}
 \]
 
@@ -15,28 +15,28 @@ where $H_\alpha^T(p) = \frac{1}{\alpha(\alpha-1)} \sum_i (p_i - p_i^\alpha)$.
 \textbf{Lagrangian.}
 
 \[
-\mathcal{L}(p, \tau) = \langle p, s \rangle + \frac{1}{\alpha(\alpha-1)} \sum_i (p_i - p_i^\alpha) - \tau \left(\sum_i p_i - 1\right)
+\mathcal{L}(p, \tau) = \langle p, s \rangle + \frac{1}{\alpha(\alpha-1)} \sum\_i (p\_i - p\_i^\alpha) - \tau \left(\sum\_i p\_i - 1\right)
 \tag{A.2}
 \]
 
 \textbf{Stationarity.} $\partial \mathcal{L} / \partial p_i = 0$:
 
 \[
-s_i + \frac{1 - \alpha p_i^{\alpha-1}}{\alpha(\alpha-1)} - \tau = 0
+s\_i + \frac{1 - \alpha p\_i^{\alpha-1}}{\alpha(\alpha-1)} - \tau = 0
 \tag{A.3}
 \]
 
 Rearranging:
 
 \[
-p_i^{\alpha - 1} = (\alpha - 1) s_i - \tau + \frac{1}{\alpha}
+p\_i^{\alpha - 1} = (\alpha - 1) s\_i - \tau + \frac{1}{\alpha}
 \tag{A.4}
 \]
 
 Let $\tilde\tau = \tau - 1/\alpha$. Then:
 
 \[
-p_i = \max\left(0, (\alpha - 1) s_i - \tilde\tau\right)^{1/(\alpha - 1)}
+p\_i = \max\left(0, (\alpha - 1) s\_i - \tilde\tau\right)^{1/(\alpha - 1)}
 \tag{A.5}
 \]
 
@@ -55,7 +55,7 @@ iterations, precision is $O(2^{-25}) = O(10^{-7.5})$. $\square$
 
 \textbf{Claim.} At convergence, the support of $\alpha$-entmax is:
 \[
-S = \{i : (\alpha - 1) s_i > \tau^*\}
+S = \{i : (\alpha - 1) s\_i \textgreater{} \tau^*\}
 \]
 
 \textbf{Proof.} Direct from the closed form: $p_i > 0$ iff $(\alpha - 1) s_i > \tau^*$. $\square$
@@ -89,7 +89,7 @@ For square $d \times d$ projection:
 \]
 
 \[
-\text{AdaSplash params} = d^2 + r_L (d + d) = d^2 + 2 r_L d
+\text{AdaSplash params} = d^2 + r\_L (d + d) = d^2 + 2 r\_L d
 \tag{A.7}
 \]
 

@@ -24,37 +24,37 @@ LEKAv3 copies base weights via \texttt{copy\_weights}, handling four patterns:
 \subsubsection{Pattern 1: GPT-2 Conv1D}
 
 \begin{lstlisting}
-c_w = src.c_attn.weight.t()
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
+c\_w = src.c\_attn.weight.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{Pattern 2: RoBERTa Nested}
 
 \begin{lstlisting}
 if hasattr(src, "self") and hasattr(src, "output"):
-    self.is_nested_encoder = True
-    q_w = src.self.query.weight
-    k_w = src.self.key.weight
-    v_w = src.self.value.weight
-    o_w = src.output.dense.weight
+    self.is\_nested\_encoder = True
+    q\_w = src.self.query.weight
+    k\_w = src.self.key.weight
+    v\_w = src.self.value.weight
+    o\_w = src.output.dense.weight
 \end{lstlisting}
 
 \subsubsection{Pattern 3: Qwen/LLaMA}
 
 \begin{lstlisting}
-q_w = src.q_proj.weight
-k_w = src.k_proj.weight
-v_w = src.v_proj.weight
-o_w = src.o_proj.weight
+q\_w = src.q\_proj.weight
+k\_w = src.k\_proj.weight
+v\_w = src.v\_proj.weight
+o\_w = src.o\_proj.weight
 \end{lstlisting}
 
 \subsubsection{Pattern 4: DistilBERT}
 
 \begin{lstlisting}
-q_w = src.q_lin.weight
-k_w = src.k_lin.weight
-v_w = src.v_lin.weight
-o_w = src.out_lin.weight
+q\_w = src.q\_lin.weight
+k\_w = src.k\_lin.weight
+v\_w = src.v\_lin.weight
+o\_w = src.out\_lin.weight
 \end{lstlisting}
 
 \subsection{Nested Encoder Bypass}
@@ -72,9 +72,9 @@ RoPE to $Q, K$ before computing features.
 For GQA models, we expand $K, V$ before computing features:
 
 \begin{lstlisting}
-if self.kv_repeat > 1:
-    k = repeat_kv(k, self.kv_repeat)
-    v = repeat_kv(v, self.kv_repeat)
+if self.kv\_repeat \textgreater{} 1:
+    k = repeat\_kv(k, self.kv\_repeat)
+    v = repeat\_kv(v, self.kv\_repeat)
 \end{lstlisting}
 
 The feature map, landmark scoring, and attention all use the expanded tensors.
@@ -84,10 +84,10 @@ The feature map, landmark scoring, and attention all use the expanded tensors.
 For decoders, the landmark mask uses original positions:
 
 \begin{lstlisting}
-q_pos = torch.arange(N).view(1, 1, N, 1)
-k_land_pos = land_idx.unsqueeze(2)  # [B, H, 1, L_land]
-causal_land_mask = (k_land_pos <= q_pos)
-attn_weights = attn_weights.masked_fill(~causal_land_mask, -1e4)
+q\_pos = torch.arange(N).view(1, 1, N, 1)
+k\_land\_pos = land\_idx.unsqueeze(2)  # [B, H, 1, L\_land]
+causal\_land\_mask = (k\_land\_pos \textless{}= q\_pos)
+attn\_weights = attn\_weights.masked\_fill(~causal\_land\_mask, -1e4)
 \end{lstlisting}
 
 The local mask uses standard triangular masking.
@@ -99,9 +99,9 @@ The local mask uses standard triangular masking.
 Input:  model M, config
 Output: M with attention replaced
 
-1: for   in transformer_layers(M) do
-2:     src $\leftarrow$ get_attention( )
-3:     new $\leftarrow$ LEKAV3Attention(config, old_attn=src)
+1: for   in transformer\_layers(M) do
+2:     src $\leftarrow$ get\_attention( )
+3:     new $\leftarrow$ LEKAV3Attention(config, old\_attn=src)
 4:     replace( , new)
 5: end for
 6: return M
@@ -120,7 +120,7 @@ Weight copy fails & Exception & Log, return None \\
 Missing Q/K/V & \texttt{missing} non-empty & Raise RuntimeError \\
 Near-zero norms & Frobenius check & Raise RuntimeError \\
 NaN in output & \texttt{torch.isnan} & Fall back to \texttt{nan\_to\_num} \\
-Landmark count > N & \texttt{min(L\_land, N)} & Cap \\
+Landmark count \textgreater{} N & \texttt{min(L\_land, N)} & Cap \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -128,8 +128,8 @@ Landmark count > N & \texttt{min(L\_land, N)} & Cap \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("leka_v3")
-@ATTENTION_REGISTRY.register("leka_v3_attention")
+@ATTENTION\_REGISTRY.register("leka\_v3")
+@ATTENTION\_REGISTRY.register("leka\_v3\_attention")
 class LEKAV3Attention(BaseAttention):
     ...
 \end{lstlisting}
@@ -141,8 +141,8 @@ for training. The landmark scorer, gate, and $W_\text{corr}$ are also
 trainable:
 
 \begin{lstlisting}
-self.landmark_scorer = nn.Sequential(...)  # trainable
-self.W_corr = nn.Parameter(...)              # trainable
+self.landmark\_scorer = nn.Sequential(...)  # trainable
+self.W\_corr = nn.Parameter(...)              # trainable
 self.gate = nn.Parameter(...)                # trainable
 \end{lstlisting}
 \begin{lstlisting}
@@ -154,6 +154,6 @@ self.gate = nn.Parameter(...)                # trainable
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of leka\_v3.}
-\label{fig:arch_leka-v3}
+\label{fig:arch\_leka-v3}
 \end{figure}
 

@@ -20,7 +20,7 @@ Pinning token 0 recovers \textbf{0.85\%} accuracy -- a free win.
 
 \subsubsection{Recommended}
 \begin{itemize}
-\item \textbf{Long-context inference} (L > 512)
+\item \textbf{Long-context inference} (L \textgreater{} 512)
 \item \textbf{Memory-constrained deployment}
 \item \textbf{Streaming/decoding scenarios}
 \item \textbf{Combined with quantization} (TCA + INT8)
@@ -28,7 +28,7 @@ Pinning token 0 recovers \textbf{0.85\%} accuracy -- a free win.
 \end{itemize}
 \subsubsection{Not Recommended}
 \begin{itemize}
-\item \textbf{Short sequences} (L < 64): overhead dominates
+\item \textbf{Short sequences} (L \textless{} 64): overhead dominates
 \item \textbf{Latency-critical}: score\_net adds a small compute cost
 \item \textbf{Parameter-sensitive deployments}: TCA increases params by ~6\%
 

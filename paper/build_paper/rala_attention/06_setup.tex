@@ -95,7 +95,7 @@ Precision & FP16 \\
 \midrule
 PASS & $\ge$ 56.0\% \\
 PASS\_LOW & 50.92\% -- 56.0\% \\
-FAIL & < 50.92\% \\
+FAIL & \textless{} 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -120,10 +120,10 @@ Transformers & 4.36.0 \\
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_rala.py \
+python run\_all\_4\_rala.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Seeds}

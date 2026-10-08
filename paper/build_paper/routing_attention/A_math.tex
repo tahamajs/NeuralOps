@@ -6,7 +6,7 @@
 Given $N$ points $\{x_i\} \subset \mathbb{R}^d$ and $K$ clusters:
 
 \[
-\mathcal{L}(\mathcal{C}, \mu) = \sum_{k=1}^{K} \sum_{i \in \mathcal{C}_k} \|x_i - \mu_k\|_2^2
+\mathcal{L}(\mathcal{C}, \mu) = \sum\_{k=1}^{K} \sum\_{i \in \mathcal{C}\_k} \|x\_i - \mu\_k\|\_2^2
 \tag{A.1}
 \]
 
@@ -18,7 +18,7 @@ local minimum.
 We compute:
 
 \[
-F_i = \frac{q_i + k_i}{\|q_i + k_i\|_2}
+F\_i = \frac{q\_i + k\_i}{\|q\_i + k\_i\|\_2}
 \tag{A.2}
 \]
 
@@ -30,8 +30,8 @@ equivalent to spherical k-means.
 For each cluster $k$, the restricted attention is:
 
 \[
-\text{out}_i^{(k)} = \begin{cases} 
-\text{softmax}_{j \in \mathcal{S}_k}\!\left(\frac{q_i^\top k_j}{\sqrt{d}}\right) V_{\mathcal{S}_k} & i \in \mathcal{S}_k \\
+\text{out}\_i^{(k)} = \begin{cases} 
+\text{softmax}\_{j \in \mathcal{S}\_k}\!\left(\frac{q\_i^\top k\_j}{\sqrt{d}}\right) V\_{\mathcal{S}\_k} & i \in \mathcal{S}\_k \\
 0 & \text{otherwise}
 \end{cases}
 \tag{A.3}
@@ -44,7 +44,7 @@ where $\mathcal{S}_k = \{j : c_j = k\} \cup \{0\}$.
 The loop over $K$ clusters, each computing a full $L \times L$ matrix:
 
 \[
-T_\text{naive} = K \cdot \left( L^2 d + L^2 + L^2 d \right) = \mathcal{O}(K L^2 d)
+T\_\text{naive} = K \cdot \left( L^2 d + L^2 + L^2 d \right) = \mathcal{O}(K L^2 d)
 \tag{A.4}
 \]
 
@@ -53,7 +53,7 @@ Compare to dense: $T_\text{dense} = \mathcal{O}(L^2 d)$. Ratio: $K$.
 \textbf{Theoretical sparse cost} (with sparse matmul):
 
 \[
-T_\text{sparse} = \mathcal{O}(L \cdot (L/K) \cdot d) = \mathcal{O}(L^2 d / K)
+T\_\text{sparse} = \mathcal{O}(L \cdot (L/K) \cdot d) = \mathcal{O}(L^2 d / K)
 \tag{A.5}
 \]
 
@@ -65,7 +65,7 @@ The \texttt{argmin} operation is piecewise constant: it has zero gradient almost
 everywhere and undefined gradient at boundaries. Thus:
 
 \[
-\frac{\partial c_i}{\partial q_i} = 0 \text{ a.e.}
+\frac{\partial c\_i}{\partial q\_i} = 0 \text{ a.e.}
 \tag{A.6}
 \]
 
@@ -74,7 +74,7 @@ No gradient flows through cluster assignment.
 \textbf{Alternative.} Gumbel-Softmax relaxation:
 
 \[
-c_i^{(k)} = \frac{\exp(-\|f_i - \mu_k\|_2^2 / \tau)}{\sum_{k'} \exp(-\|f_i - \mu_{k'}\|_2^2 / \tau)}
+c\_i^{(k)} = \frac{\exp(-\|f\_i - \mu\_k\|\_2^2 / \tau)}{\sum\_{k'} \exp(-\|f\_i - \mu\_{k'}\|\_2^2 / \tau)}
 \tag{A.7}
 \]
 
@@ -86,7 +86,7 @@ Token 0 is included in every cluster. Its effect is to provide a shared
 context key. In terms of attention weights:
 
 \[
-\text{attn}_{i,0} = \frac{e^{q_i^\top k_0 / \sqrt{d}}}{\sum_{j \in \mathcal{S}_{c_i}} e^{q_i^\top k_j / \sqrt{d}}}
+\text{attn}\_{i,0} = \frac{e^{q\_i^\top k\_0 / \sqrt{d}}}{\sum\_{j \in \mathcal{S}\_{c\_i}} e^{q\_i^\top k\_j / \sqrt{d}}}
 \tag{A.8}
 \]
 

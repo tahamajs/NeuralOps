@@ -17,14 +17,14 @@ Compressed MHA has four stages:
             
     +----------------------+
     | Joint QKV SVD        |
-    |  Vh_qkv: (r, d)      |  $\leftarrow$ shared input basis
-    |  S_qkv: (r,)         |
-    |  U_qkv: (3d, r)      |
+    |  Vh\_qkv: (r, d)      |  $\leftarrow$ shared input basis
+    |  S\_qkv: (r,)         |
+    |  U\_qkv: (3d, r)      |
     +-------+--------------+
             |
     +------- --------------+
     | QKV LoRA             |
-    |  lora_A_qkv, lora_B_qkv |
+    |  lora\_A\_qkv, lora\_B\_qkv |
     +-------+--------------+
             |
     +------- --------------+
@@ -34,7 +34,7 @@ Compressed MHA has four stages:
             |
     +------- --------------+
     | Separate O SVD       |
-    |  Vh_out, S_out, U_out|
+    |  Vh\_out, S\_out, U\_out|
     +-------+--------------+
             |
     +------- --------------+
@@ -51,10 +51,10 @@ We extract weights via \texttt{copy\_weights}, handling four patterns:
 \subsubsection{DistilBERT (Flat)}
 
 \begin{lstlisting}
-w_q = src.q_lin.weight
-w_k = src.k_lin.weight
-w_v = src.v_lin.weight
-w_o = src.out_lin.weight
+w\_q = src.q\_lin.weight
+w\_k = src.k\_lin.weight
+w\_v = src.v\_lin.weight
+w\_o = src.out\_lin.weight
 \end{lstlisting}
 
 \textbf{Nested detection:} \texttt{out\_lin} exists $\to$ \texttt{is\_nested\_encoder = False}.
@@ -63,11 +63,11 @@ w_o = src.out_lin.weight
 
 \begin{lstlisting}
 if hasattr(src, "self") and hasattr(src, "output"):
-    is_nested_encoder = True
-    w_q = src.self.query.weight
-    w_k = src.self.key.weight
-    w_v = src.self.value.weight
-    w_o = src.output.dense.weight
+    is\_nested\_encoder = True
+    w\_q = src.self.query.weight
+    w\_k = src.self.key.weight
+    w\_v = src.self.value.weight
+    w\_o = src.output.dense.weight
 \end{lstlisting}
 
 \textbf{Nested detection:} No \texttt{out\_lin}/\texttt{o\_proj}/\texttt{c\_proj} $\to$ \texttt{is\_nested\_encoder = True}.
@@ -75,18 +75,18 @@ if hasattr(src, "self") and hasattr(src, "output"):
 \subsubsection{GPT-2 (Conv1D)}
 
 \begin{lstlisting}
-w = src.c_attn.weight.t()  # Conv1D stored as (in, out)
-q_w, k_w, v_w = w.chunk(3, dim=0)
-w_o = src.c_proj.weight.t()
+w = src.c\_attn.weight.t()  # Conv1D stored as (in, out)
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+w\_o = src.c\_proj.weight.t()
 \end{lstlisting}
 
 \subsubsection{Qwen (GQA)}
 
 \begin{lstlisting}
-w_q = src.q_proj.weight
-w_k = src.k_proj.weight
-w_v = src.v_proj.weight
-w_o = src.o_proj.weight
+w\_q = src.q\_proj.weight
+w\_k = src.k\_proj.weight
+w\_v = src.v\_proj.weight
+w\_o = src.o\_proj.weight
 \end{lstlisting}
 
 \subsection{Joint QKV SVD}
@@ -96,7 +96,7 @@ w_o = src.o_proj.weight
 We concatenate along the output dimension:
 
 \[
-W_{QKV} = \begin{pmatrix} W_Q \\ W_K \\ W_V \end{pmatrix}
+W\_{QKV} = \begin{pmatrix} W\_Q \\ W\_K \\ W\_V \end{pmatrix}
 \]
 
 Shape: $[H d_h + 2 H_{kv} d_h, d]$.
@@ -106,24 +106,24 @@ Shape: $[H d_h + 2 H_{kv} d_h, d]$.
 Compute the full SVD:
 
 \[
-W_{QKV} = U_{QKV} \Sigma_{QKV} V_{QKV}^\top
+W\_{QKV} = U\_{QKV} \Sigma\_{QKV} V\_{QKV}^\top
 \]
 
 Truncate to rank $r_{qkv}$:
 
 \[
-r_{qkv} = \min(\text{rank\_qkv}, H d_h + 2 H_{kv} d_h, d)
+r\_{qkv} = \min(\text{rank\_qkv}, H d\_h + 2 H\_{kv} d\_h, d)
 \]
 
 Store the factors:
 
 \[
-U_{QKV, r} \in \mathbb{R}^{(H d_h + 2 H_{kv} d_h) \times r_{qkv}}
+U\_{QKV, r} \in \mathbb{R}^{(H d\_h + 2 H\_{kv} d\_h) \times r\_{qkv}}
 \]
 
 \[
-S_{QKV, r} \in \mathbb{R}^{r_{qkv}}, \quad
-V_{QKV, r} \in \mathbb{R}^{r_{qkv} \times d}
+S\_{QKV, r} \in \mathbb{R}^{r\_{qkv}}, \quad
+V\_{QKV, r} \in \mathbb{R}^{r\_{qkv} \times d}
 \]
 
 \subsubsection{Forward Pass}
@@ -131,15 +131,15 @@ V_{QKV, r} \in \mathbb{R}^{r_{qkv} \times d}
 Given input $X$:
 
 \[
-\text{Proj}_1 = X V_{QKV, r}^\top \in \mathbb{R}^{B \times N \times r_{qkv}}
+\text{Proj}\_1 = X V\_{QKV, r}^\top \in \mathbb{R}^{B \times N \times r\_{qkv}}
 \]
 
 \[
-\text{Proj}_2 = \text{Proj}_1 \cdot \text{diag}(S_{QKV, r}) \in \mathbb{R}^{B \times N \times r_{qkv}}
+\text{Proj}\_2 = \text{Proj}\_1 \cdot \text{diag}(S\_{QKV, r}) \in \mathbb{R}^{B \times N \times r\_{qkv}}
 \]
 
 \[
-\text{QKV} = \text{Proj}_2 U_{QKV, r}^\top \in \mathbb{R}^{B \times N \times (H d_h + 2 H_{kv} d_h)}
+\text{QKV} = \text{Proj}\_2 U\_{QKV, r}^\top \in \mathbb{R}^{B \times N \times (H d\_h + 2 H\_{kv} d\_h)}
 \]
 
 Then split into Q, K, V.
@@ -163,7 +163,7 @@ $U_{QKV, r}$ & $r_{qkv} \cdot (H d_h + 2 H_{kv} d_h)$ \\
 
 For $H = H_{kv}$:
 \[
-\text{Total}_{QKV} = r_{qkv} (2d + 2 d_h) = 2 r_{qkv} (d + d_h)
+\text{Total}\_{QKV} = r\_{qkv} (2d + 2 d\_h) = 2 r\_{qkv} (d + d\_h)
 \]
 
 \subsection{Separate O SVD}
@@ -171,32 +171,32 @@ For $H = H_{kv}$:
 The output projection $W_O \in \mathbb{R}^{d \times H d_h}$ gets its own SVD:
 
 \[
-W_O = U_O \Sigma_O V_O^\top
+W\_O = U\_O \Sigma\_O V\_O^\top
 \]
 
 Truncate to rank $r_{out}$:
 
 \[
-r_{out} = \min(\text{rank\_out}, d, H d_h)
+r\_{out} = \min(\text{rank\_out}, d, H d\_h)
 \]
 
 Forward:
 
 \[
-\text{Out}_1 = \text{Context} V_{O, r}^\top \in \mathbb{R}^{B \times N \times r_{out}}
+\text{Out}\_1 = \text{Context} V\_{O, r}^\top \in \mathbb{R}^{B \times N \times r\_{out}}
 \]
 
 \[
-\text{Out}_2 = \text{Out}_1 \cdot \text{diag}(S_{O, r}) \in \mathbb{R}^{B \times N \times r_{out}}
+\text{Out}\_2 = \text{Out}\_1 \cdot \text{diag}(S\_{O, r}) \in \mathbb{R}^{B \times N \times r\_{out}}
 \]
 
 \[
-\text{Out} = \text{Out}_2 U_{O, r}^\top + b_O \in \mathbb{R}^{B \times N \times d}
+\text{Out} = \text{Out}\_2 U\_{O, r}^\top + b\_O \in \mathbb{R}^{B \times N \times d}
 \]
 
 \textbf{Parameter count:}
 \[
-\text{Total}_O = r_{out} (d + H d_h) + r_{out}
+\text{Total}\_O = r\_{out} (d + H d\_h) + r\_{out}
 \]
 
 \subsection{LoRA Recovery}
@@ -206,19 +206,19 @@ Both branches have LoRA adapters:
 \subsubsection{QKV LoRA}
 
 \[
-\text{QKV}_\text{LoRA} = \frac{\alpha}{r_L} B_{QKV} A_{QKV} \cdot X
+\text{QKV}\_\text{LoRA} = \frac{\alpha}{r\_L} B\_{QKV} A\_{QKV} \cdot X
 \]
 
 Added to the SVD output:
 
 \[
-\text{QKV}_\text{final} = \text{QKV}_\text{SVD} + \text{QKV}_\text{LoRA}
+\text{QKV}\_\text{final} = \text{QKV}\_\text{SVD} + \text{QKV}\_\text{LoRA}
 \]
 
 \subsubsection{Output LoRA}
 
 \[
-\text{Out}_\text{LoRA} = \frac{\alpha}{r_L} B_O A_O \cdot \text{Context}
+\text{Out}\_\text{LoRA} = \frac{\alpha}{r\_L} B\_O A\_O \cdot \text{Context}
 \]
 
 Added after SVD output.
@@ -245,30 +245,30 @@ $B_O$ & $d \cdot r_L$ \\
 
 \textbf{Algorithm 1:} Compressed MHA forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$N$\times$d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$\times$N$\times$d}, attention\_mask, position\_embeddings
 Output: Y $\in$ R^{B$\times$N$\times$d}
 
- 1: Proj_1 $\leftarrow$ X @ Vh_qkv^T
- 2: Proj_2 $\leftarrow$ Proj_1 * S_qkv
- 3: QKV $\leftarrow$ Proj_2 @ U_qkv^T
- 4: if lora_rank > 0:
- 5:     QKV $\leftarrow$ QKV + lora_B_qkv(lora_A_qkv(X)) * scaling
+ 1: Proj\_1 $\leftarrow$ X @ Vh\_qkv^T
+ 2: Proj\_2 $\leftarrow$ Proj\_1 * S\_qkv
+ 3: QKV $\leftarrow$ Proj\_2 @ U\_qkv^T
+ 4: if lora\_rank \textgreater{} 0:
+ 5:     QKV $\leftarrow$ QKV + lora\_B\_qkv(lora\_A\_qkv(X)) * scaling
  6: Q, K, V $\leftarrow$ split(QKV)
- 7: Q $\leftarrow$ Q + bias_q; K $\leftarrow$ K + bias_k; V $\leftarrow$ V + bias_v
+ 7: Q $\leftarrow$ Q + bias\_q; K $\leftarrow$ K + bias\_k; V $\leftarrow$ V + bias\_v
  8: if RoPE: Q, K $\leftarrow$ RoPE(Q, K)
- 9: if GQA: K, V $\leftarrow$ repeat_kv(K, V)
-10: scores $\leftarrow$ Q @ K^T / $\sqrt{}$d_h
+ 9: if GQA: K, V $\leftarrow$ repeat\_kv(K, V)
+10: scores $\leftarrow$ Q @ K^T / $\sqrt{}$d\_h
 11: if causal: mask(scores)
 12: if padding: mask(scores)
 13: Attn $\leftarrow$ softmax(scores)
 14: Context $\leftarrow$ Attn @ V
-15: if is_nested_encoder:
-16:     return Context  # outer layer applies W_O
-17: Out_1 $\leftarrow$ Context @ Vh_out^T
-18: Out_2 $\leftarrow$ Out_1 * S_out
-19: Out $\leftarrow$ Out_2 @ U_out^T + bias_out
-20: if lora_rank > 0:
-21:     Out $\leftarrow$ Out + lora_B_out(lora_A_out(Context)) * scaling
+15: if is\_nested\_encoder:
+16:     return Context  # outer layer applies W\_O
+17: Out\_1 $\leftarrow$ Context @ Vh\_out^T
+18: Out\_2 $\leftarrow$ Out\_1 * S\_out
+19: Out $\leftarrow$ Out\_2 @ U\_out^T + bias\_out
+20: if lora\_rank \textgreater{} 0:
+21:     Out $\leftarrow$ Out + lora\_B\_out(lora\_A\_out(Context)) * scaling
 22: return Out
 \end{lstlisting}
 
@@ -278,7 +278,7 @@ Output: Y $\in$ R^{B$\times$N$\times$d}
 apply its own output projection:
 
 \begin{lstlisting}
-if self.is_nested_encoder:
+if self.is\_nested\_encoder:
     out = context
 else:
     # Apply SVD output projection
@@ -291,12 +291,12 @@ The outer \texttt{BertSelfOutput.dense} will apply the projection.
 
 \begin{lstlisting}
 # Check for flat output projections FIRST
-if hasattr(src, "out_lin") or hasattr(src, "c_proj") or hasattr(src, "o_proj"):
-    self.is_nested_encoder = False
+if hasattr(src, "out\_lin") or hasattr(src, "c\_proj") or hasattr(src, "o\_proj"):
+    self.is\_nested\_encoder = False
 elif (hasattr(src, "self") and hasattr(src, "output")):
-    self.is_nested_encoder = True
+    self.is\_nested\_encoder = True
 else:
-    self.is_nested_encoder = False
+    self.is\_nested\_encoder = False
 \end{lstlisting}
 
 \textbf{Why order matters.} DistilBERT's \texttt{MultiHeadSelfAttention} ends with 
@@ -392,7 +392,7 @@ joint SVD recovers $V$ as the dominant right singular vectors. $\square$
 For the joint SVD:
 
 \[
-\|W_{QKV} - U_{QKV, r} \Sigma_r V_{QKV, r}^\top\|_F = \sqrt{\sum_{i > r} \sigma_i^2}
+\|W\_{QKV} - U\_{QKV, r} \Sigma\_r V\_{QKV, r}^\top\|\_F = \sqrt{\sum\_{i \textgreater{} r} \sigma\_i^2}
 \]
 
 \subsubsection{Causality}

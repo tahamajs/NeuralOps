@@ -8,12 +8,12 @@ truncated SVD of rank $r_b + r_r$.
 \textbf{Proof.} Let $W = U \Sigma V^\top$ be the full SVD. Then:
 
 \[
-W_b = U_{:, :r_b} \Sigma_{:r_b} V_{:r_b, :}^\top
+W\_b = U\_{:, :r\_b} \Sigma\_{:r\_b} V\_{:r\_b, :}^\top
 \tag{A.1}
 \]
 
 \[
-R = W - W_b = U_{:, r_b:} \Sigma_{r_b:} V_{r_b:, :}^\top
+R = W - W\_b = U\_{:, r\_b:} \Sigma\_{r\_b:} V\_{r\_b:, :}^\top
 \tag{A.2}
 \]
 
@@ -21,14 +21,14 @@ The residual has the same left and right singular vectors as $W$, only
 shifted by $r_b$. Its top-$r_r$ SVD:
 
 \[
-R_{r_r} = U_{:, r_b:r_b+r_r} \Sigma_{:r_b+r_r} V_{:r_b+r_r, :}^\top
+R\_{r\_r} = U\_{:, r\_b:r\_b+r\_r} \Sigma\_{:r\_b+r\_r} V\_{:r\_b+r\_r, :}^\top
 \tag{A.3}
 \]
 
 Sum:
 
 \[
-W_b + R_{r_r} = U_{:, :r_b} \Sigma_{:r_b} V_{:r_b, :}^\top + U_{:, r_b:r_b+r_r} \Sigma_{:r_b+r_r} V_{:r_b+r_r, :}^\top = U_{:, :r_b+r_r} \Sigma_{:r_b+r_r} V_{:r_b+r_r, :}^\top
+W\_b + R\_{r\_r} = U\_{:, :r\_b} \Sigma\_{:r\_b} V\_{:r\_b, :}^\top + U\_{:, r\_b:r\_b+r\_r} \Sigma\_{:r\_b+r\_r} V\_{:r\_b+r\_r, :}^\top = U\_{:, :r\_b+r\_r} \Sigma\_{:r\_b+r\_r} V\_{:r\_b+r\_r, :}^\top
 \tag{A.4}
 \]
 
@@ -39,7 +39,7 @@ This is exactly the rank-$(r_b + r_r)$ truncated SVD of $W$. $\square$
 \textbf{Claim.} At initialization:
 
 \[
-\|W - W_b - R_{r_r}\|_F = \sqrt{\sum_{i > r_b + r_r} \sigma_i^2}
+\|W - W\_b - R\_{r\_r}\|\_F = \sqrt{\sum\_{i \textgreater{} r\_b + r\_r} \sigma\_i^2}
 \tag{A.5}
 \]
 

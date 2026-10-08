@@ -3,14 +3,14 @@
 \subsection{A.1 Polynomial Kernel Definition}
 
 \[
-K_\text{PADRe}(q, k) = \left(1 + \frac{q \cdot k}{d \sqrt{d_h}}\right)^d
+K\_\text{PADRe}(q, k) = \left(1 + \frac{q \cdot k}{d \sqrt{d\_h}}\right)^d
 \tag{A.1}
 \]
 
 \subsection{A.2 Taylor Expansion}
 
 \[
-(1 + x)^d = \sum_{n=0}^{d} \binom{d}{n} x^n
+(1 + x)^d = \sum\_{n=0}^{d} \binom{d}{n} x^n
 \tag{A.2}
 \]
 
@@ -35,7 +35,7 @@ Dimension: $1 + d_h + d_h^2$.
 \subsection{A.4 Centering}
 
 \[
-m_i = \max_j s_{ij}, \quad s_{ij}' = (s_{ij} - m_i)/T
+m\_i = \max\_j s\_{ij}, \quad s\_{ij}' = (s\_{ij} - m\_i)/T
 \tag{A.5}
 \]
 
@@ -44,7 +44,7 @@ Property: $s_{ij}' \leq 0$.
 \subsection{A.5 Base Bound}
 
 \[
-\text{base}_{ij} = \text{ReLU}(1 + s_{ij}'/d)
+\text{base}\_{ij} = \text{ReLU}(1 + s\_{ij}'/d)
 \tag{A.6}
 \]
 
@@ -53,7 +53,7 @@ Property: $0 \leq \text{base}_{ij} \leq 1$.
 \subsection{A.6 Attention Normalization}
 
 \[
-\text{attn}_{ij} = \frac{\text{base}_{ij}^d \cdot \mathbb{1}[\text{valid}_{ij}]}{\sum_{j'} \text{base}_{ij'}^d \cdot \mathbb{1}[\text{valid}_{ij'}]}
+\text{attn}\_{ij} = \frac{\text{base}\_{ij}^d \cdot \mathbb{1}[\text{valid}\_{ij}]}{\sum\_{j'} \text{base}\_{ij'}^d \cdot \mathbb{1}[\text{valid}\_{ij'}]}
 \tag{A.7}
 \]
 
@@ -79,7 +79,7 @@ Total: $\mathcal{O}(N^2 d_h)$.
 For feature dimension $F$:
 
 \[
-\text{Context}_i = \frac{\phi(q_i) \cdot \sum_j \phi(k_j) v_j^\top}{\phi(q_i) \cdot \sum_j \phi(k_j)}
+\text{Context}\_i = \frac{\phi(q\_i) \cdot \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i) \cdot \sum\_j \phi(k\_j)}
 \tag{A.9}
 \]
 

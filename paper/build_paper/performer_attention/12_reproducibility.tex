@@ -4,8 +4,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -14,19 +14,19 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_performer.py \
+python run\_all\_4\_performer.py \
     --models distilbert,roberta,gpt2 \
-    --num_features 64 \
-    --recovery_steps 50
+    --num\_features 64 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"efficiency-lab/svd-linear-attention-{model}-performer",
+    path = hf\_hub\_download(
+        repo\_id=f"efficiency-lab/svd-linear-attention-{model}-performer",
         filename="weights.pt",
     )
 \end{lstlisting}
@@ -36,31 +36,31 @@ for model in ["distilbert", "roberta", "gpt2"]:
 \subsubsection{Main Results}
 
 \begin{lstlisting}
-python run_all_4_performer.py --models distilbert,roberta,gpt2
+python run\_all\_4\_performer.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Feature Ablation}
 
 \begin{lstlisting}
 for F in 32 64 128 256; do
-    python run_all_4_performer.py --num_features $F --output_suffix f$F
+    python run\_all\_4\_performer.py --num\_features $F --output_suffix f$F
 done
 \end{lstlisting}
 
 \subsubsection{Kernel Type Ablation}
 
 \begin{lstlisting}
-python run_all_4_performer.py --kernel_type favor_plus --output_suffix favor
-python run_all_4_performer.py --kernel_type elu --output_suffix elu
-python run_all_4_performer.py --kernel_type relu --output_suffix relu
+python run\_all\_4\_performer.py --kernel\_type favor\_plus --output\_suffix favor
+python run\_all\_4\_performer.py --kernel\_type elu --output\_suffix elu
+python run\_all\_4\_performer.py --kernel\_type relu --output\_suffix relu
 \end{lstlisting}
 
 \subsection{Seeds}
 
 \begin{lstlisting}
 seed = 42
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}
@@ -84,24 +84,24 @@ GPT-2 & 77.5\% $\pm$ 2\% & PASS \\
 \subsubsection{Verify Feature Positivity}
 
 \begin{lstlisting}
-Q_feat = model._feature_map(Q)
-assert (Q_feat >= 0).all(), "Feature map produced negative values!"
+Q\_feat = model.\_feature\_map(Q)
+assert (Q\_feat \textgreater{}= 0).all(), "Feature map produced negative values!"
 \end{lstlisting}
 
 \subsubsection{Verify Omega Persistence}
 
 \begin{lstlisting}
-sd = model.state_dict()
+sd = model.state\_dict()
 assert any('omega' in k for k in sd), "omega NOT persisted!"
 \end{lstlisting}
 
 \subsubsection{Verify Causal Path}
 
 \begin{lstlisting}
-x = torch.randn(1, 128, 768, requires_grad=True)
+x = torch.randn(1, 128, 768, requires\_grad=True)
 y = model(x)
 y[0, 50].sum().backward()
-assert x.grad[0, 51:].abs().max() < 1e-6
+assert x.grad[0, 51:].abs().max() \textless{} 1e-6
 \end{lstlisting}
 
 \subsection{Known Issues}

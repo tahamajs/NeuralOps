@@ -4,29 +4,29 @@
 
 \begin{lstlisting}
 class DynamicLowRankProjector(nn.Module):
-    def __init__(self, rank, in_dim, out_dim, lora_rank=16):
-        super().__init__()
-        self.U = nn.Parameter(torch.randn(out_dim, rank) * 0.02)
+    def \_\_init\_\_(self, rank, in\_dim, out\_dim, lora\_rank=16):
+        super().\_\_init\_\_()
+        self.U = nn.Parameter(torch.randn(out\_dim, rank) * 0.02)
         self.S = nn.Parameter(torch.ones(rank))
-        self.V = nn.Parameter(torch.randn(in_dim, rank) * 0.02)
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_dim))
-            self.lora_B = nn.Parameter(torch.empty(out_dim, lora_rank))
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B)
-        self.freeze_base_weights()
+        self.V = nn.Parameter(torch.randn(in\_dim, rank) * 0.02)
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_dim))
+            self.lora\_B = nn.Parameter(torch.empty(out\_dim, lora\_rank))
+            nn.init.kaiming\_uniform\_(self.lora\_A, a=math.sqrt(5))
+            nn.init.zeros\_(self.lora\_B)
+        self.freeze\_base\_weights()
     
-    def set_weight(self, weight, bias=None):
-        U, S, Vh = torch.linalg.svd(weight.float(), full_matrices=False)
-        eff_rank = min(self.rank, U.size(1), Vh.size(0))
-        self.U.data.zero_()
-        self.S.data.zero_()
-        self.V.data.zero_()
-        self.U.data[:min(self.U.size(0), U.size(0)), :eff_rank].copy_(U[:min(self.U.size(0), U.size(0)), :eff_rank])
-        self.S.data[:eff_rank].copy_(S[:eff_rank])
-        self.V.data[:min(self.V.size(0), Vh.size(1)), :eff_rank].copy_(Vh[:eff_rank, :min(self.V.size(0), Vh.size(1))].t())
+    def set\_weight(self, weight, bias=None):
+        U, S, Vh = torch.linalg.svd(weight.float(), full\_matrices=False)
+        eff\_rank = min(self.rank, U.size(1), Vh.size(0))
+        self.U.data.zero\_()
+        self.S.data.zero\_()
+        self.V.data.zero\_()
+        self.U.data[:min(self.U.size(0), U.size(0)), :eff\_rank].copy\_(U[:min(self.U.size(0), U.size(0)), :eff\_rank])
+        self.S.data[:eff\_rank].copy\_(S[:eff\_rank])
+        self.V.data[:min(self.V.size(0), Vh.size(1)), :eff\_rank].copy\_(Vh[:eff\_rank, :min(self.V.size(0), Vh.size(1))].t())
         if bias is not None:
-            self.bias.data[:min(...)].copy_(bias[:min(...)])
+            self.bias.data[:min(...)].copy\_(bias[:min(...)])
     
     def forward(self, x, gate):
         z = torch.matmul(x, self.V)              # (B, k, r)
@@ -35,9 +35,9 @@ class DynamicLowRankProjector(nn.Module):
         out = torch.matmul(z, self.U.t())        # (B, k, out)
         if self.bias is not None:
             out = out + self.bias
-        if self.lora_A is not None:
-            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
-            out = out + lora_out
+        if self.lora\_A is not None:
+            lora\_out = F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.scaling
+            out = out + lora\_out
         return out
 \end{lstlisting}
 
@@ -45,43 +45,43 @@ class DynamicLowRankProjector(nn.Module):
 
 \begin{lstlisting}
 class VariationalSpectralGate(nn.Module):
-    def __init__(self, hidden_dim, rank):
-        super().__init__()
+    def \_\_init\_\_(self, hidden\_dim, rank):
+        super().\_\_init\_\_()
         self.net = nn.Sequential(
-            nn.Linear(hidden_dim, 64), nn.GELU(), nn.Linear(64, rank * 2)
+            nn.Linear(hidden\_dim, 64), nn.GELU(), nn.Linear(64, rank * 2)
         )
-        nn.init.zeros_(self.net[-1].weight)
-        nn.init.constant_(self.net[-1].bias[:rank], 3.0)
-        nn.init.constant_(self.net[-1].bias[rank:], -3.0)
+        nn.init.zeros\_(self.net[-1].weight)
+        nn.init.constant\_(self.net[-1].bias[:rank], 3.0)
+        nn.init.constant\_(self.net[-1].bias[rank:], -3.0)
     
-    def forward(self, x, valid_mask=None):
-        pooled = _masked_mean(x, valid_mask).float()
+    def forward(self, x, valid\_mask=None):
+        pooled = \_masked\_mean(x, valid\_mask).float()
         stats = self.net(pooled)
-        mu, log_sigma = stats.chunk(2, dim=-1)
-        log_sigma = torch.clamp(log_sigma, min=-10.0, max=2.0)
+        mu, log\_sigma = stats.chunk(2, dim=-1)
+        log\_sigma = torch.clamp(log\_sigma, min=-10.0, max=2.0)
         if self.training:
-            eps = torch.randn_like(mu)
-            z = mu + eps * torch.exp(log_sigma)
+            eps = torch.randn\_like(mu)
+            z = mu + eps * torch.exp(log\_sigma)
         else:
             z = mu
         g = torch.sigmoid(z).to(x.dtype)
-        return g, mu, log_sigma
+        return g, mu, log\_sigma
 \end{lstlisting}
 
 \subsection{B.3 The HeadGate}
 
 \begin{lstlisting}
 class HeadGate(nn.Module):
-    def __init__(self, hidden_dim, n_heads):
-        super().__init__()
+    def \_\_init\_\_(self, hidden\_dim, n\_heads):
+        super().\_\_init\_\_()
         self.net = nn.Sequential(
-            nn.Linear(hidden_dim, 32), nn.GELU(), nn.Linear(32, n_heads)
+            nn.Linear(hidden\_dim, 32), nn.GELU(), nn.Linear(32, n\_heads)
         )
-        nn.init.zeros_(self.net[-1].weight)
-        nn.init.constant_(self.net[-1].bias, 3.0)
+        nn.init.zeros\_(self.net[-1].weight)
+        nn.init.constant\_(self.net[-1].bias, 3.0)
     
-    def forward(self, x, valid_mask=None):
-        pooled = _masked_mean(x, valid_mask).float()
+    def forward(self, x, valid\_mask=None):
+        pooled = \_masked\_mean(x, valid\_mask).float()
         return torch.sigmoid(self.net(pooled)).to(x.dtype)
 \end{lstlisting}
 
@@ -89,23 +89,23 @@ class HeadGate(nn.Module):
 
 \begin{lstlisting}
 class TokenRouter(nn.Module):
-    def __init__(self, hidden_dim, keep_ratio=0.75, min_tokens=8):
-        super().__init__()
+    def \_\_init\_\_(self, hidden\_dim, keep\_ratio=0.75, min\_tokens=8):
+        super().\_\_init\_\_()
         self.net = nn.Sequential(
-            nn.Linear(hidden_dim, 32), nn.GELU(), nn.Linear(32, 1)
+            nn.Linear(hidden\_dim, 32), nn.GELU(), nn.Linear(32, 1)
         )
-        self.keep_ratio = keep_ratio
-        self.min_tokens = min_tokens
+        self.keep\_ratio = keep\_ratio
+        self.min\_tokens = min\_tokens
     
-    def forward(self, x, valid_mask=None, is_decoder=False):
+    def forward(self, x, valid\_mask=None, is\_decoder=False):
         B, N, D = x.shape
         scores = torch.sigmoid(self.net(x.float()).squeeze(-1))
-        if valid_mask is not None:
-            scores = scores.masked_fill(~valid_mask, -10000.0)
+        if valid\_mask is not None:
+            scores = scores.masked\_fill(~valid\_mask, -10000.0)
         scores[:, 0] = 1e4
-        keep = min(N, max(1, max(self.min_tokens, int(N * self.keep_ratio))))
+        keep = min(N, max(1, max(self.min\_tokens, int(N * self.keep\_ratio))))
         idx = scores.topk(keep, dim=1).indices
-        idx, _ = torch.sort(idx, dim=1)
+        idx, \_ = torch.sort(idx, dim=1)
         routed = torch.gather(x, 1, idx.unsqueeze(-1).expand(-1, -1, D))
         return routed, idx
 \end{lstlisting}
@@ -113,21 +113,21 @@ class TokenRouter(nn.Module):
 \subsection{B.5 RoPE Gathering}
 
 \begin{lstlisting}
-if pos_emb is not None:
-    cos, sin = pos_emb[0], pos_emb[1]
-    cos_routed = torch.gather(cos_b, 1, idx.unsqueeze(-1).expand(-1, -1, cos.size(-1)))
-    sin_routed = torch.gather(sin_b, 1, idx.unsqueeze(-1).expand(-1, -1, sin.size(-1)))
-    Q, K = apply_rotary_pos_emb(Q, K, cos_routed, sin_routed)
+if pos\_emb is not None:
+    cos, sin = pos\_emb[0], pos\_emb[1]
+    cos\_routed = torch.gather(cos\_b, 1, idx.unsqueeze(-1).expand(-1, -1, cos.size(-1)))
+    sin\_routed = torch.gather(sin\_b, 1, idx.unsqueeze(-1).expand(-1, -1, sin.size(-1)))
+    Q, K = apply\_rotary\_pos\_emb(Q, K, cos\_routed, sin\_routed)
 \end{lstlisting}
 
 \subsection{B.6 Scatter Back}
 
 \begin{lstlisting}
-if k_len == N:
+if k\_len == N:
     output = out
 else:
     output = torch.zeros(B, N, D, device=device, dtype=out.dtype)
-    output.scatter_(1, idx.unsqueeze(-1).expand(-1, -1, D), out)
+    output.scatter\_(1, idx.unsqueeze(-1).expand(-1, -1, D), out)
 \end{lstlisting}
 
 \subsection{B.7 Common Pitfalls}
@@ -136,7 +136,7 @@ else:
 
 \textbf{Wrong:}
 \begin{lstlisting}
-g = torch.sigmoid(mu + torch.randn_like(mu) * torch.exp(log_sigma))
+g = torch.sigmoid(mu + torch.randn\_like(mu) * torch.exp(log\_sigma))
 \end{lstlisting}
 
 \textbf{Right:}
@@ -158,18 +158,18 @@ are wrong.
 For RoBERTa/BERT, we skip routing entirely:
 
 \begin{lstlisting}
-if self.is_nested_encoder:
-    routed = hidden_states
+if self.is\_nested\_encoder:
+    routed = hidden\_states
     idx = torch.arange(N, device=device).unsqueeze(0).expand(B, -1)
 \end{lstlisting}
 
 \subsection{B.8 Diagnostic Checks}
 
 \begin{lstlisting}
-# After copy_weights
-assert self.Pq.U.shape == (self.all_head_size, self.rank)
+# After copy\_weights
+assert self.Pq.U.shape == (self.all\_head\_size, self.rank)
 assert self.Pq.S.shape == (self.rank,)
-assert self.Pq.V.shape == (self.hidden_size, self.rank)
+assert self.Pq.V.shape == (self.hidden\_size, self.rank)
 
 # After forward
 assert output.shape == (B, N, D)

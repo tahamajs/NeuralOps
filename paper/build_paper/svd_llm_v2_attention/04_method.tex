@@ -25,22 +25,22 @@ recovery.
 
 \begin{lstlisting}
    +----------------------------------------------+
-   |  Input weight W $\in$ R^{d_out $\times$ d_in}           |
+   |  Input weight W $\in$ R^{d\_out $\times$ d\_in}           |
    +--------------------+-------------------------+
                         |
                          
    +----------------------------------------------+
    |  SVD: W = U $\Sigma$ V^H                             |
    |  Compute cumulative energy E(r)              |
-   |  r_eff = min(r_max, argmin E(r) $\ge$  )         |
+   |  r\_eff = min(r\_max, argmin E(r) $\ge$  )         |
    +--------------------+-------------------------+
                         |
                          
    +----------------------------------------------+
    |  Store explicitly:                            |
-   |  U  $\in$ R^{d_out $\times$ r}                           |
+   |  U  $\in$ R^{d\_out $\times$ r}                           |
    |  $\Sigma$  $\in$ R^r (diagonal)                          |
-   |  V^H $\in$ R^{r $\times$ d_in}                           |
+   |  V^H $\in$ R^{r $\times$ d\_in}                           |
    +--------------------+-------------------------+
                         |
                          
@@ -93,12 +93,12 @@ With rank 64: \textbf{6.0$\times$} reduction.
 SVD-LLM V2 uses a unified helper:
 
 \begin{lstlisting}
-def _project(self, x, vh, s, u, b, lora_A, lora_B):
-    base_out = ((x @ vh.t()) * s.to(dtype=x.dtype)) @ u.t() + b
-    if self.lora_rank > 0 and lora_A is not None and lora_B is not None:
-        lora_out = F.linear(F.linear(x, lora_A), lora_B) * self.scaling
-        base_out = base_out + lora_out
-    return base_out
+def \_project(self, x, vh, s, u, b, lora\_A, lora\_B):
+    base\_out = ((x @ vh.t()) * s.to(dtype=x.dtype)) @ u.t() + b
+    if self.lora\_rank \textgreater{} 0 and lora\_A is not None and lora\_B is not None:
+        lora\_out = F.linear(F.linear(x, lora\_A), lora\_B) * self.scaling
+        base\_out = base\_out + lora\_out
+    return base\_out
 \end{lstlisting}
 
 \textbf{Order of operations:}
@@ -148,10 +148,10 @@ Fallback & UniversalAdapter \\
 \subsubsection{Conv1D Handling}
 
 \begin{lstlisting}
-def _unpack_weight_bias(module):
-    base = getattr(module, "base_layer", module)
+def \_unpack\_weight\_bias(module):
+    base = getattr(module, "base\_layer", module)
     w = base.weight.data.clone()
-    if "Conv1D" in type(module).__name__ or hasattr(module, "nf"):
+    if "Conv1D" in type(module).\_\_name\_\_ or hasattr(module, "nf"):
         w = w.t()   # (in, out) $\to$ (out, in)
     return w, base.bias
 \end{lstlisting}
@@ -161,11 +161,11 @@ def _unpack_weight_bias(module):
 When \texttt{w\_k.shape[0] != self.kv\_head\_size}:
 
 \begin{lstlisting}
-rep = w_k.shape[0] // self.kv_head_size
-w_k_pooled = (
-    w_k.view(self.num_kv_heads, rep, self.head_dim, -1)
+rep = w\_k.shape[0] // self.kv\_head\_size
+w\_k\_pooled = (
+    w\_k.view(self.num\_kv\_heads, rep, self.head\_dim, -1)
     .mean(dim=1)
-    .view(self.kv_head_size, -1)
+    .view(self.kv\_head\_size, -1)
 )
 \end{lstlisting}
 
@@ -177,9 +177,9 @@ Same for bias.
 
 \begin{lstlisting}
 if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-    # Nested encoder -- extract from inner, skip out_proj
-    w_o = src.output.dense.weight
-    self.is_nested_encoder = True
+    # Nested encoder -- extract from inner, skip out\_proj
+    w\_o = src.output.dense.weight
+    self.is\_nested\_encoder = True
 \end{lstlisting}
 
 When nested, \texttt{out\_proj} is skipped in forward.
@@ -188,39 +188,39 @@ When nested, \texttt{out\_proj} is skipped in forward.
 
 \textbf{Algorithm 1:} Whole-model injection with pre-test
 \begin{lstlisting}
-Input:  model M, rank cap r_max, energy  
+Input:  model M, rank cap r\_max, energy  
 Output: M' with factorized attention
 
-1:  layer_list $\leftarrow$ find_transformer_layers(M)
+1:  layer\_list $\leftarrow$ find\_transformer\_layers(M)
 2:
 3:  # Pre-test on first layer
-4:  test_src $\leftarrow$ get_attention(layer_list[0])
+4:  test\_src $\leftarrow$ get\_attention(layer\_list[0])
 5:  try:
-6:      test_module $\leftarrow$ SVDLLMV2Attention(cfg, old_attn=test_src)
+6:      test\_module $\leftarrow$ SVDLLMV2Attention(cfg, old\_attn=test\_src)
 7:  except Exception:
 8:      return None
 9:
 10: # Inject each layer
 11: count $\leftarrow$ 0
-12: for (idx, layer) in enumerate(layer_list) do
-13:     src_attn $\leftarrow$ get_attention(layer)
-14:     if src_attn is SVDLLMV2Attention: skip
-15:     new_attn $\leftarrow$ SVDLLMV2Attention(cfg, old_attn=src_attn)
+12: for (idx, layer) in enumerate(layer\_list) do
+13:     src\_attn $\leftarrow$ get\_attention(layer)
+14:     if src\_attn is SVDLLMV2Attention: skip
+15:     new\_attn $\leftarrow$ SVDLLMV2Attention(cfg, old\_attn=src\_attn)
 16:
 17:     # Set nested flag and replace
-18:     for attr in ("attention", "attn", "self_attn", "self"):
+18:     for attr in ("attention", "attn", "self\_attn", "self"):
 19:         if hasattr(layer, attr):
 20:             if attr == "attention" and hasattr(layer.attention, "self"):
-21:                 new_attn.is_nested_encoder = True
-22:                 layer.attention.self = new_attn
+21:                 new\_attn.is\_nested\_encoder = True
+22:                 layer.attention.self = new\_attn
 23:             else:
-24:                 new_attn.is_nested_encoder = False
-25:                 setattr(layer, attr, new_attn)
+24:                 new\_attn.is\_nested\_encoder = False
+25:                 setattr(layer, attr, new\_attn)
 26:             break
 27:     count += 1
 28: end for
 29:
-30: return M' if count > 0 else None
+30: return M' if count \textgreater{} 0 else None
 \end{lstlisting}
 
 \subsection{LoRA Recovery}
@@ -262,7 +262,7 @@ Total & $\mathcal{O}(N_l d^3)$ & $\mathcal{O}(d^2)$ \\
 $E(r_\text{eff}) \geq \eta$, then:
 
 \[
-\frac{\|W - W_{r_\text{eff}}\|_F}{\|W\|_F} \leq \sqrt{1 - \eta}
+\frac{\|W - W\_{r\_\text{eff}}\|\_F}{\|W\|\_F} \leq \sqrt{1 - \eta}
 \tag{4.3}
 \]
 

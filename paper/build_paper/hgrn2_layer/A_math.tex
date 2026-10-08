@@ -5,21 +5,21 @@
 For the HGRN-2 recurrence:
 
 \[
-s_t = f_t \odot s_{t-1} + g_t
+s\_t = f\_t \odot s\_{t-1} + g\_t
 \tag{A.1}
 \]
 
 with $s_0 = 0$, the closed form is:
 
 \[
-s_t = \sum_{j=1}^{t} \left( \prod_{i=j+1}^{t} f_i \right) g_j
+s\_t = \sum\_{j=1}^{t} \left( \prod\_{i=j+1}^{t} f\_i \right) g\_j
 \tag{A.2}
 \]
 
 The effective decay from position $j$ to position $t$ is:
 
 \[
-D_{t, j} = \prod_{i=j+1}^{t} f_i = \exp\left(\sum_{i=j+1}^{t} \log f_i\right)
+D\_{t, j} = \prod\_{i=j+1}^{t} f\_i = \exp\left(\sum\_{i=j+1}^{t} \log f\_i\right)
 \tag{A.3}
 \]
 
@@ -28,21 +28,21 @@ D_{t, j} = \prod_{i=j+1}^{t} f_i = \exp\left(\sum_{i=j+1}^{t} \log f_i\right)
 For a chunk $[s, e)$ with $C = e - s$ timesteps, define:
 
 \[
-A_k = \sum_{i=s}^{k} \log f_i, \quad k \in [s, e)
+A\_k = \sum\_{i=s}^{k} \log f\_i, \quad k \in [s, e)
 \tag{A.4}
 \]
 
 Then within the chunk:
 
 \[
-h_k^\text{intra} = \sum_{j=s}^{k} \exp(A_k - A_j) \cdot g_j
+h\_k^\text{intra} = \sum\_{j=s}^{k} \exp(A\_k - A\_j) \cdot g\_j
 \tag{A.5}
 \]
 
 Combined with previous chunk's final state $h_\text{prev}$:
 
 \[
-h_k^\text{chunk} = h_\text{prev} \cdot \exp(A_k) + h_k^\text{intra}
+h\_k^\text{chunk} = h\_\text{prev} \cdot \exp(A\_k) + h\_k^\text{intra}
 \tag{A.6}
 \]
 
@@ -53,7 +53,7 @@ This is exact (no approximation).
 The forget gate:
 
 \[
-f_t = \exp(-\text{softplus}(W_f x_t))
+f\_t = \exp(-\text{softplus}(W\_f x\_t))
 \tag{A.7}
 \]
 
@@ -62,7 +62,7 @@ Softplus is always positive: $\text{softplus}(u) > 0$. So $f_t \in (0, 1)$.
 \textbf{Clamp in log-space:}
 
 \[
-\log f_t \leftarrow \text{clamp}(- \text{softplus}(u), -3, -10^{-4})
+\log f\_t \leftarrow \text{clamp}(- \text{softplus}(u), -3, -10^{-4})
 \tag{A.8}
 \]
 
@@ -77,7 +77,7 @@ $f \approx 1$ (no update). The clamp prevents both.
 For encoders:
 
 \[
-h_t = h_t^\text{fwd} + h_t^\text{bwd}
+h\_t = h\_t^\text{fwd} + h\_t^\text{bwd}
 \tag{A.9}
 \]
 
@@ -90,8 +90,8 @@ standard choice in BiRNN implementations.
 Base weights are frozen. LoRA adapters:
 
 \[
-\Delta W_v = \frac{\alpha}{r} B_v A_v, \quad
-\Delta W_o = \frac{\alpha}{r} B_o A_o
+\Delta W\_v = \frac{\alpha}{r} B\_v A\_v, \quad
+\Delta W\_o = \frac{\alpha}{r} B\_o A\_o
 \tag{A.10}
 \]
 

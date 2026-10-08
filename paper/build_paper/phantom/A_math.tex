@@ -8,7 +8,7 @@ rank $r^*$. Sample $r$ columns with probability proportional to leverage
 scores $\pi_j$ and $r$ rows with probability proportional to $\rho_i$. Then:
 
 \[
-\|W - C U^+ R\|_F \leq (1 + \epsilon) \|W - W_{r^*}\|_F
+\|W - C U^+ R\|\_F \leq (1 + \epsilon) \|W - W\_{r^*}\|\_F
 \tag{A.1}
 \]
 
@@ -23,12 +23,12 @@ leverage distributions (Papailiopoulos et al., 2014).
 Given SVD $W = U \Sigma V^\top$:
 
 \[
-\pi_j = \sum_{k=1}^{\min(m, n)} V_{j, k}^2 = \|V_{j, :}\|_2^2
+\pi\_j = \sum\_{k=1}^{\min(m, n)} V\_{j, k}^2 = \|V\_{j, :}\|\_2^2
 \tag{A.2}
 \]
 
 \[
-\rho_i = \sum_{k=1}^{\min(m, n)} U_{i, k}^2 = \|U_{i, :}\|_2^2
+\rho\_i = \sum\_{k=1}^{\min(m, n)} U\_{i, k}^2 = \|U\_{i, :}\|\_2^2
 \tag{A.3}
 \]
 
@@ -40,7 +40,7 @@ Given SVD $W = U \Sigma V^\top$:
 angle $\theta = \arccos(x^\top y)$:
 
 \[
-\Pr_{a \sim \mathcal{N}(0, I)}[\text{sign}(a^\top x) = \text{sign}(a^\top y)] = 1 - \frac{\theta}{\pi}
+\Pr\_{a \sim \mathcal{N}(0, I)}[\text{sign}(a^\top x) = \text{sign}(a^\top y)] = 1 - \frac{\theta}{\pi}
 \tag{A.4}
 \]
 
@@ -60,7 +60,7 @@ $\square$
 For a score vector $x \in \mathbb{R}^L$ with maximum $m$, softpick gives:
 
 \[
-\text{softpick}_i = \text{ReLU}(e^{(x_i - m)/\tau} - e^{-m/\tau})
+\text{softpick}\_i = \text{ReLU}(e^{(x\_i - m)/\tau} - e^{-m/\tau})
 \tag{A.5}
 \]
 
@@ -68,7 +68,7 @@ This is non-zero iff $x_i > m - \tau \log(2)$. The fraction of non-zero
 entries is:
 
 \[
-\text{sparsity} = \frac{1}{L} \#\{i : x_i > m - \tau \log 2\}
+\text{sparsity} = \frac{1}{L} \#\{i : x\_i \textgreater{} m - \tau \log 2\}
 \tag{A.6}
 \]
 
@@ -79,7 +79,7 @@ For peaked distributions (typical of trained attention), this is 5-15\%.
 When $\sum_j \text{softpick}_j < \epsilon$, we substitute softmax:
 
 \[
-p_i = \frac{e^{x_i / \tau}}{\sum_j e^{x_j / \tau}}
+p\_i = \frac{e^{x\_i / \tau}}{\sum\_j e^{x\_j / \tau}}
 \tag{A.7}
 \]
 
@@ -93,7 +93,7 @@ For $R$ independent rounds with individual outputs $O^{(r)}$, the average
 is:
 
 \[
-O = \frac{1}{R} \sum_{r=1}^{R} O^{(r)}
+O = \frac{1}{R} \sum\_{r=1}^{R} O^{(r)}
 \tag{A.8}
 \]
 

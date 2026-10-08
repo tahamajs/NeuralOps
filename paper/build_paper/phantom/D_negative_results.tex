@@ -7,15 +7,15 @@
 
 \textbf{Goal.} Replace random projections with learnable ones.
 
-\textbf{Result.} Accuracy improvement <0.3\%, training instability.
+\textbf{Result.} Accuracy improvement \textless{}0.3\%, training instability.
 
 \textbf{Conclusion.} Random projections are sufficient.
 
-\subsubsection{D.1.2 Larger LSH Bits (>8)}
+\subsubsection{D.1.2 Larger LSH Bits (\textgreater{}8)}
 
 \textbf{Goal.} Finer buckets for more precise matching.
 
-\textbf{Result.} Most buckets had <2 tokens; attention too sparse.
+\textbf{Result.} Most buckets had \textless{}2 tokens; attention too sparse.
 
 \textbf{Conclusion.} 4-6 bits is optimal.
 
@@ -123,7 +123,7 @@ We tried mixing LSH attention with dense attention. Result: no gain, 2$\times$ s
 Larger \texttt{n\_bits} & Precision & Sparse attention \\
 Multi-scale LSH & Bucket size variance & No improvement \\
 Per-layer $\tau$\_s & Non-stationarity & No improvement \\
-LayerNorm recalibration & Shift & <0.2\% improvement \\
+LayerNorm recalibration & Shift & \textless{}0.2\% improvement \\
 \bottomrule
 \end{tabular}
 \end{table}

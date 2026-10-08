@@ -3,8 +3,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -29,43 +29,43 @@ datasets & 1.0.0 \\
 \subsection{Running LEKAv3}
 
 \begin{lstlisting}
-python run_all_4_leka_v3.py \
+python run\_all\_4\_leka\_v3.py \
     --models distilbert,roberta,gpt2 \
-    --num_landmarks 0.0 \
-    --local_window_size 128 \
-    --feature_dim 64 \
-    --recovery_steps 50
+    --num\_landmarks 0.0 \
+    --local\_window\_size 128 \
+    --feature\_dim 64 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --modules full,leka_v3 \
-    --num_landmarks 0.0 \
-    --local_window_size 128 \
-    --recovery_steps 50
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --modules full,leka\_v3 \
+    --num\_landmarks 0.0 \
+    --local\_window\_size 128 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1 (Main)}
 \begin{lstlisting}
-python run_all_4_leka_v3.py
+python run\_all\_4\_leka\_v3.py
 \end{lstlisting}
 
 \subsubsection{Table 7.4 ($L_0$ Ablation)}
 \begin{lstlisting}
 for l0 in 8 16 32 64 128; do
-    python run_all_4_leka_v3.py --num_landmarks $l0 --output_suffix l$l0
+    python run\_all\_4\_leka\_v3.py --num\_landmarks $l0 --output_suffix l$l0
 done
 \end{lstlisting}
 
 \subsubsection{Table 7.5 ($W$ Ablation)}
 \begin{lstlisting}
 for w in 8 16 32 64; do
-    python run_all_4_leka_v3.py --local_window_size $w --output_suffix w$w
+    python run\_all\_4\_leka\_v3.py --local\_window\_size $w --output_suffix w$w
 done
 \end{lstlisting}
 
@@ -76,8 +76,8 @@ import random, numpy as np, torch
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}

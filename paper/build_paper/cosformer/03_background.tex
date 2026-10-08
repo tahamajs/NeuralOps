@@ -28,7 +28,7 @@ Replacing softmax with a kernel factorization:
 allows rewriting attention as:
 
 \[
-\text{Attn}(Q_i, K, V) = \frac{\sum_j \phi(q_i)^\top \phi(k_j) V_j}{\sum_j \phi(q_i)^\top \phi(k_j)} = \frac{\phi(q_i)^\top \sum_j \phi(k_j) V_j}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\text{Attn}(Q\_i, K, V) = \frac{\sum\_j \phi(q\_i)^\top \phi(k\_j) V\_j}{\sum\_j \phi(q\_i)^\top \phi(k\_j)} = \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) V\_j}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \]
 
 \textbf{Complexity.} The sums $\sum_j \phi(k_j) V_j$ and $\sum_j \phi(k_j)$ are 
@@ -64,20 +64,20 @@ summarization), linear attention underperforms softmax.
 Cosformer adds cosine/sine modulation:
 
 \[
-\tilde{\phi}(q_i) = \phi(q_i) \cdot \cos\!\left(\frac{\pi i}{2 L}\right), \quad
-\tilde{\phi}'(q_i) = \phi(q_i) \cdot \sin\!\left(\frac{\pi i}{2 L}\right)
+\tilde{\phi}(q\_i) = \phi(q\_i) \cdot \cos\!\left(\frac{\pi i}{2 L}\right), \quad
+\tilde{\phi}'(q\_i) = \phi(q\_i) \cdot \sin\!\left(\frac{\pi i}{2 L}\right)
 \]
 
 Then the attention becomes:
 
 \[
-\text{Attn}(Q_i, K, V) = \frac{\tilde{\phi}(q_i)^\top \sum_j \tilde{\phi}(k_j) V_j + \tilde{\phi}'(q_i)^\top \sum_j \tilde{\phi}'(k_j) V_j}{\tilde{\phi}(q_i)^\top \sum_j \tilde{\phi}(k_j) + \tilde{\phi}'(q_i)^\top \sum_j \tilde{\phi}'(k_j)}
+\text{Attn}(Q\_i, K, V) = \frac{\tilde{\phi}(q\_i)^\top \sum\_j \tilde{\phi}(k\_j) V\_j + \tilde{\phi}'(q\_i)^\top \sum\_j \tilde{\phi}'(k\_j) V\_j}{\tilde{\phi}(q\_i)^\top \sum\_j \tilde{\phi}(k\_j) + \tilde{\phi}'(q\_i)^\top \sum\_j \tilde{\phi}'(k\_j)}
 \]
 
 \textbf{Why it works.} The identity:
 
 \[
-\cos(\theta_i - \theta_j) = \cos\theta_i \cos\theta_j + \sin\theta_i \sin\theta_j
+\cos(\theta\_i - \theta\_j) = \cos\theta\_i \cos\theta\_j + \sin\theta\_i \sin\theta\_j
 \]
 
 means the sum $\tilde{\phi}(q_i)^\top \tilde{\phi}(k_j) + \tilde{\phi}'(q_i)^\top \tilde{\phi}'(k_j)$ 
@@ -111,7 +111,7 @@ $C$ & Chunk size \\
 \bottomrule
 \end{tabular}
 \end{table}
-</parameter>
+\textless{}/parameter\textgreater{}
 \begin{lstlisting}
 
 ---

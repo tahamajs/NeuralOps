@@ -18,14 +18,14 @@ Adaptive SVD compresses each attention projection in four steps:
 \begin{lstlisting}
     +------------------------------------------+
     |  Pretrained attention module A           |
-    |  with projections W_Q, W_K, W_V, W_O     |
+    |  with projections W\_Q, W\_K, W\_V, W\_O     |
     +------------------+-----------------------+
                        |
                         
     +------------------------------------------+
     |  For each projection P:                  |
-    |    Phase 1: SVD(W_P) $\to$ U_P  _P V_P^T     |
-    |    Phase 2: Find r_P via $\tau$               |
+    |    Phase 1: SVD(W\_P) $\to$ U\_P  \_P V\_P^T     |
+    |    Phase 2: Find r\_P via $\tau$               |
     |    Phase 3: Truncate + distribute  ^{1/2}|
     |    Phase 4: Add zero-init BA adapter     |
     +------------------+-----------------------+
@@ -33,8 +33,8 @@ Adaptive SVD compresses each attention projection in four steps:
                         
     +------------------------------------------+
     |  Compressed attention A' with:           |
-    |    - Frozen U_P, V_P for each P          |
-    |    - Trainable A_P, B_P for each P       |
+    |    - Frozen U\_P, V\_P for each P          |
+    |    - Trainable A\_P, B\_P for each P       |
     +------------------------------------------+
 \end{lstlisting}
 
@@ -43,7 +43,7 @@ Adaptive SVD compresses each attention projection in four steps:
 For each projection weight $W_P \in \mathbb{R}^{d_\text{out}^{(P)} \times d_\text{in}^{(P)}}$:
 
 \[
-W_P = U_P \Sigma_P V_P^\top
+W\_P = U\_P \Sigma\_P V\_P^\top
 \tag{4.1}
 \]
 
@@ -60,30 +60,30 @@ For $768 \times 768$, this is ~450M FLOPs, ~50 ms on CPU, ~5 ms on GPU.
 Given singular values $\sigma_1 \geq \sigma_2 \geq \dots$, define:
 
 \[
-s_i = \sigma_i^2, \quad \mathcal{E}(r) = \frac{\sum_{i=1}^{r} s_i}{\sum_{j=1}^{\min(d_\text{in}, d_\text{out})} s_j}
+s\_i = \sigma\_i^2, \quad \mathcal{E}(r) = \frac{\sum\_{i=1}^{r} s\_i}{\sum\_{j=1}^{\min(d\_\text{in}, d\_\text{out})} s\_j}
 \tag{4.2}
 \]
 
 The rank is:
 
 \[
-r_P = \min\{r : \mathcal{E}(r) \geq \tau\}
+r\_P = \min\{r : \mathcal{E}(r) \geq \tau\}
 \tag{4.3}
 \]
 
 \subsubsection{Implementation}
 
 \begin{lstlisting}
-def _compute_energy_rank(self, S, max_rank, min_rank=16):
-    s_squared = S ** 2
-    total_energy = s_squared.sum()
-    if total_energy <= 1e-12:
-        return max(1, min(min_rank, max_rank))
+def \_compute\_energy\_rank(self, S, max\_rank, min\_rank=16):
+    s\_squared = S ** 2
+    total\_energy = s\_squared.sum()
+    if total\_energy \textless{}= 1e-12:
+        return max(1, min(min\_rank, max\_rank))
     
-    cum_energy = torch.cumsum(s_squared, dim=0) / total_energy
-    idx = torch.where(cum_energy >= self.energy_threshold)[0]
-    r = int(idx[0].item()) + 1 if len(idx) > 0 else max_rank
-    return max(1, min(max(r, min_rank), max_rank))
+    cum\_energy = torch.cumsum(s\_squared, dim=0) / total\_energy
+    idx = torch.where(cum\_energy \textgreater{}= self.energy\_threshold)[0]
+    r = int(idx[0].item()) + 1 if len(idx) \textgreater{} 0 else max\_rank
+    return max(1, min(max(r, min\_rank), max\_rank))
 \end{lstlisting}
 
 \textbf{Complexity.} $\mathcal{O}(\min(d_\text{in}, d_\text{out}))$ via \texttt{cumsum}.
@@ -108,8 +108,8 @@ edge cases.
 Given $r_P$, set:
 
 \[
-U_{P, r} = U_{P, :, :r_P} \Sigma_{P, :r_P, :r_P}^{1/2}, \quad
-V_{P, r} = \Sigma_{P, :r_P, :r_P}^{1/2} V_{P, :r_P, :}^\top
+U\_{P, r} = U\_{P, :, :r\_P} \Sigma\_{P, :r\_P, :r\_P}^{1/2}, \quad
+V\_{P, r} = \Sigma\_{P, :r\_P, :r\_P}^{1/2} V\_{P, :r\_P, :}^\top
 \tag{4.4}
 \]
 
@@ -135,7 +135,7 @@ Three reasons:
 The compressed projection computes:
 
 \[
-\text{Proj}_P(x) = (x V_{P, r}^\top) U_{P, r}^\top + b_P
+\text{Proj}\_P(x) = (x V\_{P, r}^\top) U\_{P, r}^\top + b\_P
 \tag{4.5}
 \]
 
@@ -163,7 +163,7 @@ Adaptive SVD & $r_P (d_\text{in}^{(P)} + d_\text{out}^{(P)})$ \\
 The truncation residual is:
 
 \[
-\Delta W_P = W_P - U_{P, r} V_{P, r}
+\Delta W\_P = W\_P - U\_{P, r} V\_{P, r}
 \tag{4.6}
 \]
 
@@ -175,16 +175,16 @@ At $\tau = 0.92$, this is ~28\% of $\|W_P\|_F$.
 We approximate the residual with a rank-$r_L$ factor:
 
 \[
-\Delta W_P \approx B_P A_P, \quad
-A_P \in \mathbb{R}^{r_L \times d_\text{in}}, \quad
-B_P \in \mathbb{R}^{d_\text{out} \times r_L}
+\Delta W\_P \approx B\_P A\_P, \quad
+A\_P \in \mathbb{R}^{r\_L \times d\_\text{in}}, \quad
+B\_P \in \mathbb{R}^{d\_\text{out} \times r\_L}
 \tag{4.7}
 \]
 
 \subsubsection{Initialization}
 
 \[
-B_P = 0, \quad A_P \sim \mathcal{N}(0, 1/\sqrt{r_L})
+B\_P = 0, \quad A\_P \sim \mathcal{N}(0, 1/\sqrt{r\_L})
 \tag{4.8}
 \]
 
@@ -193,7 +193,7 @@ The zero initialization of $B_P$ ensures $\Delta W_P = B_P A_P = 0$ at step 0.
 \subsubsection{Full Forward Pass}
 
 \[
-\text{Proj}_P(x) = (x V_{P, r}^\top) U_{P, r}^\top + (x A_P^\top) B_P^\top + b_P
+\text{Proj}\_P(x) = (x V\_{P, r}^\top) U\_{P, r}^\top + (x A\_P^\top) B\_P^\top + b\_P
 \tag{4.9}
 \]
 
@@ -205,30 +205,30 @@ The zero initialization of $B_P$ ensures $\Delta W_P = B_P A_P = 0$ at step 0.
 \begin{lstlisting}
 Input:  pretrained attention A with projections P $\in$ {Q, K, V, O}
         energy threshold $\tau$ $\in$ (0, 1)
-        residual rank r_L
-        minimum rank r_min
+        residual rank r\_L
+        minimum rank r\_min
 Output: compressed attention A'
 
 1:  for P in {Q, K, V, O} do
-2:      W_P $\leftarrow$ weight(A.P)                              Extract
-3:      U_P,  _P, V_P^T $\leftarrow$ svd(W_P)                     Full SVD in FP32
-4:      s $\leftarrow$  _P^2
+2:      W\_P $\leftarrow$ weight(A.P)                              Extract
+3:      U\_P,  \_P, V\_P^T $\leftarrow$ svd(W\_P)                     Full SVD in FP32
+4:      s $\leftarrow$  \_P^2
 5:      E $\leftarrow$ cumsum(s) / sum(s)                        Cumulative energy
 6:      idx $\leftarrow$ first index where E $\ge$ $\tau$
-7:      r_P $\leftarrow$ max(idx + 1, r_min)                     Enforce min rank
+7:      r\_P $\leftarrow$ max(idx + 1, r\_min)                     Enforce min rank
 8:
-9:       _r^{1/2} $\leftarrow$ sqrt( _P[:r_P])
-10:     U_r $\leftarrow$ U_P[:, :r_P] @ diag( _r^{1/2})          Symmetric split
-11:     V_r $\leftarrow$ diag( _r^{1/2}) @ V_P^T[:r_P, :]
+9:       \_r^{1/2} $\leftarrow$ sqrt( \_P[:r\_P])
+10:     U\_r $\leftarrow$ U\_P[:, :r\_P] @ diag( \_r^{1/2})          Symmetric split
+11:     V\_r $\leftarrow$ diag( \_r^{1/2}) @ V\_P^T[:r\_P, :]
 12:
-13:     B_P $\leftarrow$ zeros(d_out, r_L)                       Zero init
-14:     A_P $\leftarrow$ kaiming_uniform(r_L, d_in)
+13:     B\_P $\leftarrow$ zeros(d\_out, r\_L)                       Zero init
+14:     A\_P $\leftarrow$ kaiming\_uniform(r\_L, d\_in)
 15:
-16:     replace A.P with AdaptiveSVDLinear(U_r, V_r, A_P, B_P)
+16:     replace A.P with AdaptiveSVDLinear(U\_r, V\_r, A\_P, B\_P)
 17: end for
 18:
-19: freeze(U_r, V_r) for all P                        Base frozen
-20: unfreeze(A_P, B_P) for all P                      Adapters trainable
+19: freeze(U\_r, V\_r) for all P                        Base frozen
+20: unfreeze(A\_P, B\_P) for all P                      Adapters trainable
 21:
 22: return A'
 \end{lstlisting}
@@ -299,7 +299,7 @@ Adaptive SVD + LoRA($r_L$) & $2 d (r_P + r_L)$ \\
 \textbf{Reduction factor (with adapter):}
 
 \[
-\frac{d^2}{2 d (r_P + r_L)} = \frac{d}{2(r_P + r_L)}
+\frac{d^2}{2 d (r\_P + r\_L)} = \frac{d}{2(r\_P + r\_L)}
 \tag{4.10}
 \]
 
@@ -326,7 +326,7 @@ Adaptive SVD (base) & 196,608 & 3.00$\times$ \\
 \textbf{Proposition.} With energy threshold $\tau$:
 
 \[
-\frac{\|W_P - U_{P, r} V_{P, r}\|_F}{\|W_P\|_F} = \sqrt{1 - \mathcal{E}(r_P)} \leq \sqrt{1 - \tau}
+\frac{\|W\_P - U\_{P, r} V\_{P, r}\|\_F}{\|W\_P\|\_F} = \sqrt{1 - \mathcal{E}(r\_P)} \leq \sqrt{1 - \tau}
 \tag{4.11}
 \]
 
@@ -347,7 +347,7 @@ At $\tau = 0.92$, the maximum relative error is $\sqrt{0.08} \approx 0.283$.
 \textbf{Proposition.} At initialization ($B_P = 0$):
 
 \[
-\text{Proj}_P(x) = (x V_{P, r}^\top) U_{P, r}^\top + b_P = W_{P, r_P} x + b_P
+\text{Proj}\_P(x) = (x V\_{P, r}^\top) U\_{P, r}^\top + b\_P = W\_{P, r\_P} x + b\_P
 \tag{4.12}
 \]
 
@@ -362,7 +362,7 @@ not the pretrained model (unless $r_P = \text{rank}(W_P)$).
 The parameter ratio per projection is:
 
 \[
-\rho_P = \frac{2 r_P d}{d^2} = \frac{2 r_P}{d} \quad \text{(for square } d \times d\text{)}
+\rho\_P = \frac{2 r\_P d}{d^2} = \frac{2 r\_P}{d} \quad \text{(for square } d \times d\text{)}
 \tag{4.13}
 \]
 

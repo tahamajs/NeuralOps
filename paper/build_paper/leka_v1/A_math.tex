@@ -5,14 +5,14 @@
 Starting from softmax attention:
 
 \[
-A_i = \frac{\sum_j \kappa(q_i, k_j) v_j}{\sum_j \kappa(q_i, k_j)}
+A\_i = \frac{\sum\_j \kappa(q\_i, k\_j) v\_j}{\sum\_j \kappa(q\_i, k\_j)}
 \tag{A.1}
 \]
 
 If $\kappa(q, k) = \phi(q)^\top \phi(k)$:
 
 \[
-A_i = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+A\_i = \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \tag{A.2}
 \]
 
@@ -37,21 +37,21 @@ For the Gaussian kernel:
 \subsection{A.3 RFF Estimator}
 
 \[
-\kappa(x - y) = \mathbb{E}_\omega[\cos(\omega^\top (x - y))] = \mathbb{E}_\omega[\cos(\omega^\top x) \cos(\omega^\top y) + \sin(\omega^\top x) \sin(\omega^\top y)]
+\kappa(x - y) = \mathbb{E}\_\omega[\cos(\omega^\top (x - y))] = \mathbb{E}\_\omega[\cos(\omega^\top x) \cos(\omega^\top y) + \sin(\omega^\top x) \sin(\omega^\top y)]
 \tag{A.5}
 \]
 
 Sampling $F$ frequencies $\omega_1, \dots, \omega_F$:
 
 \[
-\hat{\kappa}(x - y) = \frac{1}{F} \sum_i [\cos(\omega_i^\top x) \cos(\omega_i^\top y) + \sin(\omega_i^\top x) \sin(\omega_i^\top y)]
+\hat{\kappa}(x - y) = \frac{1}{F} \sum\_i [\cos(\omega\_i^\top x) \cos(\omega\_i^\top y) + \sin(\omega\_i^\top x) \sin(\omega\_i^\top y)]
 \tag{A.6}
 \]
 
 Define:
 
 \[
-\phi(x) = \frac{1}{\sqrt{F}} [\cos(\omega_1^\top x), \dots, \cos(\omega_F^\top x), \sin(\omega_1^\top x), \dots, \sin(\omega_F^\top x)]
+\phi(x) = \frac{1}{\sqrt{F}} [\cos(\omega\_1^\top x), \dots, \cos(\omega\_F^\top x), \sin(\omega\_1^\top x), \dots, \sin(\omega\_F^\top x)]
 \tag{A.7}
 \]
 
@@ -78,7 +78,7 @@ For orthogonalized sampling:
 For decoders, we need cumulative sums:
 
 \[
-\text{KV}_i = \sum_{j \leq i} \phi(k_j) v_j^\top
+\text{KV}\_i = \sum\_{j \leq i} \phi(k\_j) v\_j^\top
 \tag{A.10}
 \]
 

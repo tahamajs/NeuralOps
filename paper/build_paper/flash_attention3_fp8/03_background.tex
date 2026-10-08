@@ -17,8 +17,8 @@ Memory for $QK^\top$ is $\mathcal{O}(BL^2)$ -- the target of reduction.
 GQA uses $H_{kv} < H$ to reduce KV-cache size:
 
 \[
-K, V \in \mathbb{R}^{B \times L \times H_{kv} d}, \qquad
-H_{\text{repeat}} = H / H_{kv}
+K, V \in \mathbb{R}^{B \times L \times H\_{kv} d}, \qquad
+H\_{\text{repeat}} = H / H\_{kv}
 \tag{3.2}
 \]
 
@@ -30,7 +30,7 @@ FlashAttention partitions $Q, K, V$ into blocks that fit in SRAM ($\sim$ 100 KB
 on A100, $\sim$ 200 KB on H100). The inner loop:
 
 \[
-O_{ij} \leftarrow \text{softmax}(Q_i K_j^\top / \sqrt{d}) V_j
+O\_{ij} \leftarrow \text{softmax}(Q\_i K\_j^\top / \sqrt{d}) V\_j
 \tag{3.3}
 \]
 

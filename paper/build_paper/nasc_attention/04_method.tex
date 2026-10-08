@@ -6,7 +6,7 @@
 NASC has two paths, chosen by the flag \texttt{use\_dense}:
 
 \begin{lstlisting}
-use_dense = is_cross or (not self.is_decoder and not self.enable_cascade_on_encoders)
+use\_dense = is\_cross or (not self.is\_decoder and not self.enable\_cascade\_on\_encoders)
 \end{lstlisting}
 
 \begin{itemize}
@@ -40,7 +40,7 @@ The cascade path combines three branches:
     +---------+----------+---------+      |
               |                            |
                                             
-        g  O_loc + g$_1$ O_sp + g$_2$ O_glb
+        g  O\_loc + g$_1$ O\_sp + g$_2$ O\_glb
               |
                
         Output Y
@@ -51,14 +51,14 @@ The cascade path combines three branches:
 Standard scaled dot-product attention with window mask:
 
 \[
-\text{scores}_{ij} = \frac{q_i^\top k_j}{\sqrt{d}}
+\text{scores}\_{ij} = \frac{q\_i^\top k\_j}{\sqrt{d}}
 \tag{4.1}
 \]
 
 Mask:
 
 \[
-M_{ij} = \begin{cases} 1 & |i - j| \leq W \text{ and } j \leq i \text{ (if causal)} \\ 0 & \text{otherwise} \end{cases}
+M\_{ij} = \begin{cases} 1 & |i - j| \leq W \text{ and } j \leq i \text{ (if causal)} \\ 0 & \text{otherwise} \end{cases}
 \tag{4.2}
 \]
 
@@ -71,15 +71,15 @@ Standard softmax attention within the window.
 Partition into $n_b = \lceil L / B_s \rceil$ blocks. Compute mean Q and K:
 
 \[
-\bar{q}_i = \text{mean}(Q_{\text{block } i}), \quad
-\bar{k}_j = \text{mean}(K_{\text{block } j})
+\bar{q}\_i = \text{mean}(Q\_{\text{block } i}), \quad
+\bar{k}\_j = \text{mean}(K\_{\text{block } j})
 \tag{4.3}
 \]
 
 Block scores:
 
 \[
-s_{ij} = \frac{\bar{q}_i^\top \bar{k}_j}{\sqrt{d}}
+s\_{ij} = \frac{\bar{q}\_i^\top \bar{k}\_j}{\sqrt{d}}
 \tag{4.4}
 \]
 
@@ -88,7 +88,7 @@ s_{ij} = \frac{\bar{q}_i^\top \bar{k}_j}{\sqrt{d}}
 For each query block $i$, select top-$k$ key blocks:
 
 \[
-\mathcal{B}_i = \text{topk}_{k}(\{s_{ij}\}_j)
+\mathcal{B}\_i = \text{topk}\_{k}(\{s\_{ij}\}\_j)
 \tag{4.5}
 \]
 
@@ -102,7 +102,7 @@ selected (an attention sink).
 Concatenate the selected blocks' K, V, compute softpick attention:
 
 \[
-O_{\text{sp}, i} = \text{softpick}(Q_i K_{\mathcal{B}_i}^\top / \sqrt{d}) V_{\mathcal{B}_i}
+O\_{\text{sp}, i} = \text{softpick}(Q\_i K\_{\mathcal{B}\_i}^\top / \sqrt{d}) V\_{\mathcal{B}\_i}
 \tag{4.6}
 \]
 
@@ -124,12 +124,12 @@ where $\Omega \in \mathbb{R}^{d \times F}$ is orthogonally initialized.
 \subsubsection{Non-Causal Path}
 
 \[
-KV = \phi(K)^\top V, \quad Z = \sum_j \phi(K_j)
+KV = \phi(K)^\top V, \quad Z = \sum\_j \phi(K\_j)
 \tag{4.8}
 \]
 
 \[
-O_{\text{glb}, i} = \frac{\phi(q_i)^\top KV}{\phi(q_i)^\top Z}
+O\_{\text{glb}, i} = \frac{\phi(q\_i)^\top KV}{\phi(q\_i)^\top Z}
 \tag{4.9}
 \]
 
@@ -138,19 +138,19 @@ O_{\text{glb}, i} = \frac{\phi(q_i)^\top KV}{\phi(q_i)^\top Z}
 For causal decoders:
 
 \[
-KV_c = \text{cumsum}(\phi(K) \otimes V) \in \mathbb{R}^{B \times H \times L \times 2F \times d}
+KV\_c = \text{cumsum}(\phi(K) \otimes V) \in \mathbb{R}^{B \times H \times L \times 2F \times d}
 \tag{4.10}
 \]
 
 \[
-Z_c = \text{cumsum}(\phi(K))
+Z\_c = \text{cumsum}(\phi(K))
 \tag{4.11}
 \]
 
 Then per-token:
 
 \[
-O_{\text{glb}, i} = \frac{\phi(q_i)^\top KV_{c,i}}{\phi(q_i)^\top Z_{c,i} + \epsilon}
+O\_{\text{glb}, i} = \frac{\phi(q\_i)^\top KV\_{c,i}}{\phi(q\_i)^\top Z\_{c,i} + \epsilon}
 \tag{4.12}
 \]
 
@@ -166,12 +166,12 @@ materialize this, causing OOM on RTX 4070.
 Per-batch gate:
 
 \[
-\bar{x}_b = \frac{1}{L} \sum_t x_{b,t}
+\bar{x}\_b = \frac{1}{L} \sum\_t x\_{b,t}
 \tag{4.13}
 \]
 
 \[
-g = \text{softmax}(W_g \bar{x}_b) \in \mathbb{R}^3
+g = \text{softmax}(W\_g \bar{x}\_b) \in \mathbb{R}^3
 \tag{4.14}
 \]
 
@@ -182,7 +182,7 @@ where $W_g \in \mathbb{R}^{3 \times d}$.
 \subsection{Fusion}
 
 \[
-O = g_0 \cdot O_{\text{loc}} + g_1 \cdot O_{\text{sp}} + g_2 \cdot O_{\text{glb}}
+O = g\_0 \cdot O\_{\text{loc}} + g\_1 \cdot O\_{\text{sp}} + g\_2 \cdot O\_{\text{glb}}
 \tag{4.15}
 \]
 
@@ -229,27 +229,27 @@ Gate & $O(L d)$ & $O(d)$ \\
 
 \textbf{Algorithm 1:} NASC forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, is_decoder, is_cross, W, B_s, k, F
+Input:  X $\in$ R^{B$\times$L$\times$d}, is\_decoder, is\_cross, W, B\_s, k, F
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
- 1: Q $\leftarrow$ X W_Q; K $\leftarrow$ X W_K; V $\leftarrow$ X W_V
+ 1: Q $\leftarrow$ X W\_Q; K $\leftarrow$ X W\_K; V $\leftarrow$ X W\_V
  2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
- 3: if GQA: (K, V) $\leftarrow$ repeat_kv(K, V)
+ 3: if GQA: (K, V) $\leftarrow$ repeat\_kv(K, V)
  4:
- 5: if is_cross or (not is_decoder and not enable_cascade):
+ 5: if is\_cross or (not is\_decoder and not enable\_cascade):
  6:     # Dense path
  7:     O $\leftarrow$ softmax(Q K^T / sqrt(d)) V
  8: else:
  9:     # Cascade path
-10:     g $\leftarrow$ softmax(W_g   mean(X, dim=1))     per-batch gate
-11:     O_loc $\leftarrow$ local_window_attention(Q, K, V, W)
-12:     O_sp $\leftarrow$ sparse_block_attention(Q, K, V, B_s, k)
-13:     O_glb $\leftarrow$ spectral_rff_attention(Q, K, V, F)
-14:     O $\leftarrow$ g[0] O_loc + g[1] O_sp + g[2] O_glb
+10:     g $\leftarrow$ softmax(W\_g   mean(X, dim=1))     per-batch gate
+11:     O\_loc $\leftarrow$ local\_window\_attention(Q, K, V, W)
+12:     O\_sp $\leftarrow$ sparse\_block\_attention(Q, K, V, B\_s, k)
+13:     O\_glb $\leftarrow$ spectral\_rff\_attention(Q, K, V, F)
+14:     O $\leftarrow$ g[0] O\_loc + g[1] O\_sp + g[2] O\_glb
 15:
-16: if head_mask: apply
-17: if is_nested_encoder: return O
-18: else: return out_proj(O)
+16: if head\_mask: apply
+17: if is\_nested\_encoder: return O
+18: else: return out\_proj(O)
 \end{lstlisting}
 \begin{lstlisting}
 

@@ -12,25 +12,25 @@ non-DeepSeek architectures.
 
 \begin{lstlisting}
    +----------------------------------------------+
-   |  Input hidden h_t $\in$ R^d                      |
+   |  Input hidden h\_t $\in$ R^d                      |
    +--------------------+-------------------------+
                         |
         +---------------+---------------+
         |                               |
                                          
    +----------+                    +----------+
-   |  Q proj  |                    |  kv_down |  $\leftarrow$ latent down-projection
+   |  Q proj  |                    |  kv\_down |  $\leftarrow$ latent down-projection
    |  W^Q     |                    |  W^DKV   |
    +----+-----+                    +----+-----+
         |                               |
         |                                
-        |                          c_t $\in$ R^c
+        |                          c\_t $\in$ R^c
         |                               |
         |                    +----------+----------+
         |                    |                     |
         |                                           
         |              +----------+          +----------+
-        |              |  k_up    |          |  v_up    |
+        |              |  k\_up    |          |  v\_up    |
         |              |  W^UK    |          |  W^UV    |
         |              +----+-----+          +----+-----+
         |                   |                     |
@@ -41,7 +41,7 @@ non-DeepSeek architectures.
                     |
                      
               +----------+
-              |  out_proj|
+              |  out\_proj|
               |  W^O     |
               +----+-----+
                    |
@@ -55,10 +55,10 @@ Given hidden states $h \in \mathbb{R}^{B \times L \times d}$:
 
 \[
 \begin{aligned}
-q &= W^Q h \in \mathbb{R}^{B \times L \times H d_h} \\
+q &= W^Q h \in \mathbb{R}^{B \times L \times H d\_h} \\
 c &= W^{DKV} h \in \mathbb{R}^{B \times L \times c} \\
-k &= W^{UK} c \in \mathbb{R}^{B \times L \times H_{kv} d_h} \\
-v &= W^{UV} c \in \mathbb{R}^{B \times L \times H_{kv} d_h}
+k &= W^{UK} c \in \mathbb{R}^{B \times L \times H\_{kv} d\_h} \\
+v &= W^{UV} c \in \mathbb{R}^{B \times L \times H\_{kv} d\_h}
 \end{aligned}
 \tag{4.1}
 \]
@@ -76,14 +76,14 @@ $W^{DKV}, W^{UK}, W^{UV}$ from the concatenated pretrained $W^K, W^V$.
 Given pretrained $W^K, W^V \in \mathbb{R}^{H_{kv} d_h \times d}$:
 
 \[
-W_\text{fused} = \begin{pmatrix} W^K \\ W^V \end{pmatrix} \in \mathbb{R}^{2 H_{kv} d_h \times d}
+W\_\text{fused} = \begin{pmatrix} W^K \\ W^V \end{pmatrix} \in \mathbb{R}^{2 H\_{kv} d\_h \times d}
 \tag{4.2}
 \]
 
 \subsubsection{Truncated SVD}
 
 \[
-W_\text{fused} \approx U \Sigma V^\top
+W\_\text{fused} \approx U \Sigma V^\top
 \tag{4.3}
 \]
 
@@ -94,8 +94,8 @@ $V^\top \in \mathbb{R}^{r \times d}$, and $r = \min(c, 2 H_{kv} d_h, d)$.
 
 \[
 W^{DKV} = V^\top, \qquad
-W^{UK} = U_{:H_{kv} d_h, :} \Sigma, \qquad
-W^{UV} = U_{H_{kv} d_h:, :} \Sigma
+W^{UK} = U\_{:H\_{kv} d\_h, :} \Sigma, \qquad
+W^{UV} = U\_{H\_{kv} d\_h:, :} \Sigma
 \tag{4.4}
 \]
 
@@ -104,23 +104,23 @@ W^{UV} = U_{H_{kv} d_h:, :} \Sigma
 To preserve the total reconstruction scale, we compute:
 
 \[
-\gamma = \frac{\|W_\text{fused}\|_F}{\|\Sigma\|_F}
+\gamma = \frac{\|W\_\text{fused}\|\_F}{\|\Sigma\|\_F}
 \tag{4.5}
 \]
 
 and multiply both up-projections by $\gamma$:
 
 \[
-W^{UK} \leftarrow \gamma \cdot U_{:H_{kv} d_h, :} \Sigma, \qquad
-W^{UV} \leftarrow \gamma \cdot U_{H_{kv} d_h:, :} \Sigma
+W^{UK} \leftarrow \gamma \cdot U\_{:H\_{kv} d\_h, :} \Sigma, \qquad
+W^{UV} \leftarrow \gamma \cdot U\_{H\_{kv} d\_h:, :} \Sigma
 \tag{4.6}
 \]
 
 This ensures:
 
 \[
-\|W^{UK} W^{DKV}\|_F \approx \|W^K\|_F, \qquad
-\|W^{UV} W^{DKV}\|_F \approx \|W^V\|_F
+\|W^{UK} W^{DKV}\|\_F \approx \|W^K\|\_F, \qquad
+\|W^{UV} W^{DKV}\|\_F \approx \|W^V\|\_F
 \tag{4.7}
 \]
 
@@ -151,25 +151,25 @@ $W^Q$ and $W^O$ are copied directly (with LoRA adapters frozen at
 initialization):
 
 \begin{lstlisting}
-self.q_proj.weight.data[:q_dim, :hidden].copy_(w_q[:q_dim, :hidden])
-self.out_proj.weight.data[:hidden, :q_dim].copy_(w_o[:hidden, :q_dim])
+self.q\_proj.weight.data[:q\_dim, :hidden].copy\_(w\_q[:q\_dim, :hidden])
+self.out\_proj.weight.data[:hidden, :q\_dim].copy\_(w\_o[:hidden, :q\_dim])
 \end{lstlisting}
 
 \subsubsection{K/V Concatenation and SVD}
 
 \begin{lstlisting}
-w_kv = torch.cat([w_k_f[:kv_dim, :hidden], w_v_f[:kv_dim, :hidden]], dim=0)
-u_kv, s_kv, vh_kv = torch.linalg.svd(w_kv, full_matrices=False)
-r = min(self.rank, s_kv.shape[0], kv_down.weight.shape[0], ...)
+w\_kv = torch.cat([w\_k\_f[:kv\_dim, :hidden], w\_v\_f[:kv\_dim, :hidden]], dim=0)
+u\_kv, s\_kv, vh\_kv = torch.linalg.svd(w\_kv, full\_matrices=False)
+r = min(self.rank, s\_kv.shape[0], kv\_down.weight.shape[0], ...)
 
-orig_norm = torch.linalg.norm(w_kv)
-approx_norm = torch.linalg.norm(s_kv[:r])
-norm_scale = orig_norm / max(approx_norm, 1e-12)
+orig\_norm = torch.linalg.norm(w\_kv)
+approx\_norm = torch.linalg.norm(s\_kv[:r])
+norm\_scale = orig\_norm / max(approx\_norm, 1e-12)
 
-self.kv_down.weight.data[:r, :].copy_(vh_kv[:r, :])
-up = (u_kv[:, :r] * s_kv[:r].unsqueeze(0)) * norm_scale
-self.k_up.weight.data[:kv_dim, :r].copy_(up[:kv_dim, :r])
-self.v_up.weight.data[:kv_dim, :r].copy_(up[kv_dim:, :r])
+self.kv\_down.weight.data[:r, :].copy\_(vh\_kv[:r, :])
+up = (u\_kv[:, :r] * s\_kv[:r].unsqueeze(0)) * norm\_scale
+self.k\_up.weight.data[:kv\_dim, :r].copy\_(up[:kv\_dim, :r])
+self.v\_up.weight.data[:kv\_dim, :r].copy\_(up[kv\_dim:, :r])
 \end{lstlisting}
 
 \subsubsection{GQA Dimension Matching}
@@ -178,9 +178,9 @@ When $H_{kv} < H$ in the pretrained model, K and V have larger output
 dimension. We mean-pool before SVD:
 
 \begin{lstlisting}
-if w_k_f.shape[0] > self.kv_dim:
-    rep = w_k_f.shape[0] // self.kv_dim
-    w_k_f = w_k_f.view(self.kv_dim, rep, -1).mean(dim=1)
+if w\_k\_f.shape[0] \textgreater{} self.kv\_dim:
+    rep = w\_k\_f.shape[0] // self.kv\_dim
+    w\_k\_f = w\_k\_f.view(self.kv\_dim, rep, -1).mean(dim=1)
 \end{lstlisting}
 
 \subsubsection{GPT-2 Conv1D}
@@ -188,8 +188,8 @@ if w_k_f.shape[0] > self.kv_dim:
 Handled by transposing before SVD:
 
 \begin{lstlisting}
-if hasattr(src, "c_attn"):
-    if weight.shape[1] == 3 * self.hidden_size:
+if hasattr(src, "c\_attn"):
+    if weight.shape[1] == 3 * self.hidden\_size:
         weight = weight.t()
 \end{lstlisting}
 
@@ -202,10 +202,10 @@ When initialization is nested but $W^O$ is not extracted, we set
 \texttt{out\_proj} to an identity matrix:
 
 \begin{lstlisting}
-if self.is_nested_encoder:
-    min_d = min(self.out_proj.weight.shape[0], self.out_proj.weight.shape[1])
-    self.out_proj.weight.data.zero_()
-    self.out_proj.weight.data[:min_d, :min_d].fill_diagonal_(1.0)
+if self.is\_nested\_encoder:
+    min\_d = min(self.out\_proj.weight.shape[0], self.out\_proj.weight.shape[1])
+    self.out\_proj.weight.data.zero\_()
+    self.out\_proj.weight.data[:min\_d, :min\_d].fill\_diagonal\_(1.0)
 \end{lstlisting}
 
 \subsection{Output Scale Calibration}
@@ -213,7 +213,7 @@ if self.is_nested_encoder:
 We introduce a trainable scalar \texttt{output\_scale} initialized to 1.0:
 
 \begin{lstlisting}
-self.output_scale = nn.Parameter(torch.ones(1))
+self.output\_scale = nn.Parameter(torch.ones(1))
 \end{lstlisting}
 
 The forward pass multiplies the output by this scalar. This is \textbf{not} in 
@@ -225,8 +225,8 @@ K/V factorization.
 We attach LoRA adapters to the Q and O projections:
 
 \begin{lstlisting}
-self.q_proj = LoRALinear(..., lora_rank=16, ...)
-self.out_proj = LoRALinear(..., lora_rank=16, ...)
+self.q\_proj = LoRALinear(..., lora\_rank=16, ...)
+self.out\_proj = LoRALinear(..., lora\_rank=16, ...)
 \end{lstlisting}
 
 Only LoRA parameters (and \texttt{output\_scale}) are trainable. Base weights 
@@ -240,26 +240,26 @@ Input:  pretrained attention module src
         latent dimension c
 Output: MLA module with initialized weights
 
-1:  Extract W_Q, W_K, W_V, W_O from src
+1:  Extract W\_Q, W\_K, W\_V, W\_O from src
 2:  Orient to (out, in) form
 3:  Handle Conv1D transposition
 4:  GQA dimension match for K, V:
-5:      if W_K.shape[0] > H_kv * d_h: mean-pool
+5:      if W\_K.shape[0] \textgreater{} H\_kv * d\_h: mean-pool
 6:
 7:  # Q and O direct copy
-8:  q_proj.weight[:q_dim, :hidden] $\leftarrow$ W_Q
-9:  out_proj.weight[:hidden, :q_dim] $\leftarrow$ W_O
+8:  q\_proj.weight[:q\_dim, :hidden] $\leftarrow$ W\_Q
+9:  out\_proj.weight[:hidden, :q\_dim] $\leftarrow$ W\_O
 10:
 11: # K, V concatenate and SVD
-12: W_fused $\leftarrow$ concat([W_K, W_V], dim=0)
-13: U, $\Sigma$, V^T $\leftarrow$ svd(W_fused)
+12: W\_fused $\leftarrow$ concat([W\_K, W\_V], dim=0)
+13: U, $\Sigma$, V^T $\leftarrow$ svd(W\_fused)
 14: r $\leftarrow$ min(c, len($\Sigma$), ...)
-15: $\gamma$ $\leftarrow$  W_fused _F /  $\Sigma$[:r] _F
+15: $\gamma$ $\leftarrow$  W\_fused \_F /  $\Sigma$[:r] \_F
 16:
-17: kv_down.weight[:r, :] $\leftarrow$ V^T[:r, :]
+17: kv\_down.weight[:r, :] $\leftarrow$ V^T[:r, :]
 18: up $\leftarrow$ U[:, :r]   $\Sigma$[:r]   $\gamma$
-19: k_up.weight[:kv_dim, :r] $\leftarrow$ up[:kv_dim, :r]
-20: v_up.weight[:kv_dim, :r] $\leftarrow$ up[kv_dim:, :r]
+19: k\_up.weight[:kv\_dim, :r] $\leftarrow$ up[:kv\_dim, :r]
+20: v\_up.weight[:kv\_dim, :r] $\leftarrow$ up[kv\_dim:, :r]
 21:
 22: Freeze all base weights
 23: Initialize LoRA A/B (B = 0)

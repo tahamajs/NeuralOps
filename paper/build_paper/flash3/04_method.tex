@@ -26,7 +26,7 @@ provides three execution paths:
                     
     +----------------------------------+
     |  Apply RoPE (if applicable)       |
-    |  Apply GQA repeat_kv (if needed)  |
+    |  Apply GQA repeat\_kv (if needed)  |
     +--------------+-------------------+
                    |
                     
@@ -36,14 +36,14 @@ provides three execution paths:
            | Yes             | No
                               
     +-------------+   +-----------------+
-    | flash_attn  |   | SDPA fallback   |
-    | _func call  |   | (F.scaled_...)  |
+    | flash\_attn  |   | SDPA fallback   |
+    | \_func call  |   | (F.scaled\_...)  |
     +------+------+   +--------+--------+
            |                   |
            +---------+---------+
                       
               +-------------+
-              | out_proj    |
+              | out\_proj    |
               | (frozen+LoRA)|
               +------+------+
                      |
@@ -69,7 +69,7 @@ Frobenius norms verified $\geq 10^{-4}$.
 Each projection becomes a \texttt{LoRALinear}:
 
 \[
-\text{Proj}_P(X) = X W_P^\top + \frac{\alpha}{r_L} (X A_P^\top) B_P^\top + b_P
+\text{Proj}\_P(X) = X W\_P^\top + \frac{\alpha}{r\_L} (X A\_P^\top) B\_P^\top + b\_P
 \tag{4.1}
 \]
 
@@ -92,15 +92,15 @@ Q, K \leftarrow \text{RoPE}(Q, K, \text{cos}, \text{sin})
 \tag{4.2}
 \]
 
-Supports partial RoPE (rotary\_dim < head\_dim) via coordinate slicing.
+Supports partial RoPE (rotary\_dim \textless{} head\_dim) via coordinate slicing.
 
 \subsubsection{GQA}
 
 If $H_{kv} < H$:
 
 \[
-K \leftarrow \text{repeat\_kv}(K, H/H_{kv}), \quad
-V \leftarrow \text{repeat\_kv}(V, H/H_{kv})
+K \leftarrow \text{repeat\_kv}(K, H/H\_{kv}), \quad
+V \leftarrow \text{repeat\_kv}(V, H/H\_{kv})
 \tag{4.3}
 \]
 
@@ -111,16 +111,16 @@ V \leftarrow \text{repeat\_kv}(V, H/H_{kv})
 If \texttt{FLASH\_ATTN\_AVAILABLE} and \texttt{hidden\_states.is\_cuda}:
 
 \begin{lstlisting}
-q_fa = q.transpose(1, 2).contiguous()  # (B, L, H, d_h)
-k_fa = k.transpose(1, 2).contiguous()
-v_fa = v.transpose(1, 2).contiguous()
+q\_fa = q.transpose(1, 2).contiguous()  # (B, L, H, d\_h)
+k\_fa = k.transpose(1, 2).contiguous()
+v\_fa = v.transpose(1, 2).contiguous()
 
-if use_fp8 and hasattr(torch, "float8_e4m3fn"):
-    q_fa = q_fa.to(torch.float8_e4m3fn)
-    k_fa = k_fa.to(torch.float8_e4m3fn)
-    v_fa = v_fa.to(torch.float8_e4m3fn)
+if use\_fp8 and hasattr(torch, "float8\_e4m3fn"):
+    q\_fa = q\_fa.to(torch.float8\_e4m3fn)
+    k\_fa = k\_fa.to(torch.float8\_e4m3fn)
+    v\_fa = v\_fa.to(torch.float8\_e4m3fn)
 
-out = flash_attn_func(q_fa, k_fa, v_fa, causal=causal_flag).to(dtype)
+out = flash\_attn\_func(q\_fa, k\_fa, v\_fa, causal=causal\_flag).to(dtype)
 \end{lstlisting}
 
 \textbf{FP8.} If \texttt{use\_fp8=True} and Hopper, casts Q/K/V to FP8.
@@ -130,10 +130,10 @@ out = flash_attn_func(q_fa, k_fa, v_fa, causal=causal_flag).to(dtype)
 If FlashAttention-3 fails or is unavailable:
 
 \begin{lstlisting}
-if causal_flag and attn_mask is None:
-    out_sdpa = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+if causal\_flag and attn\_mask is None:
+    out\_sdpa = F.scaled\_dot\_product\_attention(q, k, v, is\_causal=True)
 else:
-    out_sdpa = F.scaled_dot_product_attention(q, k, v, attn_mask=attn_mask)
+    out\_sdpa = F.scaled\_dot\_product\_attention(q, k, v, attn\_mask=attn\_mask)
 \end{lstlisting}
 
 \textbf{Advantage.} SDPA is always available on PyTorch 2.0+ with CUDA.
@@ -141,7 +141,7 @@ else:
 \subsection{Phase 5: Output Projection}
 
 \[
-Y = \text{Attn}(Q, K, V) W_O^\top + b_O
+Y = \text{Attn}(Q, K, V) W\_O^\top + b\_O
 \tag{4.4}
 \]
 
@@ -152,35 +152,35 @@ Y = \text{Attn}(Q, K, V) W_O^\top + b_O
 
 \textbf{Algorithm 1:} FlashAttention-3 wrapper forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, position\_embeddings
 Output: Y, None
 
-1:  Q $\leftarrow$ LoRALinear_Q(X)
-2:  K $\leftarrow$ LoRALinear_K(X)
-3:  V $\leftarrow$ LoRALinear_V(X)
+1:  Q $\leftarrow$ LoRALinear\_Q(X)
+2:  K $\leftarrow$ LoRALinear\_K(X)
+3:  V $\leftarrow$ LoRALinear\_V(X)
 4:
-5:  if RoPE: (Q, K) $\leftarrow$ apply_rope(Q, K, cos, sin)
-6:  if GQA: K, V $\leftarrow$ repeat_kv(K, V, H/H_kv)
+5:  if RoPE: (Q, K) $\leftarrow$ apply\_rope(Q, K, cos, sin)
+6:  if GQA: K, V $\leftarrow$ repeat\_kv(K, V, H/H\_kv)
 7:
-8:  causal_flag $\leftarrow$ is_decoder AND not cross_attention AND L == kv_len
+8:  causal\_flag $\leftarrow$ is\_decoder AND not cross\_attention AND L == kv\_len
 9:
-10: if FA3_AVAILABLE and is_cuda:
+10: if FA3\_AVAILABLE and is\_cuda:
 11:     try:
-12:         if use_fp8 and fp8_supported:
-13:             Q, K, V $\leftarrow$ cast_to_fp8(Q, K, V)
-14:         Y_ctx $\leftarrow$ flash_attn_func(Q, K, V, causal=causal_flag)
+12:         if use\_fp8 and fp8\_supported:
+13:             Q, K, V $\leftarrow$ cast\_to\_fp8(Q, K, V)
+14:         Y\_ctx $\leftarrow$ flash\_attn\_func(Q, K, V, causal=causal\_flag)
 15:     except:
-16:         Y_ctx $\leftarrow$ None
+16:         Y\_ctx $\leftarrow$ None
 17: else:
-18:     Y_ctx $\leftarrow$ None
+18:     Y\_ctx $\leftarrow$ None
 19:
-20: if Y_ctx is None:                                  Fallback
-21:     attn_mask $\leftarrow$ build_mask(attention_mask, causal_flag)
-22:     Y_ctx $\leftarrow$ SDPA(Q, K, V, attn_mask)
+20: if Y\_ctx is None:                                  Fallback
+21:     attn\_mask $\leftarrow$ build\_mask(attention\_mask, causal\_flag)
+22:     Y\_ctx $\leftarrow$ SDPA(Q, K, V, attn\_mask)
 23:
-24: Y_ctx $\leftarrow$ Y_ctx.reshape(B, L, H d_h)
-25: if nested: Y $\leftarrow$ Y_ctx
-26: else: Y $\leftarrow$ LoRALinear_O(Y_ctx)
+24: Y\_ctx $\leftarrow$ Y\_ctx.reshape(B, L, H d\_h)
+25: if nested: Y $\leftarrow$ Y\_ctx
+26: else: Y $\leftarrow$ LoRALinear\_O(Y\_ctx)
 27:
 28: return Y
 \end{lstlisting}
@@ -235,7 +235,7 @@ floating-point precision.
 equivalent to standard softmax:
 
 \[
-\text{softmax}(s)_i = \frac{e^{s_i}}{\sum_j e^{s_j}} = \frac{e^{s_i - m}}{\sum_j e^{s_j - m}}
+\text{softmax}(s)\_i = \frac{e^{s\_i}}{\sum\_j e^{s\_j}} = \frac{e^{s\_i - m}}{\sum\_j e^{s\_j - m}}
 \tag{4.5}
 \]
 

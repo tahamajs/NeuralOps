@@ -71,7 +71,7 @@ Precision & FP16 \\
 \end{itemize}
 \subsection{Quality Gate}
 
-PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL < 50.92\%.
+PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL \textless{} 50.92\%.
 
 \subsection{Hardware}
 
@@ -80,11 +80,11 @@ RTX 4070 Laptop, CUDA 12.1, PyTorch 2.4.0.
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_cluster.py \
+python run\_all\_4\_cluster.py \
     --models distilbert,roberta,gpt2 \
-    --num_clusters 16 \
-    --window_size 32 \
-    --recovery_steps 50
+    --num\_clusters 16 \
+    --window\_size 32 \
+    --recovery\_steps 50
 \end{lstlisting}
 \begin{lstlisting}
 

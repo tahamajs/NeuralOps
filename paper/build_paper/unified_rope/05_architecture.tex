@@ -27,18 +27,18 @@ For Qwen, RoPE is native -- UnifiedRoPE simply preserves it.
 
 \begin{lstlisting}
 distilbert.transformer.layer.0.attention
-+-- q_lin  (Linear 768 $\to$ 768)
-+-- k_lin  (Linear 768 $\to$ 768)
-+-- v_lin  (Linear 768 $\to$ 768)
-+-- out_lin (Linear 768 $\to$ 768)
++-- q\_lin  (Linear 768 $\to$ 768)
++-- k\_lin  (Linear 768 $\to$ 768)
++-- v\_lin  (Linear 768 $\to$ 768)
++-- out\_lin (Linear 768 $\to$ 768)
 \end{lstlisting}
 
 \textbf{Weight extraction:}
 \begin{lstlisting}
-w_q = src.q_lin.weight.detach()
-w_k = src.k_lin.weight.detach()
-w_v = src.v_lin.weight.detach()
-w_o = src.out_lin.weight.detach()
+w\_q = src.q\_lin.weight.detach()
+w\_k = src.k\_lin.weight.detach()
+w\_v = src.v\_lin.weight.detach()
+w\_o = src.out\_lin.weight.detach()
 \end{lstlisting}
 
 \texttt{is\_nested\_encoder = False}.
@@ -59,10 +59,10 @@ roberta.encoder.layer.0.attention
 
 \textbf{Nested detection:}
 \begin{lstlisting}
-if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
-    self.is_nested_encoder = True
-    src = old_attn.self
-    w_o = old_attn.output.dense.weight
+if hasattr(old\_attn, "self") and hasattr(old\_attn, "output"):
+    self.is\_nested\_encoder = True
+    src = old\_attn.self
+    w\_o = old\_attn.output.dense.weight
 \end{lstlisting}
 
 \texttt{is\_nested\_encoder = True}. Forward returns raw context.
@@ -71,21 +71,21 @@ if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
 
 \begin{lstlisting}
 transformer.h.0.attn
-+-- c_attn  (Conv1D 768 $\to$ 2304)
-+-- c_proj  (Conv1D 768 $\to$ 768)
++-- c\_attn  (Conv1D 768 $\to$ 2304)
++-- c\_proj  (Conv1D 768 $\to$ 768)
 \end{lstlisting}
 
 \textbf{Split c\_attn:}
 \begin{lstlisting}
-c_attn_w = src.c_attn.weight.detach()
-if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
-    c_attn_w = c_attn_w.t()
-q_dim = self.q_head_size
-k_dim = self.kv_head_size
-v_dim = self.kv_head_size
-w_q = c_attn_w[:q_dim, :]
-w_k = c_attn_w[q_dim:q_dim+k_dim, :]
-w_v = c_attn_w[q_dim+k_dim:, :]
+c\_attn\_w = src.c\_attn.weight.detach()
+if c\_attn\_w.shape[0] == self.hidden\_size and c\_attn\_w.shape[1] != self.hidden\_size:
+    c\_attn\_w = c\_attn\_w.t()
+q\_dim = self.q\_head\_size
+k\_dim = self.kv\_head\_size
+v\_dim = self.kv\_head\_size
+w\_q = c\_attn\_w[:q\_dim, :]
+w\_k = c\_attn\_w[q\_dim:q\_dim+k\_dim, :]
+w\_v = c\_attn\_w[q\_dim+k\_dim:, :]
 \end{lstlisting}
 
 \texttt{is\_nested\_encoder = False}. Causal mask applied in forward.
@@ -93,18 +93,18 @@ w_v = c_attn_w[q_dim+k_dim:, :]
 \subsection{Qwen3.5 (GQA + RoPE)}
 
 \begin{lstlisting}
-model.layers.0.self_attn
-+-- q_proj  (Linear 1024 $\to$ 2048)
-+-- k_proj  (Linear 1024 $\to$ 512)
-+-- v_proj  (Linear 1024 $\to$ 512)
-+-- o_proj  (Linear 2048 $\to$ 1024)
+model.layers.0.self\_attn
++-- q\_proj  (Linear 1024 $\to$ 2048)
++-- k\_proj  (Linear 1024 $\to$ 512)
++-- v\_proj  (Linear 1024 $\to$ 512)
++-- o\_proj  (Linear 2048 $\to$ 1024)
 \end{lstlisting}
 
 \textbf{GQA expansion:}
 \begin{lstlisting}
-if self.num_kv_heads != self.num_heads:
-    k = repeat_kv(k, self.num_key_value_groups)
-    v = repeat_kv(v, self.num_key_value_groups)
+if self.num\_kv\_heads != self.num\_heads:
+    k = repeat\_kv(k, self.num\_key\_value\_groups)
+    v = repeat\_kv(v, self.num\_key\_value\_groups)
 \end{lstlisting}
 
 \textbf{RoPE:} Either internal \texttt{\_apply\_rope} or external \texttt{position\_embeddings}.
@@ -114,39 +114,39 @@ if self.num_kv_heads != self.num_heads:
 \subsection{Injection Hook}
 
 \begin{lstlisting}
-def inject_unified_rope(layer, model_config=None, comp_config=None,
-                        old_attn=None, **kwargs):
-    src = old_attn
+def inject\_unified\_rope(layer, model\_config=None, comp\_config=None,
+                        old\_attn=None, **kwargs):
+    src = old\_attn
     if src is None:
-        for attr in ("attention", "self_attn", "attn", "self"):
+        for attr in ("attention", "self\_attn", "attn", "self"):
             if hasattr(layer, attr):
                 src = getattr(layer, attr)
                 break
     
-    if model_config is None and hasattr(layer, "config"):
-        model_config = layer.config
+    if model\_config is None and hasattr(layer, "config"):
+        model\_config = layer.config
     
-    lora_rank = kwargs.pop("lora_rank", 16)
+    lora\_rank = kwargs.pop("lora\_rank", 16)
     rank = kwargs.pop("rank", 32)
     
-    new_attn = UnifiedRoPE(
-        config=model_config, rank=rank, lora_rank=lora_rank,
-        pretrained_attn=src, **kwargs,
+    new\_attn = UnifiedRoPE(
+        config=model\_config, rank=rank, lora\_rank=lora\_rank,
+        pretrained\_attn=src, **kwargs,
     )
     
     # Replace
-    for attr in ("self_attn", "attn", "self"):
+    for attr in ("self\_attn", "attn", "self"):
         if hasattr(layer, attr):
-            setattr(layer, attr, new_attn)
-            return new_attn
+            setattr(layer, attr, new\_attn)
+            return new\_attn
     if hasattr(layer, "attention"):
         if hasattr(layer.attention, "self"):
-            layer.attention.self = new_attn
+            layer.attention.self = new\_attn
         else:
-            layer.attention = new_attn
-        return new_attn
-    layer.attention = new_attn
-    return new_attn
+            layer.attention = new\_attn
+        return new\_attn
+    layer.attention = new\_attn
+    return new\_attn
 \end{lstlisting}
 
 \textbf{Safe injection.} Wraps in try/except. Logs errors. \textbf{Raises} 
@@ -162,7 +162,7 @@ def inject_unified_rope(layer, model_config=None, comp_config=None,
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
 Missing weights & Validation & Raise RuntimeError \\
-Near-zero Frobenius & Norm check < 1e-4 & Raise RuntimeError \\
+Near-zero Frobenius & Norm check \textless{} 1e-4 & Raise RuntimeError \\
 Cross-attention & Not supported & Not implemented \\
 Conv1D wrong orientation & Shape check & Transpose \\
 \bottomrule
@@ -172,16 +172,16 @@ Conv1D wrong orientation & Shape check & Transpose \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("compression_unified_rope")
-@ATTENTION_REGISTRY.register("unified_rope")
-@ATTENTION_REGISTRY.register("unified_rope_attention")
+@ATTENTION\_REGISTRY.register("compression\_unified\_rope")
+@ATTENTION\_REGISTRY.register("unified\_rope")
+@ATTENTION\_REGISTRY.register("unified\_rope\_attention")
 class UnifiedRoPE(BaseAttention):
     ...
 
-@ATTENTION_REGISTRY.register("unified_rope_inject")
-@ATTENTION_REGISTRY.register("compression_unified_rope_inject")
-@ATTENTION_REGISTRY.register("inject_unified_rope")
-def inject_unified_rope(...):
+@ATTENTION\_REGISTRY.register("unified\_rope\_inject")
+@ATTENTION\_REGISTRY.register("compression\_unified\_rope\_inject")
+@ATTENTION\_REGISTRY.register("inject\_unified\_rope")
+def inject\_unified\_rope(...):
     ...
 \end{lstlisting}
 
@@ -218,6 +218,6 @@ Nystr mformer & Compute & Reduce compute \\
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.png}
 \caption{High-level architectural diagram of unified\_rope.}
-\label{fig:arch_unified-rope}
+\label{fig:arch\_unified-rope}
 \end{figure}
 

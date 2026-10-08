@@ -4,8 +4,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -16,19 +16,19 @@ pip install -r requirements.txt
 \subsubsection{Path A (Full Attention)}
 
 \begin{lstlisting}
-python run_all_4_gated_deltanet_block.py \
+python run\_all\_4\_gated\_deltanet\_block.py \
     --models distilbert \
-    --use_full_attention true \
-    --recovery_steps 50
+    --use\_full\_attention true \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsubsection{Path B (GatedDeltaNet)}
 
 \begin{lstlisting}
-python run_all_4_gated_deltanet_block.py \
+python run\_all\_4\_gated\_deltanet\_block.py \
     --models distilbert \
-    --use_full_attention false \
-    --recovery_steps 50
+    --use\_full\_attention false \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Verification Steps}
@@ -42,10 +42,10 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 # After injection:
-for name, mod in model.named_modules():
+for name, mod in model.named\_modules():
     if hasattr(mod, 'attn') and mod.attn is not None:
-        w = mod.attn.in_proj_weight
-        print(f"{name}: in_proj_weight norm = {w.norm().item():.4f}")
+        w = mod.attn.in\_proj\_weight
+        print(f"{name}: in\_proj\_weight norm = {w.norm().item():.4f}")
         # If norm ~= 1e-3, weights are random $\to$ silent failure
         # If norm ~= sqrt(3d) * something, weights transferred OK
 \end{lstlisting}
@@ -55,15 +55,15 @@ for name, mod in model.named_modules():
 \begin{lstlisting}
 # Compare block output to baseline on first token
 x = torch.randn(1, 1, 768)  # single token
-y_block = block(x)
-# For GPT-2 causal, y_block should equal y_baseline
+y\_block = block(x)
+# For GPT-2 causal, y\_block should equal y\_baseline
 \end{lstlisting}
 
 \subsection{Seeds}
 
 \begin{lstlisting}
 seed = 42
-torch.manual_seed(seed)
+torch.manual\_seed(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}

@@ -36,9 +36,9 @@ attention. The block-sparse path is used only for encoders.
 
 \begin{lstlisting}
 if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-    is_nested = True
-elif cls_name in ("BertSelfAttention", "RobertaSelfAttention") and not has_out_proj:
-    is_nested = True
+    is\_nested = True
+elif cls\_name in ("BertSelfAttention", "RobertaSelfAttention") and not has\_out\_proj:
+    is\_nested = True
 \end{lstlisting}
 
 \subsection{RoPE Support}
@@ -50,9 +50,9 @@ Applied to Q, K after projection.
 For K/V with $H_{kv} < H$:
 
 \begin{lstlisting}
-if src_out < out_d and out_d % src_out == 0:
-    rep = out_d // src_out
-    target_w.data.copy_(w_oriented.repeat(rep, 1))
+if src\_out \textless{} out\_d and out\_d \% src\_out == 0:
+    rep = out\_d // src\_out
+    target\_w.data.copy\_(w\_oriented.repeat(rep, 1))
 \end{lstlisting}
 
 \subsection{RFF Rectification Condition}
@@ -69,13 +69,13 @@ Default \texttt{enable\_spectraformer=False} $\to$ RFF inactive.
 
 \textbf{Algorithm 2:} Inject NEXUS
 \begin{lstlisting}
-Input:  model M, comp_config
+Input:  model M, comp\_config
 Output: M with attention replaced
 
-1: for   in transformer_layers(M) do
-2:     src $\leftarrow$ get_attention( )
+1: for   in transformer\_layers(M) do
+2:     src $\leftarrow$ get\_attention( )
 3:     cfg $\leftarrow$ NEXUSConfig(...)
-4:     new $\leftarrow$ NEXUSAttention(model_config, nexus_cfg=cfg, pretrained_attn=src)
+4:     new $\leftarrow$ NEXUSAttention(model\_config, nexus\_cfg=cfg, pretrained\_attn=src)
 5:     replace( , new)
 6: end for
 \end{lstlisting}
@@ -108,7 +108,7 @@ All-negative softpick & \texttt{denom $\approx$ 0} & Uniform (fallback) \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("nexus", supports_causal=True, supports_gqa=True)
+@ATTENTION\_REGISTRY.register("nexus", supports\_causal=True, supports\_gqa=True)
 class NEXUSAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -121,6 +121,6 @@ class NEXUSAttention(BaseAttention):
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.png}
 \caption{High-level architectural diagram of nexus.}
-\label{fig:arch_nexus}
+\label{fig:arch\_nexus}
 \end{figure}
 

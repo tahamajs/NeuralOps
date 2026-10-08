@@ -29,7 +29,7 @@ A \textbf{learned scalar gate} $\alpha$ blends them.
    $\alpha$ A + (1-$\alpha$) M
        |
         
-     out_proj
+     out\_proj
        |
         
     Output Y
@@ -40,41 +40,41 @@ A \textbf{learned scalar gate} $\alpha$ blends them.
 We compute two independent Q-K pairs:
 
 \[
-Q_1 = X W_{Q_1}, \quad K_1 = X W_{K_1}
+Q\_1 = X W\_{Q\_1}, \quad K\_1 = X W\_{K\_1}
 \tag{4.1}
 \]
 
 \[
-Q_2 = X W_{Q_2}, \quad K_2 = X W_{K_2}
+Q\_2 = X W\_{Q\_2}, \quad K\_2 = X W\_{K\_2}
 \tag{4.2}
 \]
 
 Two attention maps:
 
 \[
-A_1 = \text{softmax}\!\left(\frac{Q_1 K_1^\top}{\sqrt{d_h}}\right), \quad
-A_2 = \text{softmax}\!\left(\frac{Q_2 K_2^\top}{\sqrt{d_h}}\right)
+A\_1 = \text{softmax}\!\left(\frac{Q\_1 K\_1^\top}{\sqrt{d\_h}}\right), \quad
+A\_2 = \text{softmax}\!\left(\frac{Q\_2 K\_2^\top}{\sqrt{d\_h}}\right)
 \tag{4.3}
 \]
 
 Differential output:
 
 \[
-A_\text{diff} = \text{ReLU}(A_1 - \lambda A_2), \quad \lambda = 0.2
+A\_\text{diff} = \text{ReLU}(A\_1 - \lambda A\_2), \quad \lambda = 0.2
 \tag{4.4}
 \]
 
 Then normalize:
 
 \[
-\tilde{A}_\text{diff} = \frac{A_\text{diff}}{\sum A_\text{diff} + \epsilon}
+\tilde{A}\_\text{diff} = \frac{A\_\text{diff}}{\sum A\_\text{diff} + \epsilon}
 \tag{4.5}
 \]
 
 Value projection:
 
 \[
-V = X W_V, \quad A_\text{out} = \tilde{A}_\text{diff} V
+V = X W\_V, \quad A\_\text{out} = \tilde{A}\_\text{diff} V
 \tag{4.6}
 \]
 
@@ -93,8 +93,8 @@ very small total mass. Normalization preserves output scale.
 We use a \texttt{SimpleSSM} module with element-wise recurrence:
 
 \[
-h_t = \bar{A}_t \odot h_{t-1} + \bar{B}_t \odot x_t, \quad
-y_t = \bar{C}_t \odot h_t
+h\_t = \bar{A}\_t \odot h\_{t-1} + \bar{B}\_t \odot x\_t, \quad
+y\_t = \bar{C}\_t \odot h\_t
 \tag{4.7}
 \]
 
@@ -103,13 +103,13 @@ where $\bar{A}_t \in (0, 1)$ is a data-dependent decay.
 \textbf{Bidirectional handling.} For encoders, we run two SSM passes:
 
 \[
-M_\text{fwd} = \text{SSM}(X), \quad
-M_\text{bwd} = \text{flip}(\text{SSM}(\text{flip}(X)))
+M\_\text{fwd} = \text{SSM}(X), \quad
+M\_\text{bwd} = \text{flip}(\text{SSM}(\text{flip}(X)))
 \tag{4.8}
 \]
 
 \[
-M_\text{ssm} = 0.5 (M_\text{fwd} + M_\text{bwd})
+M\_\text{ssm} = 0.5 (M\_\text{fwd} + M\_\text{bwd})
 \tag{4.9}
 \]
 
@@ -129,7 +129,7 @@ Initialized to $w = -1$, giving $\alpha = 0.27$.
 Final output:
 
 \[
-\text{combined} = \alpha \odot A_\text{out} + (1 - \alpha) \odot M_\text{ssm}
+\text{combined} = \alpha \odot A\_\text{out} + (1 - \alpha) \odot M\_\text{ssm}
 \tag{4.11}
 \]
 
@@ -141,19 +141,19 @@ When the parent model does not pass \texttt{position\_embeddings}, we compute th
 internally:
 
 \[
-\theta_{k, i} = i \cdot \text{base}^{-2k/d_h}, \quad \text{base} = 10^4
+\theta\_{k, i} = i \cdot \text{base}^{-2k/d\_h}, \quad \text{base} = 10^4
 \tag{4.12}
 \]
 
 \[
-\text{cos}_{i, k} = \cos(\theta_{k, i}), \quad \text{sin}_{i, k} = \sin(\theta_{k, i})
+\text{cos}\_{i, k} = \cos(\theta\_{k, i}), \quad \text{sin}\_{i, k} = \sin(\theta\_{k, i})
 \tag{4.13}
 \]
 
 Then apply:
 
 \[
-\tilde{Q}_i = Q_i \cos_i + \text{rot}(Q_i) \sin_i
+\tilde{Q}\_i = Q\_i \cos\_i + \text{rot}(Q\_i) \sin\_i
 \tag{4.14}
 \]
 
@@ -190,27 +190,27 @@ we log a warning and keep the Kaiming-initialized default. This is a
 
 \textbf{Algorithm 1:} HymbaTransX forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
-        position_embeddings (optional)
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask
+        position\_embeddings (optional)
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
- 1: Q1 $\leftarrow$ W_q1(X);  K1 $\leftarrow$ W_k1(X)
- 2: Q2 $\leftarrow$ W_q2(X);  K2 $\leftarrow$ W_k2(X)
- 3: V  $\leftarrow$ W_v(X)
- 4: if pos_emb: Q_i, K_i $\leftarrow$ RoPE(Q_i, K_i, pos_emb)
- 5: else:       Q_i, K_i $\leftarrow$ HeadRoPE(Q_i, K_i)
- 6: if GQA: K_i, V $\leftarrow$ repeat_kv(...)
- 7: A1 $\leftarrow$ softmax(Q1 K1^T / $\sqrt{}$d_h)
- 8: A2 $\leftarrow$ softmax(Q2 K2^T / $\sqrt{}$d_h)
+ 1: Q1 $\leftarrow$ W\_q1(X);  K1 $\leftarrow$ W\_k1(X)
+ 2: Q2 $\leftarrow$ W\_q2(X);  K2 $\leftarrow$ W\_k2(X)
+ 3: V  $\leftarrow$ W\_v(X)
+ 4: if pos\_emb: Q\_i, K\_i $\leftarrow$ RoPE(Q\_i, K\_i, pos\_emb)
+ 5: else:       Q\_i, K\_i $\leftarrow$ HeadRoPE(Q\_i, K\_i)
+ 6: if GQA: K\_i, V $\leftarrow$ repeat\_kv(...)
+ 7: A1 $\leftarrow$ softmax(Q1 K1^T / $\sqrt{}$d\_h)
+ 8: A2 $\leftarrow$ softmax(Q2 K2^T / $\sqrt{}$d\_h)
  9: if causal: mask A1, A2
-10: A_diff $\leftarrow$ ReLU(A1 - $\lambda$ A2)
-11: A_norm $\leftarrow$ A_diff / (sum + $\epsilon$)
-12: A_out $\leftarrow$ A_norm @ V
+10: A\_diff $\leftarrow$ ReLU(A1 - $\lambda$ A2)
+11: A\_norm $\leftarrow$ A\_diff / (sum + $\epsilon$)
+12: A\_out $\leftarrow$ A\_norm @ V
 13: if decoder: M $\leftarrow$ SSM(X)
 14: else:       M $\leftarrow$ 0.5(SSM(X) + flip(SSM(flip(X))))
 15: $\alpha$ $\leftarrow$ sigmoid(w)
-16: out $\leftarrow$ $\alpha$ A_out + (1-$\alpha$) M
-17: Y $\leftarrow$ out_proj(out)
+16: out $\leftarrow$ $\alpha$ A\_out + (1-$\alpha$) M
+17: Y $\leftarrow$ out\_proj(out)
 18: return Y
 \end{lstlisting}
 

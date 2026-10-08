@@ -5,19 +5,19 @@
 Given $W_Q, W_K, W_V$, stack:
 
 \[
-W_{QKV} = \begin{pmatrix} W_Q \\ W_K \\ W_V \end{pmatrix} \in \mathbb{R}^{(H d_h + 2 H_{kv} d_h) \times d}
+W\_{QKV} = \begin{pmatrix} W\_Q \\ W\_K \\ W\_V \end{pmatrix} \in \mathbb{R}^{(H d\_h + 2 H\_{kv} d\_h) \times d}
 \]
 
 Full SVD:
 
 \[
-W_{QKV} = U_{QKV} \Sigma_{QKV} V_{QKV}^\top
+W\_{QKV} = U\_{QKV} \Sigma\_{QKV} V\_{QKV}^\top
 \]
 
 Truncate to rank $r$:
 
 \[
-W_{QKV} \approx U_r \Sigma_r V_r^\top
+W\_{QKV} \approx U\_r \Sigma\_r V\_r^\top
 \]
 
 with $\|W_{QKV} - U_r \Sigma_r V_r^\top\|_F = \sqrt{\sum_{i > r} \sigma_i^2}$.
@@ -27,8 +27,8 @@ with $\|W_{QKV} - U_r \Sigma_r V_r^\top\|_F = \sqrt{\sum_{i > r} \sigma_i^2}$.
 Distribute $\Sigma^{1/2}$:
 
 \[
-U_r' = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \quad
-V_r' = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top
+U\_r' = U\_{:, :r} \Sigma\_{:r, :r}^{1/2}, \quad
+V\_r' = \Sigma\_{:r, :r}^{1/2} V\_{:r, :}^\top
 \]
 
 Store:
@@ -41,7 +41,7 @@ Store:
 \textbf{Forward:}
 
 \[
-\text{QKV} = \left((X V_{QKV, r}^\top) \cdot S_{QKV, r}\right) U_{QKV, r}^\top
+\text{QKV} = \left((X V\_{QKV, r}^\top) \cdot S\_{QKV, r}\right) U\_{QKV, r}^\top
 \]
 
 \subsection{A.3 Parameter Count}
@@ -62,19 +62,19 @@ $U_{QKV, r}$ & $(H d_h + 2 H_{kv} d_h) \times r$ & $r (H d_h + 2 H_{kv} d_h)$ \\
 
 For $H = H_{kv}$, $d_h = d/H$:
 \[
-\text{Total} = r d + r + r (d + 2 d_h) = r(2d + 2 d_h) + r
+\text{Total} = r d + r + r (d + 2 d\_h) = r(2d + 2 d\_h) + r
 \]
 
 \subsection{A.4 Comparison with Independent SVD}
 
 Independent:
 \[
-\text{Params}_\text{indep} = 2 r d \cdot 3 = 6 r d
+\text{Params}\_\text{indep} = 2 r d \cdot 3 = 6 r d
 \]
 
 Joint:
 \[
-\text{Params}_\text{joint} = 2 r (d + d_h) + r
+\text{Params}\_\text{joint} = 2 r (d + d\_h) + r
 \]
 
 For $d = 768$, $d_h = 64$:
@@ -90,13 +90,13 @@ For $d = 768$, $d_h = 64$:
 For $W_O \in \mathbb{R}^{d \times H d_h}$:
 
 \[
-W_O = U_O \Sigma_O V_O^\top
+W\_O = U\_O \Sigma\_O V\_O^\top
 \]
 
 Truncate to $r_{out}$:
 
 \[
-W_O \approx U_{O, r} \Sigma_{O, r} V_{O, r}^\top
+W\_O \approx U\_{O, r} \Sigma\_{O, r} V\_{O, r}^\top
 \]
 
 \subsection{A.6 LoRA on Both Branches}
@@ -104,13 +104,13 @@ W_O \approx U_{O, r} \Sigma_{O, r} V_{O, r}^\top
 QKV LoRA:
 
 \[
-\text{QKV}_\text{LoRA} = \frac{\alpha}{r_L} B_{QKV} A_{QKV} X
+\text{QKV}\_\text{LoRA} = \frac{\alpha}{r\_L} B\_{QKV} A\_{QKV} X
 \]
 
 Output LoRA:
 
 \[
-\text{Out}_\text{LoRA} = \frac{\alpha}{r_L} B_O A_O \text{Context}
+\text{Out}\_\text{LoRA} = \frac{\alpha}{r\_L} B\_O A\_O \text{Context}
 \]
 
 Both have $B = 0$ at initialization.
@@ -120,13 +120,13 @@ Both have $B = 0$ at initialization.
 By Eckart-Young:
 
 \[
-\|W_{QKV} - W_{QKV, r}\|_F \leq \sqrt{\sum_{i > r} \sigma_i^2}
+\|W\_{QKV} - W\_{QKV, r}\|\_F \leq \sqrt{\sum\_{i \textgreater{} r} \sigma\_i^2}
 \]
 
 The energy fraction:
 
 \[
-E(r) = \frac{\sum_{i \leq r} \sigma_i^2}{\sum_i \sigma_i^2}
+E(r) = \frac{\sum\_{i \leq r} \sigma\_i^2}{\sum\_i \sigma\_i^2}
 \]
 
 We can choose $r$ such that $E(r) \geq \eta$.
@@ -136,7 +136,7 @@ We can choose $r$ such that $E(r) \geq \eta$.
 Standard triangular mask before softmax:
 
 \[
-\text{mask}_{ij} = \begin{cases} 0 & j \leq i \\ -\infty & j > i \end{cases}
+\text{mask}\_{ij} = \begin{cases} 0 & j \leq i \\ -\infty & j \textgreater{} i \end{cases}
 \]
 
 \subsection{A.9 Nested Encoder Correctness}

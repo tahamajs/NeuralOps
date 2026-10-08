@@ -144,12 +144,12 @@ Step  Loss
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
-    "params_after": 66.4M,
-    "param_delta": -32M,
-    "accuracy_pct": 86.4,
-    "sketch_rank": 32,
-    "score_correlation": 0.96
+    "params\_before": 66955010,
+    "params\_after": 66.4M,
+    "param\_delta": -32M,
+    "accuracy\_pct": 86.4,
+    "sketch\_rank": 32,
+    "score\_correlation": 0.96
   },
   "roberta": {...},
   "gpt2": {...}
@@ -160,11 +160,11 @@ Step  Loss
 
 \begin{lstlisting}
 # Full benchmark
-python run_all_4_rpc.py --models distilbert,roberta,gpt2
+python run\_all\_4\_rpc.py --models distilbert,roberta,gpt2
 
 # Rank sweep
 for r in 8 16 32 64; do
-    python run_all_4_rpc.py --rank $r --output_suffix r$r
+    python run\_all\_4\_rpc.py --rank $r --output_suffix r$r
 done
 \end{lstlisting}
 \begin{lstlisting}

@@ -5,14 +5,14 @@
 
 \begin{lstlisting}
 try:
-    from flash_attn_interface import flash_attn_func
-    FLASH_ATTN_AVAILABLE = True
+    from flash\_attn\_interface import flash\_attn\_func
+    FLASH\_ATTN\_AVAILABLE = True
 except ImportError:
     try:
-        from flash_attn import flash_attn_func
-        FLASH_ATTN_AVAILABLE = True
+        from flash\_attn import flash\_attn\_func
+        FLASH\_ATTN\_AVAILABLE = True
     except ImportError:
-        FLASH_ATTN_AVAILABLE = False
+        FLASH\_ATTN\_AVAILABLE = False
 \end{lstlisting}
 
 Two import paths: \texttt{flash\_attn\_interface} (Hopper-optimized) and \texttt{flash\_attn} 
@@ -21,13 +21,13 @@ Two import paths: \texttt{flash\_attn\_interface} (Hopper-optimized) and \texttt
 \subsection{B.2 FP8 Forward Path}
 
 \begin{lstlisting}
-if FLASH_ATTN_AVAILABLE and self.use_fp8 and q.is_cuda and hasattr(torch, "float8_e4m3fn"):
+if FLASH\_ATTN\_AVAILABLE and self.use\_fp8 and q.is\_cuda and hasattr(torch, "float8\_e4m3fn"):
     try:
-        q_fa = q.transpose(1, 2).contiguous().to(torch.float8_e4m3fn)
-        k_fa = k.transpose(1, 2).contiguous().to(torch.float8_e4m3fn)
-        v_fa = v.transpose(1, 2).contiguous().to(torch.float8_e4m3fn)
-        out = flash_attn_func(q_fa, k_fa, v_fa, causal=causal_flag).to(dtype)
-        out = out.contiguous().view(B, L, self.all_head_size)
+        q\_fa = q.transpose(1, 2).contiguous().to(torch.float8\_e4m3fn)
+        k\_fa = k.transpose(1, 2).contiguous().to(torch.float8\_e4m3fn)
+        v\_fa = v.transpose(1, 2).contiguous().to(torch.float8\_e4m3fn)
+        out = flash\_attn\_func(q\_fa, k\_fa, v\_fa, causal=causal\_flag).to(dtype)
+        out = out.contiguous().view(B, L, self.all\_head\_size)
     except Exception:
         out = None
 \end{lstlisting}
@@ -36,34 +36,34 @@ if FLASH_ATTN_AVAILABLE and self.use_fp8 and q.is_cuda and hasattr(torch, "float
 
 \begin{lstlisting}
 if out is None:
-    if causal_flag and attn_mask is None:
-        out_sdpa = F.scaled_dot_product_attention(
-            q, k, v, attn_mask=None, is_causal=True, dropout_p=self.dropout.p
+    if causal\_flag and attn\_mask is None:
+        out\_sdpa = F.scaled\_dot\_product\_attention(
+            q, k, v, attn\_mask=None, is\_causal=True, dropout\_p=self.dropout.p
         )
     else:
         # Combine causal and padding
-        if causal_flag:
-            causal_m = torch.triu(
-                torch.full((L, kv_len), float("-inf"), device=device),
+        if causal\_flag:
+            causal\_m = torch.triu(
+                torch.full((L, kv\_len), float("-inf"), device=device),
                 diagonal=1
             )
-            attn_mask = (attn_mask + causal_m.unsqueeze(0).unsqueeze(0)) \
-                        if attn_mask is not None else causal_m.unsqueeze(0).unsqueeze(0)
-        out_sdpa = F.scaled_dot_product_attention(
-            q, k, v, attn_mask=attn_mask, is_causal=False, dropout_p=self.dropout.p
+            attn\_mask = (attn\_mask + causal\_m.unsqueeze(0).unsqueeze(0)) \
+                        if attn\_mask is not None else causal\_m.unsqueeze(0).unsqueeze(0)
+        out\_sdpa = F.scaled\_dot\_product\_attention(
+            q, k, v, attn\_mask=attn\_mask, is\_causal=False, dropout\_p=self.dropout.p
         )
-    out = out_sdpa.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+    out = out\_sdpa.transpose(1, 2).contiguous().view(B, L, self.all\_head\_size)
 \end{lstlisting}
 
 \subsection{B.4 Weight Copy (GPT-2)}
 
 \begin{lstlisting}
-if hasattr(src, "c_attn"):
-    w = src.c_attn.weight.data.clone()
-    if src.c_attn.__class__.__name__ == "Conv1D":
+if hasattr(src, "c\_attn"):
+    w = src.c\_attn.weight.data.clone()
+    if src.c\_attn.\_\_class\_\_.\_\_name\_\_ == "Conv1D":
         w = w.t()
-    q_w, k_w, v_w = w.chunk(3, dim=0)
-    extracted["q"] = (q_w, ...)
+    q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+    extracted["q"] = (q\_w, ...)
 \end{lstlisting}
 
 \subsection{B.5 Weight Copy (RoBERTa)}
@@ -81,23 +81,23 @@ elif hasattr(src, "self") and hasattr(src.self, "query"):
 
 \begin{lstlisting}
 else:
-    extracted["q"] = (src.q_lin.weight.data, ...)
-    extracted["k"] = (src.k_lin.weight.data, ...)
-    extracted["v"] = (src.v_lin.weight.data, ...)
-    extracted["o"] = (src.out_lin.weight.data, ...)
+    extracted["q"] = (src.q\_lin.weight.data, ...)
+    extracted["k"] = (src.k\_lin.weight.data, ...)
+    extracted["v"] = (src.v\_lin.weight.data, ...)
+    extracted["o"] = (src.out\_lin.weight.data, ...)
 \end{lstlisting}
 
 \subsection{B.7 Nested vs Flat Detection}
 
 \begin{lstlisting}
-if hasattr(src, "out_lin"):        # DistilBERT
-    is_nested = False
+if hasattr(src, "out\_lin"):        # DistilBERT
+    is\_nested = False
 elif hasattr(src, "self") and hasattr(src.self, "query"):  # RoBERTa
-    is_nested = True
-elif cls_name in ("BertSelfAttention", "RobertaSelfAttention"):
-    is_nested = True
+    is\_nested = True
+elif cls\_name in ("BertSelfAttention", "RobertaSelfAttention"):
+    is\_nested = True
 else:
-    is_nested = False
+    is\_nested = False
 \end{lstlisting}
 
 \textbf{Critical:} Check \texttt{out\_lin} first. DistilBERT's \texttt{MultiHeadSelfAttention} 
@@ -111,10 +111,10 @@ Without detection:
 
 \begin{lstlisting}
 # WRONG -- crashes on RTX 4070
-out = flash_attn_func(q.to(torch.float8_e4m3fn), ...)
+out = flash\_attn\_func(q.to(torch.float8\_e4m3fn), ...)
 
 # CORRECT
-if FLASH_ATTN_AVAILABLE and hasattr(torch, "float8_e4m3fn"):
+if FLASH\_ATTN\_AVAILABLE and hasattr(torch, "float8\_e4m3fn"):
     ...
 \end{lstlisting}
 
@@ -122,22 +122,22 @@ if FLASH_ATTN_AVAILABLE and hasattr(torch, "float8_e4m3fn"):
 
 \begin{lstlisting}
 # WRONG
-w = src.c_attn.weight.data  # (768, 2304) for GPT-2
-q_w, k_w, v_w = w.chunk(3, dim=0)  # wrong shapes
+w = src.c\_attn.weight.data  # (768, 2304) for GPT-2
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)  # wrong shapes
 
 # CORRECT
-w = src.c_attn.weight.data.t()  # (2304, 768)
-q_w, k_w, v_w = w.chunk(3, dim=0)
+w = src.c\_attn.weight.data.t()  # (2304, 768)
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{B.8.3 Missing causal\_flag}
 
 \begin{lstlisting}
 # WRONG -- applies causal to cross-attention
-causal_flag = self.is_decoder
+causal\_flag = self.is\_decoder
 
 # CORRECT
-causal_flag = self.is_decoder and not is_cross_attention and L == kv_len
+causal\_flag = self.is\_decoder and not is\_cross\_attention and L == kv\_len
 \end{lstlisting}
 
 \subsection{B.9 Diagnostics}
@@ -145,20 +145,20 @@ causal_flag = self.is_decoder and not is_cross_attention and L == kv_len
 \begin{lstlisting}
 # Print hardware capabilities
 import torch
-print("GPU:", torch.cuda.get_device_name(0))
-print("Capability:", torch.cuda.get_device_capability(0))
-print("Float8 exists:", hasattr(torch, "float8_e4m3fn"))
-print("flash_attn available:", FLASH_ATTN_AVAILABLE)
+print("GPU:", torch.cuda.get\_device\_name(0))
+print("Capability:", torch.cuda.get\_device\_capability(0))
+print("Float8 exists:", hasattr(torch, "float8\_e4m3fn"))
+print("flash\_attn available:", FLASH\_ATTN\_AVAILABLE)
 
 # In forward, add:
-logger.info("FP8 path taken: %s", out is not None)
+logger.info("FP8 path taken: \%s", out is not None)
 \end{lstlisting}
 
 \subsection{B.10 Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("flash3_fp8")
-@ATTENTION_REGISTRY.register("flash_attention3_fp8")
+@ATTENTION\_REGISTRY.register("flash3\_fp8")
+@ATTENTION\_REGISTRY.register("flash\_attention3\_fp8")
 class FlashAttention3FP8(BaseAttention):
     ...
 \end{lstlisting}
@@ -166,13 +166,13 @@ class FlashAttention3FP8(BaseAttention):
 \subsection{B.11 Injection Factory}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("flash3_fp8_inject")
-def inject_flash3_fp8(layer, model_config, comp_config, old_attn=None, **kwargs):
-    src_attn = old_attn or extract_attention(layer)
+@ATTENTION\_REGISTRY.register("flash3\_fp8\_inject")
+def inject\_flash3\_fp8(layer, model\_config, comp\_config, old\_attn=None, **kwargs):
+    src\_attn = old\_attn or extract\_attention(layer)
     try:
-        new_attn = FlashAttention3FP8(config=model_config, old_attn=src_attn)
-        replace_attention(layer, new_attn)
-        return new_attn
+        new\_attn = FlashAttention3FP8(config=model\_config, old\_attn=src\_attn)
+        replace\_attention(layer, new\_attn)
+        return new\_attn
     except Exception as e:
         logger.error(f"Injection failed: {e}")
         return None

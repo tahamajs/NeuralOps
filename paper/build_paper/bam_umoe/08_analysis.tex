@@ -8,19 +8,19 @@ model's forward pass.
 \textbf{Test.} For DistilBERT:
 
 \begin{lstlisting}
-model_base = load_model()
-model_bam = inject_bam_umoe(model_base)
+model\_base = load\_model()
+model\_bam = inject\_bam\_umoe(model\_base)
 
 ids = torch.randint(0, 1000, (4, 32))
-with torch.no_grad():
-    logits_base = model_base(ids).logits
-    logits_bam = model_bam(ids).logits
+with torch.no\_grad():
+    logits\_base = model\_base(ids).logits
+    logits\_bam = model\_bam(ids).logits
 
-diff = (logits_base - logits_bam).abs().max().item()
+diff = (logits\_base - logits\_bam).abs().max().item()
 print(f"Max diff: {diff:.6e}")
 \end{lstlisting}
 
-\textbf{Expected:} \texttt{diff < 1e-5} (numerical precision).
+\textbf{Expected:} \texttt{diff \textless{} 1e-5} (numerical precision).
 
 \textbf{Observed:} \texttt{diff = 1.2e-6}.
 
@@ -85,7 +85,7 @@ GPT-2 & 124.4M / 79.36\% & 570M / 81.42\% \\
 \end{tabular}
 \end{table}
 
-\textbf{Observation.} MoE adds 0.6% accuracy at 4.4x parameter cost..
+\textbf{Observation.} MoE adds 0.6\% accuracy at 4.4x parameter cost..
 
 \subsection{Comparison with LoRA-Only Baseline}
 
@@ -114,7 +114,7 @@ No systematic failures.
 \subsection{Summary of Insights}
 
 \begin{enumerate}
-\item \textbf{Step-0 preservation works} -- forward diff < 1.2e-6.
+\item \textbf{Step-0 preservation works} -- forward diff \textless{} 1.2e-6.
 \item \textbf{Load balancing is stable} -- entropy near max.
 \item \textbf{MoE adds capacity} -- but at high parameter cost.
 \item \textbf{Not a compression method.}

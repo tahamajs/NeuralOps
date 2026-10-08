@@ -4,77 +4,77 @@
 
 \begin{lstlisting}
 class HGRN2Layer(BaseAttention):
-    def __init__(self, config, rank=None, d_model=None, 
-                 res_clip=30.0, lora_rank=16, lora_alpha=32.0, 
-                 is_decoder=None, freeze_base=True, **kwargs):
-        super().__init__(config, rank)
+    def \_\_init\_\_(self, config, rank=None, d\_model=None, 
+                 res\_clip=30.0, lora\_rank=16, lora\_alpha=32.0, 
+                 is\_decoder=None, freeze\_base=True, **kwargs):
+        super().\_\_init\_\_(config, rank)
         
-        self.d_model = resolve_d_model(config, d_model, kwargs)
-        self.res_clip = res_clip
+        self.d\_model = resolve\_d\_model(config, d\_model, kwargs)
+        self.res\_clip = res\_clip
         
         # Gates
-        self.forget_gate = nn.Linear(self.d_model, self.d_model)
-        self.input_gate = nn.Linear(self.d_model, self.d_model)
-        self.v_proj = nn.Linear(self.d_model, self.d_model, bias=False)
-        self.g_proj = nn.Linear(self.d_model, self.d_model)
-        self.state_norm = nn.LayerNorm(self.d_model)
-        self.out_proj = nn.Linear(self.d_model, self.d_model)
+        self.forget\_gate = nn.Linear(self.d\_model, self.d\_model)
+        self.input\_gate = nn.Linear(self.d\_model, self.d\_model)
+        self.v\_proj = nn.Linear(self.d\_model, self.d\_model, bias=False)
+        self.g\_proj = nn.Linear(self.d\_model, self.d\_model)
+        self.state\_norm = nn.LayerNorm(self.d\_model)
+        self.out\_proj = nn.Linear(self.d\_model, self.d\_model)
         
         # Init
-        nn.init.normal_(self.forget_gate.weight, std=0.01)
-        nn.init.constant_(self.forget_gate.bias, -2.5)
-        nn.init.normal_(self.input_gate.weight, std=0.02)
-        nn.init.constant_(self.input_gate.bias, 0.0)
-        nn.init.normal_(self.g_proj.weight, std=0.02)
-        nn.init.constant_(self.g_proj.bias, 1.28)
-        nn.init.normal_(self.v_proj.weight, std=0.02)
+        nn.init.normal\_(self.forget\_gate.weight, std=0.01)
+        nn.init.constant\_(self.forget\_gate.bias, -2.5)
+        nn.init.normal\_(self.input\_gate.weight, std=0.02)
+        nn.init.constant\_(self.input\_gate.bias, 0.0)
+        nn.init.normal\_(self.g\_proj.weight, std=0.02)
+        nn.init.constant\_(self.g\_proj.bias, 1.28)
+        nn.init.normal\_(self.v\_proj.weight, std=0.02)
 \end{lstlisting}
 
 \subsection{B.2 The Chunked Scan}
 
 \begin{lstlisting}
-def _scan_direction(self, f, iv, chunk_size=32):
+def \_scan\_direction(self, f, iv, chunk\_size=32):
     B, L, D = iv.shape
-    f_fp32 = f.float()
-    iv_fp32 = iv.float()
-    log_f = torch.log(f_fp32.clamp(min=1e-6))
+    f\_fp32 = f.float()
+    iv\_fp32 = iv.float()
+    log\_f = torch.log(f\_fp32.clamp(min=1e-6))
     
-    h_chunks = []
-    h_prev = torch.zeros(B, D, device=iv.device, dtype=torch.float32)
+    h\_chunks = []
+    h\_prev = torch.zeros(B, D, device=iv.device, dtype=torch.float32)
     
-    for start in range(0, L, chunk_size):
-        end = min(start + chunk_size, L)
+    for start in range(0, L, chunk\_size):
+        end = min(start + chunk\_size, L)
         C = end - start
         
-        f_c = log_f[:, start:end]           # (B, C, D)
-        iv_c = iv_fp32[:, start:end]        # (B, C, D)
+        f\_c = log\_f[:, start:end]           # (B, C, D)
+        iv\_c = iv\_fp32[:, start:end]        # (B, C, D)
         
-        A = torch.cumsum(f_c, dim=1)        # (B, C, D)
-        A_diff = A.unsqueeze(2) - A.unsqueeze(1)   # (B, C, C, D)
+        A = torch.cumsum(f\_c, dim=1)        # (B, C, D)
+        A\_diff = A.unsqueeze(2) - A.unsqueeze(1)   # (B, C, C, D)
         
         mask = torch.tril(torch.ones(C, C, device=iv.device, dtype=torch.bool))
-        A_diff = torch.where(mask.unsqueeze(0).unsqueeze(-1), A_diff, 
-                             torch.full_like(A_diff, -1e4))
+        A\_diff = torch.where(mask.unsqueeze(0).unsqueeze(-1), A\_diff, 
+                             torch.full\_like(A\_diff, -1e4))
         
-        decay_weights = torch.exp(A_diff) * mask.unsqueeze(0).unsqueeze(-1)
-        intra = torch.sum(decay_weights * iv_c.unsqueeze(1), dim=2)
-        inter = h_prev.unsqueeze(1) * torch.exp(A)
-        h_c = inter + intra
+        decay\_weights = torch.exp(A\_diff) * mask.unsqueeze(0).unsqueeze(-1)
+        intra = torch.sum(decay\_weights * iv\_c.unsqueeze(1), dim=2)
+        inter = h\_prev.unsqueeze(1) * torch.exp(A)
+        h\_c = inter + intra
         
-        if self.res_clip is not None and self.res_clip > 0:
-            h_c = torch.clamp(h_c, -self.res_clip, self.res_clip)
+        if self.res\_clip is not None and self.res\_clip \textgreater{} 0:
+            h\_c = torch.clamp(h\_c, -self.res\_clip, self.res\_clip)
         
-        h_chunks.append(h_c)
-        h_prev = h_c[:, -1]
+        h\_chunks.append(h\_c)
+        h\_prev = h\_c[:, -1]
     
-    return torch.cat(h_chunks, dim=1).to(iv.dtype)
+    return torch.cat(h\_chunks, dim=1).to(iv.dtype)
 \end{lstlisting}
 
 \subsection{B.3 Forget Gate Initialization}
 
 \begin{lstlisting}
-nn.init.normal_(self.forget_gate.weight, mean=0.0, std=0.01)
-nn.init.constant_(self.forget_gate.bias, -2.5)
+nn.init.normal\_(self.forget\_gate.weight, mean=0.0, std=0.01)
+nn.init.constant\_(self.forget\_gate.bias, -2.5)
 \end{lstlisting}
 
 \textbf{Why -2.5?} \texttt{softplus(-2.5) $\approx$ 0.076}. So \texttt{log f = -0.076}, 
@@ -84,8 +84,8 @@ per step -- slow decay.
 \subsection{B.4 Input Modulation}
 
 \begin{lstlisting}
-input_scale = (1.0 - f) * i
-iv = input_scale * v
+input\_scale = (1.0 - f) * i
+iv = input\_scale * v
 \end{lstlisting}
 
 *\textit{Why (1-f) } i?** When $f \approx 1$ (retain), $1 - f \approx 0$, so no 
@@ -95,9 +95,9 @@ ties the write magnitude to the forget rate.
 \subsection{B.5 Output Modulation}
 
 \begin{lstlisting}
-h_norm = self.state_norm(h_ctx)
-gated = (0.5 * v + 0.5 * h_norm) * F.silu(z)
-out = self.out_proj(gated)
+h\_norm = self.state\_norm(h\_ctx)
+gated = (0.5 * v + 0.5 * h\_norm) * F.silu(z)
+out = self.out\_proj(gated)
 \end{lstlisting}
 
 \textbf{Why 0.5 v + 0.5 h\_norm?} Preserves the current value alongside the 

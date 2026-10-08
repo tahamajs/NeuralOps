@@ -5,59 +5,59 @@
 
 \begin{lstlisting}
 class RALALinearAttention(BaseAttention):
-    def __init__(self, config, rank=64, pretrained_attn=None, **kwargs):
-        super().__init__(config, rank or 64)
+    def \_\_init\_\_(self, config, rank=64, pretrained\_attn=None, **kwargs):
+        super().\_\_init\_\_(config, rank or 64)
         
         # Dimensions
-        self.hidden_size = ...
-        self.num_heads = ...
-        self.head_dim = self.hidden_size // self.num_heads
+        self.hidden\_size = ...
+        self.num\_heads = ...
+        self.head\_dim = self.hidden\_size // self.num\_heads
         
         # Augmentation params
-        self.rank_r = 8
+        self.rank\_r = 8
         self.U = nn.Parameter(torch.randn(H, d, r) * 0.01)
         self.V = nn.Parameter(torch.randn(H, d, r) * 0.01)
         self.alpha = nn.Parameter(torch.tensor(0.0))
         
         # LoRA projections
-        self.q_proj = LoRALinear(...)
-        self.k_proj = LoRALinear(...)
-        self.v_proj = LoRALinear(...)
-        self.out_proj = LoRALinear(...)
+        self.q\_proj = LoRALinear(...)
+        self.k\_proj = LoRALinear(...)
+        self.v\_proj = LoRALinear(...)
+        self.out\_proj = LoRALinear(...)
         
-        if pretrained_attn is not None:
-            self.copy_weights(pretrained_attn)
+        if pretrained\_attn is not None:
+            self.copy\_weights(pretrained\_attn)
 \end{lstlisting}
 
 \subsection{B.2 Forward Pass (Causal)}
 
 \begin{lstlisting}
-if is_causal:
+if is\_causal:
     S = torch.zeros(B, H, d, d, device=..., dtype=q.dtype)
     z = torch.zeros(B, H, d, device=..., dtype=q.dtype)
-    num_list, denom_list = [], []
+    num\_list, denom\_list = [], []
     
-    for i in range(seq_len):
-        q_i = q_prime[:, :, i, :]  # (B, H, d)
-        k_i = k_prime[:, :, i, :]
-        v_i = v_masked[:, :, i, :]
+    for i in range(seq\_len):
+        q\_i = q\_prime[:, :, i, :]  # (B, H, d)
+        k\_i = k\_prime[:, :, i, :]
+        v\_i = v\_masked[:, :, i, :]
         
-        S = S + torch.einsum("bhd,bhe->bhde", k_i, v_i)
-        z = z + k_i
+        S = S + torch.einsum("bhd,bhe-\textgreater{}bhde", k\_i, v\_i)
+        z = z + k\_i
         
-        num_i = torch.einsum("bhd,bhde->bhe", q_i, S)
-        denom_i = torch.einsum("bhd,bhd->bh", q_i, z).unsqueeze(-1)
-        num_list.append(num_i)
-        denom_list.append(denom_i)
+        num\_i = torch.einsum("bhd,bhde-\textgreater{}bhe", q\_i, S)
+        denom\_i = torch.einsum("bhd,bhd-\textgreater{}bh", q\_i, z).unsqueeze(-1)
+        num\_list.append(num\_i)
+        denom\_list.append(denom\_i)
     
-    num = torch.stack(num_list, dim=2)
-    denom = torch.stack(denom_list, dim=2).clamp(min=1e-4)
-    lin_out = torch.nan_to_num(num / denom)
+    num = torch.stack(num\_list, dim=2)
+    denom = torch.stack(denom\_list, dim=2).clamp(min=1e-4)
+    lin\_out = torch.nan\_to\_num(num / denom)
     
     # Augmentation
-    rank_mat = torch.einsum("hdr,her->hde", self.U, self.V)  # (H, d, d)
-    aug_out = torch.nan_to_num(
-        torch.einsum("bhnd,hde->bhne", q_prime, rank_mat) / denom
+    rank\_mat = torch.einsum("hdr,her-\textgreater{}hde", self.U, self.V)  # (H, d, d)
+    aug\_out = torch.nan\_to\_num(
+        torch.einsum("bhnd,hde-\textgreater{}bhne", q\_prime, rank\_mat) / denom
     )
 \end{lstlisting}
 
@@ -65,29 +65,29 @@ if is_causal:
 
 \begin{lstlisting}
 else:
-    kv = torch.einsum("bhnd,bhne->bhde", k_prime, v_masked)  # (B,H,d,d)
-    z = k_prime.sum(dim=2)                                    # (B,H,d)
-    denom = torch.einsum("bhnd,bhd->bhn", q_prime, z).unsqueeze(-1).clamp(min=1e-4)
+    kv = torch.einsum("bhnd,bhne-\textgreater{}bhde", k\_prime, v\_masked)  # (B,H,d,d)
+    z = k\_prime.sum(dim=2)                                    # (B,H,d)
+    denom = torch.einsum("bhnd,bhd-\textgreater{}bhn", q\_prime, z).unsqueeze(-1).clamp(min=1e-4)
     
-    lin_out = torch.nan_to_num(
-        torch.einsum("bhnd,bhde->bhne", q_prime, kv) / denom
+    lin\_out = torch.nan\_to\_num(
+        torch.einsum("bhnd,bhde-\textgreater{}bhne", q\_prime, kv) / denom
     )
     
-    rank_mat = torch.einsum("hdr,her->hde", self.U, self.V)
-    aug_out = torch.nan_to_num(
-        torch.einsum("bhnd,hde->bhne", q_prime, rank_mat) / denom
+    rank\_mat = torch.einsum("hdr,her-\textgreater{}hde", self.U, self.V)
+    aug\_out = torch.nan\_to\_num(
+        torch.einsum("bhnd,hde-\textgreater{}bhne", q\_prime, rank\_mat) / denom
     )
 \end{lstlisting}
 
 \subsection{B.4 Combination}
 
 \begin{lstlisting}
-out = (lin_out + self.alpha * aug_out) * mask_4d
-out = out.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+out = (lin\_out + self.alpha * aug\_out) * mask\_4d
+out = out.permute(0, 2, 1, 3).contiguous().view(B, L, self.all\_head\_size)
 
-if self.is_nested_encoder:
+if self.is\_nested\_encoder:
     return out, None
-return self.out_proj(out), None
+return self.out\_proj(out), None
 \end{lstlisting}
 
 \subsection{B.5 Weight Copy}
@@ -95,7 +95,7 @@ return self.out_proj(out), None
 Standard extraction handles four families:
 
 \begin{lstlisting}
-if hasattr(src, "c_attn"):        # GPT-2
+if hasattr(src, "c\_attn"):        # GPT-2
     ...
 elif hasattr(src, "self"):        # RoBERTa
     ...
@@ -111,8 +111,8 @@ When LoRA is active, \texttt{freeze\_base\_weights} sets \texttt{U.requires\_gra
 This disables learning of the augmentation. To unfreeze:
 
 \begin{lstlisting}
-self.U.requires_grad = True
-self.V.requires_grad = True
+self.U.requires\_grad = True
+self.V.requires\_grad = True
 \end{lstlisting}
 
 \subsubsection{B.6.2 Missing Mask}
@@ -120,8 +120,8 @@ self.V.requires_grad = True
 Without \texttt{mask\_4d}, padding tokens contribute to prefix sums:
 
 \begin{lstlisting}
-k_prime = F.softplus(k) * mask_4d  # zero out padding
-v_masked = v * mask_4d
+k\_prime = F.softplus(k) * mask\_4d  # zero out padding
+v\_masked = v * mask\_4d
 \end{lstlisting}
 
 \subsubsection{B.6.3 Denominator Clamp}
@@ -135,18 +135,18 @@ denom = denom.clamp(min=1e-4)
 \subsubsection{B.6.4 Nested Encoder Detection}
 
 \begin{lstlisting}
-if hasattr(src, "out_lin"):      # DistilBERT (flat)
-    is_nested = False
+if hasattr(src, "out\_lin"):      # DistilBERT (flat)
+    is\_nested = False
 elif hasattr(src, "self") and hasattr(src.self, "query"):  # RoBERTa
-    is_nested = True
+    is\_nested = True
 \end{lstlisting}
 
 \subsection{B.7 Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("rala")
-@ATTENTION_REGISTRY.register("rala_attention")
-@ATTENTION_REGISTRY.register("rala_linear_attention")
+@ATTENTION\_REGISTRY.register("rala")
+@ATTENTION\_REGISTRY.register("rala\_attention")
+@ATTENTION\_REGISTRY.register("rala\_linear\_attention")
 class RALALinearAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -155,12 +155,12 @@ class RALALinearAttention(BaseAttention):
 
 \begin{lstlisting}
 # Check injection
-for name, mod in model.named_modules():
-    if "attention" in name and "rala" in type(mod).__name__.lower():
-        print(name, type(mod).__name__)
+for name, mod in model.named\_modules():
+    if "attention" in name and "rala" in type(mod).\_\_name\_\_.lower():
+        print(name, type(mod).\_\_name\_\_)
 
 # Check alpha
-for name, mod in model.named_modules():
+for name, mod in model.named\_modules():
     if hasattr(mod, 'alpha'):
         print(f"{name}: alpha = {mod.alpha.item():.4f}")
 \end{lstlisting}

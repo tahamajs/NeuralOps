@@ -5,7 +5,7 @@
 Given sequence length $N$ and block size $B_s$, the number of blocks is:
 
 \[
-M = \lceil N / B_s \rceil
+M = \lceil N / B\_s \rceil
 \tag{A.1}
 \]
 
@@ -23,14 +23,14 @@ For stride $\sigma$:
 Block score:
 
 \[
-S_{b_i, b_j} = \text{mean}(\tilde{Q}_{[b_i]} \tilde{K}_{[b_j]}^\top)
+S\_{b\_i, b\_j} = \text{mean}(\tilde{Q}\_{[b\_i]} \tilde{K}\_{[b\_j]}^\top)
 \tag{A.3}
 \]
 
 \subsection{A.3 Softpick}
 
 \[
-\text{softpick}(x)_i = \frac{\text{ReLU}(e^{x_i/T} - 1)}{\sum_j \text{ReLU}(e^{x_j/T} - 1)}
+\text{softpick}(x)\_i = \frac{\text{ReLU}(e^{x\_i/T} - 1)}{\sum\_j \text{ReLU}(e^{x\_j/T} - 1)}
 \tag{A.4}
 \]
 
@@ -48,14 +48,14 @@ Token $t$ is in stripe group $s_t = \lfloor t / S_w \rfloor$.
 Mask:
 
 \[
-\text{mask}_{ij} = \mathbb{1}[|s_i - s_j| \leq 1]
+\text{mask}\_{ij} = \mathbb{1}[|s\_i - s\_j| \leq 1]
 \tag{A.5}
 \]
 
 \subsection{A.5 RFF Rectification}
 
 \[
-\phi(x) = \frac{1}{\sqrt{F}} \exp(W_\text{rff} \hat{x})
+\phi(x) = \frac{1}{\sqrt{F}} \exp(W\_\text{rff} \hat{x})
 \tag{A.6}
 \]
 
@@ -64,7 +64,7 @@ where $\hat{x} = x / \|x\|_2$.
 Linear attention:
 
 \[
-\text{Out}_i = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\text{Out}\_i = \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \tag{A.7}
 \]
 

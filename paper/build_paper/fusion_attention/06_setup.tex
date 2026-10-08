@@ -60,7 +60,7 @@ Precision & FP16 \\
 
 \subsection{Quality Gate}
 
-PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL < 50.92\%.
+PASS $\ge$ 56\%, PASS\_LOW 50.92\%--56\%, FAIL \textless{} 50.92\%.
 
 \subsection{Hardware}
 
@@ -69,11 +69,11 @@ RTX 4070 Laptop, CUDA 12.1, PyTorch 2.1.2.
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_fusion_attn.py \
+python run\_all\_4\_fusion\_attn.py \
     --models distilbert,roberta,gpt2 \
-    --block_size 64 \
-    --top_k_blocks 2 \
-    --recovery_steps 50
+    --block\_size 64 \
+    --top\_k\_blocks 2 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}

@@ -47,14 +47,14 @@ seek a modified attention module $\mathcal{A}'$ that:
 network**:
 
 \[
-s_i = \sigma\left(\text{MLP}(x_i)\right) \in (0, 1)
+s\_i = \sigma\left(\text{MLP}(x\_i)\right) \in (0, 1)
 \tag{1.1}
 \]
 
 where $x_i$ is the hidden state of token $i$, and the MLP is:
 
 \[
-\text{MLP}(x) = W_2 \cdot \text{GELU}(W_1 x + b_1) + b_2
+\text{MLP}(x) = W\_2 \cdot \text{GELU}(W\_1 x + b\_1) + b\_2
 \tag{1.2}
 \]
 
@@ -64,7 +64,7 @@ with $W_1 \in \mathbb{R}^{64 \times d}$, $W_2 \in \mathbb{R}^{1 \times 64}$.
 tokens with the highest scores:
 
 \[
-\mathcal{T} = \text{top-}k_i \, s_i
+\mathcal{T} = \text{top-}k\_i \, s\_i
 \tag{1.3}
 \]
 

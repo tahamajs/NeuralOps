@@ -20,7 +20,7 @@ where $\Omega \in \mathbb{R}^{d_h \times F}$ is a random projection.
 Using $\cos(a)\cos(b) + \sin(a)\sin(b) = \cos(a - b)$:
 
 \[
-\phi(x)^\top \phi(y) = \frac{1}{\sqrt{F}} \sum_{i=1}^{F} \cos(\omega_i^\top (x - y))
+\phi(x)^\top \phi(y) = \frac{1}{\sqrt{F}} \sum\_{i=1}^{F} \cos(\omega\_i^\top (x - y))
 \]
 
 This is a scaled cosine-similarity kernel.
@@ -28,7 +28,7 @@ This is a scaled cosine-similarity kernel.
 \subsection{A.2 Spherical Normalization}
 
 \[
-\hat{x} = \frac{x}{\|x\|_2 + \epsilon}
+\hat{x} = \frac{x}{\|x\|\_2 + \epsilon}
 \]
 
 \textbf{Property.} $\|\hat{x}\|_2 = 1$ for all $x$.
@@ -40,7 +40,7 @@ This is a scaled cosine-similarity kernel.
 \subsection{A.3 Linear Attention}
 
 \[
-O_i^\text{linear} = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+O\_i^\text{linear} = \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \]
 
 \textbf{Complexity.} Computing $KV = \sum_j \phi(k_j) v_j^\top$ is 
@@ -51,14 +51,14 @@ $\mathcal{O}(L \cdot 2F \cdot d_h)$. Evaluating (A.5) is $\mathcal{O}(L \cdot 2F
 For decoders, we require:
 
 \[
-O_t^\text{linear} = \frac{\phi(q_t)^\top \sum_{j \leq t} \phi(k_j) v_j^\top}{\phi(q_t)^\top \sum_{j \leq t} \phi(k_j)}
+O\_t^\text{linear} = \frac{\phi(q\_t)^\top \sum\_{j \leq t} \phi(k\_j) v\_j^\top}{\phi(q\_t)^\top \sum\_{j \leq t} \phi(k\_j)}
 \]
 
 Define:
 
 \[
-S_t = \sum_{j \leq t} \phi(k_j) v_j^\top, \quad
-Z_t = \sum_{j \leq t} \phi(k_j)
+S\_t = \sum\_{j \leq t} \phi(k\_j) v\_j^\top, \quad
+Z\_t = \sum\_{j \leq t} \phi(k\_j)
 \]
 
 Both are cumulative sums, computed via \texttt{torch.cumsum}.
@@ -69,7 +69,7 @@ $\mathcal{O}(L \cdot 2F \cdot d_h)$ memory.
 \subsection{A.5 Gate Fusion}
 
 \[
-g = \sigma(W_g X + b_g)
+g = \sigma(W\_g X + b\_g)
 \]
 
 \[
@@ -119,7 +119,7 @@ When does the linear stream pay off?
 Breakeven when $T_d = T_l$:
 
 \[
-L^* = \frac{c_2 \cdot 2F}{c_1}
+L^* = \frac{c\_2 \cdot 2F}{c\_1}
 \]
 
 For typical constants, $L^* \approx 2F \cdot \kappa$ where $\kappa$ is a 

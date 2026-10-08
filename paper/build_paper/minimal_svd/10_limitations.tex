@@ -21,8 +21,8 @@ Only SST-2 is evaluated. MinimalSVD may behave differently on:
 \textbf{Constraint} & \textbf{Status} \\
 \midrule
 $\le$124M params & Tested \\
->1B params & Not tested \\
->24 layers & Not tested \\
+\textgreater{}1B params & Not tested \\
+\textgreater{}24 layers & Not tested \\
 MoE & Not tested \\
 \bottomrule
 \end{tabular}
@@ -61,7 +61,7 @@ but require calibration.
 Unlike A3, MinimalSVD does \textbf{not} enforce a Frobenius error threshold per 
 layer. It relies on:
 \begin{itemize}
-\item Weight extraction checks (norm > 1e-4)
+\item Weight extraction checks (norm \textgreater{} 1e-4)
 \item Empirical accuracy after recovery
 \item Energy bound $\sqrt{1 - \eta}$ (theoretical, not enforced)
 

@@ -62,7 +62,7 @@ The forward pass:
 For each projection $P \in \{Q, K, V, O\}$, we use a \texttt{LoRALinear} module:
 
 \[
-\text{Proj}_P(X) = X W_P^\top + (X A_P^\top) B_P^\top \cdot s + b_P
+\text{Proj}\_P(X) = X W\_P^\top + (X A\_P^\top) B\_P^\top \cdot s + b\_P
 \]
 
 where $W_P$ is the frozen base, $(A_P, B_P)$ are LoRA factors, and 
@@ -86,12 +86,12 @@ Concretely:
 
 \[
 \begin{aligned}
-X_\text{norm} &= \text{LayerNorm}(X) \\
-\logits &= \text{Router}(X_\text{norm}) \in \mathbb{R}^{B \times L \times E} \\
+X\_\text{norm} &= \text{LayerNorm}(X) \\
+\logits &= \text{Router}(X\_\text{norm}) \in \mathbb{R}^{B \times L \times E} \\
 (\text{topk\_vals}, \text{topk\_idx}) &= \text{topk}(\logits, k) \\
 \text{scores} &= \text{softmax}(\text{topk\_vals}) \\
-E_\text{out} &= \text{stack}([\text{Expert}_e(X) \text{ for } e \in [E]]) \\
-\text{MoE}(X) &= \sum_{j=1}^{k} \text{scores}_j \cdot E_\text{out}[\text{topk\_idx}_j]
+E\_\text{out} &= \text{stack}([\text{Expert}\_e(X) \text{ for } e \in [E]]) \\
+\text{MoE}(X) &= \sum\_{j=1}^{k} \text{scores}\_j \cdot E\_\text{out}[\text{topk\_idx}\_j]
 \end{aligned}
 \]
 
@@ -100,7 +100,7 @@ E_\text{out} &= \text{stack}([\text{Expert}_e(X) \text{ for } e \in [E]]) \\
 Each expert is a 2-layer MLP:
 
 \[
-\text{Expert}_e(X) = W_2^{(e)} \cdot \text{GELU}(W_1^{(e)} X + b_1^{(e)}) + b_2^{(e)}
+\text{Expert}\_e(X) = W\_2^{(e)} \cdot \text{GELU}(W\_1^{(e)} X + b\_1^{(e)}) + b\_2^{(e)}
 \]
 
 with $W_1^{(e)} \in \mathbb{R}^{(2d) \times d}$ and 
@@ -111,7 +111,7 @@ $W_2^{(e)} \in \mathbb{R}^{d \times (2d)}$.
 \textbf{Critical.} We initialize:
 
 \[
-W_2^{(e)} = 0, \quad b_2^{(e)} = 0 \quad \forall e
+W\_2^{(e)} = 0, \quad b\_2^{(e)} = 0 \quad \forall e
 \]
 
 This ensures $\text{Expert}_e(X) = 0$ for all inputs, so 
@@ -122,7 +122,7 @@ $\text{MoE}(X) = 0$ at step 0.
 We add the Switch/GShard load-balancing loss:
 
 \[
-\mathcal{L}_\text{aux} = E \cdot \sum_{e=1}^{E} f_e \cdot P_e
+\mathcal{L}\_\text{aux} = E \cdot \sum\_{e=1}^{E} f\_e \cdot P\_e
 \]
 
 where $f_e$ is the fraction of tokens routed to expert $e$ and $P_e$ is 
@@ -147,7 +147,7 @@ conservative -- even after training, the MoE never dominates the base.
 A learnable scalar gate:
 
 \[
-g_\text{gate} = \sigma(b_g), \quad b_g \in \mathbb{R}
+g\_\text{gate} = \sigma(b\_g), \quad b\_g \in \mathbb{R}
 \]
 
 initialized to $b_g = -3.0$, so $g_\text{gate} \approx 0.047$ at start.
@@ -155,7 +155,7 @@ initialized to $b_g = -3.0$, so $g_\text{gate} \approx 0.047$ at start.
 The final MoE contribution:
 
 \[
-\text{MoE}_\text{final}(X) = g_\text{gate} \cdot \text{MoE}(X)
+\text{MoE}\_\text{final}(X) = g\_\text{gate} \cdot \text{MoE}(X)
 \]
 
 \textbf{Rationale.} Even with zero-init, the MoE branch's gradient at step 0 is 
@@ -168,7 +168,7 @@ drift.
 The final forward pass:
 
 \[
-V' = V + \alpha \cdot g_\text{gate} \cdot \text{MoE}(X)
+V' = V + \alpha \cdot g\_\text{gate} \cdot \text{MoE}(X)
 \]
 
 At step 0, $W_2^{(e)} = 0 \Rightarrow \text{MoE}(X) = 0 \Rightarrow V' = V$. 
@@ -179,7 +179,7 @@ Exact preservation.
 The output projection follows the standard pattern:
 
 \[
-Y = \text{Attn}(Q, K, V') W_O^\top + b_O
+Y = \text{Attn}(Q, K, V') W\_O^\top + b\_O
 \]
 
 with nested encoder bypass: for RoBERTa/BERT, \texttt{out\_lin} is not applied 
@@ -189,29 +189,29 @@ with nested encoder bypass: for RoBERTa/BERT, \texttt{out\_lin} is not applied
 
 \textbf{Algorithm 1:} BAM-UMoE forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, mask, position_embeddings
-Output: Y $\in$ R^{B$\times$L$\times$d}, aux_loss
+Input:  X $\in$ R^{B$\times$L$\times$d}, mask, position\_embeddings
+Output: Y $\in$ R^{B$\times$L$\times$d}, aux\_loss
 
-1:  Q $\leftarrow$ LoRALinear_Q(X)                          Frozen base + LoRA
-2:  K $\leftarrow$ LoRALinear_K(X)
-3:  V $\leftarrow$ LoRALinear_V(X)
+1:  Q $\leftarrow$ LoRALinear\_Q(X)                          Frozen base + LoRA
+2:  K $\leftarrow$ LoRALinear\_K(X)
+3:  V $\leftarrow$ LoRALinear\_V(X)
 4:
-5:  if RoPE: (Q, K) $\leftarrow$ apply_rotary(Q, K, cos, sin)
-6:  if GQA: K, V $\leftarrow$ repeat_kv(K, V, H/H_kv)
+5:  if RoPE: (Q, K) $\leftarrow$ apply\_rotary(Q, K, cos, sin)
+6:  if GQA: K, V $\leftarrow$ repeat\_kv(K, V, H/H\_kv)
 7:
-8:  if not cross_attention:
-9:      MoE_out $\leftarrow$ UnifiedMoE(X)                  Top-2 MoE
-10:     V $\leftarrow$ V + 0.1   MoE_out                    MoE refinement
+8:  if not cross\_attention:
+9:      MoE\_out $\leftarrow$ UnifiedMoE(X)                  Top-2 MoE
+10:     V $\leftarrow$ V + 0.1   MoE\_out                    MoE refinement
 11:
-12: S $\leftarrow$ (Q @ K^T) / $\sqrt{}$d_h                         FP32
-13: S $\leftarrow$ apply_mask(S, causal, padding)
+12: S $\leftarrow$ (Q @ K^T) / $\sqrt{}$d\_h                         FP32
+13: S $\leftarrow$ apply\_mask(S, causal, padding)
 14: A $\leftarrow$ softmax(S)
 15: C $\leftarrow$ A @ V
 16:
-17: if nested_encoder: Y $\leftarrow$ C
-18: else: Y $\leftarrow$ LoRALinear_O(C)
+17: if nested\_encoder: Y $\leftarrow$ C
+18: else: Y $\leftarrow$ LoRALinear\_O(C)
 19:
-20: return Y, MoE.aux_loss
+20: return Y, MoE.aux\_loss
 \end{lstlisting}
 
 \subsection{Complexity Analysis}

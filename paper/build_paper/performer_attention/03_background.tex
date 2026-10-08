@@ -15,14 +15,14 @@
 Reformulate softmax as a kernel:
 
 \[
-\text{softmax}(q_i^\top k_j / \sqrt{d}) = \frac{\exp(q_i^\top k_j / \sqrt{d})}{\sum_j \exp(q_i^\top k_j / \sqrt{d})}
+\text{softmax}(q\_i^\top k\_j / \sqrt{d}) = \frac{\exp(q\_i^\top k\_j / \sqrt{d})}{\sum\_j \exp(q\_i^\top k\_j / \sqrt{d})}
 \tag{3.2}
 \]
 
 Approximate $\exp(q^\top k) \approx \phi(q)^\top \phi(k)$:
 
 \[
-\text{Attn}_i \approx \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\text{Attn}\_i \approx \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \tag{3.3}
 \]
 
@@ -38,14 +38,14 @@ k(x - y) = \int p(\omega) e^{i \omega^\top (x - y)} d\omega
 Sample $\omega_1, \dots, \omega_F$ from $p(\omega)$:
 
 \[
-k(x - y) \approx \frac{1}{F} \sum_{i=1}^{F} e^{i \omega_i^\top (x - y)}
+k(x - y) \approx \frac{1}{F} \sum\_{i=1}^{F} e^{i \omega\_i^\top (x - y)}
 \tag{3.5}
 \]
 
 \textbf{Real form:}
 
 \[
-\phi(x) = \frac{1}{\sqrt{F}} [\cos(\omega_1^\top x), \dots, \cos(\omega_F^\top x), \sin(\omega_1^\top x), \dots, \sin(\omega_F^\top x)]
+\phi(x) = \frac{1}{\sqrt{F}} [\cos(\omega\_1^\top x), \dots, \cos(\omega\_F^\top x), \sin(\omega\_1^\top x), \dots, \sin(\omega\_F^\top x)]
 \tag{3.6}
 \]
 

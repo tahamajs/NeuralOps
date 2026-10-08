@@ -23,7 +23,7 @@ RPC replaces the standard attention score with a sketched version:
                                    
     +----------+             +----------+
     | Q, K, V  |             | $\Omega$ $\in$ R^   |
-    | proj     |             | {d_h$\times$r}  |
+    | proj     |             | {d\_h$\times$r}  |
     +----+-----+             +----+-----+
          |                        |
                                    
@@ -54,17 +54,17 @@ RPC replaces the standard attention score with a sketched version:
 For each head $h$, RPC samples:
 
 \[
-\Omega_h \in \mathbb{R}^{d_h \times r}, \qquad
-(\Omega_h)_{ij} \sim \mathcal{N}\!\left(0, \frac{1}{d_h}\right)
+\Omega\_h \in \mathbb{R}^{d\_h \times r}, \qquad
+(\Omega\_h)\_{ij} \sim \mathcal{N}\!\left(0, \frac{1}{d\_h}\right)
 \tag{4.1}
 \]
 
 This is stored as a \textbf{buffer} (not a parameter):
 
 \begin{lstlisting}
-self.register_buffer(
+self.register\_buffer(
     "proj",
-    torch.randn(self.num_heads, self.head_dim, self.rank) * (self.head_dim ** -0.5)
+    torch.randn(self.num\_heads, self.head\_dim, self.rank) * (self.head\_dim ** -0.5)
 )
 \end{lstlisting}
 
@@ -92,7 +92,7 @@ across heads.
 \subsubsection{Standard Attention}
 
 \[
-S_{ij} = \frac{Q_i K_j^\top}{\sqrt{d_h}}, \qquad
+S\_{ij} = \frac{Q\_i K\_j^\top}{\sqrt{d\_h}}, \qquad
 P = \text{softmax}(S), \qquad
 \text{out} = P V
 \tag{4.2}
@@ -101,13 +101,13 @@ P = \text{softmax}(S), \qquad
 \subsubsection{RPC Attention}
 
 \[
-\tilde{Q}_i = Q_i \Omega_h, \qquad
-\tilde{K}_j = K_j \Omega_h
+\tilde{Q}\_i = Q\_i \Omega\_h, \qquad
+\tilde{K}\_j = K\_j \Omega\_h
 \tag{4.3}
 \]
 
 \[
-S_{ij}^{RPC} = \frac{\tilde{Q}_i \tilde{K}_j^\top}{\sqrt{r}}, \qquad
+S\_{ij}^{RPC} = \frac{\tilde{Q}\_i \tilde{K}\_j^\top}{\sqrt{r}}, \qquad
 P^{RPC} = \text{softmax}(S^{RPC}), \qquad
 \text{out} = P^{RPC} V
 \tag{4.4}
@@ -120,7 +120,7 @@ P^{RPC} = \text{softmax}(S^{RPC}), \qquad
 For decoders, the causal mask is applied in the sketched space:
 
 \[
-S^{RPC} = S^{RPC} + M_{causal}
+S^{RPC} = S^{RPC} + M\_{causal}
 \tag{4.5}
 \]
 
@@ -148,7 +148,7 @@ Softmax & $\mathcal{O}(L^2 H)$ & $\mathcal{O}(L^2 H)$ \\
 \textbf{Speedup} for $L \gg d_h$:
 
 \[
-\frac{\text{Standard}}{\text{RPC}} \approx \frac{d_h}{r}
+\frac{\text{Standard}}{\text{RPC}} \approx \frac{d\_h}{r}
 \tag{4.6}
 \]
 
@@ -200,29 +200,29 @@ Proj buffer & 0 & 0 \\
 
 \textbf{Algorithm 1:} RPC forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, $\Omega$ (fixed)
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, $\Omega$ (fixed)
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
-1:  Q $\leftarrow$ W_Q X + LoRA_Q(X)            (B, H, L, d_h)
-2:  K $\leftarrow$ W_K X + LoRA_K(X)
-3:  V $\leftarrow$ W_V X + LoRA_V(X)
+1:  Q $\leftarrow$ W\_Q X + LoRA\_Q(X)            (B, H, L, d\_h)
+2:  K $\leftarrow$ W\_K X + LoRA\_K(X)
+3:  V $\leftarrow$ W\_V X + LoRA\_V(X)
 4:  if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
-5:  if GQA:  K, V $\leftarrow$ repeat_kv(K, V)
+5:  if GQA:  K, V $\leftarrow$ repeat\_kv(K, V)
 6:
 7:  # Sketch
-8:  Q  $\leftarrow$ einsum("bhld,hdr->bhlr", Q, $\Omega$)
-9:  K  $\leftarrow$ einsum("bhld,hdr->bhlr", K, $\Omega$)
+8:  Q  $\leftarrow$ einsum("bhld,hdr-\textgreater{}bhlr", Q, $\Omega$)
+9:  K  $\leftarrow$ einsum("bhld,hdr-\textgreater{}bhlr", K, $\Omega$)
 10:
 11: # Score
 12: S $\leftarrow$ Q  K ^T / $\sqrt{}$r                    (B, H, L, L)
-13: if causal: S $\leftarrow$ S + causal_mask
-14: if mask:   S $\leftarrow$ S + pad_mask
+13: if causal: S $\leftarrow$ S + causal\_mask
+14: if mask:   S $\leftarrow$ S + pad\_mask
 15:
 16: # Attend
 17: P $\leftarrow$ softmax(S)
-18: out $\leftarrow$ P V                          (B, H, L, d_h)
-19: out $\leftarrow$ concat_heads(out)
-20: Y $\leftarrow$ W_O out + LoRA_O(out)
+18: out $\leftarrow$ P V                          (B, H, L, d\_h)
+19: out $\leftarrow$ concat\_heads(out)
+20: Y $\leftarrow$ W\_O out + LoRA\_O(out)
 21: return Y
 \end{lstlisting}
 
@@ -233,7 +233,7 @@ Output: Y $\in$ R^{B$\times$L$\times$d}
 \textbf{Claim.} For $r \geq 8 \log(L) / \epsilon^2$, with probability $1 - L^{-2}$:
 
 \[
-|S^{RPC}_{ij} - S_{ij}| \leq \epsilon \|Q_i\|_2 \|K_j\|_2 / \sqrt{r}
+|S^{RPC}\_{ij} - S\_{ij}| \leq \epsilon \|Q\_i\|\_2 \|K\_j\|\_2 / \sqrt{r}
 \tag{4.7}
 \]
 
@@ -245,7 +245,7 @@ vector $[Q_i; K_j]$. Full derivation in Appendix A.1. $\square$
 \textbf{Claim.} The sketched scores $S^{RPC}$ have bounded variance:
 
 \[
-\text{Var}[S^{RPC}_{ij}] \approx \frac{1}{r} \|Q_i\|_2^2 \|K_j\|_2^2
+\text{Var}[S^{RPC}\_{ij}] \approx \frac{1}{r} \|Q\_i\|\_2^2 \|K\_j\|\_2^2
 \tag{4.8}
 \]
 

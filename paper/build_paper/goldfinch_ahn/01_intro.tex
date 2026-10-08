@@ -50,9 +50,9 @@ Two implementation details must be disclosed before the methodology:
 
 \begin{lstlisting}
 class GatedDeltaNetLayer(nn.Module):
-    def __init__(self, d_model, use_spectral_norm=False):
-        super().__init__()
-        self.net = nn.Linear(d_model, d_model)
+    def \_\_init\_\_(self, d\_model, use\_spectral\_norm=False):
+        super().\_\_init\_\_()
+        self.net = nn.Linear(d\_model, d\_model)
 
     def forward(self, x):
         return self.net(x)
@@ -111,5 +111,5 @@ $r$ & LoRA rank & 4.4 \\
 \bottomrule
 \end{tabular}
 \end{table}
-</parameter>
+\textless{}/parameter\textgreater{}
 

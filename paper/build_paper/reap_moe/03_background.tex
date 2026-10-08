@@ -5,7 +5,7 @@
 A standard MoE layer computes:
 
 \[
-y = \sum_{i=1}^{E} g_i(x) \cdot E_i(x)
+y = \sum\_{i=1}^{E} g\_i(x) \cdot E\_i(x)
 \tag{3.1}
 \]
 
@@ -18,7 +18,7 @@ where:
 \textbf{Sparse MoE.} To save compute, only the top-$k$ experts are activated:
 
 \[
-y = \sum_{i \in \text{Top-}k(g(x))} \tilde{g}_i(x) \cdot E_i(x)
+y = \sum\_{i \in \text{Top-}k(g(x))} \tilde{g}\_i(x) \cdot E\_i(x)
 \tag{3.2}
 \]
 
@@ -29,7 +29,7 @@ where $\tilde{g}$ is $g$ restricted to the top-$k$ and renormalized.
 \textbf{Linear router.} The gate is typically:
 
 \[
-g(x) = \text{softmax}(W_r \cdot \text{LN}(x))
+g(x) = \text{softmax}(W\_r \cdot \text{LN}(x))
 \tag{3.3}
 \]
 
@@ -38,7 +38,7 @@ where $W_r \in \mathbb{R}^{E \times d}$.
 \textbf{Noisy gating.} Shazeer et al. (2017) add Gaussian noise during training:
 
 \[
-g(x) = \text{softmax}(W_r x + \epsilon), \quad \epsilon \sim \mathcal{N}(0, \sigma^2)
+g(x) = \text{softmax}(W\_r x + \epsilon), \quad \epsilon \sim \mathcal{N}(0, \sigma^2)
 \tag{3.4}
 \]
 
@@ -53,7 +53,7 @@ Without regularization, the router tends to concentrate on a few experts.
 The standard fix is the auxiliary loss:
 
 \[
-\mathcal{L}_\text{aux} = E \cdot \sum_{i=1}^{E} \rho_i \cdot \pi_i
+\mathcal{L}\_\text{aux} = E \cdot \sum\_{i=1}^{E} \rho\_i \cdot \pi\_i
 \tag{3.5}
 \]
 
@@ -73,7 +73,7 @@ For a weight matrix $W \in \mathbb{R}^{m \times n}$, the rank-$r$ SVD
 approximation is:
 
 \[
-W \approx U_r \Sigma_r V_r^\top
+W \approx U\_r \Sigma\_r V\_r^\top
 \tag{3.6}
 \]
 
@@ -89,7 +89,7 @@ with rank $r = \min(d_\text{in}, d_\text{out}) / 4$.
 Standard transformer FFN:
 
 \[
-\text{FFN}(x) = W_2 \cdot \text{GELU}(W_1 x)
+\text{FFN}(x) = W\_2 \cdot \text{GELU}(W\_1 x)
 \tag{3.7}
 \]
 
@@ -99,7 +99,7 @@ Parameter count: $8d^2$.
 REAP-MoE replaces this with $E$ experts, each using SVD:
 
 \[
-\text{FFN}_\text{MoE}(x) = \sum_{i \in \text{Top-}k} g_i \cdot E_i(x)
+\text{FFN}\_\text{MoE}(x) = \sum\_{i \in \text{Top-}k} g\_i \cdot E\_i(x)
 \tag{3.8}
 \]
 

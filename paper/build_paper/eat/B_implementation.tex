@@ -4,51 +4,51 @@
 \subsection{B.1 The EATBlock Module}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("eat")
-@ATTENTION_REGISTRY.register("eat_attention")
+@ATTENTION\_REGISTRY.register("eat")
+@ATTENTION\_REGISTRY.register("eat\_attention")
 class EATBlock(BaseAttention):
-    def __init__(self, config, rank=64, ..., prune_layer=None,
-                 pretrained_attn=None, ...):
-        super().__init__(config, rank)
-        self.q_lin = LoRALinear(d, H*d_h, lora_rank=16)
-        self.k_lin = LoRALinear(d, H_kv*d_h, lora_rank=16)
-        self.v_lin = LoRALinear(d, H_kv*d_h, lora_rank=16)
-        self.out_lin = LoRALinear(H*d_h, d, lora_rank=16)
-        self.prune_layer = prune_layer
-        if pretrained_attn is not None:
-            self.copy_weights(pretrained_attn)
+    def \_\_init\_\_(self, config, rank=64, ..., prune\_layer=None,
+                 pretrained\_attn=None, ...):
+        super().\_\_init\_\_(config, rank)
+        self.q\_lin = LoRALinear(d, H*d\_h, lora\_rank=16)
+        self.k\_lin = LoRALinear(d, H\_kv*d\_h, lora\_rank=16)
+        self.v\_lin = LoRALinear(d, H\_kv*d\_h, lora\_rank=16)
+        self.out\_lin = LoRALinear(H*d\_h, d, lora\_rank=16)
+        self.prune\_layer = prune\_layer
+        if pretrained\_attn is not None:
+            self.copy\_weights(pretrained\_attn)
     
-    def forward(self, X, attention_mask=None, head_mask=None,
-                encoder_hidden_states=None, position_embeddings=None, **kwargs):
+    def forward(self, X, attention\_mask=None, head\_mask=None,
+                encoder\_hidden\_states=None, position\_embeddings=None, **kwargs):
         B, L, D = X.shape
         # 1. Project
-        q = self.q_lin(X).view(B, L, H, d_h).transpose(1, 2)
-        k = self.k_lin(X).view(B, L, H_kv, d_h).transpose(1, 2)
-        v = self.v_lin(X).view(B, L, H_kv, d_h).transpose(1, 2)
+        q = self.q\_lin(X).view(B, L, H, d\_h).transpose(1, 2)
+        k = self.k\_lin(X).view(B, L, H\_kv, d\_h).transpose(1, 2)
+        v = self.v\_lin(X).view(B, L, H\_kv, d\_h).transpose(1, 2)
         # 2. RoPE
-        if position_embeddings is not None:
-            q, k = apply_rotary_pos_emb(q, k, *position_embeddings)
+        if position\_embeddings is not None:
+            q, k = apply\_rotary\_pos\_emb(q, k, *position\_embeddings)
         # 3. GQA
-        if self.kv_repeat > 1:
-            k = repeat_kv(k, self.kv_repeat)
-            v = repeat_kv(v, self.kv_repeat)
+        if self.kv\_repeat \textgreater{} 1:
+            k = repeat\_kv(k, self.kv\_repeat)
+            v = repeat\_kv(v, self.kv\_repeat)
         # 4. Attention
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1)) * scale
-        if self.is_decoder:
-            scores = scores + causal_mask
-        if attention_mask is not None:
-            scores = scores + pad_mask
+        if self.is\_decoder:
+            scores = scores + causal\_mask
+        if attention\_mask is not None:
+            scores = scores + pad\_mask
         probs = F.softmax(scores, dim=-1)
-        attn_out = torch.matmul(probs.to(v.dtype), v)
-        attn_out = attn_out.transpose(1, 2).contiguous().view(B, L, H*d_h)
+        attn\_out = torch.matmul(probs.to(v.dtype), v)
+        attn\_out = attn\_out.transpose(1, 2).contiguous().view(B, L, H*d\_h)
         # 5. Output projection
-        if self.is_nested_encoder:
-            out = attn_out
+        if self.is\_nested\_encoder:
+            out = attn\_out
         else:
-            out = self.out_lin(attn_out)
+            out = self.out\_lin(attn\_out)
         # 6. Optional pruning (inference only)
-        if self.prune_layer is not None and not self.training:
-            out, _ = self.prune_layer(out)
+        if self.prune\_layer is not None and not self.training:
+            out, \_ = self.prune\_layer(out)
         return out, None
 \end{lstlisting}
 
@@ -56,23 +56,23 @@ class EATBlock(BaseAttention):
 
 \begin{lstlisting}
 class LoRALinear(nn.Module):
-    def __init__(self, in_features, out_features, bias=True,
-                 lora_rank=16, lora_alpha=32.0, freeze_base=False):
-        super().__init__()
-        self.weight = nn.Parameter(torch.empty(out_features, in_features))
+    def \_\_init\_\_(self, in\_features, out\_features, bias=True,
+                 lora\_rank=16, lora\_alpha=32.0, freeze\_base=False):
+        super().\_\_init\_\_()
+        self.weight = nn.Parameter(torch.empty(out\_features, in\_features))
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
-        self.reset_parameters()
-        if freeze_base:
-            self.freeze_base_weights()
+            self.bias = nn.Parameter(torch.empty(out\_features))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.zeros(out\_features, lora\_rank))
+        self.reset\_parameters()
+        if freeze\_base:
+            self.freeze\_base\_weights()
     
     def forward(self, x):
         out = F.linear(x, self.weight, self.bias)
-        if self.lora_rank > 0:
-            lora = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
+        if self.lora\_rank \textgreater{} 0:
+            lora = F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
             out = out + lora
         return out
 \end{lstlisting}
@@ -82,10 +82,10 @@ class LoRALinear(nn.Module):
 \subsubsection{B.3.1 DistilBERT}
 
 \begin{lstlisting}
-extracted["q"] = (src.q_lin.weight.data, src.q_lin.bias.data)
-extracted["k"] = (src.k_lin.weight.data, src.k_lin.bias.data)
-extracted["v"] = (src.v_lin.weight.data, src.v_lin.bias.data)
-extracted["o"] = (src.out_lin.weight.data, src.out_lin.bias.data)
+extracted["q"] = (src.q\_lin.weight.data, src.q\_lin.bias.data)
+extracted["k"] = (src.k\_lin.weight.data, src.k\_lin.bias.data)
+extracted["v"] = (src.v\_lin.weight.data, src.v\_lin.bias.data)
+extracted["o"] = (src.out\_lin.weight.data, src.out\_lin.bias.data)
 \end{lstlisting}
 
 \subsubsection{B.3.2 RoBERTa (nested)}
@@ -101,21 +101,21 @@ extracted["o"] = (src.output.dense.weight.data, src.output.dense.bias.data)
 \subsubsection{B.3.3 GPT-2 (Conv1D)}
 
 \begin{lstlisting}
-w = src.c_attn.weight.data.t()  # transpose
-q_w, k_w, v_w = w.chunk(3, dim=0)
-extracted["q"] = (q_w, src.c_attn.bias.data[:768])
-extracted["k"] = (k_w, src.c_attn.bias.data[768:1536])
-extracted["v"] = (v_w, src.c_attn.bias.data[1536:2304])
-extracted["o"] = (src.c_proj.weight.data.t(), src.c_proj.bias.data)
+w = src.c\_attn.weight.data.t()  # transpose
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+extracted["q"] = (q\_w, src.c\_attn.bias.data[:768])
+extracted["k"] = (k\_w, src.c\_attn.bias.data[768:1536])
+extracted["v"] = (v\_w, src.c\_attn.bias.data[1536:2304])
+extracted["o"] = (src.c\_proj.weight.data.t(), src.c\_proj.bias.data)
 \end{lstlisting}
 
 \subsubsection{B.3.4 Qwen}
 
 \begin{lstlisting}
-extracted["q"] = (src.q_proj.weight.data, src.q_proj.bias.data)
-extracted["k"] = (src.k_proj.weight.data, src.k_proj.bias.data)
-extracted["v"] = (src.v_proj.weight.data, src.v_proj.bias.data)
-extracted["o"] = (src.o_proj.weight.data, src.o_proj.bias.data)
+extracted["q"] = (src.q\_proj.weight.data, src.q\_proj.bias.data)
+extracted["k"] = (src.k\_proj.weight.data, src.k\_proj.bias.data)
+extracted["v"] = (src.v\_proj.weight.data, src.v\_proj.bias.data)
+extracted["o"] = (src.o\_proj.weight.data, src.o\_proj.bias.data)
 \end{lstlisting}
 
 \subsection{B.4 The Silent Failure Path}
@@ -123,11 +123,11 @@ extracted["o"] = (src.o_proj.weight.data, src.o_proj.bias.data)
 \textbf{Critical code path} (in \texttt{copy\_weights}):
 
 \begin{lstlisting}
-missing_after = [k for k, (w, _) in extracted.items() 
-                 if w is None and (k != "o" or not self.is_nested_encoder)]
-if missing_after:
-    logger.warning(f"EATBlock copy_weights: missing projections {missing_after} "
-                   f"from {pretrained_attn.__class__.__name__}; "
+missing\_after = [k for k, (w, \_) in extracted.items() 
+                 if w is None and (k != "o" or not self.is\_nested\_encoder)]
+if missing\_after:
+    logger.warning(f"EATBlock copy\_weights: missing projections {missing\_after} "
+                   f"from {pretrained\_attn.\_\_class\_\_.\_\_name\_\_}; "
                    f"proceeding with random init for those")
     # $\leftarrow$ continues, doesn't raise
 \end{lstlisting}
@@ -135,21 +135,21 @@ if missing_after:
 This is the origin of the "silent failure" problem. We recommend adding:
 
 \begin{lstlisting}
-if missing_after and os.environ.get("EAT_STRICT", "0") == "1":
-    raise RuntimeError(f"Missing projections: {missing_after}")
+if missing\_after and os.environ.get("EAT\_STRICT", "0") == "1":
+    raise RuntimeError(f"Missing projections: {missing\_after}")
 \end{lstlisting}
 
 \subsection{B.5 Post-Injection Sanity Check}
 
 \begin{lstlisting}
-def sanity_check(model, device, seq_len=32):
+def sanity\_check(model, device, seq\_len=32):
     model.eval()
-    ids = torch.randint(0, 1000, (2, seq_len), device=device)
-    with torch.no_grad():
+    ids = torch.randint(0, 1000, (2, seq\_len), device=device)
+    with torch.no\_grad():
         out = model(ids).logits
     std = out.std(dim=0).mean().item()
     uniq = out.argmax(-1).unique().numel()
-    if std < 1e-3 or uniq < 2:
+    if std \textless{} 1e-3 or uniq \textless{} 2:
         raise RuntimeError(f"Collapse detected: std={std}, uniq={uniq}")
 \end{lstlisting}
 

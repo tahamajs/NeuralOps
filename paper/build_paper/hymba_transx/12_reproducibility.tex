@@ -3,8 +3,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -13,28 +13,28 @@ pip install -r requirements.txt
 \subsection{Running}
 
 \begin{lstlisting}
-python run_all_4_hymba_transx.py \
+python run\_all\_4\_hymba\_transx.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --model_family bert \
-    --modules full,hymba_transx \
-    --recovery_steps 50 \
-    --lora_rank 8
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --model\_family bert \
+    --modules full,hymba\_transx \
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1 (Main)}
 \begin{lstlisting}
-python run_all_4_hymba_transx.py
+python run\_all\_4\_hymba\_transx.py
 \end{lstlisting}
 
 \subsubsection{Table 7.4 (Differential Ablation)}
@@ -45,9 +45,9 @@ python run_all_4_hymba_transx.py
 
 \subsubsection{Table 7.5 (SSM Ablation)}
 \begin{lstlisting}
-python run_all_4_hymba_transx.py --alpha 1.0  # attn only
-python run_all_4_hymba_transx.py --alpha 0.0  # ssm only
-python run_all_4_hymba_transx.py --alpha 0.5  # fixed
+python run\_all\_4\_hymba\_transx.py --alpha 1.0  # attn only
+python run\_all\_4\_hymba\_transx.py --alpha 0.0  # ssm only
+python run\_all\_4\_hymba\_transx.py --alpha 0.5  # fixed
 # default: learned
 \end{lstlisting}
 
@@ -58,8 +58,8 @@ import random, numpy as np, torch
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 \end{lstlisting}
 
 \subsection{Expected Results}

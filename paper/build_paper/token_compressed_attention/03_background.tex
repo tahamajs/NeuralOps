@@ -5,19 +5,19 @@
 For input $X \in \mathbb{R}^{B \times L \times d}$, standard attention:
 
 \[
-Q = X W_Q, \quad K = X W_K, \quad V = X W_V
+Q = X W\_Q, \quad K = X W\_K, \quad V = X W\_V
 \tag{3.1}
 \]
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \tag{3.2}
 \]
 
 At inference, $K, V$ are cached across decoding steps. Cache size per layer:
 
 \[
-\text{KV size} = 2 \cdot B \cdot H_{kv} \cdot L \cdot d_h \cdot \text{bytes}
+\text{KV size} = 2 \cdot B \cdot H\_{kv} \cdot L \cdot d\_h \cdot \text{bytes}
 \tag{3.3}
 \]
 
@@ -28,8 +28,8 @@ For $H_{kv} = 12$, $d_h = 64$, $L = 4096$, FP16: \textbf{~12.6 MB per layer}.
 GQA shares K/V across $H/H_{kv}$ query heads:
 
 \[
-K, V \in \mathbb{R}^{B \times L \times H_{kv} \times d_h}, \quad
-K_{\text{expanded}} = \text{repeat\_kv}(K, H/H_{kv})
+K, V \in \mathbb{R}^{B \times L \times H\_{kv} \times d\_h}, \quad
+K\_{\text{expanded}} = \text{repeat\_kv}(K, H/H\_{kv})
 \tag{3.4}
 \]
 
@@ -40,7 +40,7 @@ TCA respects GQA by selecting tokens once per KV head (before expansion).
 RoPE applies position-dependent rotations:
 
 \[
-\tilde{Q}_i = Q_i \cos(\theta_i) + \text{rot}(Q_i) \sin(\theta_i)
+\tilde{Q}\_i = Q\_i \cos(\theta\_i) + \text{rot}(Q\_i) \sin(\theta\_i)
 \tag{3.5}
 \]
 
@@ -52,7 +52,7 @@ already baked into $K$ when we select tokens.
 For decoders, query at position $i$ attends only to keys $j \leq i$:
 
 \[
-\text{mask}_{ij} = \begin{cases} 0 & j \leq i \\ -\infty & j > i \end{cases}
+\text{mask}\_{ij} = \begin{cases} 0 & j \leq i \\ -\infty & j \textgreater{} i \end{cases}
 \tag{3.6}
 \]
 
@@ -60,7 +60,7 @@ After compression, the effective mask must be computed against the **original
 positions** of selected keys:
 
 \[
-\text{mask}_{i, j'} = \begin{cases} 0 & \text{pos}(j') \leq i \\ -\infty & \text{pos}(j') > i \end{cases}
+\text{mask}\_{i, j'} = \begin{cases} 0 & \text{pos}(j') \leq i \\ -\infty & \text{pos}(j') \textgreater{} i \end{cases}
 \tag{3.7}
 \]
 

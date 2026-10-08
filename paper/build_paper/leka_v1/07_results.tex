@@ -14,13 +14,13 @@
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
 DistilBERT & \textbf{Leka V1} & \textbf{90.83\%} & -0.11\% & PASS & 0.9113 & 0 & \textbf{1.00$\times$} & 308.8 MB & 5.4 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Leka V1} & \textbf{51.15\%} & -24.31\% & PASS_LOW & 0.6758 & 0 & \textbf{1.00$\times$} & 528.9 MB & 12.2 & -- \\
+RoBERTa & \textbf{Leka V1} & \textbf{51.15\%} & -24.31\% & PASS\_LOW & 0.6758 & 0 & \textbf{1.00$\times$} & 528.9 MB & 12.2 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
 GPT-2 & \textbf{Leka V1} & \textbf{85.78\%} & -2.06\% & PASS & 0.8716 & 48 & \textbf{1.00$\times$} & 410.4 MB & 19.9 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main_sst2}
+\label{tab:main\_sst2}
 \end{table*}
 
 \subsection{Parameter Analysis}
@@ -193,7 +193,7 @@ GPT-2 & 0.85 & 0.85 \\
 
 \begin{itemize}
 \item \textbf{Accuracy:} drops -39.68\%---30.05\%.
-\item \textbf{Linear scaling:} LEKAv1 is faster at L > 128.
+\item \textbf{Linear scaling:} LEKAv1 is faster at L \textgreater{} 128.
 \item \textbf{Preservation gate:} contributes 0.85\%.
 \item \textbf{QR projection:} contributes 0.85\%.
 \item \textbf{Parameter increase:} 48.5\%\%.
@@ -203,7 +203,7 @@ GPT-2 & 0.85 & 0.85 \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/leka_v1_dissection_profile.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{leka_v1}.}
-\label{fig:results_leka_v1}
+\includegraphics[width=0.85\linewidth]{figures/leka\_v1\_dissection\_profile.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{leka\_v1}.}
+\label{fig:results\_leka\_v1}
 \end{figure}

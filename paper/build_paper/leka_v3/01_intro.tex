@@ -7,7 +7,7 @@ input $X \in \mathbb{R}^{B \times L \times d}$ with $H$ heads and head
 dimension $d_h$:
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \tag{1.1}
 \]
 
@@ -75,7 +75,7 @@ LEKAv3 has three components:
 We map each $Q, K$ vector to a feature space via cos/sin projections:
 
 \[
-\phi(x) = \frac{1}{\sqrt{d_\text{feat}}} \begin{pmatrix} \cos(W_1 x) \\ \sin(W_1 x) \end{pmatrix}
+\phi(x) = \frac{1}{\sqrt{d\_\text{feat}}} \begin{pmatrix} \cos(W\_1 x) \\ \sin(W\_1 x) \end{pmatrix}
 \tag{1.4}
 \]
 
@@ -87,7 +87,7 @@ Instead of using all $L$ keys, we select $L_\text{land}$ landmarks using a
 learnable scorer:
 
 \[
-s_i = \text{MLP}(K_\text{feat}[i])
+s\_i = \text{MLP}(K\_\text{feat}[i])
 \tag{1.5}
 \]
 
@@ -99,7 +99,7 @@ The top-$L_\text{land}$ indices are selected. Token 0 is always retained
 The final output is:
 
 \[
-\text{Out} = \sigma(g) \cdot \text{Out}_\text{land} + (1 - \sigma(g)) \cdot \text{Out}_\text{local}
+\text{Out} = \sigma(g) \cdot \text{Out}\_\text{land} + (1 - \sigma(g)) \cdot \text{Out}\_\text{local}
 \tag{1.6}
 \]
 

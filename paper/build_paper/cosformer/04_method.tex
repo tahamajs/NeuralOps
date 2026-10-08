@@ -39,7 +39,7 @@ and cosine/sine reweighting.
              |           |           |
                                       
         +--------------------------------+
-        | is_decoder?                    |
+        | is\_decoder?                    |
         +--+-------------------------+---+
            | No                      | Yes
            |                         |
@@ -79,13 +79,13 @@ accuracy. ELU + 1 is deterministic and works well in practice.
 For sequence length $N$ and max position $M = \max(\text{max\_seq\_len}, N)$:
 
 \[
-\theta_i = \frac{\pi i}{2 M}, \quad i = 0, 1, \dots, N-1
+\theta\_i = \frac{\pi i}{2 M}, \quad i = 0, 1, \dots, N-1
 \]
 
 The cosine and sine factors are:
 
 \[
-c_i = \cos(\theta_i), \quad s_i = \sin(\theta_i)
+c\_i = \cos(\theta\_i), \quad s\_i = \sin(\theta\_i)
 \]
 
 Applied to $Q, K$:
@@ -104,18 +104,18 @@ For bidirectional attention:
 
 \[
 \begin{aligned}
-KV_c &= \tilde{K}^\top V \in \mathbb{R}^{B \times H \times d \times d} \\
-KV_s &= \tilde{K}'^\top V \in \mathbb{R}^{B \times H \times d \times d} \\
-Z_c &= \sum_j \tilde{K}_j \in \mathbb{R}^{B \times H \times 1 \times d} \\
-Z_s &= \sum_j \tilde{K}'_j \in \mathbb{R}^{B \times H \times 1 \times d}
+KV\_c &= \tilde{K}^\top V \in \mathbb{R}^{B \times H \times d \times d} \\
+KV\_s &= \tilde{K}'^\top V \in \mathbb{R}^{B \times H \times d \times d} \\
+Z\_c &= \sum\_j \tilde{K}\_j \in \mathbb{R}^{B \times H \times 1 \times d} \\
+Z\_s &= \sum\_j \tilde{K}'\_j \in \mathbb{R}^{B \times H \times 1 \times d}
 \end{aligned}
 \]
 
 The output:
 
 \[
-\text{num} = \tilde{Q} KV_c + \tilde{Q}' KV_s, \quad
-\text{den} = \tilde{Q} Z_c^\top + \tilde{Q}' Z_s^\top + \epsilon
+\text{num} = \tilde{Q} KV\_c + \tilde{Q}' KV\_s, \quad
+\text{den} = \tilde{Q} Z\_c^\top + \tilde{Q}' Z\_s^\top + \epsilon
 \]
 
 \[
@@ -144,26 +144,26 @@ For causal attention:
 \textbf{Intra-chunk:}
 
 \[
-\text{num}_\text{intra} = \text{masked}(\tilde{Q}_c \tilde{K}_c^\top) V_c
+\text{num}\_\text{intra} = \text{masked}(\tilde{Q}\_c \tilde{K}\_c^\top) V\_c
 \]
 
 \textbf{Inter-chunk:}
 
 \[
-\text{num}_\text{inter} = \tilde{Q}_c S_c + \tilde{Q}_c' S_s
+\text{num}\_\text{inter} = \tilde{Q}\_c S\_c + \tilde{Q}\_c' S\_s
 \]
 
 \textbf{State update:}
 
 \[
-S_c \mathrel{+}= \tilde{K}_c^\top V_c, \quad
-Z_c \mathrel{+}= \tilde{K}_c^\top \mathbf{1}
+S\_c \mathrel{+}= \tilde{K}\_c^\top V\_c, \quad
+Z\_c \mathrel{+}= \tilde{K}\_c^\top \mathbf{1}
 \]
 
 The output for chunk $c$:
 
 \[
-\text{context}_c = \frac{\text{num}_\text{intra} + \text{num}_\text{inter}}{\text{den}_\text{intra} + \text{den}_\text{inter} + \epsilon}
+\text{context}\_c = \frac{\text{num}\_\text{intra} + \text{num}\_\text{inter}}{\text{den}\_\text{intra} + \text{den}\_\text{inter} + \epsilon}
 \]
 
 \textbf{Complexity.} Outer Python loop over \texttt{num\_chunks} iterations (4 for $L = 128$). 
@@ -175,27 +175,27 @@ launches per chunk $\times$ 2 chunks.
 \subsubsection{Standard (DistilBERT)}
 
 \begin{lstlisting}
-q_w = src.q_lin.weight.data
-k_w = src.k_lin.weight.data
-v_w = src.v_lin.weight.data
-o_w = src.out_lin.weight.data
+q\_w = src.q\_lin.weight.data
+k\_w = src.k\_lin.weight.data
+v\_w = src.v\_lin.weight.data
+o\_w = src.out\_lin.weight.data
 \end{lstlisting}
 
 \subsubsection{Nested (RoBERTa)}
 
 \begin{lstlisting}
-q_w = src.self.query.weight.data
-k_w = src.self.key.weight.data
-v_w = src.self.value.weight.data
-o_w = src.output.dense.weight.data
+q\_w = src.self.query.weight.data
+k\_w = src.self.key.weight.data
+v\_w = src.self.value.weight.data
+o\_w = src.output.dense.weight.data
 \end{lstlisting}
 
 \subsubsection{Fused (GPT-2)}
 
 \begin{lstlisting}
-c_w = src.c_attn.weight.data.t()
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
-o_w = src.c_proj.weight.data.t()
+c\_w = src.c\_attn.weight.data.t()
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+o\_w = src.c\_proj.weight.data.t()
 \end{lstlisting}
 
 \subsection{Parameter Analysis}
@@ -259,34 +259,34 @@ Baseline MHSA & $\mathcal{O}(L^2 d)$ & $\mathcal{O}(L^2)$ \\
 
 \textbf{Algorithm 1:} CosformerAttention forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, is_decoder, chunk_size C
+Input:  X $\in$ R^{B$\times$L$\times$d}, is\_decoder, chunk\_size C
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
-1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V
+1: Q $\leftarrow$ X W\_Q;  K $\leftarrow$ X W\_K;  V $\leftarrow$ X W\_V
 2: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
-3: if GQA: (K, V) $\leftarrow$ repeat_kv(K, V)
+3: if GQA: (K, V) $\leftarrow$ repeat\_kv(K, V)
 4:
 5: # Feature map
 6: Q $\leftarrow$ ELU(Q) + 1
 7: K $\leftarrow$ ELU(K) + 1
 8:
 9: # Positional reweighting
-10: $\theta$ $\leftarrow$   * arange(L) / (2 * max_seq_len)
-11: Q_c $\leftarrow$ Q   cos($\theta$); Q_s $\leftarrow$ Q   sin($\theta$)
-12: K_c $\leftarrow$ K   cos($\theta$); K_s $\leftarrow$ K   sin($\theta$)
+10: $\theta$ $\leftarrow$   * arange(L) / (2 * max\_seq\_len)
+11: Q\_c $\leftarrow$ Q   cos($\theta$); Q\_s $\leftarrow$ Q   sin($\theta$)
+12: K\_c $\leftarrow$ K   cos($\theta$); K\_s $\leftarrow$ K   sin($\theta$)
 13:
-14: if is_decoder:
-15:     Y $\leftarrow$ chunked_prefix_sum(Q_c, Q_s, K_c, K_s, V, C)
+14: if is\_decoder:
+15:     Y $\leftarrow$ chunked\_prefix\_sum(Q\_c, Q\_s, K\_c, K\_s, V, C)
 16: else:
-17:     KV_c $\leftarrow$ K_c^T @ V
-18:     KV_s $\leftarrow$ K_s^T @ V
-19:     Z_c $\leftarrow$ sum(K_c); Z_s $\leftarrow$ sum(K_s)
-20:     num $\leftarrow$ Q_c @ KV_c + Q_s @ KV_s
-21:     den $\leftarrow$ Q_c @ Z_c^T + Q_s @ Z_s^T
+17:     KV\_c $\leftarrow$ K\_c^T @ V
+18:     KV\_s $\leftarrow$ K\_s^T @ V
+19:     Z\_c $\leftarrow$ sum(K\_c); Z\_s $\leftarrow$ sum(K\_s)
+20:     num $\leftarrow$ Q\_c @ KV\_c + Q\_s @ KV\_s
+21:     den $\leftarrow$ Q\_c @ Z\_c^T + Q\_s @ Z\_s^T
 22:     Y $\leftarrow$ num / (den + $\epsilon$)
 23:
-24: if not is_nested_encoder:
-25:     Y $\leftarrow$ out_proj(Y)
+24: if not is\_nested\_encoder:
+25:     Y $\leftarrow$ out\_proj(Y)
 26: return Y
 \end{lstlisting}
 
@@ -298,7 +298,7 @@ ELU + 1 is \textbf{not} a good approximation of $\exp(q^\top k)$. The
 approximation error is bounded by:
 
 \[
-\left|\phi(q)^\top \phi(k) - e^{q^\top k}\right| \leq \epsilon_\text{ELU}
+\left|\phi(q)^\top \phi(k) - e^{q^\top k}\right| \leq \epsilon\_\text{ELU}
 \]
 
 where $\epsilon_\text{ELU}$ grows with $\|q\|$ and $\|k\|$.
@@ -312,7 +312,7 @@ approximately.
 The Cosformer reweighting gives:
 
 \[
-\tilde{q}_i^\top \tilde{k}_j + \tilde{q}_i'^\top \tilde{k}_j' = \phi(q_i)^\top \phi(k_j) \cdot \cos(\theta_i - \theta_j)
+\tilde{q}\_i^\top \tilde{k}\_j + \tilde{q}\_i'^\top \tilde{k}\_j' = \phi(q\_i)^\top \phi(k\_j) \cdot \cos(\theta\_i - \theta\_j)
 \]
 
 The cosine term decays from 1 at $|i - j| = 0$ to 0 at $|i - j| = L$ 
@@ -323,7 +323,7 @@ The cosine term decays from 1 at $|i - j| = 0$ to 0 at $|i - j| = L$
 The causal path preserves causality:
 
 \[
-\frac{\partial Y_i}{\partial X_j} = 0 \text{ for } j > i
+\frac{\partial Y\_i}{\partial X\_j} = 0 \text{ for } j \textgreater{} i
 \]
 
 because intra-chunk scores are masked and inter-chunk uses only 

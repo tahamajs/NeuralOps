@@ -6,7 +6,7 @@
 Our test dataset (SST-2) uses $L = 128$. The condition:
 
 \begin{lstlisting}
-if N <= 128 or is_cross_attention:
+if N \textless{}= 128 or is\_cross\_attention:
     # short path
 \end{lstlisting}
 
@@ -103,7 +103,7 @@ The gate MLP adds ~66.4MM parameters but does nothing at L=128.
 
 \begin{enumerate}
 \item \textbf{Short path is silent at L=128} -- no sparsity benefit.
-\item \textbf{Long path untested} -- requires L > 128.
+\item \textbf{Long path untested} -- requires L \textgreater{} 128.
 \item \textbf{Parameter count increases} -- LoRA + gate.
 \item \textbf{Not a compression method.}
 \item \textbf{Theoretical speedup} exists for L $\ge$ 256.

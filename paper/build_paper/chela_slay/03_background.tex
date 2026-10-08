@@ -3,7 +3,7 @@
 \subsection{Softmax Attention}
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \]
 
 with $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_h}$.
@@ -13,13 +13,13 @@ with $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_h}$.
 Linear attention replaces softmax with a kernel $\phi$:
 
 \[
-\text{Attn}(Q, K, V)_i = \frac{\sum_j \phi(q_i)^\top \phi(k_j) v_j}{\sum_j \phi(q_i)^\top \phi(k_j)}
+\text{Attn}(Q, K, V)\_i = \frac{\sum\_j \phi(q\_i)^\top \phi(k\_j) v\_j}{\sum\_j \phi(q\_i)^\top \phi(k\_j)}
 \]
 
 The \textbf{associative} trick:
 
 \[
-\text{Attn}(Q, K, V)_i = \frac{\phi(q_i)^\top \left[ \sum_j \phi(k_j) v_j^\top \right]}{\phi(q_i)^\top \left[ \sum_j \phi(k_j) \right]}
+\text{Attn}(Q, K, V)\_i = \frac{\phi(q\_i)^\top \left[ \sum\_j \phi(k\_j) v\_j^\top \right]}{\phi(q\_i)^\top \left[ \sum\_j \phi(k\_j) \right]}
 \]
 
 Computing the bracketed terms is $\mathcal{O}(L \cdot 2F \cdot d_h)$, independent of $L^2$.
@@ -31,19 +31,19 @@ kernel $k(x, y) = k(x - y)$ can be represented as the Fourier transform of
 a probability distribution $p(\omega)$:
 
 \[
-k(x - y) = \mathbb{E}_\omega [e^{i \omega^\top (x - y)}]
+k(x - y) = \mathbb{E}\_\omega [e^{i \omega^\top (x - y)}]
 \]
 
 Approximating this expectation with $F$ samples:
 
 \[
-k(x - y) \approx \frac{1}{F} \sum_{i=1}^{F} e^{i \omega_i^\top (x - y)}
+k(x - y) \approx \frac{1}{F} \sum\_{i=1}^{F} e^{i \omega\_i^\top (x - y)}
 \]
 
 Using Euler's formula, the real part is:
 
 \[
-k(x - y) \approx \frac{1}{F} \sum_{i=1}^{F} \cos(\omega_i^\top (x - y))
+k(x - y) \approx \frac{1}{F} \sum\_{i=1}^{F} \cos(\omega\_i^\top (x - y))
 = \phi(x)^\top \phi(y)
 \]
 
@@ -76,8 +76,8 @@ The Yat-Kernel is thus a scaled cosine-similarity kernel, which is
 Given Q, K, we project them onto the unit sphere:
 
 \[
-\hat{Q} = \frac{Q}{\|Q\|_2 + \epsilon}, \quad
-\hat{K} = \frac{K}{\|K\|_2 + \epsilon}
+\hat{Q} = \frac{Q}{\|Q\|\_2 + \epsilon}, \quad
+\hat{K} = \frac{K}{\|K\|\_2 + \epsilon}
 \]
 
 \textbf{Properties:}
@@ -93,7 +93,7 @@ Given Q, K, we project them onto the unit sphere:
 A learnable gate blends two streams:
 
 \[
-g = \sigma(W_g X + b_g)
+g = \sigma(W\_g X + b\_g)
 \]
 
 \[
@@ -106,7 +106,7 @@ O = g \odot O^\text{dense} + (1 - g) \odot O^\text{linear}
 \subsection{LoRA Recovery}
 
 \[
-\Delta W = \frac{\alpha}{r_L} B A
+\Delta W = \frac{\alpha}{r\_L} B A
 \]
 
 with $B = 0$ initially.

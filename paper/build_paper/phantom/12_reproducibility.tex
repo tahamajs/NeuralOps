@@ -4,8 +4,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/Efficiency Lab/SVD_Project
-cd SVD_Project
+git clone https://github.com/Efficiency Lab/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -31,13 +31,13 @@ numpy & 1.0.0 \\
 \subsection{Running PHANTOM}
 
 \begin{lstlisting}
-python run_all_4_phantom.py \
+python run\_all\_4\_phantom.py \
     --models distilbert,roberta,gpt2 \
-    --cur_rank 32 \
-    --lsh_rounds 4 \
-    --recovery_steps 50 \
-    --lora_rank 8 \
-    --batch_size 32
+    --cur\_rank 32 \
+    --lsh\_rounds 4 \
+    --recovery\_steps 50 \
+    --lora\_rank 8 \
+    --batch\_size 32
 \end{lstlisting}
 
 \textbf{Runtime:} ~PyTorch 2.0 minutes on RTX 4070.
@@ -45,16 +45,16 @@ python run_all_4_phantom.py \
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --model_family bert \
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --model\_family bert \
     --dataset sst2 \
-    --output_dir results/unified_phantom/distilbert \
-    --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
+    --output\_dir results/unified\_phantom/distilbert \
+    --parent\_checkpoint results/unified\_asvd/distilbert/finetuned\_model.pt \
     --modules full,phantom \
-    --cur_rank 32 \
-    --lsh_rounds 4 \
-    --lora_rank 8
+    --cur\_rank 32 \
+    --lsh\_rounds 4 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
@@ -62,14 +62,14 @@ python Codes/framework/run_quality_sweep.py \
 \subsubsection{Table 7.1 (Main)}
 
 \begin{lstlisting}
-python run_all_4_phantom.py --models distilbert,roberta,gpt2
+python run\_all\_4\_phantom.py --models distilbert,roberta,gpt2
 \end{lstlisting}
 
 \subsubsection{Table 7.6 (CUR rank)}
 
 \begin{lstlisting}
 for r in 8 16 32 64; do
-    python run_all_4_phantom.py --cur_rank $r --output_suffix r$r
+    python run\_all\_4\_phantom.py --cur\_rank $r --output_suffix r$r
 done
 \end{lstlisting}
 
@@ -77,7 +77,7 @@ done
 
 \begin{lstlisting}
 for rounds in 1 2 4 8; do
-    python run_all_4_phantom.py --lsh_rounds $rounds --output_suffix lsh$rounds
+    python run\_all\_4\_phantom.py --lsh\_rounds $rounds --output_suffix lsh$rounds
 done
 \end{lstlisting}
 
@@ -85,7 +85,7 @@ done
 
 \begin{lstlisting}
 for bits in 2 3 4 6; do
-    python run_all_4_phantom.py --lsh_bucket_size $bits --output_suffix k$bits
+    python run\_all\_4\_phantom.py --lsh\_bucket\_size $bits --output_suffix k$bits
 done
 \end{lstlisting}
 
@@ -96,8 +96,8 @@ import random, numpy as np, torch
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+torch.manual\_seed(seed)
+torch.cuda.manual\_seed\_all(seed)
 torch.backends.cudnn.deterministic = True
 \end{lstlisting}
 

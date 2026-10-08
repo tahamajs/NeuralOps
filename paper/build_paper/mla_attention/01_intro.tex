@@ -9,7 +9,7 @@ linearly with sequence length and dominates memory usage for long-context
 generation:
 
 \[
-\text{KV-cache size} = 2 \cdot N_l \cdot H \cdot d_h \cdot L \cdot B
+\text{KV-cache size} = 2 \cdot N\_l \cdot H \cdot d\_h \cdot L \cdot B
 \tag{1.1}
 \]
 
@@ -35,7 +35,7 @@ architecture. The key idea is to **replace the separate K and V projections
 with a single shared low-rank latent vector**:
 
 \[
-c_t = W^{DKV} h_t \in \mathbb{R}^{c}
+c\_t = W^{DKV} h\_t \in \mathbb{R}^{c}
 \tag{1.2}
 \]
 
@@ -45,7 +45,7 @@ is a down-projection to latent dimension $c$, and $c \ll 2 d_h H$.
 Then K and V are computed from this latent:
 
 \[
-k_t = W^{UK} c_t, \qquad v_t = W^{UV} c_t
+k\_t = W^{UK} c\_t, \qquad v\_t = W^{UV} c\_t
 \tag{1.3}
 \]
 

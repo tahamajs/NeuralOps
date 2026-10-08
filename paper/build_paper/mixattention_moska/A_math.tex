@@ -6,14 +6,14 @@
 For a key vector $k \in \mathbb{R}^{d_h}$:
 
 \[
-\text{Var}(k) = \frac{1}{d_h} \sum_{j=1}^{d_h} k_j^2 - \left(\frac{1}{d_h} \sum_{j=1}^{d_h} k_j\right)^2
+\text{Var}(k) = \frac{1}{d\_h} \sum\_{j=1}^{d\_h} k\_j^2 - \left(\frac{1}{d\_h} \sum\_{j=1}^{d\_h} k\_j\right)^2
 \tag{A.1}
 \]
 
 For per-head keys $K_{b,h,i,:}$, aggregate:
 
 \[
-\text{imp}(b, i) = \frac{1}{H} \sum_{h=1}^{H} \text{Var}(K_{b,h,i,:})
+\text{imp}(b, i) = \frac{1}{H} \sum\_{h=1}^{H} \text{Var}(K\_{b,h,i,:})
 \tag{A.2}
 \]
 
@@ -22,7 +22,7 @@ For per-head keys $K_{b,h,i,:}$, aggregate:
 Given scores $\text{imp} \in \mathbb{R}^{B \times L}$ and keep count $k$:
 
 \[
-\mathcal{S}_b = \text{argsort}_{k}(\text{imp}_{b,:}) \text{ sorted ascending}
+\mathcal{S}\_b = \text{argsort}\_{k}(\text{imp}\_{b,:}) \text{ sorted ascending}
 \tag{A.3}
 \]
 
@@ -42,7 +42,7 @@ ensures $0 \in \mathcal{S}_b$ for all batches.
 \subsection{A.4 Pruned Attention}
 
 \[
-\text{Attn}'(Q, K, V) = \text{softmax}\!\left(\frac{Q K_{\mathcal{S}}^\top}{\sqrt{d_h}}\right)V_{\mathcal{S}}
+\text{Attn}'(Q, K, V) = \text{softmax}\!\left(\frac{Q K\_{\mathcal{S}}^\top}{\sqrt{d\_h}}\right)V\_{\mathcal{S}}
 \tag{A.5}
 \]
 
@@ -51,7 +51,7 @@ ensures $0 \in \mathcal{S}_b$ for all batches.
 \textbf{Claim.} For any query $q$, the difference between pruned and full attention is bounded by:
 
 \[
-\|\text{Attn}'(q) - \text{Attn}(q)\|_2 \leq \|V_{\bar{\mathcal{S}}}\|_\infty \cdot \left(1 + \max_i \sigma_i - \min_i \sigma_i\right)
+\|\text{Attn}'(q) - \text{Attn}(q)\|\_2 \leq \|V\_{\bar{\mathcal{S}}}\|\_\infty \cdot \left(1 + \max\_i \sigma\_i - \min\_i \sigma\_i\right)
 \tag{A.6}
 \]
 
@@ -93,14 +93,14 @@ dominate for small $L$.
 For causal decoders, the code chooses:
 
 \[
-\text{Attn}_\text{causal}' = \text{Attn}_\text{full} + \text{mask}
+\text{Attn}\_\text{causal}' = \text{Attn}\_\text{full} + \text{mask}
 \tag{A.7}
 \]
 
 No pruning occurs. This guarantees:
 
 \[
-\frac{\partial \text{Attn}_\text{causal}'_i}{\partial x_j} = 0 \text{ for } j > i
+\frac{\partial \text{Attn}\_\text{causal}'\_i}{\partial x\_j} = 0 \text{ for } j \textgreater{} i
 \tag{A.8}
 \]
 \begin{lstlisting}

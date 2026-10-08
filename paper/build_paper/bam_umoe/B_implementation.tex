@@ -4,75 +4,75 @@
 
 \begin{lstlisting}
 class UnifiedMoE(nn.Module):
-    def __init__(self, dim, num_experts=8, top_k=2, output_dim=None,
-                 noise_std=0.1, expert_multiplier=2):
-        super().__init__()
-        self.output_scale = nn.Parameter(torch.ones(1))
+    def \_\_init\_\_(self, dim, num\_experts=8, top\_k=2, output\_dim=None,
+                 noise\_std=0.1, expert\_multiplier=2):
+        super().\_\_init\_\_()
+        self.output\_scale = nn.Parameter(torch.ones(1))
         self.dim = dim
-        self.num_experts = max(1, num_experts)
-        self.top_k = min(max(1, top_k), self.num_experts)
-        self.out_dim = output_dim or dim
-        self.noise_std = noise_std
-        self.aux_loss = torch.tensor(0.0)
+        self.num\_experts = max(1, num\_experts)
+        self.top\_k = min(max(1, top\_k), self.num\_experts)
+        self.out\_dim = output\_dim or dim
+        self.noise\_std = noise\_std
+        self.aux\_loss = torch.tensor(0.0)
         
-        self.router_ln = nn.LayerNorm(self.dim)
-        self.router = nn.Linear(self.dim, self.num_experts, bias=False)
-        nn.init.uniform_(self.router.weight, -0.01, 0.01)
+        self.router\_ln = nn.LayerNorm(self.dim)
+        self.router = nn.Linear(self.dim, self.num\_experts, bias=False)
+        nn.init.uniform\_(self.router.weight, -0.01, 0.01)
         
-        hidden_dim = self.out_dim * expert_multiplier
+        hidden\_dim = self.out\_dim * expert\_multiplier
         self.experts = nn.ModuleList([
             nn.Sequential(
-                nn.Linear(dim, hidden_dim),
+                nn.Linear(dim, hidden\_dim),
                 nn.GELU(),
-                nn.Linear(hidden_dim, self.out_dim),
+                nn.Linear(hidden\_dim, self.out\_dim),
             )
-            for _ in range(self.num_experts)
+            for \_ in range(self.num\_experts)
         ])
         
         # Step-0 preservation: final expert layer zero
         for exp in self.experts:
-            nn.init.zeros_(exp[2].weight)
+            nn.init.zeros\_(exp[2].weight)
             if exp[2].bias is not None:
-                nn.init.zeros_(exp[2].bias)
+                nn.init.zeros\_(exp[2].bias)
         
-        self.gate_bias = nn.Parameter(torch.tensor([-3.0]))
+        self.gate\_bias = nn.Parameter(torch.tensor([-3.0]))
     
     def forward(self, x):
         B, L, D = x.shape
-        x_norm = self.router_ln(x)
-        logits = self.router(x_norm)
+        x\_norm = self.router\_ln(x)
+        logits = self.router(x\_norm)
         
-        if self.training and self.noise_std > 0:
-            noise = torch.randn_like(logits) * self.noise_std
-            routing_logits = logits + noise
+        if self.training and self.noise\_std \textgreater{} 0:
+            noise = torch.randn\_like(logits) * self.noise\_std
+            routing\_logits = logits + noise
         else:
-            routing_logits = logits
+            routing\_logits = logits
         
-        topk_vals, topk_idx = torch.topk(routing_logits, self.top_k, dim=-1)
-        scores = F.softmax(topk_vals, dim=-1)
-        scores = torch.nan_to_num(scores, nan=0.0, posinf=1.0, neginf=0.0)
+        topk\_vals, topk\_idx = torch.topk(routing\_logits, self.top\_k, dim=-1)
+        scores = F.softmax(topk\_vals, dim=-1)
+        scores = torch.nan\_to\_num(scores, nan=0.0, posinf=1.0, neginf=0.0)
         
         # Auxiliary load balancing
-        if self.training and self.num_experts > 1:
-            router_probs = F.softmax(logits.float(), dim=-1).view(-1, self.num_experts)
-            expert_mask = F.one_hot(topk_idx, num_classes=self.num_experts).float()
-            density = expert_mask.sum(dim=2).view(-1, self.num_experts).mean(dim=0)
-            prob_mean = router_probs.mean(dim=0)
-            self.aux_loss = self.num_experts * torch.sum(density * prob_mean)
+        if self.training and self.num\_experts \textgreater{} 1:
+            router\_probs = F.softmax(logits.float(), dim=-1).view(-1, self.num\_experts)
+            expert\_mask = F.one\_hot(topk\_idx, num\_classes=self.num\_experts).float()
+            density = expert\_mask.sum(dim=2).view(-1, self.num\_experts).mean(dim=0)
+            prob\_mean = router\_probs.mean(dim=0)
+            self.aux\_loss = self.num\_experts * torch.sum(density * prob\_mean)
         else:
-            self.aux_loss = torch.tensor(0.0, device=x.device, dtype=torch.float32)
+            self.aux\_loss = torch.tensor(0.0, device=x.device, dtype=torch.float32)
         
         # Expert forward
-        experts_out = torch.stack([exp(x) for exp in self.experts], dim=2)
-        topk_out = torch.gather(
-            experts_out, 2,
-            topk_idx.unsqueeze(-1).expand(B, L, self.top_k, self.out_dim)
+        experts\_out = torch.stack([exp(x) for exp in self.experts], dim=2)
+        topk\_out = torch.gather(
+            experts\_out, 2,
+            topk\_idx.unsqueeze(-1).expand(B, L, self.top\_k, self.out\_dim)
         )
-        out = torch.sum(topk_out * scores.unsqueeze(-1), dim=2)
-        out = torch.clamp(torch.nan_to_num(out, nan=0.0), min=-65000.0, max=65000.0)
+        out = torch.sum(topk\_out * scores.unsqueeze(-1), dim=2)
+        out = torch.clamp(torch.nan\_to\_num(out, nan=0.0), min=-65000.0, max=65000.0)
         
-        gate = torch.sigmoid(self.gate_bias)
-        return out * self.output_scale * gate
+        gate = torch.sigmoid(self.gate\_bias)
+        return out * self.output\_scale * gate
 \end{lstlisting}
 
 \subsection{B.2 Numerical Stability}
@@ -94,7 +94,7 @@ from pretrained, causing catastrophic drift.
 
 \subsubsection{B.3.2 Gate Bias Too High}
 
-Gate bias > -1 gives fast ramp-up, destabilizing early training.
+Gate bias \textgreater{} -1 gives fast ramp-up, destabilizing early training.
 
 \subsubsection{B.3.3 Cross-Attention MoE}
 

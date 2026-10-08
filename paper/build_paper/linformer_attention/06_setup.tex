@@ -98,7 +98,7 @@ WD & 0.01 \\
 \midrule
 PASS & $\ge$ 56\% \\
 PASS\_LOW & 50.92--56\% \\
-FAIL & < 50.92\% \\
+FAIL & \textless{} 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -123,11 +123,11 @@ PyTorch & 2.1.2 \\
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_linformer.py \
+python run\_all\_4\_linformer.py \
     --models distilbert,roberta,gpt2 \
-    --linformer_k 4 \
-    --recovery_steps 50 \
-    --lora_rank 8
+    --linformer\_k 4 \
+    --recovery\_steps 50 \
+    --lora\_rank 8
 \end{lstlisting}
 
 \subsection{Baselines}

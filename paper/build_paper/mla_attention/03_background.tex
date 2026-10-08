@@ -13,7 +13,7 @@ Q = X W^Q, \quad K = X W^K, \quad V = X W^V
 with $W^Q, W^K, W^V \in \mathbb{R}^{H d_h \times d}$. Attention:
 
 \[
-\text{head}_h = \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_h
+\text{head}\_h = \text{softmax}\!\left(\frac{Q\_h K\_h^\top}{\sqrt{d\_h}}\right) V\_h
 \tag{3.2}
 \]
 
@@ -25,14 +25,14 @@ a total of $2 \cdot H \cdot d_h \cdot L$ values per layer.
 MLA replaces $W^K, W^V$ with a \textbf{shared low-rank latent}:
 
 \[
-c_t = W^{DKV} h_t \in \mathbb{R}^c
+c\_t = W^{DKV} h\_t \in \mathbb{R}^c
 \tag{3.3}
 \]
 
 Then:
 
 \[
-k_t = W^{UK} c_t, \quad v_t = W^{UV} c_t
+k\_t = W^{UK} c\_t, \quad v\_t = W^{UV} c\_t
 \tag{3.4}
 \]
 
@@ -43,7 +43,7 @@ The KV cache now stores $c_t \in \mathbb{R}^c$ instead of $(k_t, v_t) \in \mathb
 \textbf{Compression ratio:}
 
 \[
-\rho = \frac{2 H d_h}{c}
+\rho = \frac{2 H d\_h}{c}
 \tag{3.5}
 \]
 
@@ -56,22 +56,22 @@ To initialize $W^{DKV}, W^{UK}, W^{UV}$ from a pretrained attention, we
 concatenate the existing $W^K$ and $W^V$:
 
 \[
-W^{KV}_\text{fused} = \begin{pmatrix} W^K \\ W^V \end{pmatrix} \in \mathbb{R}^{2 H d_h \times d}
+W^{KV}\_\text{fused} = \begin{pmatrix} W^K \\ W^V \end{pmatrix} \in \mathbb{R}^{2 H d\_h \times d}
 \tag{3.6}
 \]
 
 Then compute SVD:
 
 \[
-W^{KV}_\text{fused} \approx U \Sigma V^\top
+W^{KV}\_\text{fused} \approx U \Sigma V^\top
 \tag{3.7}
 \]
 
 and set:
 
 \[
-W^{DKV} = V_{:, :c}^\top, \quad
-W^{UK} = U_{:, :c} \Sigma_{:c, :c}
+W^{DKV} = V\_{:, :c}^\top, \quad
+W^{UK} = U\_{:, :c} \Sigma\_{:c, :c}
 \tag{3.8}
 \]
 
@@ -82,14 +82,14 @@ with the corresponding slice of $U \Sigma$ for $W^{UV}$.
 To preserve the reconstruction scale, we compute a scalar correction:
 
 \[
-\gamma = \frac{\|W^{KV}_\text{fused}\|_F}{\|\Sigma_{:c}\|_F}
+\gamma = \frac{\|W^{KV}\_\text{fused}\|\_F}{\|\Sigma\_{:c}\|\_F}
 \tag{3.9}
 \]
 
 and multiply the up-projection by $\gamma$:
 
 \[
-W^{UK} \leftarrow \gamma \cdot U_{:H d_h, :c} \Sigma_{:c}
+W^{UK} \leftarrow \gamma \cdot U\_{:H d\_h, :c} \Sigma\_{:c}
 \tag{3.10}
 \]
 
@@ -112,7 +112,7 @@ applying RoPE \textbf{after} the up-projection.
 LoRA (Hu et al., 2021) adds trainable residuals:
 
 \[
-\Delta W = \frac{\alpha}{r_L} B A
+\Delta W = \frac{\alpha}{r\_L} B A
 \tag{3.11}
 \]
 

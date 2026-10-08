@@ -24,7 +24,7 @@ single \texttt{nn.Module}. It provides:
         +---------------+---------------+
                                          
    +---------+    +---------+    +---------+
-   | q_proj  |    | k_proj  |    | v_proj  |
+   | q\_proj  |    | k\_proj  |    | v\_proj  |
    | + LoRA  |    | + LoRA  |    | + LoRA  |
    +----+----+    +----+----+    +----+----+
         |              |              |
@@ -49,7 +49,7 @@ single \texttt{nn.Module}. It provides:
                |
                 
         +--------------+
-        |  out_proj    |
+        |  out\_proj    |
         |  + LoRA      |
         +--------------+
 \end{lstlisting}
@@ -60,37 +60,37 @@ single \texttt{nn.Module}. It provides:
 
 \begin{lstlisting}
 class UnifiedRoPE(BaseAttention):
-    def __init__(self, config=None, rank=None, dim=None, num_heads=None,
-                 max_seq_len=4096, base=10000, dropout=0.1,
-                 pretrained_attn=None, lora_rank=16, lora_alpha=32.0,
-                 is_decoder=None, **kwargs):
+    def \_\_init\_\_(self, config=None, rank=None, dim=None, num\_heads=None,
+                 max\_seq\_len=4096, base=10000, dropout=0.1,
+                 pretrained\_attn=None, lora\_rank=16, lora\_alpha=32.0,
+                 is\_decoder=None, **kwargs):
         # Resolve dimensions
-        self.hidden_size = ...
-        self.num_heads = ...
-        self.num_kv_heads = ...
-        self.head_dim = hidden_size // num_heads
+        self.hidden\_size = ...
+        self.num\_heads = ...
+        self.num\_kv\_heads = ...
+        self.head\_dim = hidden\_size // num\_heads
         
         # LoRA projections
-        self.q_proj = LoRALinear(hidden_size, q_head_size, lora_rank=..., freeze_base=True)
-        self.k_proj = LoRALinear(hidden_size, kv_head_size, lora_rank=..., freeze_base=True)
-        self.v_proj = LoRALinear(hidden_size, kv_head_size, lora_rank=..., freeze_base=True)
-        self.out_proj = LoRALinear(q_head_size, hidden_size, lora_rank=..., freeze_base=True)
+        self.q\_proj = LoRALinear(hidden\_size, q\_head\_size, lora\_rank=..., freeze\_base=True)
+        self.k\_proj = LoRALinear(hidden\_size, kv\_head\_size, lora\_rank=..., freeze\_base=True)
+        self.v\_proj = LoRALinear(hidden\_size, kv\_head\_size, lora\_rank=..., freeze\_base=True)
+        self.out\_proj = LoRALinear(q\_head\_size, hidden\_size, lora\_rank=..., freeze\_base=True)
         
         # RoPE cache
-        self.rotary_dim = 2 * (head_dim // 2)
-        self.register_buffer("inv_freq", ..., persistent=False)
-        self._build_cache(max_seq_len)
+        self.rotary\_dim = 2 * (head\_dim // 2)
+        self.register\_buffer("inv\_freq", ..., persistent=False)
+        self.\_build\_cache(max\_seq\_len)
 \end{lstlisting}
 
 \subsubsection{Precomputed RoPE Cache}
 
 \begin{lstlisting}
-def _build_cache(self, seq_len):
-    t = torch.arange(seq_len, dtype=self.inv_freq.dtype)
-    freqs = torch.einsum("i,j->ij", t, self.inv_freq)
+def \_build\_cache(self, seq\_len):
+    t = torch.arange(seq\_len, dtype=self.inv\_freq.dtype)
+    freqs = torch.einsum("i,j-\textgreater{}ij", t, self.inv\_freq)
     emb = torch.cat((freqs, freqs), dim=-1)
-    self.register_buffer("cos_cached", emb.cos(), persistent=False)
-    self.register_buffer("sin_cached", emb.sin(), persistent=False)
+    self.register\_buffer("cos\_cached", emb.cos(), persistent=False)
+    self.register\_buffer("sin\_cached", emb.sin(), persistent=False)
 \end{lstlisting}
 
 \textbf{Note.} Buffers are \texttt{persistent=False}, so they are not stored in 
@@ -99,20 +99,20 @@ def _build_cache(self, seq_len):
 \subsubsection{Applying RoPE}
 
 \begin{lstlisting}
-def _apply_rope(self, x, seq_len):
-    rotary_dim = min(self.rotary_dim, self.cos_cached.shape[-1], x.shape[-1])
-    rotary_dim = 2 * (rotary_dim // 2)
+def \_apply\_rope(self, x, seq\_len):
+    rotary\_dim = min(self.rotary\_dim, self.cos\_cached.shape[-1], x.shape[-1])
+    rotary\_dim = 2 * (rotary\_dim // 2)
     
-    cos = self.cos_cached[:seq_len, :rotary_dim].unsqueeze(0).unsqueeze(0)
-    sin = self.sin_cached[:seq_len, :rotary_dim].unsqueeze(0).unsqueeze(0)
+    cos = self.cos\_cached[:seq\_len, :rotary\_dim].unsqueeze(0).unsqueeze(0)
+    sin = self.sin\_cached[:seq\_len, :rotary\_dim].unsqueeze(0).unsqueeze(0)
     
-    if rotary_dim < x.shape[-1]:
-        x_rot = x[..., :rotary_dim]
-        x_pass = x[..., rotary_dim:]
-        rotated = (x_rot * cos) + (_rotate_half(x_rot) * sin)
-        return torch.cat((rotated, x_pass), dim=-1)
+    if rotary\_dim \textless{} x.shape[-1]:
+        x\_rot = x[..., :rotary\_dim]
+        x\_pass = x[..., rotary\_dim:]
+        rotated = (x\_rot * cos) + (\_rotate\_half(x\_rot) * sin)
+        return torch.cat((rotated, x\_pass), dim=-1)
     else:
-        return (x * cos) + (_rotate_half(x) * sin)
+        return (x * cos) + (\_rotate\_half(x) * sin)
 \end{lstlisting}
 
 \subsection{Weight Transfer}
@@ -140,18 +140,18 @@ UnifiedRoPE's \texttt{copy\_weights} handles:
 \subsubsection{Conv1D Transposition}
 
 \begin{lstlisting}
-if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
-    c_attn_w = c_attn_w.t()
+if c\_attn\_w.shape[0] == self.hidden\_size and c\_attn\_w.shape[1] != self.hidden\_size:
+    c\_attn\_w = c\_attn\_w.t()
 \end{lstlisting}
 
 \subsubsection{Nested Encoder Detection}
 
 \begin{lstlisting}
-if hasattr(old_attn, "self") and hasattr(old_attn, "output"):
-    self.is_nested_encoder = True
-    src = old_attn.self
-    if hasattr(old_attn.output, "dense"):
-        w_o = old_attn.output.dense.weight
+if hasattr(old\_attn, "self") and hasattr(old\_attn, "output"):
+    self.is\_nested\_encoder = True
+    src = old\_attn.self
+    if hasattr(old\_attn.output, "dense"):
+        w\_o = old\_attn.output.dense.weight
 \end{lstlisting}
 
 When nested, \texttt{out\_proj} is \textbf{skipped} in forward; the outer layer applies.
@@ -161,62 +161,62 @@ When nested, \texttt{out\_proj} is \textbf{skipped} in forward; the outer layer 
 The \texttt{\_copy\_layer} helper preserves source LoRA adapters:
 
 \begin{lstlisting}
-def _copy_layer(target_layer, w, b, src_sub=None):
+def \_copy\_layer(target\_layer, w, b, src\_sub=None):
     # Copy base weight
     if w is not None: ...
     # Copy bias
     if b is not None: ...
     # Preserve LoRA
-    if src_sub is not None and hasattr(src_sub, "lora_A"):
-        target_layer.lora_A.data.copy_(src_sub.lora_A.data)
-        target_layer.lora_B.data.copy_(src_sub.lora_B.data)
+    if src\_sub is not None and hasattr(src\_sub, "lora\_A"):
+        target\_layer.lora\_A.data.copy\_(src\_sub.lora\_A.data)
+        target\_layer.lora\_B.data.copy\_(src\_sub.lora\_B.data)
 \end{lstlisting}
 
 \subsection{Forward Pass}
 
 \begin{lstlisting}
-def forward(self, hidden_states, attention_mask=None, ...):
-    B, L, _ = hidden_states.shape
+def forward(self, hidden\_states, attention\_mask=None, ...):
+    B, L, \_ = hidden\_states.shape
     
     # 1. Project
-    q = self.q_proj(hidden_states).view(B, L, H, d_h).transpose(1, 2)
-    k = self.k_proj(hidden_states).view(B, L, Hkv, d_h).transpose(1, 2)
-    v = self.v_proj(hidden_states).view(B, L, Hkv, d_h).transpose(1, 2)
+    q = self.q\_proj(hidden\_states).view(B, L, H, d\_h).transpose(1, 2)
+    k = self.k\_proj(hidden\_states).view(B, L, Hkv, d\_h).transpose(1, 2)
+    v = self.v\_proj(hidden\_states).view(B, L, Hkv, d\_h).transpose(1, 2)
     
     # 2. Apply RoPE
-    pos_emb = kwargs.get("position_embeddings")
-    if pos_emb is not None:
-        cos, sin = pos_emb
-        q, k = apply_rotary_pos_emb(q, k, cos, sin)
+    pos\_emb = kwargs.get("position\_embeddings")
+    if pos\_emb is not None:
+        cos, sin = pos\_emb
+        q, k = apply\_rotary\_pos\_emb(q, k, cos, sin)
     else:
-        q = self._apply_rope(q, L)
-        k = self._apply_rope(k, L)
+        q = self.\_apply\_rope(q, L)
+        k = self.\_apply\_rope(k, L)
     
     # 3. GQA expansion
-    if self.num_kv_heads != self.num_heads:
-        k = repeat_kv(k, self.num_key_value_groups)
-        v = repeat_kv(v, self.num_key_value_groups)
+    if self.num\_kv\_heads != self.num\_heads:
+        k = repeat\_kv(k, self.num\_key\_value\_groups)
+        v = repeat\_kv(v, self.num\_key\_value\_groups)
     
     # 4. Scaled dot-product attention
-    scores = q @ k^T / sqrt(d_h)
+    scores = q @ k^T / sqrt(d\_h)
     
     # 5. Causal mask for decoders
-    if self.is_decoder and L > 1:
-        scores = scores + causal_mask
+    if self.is\_decoder and L \textgreater{} 1:
+        scores = scores + causal\_mask
     
     # 6. Padding mask
-    if attention_mask is not None:
-        scores = apply_attention_mask(scores, attention_mask)
+    if attention\_mask is not None:
+        scores = apply\_attention\_mask(scores, attention\_mask)
     
     # 7. Softmax, dropout, context
     attn = softmax(scores)
     context = attn @ v
     
     # 8. Output projection (skip if nested)
-    if self.is_nested_encoder:
+    if self.is\_nested\_encoder:
         output = context
     else:
-        output = self.out_proj(context)
+        output = self.out\_proj(context)
     
     return output, attn
 \end{lstlisting}
@@ -241,9 +241,9 @@ not. UnifiedRoPE supports both.
 For $H_{kv} < H$:
 
 \begin{lstlisting}
-if self.num_kv_heads != self.num_heads:
-    k = repeat_kv(k, self.num_key_value_groups)
-    v = repeat_kv(v, self.num_key_value_groups)
+if self.num\_kv\_heads != self.num\_heads:
+    k = repeat\_kv(k, self.num\_key\_value\_groups)
+    v = repeat\_kv(v, self.num\_key\_value\_groups)
 \end{lstlisting}
 
 \texttt{repeat\_kv} broadcasts each KV head to \texttt{H / H\_{kv}} query heads.
@@ -253,10 +253,10 @@ if self.num_kv_heads != self.num_heads:
 For RoBERTa-style models:
 
 \begin{lstlisting}
-if self.is_nested_encoder:
+if self.is\_nested\_encoder:
     output = context   # Raw context
 else:
-    output = self.out_proj(context)
+    output = self.out\_proj(context)
 \end{lstlisting}
 
 The outer \texttt{BertSelfOutput.dense} applies the projection.
@@ -289,7 +289,7 @@ Output projection & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
 \textbf{Proposition.} The rotation operator preserves L2 norm:
 
 \[
-\|\tilde{q}_i\|_2 = \|q_i\|_2
+\|\tilde{q}\_i\|\_2 = \|q\_i\|\_2
 \tag{4.1}
 \]
 
@@ -300,7 +300,7 @@ Output projection & $\mathcal{O}(L d^2)$ & $\mathcal{O}(L d)$ \\
 \textbf{Proposition.} The attention score satisfies:
 
 \[
-\tilde{q}_i^\top \tilde{k}_j = f(q_i, k_j, i - j)
+\tilde{q}\_i^\top \tilde{k}\_j = f(q\_i, k\_j, i - j)
 \tag{4.2}
 \]
 

@@ -6,7 +6,7 @@
 For a pretrained weight $W_0 \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
 
 \[
-W = W_0 + \frac{\alpha}{r_L} B A
+W = W\_0 + \frac{\alpha}{r\_L} B A
 \]
 
 where $B \in \mathbb{R}^{d_\text{out} \times r_L}$, $A \in \mathbb{R}^{r_L \times d_\text{in}}$, and $B = 0$ at initialization.
@@ -14,7 +14,7 @@ where $B \in \mathbb{R}^{d_\text{out} \times r_L}$, $A \in \mathbb{R}^{r_L \time
 \textbf{Forward:}
 
 \[
-y = W x = W_0 x + \frac{\alpha}{r_L} B A x
+y = W x = W\_0 x + \frac{\alpha}{r\_L} B A x
 \]
 
 \textbf{Parameter count:} $r_L (d_\text{in} + d_\text{out})$.
@@ -53,7 +53,7 @@ $\square$
 Given $H_\text{source}$ source KV heads with $H_\text{source} > H_\text{target}$:
 
 \[
-{W_K^{(\text{pool})}}_g = \frac{1}{r} \sum_{h \in g} {W_K^{(\text{source})}}_h
+{W\_K^{(\text{pool})}}\_g = \frac{1}{r} \sum\_{h \in g} {W\_K^{(\text{source})}}\_h
 \]
 
 where $r = H_\text{source} / H_\text{target}$.
@@ -87,7 +87,7 @@ $W_O$ & $d_h H \cdot d$ & $d_h' H \cdot d$ \\
 Attention scores computed in FP32:
 
 \[
-S = \frac{Q_\text{FP32} K_\text{FP32}^\top}{\sqrt{d_h}}
+S = \frac{Q\_\text{FP32} K\_\text{FP32}^\top}{\sqrt{d\_h}}
 \]
 
 Softmax in FP32, then cast back to model dtype.

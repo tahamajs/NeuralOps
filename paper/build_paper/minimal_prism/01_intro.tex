@@ -13,7 +13,7 @@ is therefore a high-leverage compression strategy.
 Standard MHSA stores four dense matrices per layer:
 
 \[
-W_Q, W_K, W_V, W_O \in \mathbb{R}^{d \times d}
+W\_Q, W\_K, W\_V, W\_O \in \mathbb{R}^{d \times d}
 \tag{1.1}
 \]
 
@@ -26,8 +26,8 @@ replaces it with a product:
 
 \[
 W \approx U V, \qquad
-U \in \mathbb{R}^{d_\text{out} \times r}, \quad
-V \in \mathbb{R}^{r \times d_\text{in}}, \quad r \ll \min(d_\text{in}, d_\text{out})
+U \in \mathbb{R}^{d\_\text{out} \times r}, \quad
+V \in \mathbb{R}^{r \times d\_\text{in}}, \quad r \ll \min(d\_\text{in}, d\_\text{out})
 \tag{1.2}
 \]
 

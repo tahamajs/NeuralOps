@@ -25,11 +25,11 @@ The \texttt{copy\_weights} method handles three extraction patterns:
 \subsubsection{GPT-2 (Fused Conv1D)}
 
 \begin{lstlisting}
-if hasattr(src, "c_attn"):
-    c_w = src.c_attn.weight.data.clone()
-    if src.c_attn.__class__.__name__ == "Conv1D":
-        c_w = c_w.t()
-    q_w, k_w, v_w = c_w.chunk(3, dim=0)
+if hasattr(src, "c\_attn"):
+    c\_w = src.c\_attn.weight.data.clone()
+    if src.c\_attn.\_\_class\_\_.\_\_name\_\_ == "Conv1D":
+        c\_w = c\_w.t()
+    q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{RoBERTa (Nested)}
@@ -53,10 +53,10 @@ The output projection is taken from \texttt{src.output.dense}.
 Direct extraction:
 
 \begin{lstlisting}
-extracted["q"] = src.q_lin.weight.data
-extracted["k"] = src.k_lin.weight.data
-extracted["v"] = src.v_lin.weight.data
-extracted["o"] = src.out_lin.weight.data
+extracted["q"] = src.q\_lin.weight.data
+extracted["k"] = src.k\_lin.weight.data
+extracted["v"] = src.v\_lin.weight.data
+extracted["o"] = src.out\_lin.weight.data
 \end{lstlisting}
 
 \subsection{Nested Encoder Bypass}
@@ -64,9 +64,9 @@ extracted["o"] = src.out_lin.weight.data
 For RoBERTa, we set \texttt{is\_nested\_encoder = True} and skip our own \texttt{out\_proj}:
 
 \begin{lstlisting}
-if self.is_nested_encoder:
+if self.is\_nested\_encoder:
     return context, None
-output = self.out_proj(context)
+output = self.out\_proj(context)
 \end{lstlisting}
 
 The outer \texttt{BertSelfOutput.dense} applies the projection.
@@ -76,9 +76,9 @@ The outer \texttt{BertSelfOutput.dense} applies the projection.
 For Qwen with $H_{kv} < H$:
 
 \begin{lstlisting}
-if self.num_heads != self.num_kv_heads:
-    K = repeat_kv(K, self.num_heads // self.num_kv_heads)
-    V = repeat_kv(V, self.num_heads // self.num_kv_heads)
+if self.num\_heads != self.num\_kv\_heads:
+    K = repeat\_kv(K, self.num\_heads // self.num\_kv\_heads)
+    V = repeat\_kv(V, self.num\_heads // self.num\_kv\_heads)
 \end{lstlisting}
 
 This is applied \textbf{before} the joint feature computation.
@@ -91,15 +91,15 @@ Partial RoPE supported via \texttt{apply\_rotary\_pos\_emb}.
 
 \textbf{Algorithm 3:} Inject Routing Attention
 \begin{lstlisting}
-Input:  layer  , config, old_attn
+Input:  layer  , config, old\_attn
 Output: new attention module
 
-1: new $\leftarrow$ RoutingAttention(config, pretrained_attn=old_attn)
+1: new $\leftarrow$ RoutingAttention(config, pretrained\_attn=old\_attn)
 2: if layer.attention.self: 
-3:     layer.attention.self $\leftarrow$ new; new.is_nested_encoder $\leftarrow$ True
-4: elif layer.self_attn: layer.self_attn $\leftarrow$ new
+3:     layer.attention.self $\leftarrow$ new; new.is\_nested\_encoder $\leftarrow$ True
+4: elif layer.self\_attn: layer.self\_attn $\leftarrow$ new
 5: elif layer.attn: layer.attn $\leftarrow$ new
-6: elif layer.self: layer.self $\leftarrow$ new; new.is_nested_encoder $\leftarrow$ True
+6: elif layer.self: layer.self $\leftarrow$ new; new.is\_nested\_encoder $\leftarrow$ True
 7: return new
 \end{lstlisting}
 
@@ -125,10 +125,10 @@ Injection exception & try/except in \texttt{inject\_routing} & Return \texttt{No
 Unlike other modules, this one \textbf{raises} if a weight has near-zero norm:
 
 \begin{lstlisting}
-w_norm = float(torch.norm(target_mod.weight.data).item())
-if w_norm < 1e-4:
-    raise RuntimeError(f"RoutingAttention weight verification failed for '{proj_key}': "
-                       f"norm too small ({w_norm:.2e})")
+w\_norm = float(torch.norm(target\_mod.weight.data).item())
+if w\_norm \textless{} 1e-4:
+    raise RuntimeError(f"RoutingAttention weight verification failed for '{proj\_key}': "
+                       f"norm too small ({w\_norm:.2e})")
 \end{lstlisting}
 
 \textbf{This is a bug.} If any projection weight is legitimately small, the 
@@ -143,9 +143,9 @@ it twice could corrupt the model.
 
 \begin{lstlisting}
 # Verify injection
-for name, mod in model.named_modules():
-    if 'routing' in type(mod).__name__.lower():
-        print(name, type(mod).__name__)
+for name, mod in model.named\_modules():
+    if 'routing' in type(mod).\_\_name\_\_.lower():
+        print(name, type(mod).\_\_name\_\_)
 \end{lstlisting}
 
 \subsection{Common Pitfalls}
@@ -172,6 +172,6 @@ If \texttt{is\_nested\_encoder} is wrong, the output projection is applied twice
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.png}
 \caption{High-level architectural diagram of routing\_attention.}
-\label{fig:arch_routing-attention}
+\label{fig:arch\_routing-attention}
 \end{figure}
 

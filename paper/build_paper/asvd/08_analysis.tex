@@ -98,9 +98,9 @@ AASVD & 85.0 & 4.0$\times$ \\
 representative layers:
 
 \begin{itemize}
-\item Layer 0 (early): Fast decay; top-32 captures 95%
-\item Layer 2 (middle): Slower decay; top-64 needed for 95%
-\item Layer 5 (late): Fast decay; top-48 captures 95%
+\item Layer 0 (early): Fast decay; top-32 captures 95\%
+\item Layer 2 (middle): Slower decay; top-64 needed for 95\%
+\item Layer 5 (late): Fast decay; top-48 captures 95\%
 
 \end{itemize}
 \textbf{Observation.} Attention layers have similar decay patterns
@@ -177,7 +177,7 @@ reduction.
 
 \begin{enumerate}
 \item Missing projection in \texttt{copy\_weights}.
-\item Reconstruction error > $\tau$ in \texttt{\_decompose\_and\_set}.
+\item Reconstruction error \textgreater{} $\tau$ in \texttt{\_decompose\_and\_set}.
 
 \end{enumerate}
 \textbf{Advantages:}
@@ -206,8 +206,8 @@ No injection failures observed on tested models
 \textbf{Failure} & \textbf{Symptom} & \textbf{Root cause} \\
 \midrule
 Injection abort & RuntimeError & Missing projection \\
-Reconstruction abort & RuntimeError & Error > $\tau$ \\
-Accuracy drop & $\Delta$ < -5\% & Insufficient rank / LoRA \\
+Reconstruction abort & RuntimeError & Error \textgreater{} $\tau$ \\
+Accuracy drop & $\Delta$ \textless{} -5\% & Insufficient rank / LoRA \\
 NaN & Loss = NaN & Numerical instability \\
 \bottomrule
 \end{tabular}

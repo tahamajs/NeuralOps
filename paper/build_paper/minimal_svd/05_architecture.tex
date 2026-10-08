@@ -22,10 +22,10 @@ Qwen3.5-0.8B & 24 & 1024 & 8 & 2 & No & No \\
 
 \begin{lstlisting}
 distilbert.transformer.layer.0.attention
-+-- q_lin  (Linear 768 $\to$ 768)
-+-- k_lin  (Linear 768 $\to$ 768)
-+-- v_lin  (Linear 768 $\to$ 768)
-+-- out_lin (Linear 768 $\to$ 768)
++-- q\_lin  (Linear 768 $\to$ 768)
++-- k\_lin  (Linear 768 $\to$ 768)
++-- v\_lin  (Linear 768 $\to$ 768)
++-- out\_lin (Linear 768 $\to$ 768)
 \end{lstlisting}
 
 All four are \texttt{nn.Linear}. Direct factorization, no special handling.
@@ -61,8 +61,8 @@ If they disagree, \texttt{copy\_weights} wins.
 
 \begin{lstlisting}
 transformer.h.0.attn
-+-- c_attn  (Conv1D 768 $\to$ 2304)   # $\leftarrow$ FUSED Q, K, V
-+-- c_proj  (Conv1D 768 $\to$ 768)    # $\leftarrow$ output projection
++-- c\_attn  (Conv1D 768 $\to$ 2304)   # $\leftarrow$ FUSED Q, K, V
++-- c\_proj  (Conv1D 768 $\to$ 768)    # $\leftarrow$ output projection
 \end{lstlisting}
 
 \textbf{Two challenges:}
@@ -71,10 +71,10 @@ transformer.h.0.attn
 \item \textbf{Fused c\_attn.} Q, K, V are stored in one matrix. We split:
 \end{enumerate}
 \begin{lstlisting}
-   w = src.c_attn.weight.data.clone()
-   if is_conv1d:
+   w = src.c\_attn.weight.data.clone()
+   if is\_conv1d:
        w = w.t()   # (in, out) $\to$ (out, in)
-   q_w, k_w, v_w = w.chunk(3, dim=0)
+   q\_w, k\_w, v\_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
 \begin{enumerate}
@@ -82,7 +82,7 @@ transformer.h.0.attn
   opposite to \texttt{nn.Linear}. Detected via:
 \end{enumerate}
 \begin{lstlisting}
-   is_conv1d = hasattr(module, "nf") or "Conv1D" in type(module).__name__
+   is\_conv1d = hasattr(module, "nf") or "Conv1D" in type(module).\_\_name\_\_
 \end{lstlisting}
 
 \texttt{is\_nested\_encoder = False} because \texttt{c\_proj} is inside the attention (applied 
@@ -91,20 +91,20 @@ by our module).
 \subsection{Qwen3.5 (GQA + RoPE)}
 
 \begin{lstlisting}
-model.layers.0.self_attn
-+-- q_proj  (Linear 1024 $\to$ 2048)   # H * d_h
-+-- k_proj  (Linear 1024 $\to$ 512)    # H_kv * d_h
-+-- v_proj  (Linear 1024 $\to$ 512)
-+-- o_proj  (Linear 2048 $\to$ 1024)
+model.layers.0.self\_attn
++-- q\_proj  (Linear 1024 $\to$ 2048)   # H * d\_h
++-- k\_proj  (Linear 1024 $\to$ 512)    # H\_kv * d\_h
++-- v\_proj  (Linear 1024 $\to$ 512)
++-- o\_proj  (Linear 2048 $\to$ 1024)
 \end{lstlisting}
 
 \textbf{GQA handling:} $H_{kv} = 2 < H = 8$. K and V projections are narrower. 
 MinimalSVD factorizes each at its natural dimension. During forward:
 
 \begin{lstlisting}
-if self.num_kv_heads < self.num_heads:
-    K = repeat_kv(K, self.kv_repeat)
-    V = repeat_kv(V, self.kv_repeat)
+if self.num\_kv\_heads \textless{} self.num\_heads:
+    K = repeat\_kv(K, self.kv\_repeat)
+    V = repeat\_kv(V, self.kv\_repeat)
 \end{lstlisting}
 
 \textbf{RoPE handling:} Qwen applies RoPE after projection.
@@ -118,14 +118,14 @@ When \texttt{is\_nested\_encoder = True}:
 \begin{lstlisting}
 def forward(self, ...):
     ...
-    context = torch.matmul(attn_weights, V)
+    context = torch.matmul(attn\_weights, V)
     context = context.transpose(1, 2).contiguous().view(B, N, H * D)
     
-    if self.is_nested_encoder:
-        return context, attn_weights   # Raw context
+    if self.is\_nested\_encoder:
+        return context, attn\_weights   # Raw context
     else:
-        output = self.out_proj(context)
-        return output, attn_weights
+        output = self.out\_proj(context)
+        return output, attn\_weights
 \end{lstlisting}
 
 The outer \texttt{BertSelfOutput.dense} then applies the projection.
@@ -137,37 +137,37 @@ The outer \texttt{BertSelfOutput.dense} then applies the projection.
 Input:  layer, config, energy  
 Output: layer with factorized attention
 
-1:  src $\leftarrow$ get_attention(layer)
+1:  src $\leftarrow$ get\_attention(layer)
 2:  if src is MinimalSVD: return None
 3:
-4:  new_attn $\leftarrow$ MinimalSVDAttention(config)
+4:  new\_attn $\leftarrow$ MinimalSVDAttention(config)
 5:  try:
-6:      new_attn.copy_weights(src)
+6:      new\_attn.copy\_weights(src)
 7:  except Exception as e:
 8:      return None
 9:
 10: p $\leftarrow$ next(src.parameters())
-11: new_attn.to(device=p.device, dtype=p.dtype)
+11: new\_attn.to(device=p.device, dtype=p.dtype)
 12:
 13: # Set nested flag and replace
 14: if hasattr(layer, "attention"):
 15:     if hasattr(layer.attention, "self"):
-16:         layer.attention.self = new_attn
-17:         new_attn.is_nested_encoder = True
+16:         layer.attention.self = new\_attn
+17:         new\_attn.is\_nested\_encoder = True
 18:     else:
-19:         layer.attention = new_attn
-20:         new_attn.is_nested_encoder = False
+19:         layer.attention = new\_attn
+20:         new\_attn.is\_nested\_encoder = False
 21: elif hasattr(layer, "self"):
-22:     layer.self = new_attn
-23:     new_attn.is_nested_encoder = True
-24: return new_attn
+22:     layer.self = new\_attn
+23:     new\_attn.is\_nested\_encoder = True
+24: return new\_attn
 \end{lstlisting}
 
 \textbf{Whole-model traversal} is the caller's responsibility:
 
 \begin{lstlisting}
 for layer in model.distilbert.transformer.layer:
-    inject_minimal_svd(layer, model.config, energy=0.95)
+    inject\_minimal\_svd(layer, model.config, energy=0.95)
 \end{lstlisting}
 
 \subsection{Failure Modes}
@@ -180,7 +180,7 @@ for layer in model.distilbert.transformer.layer:
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
 Missing weights & \texttt{copy\_weights} raises & Return None \\
-Near-zero Frobenius & Norm check < 1e-4 & Raise \\
+Near-zero Frobenius & Norm check \textless{} 1e-4 & Raise \\
 Shape mismatch & Padding in \texttt{decompose\_from\_weight} & Warn \\
 Cross-attention & Not supported & Not implemented \\
 \bottomrule
@@ -190,13 +190,13 @@ Cross-attention & Not supported & Not implemented \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("minimal_svd")
+@ATTENTION\_REGISTRY.register("minimal\_svd")
 class MinimalSVDAttention(BaseAttention):
     ...
 
-@ATTENTION_REGISTRY.register("minimal_svd_inject")
-@ATTENTION_REGISTRY.register("inject_minimal_svd")
-def inject_minimal_svd(...):
+@ATTENTION\_REGISTRY.register("minimal\_svd\_inject")
+@ATTENTION\_REGISTRY.register("inject\_minimal\_svd")
+def inject\_minimal\_svd(...):
     ...
 \end{lstlisting}
 
@@ -222,6 +222,6 @@ MinimalSVD integrates cleanly with the framework's LoRA recovery:
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of minimal\_svd.}
-\label{fig:arch_minimal-svd}
+\label{fig:arch\_minimal-svd}
 \end{figure}
 

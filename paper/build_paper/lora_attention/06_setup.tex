@@ -106,7 +106,7 @@ Precision & FP16 \\
 \midrule
 PASS & $\ge$ 56\% \\
 PASS\_LOW & 50.92--56\% \\
-FAIL & < 50.92\% \\
+FAIL & \textless{} 50.92\% \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -131,11 +131,11 @@ PyTorch & 2.1.2 \\
 \subsection{Reproduction}
 
 \begin{lstlisting}
-python run_all_4_lora_attention.py \
+python run\_all\_4\_lora\_attention.py \
     --models distilbert,roberta,gpt2 \
-    --lora_rank 8 \
-    --lora_alpha 16 \
-    --recovery_steps 50
+    --lora\_rank 8 \
+    --lora\_alpha 16 \
+    --recovery\_steps 50
 \end{lstlisting}
 
 \subsection{Baselines}

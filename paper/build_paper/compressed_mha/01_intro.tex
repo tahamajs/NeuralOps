@@ -15,7 +15,7 @@ $d^2$ to $2 r d$.
 \textbf{Standard SVD compression} treats each projection independently:
 
 \[
-W_Q \to U_{Q,r} V_{Q,r}, \quad W_K \to U_{K,r} V_{K,r}, \quad W_V \to U_{V,r} V_{V,r}, \quad W_O \to U_{O,r} V_{O,r}
+W\_Q \to U\_{Q,r} V\_{Q,r}, \quad W\_K \to U\_{K,r} V\_{K,r}, \quad W\_V \to U\_{V,r} V\_{V,r}, \quad W\_O \to U\_{O,r} V\_{O,r}
 \]
 
 This costs $4 \cdot 2 r d = 8 r d$ parameters.
@@ -51,7 +51,7 @@ subject to:
 We stack the Q, K, V projections:
 
 \[
-W_{QKV} = \begin{pmatrix} W_Q \\ W_K \\ W_V \end{pmatrix} \in \mathbb{R}^{(d + 2 d_{kv}) \times d}
+W\_{QKV} = \begin{pmatrix} W\_Q \\ W\_K \\ W\_V \end{pmatrix} \in \mathbb{R}^{(d + 2 d\_{kv}) \times d}
 \]
 
 where $d_{kv} = H_{kv} \cdot d_h$ for grouped-query attention.
@@ -59,13 +59,13 @@ where $d_{kv} = H_{kv} \cdot d_h$ for grouped-query attention.
 We then compute a single SVD:
 
 \[
-W_{QKV} = U_{QKV} \Sigma_{QKV} V_{QKV}^\top
+W\_{QKV} = U\_{QKV} \Sigma\_{QKV} V\_{QKV}^\top
 \]
 
 and truncate to rank $r$:
 
 \[
-W_{QKV} \approx U_{QKV, r} \Sigma_{QKV, r}^{1/2} \cdot \Sigma_{QKV, r}^{1/2} V_{QKV, r}^\top
+W\_{QKV} \approx U\_{QKV, r} \Sigma\_{QKV, r}^{1/2} \cdot \Sigma\_{QKV, r}^{1/2} V\_{QKV, r}^\top
 \]
 
 \textbf{Advantages:}
@@ -81,7 +81,7 @@ W_{QKV} \approx U_{QKV, r} \Sigma_{QKV, r}^{1/2} \cdot \Sigma_{QKV, r}^{1/2} V_{
 We apply separate SVD to the output projection $W_O \in \mathbb{R}^{d \times d_h H}$:
 
 \[
-W_O \approx U_{O, r} \Sigma_{O, r}^{1/2} \cdot \Sigma_{O, r}^{1/2} V_{O, r}^\top
+W\_O \approx U\_{O, r} \Sigma\_{O, r}^{1/2} \cdot \Sigma\_{O, r}^{1/2} V\_{O, r}^\top
 \]
 
 \subsection{Contributions}

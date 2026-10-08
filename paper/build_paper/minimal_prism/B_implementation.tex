@@ -5,165 +5,165 @@
 
 \begin{lstlisting}
 class FactorisedLinear(nn.Module):
-    def __init__(self, in_features, out_features, rank=64, bias=True,
-                 energy=0.95, lora_rank=16, lora_alpha=32.0, ...):
-        super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.rank = min(rank, in_features, out_features)
+    def \_\_init\_\_(self, in\_features, out\_features, rank=64, bias=True,
+                 energy=0.95, lora\_rank=16, lora\_alpha=32.0, ...):
+        super().\_\_init\_\_()
+        self.in\_features = in\_features
+        self.out\_features = out\_features
+        self.rank = min(rank, in\_features, out\_features)
         self.energy = energy
-        self.lora_rank = lora_rank
-        self.lora_scaling = lora_alpha / lora_rank if lora_rank > 0 else 1.0
+        self.lora\_rank = lora\_rank
+        self.lora\_scaling = lora\_alpha / lora\_rank if lora\_rank \textgreater{} 0 else 1.0
         
-        self.down = nn.Linear(in_features, self.rank, bias=False)
-        self.up = nn.Linear(self.rank, out_features, bias=bias)
+        self.down = nn.Linear(in\_features, self.rank, bias=False)
+        self.up = nn.Linear(self.rank, out\_features, bias=bias)
         
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.randn(lora_rank, in_features) * 0.01)
-            self.lora_B = nn.Parameter(torch.zeros(out_features, lora_rank))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.randn(lora\_rank, in\_features) * 0.01)
+            self.lora\_B = nn.Parameter(torch.zeros(out\_features, lora\_rank))
         
-        self.reset_parameters()
+        self.reset\_parameters()
     
     def forward(self, x):
         if self.down.weight.device != x.device:
             self.to(device=x.device)
         out = self.up(self.down(x))
-        if self.lora_rank > 0:
-            out += F.linear(F.linear(x, self.lora_A.to(x.dtype)), 
-                            self.lora_B.to(x.dtype)) * self.lora_scaling
+        if self.lora\_rank \textgreater{} 0:
+            out += F.linear(F.linear(x, self.lora\_A.to(x.dtype)), 
+                            self.lora\_B.to(x.dtype)) * self.lora\_scaling
         return out
 \end{lstlisting}
 
 \subsection{B.2 `decompose\_from\_weight`}
 
 \begin{lstlisting}
-def decompose_from_weight(self, weight, bias=None, energy=None):
-    with torch.no_grad():
+def decompose\_from\_weight(self, weight, bias=None, energy=None):
+    with torch.no\_grad():
         W = weight.float()
         
         # Handle GQA dimension mismatch
-        if W.shape[0] < self.out_features and self.out_features % W.shape[0] == 0:
-            rep = self.out_features // W.shape[0]
+        if W.shape[0] \textless{} self.out\_features and self.out\_features \% W.shape[0] == 0:
+            rep = self.out\_features // W.shape[0]
             W = W.repeat(rep, 1)
-        elif W.shape[0] > self.out_features and W.shape[0] % self.out_features == 0:
-            rep = W.shape[0] // self.out_features
-            W = W.view(self.out_features, rep, -1).mean(dim=1)
+        elif W.shape[0] \textgreater{} self.out\_features and W.shape[0] \% self.out\_features == 0:
+            rep = W.shape[0] // self.out\_features
+            W = W.view(self.out\_features, rep, -1).mean(dim=1)
         
         # SVD
-        U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        U, S, Vt = torch.linalg.svd(W, full\_matrices=False)
         
         # Energy-based rank
-        target_energy = energy if energy is not None else self.energy
-        total_energy = (S ** 2).sum()
-        cum_energy = torch.cumsum(S ** 2, dim=0) / (total_energy + 1e-12)
-        calc_rank = int((cum_energy < target_energy).sum().item()) + 1
-        r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
+        target\_energy = energy if energy is not None else self.energy
+        total\_energy = (S ** 2).sum()
+        cum\_energy = torch.cumsum(S ** 2, dim=0) / (total\_energy + 1e-12)
+        calc\_rank = int((cum\_energy \textless{} target\_energy).sum().item()) + 1
+        r = min(self.rank, calc\_rank, U.size(1), Vt.size(0))
         r = max(1, r)
         
         # Symmetric distribution
-        sqrt_s = torch.sqrt(S[:r])
-        A = (U[:, :r] * sqrt_s).to(self.up.weight.dtype)
-        B = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype)
+        sqrt\_s = torch.sqrt(S[:r])
+        A = (U[:, :r] * sqrt\_s).to(self.up.weight.dtype)
+        B = (sqrt\_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype)
         
         # Store
-        self.up.weight.data.zero_()
-        self.down.weight.data.zero_()
+        self.up.weight.data.zero\_()
+        self.down.weight.data.zero\_()
         self.up.weight.data[:, :r] = A
         self.down.weight.data[:r, :] = B
         
-        self.freeze_base_weights()
+        self.freeze\_base\_weights()
 \end{lstlisting}
 
 \subsection{B.3 Injection Hook}
 
 \begin{lstlisting}
-def inject_minimal_prism(layer=None, model=None, ...):
+def inject\_minimal\_prism(layer=None, model=None, ...):
     target = layer if layer is not None else model
     
     # 1. Whole model traversal
     if hasattr(target, "distilbert"):
-        layer_list = target.distilbert.transformer.layer
+        layer\_list = target.distilbert.transformer.layer
     elif hasattr(target, "roberta"):
-        layer_list = target.roberta.encoder.layer
+        layer\_list = target.roberta.encoder.layer
     elif hasattr(target, "transformer"):
-        layer_list = target.transformer.h
+        layer\_list = target.transformer.h
     elif hasattr(target, "model") and hasattr(target.model, "layers"):
-        layer_list = target.model.layers
+        layer\_list = target.model.layers
     
-    if layer_list is not None:
+    if layer\_list is not None:
         # Pre-test on first layer
-        test_src = layer_list[0].attention
+        test\_src = layer\_list[0].attention
         try:
-            MinimalPRISMAttention(cfg).copy_weights(test_src)
+            MinimalPRISMAttention(cfg).copy\_weights(test\_src)
         except Exception as e:
             logger.warning(f"Pre-test failed: {e}")
             return None
         
         # Inject all
-        for idx, lyr in enumerate(layer_list):
-            inject_minimal_prism(layer=lyr, ...)
+        for idx, lyr in enumerate(layer\_list):
+            inject\_minimal\_prism(layer=lyr, ...)
         return target
     
     # 2. Single-layer injection
-    src_attn = get_attention(target)
-    new_attn = MinimalPRISMAttention(cfg)
-    new_attn.copy_weights(src_attn)
+    src\_attn = get\_attention(target)
+    new\_attn = MinimalPRISMAttention(cfg)
+    new\_attn.copy\_weights(src\_attn)
     
     # Set nested flag at injection
     if hasattr(target, "attention") and hasattr(target.attention, "self"):
-        new_attn.is_nested_encoder = True
-        target.attention.self = new_attn
+        new\_attn.is\_nested\_encoder = True
+        target.attention.self = new\_attn
     else:
-        new_attn.is_nested_encoder = False
+        new\_attn.is\_nested\_encoder = False
         if hasattr(target, "attention"):
-            target.attention = new_attn
+            target.attention = new\_attn
         elif hasattr(target, "self"):
-            new_attn.is_nested_encoder = True
-            target.self = new_attn
+            new\_attn.is\_nested\_encoder = True
+            target.self = new\_attn
         ...
     
-    return new_attn
+    return new\_attn
 \end{lstlisting}
 
 \subsection{B.4 Handling GPT-2 Conv1D}
 
 \begin{lstlisting}
-if hasattr(src, "c_attn"):
-    c_attn_mod = src.c_attn
-    base_c = getattr(c_attn_mod, "base_layer", c_attn_mod)
-    weight = base_c.weight.data.clone()
+if hasattr(src, "c\_attn"):
+    c\_attn\_mod = src.c\_attn
+    base\_c = getattr(c\_attn\_mod, "base\_layer", c\_attn\_mod)
+    weight = base\_c.weight.data.clone()
     
-    is_conv1d = (
-        "Conv1D" in type(c_attn_mod).__name__
-        or "Conv1D" in type(base_c).__name__
-        or hasattr(c_attn_mod, "nf")
-        or hasattr(base_c, "nf")
+    is\_conv1d = (
+        "Conv1D" in type(c\_attn\_mod).\_\_name\_\_
+        or "Conv1D" in type(base\_c).\_\_name\_\_
+        or hasattr(c\_attn\_mod, "nf")
+        or hasattr(base\_c, "nf")
     )
-    if is_conv1d:
+    if is\_conv1d:
         weight = weight.t()
     
-    split_size = weight.shape[0] // 3
-    q_w = weight[:split_size, :]
-    k_w = weight[split_size:2*split_size, :]
-    v_w = weight[2*split_size:, :]
+    split\_size = weight.shape[0] // 3
+    q\_w = weight[:split\_size, :]
+    k\_w = weight[split\_size:2*split\_size, :]
+    v\_w = weight[2*split\_size:, :]
 \end{lstlisting}
 
 \subsection{B.5 Nested Encoder Detection}
 
 \begin{lstlisting}
-cls_name = src.__class__.__name__
-has_out_proj = any(hasattr(src, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj"))
+cls\_name = src.\_\_class\_\_.\_\_name\_\_
+has\_out\_proj = any(hasattr(src, attr) for attr in ("dense", "out\_proj", "c\_proj", "out\_lin", "o\_proj"))
 
-is_nested = False
+is\_nested = False
 if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-    is_nested = True
+    is\_nested = True
 elif (
-    cls_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
-    or (cls_name.endswith("SelfAttention") and not has_out_proj)
+    cls\_name in ("BertSelfAttention", "RobertaSelfAttention", "XLMRobertaSelfAttention")
+    or (cls\_name.endswith("SelfAttention") and not has\_out\_proj)
 ):
-    is_nested = True
+    is\_nested = True
 
-self.is_nested_encoder = is_nested
+self.is\_nested\_encoder = is\_nested
 \end{lstlisting}
 
 \subsection{B.6 Common Pitfalls}
@@ -172,10 +172,10 @@ self.is_nested_encoder = is_nested
 
 \begin{lstlisting}
 # WRONG
-w = src.c_attn.weight
+w = src.c\_attn.weight
 
 # RIGHT
-if is_conv1d:
+if is\_conv1d:
     w = w.t()
 \end{lstlisting}
 
@@ -183,27 +183,27 @@ if is_conv1d:
 
 \begin{lstlisting}
 # WRONG (RoBERTa)
-self.is_nested_encoder = False   # out_proj applied twice
+self.is\_nested\_encoder = False   # out\_proj applied twice
 
 # RIGHT
-self.is_nested_encoder = True
+self.is\_nested\_encoder = True
 \end{lstlisting}
 
 \subsubsection{B.6.3 LoRA B Not Zeroed}
 
 \begin{lstlisting}
 # WRONG
-self.lora_B = nn.Parameter(torch.randn(...))
+self.lora\_B = nn.Parameter(torch.randn(...))
 
 # RIGHT
-self.lora_B = nn.Parameter(torch.zeros(...))
+self.lora\_B = nn.Parameter(torch.zeros(...))
 \end{lstlisting}
 
 \subsubsection{B.6.4 Missing Near-Zero Check}
 
 \begin{lstlisting}
-w_norm = torch.linalg.norm(w.float())
-if w_norm < 1e-4:
+w\_norm = torch.linalg.norm(w.float())
+if w\_norm \textless{} 1e-4:
     raise RuntimeError(f"Near-zero weight on {proj}")
 \end{lstlisting}
 
@@ -211,10 +211,10 @@ if w_norm < 1e-4:
 
 \begin{lstlisting}
 # Pre-test on first layer
-test_src = layer_list[0].attention
-test_module = MinimalPRISMAttention(cfg)
+test\_src = layer\_list[0].attention
+test\_module = MinimalPRISMAttention(cfg)
 try:
-    test_module.copy_weights(test_src)
+    test\_module.copy\_weights(test\_src)
 except Exception as e:
     logger.warning(f"Pre-test failed: {e}. Aborting.")
     return None
@@ -223,8 +223,8 @@ except Exception as e:
 \subsection{B.8 Double-Injection Guard}
 
 \begin{lstlisting}
-if isinstance(src_attn, MinimalPRISMAttention) or \
-   "MinimalPRISM" in src_attn.__class__.__name__:
+if isinstance(src\_attn, MinimalPRISMAttention) or \
+   "MinimalPRISM" in src\_attn.\_\_class\_\_.\_\_name\_\_:
     return None
 \end{lstlisting}
 \begin{lstlisting}

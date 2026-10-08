@@ -25,7 +25,7 @@ Discretized with step size $\Delta$:
 The recurrence:
 
 \[
-h_t = \bar{A} h_{t-1} + \bar{B} x_t, \quad y_t = C h_t
+h\_t = \bar{A} h\_{t-1} + \bar{B} x\_t, \quad y\_t = C h\_t
 \tag{3.3}
 \]
 
@@ -34,7 +34,7 @@ h_t = \bar{A} h_{t-1} + \bar{B} x_t, \quad y_t = C h_t
 Mamba makes $\Delta, B, C$ input-dependent:
 
 \[
-\Delta_t = \text{softplus}(W_\Delta x_t), \quad B_t = W_B x_t, \quad C_t = W_C x_t
+\Delta\_t = \text{softplus}(W\_\Delta x\_t), \quad B\_t = W\_B x\_t, \quad C\_t = W\_C x\_t
 \tag{3.4}
 \]
 
@@ -45,14 +45,14 @@ This lets the SSM decide when to update state based on input content.
 For efficiency, Mamba uses a \textbf{diagonal} A matrix:
 
 \[
-A = \text{diag}(a_1, \dots, a_{d_h}), \quad a_i < 0
+A = \text{diag}(a\_1, \dots, a\_{d\_h}), \quad a\_i \textless{} 0
 \tag{3.5}
 \]
 
 The discrete decay per dimension:
 
 \[
-\bar{A}_i = \exp(\Delta_i a_i) \in (0, 1)
+\bar{A}\_i = \exp(\Delta\_i a\_i) \in (0, 1)
 \tag{3.6}
 \]
 
@@ -61,7 +61,7 @@ The discrete decay per dimension:
 We parameterize the decay as:
 
 \[
-\gamma_i = \sigma(-\exp(A_{\log, i}))
+\gamma\_i = \sigma(-\exp(A\_{\log, i}))
 \tag{3.7}
 \]
 
@@ -78,15 +78,15 @@ where $A_{\log, i}$ is a learnable parameter. This gives:
 For a causal model, we compute:
 
 \[
-\text{dist}_{ij} = \max(0, j - i), \quad
-\log w_{ij} = \text{dist}_{ij} \cdot \log \gamma_i
+\text{dist}\_{ij} = \max(0, j - i), \quad
+\log w\_{ij} = \text{dist}\_{ij} \cdot \log \gamma\_i
 \tag{3.8}
 \]
 
 After softmax over $j$:
 
 \[
-w_{ij} = \frac{\exp(\text{dist}_{ij} \log \gamma_i)}{\sum_{j'} \exp(\text{dist}_{ij'} \log \gamma_i)}
+w\_{ij} = \frac{\exp(\text{dist}\_{ij} \log \gamma\_i)}{\sum\_{j'} \exp(\text{dist}\_{ij'} \log \gamma\_i)}
 \tag{3.9}
 \]
 
@@ -102,17 +102,17 @@ w_{ij} = \frac{\exp(\text{dist}_{ij} \log \gamma_i)}{\sum_{j'} \exp(\text{dist}_
 For encoders, we combine forward and backward:
 
 \[
-w_{ij}^\text{fwd} = \text{softmax}_j(\text{dist}_{ij}^\text{fwd} \log \gamma_i)
+w\_{ij}^\text{fwd} = \text{softmax}\_j(\text{dist}\_{ij}^\text{fwd} \log \gamma\_i)
 \tag{3.10}
 \]
 
 \[
-w_{ij}^\text{bwd} = \text{softmax}_j(\text{dist}_{ij}^\text{bwd} \log \gamma_i)
+w\_{ij}^\text{bwd} = \text{softmax}\_j(\text{dist}\_{ij}^\text{bwd} \log \gamma\_i)
 \tag{3.11}
 \]
 
 \[
-\text{Out} = 0.5 \cdot (w^\text{fwd} p_1 + w^\text{bwd} p_1)
+\text{Out} = 0.5 \cdot (w^\text{fwd} p\_1 + w^\text{bwd} p\_1)
 \tag{3.12}
 \]
 
@@ -128,7 +128,7 @@ We use the SiLU (Swish) activation:
 Gated fusion:
 
 \[
-\text{Out} = \text{SiLU}(p_1) \odot p_2
+\text{Out} = \text{SiLU}(p\_1) \odot p\_2
 \tag{3.14}
 \]
 

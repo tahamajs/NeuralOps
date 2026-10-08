@@ -182,12 +182,12 @@ Step  Loss
 \begin{lstlisting}
 {
   "distilbert": {
-    "params_before": 66955010,
-    "params_after": 66.4M,
-    "param_delta": -32M,
-    "accuracy_pct": 86.4,
+    "params\_before": 66955010,
+    "params\_after": 66.4M,
+    "param\_delta": -32M,
+    "accuracy\_pct": 86.4,
     "f1": 86.2,
-    "compressed_layers": 2.0x
+    "compressed\_layers": 2.0x
   },
   "roberta": {...},
   "gpt2": {...}
@@ -198,16 +198,16 @@ Step  Loss
 
 \begin{lstlisting}
 # Full benchmark
-python run_all_4_eat.py --models distilbert,roberta,gpt2
+python run\_all\_4\_eat.py --models distilbert,roberta,gpt2
 
 # LoRA rank sweep
 for r in 4 8 16 32 64; do
-    python run_all_4_eat.py --lora_rank $r --output_suffix lora$r
+    python run\_all\_4\_eat.py --lora\_rank $r --output_suffix lora$r
 done
 
 # Pruning sweep
 for ratio in 1.0 0.9 0.7 0.5 0.3; do
-    python run_all_4_eat.py --prune_ratio $ratio --output_suffix prune$ratio
+    python run\_all\_4\_eat.py --prune\_ratio $ratio --output_suffix prune$ratio
 done
 \end{lstlisting}
 \begin{lstlisting}

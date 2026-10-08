@@ -2,16 +2,16 @@
 All code, model weights, and benchmark evaluation scripts are packaged to guarantee exact reproducibility:
 \begin{lstlisting}[language=bash]
 # 1. Run unified compression sweep
-python -u Codes/framework/run_compressor.py \
+python -u Codes/framework/run\_compressor.py \
     --model distilbert-base-uncased \
     --compressor jamba \
     --dataset sst2 \
-    --batch_size 64 \
-    --recovery_steps 50 \
-    --output_dir results/unified_jamba
+    --batch\_size 64 \
+    --recovery\_steps 50 \
+    --output\_dir results/unified\_jamba
 
 # 2. Run multi-model verification suite
-python -u scripts/run_all_4_jamba.py \
+python -u scripts/run\_all\_4\_jamba.py \
     --models distilbert,roberta,gpt2 \
-    --recovery_steps 50
+    --recovery\_steps 50
 \end{lstlisting}

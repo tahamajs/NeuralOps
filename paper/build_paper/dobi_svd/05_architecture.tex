@@ -46,10 +46,10 @@ With \texttt{target\_attention\_only = False}, all compressible layers are targe
 
 \begin{lstlisting}
 distilbert.transformer.layer.0.attention
-+-- q_lin  (Linear 768 $\to$ 768)
-+-- k_lin  (Linear 768 $\to$ 768)
-+-- v_lin  (Linear 768 $\to$ 768)
-+-- out_lin (Linear 768 $\to$ 768)
++-- q\_lin  (Linear 768 $\to$ 768)
++-- k\_lin  (Linear 768 $\to$ 768)
++-- v\_lin  (Linear 768 $\to$ 768)
++-- out\_lin (Linear 768 $\to$ 768)
 \end{lstlisting}
 
 All four are targeted. Direct SVD, no special handling.
@@ -75,14 +75,14 @@ simply replaces \texttt{query} $\to$ \texttt{DobiSVDLinearLayer(query)}.
 
 \begin{lstlisting}
 transformer.h.0.attn
-+-- c_attn  (Conv1D 768 $\to$ 2304)
-+-- c_proj  (Conv1D 768 $\to$ 768)
++-- c\_attn  (Conv1D 768 $\to$ 2304)
++-- c\_proj  (Conv1D 768 $\to$ 768)
 \end{lstlisting}
 
 \textbf{Conv1D handling:} Dobi-SVD detects Conv1D by checking:
 
 \begin{lstlisting}
-is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+is\_conv1d = "conv1d" in cls\_name or hasattr(target\_mod, "nf")
 \end{lstlisting}
 
 and transposes weights before SVD. The output shape is preserved 
@@ -94,11 +94,11 @@ set, so they are targeted.
 \subsection{Qwen3.5 (GQA + RoPE)}
 
 \begin{lstlisting}
-model.layers.0.self_attn
-+-- q_proj  (Linear 1024 $\to$ 2048)
-+-- k_proj  (Linear 1024 $\to$ 512)
-+-- v_proj  (Linear 1024 $\to$ 512)
-+-- o_proj  (Linear 2048 $\to$ 1024)
+model.layers.0.self\_attn
++-- q\_proj  (Linear 1024 $\to$ 2048)
++-- k\_proj  (Linear 1024 $\to$ 512)
++-- v\_proj  (Linear 1024 $\to$ 512)
++-- o\_proj  (Linear 2048 $\to$ 1024)
 \end{lstlisting}
 
 Each is targeted individually. GQA is handled at the \textbf{attention level}, 
@@ -110,20 +110,20 @@ When a target layer is inside a \texttt{LoRALinear} wrapper, Dobi-SVD preserves
 the wrapper:
 
 \begin{lstlisting}
-if hasattr(module, "base_layer"):
-    module.base_layer = new_layer
-elif hasattr(module, "linear") and hasattr(module, "lora_A"):
-    module.linear = new_layer
+if hasattr(module, "base\_layer"):
+    module.base\_layer = new\_layer
+elif hasattr(module, "linear") and hasattr(module, "lora\_A"):
+    module.linear = new\_layer
 else:
-    replace_module(self.model, name, new_layer)
+    replace\_module(self.model, name, new\_layer)
 \end{lstlisting}
 
 After replacement, LoRA parameters remain trainable:
 
 \begin{lstlisting}
-for p_name, p in module.named_parameters():
-    if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
-        p.requires_grad = True
+for p\_name, p in module.named\_parameters():
+    if any(t in p\_name.lower() for t in ("lora\_a", "lora\_b", "adapter")):
+        p.requires\_grad = True
 \end{lstlisting}
 
 \subsection{Injection Hook}
@@ -131,18 +131,18 @@ for p_name, p in module.named_parameters():
 Dobi-SVD uses a \textbf{compressor-level API} (not an attention-level one):
 
 \begin{lstlisting}
-def dobi_factory(model, comp_config, **kwargs):
+def dobi\_factory(model, comp\_config, **kwargs):
     compressor = DobiSVDCompressor(model, ...)
-    compressed_model, stats = compressor.compress()
-    return compressed_model
+    compressed\_model, stats = compressor.compress()
+    return compressed\_model
 
-@COMPRESSOR_REGISTRY.register("inject_dobi")
-def inject_dobi(model=None, layer=None, **kwargs):
+@COMPRESSOR\_REGISTRY.register("inject\_dobi")
+def inject\_dobi(model=None, layer=None, **kwargs):
     target = layer if layer is not None else model
     try:
-        return dobi_factory(target, **kwargs)
+        return dobi\_factory(target, **kwargs)
     except Exception as e:
-        logger.error("inject_dobi failed: %s", e)
+        logger.error("inject\_dobi failed: \%s", e)
         return None
 \end{lstlisting}
 
@@ -171,13 +171,13 @@ LoRA wrapper & \texttt{hasattr(module, "base\_layer")} & Preserve wrapper \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@COMPRESSOR_REGISTRY.register("dobi")
-@COMPRESSOR_REGISTRY.register("dobi_svd")
-@COMPRESSOR_REGISTRY.register("dobi_compressor")
-@COMPRESSOR_REGISTRY.register("dobi_svd_compressor")
-@COMPRESSOR_REGISTRY.register("dobi_factory")
-@COMPRESSOR_REGISTRY.register("dobi_svd_factory")
-def dobi_factory(model, comp_config, **kwargs):
+@COMPRESSOR\_REGISTRY.register("dobi")
+@COMPRESSOR\_REGISTRY.register("dobi\_svd")
+@COMPRESSOR\_REGISTRY.register("dobi\_compressor")
+@COMPRESSOR\_REGISTRY.register("dobi\_svd\_compressor")
+@COMPRESSOR\_REGISTRY.register("dobi\_factory")
+@COMPRESSOR\_REGISTRY.register("dobi\_svd\_factory")
+def dobi\_factory(model, comp\_config, **kwargs):
     ...
 \end{lstlisting}
 
@@ -201,6 +201,6 @@ Dobi-SVD integrates cleanly with the framework's LoRA recovery:
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of dobi\_svd.}
-\label{fig:arch_dobi-svd}
+\label{fig:arch\_dobi-svd}
 \end{figure}
 

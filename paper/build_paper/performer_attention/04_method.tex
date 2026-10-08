@@ -38,15 +38,15 @@ Performer replaces standard softmax attention with FAVOR+ linear attention:
 We build $\omega \in \mathbb{R}^{F \times d}$ in blocks of $d$ rows:
 
 \begin{lstlisting}
-def _build_orthogonal_matrix(d, m):
+def \_build\_orthogonal\_matrix(d, m):
     blocks = []
     remaining = m
-    while remaining > 0:
-        block_size = min(d, remaining)
-        g = torch.randn(d, block_size)
-        q, _ = torch.linalg.qr(g)
+    while remaining \textgreater{} 0:
+        block\_size = min(d, remaining)
+        g = torch.randn(d, block\_size)
+        q, \_ = torch.linalg.qr(g)
         blocks.append(q)
-        remaining -= block_size
+        remaining -= block\_size
     W = torch.cat(blocks, dim=1) * math.sqrt(d)
     return W.t().contiguous()
 \end{lstlisting}
@@ -56,13 +56,13 @@ Each block is orthonormal. The scaling $\sqrt{d}$ normalizes the variance.
 \subsubsection{FAVOR+ Feature Map}
 
 \begin{lstlisting}
-def _feature_map(self, x):
+def \_feature\_map(self, x):
     proj = torch.matmul(x, self.omega.t())
-    diag_sq = torch.sum(x ** 2, dim=-1, keepdim=True) * 0.5
-    max_proj = proj.amax(dim=-1, keepdim=True).detach()
-    diff = torch.clamp(proj - max_proj - diag_sq, min=-30.0, max=10.0)
+    diag\_sq = torch.sum(x ** 2, dim=-1, keepdim=True) * 0.5
+    max\_proj = proj.amax(dim=-1, keepdim=True).detach()
+    diff = torch.clamp(proj - max\_proj - diag\_sq, min=-30.0, max=10.0)
     phi = torch.exp(diff) + self.eps
-    phi = phi / (math.sqrt(self.num_features) + self.eps)
+    phi = phi / (math.sqrt(self.num\_features) + self.eps)
     return phi
 \end{lstlisting}
 
@@ -78,20 +78,20 @@ def _feature_map(self, x):
 For non-causal attention:
 
 \[
-KV = \phi(K)^\top V, \quad Z = \sum_j \phi(K_j)
+KV = \phi(K)^\top V, \quad Z = \sum\_j \phi(K\_j)
 \tag{4.1}
 \]
 
 \[
-O_i = \frac{\phi(q_i)^\top KV}{\phi(q_i)^\top Z + \epsilon}
+O\_i = \frac{\phi(q\_i)^\top KV}{\phi(q\_i)^\top Z + \epsilon}
 \tag{4.2}
 \]
 
 \textbf{Masking.} We mask both K and Q features:
 
 \begin{lstlisting}
-K_feat = self._feature_map(K) * mask_expanded
-Q_feat = self._feature_map(Q) * mask_expanded
+K\_feat = self.\_feature\_map(K) * mask\_expanded
+Q\_feat = self.\_feature\_map(Q) * mask\_expanded
 \end{lstlisting}
 
 Masking Q prevents padding tokens from contributing to the output.
@@ -107,7 +107,7 @@ For each chunk:
 
 \end{enumerate}
 \[
-\text{intra}_i = \sum_{j \leq i, j \in \text{chunk}} \phi(q_i)^\top \phi(k_j) v_j
+\text{intra}\_i = \sum\_{j \leq i, j \in \text{chunk}} \phi(q\_i)^\top \phi(k\_j) v\_j
 \tag{4.3}
 \]
 
@@ -116,7 +116,7 @@ For each chunk:
 
 \end{enumerate}
 \[
-\text{inter}_i = \phi(q_i)^\top S
+\text{inter}\_i = \phi(q\_i)^\top S
 \tag{4.4}
 \]
 
@@ -125,7 +125,7 @@ For each chunk:
 
 \end{enumerate}
 \[
-O_i = \frac{\text{intra}_i + \text{inter}_i}{\text{intra-den}_i + \text{inter-den}_i + \epsilon}
+O\_i = \frac{\text{intra}\_i + \text{inter}\_i}{\text{intra-den}\_i + \text{inter-den}\_i + \epsilon}
 \tag{4.5}
 \]
 
@@ -134,7 +134,7 @@ O_i = \frac{\text{intra}_i + \text{inter}_i}{\text{intra-den}_i + \text{inter-de
 
 \end{enumerate}
 \[
-S \mathrel{+}= \phi(K_c)^\top V_c, \quad z \mathrel{+}= \sum_j \phi(K_{c,j})
+S \mathrel{+}= \phi(K\_c)^\top V\_c, \quad z \mathrel{+}= \sum\_j \phi(K\_{c,j})
 \tag{4.6}
 \]
 
@@ -185,7 +185,7 @@ Code:
 
 \begin{lstlisting}
 except Exception as e:
-    logger.warning("PerformerAttention construction/weight copying failed: %s", e)
+    logger.warning("PerformerAttention construction/weight copying failed: \%s", e)
     raise RuntimeError(f"Injection failed")  # $\leftarrow$ raises
 \end{lstlisting}
 
@@ -195,9 +195,9 @@ gracefully. Same bug as NASC.
 \subsubsection{`LoRALinear.output\_scale` is New}
 
 \begin{lstlisting}
-self.output_scale = nn.Parameter(torch.ones(1))
+self.output\_scale = nn.Parameter(torch.ones(1))
 # ...
-return out * self.output_scale
+return out * self.output\_scale
 \end{lstlisting}
 
 This parameter is not in the baseline checkpoint. On \texttt{load\_state\_dict}, it 
@@ -208,32 +208,32 @@ shows as \texttt{missing\_key}. Defaults to 1.0 (harmless), but its presence bre
 
 \textbf{Algorithm 1:} PerformerAttention forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, is_decoder
+Input:  X $\in$ R^{B$\times$L$\times$d}, is\_decoder
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
- 1: Q $\leftarrow$ X W_Q;  K $\leftarrow$ X W_K;  V $\leftarrow$ X W_V
+ 1: Q $\leftarrow$ X W\_Q;  K $\leftarrow$ X W\_K;  V $\leftarrow$ X W\_V
  2: Q $\leftarrow$ Q * d^{-0.25};  K $\leftarrow$ K * d^{-0.25}
  3: if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
- 4: if GQA: (K, V) $\leftarrow$ repeat_kv(K, V)
+ 4: if GQA: (K, V) $\leftarrow$ repeat\_kv(K, V)
  5:
- 6: Q_feat $\leftarrow$  (Q)
- 7: K_feat $\leftarrow$  (K)
+ 6: Q\_feat $\leftarrow$  (Q)
+ 7: K\_feat $\leftarrow$  (K)
  8:
- 9: if is_decoder:
+ 9: if is\_decoder:
 10:     # Chunked prefix scan
-11:     for c in range(num_chunks):
-12:         intra $\leftarrow$ causal_attention(Q_feat_c, K_feat_c, V_c)
-13:         inter $\leftarrow$ Q_feat_c @ S
-14:         S += K_feat_c^T @ V_c
-15:         z += sum(K_feat_c)
+11:     for c in range(num\_chunks):
+12:         intra $\leftarrow$ causal\_attention(Q\_feat\_c, K\_feat\_c, V\_c)
+13:         inter $\leftarrow$ Q\_feat\_c @ S
+14:         S += K\_feat\_c^T @ V\_c
+15:         z += sum(K\_feat\_c)
 16:     O $\leftarrow$ (intra + inter) / (den + $\epsilon$)
 17: else:
 18:     # Associative accumulation
-19:     KV $\leftarrow$ K_feat^T @ V
-20:     Z $\leftarrow$ sum(K_feat)
-21:     O $\leftarrow$ (Q_feat @ KV) / (Q_feat @ Z^T + $\epsilon$)
+19:     KV $\leftarrow$ K\_feat^T @ V
+20:     Z $\leftarrow$ sum(K\_feat)
+21:     O $\leftarrow$ (Q\_feat @ KV) / (Q\_feat @ Z^T + $\epsilon$)
 22:
-23: Y $\leftarrow$ out_proj(O)
+23: Y $\leftarrow$ out\_proj(O)
 24: return Y
 \end{lstlisting}
 
@@ -244,7 +244,7 @@ Output: Y $\in$ R^{B$\times$L$\times$d}
 Choromanski et al. (2021) prove that FAVOR+ achieves:
 
 \[
-\|\text{Attn}_{\text{FAVOR+}} - \text{Attn}_{\text{softmax}}\|_\infty \leq \mathcal{O}\!\left(\frac{1}{\sqrt{F}}\right)
+\|\text{Attn}\_{\text{FAVOR+}} - \text{Attn}\_{\text{softmax}}\|\_\infty \leq \mathcal{O}\!\left(\frac{1}{\sqrt{F}}\right)
 \tag{4.7}
 \]
 

@@ -28,10 +28,10 @@ T5 & \texttt{T5Attention} \& No \& No \& No \& Yes \& not tested \\
 Direct extraction:
 
 \begin{lstlisting}
-W_Q = src.q_lin.weight  # Linear(768, 768)
-W_K = src.k_lin.weight
-W_V = src.v_lin.weight
-W_O = src.out_lin.weight
+W\_Q = src.q\_lin.weight  # Linear(768, 768)
+W\_K = src.k\_lin.weight
+W\_V = src.v\_lin.weight
+W\_O = src.out\_lin.weight
 \end{lstlisting}
 
 \texttt{is\_nested\_encoder = False}. All four projections compressed.
@@ -41,10 +41,10 @@ W_O = src.out_lin.weight
 Extract from \texttt{self}:
 
 \begin{lstlisting}
-W_Q = src.self.query.weight
-W_K = src.self.key.weight
-W_V = src.self.value.weight
-# W_O is not extracted -- outer output.dense applies it
+W\_Q = src.self.query.weight
+W\_K = src.self.key.weight
+W\_V = src.self.value.weight
+# W\_O is not extracted -- outer output.dense applies it
 \end{lstlisting}
 
 \texttt{is\_nested\_encoder = True}. During forward, \texttt{context} is returned without 
@@ -55,9 +55,9 @@ W_V = src.self.value.weight
 Split the fused \texttt{c\_attn} weight:
 
 \begin{lstlisting}
-fused = src.c_attn.weight.T  # (2304, 768)
-W_Q, W_K, W_V = fused.chunk(3, dim=0)
-W_O = src.c_proj.weight.T
+fused = src.c\_attn.weight.T  # (2304, 768)
+W\_Q, W\_K, W\_V = fused.chunk(3, dim=0)
+W\_O = src.c\_proj.weight.T
 \end{lstlisting}
 
 Handles the HuggingFace Conv1D layout \texttt{(in, out)}.
@@ -67,10 +67,10 @@ Handles the HuggingFace Conv1D layout \texttt{(in, out)}.
 Direct extraction with GQA awareness:
 
 \begin{lstlisting}
-W_Q = src.q_proj.weight  # (H * d_h, d)
-W_K = src.k_proj.weight  # (H_kv * d_h, d)
-W_V = src.v_proj.weight
-W_O = src.o_proj.weight
+W\_Q = src.q\_proj.weight  # (H * d\_h, d)
+W\_K = src.k\_proj.weight  # (H\_kv * d\_h, d)
+W\_V = src.v\_proj.weight
+W\_O = src.o\_proj.weight
 \end{lstlisting}
 
 RoPE applied after projection via \texttt{position\_embeddings}.
@@ -79,37 +79,37 @@ RoPE applied after projection via \texttt{position\_embeddings}.
 
 \begin{lstlisting}
 class AdaSplashLinear(nn.Module):
-    def __init__(self, in_features, out_features, lora_rank=16, bias=True):
-        super().__init__()
-        self.lora_rank = min(lora_rank, in_features, out_features)
+    def \_\_init\_\_(self, in\_features, out\_features, lora\_rank=16, bias=True):
+        super().\_\_init\_\_()
+        self.lora\_rank = min(lora\_rank, in\_features, out\_features)
         
         # Frozen base weight
         self.weight = nn.Parameter(
-            torch.empty(out_features, in_features),
-            requires_grad=False
+            torch.empty(out\_features, in\_features),
+            requires\_grad=False
         )
         
         if bias:
             self.bias = nn.Parameter(
-                torch.empty(out_features),
-                requires_grad=False
+                torch.empty(out\_features),
+                requires\_grad=False
             )
         
         # Trainable LoRA
-        if self.lora_rank > 0:
-            self.lora_B = nn.Parameter(
-                torch.empty(out_features, self.lora_rank)
+        if self.lora\_rank \textgreater{} 0:
+            self.lora\_B = nn.Parameter(
+                torch.empty(out\_features, self.lora\_rank)
             )
-            self.lora_A = nn.Parameter(
-                torch.empty(self.lora_rank, in_features)
+            self.lora\_A = nn.Parameter(
+                torch.empty(self.lora\_rank, in\_features)
             )
         
-        self.reset_parameters()
+        self.reset\_parameters()
     
     def forward(self, x):
         out = F.linear(x, self.weight, self.bias)
-        if self.lora_A is not None:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B)
+        if self.lora\_A is not None:
+            out = out + F.linear(F.linear(x, self.lora\_A), self.lora\_B)
         return out
 \end{lstlisting}
 
@@ -117,15 +117,15 @@ class AdaSplashLinear(nn.Module):
 
 \textbf{Algorithm 3:} Inject AdaSplash into a model
 \begin{lstlisting}
-Input:  model M, config c, hyperparameters $\alpha$, W, r_L
+Input:  model M, config c, hyperparameters $\alpha$, W, r\_L
 Output: M with attention replaced
 
-1:  for   in transformer_layers(M) do
-2:      src $\leftarrow$ find_attention( )
+1:  for   in transformer\_layers(M) do
+2:      src $\leftarrow$ find\_attention( )
 3:      if src is None: continue
-4:      new $\leftarrow$ AdaSplashAttention(c, $\alpha$, W, r_L, pretrained_attn=src)
-5:      new.copy_weights(src)
-6:      replace_attention( , new)
+4:      new $\leftarrow$ AdaSplashAttention(c, $\alpha$, W, r\_L, pretrained\_attn=src)
+5:      new.copy\_weights(src)
+6:      replace\_attention( , new)
 7: end for
 8: return M
 \end{lstlisting}
@@ -138,31 +138,31 @@ For causal decoders, we preserve the first $S = 4$ tokens regardless of
 splash mask:
 
 \begin{lstlisting}
-splash_local = ((dist >= 0) & (dist <= W)) | (k_idx < 4)
+splash\_local = ((dist \textgreater{}= 0) & (dist \textless{}= W)) | (k\_idx \textless{} 4)
 \end{lstlisting}
 
 \subsubsection{GQA Expansion}
 
 \begin{lstlisting}
-if self.kv_repeat > 1:
-    k = repeat_kv(k, self.kv_repeat)
-    v = repeat_kv(v, self.kv_repeat)
+if self.kv\_repeat \textgreater{} 1:
+    k = repeat\_kv(k, self.kv\_repeat)
+    v = repeat\_kv(v, self.kv\_repeat)
 \end{lstlisting}
 
 \subsubsection{RoPE}
 
 \begin{lstlisting}
-if position_embeddings is not None:
-    cos, sin = position_embeddings
-    q, k = apply_rotary_emb(q, k, cos, sin)
+if position\_embeddings is not None:
+    cos, sin = position\_embeddings
+    q, k = apply\_rotary\_emb(q, k, cos, sin)
 \end{lstlisting}
 
 \subsubsection{Causal Masking}
 
 \begin{lstlisting}
-if is_decoder:
-    causal_tril = torch.tril(torch.ones((L_q, L_k), device=device))
-    logits = logits.masked_fill(~causal_tril, -10000)
+if is\_decoder:
+    causal\_tril = torch.tril(torch.ones((L\_q, L\_k), device=device))
+    logits = logits.masked\_fill(~causal\_tril, -10000)
 \end{lstlisting}
 
 \subsubsection{Combined Masking}
@@ -170,18 +170,18 @@ if is_decoder:
 The causal mask and splash mask are combined:
 
 \begin{lstlisting}
-if is_decoder and W > 0:
-    dist = q_idx - k_idx
-    splash = ((dist >= 0) & (dist <= W)) | (k_idx < 4)
-    causal_and_splash = splash  # already includes causality via dist >= 0
-    logits = logits.masked_fill(~causal_and_splash, -10000)
+if is\_decoder and W \textgreater{} 0:
+    dist = q\_idx - k\_idx
+    splash = ((dist \textgreater{}= 0) & (dist \textless{}= W)) | (k\_idx \textless{} 4)
+    causal\_and\_splash = splash  # already includes causality via dist \textgreater{}= 0
+    logits = logits.masked\_fill(~causal\_and\_splash, -10000)
 \end{lstlisting}
 
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("adasplash")
-@ATTENTION_REGISTRY.register("adasplash_attention")
+@ATTENTION\_REGISTRY.register("adasplash")
+@ATTENTION\_REGISTRY.register("adasplash\_attention")
 class AdaSplashAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -197,8 +197,8 @@ class AdaSplashAttention(BaseAttention):
 \midrule
 Missing weights & \texttt{copy\_weights} raises \& Return None \\
 Shape mismatch \& Assertion in \texttt{copy\_weights} \& Skip layer \\
-Near-zero Frobenius \& Check < 1e-4 \& Raise \\
-Entmax support empty & \texttt{sum(p) < 1e-7} \& Softmax fallback \\
+Near-zero Frobenius \& Check \textless{} 1e-4 \& Raise \\
+Entmax support empty & \texttt{sum(p) \textless{} 1e-7} \& Softmax fallback \\
 NaN in scores & \texttt{torch.isnan} \& Mask to -10000 \\
 \bottomrule
 \end{tabular}
@@ -236,7 +236,7 @@ preserves the outer LoRA.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=\linewidth]{figures/adasplash_attention_architecture.png}
+\includegraphics[width=\linewidth]{figures/adasplash\_attention\_architecture.png}
 \caption{Architectural schematic of adasplash.}
-\label{fig:arch_adasplash}
+\label{fig:arch\_adasplash}
 \end{figure}

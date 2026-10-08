@@ -26,7 +26,7 @@ adaptively per layer based on spectral energy, with a cap at $r_\text{max}$.
                          
    +----------------------------------------------+
    |  Phase 1: Extraction                          |
-   |  Extract W_Q, W_K, W_V, W_O via              |
+   |  Extract W\_Q, W\_K, W\_V, W\_O via              |
    |  architecture-specific logic                  |
    +--------------------+-------------------------+
                         |
@@ -35,7 +35,7 @@ adaptively per layer based on spectral energy, with a cap at $r_\text{max}$.
    |  Phase 2: SVD Factorization (per W)          |
    |  Compute SVD: W = U $\Sigma$ V^T                    |
    |  Compute cumulative energy E(r)              |
-   |  r_eff = min(r_max, argmin E(r) $\ge$  )         |
+   |  r\_eff = min(r\_max, argmin E(r) $\ge$  )         |
    |  Truncate and symmetrize                     |
    +--------------------+-------------------------+
                         |
@@ -171,8 +171,8 @@ model weights are available.
 We distribute $\Sigma^{1/2}$ between the two factors:
 
 \[
-U_r = U_{:, :r} \Sigma_{:r, :r}^{1/2}, \qquad
-V_r = \Sigma_{:r, :r}^{1/2} V_{:r, :}^\top
+U\_r = U\_{:, :r} \Sigma\_{:r, :r}^{1/2}, \qquad
+V\_r = \Sigma\_{:r, :r}^{1/2} V\_{:r, :}^\top
 \tag{4.6}
 \]
 
@@ -184,8 +184,8 @@ training stability (both factors have unit spectral norm up to constants).
 The framework stores $V_r$ in \texttt{down.weight} and $U_r$ in \texttt{up.weight}:
 
 \begin{lstlisting}
-self.down.weight.data[:r, :] = V_r    # (r, d_in)
-self.up.weight.data[:, :r] = U_r      # (d_out, r)
+self.down.weight.data[:r, :] = V\_r    # (r, d\_in)
+self.up.weight.data[:, :r] = U\_r      # (d\_out, r)
 \end{lstlisting}
 
 For $r < \text{target rank}$, remaining rows/columns are zero.
@@ -218,17 +218,17 @@ Qwen3.5 & \texttt{q\_proj} & \texttt{k\_proj} & \texttt{v\_proj} & \texttt{o\_pr
 GPT-2 fuses $Q, K, V$ into one \texttt{c\_attn}:
 
 \[
-W_{c\_attn} = \begin{pmatrix} W_Q \\ W_K \\ W_V \end{pmatrix} \in \mathbb{R}^{3d \times d}
+W\_{c\_attn} = \begin{pmatrix} W\_Q \\ W\_K \\ W\_V \end{pmatrix} \in \mathbb{R}^{3d \times d}
 \tag{4.7}
 \]
 
 (Conv1D stores this transposed.) MinimalPRISM splits:
 
 \begin{lstlisting}
-w = src.c_attn.weight.data.clone()
-if is_conv1d:
+w = src.c\_attn.weight.data.clone()
+if is\_conv1d:
     w = w.t()   # (3d, d)
-q_w, k_w, v_w = w.chunk(3, dim=0)
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
 \subsubsection{RoBERTa Nested}
@@ -237,10 +237,10 @@ The output projection $W_O$ is at \texttt{attention.output.dense}, \textbf{outsi
 inner attention:
 
 \begin{lstlisting}
-q_w = src.self.query.weight
-k_w = src.self.key.weight
-v_w = src.self.value.weight
-w_o = src.output.dense.weight
+q\_w = src.self.query.weight
+k\_w = src.self.key.weight
+v\_w = src.self.value.weight
+w\_o = src.output.dense.weight
 \end{lstlisting}
 
 When replacing the inner attention, the outer \texttt{output.dense} remains in the 
@@ -264,10 +264,10 @@ attempts \texttt{copy\_weights} on the first attention block. If this raises,
 injection aborts, leaving the model untouched.
 
 \begin{lstlisting}
-test_src = layer_list[0].attention
+test\_src = layer\_list[0].attention
 try:
-    test_module = MinimalPRISMAttention(cfg)
-    test_module.copy_weights(test_src)
+    test\_module = MinimalPRISMAttention(cfg)
+    test\_module.copy\_weights(test\_src)
 except Exception as e:
     logger.warning(f"Pre-test failed: {e}. Aborting.")
     return None
@@ -282,7 +282,7 @@ for proj in ["q", "k", "v"]:
     w = extracted[proj][0]
     if w is not None:
         norm = torch.linalg.norm(w.float())
-        if norm < 1e-4:
+        if norm \textless{} 1e-4:
             raise RuntimeError(f"Near-zero weight on {proj}")
 \end{lstlisting}
 
@@ -292,12 +292,12 @@ The nested flag is set at \textbf{injection time}, not just in \texttt{copy\_wei
 
 \begin{lstlisting}
 if hasattr(target, "attention") and hasattr(target.attention, "self"):
-    new_attn.is_nested_encoder = True
-    target.attention.self = new_attn
+    new\_attn.is\_nested\_encoder = True
+    target.attention.self = new\_attn
 else:
-    new_attn.is_nested_encoder = False
+    new\_attn.is\_nested\_encoder = False
     if hasattr(target, "attention"):
-        target.attention = new_attn
+        target.attention = new\_attn
     ...
 \end{lstlisting}
 
@@ -308,20 +308,20 @@ This ensures correctness even if \texttt{copy\_weights} was ambiguous.
 After factorization, base weights are frozen and LoRA adapters are added:
 
 \begin{lstlisting}
-def freeze_base_weights(self):
-    self.down.weight.requires_grad = False
-    self.up.weight.requires_grad = False
+def freeze\_base\_weights(self):
+    self.down.weight.requires\_grad = False
+    self.up.weight.requires\_grad = False
     if self.up.bias is not None:
-        self.up.bias.requires_grad = False
-    if self.lora_rank > 0:
-        self.lora_A.requires_grad = True
-        self.lora_B.requires_grad = True
+        self.up.bias.requires\_grad = False
+    if self.lora\_rank \textgreater{} 0:
+        self.lora\_A.requires\_grad = True
+        self.lora\_B.requires\_grad = True
 \end{lstlisting}
 
 Only \texttt{lora\_A} and \texttt{lora\_B} are trained. LoRA $B$ starts at zero:
 
 \[
-y_{\text{init}} = (x V^\top) U^\top + b
+y\_{\text{init}} = (x V^\top) U^\top + b
 \tag{4.8}
 \]
 
@@ -331,30 +331,30 @@ which equals the SVD approximation.
 
 \textbf{Algorithm 1:} MinimalPRISM compression
 \begin{lstlisting}
-Input:  model M, rank_cap r_max, energy  
+Input:  model M, rank\_cap r\_max, energy  
 Output: model M' with factorized attention
 
-1:  layer_list $\leftarrow$ find_transformer_layers(M)
+1:  layer\_list $\leftarrow$ find\_transformer\_layers(M)
 2:  # Pre-test
-3:  test_src $\leftarrow$ get_attention(layer_list[0])
+3:  test\_src $\leftarrow$ get\_attention(layer\_list[0])
 4:  try:
-5:      MinimalPRISMAttention(cfg).copy_weights(test_src)
+5:      MinimalPRISMAttention(cfg).copy\_weights(test\_src)
 6:  except:
 7:      return None   # abort
 8:
 9:  # Inject all layers
-10: for (idx, layer) in enumerate(layer_list) do
-11:     src_attn $\leftarrow$ get_attention(layer)
-12:     new_attn $\leftarrow$ MinimalPRISMAttention(cfg)
-13:     new_attn.copy_weights(src_attn)
+10: for (idx, layer) in enumerate(layer\_list) do
+11:     src\_attn $\leftarrow$ get\_attention(layer)
+12:     new\_attn $\leftarrow$ MinimalPRISMAttention(cfg)
+13:     new\_attn.copy\_weights(src\_attn)
 14:
 15:     # Set nested flag at injection
 16:     if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
-17:         new_attn.is_nested_encoder = True
-18:         layer.attention.self = new_attn
+17:         new\_attn.is\_nested\_encoder = True
+18:         layer.attention.self = new\_attn
 19:     else:
-20:         new_attn.is_nested_encoder = False
-21:         replace_attention(layer, new_attn)
+20:         new\_attn.is\_nested\_encoder = False
+21:         replace\_attention(layer, new\_attn)
 22: end for
 23: return M'
 \end{lstlisting}
@@ -391,7 +391,7 @@ Eckart--Young.
 $E(r_\text{eff}) \geq \eta$, then:
 
 \[
-\frac{\|W - W_{r_\text{eff}}\|_F}{\|W\|_F} \leq \sqrt{1 - \eta}
+\frac{\|W - W\_{r\_\text{eff}}\|\_F}{\|W\|\_F} \leq \sqrt{1 - \eta}
 \tag{4.9}
 \]
 

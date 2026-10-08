@@ -19,7 +19,7 @@ the two branches per token.
     | -2   |    |          |
     +--+---+    +-----+----+
        |              |
-       |  $\gamma$ = $\sigma$(W_g X)|
+       |  $\gamma$ = $\sigma$(W\_g X)|
        |     |        |
                        
        +-------------------+
@@ -27,7 +27,7 @@ the two branches per token.
        +---------+---------+
                  |
                   
-              out_proj
+              out\_proj
                  |
                   
               Output Y
@@ -38,17 +38,17 @@ the two branches per token.
 The HGRN-2 branch (Qin et al., 2024) computes:
 
 \[
-u_t = \text{SiLU}(W_u x_t + b_u)
+u\_t = \text{SiLU}(W\_u x\_t + b\_u)
 \tag{4.1}
 \]
 
 \[
-\alpha_t = \sigma(W_\alpha x_t + b_\alpha)
+\alpha\_t = \sigma(W\_\alpha x\_t + b\_\alpha)
 \tag{4.2}
 \]
 
 \[
-s_t = \alpha_t \odot s_{t-1} + (1 - \alpha_t) \odot u_t
+s\_t = \alpha\_t \odot s\_{t-1} + (1 - \alpha\_t) \odot u\_t
 \tag{4.3}
 \]
 
@@ -62,7 +62,7 @@ $\alpha_t \approx 0.5$ initially.
 The Gated DeltaNet branch maintains a matrix state per head:
 
 \[
-S_t^h = \alpha_t S_{t-1}^h + \beta_t (v_t^h - S_{t-1}^h k_t^h) (k_t^h)^\top
+S\_t^h = \alpha\_t S\_{t-1}^h + \beta\_t (v\_t^h - S\_{t-1}^h k\_t^h) (k\_t^h)^\top
 \tag{4.4}
 \]
 
@@ -77,7 +77,7 @@ where:
 The output is:
 
 \[
-y_t^{h, \text{Delta}} = S_t^h q_t^h
+y\_t^{h, \text{Delta}} = S\_t^h q\_t^h
 \tag{4.5}
 \]
 
@@ -91,7 +91,7 @@ the \textbf{error} into memory, avoiding redundant writes.
 The fusion gate is a linear projection:
 
 \[
-\gamma_t = \sigma(W_g x_t + b_g)
+\gamma\_t = \sigma(W\_g x\_t + b\_g)
 \tag{4.6}
 \]
 
@@ -117,7 +117,7 @@ Y = \gamma \odot Y^\text{HGRN} + (1 - \gamma) \odot Y^\text{Delta}
 followed by an output projection:
 
 \[
-\text{out} = W_o Y + b_o
+\text{out} = W\_o Y + b\_o
 \tag{4.8}
 \]
 
@@ -132,14 +132,14 @@ prevents injecting an untrained random module.
 
 If only HGRN succeeds:
 \begin{lstlisting}
-self.gate.weight.zero_()
-self.gate.bias.fill_(4.0)  # sigmoid(4) $\approx$ 0.98
+self.gate.weight.zero\_()
+self.gate.bias.fill\_(4.0)  # sigmoid(4) $\approx$ 0.98
 \end{lstlisting}
 
 If only DeltaNet succeeds:
 \begin{lstlisting}
-self.gate.weight.zero_()
-self.gate.bias.fill_(-4.0)  # sigmoid(-4) $\approx$ 0.02
+self.gate.weight.zero\_()
+self.gate.bias.fill\_(-4.0)  # sigmoid(-4) $\approx$ 0.02
 \end{lstlisting}
 
 This ensures the gate leans toward the surviving branch.
@@ -153,14 +153,14 @@ This prevents injecting a random output projection.
 
 \textbf{Algorithm 1:} HGRN2-GatedDeltaNet forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
- 1: Y_hgrn $\leftarrow$ HGRN2Branch(X)                   Sequential O(L)
- 2: Y_delta $\leftarrow$ DeltaNetBranch(X)               Sequential O(L)
- 3: $\gamma$ $\leftarrow$ $\sigma$(W_g X + b_g)                        (B, L, d)
- 4: Y $\leftarrow$ $\gamma$   Y_hgrn + (1-$\gamma$)   Y_delta
- 5: Y $\leftarrow$ out_proj(Y)
+ 1: Y\_hgrn $\leftarrow$ HGRN2Branch(X)                   Sequential O(L)
+ 2: Y\_delta $\leftarrow$ DeltaNetBranch(X)               Sequential O(L)
+ 3: $\gamma$ $\leftarrow$ $\sigma$(W\_g X + b\_g)                        (B, L, d)
+ 4: Y $\leftarrow$ $\gamma$   Y\_hgrn + (1-$\gamma$)   Y\_delta
+ 5: Y $\leftarrow$ out\_proj(Y)
  6: return Y
 \end{lstlisting}
 

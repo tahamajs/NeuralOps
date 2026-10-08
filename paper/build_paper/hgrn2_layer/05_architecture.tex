@@ -25,44 +25,44 @@ The \texttt{copy\_weights} procedure handles five patterns:
 \subsubsection{Pattern 0: PyTorch `MultiheadAttention`}
 
 \begin{lstlisting}
-w_q, w_k, w_v = src.in_proj_weight.chunk(3, dim=0)
-b_q, b_k, b_v = src.in_proj_bias.chunk(3, dim=0)
-w_o = src.out_proj.weight
+w\_q, w\_k, w\_v = src.in\_proj\_weight.chunk(3, dim=0)
+b\_q, b\_k, b\_v = src.in\_proj\_bias.chunk(3, dim=0)
+w\_o = src.out\_proj.weight
 \end{lstlisting}
 
 \subsubsection{Pattern 1: GPT-2 Conv1D}
 
 \begin{lstlisting}
-c_w = src.c_attn.weight.t()  # transpose
-q_w, k_w, v_w = c_w.chunk(3, dim=0)
-w_o = src.c_proj.weight.t()
+c\_w = src.c\_attn.weight.t()  # transpose
+q\_w, k\_w, v\_w = c\_w.chunk(3, dim=0)
+w\_o = src.c\_proj.weight.t()
 \end{lstlisting}
 
 \subsubsection{Pattern 2: RoBERTa Nested}
 
 \begin{lstlisting}
-w_q = src.self.query.weight
-w_k = src.self.key.weight
-w_v = src.self.value.weight
-w_o = src.output.dense.weight
+w\_q = src.self.query.weight
+w\_k = src.self.key.weight
+w\_v = src.self.value.weight
+w\_o = src.output.dense.weight
 \end{lstlisting}
 
 \subsubsection{Pattern 3: Qwen / LLaMA}
 
 \begin{lstlisting}
-w_q = src.q_proj.weight
-w_k = src.k_proj.weight
-w_v = src.v_proj.weight
-w_o = src.o_proj.weight
+w\_q = src.q\_proj.weight
+w\_k = src.k\_proj.weight
+w\_v = src.v\_proj.weight
+w\_o = src.o\_proj.weight
 \end{lstlisting}
 
 \subsubsection{Pattern 4: DistilBERT}
 
 \begin{lstlisting}
-w_q = src.q_lin.weight
-w_k = src.k_lin.weight
-w_v = src.v_lin.weight
-w_o = src.out_lin.weight
+w\_q = src.q\_lin.weight
+w\_k = src.k\_lin.weight
+w\_v = src.v\_lin.weight
+w\_o = src.out\_lin.weight
 \end{lstlisting}
 
 \subsection{What Gets Copied}
@@ -101,16 +101,16 @@ projection is not applied twice.
 Input:  model M, config c
 Output: M with attention replaced
 
-1: layer_list $\leftarrow$ find_transformer_layers(M)
-2: for i, layer in enumerate(layer_list) do
-3:     if not has_attention(layer): continue
-4:     src $\leftarrow$ get_attention(layer)
-5:     new $\leftarrow$ HGRN2Layer(c, old_attn=src, ...)
-6:     if is_nested(layer):
+1: layer\_list $\leftarrow$ find\_transformer\_layers(M)
+2: for i, layer in enumerate(layer\_list) do
+3:     if not has\_attention(layer): continue
+4:     src $\leftarrow$ get\_attention(layer)
+5:     new $\leftarrow$ HGRN2Layer(c, old\_attn=src, ...)
+6:     if is\_nested(layer):
 7:         layer.attention.self = new
 8:         layer.attention.output.dense = nn.Identity()
 9:     else:
-10:        replace_attention(layer, new)
+10:        replace\_attention(layer, new)
 11: end for
 12: return M
 \end{lstlisting}
@@ -146,8 +146,8 @@ recommend adding a check if re-injection is a concern.
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("hgrn2_layer")
-@ATTENTION_REGISTRY.register("hgrn2")
+@ATTENTION\_REGISTRY.register("hgrn2\_layer")
+@ATTENTION\_REGISTRY.register("hgrn2")
 class HGRN2Layer(BaseAttention):
     ...
 \end{lstlisting}
@@ -170,6 +170,6 @@ more parallel work) and memory (larger chunks = larger intra-chunk matrices).
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of hgrn2\_layer.}
-\label{fig:arch_hgrn2-layer}
+\label{fig:arch\_hgrn2-layer}
 \end{figure}
 

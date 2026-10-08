@@ -13,8 +13,8 @@ Both stages use pre-LayerNorm:
 
 \[
 \begin{aligned}
-h_1 &= \text{LN}_1(x + \text{Attn}(x)) \\
-y &= \text{LN}_2(h_1 + \text{MoE}(h_1))
+h\_1 &= \text{LN}\_1(x + \text{Attn}(x)) \\
+y &= \text{LN}\_2(h\_1 + \text{MoE}(h\_1))
 \end{aligned}
 \tag{4.1}
 \]
@@ -24,13 +24,13 @@ y &= \text{LN}_2(h_1 + \text{MoE}(h_1))
 \begin{lstlisting}
    x -----------------------+
    |                        |
-   +-$\to$ LN_1 -$\to$ Attn -$\to$ (+) -$\to$ h_1
+   +-$\to$ LN\_1 -$\to$ Attn -$\to$ (+) -$\to$ h\_1
    |                        |
    +------------------------+
                             |
-   h_1 ---------------------+
+   h\_1 ---------------------+
    |                        |
-   +-$\to$ LN_2 -$\to$ MoE -$\to$ (+) -$\to$ y
+   +-$\to$ LN\_2 -$\to$ MoE -$\to$ (+) -$\to$ y
    |                        |
    +------------------------+
 \end{lstlisting}
@@ -40,14 +40,14 @@ y &= \text{LN}_2(h_1 + \text{MoE}(h_1))
 Standard multi-head attention:
 
 \[
-\text{Attn}(x) = W_O \cdot \text{Concat}(\text{head}_1, \dots, \text{head}_H)
+\text{Attn}(x) = W\_O \cdot \text{Concat}(\text{head}\_1, \dots, \text{head}\_H)
 \tag{4.2}
 \]
 
 where each head is:
 
 \[
-\text{head}_h = \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_h
+\text{head}\_h = \text{softmax}\!\left(\frac{Q\_h K\_h^\top}{\sqrt{d\_h}}\right) V\_h
 \tag{4.3}
 \]
 
@@ -63,7 +63,7 @@ The MoE block replaces the standard FFN.
 Given hidden state $x \in \mathbb{R}^{B \times L \times d}$:
 
 \[
-\text{logits} = W_r \cdot \text{LN}_\text{router}(x) \in \mathbb{R}^{B \times L \times E}
+\text{logits} = W\_r \cdot \text{LN}\_\text{router}(x) \in \mathbb{R}^{B \times L \times E}
 \tag{4.4}
 \]
 
@@ -84,7 +84,7 @@ where $W_r \in \mathbb{R}^{E \times d}$.
 \]
 
 \[
-g_i(x) = \frac{\exp(\text{scores}_i)}{\sum_{j \in \mathcal{T}(x)} \exp(\text{scores}_j)}, \quad i \in \mathcal{T}(x)
+g\_i(x) = \frac{\exp(\text{scores}\_i)}{\sum\_{j \in \mathcal{T}(x)} \exp(\text{scores}\_j)}, \quad i \in \mathcal{T}(x)
 \tag{4.7}
 \]
 
@@ -93,14 +93,14 @@ g_i(x) = \frac{\exp(\text{scores}_i)}{\sum_{j \in \mathcal{T}(x)} \exp(\text{sco
 Each expert $E_i$ is a two-layer MLP:
 
 \[
-E_i(x) = U_2^{(i)} \cdot \text{GELU}(U_1^{(i)} \cdot x)
+E\_i(x) = U\_2^{(i)} \cdot \text{GELU}(U\_1^{(i)} \cdot x)
 \tag{4.8}
 \]
 
 where $U_1^{(i)}, U_2^{(i)}$ are themselves SVD-factorized:
 
 \[
-U_1^{(i)} = P_1^{(i)} \Sigma_1^{(i)} Q_1^{(i)\top}
+U\_1^{(i)} = P\_1^{(i)} \Sigma\_1^{(i)} Q\_1^{(i)\top}
 \tag{4.9}
 \]
 
@@ -109,7 +109,7 @@ with similar structure for $U_2^{(i)}$.
 \subsubsection{MoE Output}
 
 \[
-\text{MoE}(x) = \sum_{i \in \mathcal{T}(x)} g_i(x) \cdot E_i(x)
+\text{MoE}(x) = \sum\_{i \in \mathcal{T}(x)} g\_i(x) \cdot E\_i(x)
 \tag{4.10}
 \]
 
@@ -131,14 +131,14 @@ add expert outputs. This is critical for training stability.
 We add the auxiliary loss to the total training objective:
 
 \[
-\mathcal{L}_\text{total} = \mathcal{L}_\text{task} + \lambda_\text{aux} \cdot \mathcal{L}_\text{aux}
+\mathcal{L}\_\text{total} = \mathcal{L}\_\text{task} + \lambda\_\text{aux} \cdot \mathcal{L}\_\text{aux}
 \tag{4.12}
 \]
 
 where:
 
 \[
-\mathcal{L}_\text{aux} = E \cdot \sum_{i=1}^{E} \rho_i \cdot \pi_i
+\mathcal{L}\_\text{aux} = E \cdot \sum\_{i=1}^{E} \rho\_i \cdot \pi\_i
 \tag{4.13}
 \]
 
@@ -163,33 +163,33 @@ when imbalanced.
 \textbf{Algorithm 1:} REAP-MoE forward pass
 \begin{lstlisting}
 Input:  x $\in$ R^{B$\times$L$\times$d}
-Output: y $\in$ R^{B$\times$L$\times$d}, L_aux
+Output: y $\in$ R^{B$\times$L$\times$d}, L\_aux
 
 1:  # Attention stage
-2:  Q $\leftarrow$ LN_1(x); K $\leftarrow$ LN_1(x); V $\leftarrow$ LN_1(x)
-3:  attn_out $\leftarrow$ MHSA(Q, K, V)
-4:  h_1 $\leftarrow$ x + attn_out
+2:  Q $\leftarrow$ LN\_1(x); K $\leftarrow$ LN\_1(x); V $\leftarrow$ LN\_1(x)
+3:  attn\_out $\leftarrow$ MHSA(Q, K, V)
+4:  h\_1 $\leftarrow$ x + attn\_out
 5:
 6:  # MoE stage
-7:  h_2 $\leftarrow$ LN_2(h_1)
-8:  logits $\leftarrow$ W_r   h_2
+7:  h\_2 $\leftarrow$ LN\_2(h\_1)
+8:  logits $\leftarrow$ W\_r   h\_2
 9:  if training:
 10:     logits $\leftarrow$ logits + N(0, $\sigma$ )
-11: topk_weights, topk_idx $\leftarrow$ topk(softmax(logits), k)
+11: topk\_weights, topk\_idx $\leftarrow$ topk(softmax(logits), k)
 12:
 13: # Compute all experts
-14: experts_out $\leftarrow$ [E_i(h_2) for i in 1..E]     [B, L, E, d]
-15: gathered $\leftarrow$ gather(experts_out, topk_idx)
-16: moe_out $\leftarrow$ sum(gathered * topk_weights, dim=k)
+14: experts\_out $\leftarrow$ [E\_i(h\_2) for i in 1..E]     [B, L, E, d]
+15: gathered $\leftarrow$ gather(experts\_out, topk\_idx)
+16: moe\_out $\leftarrow$ sum(gathered * topk\_weights, dim=k)
 17:
-18: y $\leftarrow$ h_1 + moe_out
+18: y $\leftarrow$ h\_1 + moe\_out
 19:
 20: # Auxiliary loss
-21:   $\leftarrow$ mean(one_hot(topk_idx), dim=(0,1))
+21:   $\leftarrow$ mean(one\_hot(topk\_idx), dim=(0,1))
 22:   $\leftarrow$ mean(softmax(logits), dim=(0,1))
-23: L_aux $\leftarrow$ E   sum(     )
+23: L\_aux $\leftarrow$ E   sum(     )
 24:
-25: return y, L_aux
+25: return y, L\_aux
 \end{lstlisting}
 
 \subsection{Complexity Analysis}
@@ -199,21 +199,21 @@ Output: y $\in$ R^{B$\times$L$\times$d}, L_aux
 For a single MoE layer with $E$ experts and SVD rank $r_1, r_2$:
 
 \[
-\text{Params}_\text{MoE} = E \left( r_1(d + 2d) + r_2(2d + d) \right) = E \cdot 3d(r_1 + r_2)
+\text{Params}\_\text{MoE} = E \left( r\_1(d + 2d) + r\_2(2d + d) \right) = E \cdot 3d(r\_1 + r\_2)
 \tag{4.14}
 \]
 
 With $r_1 = r_2 = d/4$:
 
 \[
-\text{Params}_\text{MoE} = E \cdot 3d \cdot d/2 = 1.5 E d^2
+\text{Params}\_\text{MoE} = E \cdot 3d \cdot d/2 = 1.5 E d^2
 \tag{4.15}
 \]
 
 Compare to standard FFN:
 
 \[
-\text{Params}_\text{FFN} = 8 d^2
+\text{Params}\_\text{FFN} = 8 d^2
 \tag{4.16}
 \]
 
@@ -231,7 +231,7 @@ So MoE with SVD is \textbf{1.5$\times$ the FFN parameters}, not 8$\times$ as in 
 Per token, only $k$ experts run:
 
 \[
-\text{FLOPs}_\text{MoE} = k \cdot (r_1 d + r_2 \cdot 2d) \cdot L
+\text{FLOPs}\_\text{MoE} = k \cdot (r\_1 d + r\_2 \cdot 2d) \cdot L
 \tag{4.18}
 \]
 
@@ -268,7 +268,7 @@ For uniform distributions, $\rho_i = \pi_i = 1/E$, giving $\mathcal{L}_\text{aux
 Each expert layer's SVD approximation has error bounded by:
 
 \[
-\|W - U_r \Sigma_r V_r^\top\|_F = \sqrt{\sum_{i > r} \sigma_i^2}
+\|W - U\_r \Sigma\_r V\_r^\top\|\_F = \sqrt{\sum\_{i \textgreater{} r} \sigma\_i^2}
 \tag{4.19}
 \]
 

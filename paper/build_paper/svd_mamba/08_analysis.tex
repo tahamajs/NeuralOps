@@ -161,7 +161,7 @@ LoRA & 0 & 2.3 s ms \\
 \midrule
 Collapse & Acc $\approx$ 50.92\% & Weight transfer failed \\
 NaN in SSM & Loss = NaN & Overflow in scan \\
-Slower than baseline & >3$\times$ latency & Extra paths \\
+Slower than baseline & \textgreater{}3$\times$ latency & Extra paths \\
 Parameter bloat & +66.4M\% & SSM + gating \\
 \bottomrule
 \end{tabular}
@@ -175,7 +175,7 @@ exception and returns \texttt{None}:
 
 \begin{lstlisting}
 except Exception as e:
-    logger.error("inject_svd_mamba failed at layer %d: %s", layer_idx, e)
+    logger.error("inject\_svd\_mamba failed at layer \%d: \%s", layer\_idx, e)
     return None
 \end{lstlisting}
 

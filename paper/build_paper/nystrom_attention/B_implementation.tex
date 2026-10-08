@@ -5,54 +5,54 @@
 
 \begin{lstlisting}
 class NystromAttention(BaseAttention):
-    def __init__(self, config=None, rank=None, num_landmarks=None,
-                 pinv_iterations=3, pretrained_attn=None, old_attn=None,
-                 comp_config=None, **kwargs):
+    def \_\_init\_\_(self, config=None, rank=None, num\_landmarks=None,
+                 pinv\_iterations=3, pretrained\_attn=None, old\_attn=None,
+                 comp\_config=None, **kwargs):
         # Dimensions
         self.dim = ...
-        self.num_heads = ...
-        self.num_kv_heads = ...
-        self.head_dim = ...
-        self.all_head_size = ...
-        self.all_kv_head_size = ...
-        self.kv_repeat = ...
+        self.num\_heads = ...
+        self.num\_kv\_heads = ...
+        self.head\_dim = ...
+        self.all\_head\_size = ...
+        self.all\_kv\_head\_size = ...
+        self.kv\_repeat = ...
         
         # Landmarks
-        self.num_landmarks = min(32, int(num_landmarks or 32))
-        self.pinv_iterations = pinv_iterations
+        self.num\_landmarks = min(32, int(num\_landmarks or 32))
+        self.pinv\_iterations = pinv\_iterations
         
         # Decoder detection
-        self.is_decoder = ...
-        self.is_nested_encoder = False
+        self.is\_decoder = ...
+        self.is\_nested\_encoder = False
         
         # LoRA config
-        self.lora_rank = ...
+        self.lora\_rank = ...
         
         # Projections
         self.query = LoRALinear(...)
         self.key = LoRALinear(...)
         self.value = LoRALinear(...)
-        self.out_proj = LoRALinear(...)
+        self.out\_proj = LoRALinear(...)
         
-        if source_attn is not None:
-            self.copy_weights(source_attn)
+        if source\_attn is not None:
+            self.copy\_weights(source\_attn)
 \end{lstlisting}
 
 \subsection{B.2 The Iterative Pseudoinverse}
 
 \begin{lstlisting}
-def _iterative_pinv(self, A, iters=3):
+def \_iterative\_pinv(self, A, iters=3):
     try:
         return torch.linalg.pinv(A.float()).to(A.dtype)
     except Exception:
-        norm_1 = A.abs().sum(dim=-2).amax(dim=-1, keepdim=True).unsqueeze(-1)
-        norm_inf = A.abs().sum(dim=-1).amax(dim=-1, keepdim=True).unsqueeze(-1)
-        alpha = 1.0 / (norm_1 * norm_inf + 1e-5)
+        norm\_1 = A.abs().sum(dim=-2).amax(dim=-1, keepdim=True).unsqueeze(-1)
+        norm\_inf = A.abs().sum(dim=-1).amax(dim=-1, keepdim=True).unsqueeze(-1)
+        alpha = 1.0 / (norm\_1 * norm\_inf + 1e-5)
         
         V = alpha * A.transpose(-2, -1)
         I = torch.eye(A.size(-1), device=A.device, dtype=A.dtype).unsqueeze(0).unsqueeze(0)
         
-        for _ in range(iters):
+        for \_ in range(iters):
             V = torch.matmul(V, 2.0 * I - torch.matmul(A, V))
         return V
 \end{lstlisting}
@@ -63,63 +63,63 @@ to Newton-Schulz. This is a deviation from the original paper.
 \subsection{B.3 The Three Execution Paths}
 
 \begin{lstlisting}
-def forward(self, hidden_states, attention_mask=None, ...):
-    Q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2)
-    K = self.key(hidden_states).view(B, N, Hkv, d).transpose(1, 2)
-    V = self.value(hidden_states).view(B, N, Hkv, d).transpose(1, 2)
+def forward(self, hidden\_states, attention\_mask=None, ...):
+    Q = self.query(hidden\_states).view(B, N, H, d).transpose(1, 2)
+    K = self.key(hidden\_states).view(B, N, Hkv, d).transpose(1, 2)
+    V = self.value(hidden\_states).view(B, N, Hkv, d).transpose(1, 2)
     
     # RoPE
-    if position_embeddings is not None:
-        Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
+    if position\_embeddings is not None:
+        Q, K = apply\_rotary\_pos\_emb(Q, K, cos, sin)
     
     # GQA
-    if self.kv_repeat > 1:
-        K = repeat_kv(K, self.kv_repeat)
-        V = repeat_kv(V, self.kv_repeat)
+    if self.kv\_repeat \textgreater{} 1:
+        K = repeat\_kv(K, self.kv\_repeat)
+        V = repeat\_kv(V, self.kv\_repeat)
     
-    valid_mask = get_token_valid_mask(attention_mask, B, N, device)
+    valid\_mask = get\_token\_valid\_mask(attention\_mask, B, N, device)
     
     # PATH 1: Causal decoder
-    if self.is_decoder or self.is_causal:
+    if self.is\_decoder or self.is\_causal:
         # Dense causal
         ...
         return out, None
     
     # PATH 2: Short sequence
-    if N <= max(128, 2 * self.num_landmarks):
-        context = self._dense_attention(Q, K, V, valid_mask, dtype)
+    if N \textless{}= max(128, 2 * self.num\_landmarks):
+        context = self.\_dense\_attention(Q, K, V, valid\_mask, dtype)
         return out, None
     
     # PATH 3: Nystr m
     # adaptive pooling landmarks
-    Q_landmarks = F.adaptive_avg_pool1d(Q_flat, m)...
-    K_landmarks = F.adaptive_avg_pool1d(K_flat, m)...
+    Q\_landmarks = F.adaptive\_avg\_pool1d(Q\_flat, m)...
+    K\_landmarks = F.adaptive\_avg\_pool1d(K\_flat, m)...
     
-    scores1 = Q @ K_landmarks^T
-    scores2 = Q_landmarks @ K_landmarks^T
-    scores3 = Q_landmarks @ K^T
+    scores1 = Q @ K\_landmarks^T
+    scores2 = Q\_landmarks @ K\_landmarks^T
+    scores3 = Q\_landmarks @ K^T
     
     F1 = softmax(scores1); F2 = softmax(scores2); F3 = softmax(scores3)
-    F2_pinv = self._iterative_pinv(F2)
+    F2\_pinv = self.\_iterative\_pinv(F2)
     
     step1 = F3 @ V
-    step2 = F2_pinv @ step1
+    step2 = F2\_pinv @ step1
     context = F1 @ step2
     
-    # Head mask, valid mask, out_proj
+    # Head mask, valid mask, out\_proj
     ...
 \end{lstlisting}
 
 \subsection{B.4 Landmark Selection via Adaptive Pooling}
 
 \begin{lstlisting}
-m = min(self.num_landmarks, N)
+m = min(self.num\_landmarks, N)
 
-Q_flat = Q.reshape(B * H, N, d).transpose(1, 2)   # (BH, d, N)
-K_flat = K.reshape(B * H, N, d).transpose(1, 2)
+Q\_flat = Q.reshape(B * H, N, d).transpose(1, 2)   # (BH, d, N)
+K\_flat = K.reshape(B * H, N, d).transpose(1, 2)
 
-Q_landmarks = F.adaptive_avg_pool1d(Q_flat, m).transpose(1, 2).reshape(B, H, m, d)
-K_landmarks = F.adaptive_avg_pool1d(K_flat, m).transpose(1, 2).reshape(B, H, m, d)
+Q\_landmarks = F.adaptive\_avg\_pool1d(Q\_flat, m).transpose(1, 2).reshape(B, H, m, d)
+K\_landmarks = F.adaptive\_avg\_pool1d(K\_flat, m).transpose(1, 2).reshape(B, H, m, d)
 \end{lstlisting}
 
 \textbf{Why adaptive\_avg\_pool1d?} It partitions the sequence into $m$ segments 
@@ -140,34 +140,34 @@ Four patterns:
 \subsection{B.6 Injection Hook}
 
 \begin{lstlisting}
-def inject_nystrom(layer, model_config, comp_config, old_attn=None, **kwargs):
-    src_attn = old_attn or layer.attention...
-    hidden_size = ...
-    num_heads = ...
+def inject\_nystrom(layer, model\_config, comp\_config, old\_attn=None, **kwargs):
+    src\_attn = old\_attn or layer.attention...
+    hidden\_size = ...
+    num\_heads = ...
     
     try:
-        landmarks = getattr(comp_config, "num_landmarks", 32) if comp_config else 32
-        new_attn = NystromAttention(
-            config=model_config,
-            num_landmarks=landmarks,
-            old_attn=src_attn,
-            hidden_size=hidden_size,
-            num_heads=num_heads,
+        landmarks = getattr(comp\_config, "num\_landmarks", 32) if comp\_config else 32
+        new\_attn = NystromAttention(
+            config=model\_config,
+            num\_landmarks=landmarks,
+            old\_attn=src\_attn,
+            hidden\_size=hidden\_size,
+            num\_heads=num\_heads,
         )
-        if src_attn is not None:
-            new_attn.copy_weights(src_attn)
+        if src\_attn is not None:
+            new\_attn.copy\_weights(src\_attn)
         
         if hasattr(layer, "attention"):
             if hasattr(layer.attention, "self"):
-                layer.attention.self = new_attn
-                new_attn.is_nested_encoder = True
+                layer.attention.self = new\_attn
+                new\_attn.is\_nested\_encoder = True
             else:
-                layer.attention = new_attn
+                layer.attention = new\_attn
         elif hasattr(layer, "self"):
-            layer.self = new_attn
+            layer.self = new\_attn
         elif hasattr(layer, "attn"):
-            layer.attn = new_attn
-        return new_attn
+            layer.attn = new\_attn
+        return new\_attn
     except Exception as e:
         logger.error(f"injection failed: {e}")
         return None

@@ -35,7 +35,7 @@ NEXUS combines six sparse-attention mechanisms in a single forward pass:
                |
     +---------- ----------+
     | Stripe mask         |
-    |   (if N > 256)      |
+    |   (if N \textgreater{} 256)      |
     +----------+----------+
                |
     +---------- ----------+
@@ -48,7 +48,7 @@ NEXUS combines six sparse-attention mechanisms in a single forward pass:
     +----------+----------+
                |
     +---------- ----------+
-    | out_proj            |
+    | out\_proj            |
     +----------+----------+
                |
         Output
@@ -57,59 +57,59 @@ NEXUS combines six sparse-attention mechanisms in a single forward pass:
 \subsection{Block Partitioning}
 
 \begin{lstlisting}
-bs = self.cfg.block_size
+bs = self.cfg.block\_size
 nb = (N + bs - 1) // bs
 \end{lstlisting}
 
 \subsection{XAttention Block Scoring}
 
 \begin{lstlisting}
-Q_sample = Q[:, :, ::stride, :]
-K_sample = K[:, :, ::stride, :]
-attn_sample = torch.matmul(Q_sample, K_sample.transpose(-2, -1)) * scale
+Q\_sample = Q[:, :, ::stride, :]
+K\_sample = K[:, :, ::stride, :]
+attn\_sample = torch.matmul(Q\_sample, K\_sample.transpose(-2, -1)) * scale
 
-for bi in range(n_blocks):
-    for bj in range(n_blocks):
-        block = attn_sample[:, :, q_start:q_end, k_start:k_end]
+for bi in range(n\_blocks):
+    for bj in range(n\_blocks):
+        block = attn\_sample[:, :, q\_start:q\_end, k\_start:k\_end]
         scores[:, :, bi, bj] = block.mean(dim=(2, 3))
 \end{lstlisting}
 
 \subsection{Top-K Block Selection}
 
 \begin{lstlisting}
-scores_inter = scores.clone()
-scores_inter[:, :, diag, diag] = -inf
-_, idx = scores_inter.topk(top_k, dim=-1)
-mask = zeros_like(scores).scatter_(-1, idx, True)
+scores\_inter = scores.clone()
+scores\_inter[:, :, diag, diag] = -inf
+\_, idx = scores\_inter.topk(top\_k, dim=-1)
+mask = zeros\_like(scores).scatter\_(-1, idx, True)
 mask[:, :, diag, diag] = True  # Always include diagonal
 \end{lstlisting}
 
 \subsection{Seer Gating}
 
 \begin{lstlisting}
-Q_pooled = Q.mean(dim=2)
-K_pooled = K.mean(dim=2)
-q_gate = self.q_pool(Q_pooled)  # [B, H, gate_rank]
-k_gate = self.k_pool(K_pooled)
-gate_score = torch.sigmoid(q_gate @ k_gate.T / T)  # [B, H]
-keep_per_head = clamp(gate_score * nb, 1, nb)
+Q\_pooled = Q.mean(dim=2)
+K\_pooled = K.mean(dim=2)
+q\_gate = self.q\_pool(Q\_pooled)  # [B, H, gate\_rank]
+k\_gate = self.k\_pool(K\_pooled)
+gate\_score = torch.sigmoid(q\_gate @ k\_gate.T / T)  # [B, H]
+keep\_per\_head = clamp(gate\_score * nb, 1, nb)
 \end{lstlisting}
 
 \subsection{Combined Mask}
 
 \begin{lstlisting}
-inter_mask = inter_mask | seer_mask
-inter_mask[:, :, :, 0] = True  # CLS block
-inter_mask[:, :, diag, diag] = True
+inter\_mask = inter\_mask | seer\_mask
+inter\_mask[:, :, :, 0] = True  # CLS block
+inter\_mask[:, :, diag, diag] = True
 \end{lstlisting}
 
 \subsection{Stripe Mask}
 
 \begin{lstlisting}
-if self.cfg.stripe_enabled and N > 256:
-    stripe_group = idx // sw
-    stripe_mask = (q_stripe - k_stripe).abs() <= 1
-    scores = scores.masked_fill(~stripe_mask, -10000.0)
+if self.cfg.stripe\_enabled and N \textgreater{} 256:
+    stripe\_group = idx // sw
+    stripe\_mask = (q\_stripe - k\_stripe).abs() \textless{}= 1
+    scores = scores.masked\_fill(~stripe\_mask, -10000.0)
 \end{lstlisting}
 
 \textbf{Note.} For $N \leq 256$, this is inactive.
@@ -118,10 +118,10 @@ if self.cfg.stripe_enabled and N > 256:
 
 \begin{lstlisting}
 def softpick(x, dim=-1, temperature=1.0):
-    x_scaled = torch.clamp(x.float() / temp, max=85.0)
-    p = F.relu(torch.exp(x_scaled) - 1.0)
+    x\_scaled = torch.clamp(x.float() / temp, max=85.0)
+    p = F.relu(torch.exp(x\_scaled) - 1.0)
     denom = p.sum(dim=-1, keepdim=True) + 1e-8
-    return (p / denom).to(orig_dtype)
+    return (p / denom).to(orig\_dtype)
 \end{lstlisting}
 
 \textbf{Concern.} For all-negative inputs, \texttt{p=0}, \texttt{denom=1e-8}, output $\approx$ 0. 
@@ -130,14 +130,14 @@ This can cause attention collapse in masked rows.
 \subsection{RFF Rectification}
 
 \begin{lstlisting}
-Q_proj = torch.matmul(F.normalize(Q), proj).clamp(max=11.0)
-K_proj = torch.matmul(F.normalize(K), proj).clamp(max=11.0)
-Q_feat = torch.exp(Q_proj) / sqrt(F)
-K_feat = torch.exp(K_proj) / sqrt(F)
-KV = einsum("bhnf,bhnd->bhfd", K_feat, V)
-Z = K_feat.sum(dim=2)
-ctx = einsum("bhnf,bhfd->bhnd", Q_feat, KV)
-norm = einsum("bhnf,bhf->bhn", Q_feat, Z)
+Q\_proj = torch.matmul(F.normalize(Q), proj).clamp(max=11.0)
+K\_proj = torch.matmul(F.normalize(K), proj).clamp(max=11.0)
+Q\_feat = torch.exp(Q\_proj) / sqrt(F)
+K\_feat = torch.exp(K\_proj) / sqrt(F)
+KV = einsum("bhnf,bhnd-\textgreater{}bhfd", K\_feat, V)
+Z = K\_feat.sum(dim=2)
+ctx = einsum("bhnf,bhfd-\textgreater{}bhnd", Q\_feat, KV)
+norm = einsum("bhnf,bhf-\textgreater{}bhn", Q\_feat, Z)
 return ctx / (norm + 1e-5)
 \end{lstlisting}
 
@@ -147,32 +147,32 @@ return ctx / (norm + 1e-5)
 
 \textbf{Algorithm 1:} NEXUS forward
 \begin{lstlisting}
-Input:  X, attention_mask, position_embeddings, is_decoder
+Input:  X, attention\_mask, position\_embeddings, is\_decoder
 Output: Y
 
  1: Q, K, V $\leftarrow$ projections(X)
- 2: if RoPE: (Q, K) $\leftarrow$ apply_rotary(Q, K)
- 3: if GQA: K, V $\leftarrow$ repeat_kv(K, V)
- 4: token_valid $\leftarrow$ extract_valid_mask(attention_mask)
- 5: use_dense $\leftarrow$ is_causal OR is_cross OR N $\le$ 8
- 6: if use_dense:
- 7:     return standard_attention(Q, K, V)
- 8: if is_rectify and spec_rectify:
- 9:     return spec_rectify(Q, K, V)
-10: block_scores $\leftarrow$ XAttention_score(Q, K)
-11: inter_mask $\leftarrow$ topk(block_scores)
-12: if seer_gate: seer_mask $\leftarrow$ seer_gate(Q, K)
-13: inter_mask $\leftarrow$ inter_mask | seer_mask
-14: inter_mask[:, :, :, 0] $\leftarrow$ True
-15: inter_mask[:, :, diag, diag] $\leftarrow$ True
-16: scores $\leftarrow$ QK^T / $\sqrt{}$d_h
-17: scores $\leftarrow$ expand_mask(inter_mask, scores)
-18: if N > 256: scores $\leftarrow$ stripe_mask(scores)
-19: scores $\leftarrow$ padding_mask(scores, token_valid)
+ 2: if RoPE: (Q, K) $\leftarrow$ apply\_rotary(Q, K)
+ 3: if GQA: K, V $\leftarrow$ repeat\_kv(K, V)
+ 4: token\_valid $\leftarrow$ extract\_valid\_mask(attention\_mask)
+ 5: use\_dense $\leftarrow$ is\_causal OR is\_cross OR N $\le$ 8
+ 6: if use\_dense:
+ 7:     return standard\_attention(Q, K, V)
+ 8: if is\_rectify and spec\_rectify:
+ 9:     return spec\_rectify(Q, K, V)
+10: block\_scores $\leftarrow$ XAttention\_score(Q, K)
+11: inter\_mask $\leftarrow$ topk(block\_scores)
+12: if seer\_gate: seer\_mask $\leftarrow$ seer\_gate(Q, K)
+13: inter\_mask $\leftarrow$ inter\_mask | seer\_mask
+14: inter\_mask[:, :, :, 0] $\leftarrow$ True
+15: inter\_mask[:, :, diag, diag] $\leftarrow$ True
+16: scores $\leftarrow$ QK^T / $\sqrt{}$d\_h
+17: scores $\leftarrow$ expand\_mask(inter\_mask, scores)
+18: if N \textgreater{} 256: scores $\leftarrow$ stripe\_mask(scores)
+19: scores $\leftarrow$ padding\_mask(scores, token\_valid)
 20: attn $\leftarrow$ softpick(scores)
 21: context $\leftarrow$ attn @ V
-22: context $\leftarrow$ mask_padding(context)
-23: return out_proj(context)
+22: context $\leftarrow$ mask\_padding(context)
+23: return out\_proj(context)
 \end{lstlisting}
 
 \subsection{Complexity Analysis}

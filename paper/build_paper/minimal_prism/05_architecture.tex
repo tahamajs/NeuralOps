@@ -22,10 +22,10 @@ Qwen3.5-0.8B & 24 & 1024 & 8 & 2 & No & No \\
 
 \begin{lstlisting}
 distilbert.transformer.layer.0.attention
-+-- q_lin  (Linear 768 $\to$ 768)
-+-- k_lin  (Linear 768 $\to$ 768)
-+-- v_lin  (Linear 768 $\to$ 768)
-+-- out_lin (Linear 768 $\to$ 768)
++-- q\_lin  (Linear 768 $\to$ 768)
++-- k\_lin  (Linear 768 $\to$ 768)
++-- v\_lin  (Linear 768 $\to$ 768)
++-- out\_lin (Linear 768 $\to$ 768)
 \end{lstlisting}
 
 All four are \texttt{nn.Linear}. Direct factorization, no special handling.
@@ -59,8 +59,8 @@ avoids this via injection-time detection.
 
 \begin{lstlisting}
 transformer.h.0.attn
-+-- c_attn  (Conv1D 768 $\to$ 2304)   # $\leftarrow$ FUSED Q, K, V
-+-- c_proj  (Conv1D 768 $\to$ 768)    # $\leftarrow$ output projection
++-- c\_attn  (Conv1D 768 $\to$ 2304)   # $\leftarrow$ FUSED Q, K, V
++-- c\_proj  (Conv1D 768 $\to$ 768)    # $\leftarrow$ output projection
 \end{lstlisting}
 
 \textbf{Two challenges:}
@@ -69,10 +69,10 @@ transformer.h.0.attn
 \item \textbf{Fused c\_attn.} Q, K, V are stored in one matrix. We split:
 \end{enumerate}
 \begin{lstlisting}
-   w = src.c_attn.weight.data.clone()
-   if is_conv1d:
+   w = src.c\_attn.weight.data.clone()
+   if is\_conv1d:
        w = w.t()   # (in, out) $\to$ (out, in)
-   q_w, k_w, v_w = w.chunk(3, dim=0)
+   q\_w, k\_w, v\_w = w.chunk(3, dim=0)
 \end{lstlisting}
 
 \begin{enumerate}
@@ -80,7 +80,7 @@ transformer.h.0.attn
   \texttt{(in\_features, out\_features)}, opposite to \texttt{nn.Linear}. Detected via:
 \end{enumerate}
 \begin{lstlisting}
-   is_conv1d = hasattr(module, "nf") or "Conv1D" in type(module).__name__
+   is\_conv1d = hasattr(module, "nf") or "Conv1D" in type(module).\_\_name\_\_
 \end{lstlisting}
 
 \texttt{is\_nested\_encoder = False} because \texttt{c\_proj} is applied by our module.
@@ -88,20 +88,20 @@ transformer.h.0.attn
 \subsection{Qwen3.5 (GQA + RoPE)}
 
 \begin{lstlisting}
-model.layers.0.self_attn
-+-- q_proj  (Linear 1024 $\to$ 2048)   # H * d_h
-+-- k_proj  (Linear 1024 $\to$ 512)    # H_kv * d_h
-+-- v_proj  (Linear 1024 $\to$ 512)
-+-- o_proj  (Linear 2048 $\to$ 1024)
+model.layers.0.self\_attn
++-- q\_proj  (Linear 1024 $\to$ 2048)   # H * d\_h
++-- k\_proj  (Linear 1024 $\to$ 512)    # H\_kv * d\_h
++-- v\_proj  (Linear 1024 $\to$ 512)
++-- o\_proj  (Linear 2048 $\to$ 1024)
 \end{lstlisting}
 
 \textbf{GQA handling:} $H_{kv} = 2 < H = 8$. K and V projections are narrower. 
 MinimalPRISM factorizes each at its natural dimension. During forward:
 
 \begin{lstlisting}
-if self.num_kv_heads < self.num_heads:
-    K = repeat_kv(K, self.kv_repeat)   # (B, 2, N, 256) $\to$ (B, 8, N, 256)
-    V = repeat_kv(V, self.kv_repeat)
+if self.num\_kv\_heads \textless{} self.num\_heads:
+    K = repeat\_kv(K, self.kv\_repeat)   # (B, 2, N, 256) $\to$ (B, 8, N, 256)
+    V = repeat\_kv(V, self.kv\_repeat)
 \end{lstlisting}
 
 \textbf{RoPE handling:} Qwen applies RoPE after projection. MinimalPRISM preserves 
@@ -116,14 +116,14 @@ When \texttt{is\_nested\_encoder = True}:
 \begin{lstlisting}
 def forward(self, ...):
     ...
-    context = torch.matmul(attn_weights, V)
-    context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+    context = torch.matmul(attn\_weights, V)
+    context = context.transpose(1, 2).contiguous().view(B, N, self.all\_head\_size)
     
-    if self.is_nested_encoder:
-        return context, attn_weights   # Raw context
+    if self.is\_nested\_encoder:
+        return context, attn\_weights   # Raw context
     else:
-        output = self.out_proj(context)
-        return output, attn_weights
+        output = self.out\_proj(context)
+        return output, attn\_weights
 \end{lstlisting}
 
 The outer \texttt{BertSelfOutput.dense} then applies the projection.
@@ -132,36 +132,36 @@ The outer \texttt{BertSelfOutput.dense} then applies the projection.
 
 \textbf{Algorithm 2:} Inject MinimalPRISM into a full model
 \begin{lstlisting}
-Input:  model M, rank_cap r_max, energy  
+Input:  model M, rank\_cap r\_max, energy  
 Output: M' with all attention blocks factorized
 
-1:  layer_list $\leftarrow$ find_transformer_layers(M)
+1:  layer\_list $\leftarrow$ find\_transformer\_layers(M)
 2:
 3:  # Pre-test
-4:  test_src $\leftarrow$ get_attention(layer_list[0])
-5:  test_module $\leftarrow$ MinimalPRISMAttention(cfg)
-6:  try: test_module.copy_weights(test_src)
+4:  test\_src $\leftarrow$ get\_attention(layer\_list[0])
+5:  test\_module $\leftarrow$ MinimalPRISMAttention(cfg)
+6:  try: test\_module.copy\_weights(test\_src)
 7:  except: return None
 8:
 9:  # Inject each layer
 10: count $\leftarrow$ 0
-11: for (idx, layer) in enumerate(layer_list) do
-12:     src_attn $\leftarrow$ get_attention(layer)
-13:     if src_attn is already MinimalPRISM: skip
-14:     new_attn $\leftarrow$ MinimalPRISMAttention(cfg)
-15:     new_attn.copy_weights(src_attn)
+11: for (idx, layer) in enumerate(layer\_list) do
+12:     src\_attn $\leftarrow$ get\_attention(layer)
+13:     if src\_attn is already MinimalPRISM: skip
+14:     new\_attn $\leftarrow$ MinimalPRISMAttention(cfg)
+15:     new\_attn.copy\_weights(src\_attn)
 16:
 17:     # Set nested flag at injection
 18:     if hasattr(layer, "attention") and hasattr(layer.attention, "self"):
-19:         new_attn.is_nested_encoder = True
-20:         layer.attention.self = new_attn
+19:         new\_attn.is\_nested\_encoder = True
+20:         layer.attention.self = new\_attn
 21:     else:
-22:         new_attn.is_nested_encoder = False
-23:         replace_attention(layer, new_attn)
+22:         new\_attn.is\_nested\_encoder = False
+23:         replace\_attention(layer, new\_attn)
 24:     count += 1
 25: end for
 26:
-27: return M' if count > 0 else None
+27: return M' if count \textgreater{} 0 else None
 \end{lstlisting}
 
 \subsection{Failure Modes and Fallbacks}
@@ -174,7 +174,7 @@ Output: M' with all attention blocks factorized
 \textbf{Failure} & \textbf{Detection} & \textbf{Response} \\
 \midrule
 Missing weights & \texttt{copy\_weights} raises & Abort (pre-test) \\
-Near-zero Frobenius & Norm check < 1e-4 & Raise \\
+Near-zero Frobenius & Norm check \textless{} 1e-4 & Raise \\
 Shape mismatch & \texttt{\_orient} and padding & Warn \\
 Double injection & Class name check & Skip \\
 Cross-attention & Not supported & Not implemented \\
@@ -186,13 +186,13 @@ CUDA OOM during SVD & RuntimeError & Fallback to CPU \\
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("minimal_prism")
+@ATTENTION\_REGISTRY.register("minimal\_prism")
 class MinimalPRISMAttention(BaseAttention):
     ...
 
-@ATTENTION_REGISTRY.register("minimal_prism_inject")
-@ATTENTION_REGISTRY.register("inject_minimal_prism")
-def inject_minimal_prism(...):
+@ATTENTION\_REGISTRY.register("minimal\_prism\_inject")
+@ATTENTION\_REGISTRY.register("inject\_minimal\_prism")
+def inject\_minimal\_prism(...):
     ...
 \end{lstlisting}
 
@@ -218,6 +218,6 @@ automatically via the naming convention.
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of minimal\_prism.}
-\label{fig:arch_minimal-prism}
+\label{fig:arch\_minimal-prism}
 \end{figure}
 

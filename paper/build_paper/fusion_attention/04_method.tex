@@ -19,7 +19,7 @@ FUSIONATTN has two execution paths selected by sequence length:
                      |
                       
     +--------------------------------------+
-    |  Apply RoPE, repeat_kv (GQA)         |
+    |  Apply RoPE, repeat\_kv (GQA)         |
     +----------------+---------------------+
                      |
                       
@@ -38,7 +38,7 @@ FUSIONATTN has two execution paths selected by sequence length:
           +-----------+-----------+
                        
               +----------------+
-              |  out_proj      |
+              |  out\_proj      |
               |  (frozen + LoRA)|
               +--------+-------+
                        |
@@ -51,7 +51,7 @@ FUSIONATTN has two execution paths selected by sequence length:
 Frozen base + LoRA:
 
 \[
-\text{Proj}_P(X) = X W_P^\top + \frac{\alpha}{r_L} (X A_P^\top) B_P^\top \cdot \sigma + b_P
+\text{Proj}\_P(X) = X W\_P^\top + \frac{\alpha}{r\_L} (X A\_P^\top) B\_P^\top \cdot \sigma + b\_P
 \tag{4.1}
 \]
 
@@ -61,8 +61,8 @@ where $W_P$ is copied exactly from the pretrained attention.
 
 \[
 \text{Path}(L) = \begin{cases}
-\text{short}, & L \leq L_\text{threshold} \\
-\text{long}, & L > L_\text{threshold}
+\text{short}, & L \leq L\_\text{threshold} \\
+\text{long}, & L \textgreater{} L\_\text{threshold}
 \end{cases}
 \tag{4.2}
 \]
@@ -77,15 +77,15 @@ cross-attention.
 Pad sequence to multiple of $B$ (block size), then reshape:
 
 \[
-Q \to Q_\text{blocks} \in \mathbb{R}^{B \times H \times T \times B \times d_h}
+Q \to Q\_\text{blocks} \in \mathbb{R}^{B \times H \times T \times B \times d\_h}
 \tag{4.3}
 \]
 
 \subsubsection{Block-Mean Representations}
 
 \[
-\bar{Q}_i = \frac{1}{B} \sum_{j=1}^{B} Q_\text{blocks}[:, :, i, j, :], \quad
-\bar{K}_i = \frac{1}{B} \sum_{j=1}^{B} K_\text{blocks}[:, :, i, j, :]
+\bar{Q}\_i = \frac{1}{B} \sum\_{j=1}^{B} Q\_\text{blocks}[:, :, i, j, :], \quad
+\bar{K}\_i = \frac{1}{B} \sum\_{j=1}^{B} K\_\text{blocks}[:, :, i, j, :]
 \tag{4.4}
 \]
 
@@ -94,7 +94,7 @@ Q \to Q_\text{blocks} \in \mathbb{R}^{B \times H \times T \times B \times d_h}
 A 2-layer MLP with GELU activation:
 
 \[
-\phi(x) = W_2 \cdot \text{GELU}(W_1 x + b_1) + b_2
+\phi(x) = W\_2 \cdot \text{GELU}(W\_1 x + b\_1) + b\_2
 \tag{4.5}
 \]
 
@@ -103,7 +103,7 @@ with $W_1 \in \mathbb{R}^{4 d_h \times d_h}$, $W_2 \in \mathbb{R}^{1 \times 4 d_
 \subsubsection{Gate Scores}
 
 \[
-g(i, j) = \frac{\phi(\bar{Q}_i) \cdot \phi(\bar{K}_j)}{\tau}
+g(i, j) = \frac{\phi(\bar{Q}\_i) \cdot \phi(\bar{K}\_j)}{\tau}
 \tag{4.6}
 \]
 
@@ -112,7 +112,7 @@ where $\tau$ is a learnable temperature.
 \subsubsection{Top-K Selection}
 
 \[
-\text{TopK}_i = \text{top-}K_{j}(\text{softmax}_j(g(i, j)))
+\text{TopK}\_i = \text{top-}K\_{j}(\text{softmax}\_j(g(i, j)))
 \tag{4.7}
 \]
 
@@ -123,7 +123,7 @@ with block 0 always included (attention sink).
 For each query block $i$:
 
 \[
-\text{Out}_i = \text{softmax}\!\left(\frac{Q_i K_{\text{TopK}_i}^\top}{\sqrt{d_h}}\right) V_{\text{TopK}_i}
+\text{Out}\_i = \text{softmax}\!\left(\frac{Q\_i K\_{\text{TopK}\_i}^\top}{\sqrt{d\_h}}\right) V\_{\text{TopK}\_i}
 \tag{4.8}
 \]
 
@@ -133,43 +133,43 @@ with causal masking if decoder, and padding masking.
 
 \textbf{Algorithm 1:} FUSIONATTN forward
 \begin{lstlisting}
-Input:  X, attention_mask, position_embeddings
-Output: Y, attn_weights
+Input:  X, attention\_mask, position\_embeddings
+Output: Y, attn\_weights
 
-1:  Q $\leftarrow$ LoRALinear_Q(X)
-2:  K $\leftarrow$ LoRALinear_K(X)
-3:  V $\leftarrow$ LoRALinear_V(X)
+1:  Q $\leftarrow$ LoRALinear\_Q(X)
+2:  K $\leftarrow$ LoRALinear\_K(X)
+3:  V $\leftarrow$ LoRALinear\_V(X)
 4:
-5:  if RoPE: (Q, K) $\leftarrow$ apply_rope(Q, K, cos, sin)
-6:  if GQA: K, V $\leftarrow$ repeat_kv(K, V)
+5:  if RoPE: (Q, K) $\leftarrow$ apply\_rope(Q, K, cos, sin)
+6:  if GQA: K, V $\leftarrow$ repeat\_kv(K, V)
 7:
-8:  if L $\le$ 128 or cross_attention:                    SHORT PATH
-9:      S $\leftarrow$ QK^T / $\sqrt{}$d_h
-10:     S $\leftarrow$ causal_mask(S) if decoder
-11:     S $\leftarrow$ padding_mask(S, attention_mask)
+8:  if L $\le$ 128 or cross\_attention:                    SHORT PATH
+9:      S $\leftarrow$ QK^T / $\sqrt{}$d\_h
+10:     S $\leftarrow$ causal\_mask(S) if decoder
+11:     S $\leftarrow$ padding\_mask(S, attention\_mask)
 12:     A $\leftarrow$ softmax(S)
-13:     Y_ctx $\leftarrow$ A @ V
+13:     Y\_ctx $\leftarrow$ A @ V
 14:
 15: else:                                                LONG PATH
-16:     Q_blocks $\leftarrow$ partition(Q, block_size)
-17:     K_blocks $\leftarrow$ partition(K, block_size)
-18:     Q_means $\leftarrow$ mean(Q_blocks, dim=-2)
-19:     K_means $\leftarrow$ mean(K_blocks, dim=-2)
-20:     g $\leftarrow$ GateMLP(Q_means) @ GateMLP(K_means)^T / $\tau$
-21:     top_idx $\leftarrow$ topk(g, K)
-22:     top_idx[..., 0] $\leftarrow$ 0                            Always include block 0
+16:     Q\_blocks $\leftarrow$ partition(Q, block\_size)
+17:     K\_blocks $\leftarrow$ partition(K, block\_size)
+18:     Q\_means $\leftarrow$ mean(Q\_blocks, dim=-2)
+19:     K\_means $\leftarrow$ mean(K\_blocks, dim=-2)
+20:     g $\leftarrow$ GateMLP(Q\_means) @ GateMLP(K\_means)^T / $\tau$
+21:     top\_idx $\leftarrow$ topk(g, K)
+22:     top\_idx[..., 0] $\leftarrow$ 0                            Always include block 0
 23:     for each query block i:
-24:         K_sel $\leftarrow$ gather(K_blocks, top_idx[i])
-25:         V_sel $\leftarrow$ gather(V_blocks, top_idx[i])
-26:         S $\leftarrow$ Q_blocks[i] @ K_sel^T / $\sqrt{}$d_h
-27:         S $\leftarrow$ causal_mask + padding_mask
+24:         K\_sel $\leftarrow$ gather(K\_blocks, top\_idx[i])
+25:         V\_sel $\leftarrow$ gather(V\_blocks, top\_idx[i])
+26:         S $\leftarrow$ Q\_blocks[i] @ K\_sel^T / $\sqrt{}$d\_h
+27:         S $\leftarrow$ causal\_mask + padding\_mask
 28:         A $\leftarrow$ softmax(S)
-29:         Out[i] $\leftarrow$ A @ V_sel
-30:     Y_ctx $\leftarrow$ concat(Out) and crop to L
+29:         Out[i] $\leftarrow$ A @ V\_sel
+30:     Y\_ctx $\leftarrow$ concat(Out) and crop to L
 31:
-32: Y_ctx $\leftarrow$ Y_ctx.reshape(B, L, H d_h)
-33: if nested: Y $\leftarrow$ Y_ctx
-34: else: Y $\leftarrow$ LoRALinear_O(Y_ctx)
+32: Y\_ctx $\leftarrow$ Y\_ctx.reshape(B, L, H d\_h)
+33: if nested: Y $\leftarrow$ Y\_ctx
+34: else: Y $\leftarrow$ LoRALinear\_O(Y\_ctx)
 35:
 36: return Y
 \end{lstlisting}
@@ -257,7 +257,7 @@ Approximation error depends on gate quality. No formal bound provided.
 For decoder long path, causal masking is enforced within each selected block:
 
 \[
-\text{mask}(i, j) = -\infty \text{ if } i < j
+\text{mask}(i, j) = -\infty \text{ if } i \textless{} j
 \tag{4.10}
 \]
 

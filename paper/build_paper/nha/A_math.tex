@@ -17,14 +17,14 @@ The matmuls require $\mathcal{O}(L w d_h)$ time. $\square$
 \textbf{Proof.} For chunk $[a, b)$:
 
 \[
-O_i = \frac{\sum_{j \le i} \phi(Q_i)^\top \phi(K_j) V_j}{\sum_{j \le i} \phi(Q_i)^\top \phi(K_j)}
+O\_i = \frac{\sum\_{j \le i} \phi(Q\_i)^\top \phi(K\_j) V\_j}{\sum\_{j \le i} \phi(Q\_i)^\top \phi(K\_j)}
 \tag{A.1}
 \]
 
 Split the sum into $j \in [a, i]$ (intra) and $j \in [0, a)$ (inter):
 
 \[
-O_i = \frac{\phi(Q_i)^\top \left(\sum_{j \in [a, i]} \phi(K_j) V_j + \sum_{j < a} \phi(K_j) V_j\right)}{\phi(Q_i)^\top \left(\sum_{j \in [a, i]} \phi(K_j) + \sum_{j < a} \phi(K_j)\right)}
+O\_i = \frac{\phi(Q\_i)^\top \left(\sum\_{j \in [a, i]} \phi(K\_j) V\_j + \sum\_{j \textless{} a} \phi(K\_j) V\_j\right)}{\phi(Q\_i)^\top \left(\sum\_{j \in [a, i]} \phi(K\_j) + \sum\_{j \textless{} a} \phi(K\_j)\right)}
 \tag{A.2}
 \]
 
@@ -45,7 +45,7 @@ are orthogonal rather than independent. This is the standard PORF argument
 Given $g = \sigma(w^\top x + b)$ with $w = 0$ and $b = 3$:
 
 \[
-g_i = \sigma(3) = \frac{1}{1 + e^{-3}} \approx 0.9526
+g\_i = \sigma(3) = \frac{1}{1 + e^{-3}} \approx 0.9526
 \tag{A.3}
 \]
 
@@ -80,7 +80,7 @@ Taking norms gives (A.4). $\square$
 For the cumulative state $S \in \mathbb{R}^{B \times H \times m \times d_h}$:
 
 \[
-\text{Memory} = B H m d_h \cdot \text{bytes}
+\text{Memory} = B H m d\_h \cdot \text{bytes}
 \tag{A.5}
 \]
 

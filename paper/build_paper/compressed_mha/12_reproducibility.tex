@@ -3,8 +3,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/your-org/SVD_Project
-cd SVD_Project
+git clone https://github.com/your-org/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
@@ -29,36 +29,36 @@ datasets & 2.20.0 \\
 \subsection{Running Compressed MHA}
 
 \begin{lstlisting}
-python run_all_4_compressed_mha.py \
+python run\_all\_4\_compressed\_mha.py \
     --models distilbert,roberta,gpt2 \
-    --rank_qkv 64 \
-    --rank_out 64 \
-    --recovery_steps 50 \
-    --lora_rank 16
+    --rank\_qkv 64 \
+    --rank\_out 64 \
+    --recovery\_steps 50 \
+    --lora\_rank 16
 \end{lstlisting}
 
 \subsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --modules full,compressed_mha \
-    --rank_qkv 64 \
-    --recovery_steps 50 \
-    --lora_rank 16
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --modules full,compressed\_mha \
+    --rank\_qkv 64 \
+    --recovery\_steps 50 \
+    --lora\_rank 16
 \end{lstlisting}
 
 \subsection{Reproducing Tables}
 
 \subsubsection{Table 7.1 (Main)}
 \begin{lstlisting}
-python run_all_4_compressed_mha.py
+python run\_all\_4\_compressed\_mha.py
 \end{lstlisting}
 
 \subsubsection{Table 7.5 (Rank Ablation)}
 \begin{lstlisting}
 for r in 32 64 128 256 384; do
-    python run_all_4_compressed_mha.py --rank_qkv $r --rank_out $r --output_suffix r$r
+    python run\_all\_4\_compressed\_mha.py --rank\_qkv $r --rank_out $r --output\_suffix r$r
 done
 \end{lstlisting}
 

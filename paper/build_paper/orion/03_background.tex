@@ -18,7 +18,7 @@ $V \in \mathbb{R}^{n \times n}$.
 \textbf{Symmetric factorization:}
 
 \[
-W_r = (U_r \Sigma_r^{1/2})(\Sigma_r^{1/2} V_r^\top)
+W\_r = (U\_r \Sigma\_r^{1/2})(\Sigma\_r^{1/2} V\_r^\top)
 \tag{3.2}
 \]
 
@@ -33,7 +33,7 @@ Given singular values $\sigma_1 \geq \sigma_2 \geq \dots$, the energy
 captured by the top-$r$:
 
 \[
-E(r) = \frac{\sum_{i=1}^{r} \sigma_i^2}{\sum_i \sigma_i^2}
+E(r) = \frac{\sum\_{i=1}^{r} \sigma\_i^2}{\sum\_i \sigma\_i^2}
 \tag{3.3}
 \]
 
@@ -55,7 +55,7 @@ with $\Omega \in \mathbb{R}^{d_h \times F}$.
 \subsection{Linear Attention with RFF}
 
 \[
-O_i = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+O\_i = \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \tag{3.5}
 \]
 
@@ -66,7 +66,7 @@ Cost: $\mathcal{O}(L F d)$.
 ORION's softpick:
 
 \[
-\text{softpick}(x)_i = \frac{\text{ReLU}(e^{x_i} - 1)}{\sum_j \text{ReLU}(e^{x_j} - 1) + \epsilon}
+\text{softpick}(x)\_i = \frac{\text{ReLU}(e^{x\_i} - 1)}{\sum\_j \text{ReLU}(e^{x\_j} - 1) + \epsilon}
 \tag{3.6}
 \]
 

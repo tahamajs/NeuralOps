@@ -6,8 +6,8 @@ LoRA Attention replaces each of the four attention projections with a
 \textbf{LoRALinear} module:
 
 \[
-y = \underbrace{W_\text{frozen} x}_{\text{frozen, copied from pretrained}} + 
-    \underbrace{\frac{\alpha}{r_L} B A x}_{\text{trainable LoRA}}
+y = \underbrace{W\_\text{frozen} x}\_{\text{frozen, copied from pretrained}} + 
+    \underbrace{\frac{\alpha}{r\_L} B A x}\_{\text{trainable LoRA}}
 \tag{4.1}
 \]
 
@@ -53,33 +53,33 @@ to zero ($B = 0$), so the initial forward pass exactly matches the baseline.
 
 \begin{lstlisting}
 class LoRALinear(nn.Module):
-    def __init__(self, in_features, out_features, bias=True, 
-                 lora_rank=16, lora_alpha=32.0, freeze_base=False):
-        super().__init__()
-        self.weight = nn.Parameter(torch.empty(out_features, in_features))
+    def \_\_init\_\_(self, in\_features, out\_features, bias=True, 
+                 lora\_rank=16, lora\_alpha=32.0, freeze\_base=False):
+        super().\_\_init\_\_()
+        self.weight = nn.Parameter(torch.empty(out\_features, in\_features))
         if bias:
-            self.bias = nn.Parameter(torch.empty(out_features))
+            self.bias = nn.Parameter(torch.empty(out\_features))
         
-        if lora_rank > 0:
-            self.lora_A = nn.Parameter(torch.empty(lora_rank, in_features))
-            self.lora_B = nn.Parameter(torch.empty(out_features, lora_rank))
+        if lora\_rank \textgreater{} 0:
+            self.lora\_A = nn.Parameter(torch.empty(lora\_rank, in\_features))
+            self.lora\_B = nn.Parameter(torch.empty(out\_features, lora\_rank))
             # A: Kaiming, B: zeros
-            nn.init.kaiming_uniform_(self.lora_A)
-            nn.init.zeros_(self.lora_B)
+            nn.init.kaiming\_uniform\_(self.lora\_A)
+            nn.init.zeros\_(self.lora\_B)
         
-        if freeze_base:
-            self.weight.requires_grad = False
+        if freeze\_base:
+            self.weight.requires\_grad = False
             if self.bias is not None:
-                self.bias.requires_grad = False
-        self.lora_rank = lora_rank
-        self.lora_alpha = lora_alpha
-        self.lora_scaling = lora_alpha / lora_rank if lora_rank > 0 else 1.0
+                self.bias.requires\_grad = False
+        self.lora\_rank = lora\_rank
+        self.lora\_alpha = lora\_alpha
+        self.lora\_scaling = lora\_alpha / lora\_rank if lora\_rank \textgreater{} 0 else 1.0
     
     def forward(self, x):
         out = F.linear(x, self.weight, self.bias)
-        if self.lora_rank > 0:
-            out = out + F.linear(F.linear(x, self.lora_A), self.lora_B) * self.lora_scaling
-        return out * self.output_scale
+        if self.lora\_rank \textgreater{} 0:
+            out = out + F.linear(F.linear(x, self.lora\_A), self.lora\_B) * self.lora\_scaling
+        return out * self.output\_scale
 \end{lstlisting}
 
 \textbf{Note.} We add a trainable \texttt{output\_scale} scalar initialized to 1.0. This 
@@ -93,14 +93,14 @@ copies them into the LoRALinear modules. It handles four patterns:
 \subsubsection{Pattern 1: GPT-2 Conv1D}
 
 \begin{lstlisting}
-if hasattr(src, "c_attn"):
-    weight = src.c_attn.weight.data
-    if weight.shape[1] == 3 * self.hidden_size:
+if hasattr(src, "c\_attn"):
+    weight = src.c\_attn.weight.data
+    if weight.shape[1] == 3 * self.hidden\_size:
         weight = weight.t()
-    q_w, k_w, v_w = weight.chunk(3, dim=0)
-    extracted["q"] = (q_w, ...)
-    extracted["k"] = (k_w, ...)
-    extracted["v"] = (v_w, ...)
+    q\_w, k\_w, v\_w = weight.chunk(3, dim=0)
+    extracted["q"] = (q\_w, ...)
+    extracted["k"] = (k\_w, ...)
+    extracted["v"] = (v\_w, ...)
 \end{lstlisting}
 
 \subsubsection{Pattern 2: RoBERTa Nested}
@@ -118,11 +118,11 @@ if hasattr(src, "output") and hasattr(src.output, "dense"):
 \subsubsection{Pattern 3: Named Projections}
 
 \begin{lstlisting}
-named_map = {
-    "q": ["q_proj", "q_lin", "query"],
-    "k": ["k_proj", "k_lin", "key"],
-    "v": ["v_proj", "v_lin", "value"],
-    "o": ["o_proj", "out_proj", "out_lin", "dense"],
+named\_map = {
+    "q": ["q\_proj", "q\_lin", "query"],
+    "k": ["k\_proj", "k\_lin", "key"],
+    "v": ["v\_proj", "v\_lin", "value"],
+    "o": ["o\_proj", "out\_proj", "out\_lin", "dense"],
 }
 \end{lstlisting}
 
@@ -131,7 +131,7 @@ named_map = {
 \begin{lstlisting}
 for proj in ["q", "k", "v", "o"]:
     try:
-        w, b = UniversalAdapter.get_weight_bias(src, proj)
+        w, b = UniversalAdapter.get\_weight\_bias(src, proj)
         if w is not None:
             extracted[proj] = (w, b)
     except Exception:
@@ -143,17 +143,17 @@ for proj in ["q", "k", "v", "o"]:
 The critical detection logic:
 
 \begin{lstlisting}
-cls_name = src.__class__.__name__
-has_out_proj = any(hasattr(src, attr) for attr in 
-                   ("dense", "out_proj", "c_proj", "out_lin", "o_proj", ...))
+cls\_name = src.\_\_class\_\_.\_\_name\_\_
+has\_out\_proj = any(hasattr(src, attr) for attr in 
+                   ("dense", "out\_proj", "c\_proj", "out\_lin", "o\_proj", ...))
 
-is_nested = False
+is\_nested = False
 if hasattr(src, "self") and hasattr(getattr(src, "self"), "query"):
-    is_nested = True
-elif (cls_name in ("BertSelfAttention", "RobertaSelfAttention", ...)
-      or (cls_name.endswith("SelfAttention") and not has_out_proj)) and not has_out_proj:
-    is_nested = True
-self.is_nested_encoder = bool(is_nested)
+    is\_nested = True
+elif (cls\_name in ("BertSelfAttention", "RobertaSelfAttention", ...)
+      or (cls\_name.endswith("SelfAttention") and not has\_out\_proj)) and not has\_out\_proj:
+    is\_nested = True
+self.is\_nested\_encoder = bool(is\_nested)
 \end{lstlisting}
 
 \textbf{Rule:}
@@ -168,24 +168,24 @@ self.is_nested_encoder = bool(is_nested)
 
 \textbf{Algorithm 1:} LoRA Attention forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, position\_embeddings
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
- 1: Q $\leftarrow$ q_proj(X)                         base + LoRA
- 2: K $\leftarrow$ k_proj(X)                         base + LoRA
- 3: V $\leftarrow$ v_proj(X)                         base + LoRA
- 4: Reshape to (B, H, L, d_h)
- 5: if RoPE: Q, K $\leftarrow$ apply_rotary(Q, K)
- 6: if GQA: K, V $\leftarrow$ repeat_kv(K, V)
- 7: scores $\leftarrow$ Q K^T / $\sqrt{}$d_h
+ 1: Q $\leftarrow$ q\_proj(X)                         base + LoRA
+ 2: K $\leftarrow$ k\_proj(X)                         base + LoRA
+ 3: V $\leftarrow$ v\_proj(X)                         base + LoRA
+ 4: Reshape to (B, H, L, d\_h)
+ 5: if RoPE: Q, K $\leftarrow$ apply\_rotary(Q, K)
+ 6: if GQA: K, V $\leftarrow$ repeat\_kv(K, V)
+ 7: scores $\leftarrow$ Q K^T / $\sqrt{}$d\_h
  8: if causal: mask(scores, tril)
  9: if padding: mask(scores, valid)
 10: attn $\leftarrow$ softmax(scores)
 11: Context $\leftarrow$ attn V
-12: Context $\leftarrow$ reshape(B, L, H d_h)
-13: if is_nested_encoder:
-14:     return Context    outer layer applies out_proj
-15: Y $\leftarrow$ out_proj(Context)
+12: Context $\leftarrow$ reshape(B, L, H d\_h)
+13: if is\_nested\_encoder:
+14:     return Context    outer layer applies out\_proj
+15: Y $\leftarrow$ out\_proj(Context)
 16: return Y
 \end{lstlisting}
 
@@ -217,7 +217,7 @@ Per attention layer (excluding base weights):
 For $d = 768$, $d_h = 64$, $H = 12$, $r_L = 16$:
 
 \[
-\text{Trainable}_\text{LoRA} = 16 \cdot (2 \cdot 768 + 2 \cdot 768) = 49,152
+\text{Trainable}\_\text{LoRA} = 16 \cdot (2 \cdot 768 + 2 \cdot 768) = 49,152
 \tag{4.2}
 \]
 
@@ -228,14 +228,14 @@ Per layer: ~49K trainable, compared to 2.36M frozen parameters.
 After training, we can merge LoRA into the base weight:
 
 \[
-W_\text{merged} = W_\text{frozen} + \frac{\alpha}{r_L} B A
+W\_\text{merged} = W\_\text{frozen} + \frac{\alpha}{r\_L} B A
 \tag{4.3}
 \]
 
 Then:
 
 \[
-y = W_\text{merged} x + b
+y = W\_\text{merged} x + b
 \tag{4.4}
 \]
 

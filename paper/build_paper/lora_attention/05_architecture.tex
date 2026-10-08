@@ -22,11 +22,11 @@ Qwen3.5 & \texttt{Qwen3Attention} & No & Yes & Yes & No \\
 \subsubsection{GPT-2 Conv1D}
 
 \begin{lstlisting}
-if hasattr(src, "c_attn"):
-    weight = src.c_attn.weight.data
-    if weight.shape[1] == 3 * self.hidden_size:
+if hasattr(src, "c\_attn"):
+    weight = src.c\_attn.weight.data
+    if weight.shape[1] == 3 * self.hidden\_size:
         weight = weight.t()
-    q_w, k_w, v_w = weight.chunk(3, dim=0)
+    q\_w, k\_w, v\_w = weight.chunk(3, dim=0)
 \end{lstlisting}
 
 The Conv1D stores weights as \texttt{(in, out)}, opposite to \texttt{nn.Linear}. We 
@@ -48,11 +48,11 @@ if hasattr(src, "output") and hasattr(src.output, "dense"):
 \subsubsection{Qwen GQA}
 
 \begin{lstlisting}
-named_map = {
-    "q": ["q_proj"],
-    "k": ["k_proj"],  # (H_kv d_h, d)
-    "v": ["v_proj"],
-    "o": ["o_proj"],
+named\_map = {
+    "q": ["q\_proj"],
+    "k": ["k\_proj"],  # (H\_kv d\_h, d)
+    "v": ["v\_proj"],
+    "o": ["o\_proj"],
 }
 \end{lstlisting}
 
@@ -61,11 +61,11 @@ The K, V projections are smaller in GQA ($H_{kv} < H$).
 \subsubsection{DistilBERT}
 
 \begin{lstlisting}
-named_map = {
-    "q": ["q_lin"],
-    "k": ["k_lin"],
-    "v": ["v_lin"],
-    "o": ["out_lin"],
+named\_map = {
+    "q": ["q\_lin"],
+    "k": ["k\_lin"],
+    "v": ["v\_lin"],
+    "o": ["out\_lin"],
 }
 \end{lstlisting}
 
@@ -74,10 +74,10 @@ named_map = {
 For nested encoders:
 
 \begin{lstlisting}
-if self.is_nested_encoder:
+if self.is\_nested\_encoder:
     output = context  # Outer layer applies output projection
 else:
-    output = self.out_proj(context)
+    output = self.out\_proj(context)
 \end{lstlisting}
 
 \subsection{LoRA on Nested Output}
@@ -85,12 +85,12 @@ else:
 For nested encoders, \texttt{out\_proj} is set to identity:
 
 \begin{lstlisting}
-elif proj_key == "o" and self.is_nested_encoder:
-    min_d = min(target.weight.shape[0], target.weight.shape[1])
-    target.weight.data.zero_()
-    target.weight.data[:min_d, :min_d].fill_diagonal_(1.0)
+elif proj\_key == "o" and self.is\_nested\_encoder:
+    min\_d = min(target.weight.shape[0], target.weight.shape[1])
+    target.weight.data.zero\_()
+    target.weight.data[:min\_d, :min\_d].fill\_diagonal\_(1.0)
     if target.bias is not None:
-        target.bias.data.zero_()
+        target.bias.data.zero\_()
 \end{lstlisting}
 
 This ensures the LoRA branch on \texttt{out\_proj} starts from identity, and the 
@@ -100,12 +100,12 @@ outer layer's projection dominates.
 
 \textbf{Algorithm 2:} Inject LoRA Attention
 \begin{lstlisting}
-Input:  model M, r_L, alpha
+Input:  model M, r\_L, alpha
 Output: M with attention replaced by LoRA modules
 
-1: for   in transformer_layers(M) do
-2:     src $\leftarrow$ get_attention( )
-3:     new $\leftarrow$ LoRAAttention(cfg, r_L, alpha, pretrained_attn=src)
+1: for   in transformer\_layers(M) do
+2:     src $\leftarrow$ get\_attention( )
+3:     new $\leftarrow$ LoRAAttention(cfg, r\_L, alpha, pretrained\_attn=src)
 4:     replace( , new)
 5: end for
 6: return M
@@ -135,8 +135,8 @@ failure would corrupt the base weights**.
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("lora_attn")
-@ATTENTION_REGISTRY.register("lora_attention")
+@ATTENTION\_REGISTRY.register("lora\_attn")
+@ATTENTION\_REGISTRY.register("lora\_attention")
 class LoRAAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -147,16 +147,16 @@ LoRA Attention can be applied on top of any compressed attention:
 
 \begin{lstlisting}
 # 1. Compress with SVD
-compressed_attn = SVDLinear(original_attn, rank=64)
+compressed\_attn = SVDLinear(original\_attn, rank=64)
 
 # 2. Wrap with LoRA
-lora_attn = LoRALinear(compressed_attn)
+lora\_attn = LoRALinear(compressed\_attn)
 
 # 3. Fine-tune LoRA only
-for p in compressed_attn.parameters():
-    p.requires_grad = False
-for p in lora_attn.parameters():
-    p.requires_grad = True
+for p in compressed\_attn.parameters():
+    p.requires\_grad = False
+for p in lora\_attn.parameters():
+    p.requires\_grad = True
 \end{lstlisting}
 
 This pattern enables \textbf{post-compression recovery} for SVD/pruning/quantization 
@@ -165,17 +165,17 @@ methods.
 \subsection{Merge Procedure}
 
 \begin{lstlisting}
-def merge_lora(model):
+def merge\_lora(model):
     """Merge LoRA adapters into base weights for zero inference overhead."""
-    for name, module in model.named_modules():
+    for name, module in model.named\_modules():
         if isinstance(module, LoRALinear):
-            with torch.no_grad():
-                delta = (module.lora_B @ module.lora_A) * module.lora_scaling
+            with torch.no\_grad():
+                delta = (module.lora\_B @ module.lora\_A) * module.lora\_scaling
                 module.weight.data += delta
                 # Delete LoRA params
-                module.lora_A = None
-                module.lora_B = None
-                module.lora_rank = 0
+                module.lora\_A = None
+                module.lora\_B = None
+                module.lora\_rank = 0
 \end{lstlisting}
 
 After merging, \texttt{model} has no LoRA parameters, only the merged weights.
@@ -188,6 +188,6 @@ After merging, \texttt{model} has no LoRA parameters, only the merged weights.
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.png}
 \caption{High-level architectural diagram of lora\_attention.}
-\label{fig:arch_lora-attention}
+\label{fig:arch\_lora-attention}
 \end{figure}
 

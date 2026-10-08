@@ -10,7 +10,7 @@ GatedDeltaNetBlock has two code paths:
                       |
                        
               +---------------+
-              | use_full_attn |
+              | use\_full\_attn |
               +---+-------+---+
                   | No    | Yes
                   |       |
@@ -39,9 +39,9 @@ GatedDeltaNetBlock has two code paths:
 Uses \texttt{nn.MultiheadAttention}. Weight transfer:
 
 \begin{lstlisting}
-qkv_w = torch.cat([w_q, w_k, w_v], dim=0)  # (3d, d)
-if qkv_w.shape == self.attn.in_proj_weight.shape:
-    self.attn.in_proj_weight.copy_(qkv_w)
+qkv\_w = torch.cat([w\_q, w\_k, w\_v], dim=0)  # (3d, d)
+if qkv\_w.shape == self.attn.in\_proj\_weight.shape:
+    self.attn.in\_proj\_weight.copy\_(qkv\_w)
 \end{lstlisting}
 
 \textbf{This is a shape-conditional copy.} If shapes do not match, the copy is 
@@ -57,8 +57,8 @@ transfer is via \texttt{GatedDeltaNet.copy\_weights}.
 For non-nested encoders (\texttt{is\_nested\_encoder=False}):
 
 \begin{lstlisting}
-delta_out, _ = self.deltanet(x, ...)
-out = self.norm(x + delta_out)
+delta\_out, \_ = self.deltanet(x, ...)
+out = self.norm(x + delta\_out)
 return out, None
 \end{lstlisting}
 
@@ -67,8 +67,8 @@ This is a \textbf{post-LayerNorm} residual block.
 For nested encoders (\texttt{is\_nested\_encoder=True}):
 
 \begin{lstlisting}
-if self.is_nested_encoder:
-    return delta_out, None  # $\leftarrow$ no residual, no LayerNorm!
+if self.is\_nested\_encoder:
+    return delta\_out, None  # $\leftarrow$ no residual, no LayerNorm!
 \end{lstlisting}
 
 \textbf{Critical:} For RoBERTa (nested), the block returns **raw attention 
@@ -86,11 +86,11 @@ output** without the residual or LayerNorm. This means:
 \begin{lstlisting}
 try:
     adapter = UniversalAdapter()
-    w_q, b_q = adapter.get_weight_bias(old_attn, "q")
+    w\_q, b\_q = adapter.get\_weight\_bias(old\_attn, "q")
     ...
-    qkv_w = torch.cat([w_q, w_k, w_v], dim=0)
-    if qkv_w.shape == self.attn.in_proj_weight.shape:
-        self.attn.in_proj_weight.copy_(qkv_w)
+    qkv\_w = torch.cat([w\_q, w\_k, w\_v], dim=0)
+    if qkv\_w.shape == self.attn.in\_proj\_weight.shape:
+        self.attn.in\_proj\_weight.copy\_(qkv\_w)
     ...
 except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
     pass  # $\leftarrow$ silent failure!
@@ -125,7 +125,7 @@ The \texttt{self.norm} LayerNorm is initialized with $\gamma = 1, \beta = 0$.
 For the output of this block to match the pretrained block, we need:
 
 \[
-\text{LN}_\text{new}(X + A_\text{new}) \approx \text{LN}_\text{pre}(X + A_\text{pre})
+\text{LN}\_\text{new}(X + A\_\text{new}) \approx \text{LN}\_\text{pre}(X + A\_\text{pre})
 \tag{4.1}
 \]
 
@@ -184,15 +184,15 @@ Residual + LN & $\mathcal{O}(Ld)$ & $\mathcal{O}(Ld)$ \\
 
 \textbf{Algorithm 1:} GatedDeltaNetBlock forward
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, use_full_attention
+Input:  X $\in$ R^{B$\times$L$\times$d}, use\_full\_attention
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
-1: if use_full_attention:
+1: if use\_full\_attention:
 2:     A $\leftarrow$ nn.MultiheadAttention(X, X, X)
 3: else:
 4:     A $\leftarrow$ GatedDeltaNet(X)
 5:
-6: if is_nested_encoder:
+6: if is\_nested\_encoder:
 7:     return A                       Raw, no LN
 8: else:
 9:     Y $\leftarrow$ LayerNorm(X + A)           With LN
@@ -208,7 +208,7 @@ of error that is \textbf{independent} of the attention mechanism.
 \textbf{Combined error bound.}
 
 \[
-\|Y_\text{new} - Y_\text{pre}\| \leq \underbrace{\|\text{Attn}_\text{new} - \text{Attn}_\text{pre}\|}_{\text{attention error}} + \underbrace{\|\text{LN}_\text{new} - \text{LN}_\text{pre}\|}_{\text{normalization error}}
+\|Y\_\text{new} - Y\_\text{pre}\| \leq \underbrace{\|\text{Attn}\_\text{new} - \text{Attn}\_\text{pre}\|}\_{\text{attention error}} + \underbrace{\|\text{LN}\_\text{new} - \text{LN}\_\text{pre}\|}\_{\text{normalization error}}
 \tag{4.2}
 \]
 

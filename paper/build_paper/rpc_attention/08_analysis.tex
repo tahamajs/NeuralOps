@@ -7,7 +7,7 @@
 For $r = 32$ and $d_h = 64$, the average inner-product distortion is:
 
 \[
-\frac{|\tilde{Q}_i \tilde{K}_j^\top - Q_i K_j^\top|}{|Q_i K_j^\top|} \approx 0.015
+\frac{|\tilde{Q}\_i \tilde{K}\_j^\top - Q\_i K\_j^\top|}{|Q\_i K\_j^\top|} \approx 0.015
 \]
 
 \textbf{Observation.} At $r = 16$, the distortion reaches 32, 
@@ -58,21 +58,21 @@ overlap, while AASVD and EAT diverge.
 RPC helps in the regime:
 
 \[
-L^2 d_h > L d_h r + L^2 r + \text{overhead}
+L^2 d\_h \textgreater{} L d\_h r + L^2 r + \text{overhead}
 \tag{8.1}
 \]
 
 Rearranging:
 
 \[
-L (d_h - r) > d_h r / L + \text{overhead} / L
+L (d\_h - r) \textgreater{} d\_h r / L + \text{overhead} / L
 \tag{8.2}
 \]
 
 For $d_h = 64$, $r = 32$, overhead is small at large $L$:
 
 \[
-L > \text{small} \Rightarrow L > 512
+L \textgreater{} \text{small} \Rightarrow L \textgreater{} 512
 \]
 
 So RPC helps at \textbf{long sequence lengths} ($L > 512$).
@@ -156,7 +156,7 @@ This is \textbf{safer} than silent fallback but \textbf{less flexible} than A3/A
 \begin{enumerate}
 \item \textbf{RPC is not a compressor.}
 \item \textbf{RPC does not reduce memory.}
-\item \textbf{RPC helps only at long sequences (L > 512).}
+\item \textbf{RPC helps only at long sequences (L \textgreater{} 512).}
 \item \textbf{Theoretical speedup $\ne$ actual speedup.}
 \item \textbf{\texttt{raise} prevents silent failure.}
 \end{enumerate}

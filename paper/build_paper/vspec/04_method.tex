@@ -22,7 +22,7 @@ VSpec++ replaces standard attention with:
       | Token Router  |
       | (top-k + CLS) |
       +-------+-------+
-              | X_routed (B$\times$k$\times$d)
+              | X\_routed (B$\times$k$\times$d)
        +------+------+
                       
     +------+ +------+ +------+
@@ -52,7 +52,7 @@ VSpec++ replaces standard attention with:
 \textbf{Saliency network.}
 
 \[
-s_i = \sigma(f_\theta(x_i)), \quad f_\theta: \mathbb{R}^d \to [0, 1]
+s\_i = \sigma(f\_\theta(x\_i)), \quad f\_\theta: \mathbb{R}^d \to [0, 1]
 \tag{4.1}
 \]
 
@@ -63,7 +63,7 @@ where $f_\theta$ is a 2-layer MLP: Linear($d$, 32) $\to$ GELU $\to$ Linear(32, 1
 \textbf{Selection.}
 
 \[
-k = \max(k_\text{min}, \lceil \rho L \rceil)
+k = \max(k\_\text{min}, \lceil \rho L \rceil)
 \tag{4.2}
 \]
 
@@ -84,7 +84,7 @@ For each projection $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$:
 \textbf{Step 1: Truncated SVD.}
 
 \[
-W \approx U_r \Sigma_r V_r^\top
+W \approx U\_r \Sigma\_r V\_r^\top
 \tag{4.4}
 \]
 
@@ -96,12 +96,12 @@ $V_r \in \mathbb{R}^{d_\text{in} \times r}$.
 \textbf{Step 3: Forward with spectral gate.}
 
 \[
-z = (x V_r) \cdot (S_r \odot g)
+z = (x V\_r) \cdot (S\_r \odot g)
 \tag{4.5}
 \]
 
 \[
-y = z U_r^\top + b + \text{LoRA}(x)
+y = z U\_r^\top + b + \text{LoRA}(x)
 \tag{4.6}
 \]
 
@@ -112,14 +112,14 @@ where $g \in [0, 1]^r$ is the spectral gate (see  4.4).
 \textbf{Pool.} Masked mean over routed tokens:
 
 \[
-\bar{x} = \frac{\sum_i m_i x_i}{\sum_i m_i + \epsilon}
+\bar{x} = \frac{\sum\_i m\_i x\_i}{\sum\_i m\_i + \epsilon}
 \tag{4.7}
 \]
 
 \textbf{Network.}
 
 \[
-{[}\mu, \log \sigma] = f_\text{sg}(\bar{x}) \in \mathbb{R}^{2r}
+{[}\mu, \log \sigma] = f\_\text{sg}(\bar{x}) \in \mathbb{R}^{2r}
 \tag{4.8}
 \]
 
@@ -152,14 +152,14 @@ SVD representation is preserved at step 0.
 \textbf{Pool.}
 
 \[
-\bar{x} = \text{masked-mean}(X_\text{routed})
+\bar{x} = \text{masked-mean}(X\_\text{routed})
 \tag{4.11}
 \]
 
 \textbf{Network.}
 
 \[
-h = \sigma(f_h(\bar{x})) \in [0, 1]^H
+h = \sigma(f\_h(\bar{x})) \in [0, 1]^H
 \tag{4.12}
 \]
 
@@ -168,7 +168,7 @@ where $f_h$ is Linear($d$, 32) $\to$ GELU $\to$ Linear(32, $H$).
 \textbf{Application.} Multiply attention logits:
 
 \[
-\text{scores} \leftarrow \text{scores} \cdot h_i
+\text{scores} \leftarrow \text{scores} \cdot h\_i
 \tag{4.13}
 \]
 
@@ -177,14 +177,14 @@ where $h_i$ is the importance of head $i$.
 \subsection{Combined Attention}
 
 \[
-Q = P_q(X_\text{routed}, g_q), \quad K = P_k(X_\text{routed}, g_k), \quad V = P_v(X_\text{routed}, g_v)
+Q = P\_q(X\_\text{routed}, g\_q), \quad K = P\_k(X\_\text{routed}, g\_k), \quad V = P\_v(X\_\text{routed}, g\_v)
 \tag{4.14}
 \]
 
 Reshape to multi-head, apply RoPE, GQA, and:
 
 \[
-\text{scores} = \frac{Q K^\top}{\sqrt{d_h}} \cdot h
+\text{scores} = \frac{Q K^\top}{\sqrt{d\_h}} \cdot h
 \tag{4.15}
 \]
 
@@ -199,7 +199,7 @@ C = A V
 \]
 
 \[
-Y_\text{routed} = P_o(C, g_q)
+Y\_\text{routed} = P\_o(C, g\_q)
 \tag{4.18}
 \]
 
@@ -207,7 +207,7 @@ Y_\text{routed} = P_o(C, g_q)
 residual connection to preserve them:
 
 \[
-Y = \text{scatter}(Y_\text{routed}, \mathcal{S})
+Y = \text{scatter}(Y\_\text{routed}, \mathcal{S})
 \tag{4.19}
 \]
 
@@ -215,28 +215,28 @@ Y = \text{scatter}(Y_\text{routed}, \mathcal{S})
 
 \textbf{Algorithm 1:} VSpec++ forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_embeddings
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, position\_embeddings
 Output: Y $\in$ R^{B$\times$L$\times$d}
 
- 1: if nested_encoder: S $\leftarrow$ arange(L); k $\leftarrow$ L
+ 1: if nested\_encoder: S $\leftarrow$ arange(L); k $\leftarrow$ L
  2: else:              s $\leftarrow$ saliency(X)
  3:                    s[0] $\leftarrow$ 1e4; s[padding] $\leftarrow$ -1e4
  4:                    S $\leftarrow$ Sort(TopK(s, k))
- 5: X_r $\leftarrow$ gather(X, S)
- 6: x  $\leftarrow$ masked_mean(X_r)
+ 5: X\_r $\leftarrow$ gather(X, S)
+ 6: x  $\leftarrow$ masked\_mean(X\_r)
  7: for proj in [q, k, v, o]:
- 8:      _proj, log $\sigma$_proj $\leftarrow$ MLP(x )
- 9:     z_proj $\leftarrow$  _proj + exp(log $\sigma$_proj)   $\epsilon$     training
-10:     g_proj $\leftarrow$ $\sigma$(z_proj)
+ 8:      \_proj, log $\sigma$\_proj $\leftarrow$ MLP(x )
+ 9:     z\_proj $\leftarrow$  \_proj + exp(log $\sigma$\_proj)   $\epsilon$     training
+10:     g\_proj $\leftarrow$ $\sigma$(z\_proj)
 11: h $\leftarrow$ $\sigma$(MLP(x ))                                 head gate
-12: Q $\leftarrow$ Pq(X_r, g_q);  K $\leftarrow$ Pk(X_r, g_k);  V $\leftarrow$ Pv(X_r, g_v)
+12: Q $\leftarrow$ Pq(X\_r, g\_q);  K $\leftarrow$ Pk(X\_r, g\_k);  V $\leftarrow$ Pv(X\_r, g\_v)
 13: Q, K $\leftarrow$ RoPE(Q, K, pos)
-14: if GQA: K, V $\leftarrow$ repeat_kv
-15: scores $\leftarrow$ Q K^T / $\sqrt{}$d_h $\times$ h
+14: if GQA: K, V $\leftarrow$ repeat\_kv
+15: scores $\leftarrow$ Q K^T / $\sqrt{}$d\_h $\times$ h
 16: A $\leftarrow$ softmax(scores + masks)
 17: C $\leftarrow$ A V
-18: Y_r $\leftarrow$ Po(C, g_q)
-19: Y $\leftarrow$ scatter(Y_r, S)
+18: Y\_r $\leftarrow$ Po(C, g\_q)
+19: Y $\leftarrow$ scatter(Y\_r, S)
 20: return Y
 \end{lstlisting}
 
@@ -302,7 +302,7 @@ Frozen:
 \textbf{Variational penalty.} In practice, we add a small KL-like regularization:
 
 \[
-\mathcal{L}_\text{KL} = \beta \sum_i \left(\mu_i^2 + \sigma_i^2 - 1\right)
+\mathcal{L}\_\text{KL} = \beta \sum\_i \left(\mu\_i^2 + \sigma\_i^2 - 1\right)
 \tag{4.20}
 \]
 

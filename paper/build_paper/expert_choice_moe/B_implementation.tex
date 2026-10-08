@@ -4,29 +4,29 @@
 
 \begin{lstlisting}
 class ExpertChoiceMoE(nn.Module):
-    def __init__(self, d_model, n_experts=8, capacity_factor=1.0, noise_std=0.05):
-        super().__init__()
-        self.d_model = d_model
-        self.n_experts = n_experts
-        self.capacity_factor = capacity_factor
+    def \_\_init\_\_(self, d\_model, n\_experts=8, capacity\_factor=1.0, noise\_std=0.05):
+        super().\_\_init\_\_()
+        self.d\_model = d\_model
+        self.n\_experts = n\_experts
+        self.capacity\_factor = capacity\_factor
         
-        self.router_ln = nn.LayerNorm(d_model)
-        self.router = nn.Linear(d_model, n_experts, bias=False)
-        nn.init.uniform_(self.router.weight, -0.01, 0.01)
+        self.router\_ln = nn.LayerNorm(d\_model)
+        self.router = nn.Linear(d\_model, n\_experts, bias=False)
+        nn.init.uniform\_(self.router.weight, -0.01, 0.01)
         
         self.experts = nn.ModuleList([
             nn.Sequential(
-                nn.Linear(d_model, d_model * 2),
+                nn.Linear(d\_model, d\_model * 2),
                 nn.GELU(),
-                nn.Linear(d_model * 2, d_model),
+                nn.Linear(d\_model * 2, d\_model),
             )
-            for _ in range(n_experts)
+            for \_ in range(n\_experts)
         ])
         
         # Zero-init expert outputs
         for expert in self.experts:
-            nn.init.zeros_(expert[2].weight)
-            nn.init.zeros_(expert[2].bias)
+            nn.init.zeros\_(expert[2].weight)
+            nn.init.zeros\_(expert[2].bias)
 \end{lstlisting}
 
 \subsection{B.2 Forward Pass}
@@ -34,70 +34,70 @@ class ExpertChoiceMoE(nn.Module):
 \begin{lstlisting}
 def forward(self, x):
     B, L, D = x.shape
-    x_flat = x.view(-1, D)
-    T = x_flat.size(0)
+    x\_flat = x.view(-1, D)
+    T = x\_flat.size(0)
     
     # Router
-    logits = self.router(self.router_ln(x_flat))
-    if self.training and self.noise_std > 0:
-        logits = logits + torch.randn_like(logits) * self.noise_std
+    logits = self.router(self.router\_ln(x\_flat))
+    if self.training and self.noise\_std \textgreater{} 0:
+        logits = logits + torch.randn\_like(logits) * self.noise\_std
     
     # Softmax over tokens per expert
-    gate_scores = F.softmax(logits.float(), dim=0).to(dtype=logits.dtype)
-    k = max(1, min(T, int(T * self.capacity_factor / self.n_experts)))
+    gate\_scores = F.softmax(logits.float(), dim=0).to(dtype=logits.dtype)
+    k = max(1, min(T, int(T * self.capacity\_factor / self.n\_experts)))
     
-    out_flat = torch.zeros_like(x_flat)
-    for e in range(self.n_experts):
-        scores_e = gate_scores[:, e]
-        topk_vals, topk_indices = torch.topk(scores_e, k, dim=0)
+    out\_flat = torch.zeros\_like(x\_flat)
+    for e in range(self.n\_experts):
+        scores\_e = gate\_scores[:, e]
+        topk\_vals, topk\_indices = torch.topk(scores\_e, k, dim=0)
         
-        selected_x = x_flat[topk_indices]
-        expert_out = self.experts[e](selected_x)
+        selected\_x = x\_flat[topk\_indices]
+        expert\_out = self.experts[e](selected\_x)
         
-        update_val = expert_out * topk_vals.unsqueeze(-1)
-        out_flat.index_add_(0, topk_indices, update_val)
+        update\_val = expert\_out * topk\_vals.unsqueeze(-1)
+        out\_flat.index\_add\_(0, topk\_indices, update\_val)
     
-    return out_flat.view(B, L, D)
+    return out\_flat.view(B, L, D)
 \end{lstlisting}
 
 \subsection{B.3 The Attention Module}
 
 \begin{lstlisting}
 class ExpertChoiceMoEAttention(BaseAttention):
-    def __init__(self, config, n_experts=8, capacity_factor=1.0, moe_init_gate=-4.0, ...):
-        super().__init__(config)
+    def \_\_init\_\_(self, config, n\_experts=8, capacity\_factor=1.0, moe\_init\_gate=-4.0, ...):
+        super().\_\_init\_\_(config)
         
         # LoRA projections
-        self.q_lin = LoRALinear(...)
-        self.k_lin = LoRALinear(...)
-        self.v_lin = LoRALinear(...)
-        self.out_lin = LoRALinear(...)
+        self.q\_lin = LoRALinear(...)
+        self.k\_lin = LoRALinear(...)
+        self.v\_lin = LoRALinear(...)
+        self.out\_lin = LoRALinear(...)
         
         # MoE block
-        self.moe = ExpertChoiceMoE(self.all_head_size, n_experts=n_experts, ...)
+        self.moe = ExpertChoiceMoE(self.all\_head\_size, n\_experts=n\_experts, ...)
         
         # Gate
-        self.moe_gate = nn.Parameter(torch.tensor(float(moe_init_gate)))
+        self.moe\_gate = nn.Parameter(torch.tensor(float(moe\_init\_gate)))
 \end{lstlisting}
 
 \subsection{B.4 Forward with MoE}
 
 \begin{lstlisting}
-def forward(self, hidden_states, ...):
+def forward(self, hidden\_states, ...):
     ...
     # Attention
-    attn_out = torch.matmul(probs.to(v.dtype), v)...  # (B, L, all_head_size)
+    attn\_out = torch.matmul(probs.to(v.dtype), v)...  # (B, L, all\_head\_size)
     
     # MoE
-    moe_out = self.moe(attn_out)
-    moe_weight = torch.sigmoid(self.moe_gate)
-    enriched_attn = attn_out + moe_weight * moe_out
+    moe\_out = self.moe(attn\_out)
+    moe\_weight = torch.sigmoid(self.moe\_gate)
+    enriched\_attn = attn\_out + moe\_weight * moe\_out
     
     # Output projection
-    if self.is_nested_encoder:
-        out = enriched_attn if enriched_attn.shape[-1] == self.dim else self.out_lin(enriched_attn)
+    if self.is\_nested\_encoder:
+        out = enriched\_attn if enriched\_attn.shape[-1] == self.dim else self.out\_lin(enriched\_attn)
     else:
-        out = self.out_lin(enriched_attn)
+        out = self.out\_lin(enriched\_attn)
     
     return out
 \end{lstlisting}
@@ -107,13 +107,13 @@ def forward(self, hidden_states, ...):
 For cases where the input dimension differs from \texttt{d\_model}:
 
 \begin{lstlisting}
-if D == self.d_model:
-    logits = self.router(self.router_ln(x_flat))
+if D == self.d\_model:
+    logits = self.router(self.router\_ln(x\_flat))
 else:
-    normed = F.layer_norm(x_flat, (D,))
-    if not hasattr(self, "_dynamic_router") or self._dynamic_router.in_features != D:
-        self._dynamic_router = nn.Linear(D, self.n_experts, bias=False)...
-    logits = self._dynamic_router(normed)
+    normed = F.layer\_norm(x\_flat, (D,))
+    if not hasattr(self, "\_dynamic\_router") or self.\_dynamic\_router.in\_features != D:
+        self.\_dynamic\_router = nn.Linear(D, self.n\_experts, bias=False)...
+    logits = self.\_dynamic\_router(normed)
 \end{lstlisting}
 
 Similarly for experts via \texttt{\_expert\_in\_proj\_{e}} and \texttt{\_expert\_out\_proj\_{e}}.
@@ -146,7 +146,7 @@ processing is faster but requires careful index handling.
 \subsection{B.7 Expert Count}
 
 For 8 experts and $d = 768$: 18.9M params per layer. For 16 experts: 
-37.8M. OOM likely on 8 GB GPUs with batch > 4.
+37.8M. OOM likely on 8 GB GPUs with batch \textgreater{} 4.
 
 \subsection{B.8 Recommended Settings}
 

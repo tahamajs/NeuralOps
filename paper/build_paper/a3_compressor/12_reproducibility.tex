@@ -4,8 +4,8 @@
 \subsection{Environment}
 
 \begin{lstlisting}
-git clone https://github.com/your-org/SVD_Project
-cd SVD_Project
+git clone https://github.com/your-org/SVD\_Project
+cd SVD\_Project
 python -m venv .venv
 .venv\Scripts\activate  # or source .venv/bin/activate
 pip install -r requirements.txt
@@ -28,7 +28,7 @@ pandas & 2.2.2 \\
 \bottomrule
 \end{tabular}
 \caption{Production software packages and pinned runtime versions for experimental replication.}
-\label{tab:repro_dependencies}
+\label{tab:repro\_dependencies}
 \end{table}
 
 \subsection{Running A3}
@@ -36,12 +36,12 @@ pandas & 2.2.2 \\
 \subsubsection{Full Benchmark}
 
 \begin{lstlisting}
-python run_all_4_a3.py \
+python run\_all\_4\_a3.py \
     --models distilbert,roberta,gpt2 \
     --rank 64 \
-    --recovery_steps 50 \
-    --lora_rank 16 \
-    --batch_size 8
+    --recovery\_steps 50 \
+    --lora\_rank 16 \
+    --batch\_size 8
 \end{lstlisting}
 
 \textbf{Runtime:} ~15 minutes on RTX 4070.
@@ -49,18 +49,18 @@ python run_all_4_a3.py \
 \subsubsection{Individual Model}
 
 \begin{lstlisting}
-python Codes/framework/run_quality_sweep.py \
-    --model models/distilbert_sst2 \
-    --model_family bert \
+python Codes/framework/run\_quality\_sweep.py \
+    --model models/distilbert\_sst2 \
+    --model\_family bert \
     --dataset sst2 \
-    --dataset_dir Codes/framework/data/glue_data/sst2 \
-    --output_dir results/unified_a3/distilbert \
-    --parent_checkpoint results/unified_asvd/distilbert/finetuned_model.pt \
+    --dataset\_dir Codes/framework/data/glue\_data/sst2 \
+    --output\_dir results/unified\_a3/distilbert \
+    --parent\_checkpoint results/unified\_asvd/distilbert/finetuned\_model.pt \
     --modules full,a3 \
-    --batch_size 8 \
-    --recovery_steps 50 \
-    --learning_rate 2e-4 \
-    --lora_rank 16 \
+    --batch\_size 8 \
+    --recovery\_steps 50 \
+    --learning\_rate 2e-4 \
+    --lora\_rank 16 \
     --rank 64 \
     --precision fp16
 \end{lstlisting}
@@ -68,11 +68,11 @@ python Codes/framework/run_quality_sweep.py \
 \subsection{Downloading Checkpoints}
 
 \begin{lstlisting}
-from huggingface_hub import hf_hub_download
+from huggingface\_hub import hf\_hub\_download
 
 for model in ["distilbert", "roberta", "gpt2"]:
-    path = hf_hub_download(
-        repo_id=f"Hooshaai/svd-linear-attention-{model}-a3",
+    path = hf\_hub\_download(
+        repo\_id=f"Hooshaai/svd-linear-attention-{model}-a3",
         filename="weights.pt",
     )
     print(f"Downloaded {model} to {path}")
@@ -83,15 +83,15 @@ for model in ["distilbert", "roberta", "gpt2"]:
 \subsubsection{Table 7.1 (Main Results)}
 
 \begin{lstlisting}
-python run_all_4_a3.py --models distilbert,roberta,gpt2
-# $\to$ results/unified_a3/{model}/summary.csv
+python run\_all\_4\_a3.py --models distilbert,roberta,gpt2
+# $\to$ results/unified\_a3/{model}/summary.csv
 \end{lstlisting}
 
 \subsubsection{Table 7.6 (Rank Ablation)}
 
 \begin{lstlisting}
 for rank in 32 64 128 192 384; do
-    python run_all_4_a3.py --models distilbert,roberta,gpt2 --rank $rank
+    python run\_all\_4\_a3.py --models distilbert,roberta,gpt2 --rank $rank
 done
 \end{lstlisting}
 
@@ -127,7 +127,7 @@ torch.backends.cudnn.benchmark = False
 
 \subsection{Expected Results}
 
-Replication of the production benchmark configuration ($r_{\mathrm{ceiling}} \le 256, \tau=0.40$) is expected to reproduce the primary findings detailed in Table~\ref{tab:main_sst2} and Appendix~\ref{sec:app_full_reproduction} (Table~\ref{tab:app_repro_expected}): DistilBERT attains 90.02\% $\pm$ 0.5\% validation accuracy with +1.25M parameters saved (PASS); RoBERTa achieves 83.26\% $\pm$ 0.5\% with +0.59M parameters saved (PASS); and GPT-2 exhibits causal degradation to 63.19\% $\pm$ 1.0\% with +0.53M parameters saved (FAIL). Observed deviations $>2.0\%$ typically indicate underlying differences in CUDA runtime floating-point environments or divergent tokenization lengths.
+Replication of the production benchmark configuration ($r\_{\mathrm{ceiling}} \le 256, \tau=0.40$) is expected to reproduce the primary findings detailed in Table~\ref{tab:main_sst2} and Appendix~\ref{sec:app_full_reproduction} (Table~\ref{tab:app_repro_expected}): DistilBERT attains 90.02\% $\pm$ 0.5\% validation accuracy with +1.25M parameters saved (PASS); RoBERTa achieves 83.26\% $\pm$ 0.5\% with +0.59M parameters saved (PASS); and GPT-2 exhibits causal degradation to 63.19\% $\pm$ 1.0\% with +0.53M parameters saved (FAIL). Observed deviations $\textgreater{}2.0\%$ typically indicate underlying differences in CUDA runtime floating-point environments or divergent tokenization lengths.
 
 \subsection{Data Availability}
 

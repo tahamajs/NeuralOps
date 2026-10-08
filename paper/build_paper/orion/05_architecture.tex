@@ -23,17 +23,17 @@ Qwen3.5 & No & Yes & Yes \\
 Standard four-architecture copy with additional factorization step:
 
 \begin{lstlisting}
-with torch.no_grad():
-    for proj_key, target_mod in target_map.items():
-        w, b = extracted[proj_key]
+with torch.no\_grad():
+    for proj\_key, target\_mod in target\_map.items():
+        w, b = extracted[proj\_key]
         if w is None:
             continue
         if w.ndim != 2:
             w = w.reshape(w.size(0), -1)
-        if w.shape != (target_mod.out_features, target_mod.in_features) \
-           and (target_mod.out_features, target_mod.in_features) == w.t().shape:
+        if w.shape != (target\_mod.out\_features, target\_mod.in\_features) \
+           and (target\_mod.out\_features, target\_mod.in\_features) == w.t().shape:
             w = w.t()
-        target_mod.decompose_from_weight(w[:target_mod.out_features, :target_mod.in_features], ...)
+        target\_mod.decompose\_from\_weight(w[:target\_mod.out\_features, :target\_mod.in\_features], ...)
 \end{lstlisting}
 
 The \texttt{decompose\_from\_weight} method:
@@ -49,8 +49,8 @@ For Qwen with $H_{kv} < H$, the K and V projections have smaller output
 dimensions. The factorization is done at the appropriate rank.
 
 \begin{lstlisting}
-self.k_proj = FactorisedLinear(hidden_size, self.all_kv_head_size, ...)
-self.v_proj = FactorisedLinear(hidden_size, self.all_kv_head_size, ...)
+self.k\_proj = FactorisedLinear(hidden\_size, self.all\_kv\_head\_size, ...)
+self.v\_proj = FactorisedLinear(hidden\_size, self.all\_kv\_head\_size, ...)
 \end{lstlisting}
 
 \subsection{The `copy\_weights` Failure Path}
@@ -92,10 +92,10 @@ self.v_proj = FactorisedLinear(hidden_size, self.all_kv_head_size, ...)
 Input:  layer  , config
 Output: new attention in  
 
-1: src $\leftarrow$ extract_attention( )
-2: new $\leftarrow$ ORIONAttention(config, source_attn=src)
-3: if new.copy_weights fails: exception $\to$ return None
-4: install new in  .attention.self (or .attn, .self_attn)
+1: src $\leftarrow$ extract\_attention( )
+2: new $\leftarrow$ ORIONAttention(config, source\_attn=src)
+3: if new.copy\_weights fails: exception $\to$ return None
+4: install new in  .attention.self (or .attn, .self\_attn)
 5: return new
 \end{lstlisting}
 
@@ -129,7 +129,7 @@ vectorized.
 \subsubsection{`rff\_proj` is not persistent}
 
 \begin{lstlisting}
-self.register_buffer("rff_proj", torch.randn(...), persistent=False)
+self.register\_buffer("rff\_proj", torch.randn(...), persistent=False)
 \end{lstlisting}
 
 With \texttt{persistent=False}, \texttt{rff\_proj} is not saved in \texttt{state\_dict()}. On 
@@ -139,9 +139,9 @@ projection must be preserved.
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("orion")
-@ATTENTION_REGISTRY.register("orion_attention")
-@ATTENTION_REGISTRY.register("orion_module")
+@ATTENTION\_REGISTRY.register("orion")
+@ATTENTION\_REGISTRY.register("orion\_attention")
+@ATTENTION\_REGISTRY.register("orion\_module")
 class ORIONAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -163,6 +163,6 @@ The \texttt{FactorisedLinear} supports LoRA adapters. The recovery pipeline:
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.png}
 \caption{High-level architectural diagram of orion.}
-\label{fig:arch_orion}
+\label{fig:arch\_orion}
 \end{figure}
 

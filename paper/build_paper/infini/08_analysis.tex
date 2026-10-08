@@ -116,7 +116,7 @@ The \textbf{+48.5\%\%} parameter increase comes from:
 \textbf{Component} & \textbf{Contribution} \\
 \midrule
 Memory & 128 KB\% \\
-Gate & <0.001\% \\
+Gate & \textless{}0.001\% \\
 LoRA & 0.85\% \\
 \bottomrule
 \end{tabular}
@@ -144,9 +144,9 @@ complementary:
 \textbf{Failure mode} & \textbf{Symptom} & \textbf{Root cause} \\
 \midrule
 Collapse & Acc $\approx$ 50.92\% & Weight transfer failure \\
-Overfitting & Train >> val acc & Memory too large \\
+Overfitting & Train \textgreater{}\textgreater{} val acc & Memory too large \\
 NaN & Loss = NaN & Memory scale too large \\
-Slow & >5$\times$ latency & Extra matmuls \\
+Slow & \textgreater{}5$\times$ latency & Extra matmuls \\
 \bottomrule
 \end{tabular}
 \end{table}

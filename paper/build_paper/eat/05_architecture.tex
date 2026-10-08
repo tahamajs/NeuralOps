@@ -50,16 +50,16 @@ For nested encoders, \texttt{layer.attention.self} is targeted.
 
 \begin{lstlisting}
 # Flat attention -- all four projections available
-extracted["q"] = (src.q_lin.weight.data, src.q_lin.bias.data)
-extracted["k"] = (src.k_lin.weight.data, src.k_lin.bias.data)
-extracted["v"] = (src.v_lin.weight.data, src.v_lin.bias.data)
-extracted["o"] = (src.out_lin.weight.data, src.out_lin.bias.data)
+extracted["q"] = (src.q\_lin.weight.data, src.q\_lin.bias.data)
+extracted["k"] = (src.k\_lin.weight.data, src.k\_lin.bias.data)
+extracted["v"] = (src.v\_lin.weight.data, src.v\_lin.bias.data)
+extracted["o"] = (src.out\_lin.weight.data, src.out\_lin.bias.data)
 \end{lstlisting}
 
 \subsubsection{RoBERTa}
 
 \begin{lstlisting}
-# Nested -- extract from src.self, skip out_proj
+# Nested -- extract from src.self, skip out\_proj
 s = src.self
 extracted["q"] = (s.query.weight.data, s.query.bias.data)
 extracted["k"] = (s.key.weight.data, s.key.bias.data)
@@ -74,23 +74,23 @@ without applying \texttt{out\_lin}. The outer \texttt{attention.output.dense} ap
 
 \begin{lstlisting}
 # Fused Conv1D -- transpose and split
-w = src.c_attn.weight.data.t()  # (3d, d)
-q_w, k_w, v_w = w.chunk(3, dim=0)
-extracted["q"] = (q_w, src.c_attn.bias.data[:d])
-extracted["k"] = (k_w, src.c_attn.bias.data[d:2*d])
-extracted["v"] = (v_w, src.c_attn.bias.data[2*d:])
-extracted["o"] = (src.c_proj.weight.data.t(), src.c_proj.bias.data)
+w = src.c\_attn.weight.data.t()  # (3d, d)
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+extracted["q"] = (q\_w, src.c\_attn.bias.data[:d])
+extracted["k"] = (k\_w, src.c\_attn.bias.data[d:2*d])
+extracted["v"] = (v\_w, src.c\_attn.bias.data[2*d:])
+extracted["o"] = (src.c\_proj.weight.data.t(), src.c\_proj.bias.data)
 \end{lstlisting}
 
 \subsubsection{Qwen (GQA + RoPE)}
 
 \begin{lstlisting}
 # Direct copy from named projections
-extracted["q"] = (src.q_proj.weight.data, src.q_proj.bias.data)
-extracted["k"] = (src.k_proj.weight.data, src.k_proj.bias.data)
-extracted["v"] = (src.v_proj.weight.data, src.v_proj.bias.data)
-extracted["o"] = (src.o_proj.weight.data, src.o_proj.bias.data)
-# RoPE preserved via rotary_emb copy
+extracted["q"] = (src.q\_proj.weight.data, src.q\_proj.bias.data)
+extracted["k"] = (src.k\_proj.weight.data, src.k\_proj.bias.data)
+extracted["v"] = (src.v\_proj.weight.data, src.v\_proj.bias.data)
+extracted["o"] = (src.o\_proj.weight.data, src.o\_proj.bias.data)
+# RoPE preserved via rotary\_emb copy
 \end{lstlisting}
 
 \subsection{The `is\_nested\_encoder` Flag}
@@ -112,28 +112,28 @@ The detection logic:
 \begin{lstlisting}
 if (hasattr(src, "self") and hasattr(src.self, "query")
     and hasattr(src, "output") and hasattr(src.output, "dense")):
-    is_nested = True
-elif (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower()
-      and not has_out_lin):
-    is_nested = True
+    is\_nested = True
+elif (cls\_name.endswith("SelfAttention") and "distil" not in cls\_name.lower()
+      and not has\_out\_lin):
+    is\_nested = True
 \end{lstlisting}
 
 \subsection{Injection}
 
 \begin{lstlisting}
-def inject_eat(layer, model_config=None, old_attn=None, **kwargs):
-    src = old_attn or find_attention(layer)
-    new_attn = EATBlock(config=model_config, pretrained_attn=src, **kwargs)
-    replace_attention(layer, new_attn)
-    return new_attn
+def inject\_eat(layer, model\_config=None, old\_attn=None, **kwargs):
+    src = old\_attn or find\_attention(layer)
+    new\_attn = EATBlock(config=model\_config, pretrained\_attn=src, **kwargs)
+    replace\_attention(layer, new\_attn)
+    return new\_attn
 \end{lstlisting}
 
 The replacement targets the same attribute path as the source:
 
 \begin{lstlisting}
-for attr in ("attention", "self_attn", "attn", "self"):
+for attr in ("attention", "self\_attn", "attn", "self"):
     if hasattr(layer, attr):
-        setattr(layer, attr, new_attn)
+        setattr(layer, attr, new\_attn)
         break
 \end{lstlisting}
 
@@ -188,20 +188,20 @@ are dominated by noise.
 
 \begin{lstlisting}
 class EATBlock(BaseAttention):
-    def __init__(self, config, rank=64, ..., prune_layer=None):
-        super().__init__(config, rank)
-        self.q_lin = LoRALinear(d, H*d_h, lora_rank=16)
-        self.k_lin = LoRALinear(d, H_kv*d_h, lora_rank=16)
-        self.v_lin = LoRALinear(d, H_kv*d_h, lora_rank=16)
-        self.out_lin = LoRALinear(H*d_h, d, lora_rank=16)
-        self.prune_layer = prune_layer
-        if pretrained_attn is not None:
-            self.copy_weights(pretrained_attn)
+    def \_\_init\_\_(self, config, rank=64, ..., prune\_layer=None):
+        super().\_\_init\_\_(config, rank)
+        self.q\_lin = LoRALinear(d, H*d\_h, lora\_rank=16)
+        self.k\_lin = LoRALinear(d, H\_kv*d\_h, lora\_rank=16)
+        self.v\_lin = LoRALinear(d, H\_kv*d\_h, lora\_rank=16)
+        self.out\_lin = LoRALinear(H*d\_h, d, lora\_rank=16)
+        self.prune\_layer = prune\_layer
+        if pretrained\_attn is not None:
+            self.copy\_weights(pretrained\_attn)
     
-    def forward(self, X, attention_mask=None, ...):
-        Q = self.q_lin(X).view(...)
-        K = self.k_lin(X).view(...)
-        V = self.v_lin(X).view(...)
+    def forward(self, X, attention\_mask=None, ...):
+        Q = self.q\_lin(X).view(...)
+        K = self.k\_lin(X).view(...)
+        V = self.v\_lin(X).view(...)
         # attention, output projection, optional pruning
         return Y
 \end{lstlisting}
@@ -209,8 +209,8 @@ class EATBlock(BaseAttention):
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("eat")
-@ATTENTION_REGISTRY.register("eat_attention")
+@ATTENTION\_REGISTRY.register("eat")
+@ATTENTION\_REGISTRY.register("eat\_attention")
 class EATBlock(BaseAttention):
     ...
 \end{lstlisting}
@@ -230,11 +230,11 @@ For decoder models, EAT maintains causality because:
 \textbf{Verification.}
 
 \begin{lstlisting}
-X = torch.randn(1, L, d, requires_grad=True)
+X = torch.randn(1, L, d, requires\_grad=True)
 Y = model(X)
 loss = Y[0, i].sum()
 loss.backward()
-assert X.grad[0, i+1:].abs().max() < 1e-6
+assert X.grad[0, i+1:].abs().max() \textless{} 1e-6
 \end{lstlisting}
 
 32
@@ -247,6 +247,6 @@ assert X.grad[0, i+1:].abs().max() < 1e-6
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of eat.}
-\label{fig:arch_eat}
+\label{fig:arch\_eat}
 \end{figure}
 

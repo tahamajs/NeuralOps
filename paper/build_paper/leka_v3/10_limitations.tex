@@ -19,8 +19,8 @@ Only SST-2 evaluated. Behavior on:
 \textbf{Constraint} & \textbf{Tested} \\
 \midrule
 $\le$124M params & Yes \\
->1B params & No \\
->24 layers & Not fully \\
+\textgreater{}1B params & No \\
+\textgreater{}24 layers & Not fully \\
 MoE & No \\
 Vision & No \\
 \bottomrule
@@ -39,7 +39,7 @@ LEKAv3 adds ~7.5\% parameters per layer. This is a real cost:
 \end{itemize}
 \subsection{Inference Overhead}
 
-At short $L$ (< 64), landmark scoring may dominate:
+At short $L$ (\textless{} 64), landmark scoring may dominate:
 \begin{itemize}
 \item Scorer cost: $\mathcal{O}(L d_\text{feat} \cdot 64)$
 \item For small $L$, this is comparable to attention itself

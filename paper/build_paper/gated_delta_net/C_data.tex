@@ -136,9 +136,9 @@ Step  Loss
   "distilbert": {
     "accuracy": 86.4,
     "status": "PASS",
-    "per_step_s": 14.2 ms,
-    "peak_vram_mb": 380 MB,
-    "params_after": 66.4M
+    "per\_step\_s": 14.2 ms,
+    "peak\_vram\_mb": 380 MB,
+    "params\_after": 66.4M
   },
   "roberta": {
     "status": "PASS",
@@ -155,17 +155,17 @@ Step  Loss
 
 \begin{lstlisting}
 # DistilBERT only
-python run_all_4_gated_delta_net.py --models distilbert
+python run\_all\_4\_gated\_delta\_net.py --models distilbert
 
 # With smaller batch
-python run_all_4_gated_delta_net.py \
+python run\_all\_4\_gated\_delta\_net.py \
     --models distilbert \
-    --batch_size 4 \
-    --recovery_steps 20
+    --batch\_size 4 \
+    --recovery\_steps 20
 
 # With chunk size sweep
 for cs in 4 8 16 32; do
-    python run_all_4_gated_delta_net.py --chunk_size $cs --output_suffix cs$cs
+    python run\_all\_4\_gated\_delta\_net.py --chunk\_size $cs --output_suffix cs$cs
 done
 \end{lstlisting}
 

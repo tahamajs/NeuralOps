@@ -6,12 +6,12 @@
 SALT replaces each linear projection $W$ with a three-component parameterization:
 
 \begin{lstlisting}
-    Weight W $\in$ R^{d_out $\times$ d_in}
+    Weight W $\in$ R^{d\_out $\times$ d\_in}
             |
              
     +-------------------------+
     |  Truncated SVD          |
-    |  W $\approx$ U_r $\Sigma$_r V_r^T      |
+    |  W $\approx$ U\_r $\Sigma$\_r V\_r^T      |
     +-----------+-------------+
                 |
     +-----------+------------+
@@ -26,8 +26,8 @@ SALT replaces each linear projection $W$ with a three-component parameterization
                           
     +--------------------------------------+
     |  Forward:                             |
-    |  W_eff = U diag(S   $\gamma$) V^T + A B     |
-    |  y = W_eff x + b                      |
+    |  W\_eff = U diag(S   $\gamma$) V^T + A B     |
+    |  y = W\_eff x + b                      |
     +--------------------------------------+
 \end{lstlisting}
 
@@ -37,15 +37,15 @@ Given a pretrained weight $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$,
 compute its SVD:
 
 \[
-W = U \Sigma V^\top, \quad U \in \mathbb{R}^{d_\text{out} \times d_\text{out}}, 
-\Sigma \in \mathbb{R}^{d_\text{out}}, V \in \mathbb{R}^{d_\text{in} \times d_\text{in}}
+W = U \Sigma V^\top, \quad U \in \mathbb{R}^{d\_\text{out} \times d\_\text{out}}, 
+\Sigma \in \mathbb{R}^{d\_\text{out}}, V \in \mathbb{R}^{d\_\text{in} \times d\_\text{in}}
 \tag{4.1}
 \]
 
 Keep the top-$r$:
 
 \[
-U_r = U_{:, :r}, \quad S_r = \Sigma_{:r}, \quad V_r = V_{:r, :}^\top
+U\_r = U\_{:, :r}, \quad S\_r = \Sigma\_{:r}, \quad V\_r = V\_{:r, :}^\top
 \tag{4.2}
 \]
 
@@ -57,7 +57,7 @@ model's dtype (FP16 or FP32).
 We add a trainable scale $\gamma \in \mathbb{R}^r$, initialized to 1:
 
 \[
-\Sigma_\gamma = S_r \odot \gamma
+\Sigma\_\gamma = S\_r \odot \gamma
 \tag{4.3}
 \]
 
@@ -76,8 +76,8 @@ This allows the model to amplify or suppress retained singular directions.
 We add a trainable low-rank residual $AB$:
 
 \[
-A \in \mathbb{R}^{d_\text{out} \times r}, \quad 
-B \in \mathbb{R}^{r \times d_\text{in}}
+A \in \mathbb{R}^{d\_\text{out} \times r}, \quad 
+B \in \mathbb{R}^{r \times d\_\text{in}}
 \tag{4.4}
 \]
 
@@ -98,7 +98,7 @@ zero avoids disrupting the pretrained state.
 The effective weight is:
 
 \[
-W_\text{SALT} = U_r \cdot \text{diag}(S_r \odot \gamma) \cdot V_r + A B
+W\_\text{SALT} = U\_r \cdot \text{diag}(S\_r \odot \gamma) \cdot V\_r + A B
 \tag{4.5}
 \]
 
@@ -111,10 +111,10 @@ rank-$r$ truncated SVD of $W_\text{pretrained}$.
 
 \begin{lstlisting}
 def forward(self, x):
-    adapted_S = self.S * self.gamma
-    W_svd = (self.U * adapted_S.unsqueeze(0)) @ self.Vt  # reconstruct
-    W_lora = self.A @ self.B                             # reconstruct
-    W = (W_svd + W_lora).to(dtype=x.dtype)
+    adapted\_S = self.S * self.gamma
+    W\_svd = (self.U * adapted\_S.unsqueeze(0)) @ self.Vt  # reconstruct
+    W\_lora = self.A @ self.B                             # reconstruct
+    W = (W\_svd + W\_lora).to(dtype=x.dtype)
     return F.linear(x, W, self.bias)                     # full matmul
 \end{lstlisting}
 
@@ -132,10 +132,10 @@ def forward(self, x):
     # 2. Scale by S * gamma
     z = z * (self.S * self.gamma)
     # 3. Project back
-    y_svd = F.linear(z, self.U)                     # (B, L, d_out)
+    y\_svd = F.linear(z, self.U)                     # (B, L, d\_out)
     # 4. LoRA branch
-    y_lora = F.linear(F.linear(x, self.B), self.A)
-    return y_svd + y_lora + self.bias
+    y\_lora = F.linear(F.linear(x, self.B), self.A)
+    return y\_svd + y\_lora + self.bias
 \end{lstlisting}
 
 \textbf{Cost.} $\mathcal{O}(r(d_\text{out} + d_\text{in}))$ -- same as low-rank W.
@@ -186,30 +186,30 @@ top-$r$.
 
 \textbf{Algorithm 1:} SALT initialization
 \begin{lstlisting}
-Input:  W $\in$ R^{d_out $\times$ d_in}, bias b, rank r
+Input:  W $\in$ R^{d\_out $\times$ d\_in}, bias b, rank r
 Output: SALTLinear module
 
-1: U, S, Vt $\leftarrow$ svd(W, full_matrices=False)
-2: U_r $\leftarrow$ U[:, :r];  S_r $\leftarrow$ S[:r];  Vt_r $\leftarrow$ Vt[:r, :]
-3: register_buffer("U", U_r)
-4: register_buffer("S", S_r)
-5: register_buffer("Vt", Vt_r)
+1: U, S, Vt $\leftarrow$ svd(W, full\_matrices=False)
+2: U\_r $\leftarrow$ U[:, :r];  S\_r $\leftarrow$ S[:r];  Vt\_r $\leftarrow$ Vt[:r, :]
+3: register\_buffer("U", U\_r)
+4: register\_buffer("S", S\_r)
+5: register\_buffer("Vt", Vt\_r)
 6: $\gamma$ $\leftarrow$ ones(r)
-7: A $\leftarrow$ randn(d_out, r) * 0.01
-8: B $\leftarrow$ zeros(r, d_in)
+7: A $\leftarrow$ randn(d\_out, r) * 0.01
+8: B $\leftarrow$ zeros(r, d\_in)
 9: bias $\leftarrow$ b
-10: return SALTLinear(U_r, S_r, Vt_r, $\gamma$, A, B, bias)
+10: return SALTLinear(U\_r, S\_r, Vt\_r, $\gamma$, A, B, bias)
 \end{lstlisting}
 
 \textbf{Algorithm 2:} SALT forward (naive)
 \begin{lstlisting}
-Input:  x $\in$ R^{B $\times$ L $\times$ d_in}
-Output: y $\in$ R^{B $\times$ L $\times$ d_out}
+Input:  x $\in$ R^{B $\times$ L $\times$ d\_in}
+Output: y $\in$ R^{B $\times$ L $\times$ d\_out}
 
-1: S_$\gamma$ $\leftarrow$ S * $\gamma$
-2: W_svd $\leftarrow$ (U * S_$\gamma$) @ Vt            (d_out, d_in)
-3: W_lora $\leftarrow$ A @ B                     (d_out, d_in)
-4: W $\leftarrow$ W_svd + W_lora
+1: S\_$\gamma$ $\leftarrow$ S * $\gamma$
+2: W\_svd $\leftarrow$ (U * S\_$\gamma$) @ Vt            (d\_out, d\_in)
+3: W\_lora $\leftarrow$ A @ B                     (d\_out, d\_in)
+4: W $\leftarrow$ W\_svd + W\_lora
 5: y $\leftarrow$ x @ W^T + bias
 6: return y
 \end{lstlisting}

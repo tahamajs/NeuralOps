@@ -164,8 +164,8 @@ Punctuation & 0.85 \\
 {
   "ptp": {
     "distilbert": {
-      "keep_ratio": 0.5,
-      "accuracy_pct": 86.4,
+      "keep\_ratio": 0.5,
+      "accuracy\_pct": 86.4,
       "speedup": 1.42x
     },
     "roberta": {...},
@@ -178,11 +178,11 @@ Punctuation & 0.85 \\
 
 \begin{lstlisting}
 # Main
-python run_all_4_ptp.py --keep_ratio 0.8
+python run\_all\_4\_ptp.py --keep\_ratio 0.8
 
 # Keep ratio sweep
 for rho in 0.5 0.7 0.8 0.9 0.95; do
-    python run_all_4_ptp.py --keep_ratio $rho
+    python run\_all\_4\_ptp.py --keep\_ratio $rho
 done
 \end{lstlisting}
 

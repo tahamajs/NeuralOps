@@ -1,7 +1,7 @@
 \section{Empirical Results and Benchmark Evaluations}
 
 \subsection{Downstream Task Performance}
-Table~\ref{tab:results_acc_svdlineardecay} details empirical evaluation metrics across target backbones.
+Table~\ref{tab:results\_acc\_svdlineardecay} details empirical evaluation metrics across target backbones.
 
 \begin{table*}[t]
 \centering
@@ -11,19 +11,19 @@ Table~\ref{tab:results_acc_svdlineardecay} details empirical evaluation metrics 
 \textbf{Model} & \textbf{Module} & \textbf{Acc} & \textbf{$\Delta$} & \textbf{Status} & \textbf{F1} & \textbf{Comp.} & \textbf{Ratio} & \textbf{VRAM} & \textbf{Inference (s)} & \textbf{Compression (s)} \\
 \midrule
 DistilBERT & full & 90.71\% & -- & -- & 0.9099 & 0 & 1.00$\times$ & 183 MB & 1.90 & -- \\
-DistilBERT & \textbf{Svd Linear Decay} & \textbf{0.00\%} & -90.94\% & SKIP_BERT_ARCHITECTURAL & 0.9125 & 0 & \textbf{1.00$\times$} & 389.5 MB & 0.4 & -- \\
+DistilBERT & \textbf{Svd Linear Decay} & \textbf{0.00\%} & -90.94\% & SKIP\_BERT\_ARCHITECTURAL & 0.9125 & 0 & \textbf{1.00$\times$} & 389.5 MB & 0.4 & -- \\
 RoBERTa & full & 94.38\% & -- & -- & 0.9445 & 0 & 1.00$\times$ & 293 MB & 4.10 & -- \\
-RoBERTa & \textbf{Svd Linear Decay} & \textbf{0.00\%} & -75.46\% & SKIP_ROBERTA_ARCHITECTURAL & 0.7277 & 0 & \textbf{1.00$\times$} & 712.3 MB & 0.7 & -- \\
+RoBERTa & \textbf{Svd Linear Decay} & \textbf{0.00\%} & -75.46\% & SKIP\_ROBERTA\_ARCHITECTURAL & 0.7277 & 0 & \textbf{1.00$\times$} & 712.3 MB & 0.7 & -- \\
 GPT-2 & full & 89.33\% & -- & -- & 0.8942 & 0 & 1.00$\times$ & 382 MB & 4.20 & -- \\
-GPT-2 & \textbf{Svd Linear Decay} & \textbf{0.00\%} & -57.91\% & SKIP_GPT_ARCHITECTURAL & 0.3010 & 0 & \textbf{1.00$\times$} & 793.2 MB & 0.7 & -- \\
+GPT-2 & \textbf{Svd Linear Decay} & \textbf{0.00\%} & -57.91\% & SKIP\_GPT\_ARCHITECTURAL & 0.3010 & 0 & \textbf{1.00$\times$} & 793.2 MB & 0.7 & -- \\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main_sst2}
+\label{tab:main\_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results_params_svdlineardecay} documents parameter compression factors and adapter overhead.
+Table~\ref{tab:results\_params\_svdlineardecay} documents parameter compression factors and adapter overhead.
 
 \begin{table*}[t]
 \centering
@@ -41,11 +41,11 @@ Table~\ref{tab:results_params_svdlineardecay} documents parameter compression fa
 \bottomrule
 \end{tabular}
 \caption{Parameter scaling and recovery parameter counts for \texttt{svdlineardecay}.}
-\label{tab:results_params_svdlineardecay}
+\label{tab:results\_params\_svdlineardecay}
 \end{table*}
 
 \subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results_vram_svdlineardecay} presents memory profiling and execution throughput.
+Table~\ref{tab:results\_vram\_svdlineardecay} presents memory profiling and execution throughput.
 
 \begin{table*}[t]
 \centering
@@ -63,13 +63,13 @@ Table~\ref{tab:results_vram_svdlineardecay} presents memory profiling and execut
 \bottomrule
 \end{tabular}
 \caption{Inference throughput and VRAM footprint for \texttt{svdlineardecay}.}
-\label{tab:results_vram_svdlineardecay}
+\label{tab:results\_vram\_svdlineardecay}
 \end{table*}
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/svd_linear_decay_dissection_profile.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{svd_linear_decay}.}
-\label{fig:results_svd_linear_decay}
+\includegraphics[width=0.85\linewidth]{figures/svd\_linear\_decay\_dissection\_profile.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{svd\_linear\_decay}.}
+\label{fig:results\_svd\_linear\_decay}
 \end{figure}

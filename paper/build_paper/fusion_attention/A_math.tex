@@ -8,7 +8,7 @@ output equals the pretrained attention output.
 \textbf{Proof.} The short path computes standard softmax attention:
 
 \[
-\text{Out} = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Out} = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \tag{A.1}
 \]
 
@@ -24,7 +24,7 @@ blocks, compute scores between $B$ queries and $K \cdot B$ keys, softmax,
 and context. Total cost:
 
 \[
-T \times B \times K B \times d_h = L \times K B \times d_h = \mathcal{O}(K L B d_h)
+T \times B \times K B \times d\_h = L \times K B \times d\_h = \mathcal{O}(K L B d\_h)
 \tag{A.2}
 \]
 
@@ -35,7 +35,7 @@ $\square$
 The gate score for block pair $(i, j)$:
 
 \[
-g(i, j) = \frac{\phi(\bar{Q}_i)^\top \phi(\bar{K}_j)}{\tau}
+g(i, j) = \frac{\phi(\bar{Q}\_i)^\top \phi(\bar{K}\_j)}{\tau}
 \tag{A.3}
 \]
 
@@ -47,7 +47,7 @@ projections.
 For query block $i$, we select:
 
 \[
-\text{TopK}_i = \arg\text{top-}K_j (g(i, j))
+\text{TopK}\_i = \arg\text{top-}K\_j (g(i, j))
 \tag{A.4}
 \]
 
@@ -68,7 +68,7 @@ For a query block $i$ with selected key block $j$:
 Causality is enforced by:
 
 \[
-\text{mask}(q, k) = -\infty \text{ if } q < k
+\text{mask}(q, k) = -\infty \text{ if } q \textless{} k
 \tag{A.5}
 \]
 

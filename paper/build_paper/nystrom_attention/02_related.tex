@@ -27,7 +27,7 @@ The Nystr m method (Nystr m, 1930) approximates a kernel matrix $K \in \mathbb{R
 using a subset of $m$ columns:
 
 \[
-K \approx K_{:, m} K_{m, m}^{-1} K_{m, :}
+K \approx K\_{:, m} K\_{m, m}^{-1} K\_{m, :}
 \tag{2.1}
 \]
 
@@ -53,7 +53,7 @@ to select landmarks. This is efficient and deterministic.
 \textbf{Iterative Newton-Schulz.} For a matrix $A$ with $\|A\|_2 < 1$:
 
 \[
-V_{k+1} = V_k (2I - A V_k)
+V\_{k+1} = V\_k (2I - A V\_k)
 \tag{2.2}
 \]
 
@@ -61,7 +61,7 @@ converges to $A^{-1}$. Preconditioning with $\|A\|_1 \|A\|_\infty$
 extends to general matrices:
 
 \[
-\alpha = \frac{1}{\|A\|_1 \|A\|_\infty + \epsilon}
+\alpha = \frac{1}{\|A\|\_1 \|A\|\_\infty + \epsilon}
 \tag{2.3}
 \]
 

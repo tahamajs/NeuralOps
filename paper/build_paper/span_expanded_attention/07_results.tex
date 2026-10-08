@@ -1,7 +1,7 @@
 \section{Empirical Results and Benchmark Evaluations}
 
 \subsection{Downstream Task Performance}
-Table~\ref{tab:results_acc_spanexpandedattention} details empirical evaluation metrics across target backbones.
+Table~\ref{tab:results\_acc\_spanexpandedattention} details empirical evaluation metrics across target backbones.
 
 \begin{table*}[t]
 \centering
@@ -19,11 +19,11 @@ GPT-2 & \textbf{Span Expanded} & \textbf{59.98\%} & -0.80\% & PASS & 0.6947 & 0 
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main_sst2}
+\label{tab:main\_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results_params_spanexpandedattention} documents parameter compression factors and adapter overhead.
+Table~\ref{tab:results\_params\_spanexpandedattention} documents parameter compression factors and adapter overhead.
 
 \begin{table*}[t]
 \centering
@@ -41,11 +41,11 @@ Table~\ref{tab:results_params_spanexpandedattention} documents parameter compres
 \bottomrule
 \end{tabular}
 \caption{Parameter scaling and recovery parameter counts for \texttt{spanexpandedattention}.}
-\label{tab:results_params_spanexpandedattention}
+\label{tab:results\_params\_spanexpandedattention}
 \end{table*}
 
 \subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results_vram_spanexpandedattention} presents memory profiling and execution throughput.
+Table~\ref{tab:results\_vram\_spanexpandedattention} presents memory profiling and execution throughput.
 
 \begin{table*}[t]
 \centering
@@ -63,13 +63,13 @@ Table~\ref{tab:results_vram_spanexpandedattention} presents memory profiling and
 \bottomrule
 \end{tabular}
 \caption{Inference throughput and VRAM footprint for \texttt{spanexpandedattention}.}
-\label{tab:results_vram_spanexpandedattention}
+\label{tab:results\_vram\_spanexpandedattention}
 \end{table*}
 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/span_expanded_gpt2_radar_metrics.png}
-\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{span_expanded_attention}.}
-\label{fig:results_span_expanded_attention}
+\includegraphics[width=0.85\linewidth]{figures/span\_expanded\_gpt2\_radar\_metrics.png}
+\caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{span\_expanded\_attention}.}
+\label{fig:results\_span\_expanded\_attention}
 \end{figure}

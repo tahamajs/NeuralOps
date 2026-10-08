@@ -4,115 +4,115 @@
 
 \begin{lstlisting}
 class HymbaTransXBlock(BaseAttention):
-    def __init__(self, config, rank=64, ...):
-        super().__init__(config, rank)
+    def \_\_init\_\_(self, config, rank=64, ...):
+        super().\_\_init\_\_(config, rank)
         
         self.dim = ...
-        self.num_heads = ...
-        self.head_dim = ...
+        self.num\_heads = ...
+        self.head\_dim = ...
         
         # Differential attention projections
-        self.W_q1 = LoRALinear(self.dim, self.all_head_size, ...)
-        self.W_k1 = LoRALinear(self.dim, self.all_kv_head_size, ...)
-        self.W_q2 = LoRALinear(self.dim, self.all_head_size, ...)
-        self.W_k2 = LoRALinear(self.dim, self.all_kv_head_size, ...)
-        self.W_v = LoRALinear(self.dim, self.all_kv_head_size, ...)
-        self.out_proj = LoRALinear(self.all_head_size, self.dim, ...)
+        self.W\_q1 = LoRALinear(self.dim, self.all\_head\_size, ...)
+        self.W\_k1 = LoRALinear(self.dim, self.all\_kv\_head\_size, ...)
+        self.W\_q2 = LoRALinear(self.dim, self.all\_head\_size, ...)
+        self.W\_k2 = LoRALinear(self.dim, self.all\_kv\_head\_size, ...)
+        self.W\_v = LoRALinear(self.dim, self.all\_kv\_head\_size, ...)
+        self.out\_proj = LoRALinear(self.all\_head\_size, self.dim, ...)
         
         # SSM
-        self.mamba = SimpleSSM(d_model=self.dim, ...)
+        self.mamba = SimpleSSM(d\_model=self.dim, ...)
         self.alpha = nn.Parameter(torch.tensor(-1.0))
         
         # RoPE fallback
-        self.rope = HeadRoPE(self.head_dim)
+        self.rope = HeadRoPE(self.head\_dim)
 \end{lstlisting}
 
 \subsection{B.2 Forward Pass}
 
 \begin{lstlisting}
-def forward(self, x, attention_mask=None, position_embeddings=None, **kwargs):
+def forward(self, x, attention\_mask=None, position\_embeddings=None, **kwargs):
     B, L, D = x.shape
     
     # 1. Projections
-    q1 = self.W_q1(x).view(B, L, H, Dh).transpose(1, 2)
-    k1 = self.W_k1(x).view(B, L, Hkv, Dh).transpose(1, 2)
-    q2 = self.W_q2(x).view(B, L, H, Dh).transpose(1, 2)
-    k2 = self.W_k2(x).view(B, L, Hkv, Dh).transpose(1, 2)
-    v = self.W_v(x).view(B, L, Hkv, Dh).transpose(1, 2)
+    q1 = self.W\_q1(x).view(B, L, H, Dh).transpose(1, 2)
+    k1 = self.W\_k1(x).view(B, L, Hkv, Dh).transpose(1, 2)
+    q2 = self.W\_q2(x).view(B, L, H, Dh).transpose(1, 2)
+    k2 = self.W\_k2(x).view(B, L, Hkv, Dh).transpose(1, 2)
+    v = self.W\_v(x).view(B, L, Hkv, Dh).transpose(1, 2)
     
     # 2. RoPE
-    if position_embeddings is not None:
-        cos, sin = position_embeddings
-        q1, k1 = apply_rotary_pos_emb(q1, k1, cos, sin)
-        q2, k2 = apply_rotary_pos_emb(q2, k2, cos, sin)
+    if position\_embeddings is not None:
+        cos, sin = position\_embeddings
+        q1, k1 = apply\_rotary\_pos\_emb(q1, k1, cos, sin)
+        q2, k2 = apply\_rotary\_pos\_emb(q2, k2, cos, sin)
     else:
         q1 = self.rope(q1); k1 = self.rope(k1)
         q2 = self.rope(q2); k2 = self.rope(k2)
     
     # 3. GQA
-    if self.kv_repeat > 1:
-        k1 = repeat_kv(k1, self.kv_repeat)
-        k2 = repeat_kv(k2, self.kv_repeat)
-        v = repeat_kv(v, self.kv_repeat)
+    if self.kv\_repeat \textgreater{} 1:
+        k1 = repeat\_kv(k1, self.kv\_repeat)
+        k2 = repeat\_kv(k2, self.kv\_repeat)
+        v = repeat\_kv(v, self.kv\_repeat)
     
     # 4. Attention
-    scale = 1.0 / math.sqrt(self.head_dim)
+    scale = 1.0 / math.sqrt(self.head\_dim)
     scores1 = torch.matmul(q1.float(), k1.float().transpose(-2, -1)) * scale
     scores2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1)) * scale
     
     # 5. Causal mask
-    if self.is_decoder:
-        causal_mask = torch.tril(torch.ones(L, L, dtype=torch.bool))
-        scores1 = scores1.masked_fill(~causal_mask, -1e4)
-        scores2 = scores2.masked_fill(~causal_mask, -1e4)
+    if self.is\_decoder:
+        causal\_mask = torch.tril(torch.ones(L, L, dtype=torch.bool))
+        scores1 = scores1.masked\_fill(~causal\_mask, -1e4)
+        scores2 = scores2.masked\_fill(~causal\_mask, -1e4)
     
     # 6. Padding mask
-    if attention_mask is not None:
-        valid = get_token_valid_mask(attention_mask, B, L, x.device)
-        scores1 = scores1.masked_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
-        scores2 = scores2.masked_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
+    if attention\_mask is not None:
+        valid = get\_token\_valid\_mask(attention\_mask, B, L, x.device)
+        scores1 = scores1.masked\_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
+        scores2 = scores2.masked\_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
     
     # 7. Differential
     attn1 = F.softmax(scores1, dim=-1)
     attn2 = F.softmax(scores2, dim=-1)
-    diff_attn = F.relu(attn1 - 0.2 * attn2)
-    diff_attn = diff_attn / (diff_attn.sum(dim=-1, keepdim=True) + 1e-6)
+    diff\_attn = F.relu(attn1 - 0.2 * attn2)
+    diff\_attn = diff\_attn / (diff\_attn.sum(dim=-1, keepdim=True) + 1e-6)
     
     # 8. Context
-    A_out = torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+    A\_out = torch.matmul(diff\_attn, v).transpose(1, 2).contiguous().view(B, L, self.all\_head\_size)
     
     # 9. SSM
-    if self.is_decoder:
-        M_out = self.mamba(x, attention_mask=attention_mask)[0]
+    if self.is\_decoder:
+        M\_out = self.mamba(x, attention\_mask=attention\_mask)[0]
     else:
-        x_rev = torch.flip(x, dims=[1])
-        mf = self.mamba(x, attention_mask=attention_mask)[0]
-        mb = self.mamba(x_rev, attention_mask=attention_mask)[0]
-        M_out = 0.5 * (mf + torch.flip(mb, dims=[1]))
+        x\_rev = torch.flip(x, dims=[1])
+        mf = self.mamba(x, attention\_mask=attention\_mask)[0]
+        mb = self.mamba(x\_rev, attention\_mask=attention\_mask)[0]
+        M\_out = 0.5 * (mf + torch.flip(mb, dims=[1]))
     
     # 10. Fusion
     alpha = torch.sigmoid(self.alpha)
-    combined = alpha * A_out + (1.0 - alpha) * M_out
+    combined = alpha * A\_out + (1.0 - alpha) * M\_out
     
-    return self.out_proj(combined), None
+    return self.out\_proj(combined), None
 \end{lstlisting}
 
 \subsection{B.3 The HeadRoPE Module}
 
 \begin{lstlisting}
 class HeadRoPE(nn.Module):
-    def __init__(self, head_dim, max_seq_len=4096, base=10000.0):
-        super().__init__()
-        inv_freq = 1.0 / (base ** (torch.arange(0, head_dim, 2).float() / head_dim))
-        self.register_buffer("inv_freq", inv_freq)
-        self._build_cache(max_seq_len)
+    def \_\_init\_\_(self, head\_dim, max\_seq\_len=4096, base=10000.0):
+        super().\_\_init\_\_()
+        inv\_freq = 1.0 / (base ** (torch.arange(0, head\_dim, 2).float() / head\_dim))
+        self.register\_buffer("inv\_freq", inv\_freq)
+        self.\_build\_cache(max\_seq\_len)
     
-    def _build_cache(self, seq_len):
-        t = torch.arange(seq_len, device=self.inv_freq.device).float()
-        freqs = torch.einsum("i,j->ij", t, self.inv_freq)
+    def \_build\_cache(self, seq\_len):
+        t = torch.arange(seq\_len, device=self.inv\_freq.device).float()
+        freqs = torch.einsum("i,j-\textgreater{}ij", t, self.inv\_freq)
         emb = torch.cat((freqs, freqs), dim=-1)
-        self.register_buffer("cos_cached", emb.cos().unsqueeze(0).unsqueeze(1))
-        self.register_buffer("sin_cached", emb.sin().unsqueeze(0).unsqueeze(1))
+        self.register\_buffer("cos\_cached", emb.cos().unsqueeze(0).unsqueeze(1))
+        self.register\_buffer("sin\_cached", emb.sin().unsqueeze(0).unsqueeze(1))
 \end{lstlisting}
 
 \subsection{B.4 Weight Transfer}
@@ -120,8 +120,8 @@ class HeadRoPE(nn.Module):
 Handles 4 patterns. The \texttt{W\_q2}, \texttt{W\_k2} are re-initialized:
 
 \begin{lstlisting}
-nn.init.kaiming_uniform_(self.W_q2.weight, a=math.sqrt(5))
-nn.init.kaiming_uniform_(self.W_k2.weight, a=math.sqrt(5))
+nn.init.kaiming\_uniform\_(self.W\_q2.weight, a=math.sqrt(5))
+nn.init.kaiming\_uniform\_(self.W\_k2.weight, a=math.sqrt(5))
 \end{lstlisting}
 
 \subsection{B.5 Common Pitfalls}
@@ -145,9 +145,9 @@ $\sigma$(-1) $\approx$ 0.27 favors SSM. $\sigma$(0) = 0.5 is neutral. We use -1.
 \subsection{B.6 Diagnostic Checks}
 
 \begin{lstlisting}
-# After copy_weights
-assert not torch.isnan(self.W_q1.weight).any()
-assert self.W_q1.weight.norm() > 1e-4
+# After copy\_weights
+assert not torch.isnan(self.W\_q1.weight).any()
+assert self.W\_q1.weight.norm() \textgreater{} 1e-4
 
 # After forward
 assert not torch.isnan(output).any()

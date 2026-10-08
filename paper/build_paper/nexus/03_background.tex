@@ -3,7 +3,7 @@
 \subsection{Standard Attention}
 
 \[
-\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_h}}\right) V
+\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d\_h}}\right) V
 \tag{3.1}
 \]
 
@@ -26,7 +26,7 @@ Sample tokens at stride $\sigma$:
 Block score between blocks $b_i, b_j$:
 
 \[
-S_{b_i, b_j} = \text{mean}(\tilde{Q}_{[b_i]} \tilde{K}_{[b_j]}^\top)
+S\_{b\_i, b\_j} = \text{mean}(\tilde{Q}\_{[b\_i]} \tilde{K}\_{[b\_j]}^\top)
 \tag{3.3}
 \]
 
@@ -37,21 +37,21 @@ Top-$k$ key blocks per query block are retained.
 Per-head query and key pooling:
 
 \[
-\bar{q}_h = \text{mean}_t(W_q q_t), \quad \bar{k}_h = \text{mean}_t(W_k k_t)
+\bar{q}\_h = \text{mean}\_t(W\_q q\_t), \quad \bar{k}\_h = \text{mean}\_t(W\_k k\_t)
 \tag{3.4}
 \]
 
 Gate:
 
 \[
-g_h = \sigma(\bar{q}_h \cdot \bar{k}_h / T)
+g\_h = \sigma(\bar{q}\_h \cdot \bar{k}\_h / T)
 \tag{3.5}
 \]
 
 Keep count per head:
 
 \[
-k_h = \text{clamp}(g_h \cdot M, 1, M)
+k\_h = \text{clamp}(g\_h \cdot M, 1, M)
 \tag{3.6}
 \]
 
@@ -60,14 +60,14 @@ k_h = \text{clamp}(g_h \cdot M, 1, M)
 Intra-block (diagonal) is dense:
 
 \[
-\text{Out}_\text{intra}[i] = \text{softmax}\!\left(\frac{q_i K_{B(i)}^\top}{\sqrt{d_h}}\right) V_{B(i)}
+\text{Out}\_\text{intra}[i] = \text{softmax}\!\left(\frac{q\_i K\_{B(i)}^\top}{\sqrt{d\_h}}\right) V\_{B(i)}
 \tag{3.7}
 \]
 
 Inter-block top-$k$:
 
 \[
-\text{Out}_\text{inter}[i] = \text{softmax}\!\left(\frac{q_i K_{\mathcal{S}_i}^\top}{\sqrt{d_h}}\right) V_{\mathcal{S}_i}
+\text{Out}\_\text{inter}[i] = \text{softmax}\!\left(\frac{q\_i K\_{\mathcal{S}\_i}^\top}{\sqrt{d\_h}}\right) V\_{\mathcal{S}\_i}
 \tag{3.8}
 \]
 
@@ -77,7 +77,7 @@ Token $t$ belongs to stripe group $\lfloor t / S_w \rfloor$. Mask keeps
 stripe groups within distance 1:
 
 \[
-\text{stripe_mask}[i, j] = \left|\lfloor i / S_w \rfloor - \lfloor j / S_w \rfloor\right| \leq 1
+\text{stripe\_mask}[i, j] = \left|\lfloor i / S\_w \rfloor - \lfloor j / S\_w \rfloor\right| \leq 1
 \tag{3.9}
 \]
 
@@ -86,14 +86,14 @@ stripe groups within distance 1:
 RFF feature map:
 
 \[
-\phi(x) = \frac{1}{\sqrt{F}} \exp(W_\text{rff} \hat{x})
+\phi(x) = \frac{1}{\sqrt{F}} \exp(W\_\text{rff} \hat{x})
 \tag{3.10}
 \]
 
 where $\hat{x} = x / \|x\|_2$. Global attention:
 
 \[
-\text{Out}[i] = \frac{\phi(q_i)^\top \sum_j \phi(k_j) v_j^\top}{\phi(q_i)^\top \sum_j \phi(k_j)}
+\text{Out}[i] = \frac{\phi(q\_i)^\top \sum\_j \phi(k\_j) v\_j^\top}{\phi(q\_i)^\top \sum\_j \phi(k\_j)}
 \tag{3.11}
 \]
 
@@ -102,7 +102,7 @@ where $\hat{x} = x / \|x\|_2$. Global attention:
 Rectified softmax:
 
 \[
-\text{softpick}(x)_i = \frac{\text{ReLU}(e^{x_i} - 1)}{\sum_j \text{ReLU}(e^{x_j} - 1)}
+\text{softpick}(x)\_i = \frac{\text{ReLU}(e^{x\_i} - 1)}{\sum\_j \text{ReLU}(e^{x\_j} - 1)}
 \tag{3.12}
 \]
 

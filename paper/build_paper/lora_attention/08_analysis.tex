@@ -69,17 +69,17 @@ We verify merge by comparing forward passes:
 
 \begin{lstlisting}
 # Before merge
-out_before = model(x)
+out\_before = model(x)
 
 # Merge
-merge_lora(model)
+merge\_lora(model)
 
 # After merge
-out_after = model(x)
+out\_after = model(x)
 
-diff = (out_before - out_after).abs().max()
+diff = (out\_before - out\_after).abs().max()
 print(f"Max diff: {diff.item()}")
-# Expected: < 1e-4 (numerical precision)
+# Expected: \textless{} 1e-4 (numerical precision)
 \end{lstlisting}
 
 All models pass this test.

@@ -6,7 +6,7 @@
 The attention output for query block $Q_i \in \mathbb{R}^{S \times d}$ is:
 
 \[
-O_i = \text{softmax}\!\left(\frac{Q_i K^\top}{\sqrt{d}}\right) V
+O\_i = \text{softmax}\!\left(\frac{Q\_i K^\top}{\sqrt{d}}\right) V
 \tag{A.1}
 \]
 
@@ -15,11 +15,11 @@ Tiling partitions $K$ into blocks $\{K_j\}$. The streaming softmax (Milakov
 
 \[
 \begin{aligned}
-m_i^{(j)} &= \max(m_i^{(j-1)}, \text{rowmax}(Q_i K_j^\top / \sqrt{d})) \\
-\ell_i^{(j)} &= e^{m_i^{(j-1)} - m_i^{(j)}} \ell_i^{(j-1)} 
-              + \text{rowsum}(e^{Q_i K_j^\top / \sqrt{d} - m_i^{(j)}}) \\
-O_i^{(j)} &= e^{m_i^{(j-1)} - m_i^{(j)}} O_i^{(j-1)} 
-          + e^{Q_i K_j^\top / \sqrt{d} - m_i^{(j)}} V_j
+m\_i^{(j)} &= \max(m\_i^{(j-1)}, \text{rowmax}(Q\_i K\_j^\top / \sqrt{d})) \\
+\ell\_i^{(j)} &= e^{m\_i^{(j-1)} - m\_i^{(j)}} \ell\_i^{(j-1)} 
+              + \text{rowsum}(e^{Q\_i K\_j^\top / \sqrt{d} - m\_i^{(j)}}) \\
+O\_i^{(j)} &= e^{m\_i^{(j-1)} - m\_i^{(j)}} O\_i^{(j-1)} 
+          + e^{Q\_i K\_j^\top / \sqrt{d} - m\_i^{(j)}} V\_j
 \end{aligned}
 \tag{A.2}
 \]
@@ -44,7 +44,7 @@ In practice, for zero-mean activations, RMS error is ~0.5\%.
 FP16 and FP8. Then:
 
 \[
-\|O^\text{fp16} - O^\text{fp8}\|_F \leq \epsilon (1 + \|V\|_F) \|Q\|_F \|K\|_F
+\|O^\text{fp16} - O^\text{fp8}\|\_F \leq \epsilon (1 + \|V\|\_F) \|Q\|\_F \|K\|\_F
 \tag{A.4}
 \]
 
@@ -70,7 +70,7 @@ base model. This is critical for recovery stability.
 The KV expansion is:
 
 \[
-K_\text{expanded}[b, h, l, d] = K[b, h // r, l, d], \quad r = H / H_{kv}
+K\_\text{expanded}[b, h, l, d] = K[b, h // r, l, d], \quad r = H / H\_{kv}
 \tag{A.5}
 \]
 

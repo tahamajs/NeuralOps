@@ -26,20 +26,20 @@ HuggingFace \texttt{Conv1D} stores weight as \texttt{(in\_features, out\_feature
 
 \begin{lstlisting}
 class Conv1D(nn.Module):
-    def __init__(self, nf, nx):
+    def \_\_init\_\_(self, nf, nx):
         self.weight = nn.Parameter(torch.empty(nx, nf))
-        # nx = in_features, nf = out_features
+        # nx = in\_features, nf = out\_features
 \end{lstlisting}
 
 Our extraction:
 
 \begin{lstlisting}
-if src.c_attn.__class__.__name__ == "Conv1D":
-    w = src.c_attn.weight.data.t()  # $\to$ (nf, nx)
+if src.c\_attn.\_\_class\_\_.\_\_name\_\_ == "Conv1D":
+    w = src.c\_attn.weight.data.t()  # $\to$ (nf, nx)
 \end{lstlisting}
 
 We detect Conv1D via class name \textbf{or} the shape heuristic 
-\texttt{w.shape[0] < w.shape[1]} (which holds for Conv1D with $n_f > n_x$ but 
+\texttt{w.shape[0] \textless{} w.shape[1]} (which holds for Conv1D with $n_f > n_x$ but 
 not for square matrices).
 
 \subsubsection{Nested vs Flat Detection}
@@ -47,17 +47,17 @@ not for square matrices).
 We use the following logic in \texttt{copy\_weights}:
 
 \begin{lstlisting}
-if hasattr(src, "out_lin"):
-    is_nested = False       # DistilBERT
+if hasattr(src, "out\_lin"):
+    is\_nested = False       # DistilBERT
 elif (hasattr(src, "self") and hasattr(src.self, "query")
       and hasattr(src, "output") and hasattr(src.output, "dense")):
-    is_nested = True        # RoBERTa
-elif cls_name in ["BertSelfAttention", "RobertaSelfAttention", ...]:
-    is_nested = True
-elif cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower():
-    is_nested = True
+    is\_nested = True        # RoBERTa
+elif cls\_name in ["BertSelfAttention", "RobertaSelfAttention", ...]:
+    is\_nested = True
+elif cls\_name.endswith("SelfAttention") and "distil" not in cls\_name.lower():
+    is\_nested = True
 else:
-    is_nested = False
+    is\_nested = False
 \end{lstlisting}
 
 \textbf{Key insight:} check \texttt{out\_lin} \textbf{first}. DistilBERT's 
@@ -70,20 +70,20 @@ For Qwen3.5 with $H_{kv} = 2 < H = 8$:
 
 \begin{lstlisting}
 # In forward:
-if self.num_kv_heads != self.num_heads:
-    k = repeat_kv(k, self.kv_repeat)
-    v = repeat_kv(v, self.kv_repeat)
+if self.num\_kv\_heads != self.num\_heads:
+    k = repeat\_kv(k, self.kv\_repeat)
+    v = repeat\_kv(v, self.kv\_repeat)
 \end{lstlisting}
 
 The \texttt{repeat\_kv} function expands via broadcast and reshape:
 
 \begin{lstlisting}
-def repeat_kv(hidden_states, n_rep):
-    if n_rep == 1:
-        return hidden_states
-    B, H_kv, L, D = hidden_states.shape
-    hidden_states = hidden_states[:, :, None, :, :].expand(B, H_kv, n_rep, L, D)
-    return hidden_states.reshape(B, H_kv * n_rep, L, D)
+def repeat\_kv(hidden\_states, n\_rep):
+    if n\_rep == 1:
+        return hidden\_states
+    B, H\_kv, L, D = hidden\_states.shape
+    hidden\_states = hidden\_states[:, :, None, :, :].expand(B, H\_kv, n\_rep, L, D)
+    return hidden\_states.reshape(B, H\_kv * n\_rep, L, D)
 \end{lstlisting}
 
 \subsection{RoPE Support}
@@ -92,12 +92,12 @@ We support partial RoPE, where the rotary dimension is smaller than
 \texttt{head\_dim}:
 
 \begin{lstlisting}
-def apply_rotary_pos_emb(q, k, cos, sin):
-    rotary_dim = cos.shape[-1]
-    if rotary_dim < q.shape[-1]:
-        q_rot, q_pass = q[..., :rotary_dim], q[..., rotary_dim:]
-        q_rot_embed = q_rot * cos + rotate_half(q_rot) * sin
-        q = torch.cat([q_rot_embed, q_pass], dim=-1)
+def apply\_rotary\_pos\_emb(q, k, cos, sin):
+    rotary\_dim = cos.shape[-1]
+    if rotary\_dim \textless{} q.shape[-1]:
+        q\_rot, q\_pass = q[..., :rotary\_dim], q[..., rotary\_dim:]
+        q\_rot\_embed = q\_rot * cos + rotate\_half(q\_rot) * sin
+        q = torch.cat([q\_rot\_embed, q\_pass], dim=-1)
     ...
 \end{lstlisting}
 
@@ -117,18 +117,18 @@ cross-attention.
 
 \textbf{Algorithm 2:} Inject FlashAttention3FP8 into a layer
 \begin{lstlisting}
-Input:  layer   (transformer block), config, old_attn
+Input:  layer   (transformer block), config, old\_attn
 Output: new attention module in  
 
-1: new $\leftarrow$ FlashAttention3FP8(config, old_attn=old_attn)
-2: if new.copy_weights failed: return None
+1: new $\leftarrow$ FlashAttention3FP8(config, old\_attn=old\_attn)
+2: if new.copy\_weights failed: return None
 3: if   has .attention.self:
 4:      .attention.self $\leftarrow$ new
-5:     new.is_nested_encoder $\leftarrow$ True
+5:     new.is\_nested\_encoder $\leftarrow$ True
 6: elif   has .attention:
 7:      .attention $\leftarrow$ new
-8: elif   has .self_attn:
-9:      .self_attn $\leftarrow$ new
+8: elif   has .self\_attn:
+9:      .self\_attn $\leftarrow$ new
 10: return new
 \end{lstlisting}
 
@@ -166,8 +166,8 @@ twice (once inside our module, once by the outer block):
 
 \begin{lstlisting}
 # WRONG for RoBERTa
-if not self.is_nested_encoder:
-    out = self.out_proj(out)  # would double-project
+if not self.is\_nested\_encoder:
+    out = self.out\_proj(out)  # would double-project
 \end{lstlisting}
 
 We verify \texttt{is\_nested\_encoder} by checking \texttt{hasattr(src, "out\_lin")}.
@@ -178,7 +178,7 @@ If we forget to transpose Conv1D weights, Q/K/V shapes mismatch:
 
 \begin{lstlisting}
 # CORRECT
-w = src.c_attn.weight.data.t()
+w = src.c\_attn.weight.data.t()
 \end{lstlisting}
 
 \subsubsection{GQA Mismatch}
@@ -190,8 +190,8 @@ or silently produce wrong results. We detect the correct value from
 \subsection{Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("flash3_fp8")
-@ATTENTION_REGISTRY.register("flash_attention3_fp8")
+@ATTENTION\_REGISTRY.register("flash3\_fp8")
+@ATTENTION\_REGISTRY.register("flash\_attention3\_fp8")
 class FlashAttention3FP8(BaseAttention):
     ...
 \end{lstlisting}
@@ -216,6 +216,6 @@ This is the same pipeline as other modules in our framework.
 \centering
 \includegraphics[width=\linewidth]{figures/architecture.jpeg}
 \caption{High-level architectural diagram of flash\_attention3\_fp8.}
-\label{fig:arch_flash-attention3-fp8}
+\label{fig:arch\_flash-attention3-fp8}
 \end{figure}
 

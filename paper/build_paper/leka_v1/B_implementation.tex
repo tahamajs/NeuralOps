@@ -3,58 +3,58 @@
 \subsection{B.1 The Kernel Feature Map}
 
 \begin{lstlisting}
-def kernel_feature_map(self, x):
-    x_norm = self.norm(x)  # LayerNorm on head_dim
-    features = torch.einsum("bhnd,hdf->bhnf", x_norm, self.proj.to(x.dtype))
-    scale = 1.0 / math.sqrt(self.feature_dim)
-    phi_cos = torch.cos(features) * scale
-    phi_sin = torch.sin(features) * scale
-    return torch.cat([phi_cos, phi_sin], dim=-1)  # (B, H, N, 2F)
+def kernel\_feature\_map(self, x):
+    x\_norm = self.norm(x)  # LayerNorm on head\_dim
+    features = torch.einsum("bhnd,hdf-\textgreater{}bhnf", x\_norm, self.proj.to(x.dtype))
+    scale = 1.0 / math.sqrt(self.feature\_dim)
+    phi\_cos = torch.cos(features) * scale
+    phi\_sin = torch.sin(features) * scale
+    return torch.cat([phi\_cos, phi\_sin], dim=-1)  # (B, H, N, 2F)
 \end{lstlisting}
 
 \subsection{B.2 QR Projection Init}
 
 \begin{lstlisting}
-proj_data = torch.randn(self.num_heads, self.head_dim, self.feature_dim)
-for h in range(self.num_heads):
-    if self.head_dim < self.feature_dim:
-        q_h, _ = torch.linalg.qr(proj_data[h].T)
-        proj_data[h] = q_h.T
+proj\_data = torch.randn(self.num\_heads, self.head\_dim, self.feature\_dim)
+for h in range(self.num\_heads):
+    if self.head\_dim \textless{} self.feature\_dim:
+        q\_h, \_ = torch.linalg.qr(proj\_data[h].T)
+        proj\_data[h] = q\_h.T
     else:
-        q_h, _ = torch.linalg.qr(proj_data[h])
-        proj_data[h] = q_h[:, :self.feature_dim]
-self.register_buffer("proj", proj_data, persistent=True)
+        q\_h, \_ = torch.linalg.qr(proj\_data[h])
+        proj\_data[h] = q\_h[:, :self.feature\_dim]
+self.register\_buffer("proj", proj\_data, persistent=True)
 \end{lstlisting}
 
 \subsection{B.3 Causal Forward}
 
 \begin{lstlisting}
-kv_outer = torch.einsum("bhnf,bhnd->bhnfd", K_features.float(), v.float())
-KV_cum = torch.cumsum(kv_outer, dim=2)
-num = torch.einsum("bhnf,bhnfd->bhnd", Q_features.float(), KV_cum)
-z_cum = torch.cumsum(K_features.float(), dim=2)
-denom = torch.einsum("bhnf,bhnf->bhn", Q_features.float(), z_cum).unsqueeze(-1).clamp(min=1e-5)
-context = (num / denom).to(hidden_states.dtype)
+kv\_outer = torch.einsum("bhnf,bhnd-\textgreater{}bhnfd", K\_features.float(), v.float())
+KV\_cum = torch.cumsum(kv\_outer, dim=2)
+num = torch.einsum("bhnf,bhnfd-\textgreater{}bhnd", Q\_features.float(), KV\_cum)
+z\_cum = torch.cumsum(K\_features.float(), dim=2)
+denom = torch.einsum("bhnf,bhnf-\textgreater{}bhn", Q\_features.float(), z\_cum).unsqueeze(-1).clamp(min=1e-5)
+context = (num / denom).to(hidden\_states.dtype)
 \end{lstlisting}
 
 \subsection{B.4 Bidirectional Forward}
 
 \begin{lstlisting}
-KV = torch.einsum("bhnf,bhnd->bhfd", K_features.float(), v.float())
-K_sum = K_features.float().sum(dim=2, keepdim=True)
-num = torch.einsum("bhnf,bhfd->bhnd", Q_features.float(), KV)
-denom = torch.einsum("bhnf,bhf->bhn", Q_features.float(), K_sum.squeeze(2)).unsqueeze(-1).clamp(min=1e-5)
-context = (num / denom).to(hidden_states.dtype)
+KV = torch.einsum("bhnf,bhnd-\textgreater{}bhfd", K\_features.float(), v.float())
+K\_sum = K\_features.float().sum(dim=2, keepdim=True)
+num = torch.einsum("bhnf,bhfd-\textgreater{}bhnd", Q\_features.float(), KV)
+denom = torch.einsum("bhnf,bhf-\textgreater{}bhn", Q\_features.float(), K\_sum.squeeze(2)).unsqueeze(-1).clamp(min=1e-5)
+context = (num / denom).to(hidden\_states.dtype)
 \end{lstlisting}
 
 \subsection{B.5 The Preservation Gate}
 
 \begin{lstlisting}
-self.pres_gate = nn.Parameter(torch.tensor(2.0))
+self.pres\_gate = nn.Parameter(torch.tensor(2.0))
 
 # In forward:
-alpha = torch.sigmoid(self.pres_gate)
-out = alpha * out + (1.0 - alpha) * hidden_states
+alpha = torch.sigmoid(self.pres\_gate)
+out = alpha * out + (1.0 - alpha) * hidden\_states
 \end{lstlisting}
 
 \subsection{B.6 Fatal Error Handling (BUG)}
@@ -62,8 +62,8 @@ out = alpha * out + (1.0 - alpha) * hidden_states
 \textbf{Current:}
 \begin{lstlisting}
 except Exception as e:
-    print(f'copy_weights failed: {e}')
-    raise RuntimeError(f"copy_weights failed: {e}")
+    print(f'copy\_weights failed: {e}')
+    raise RuntimeError(f"copy\_weights failed: {e}")
 \end{lstlisting}
 
 \textbf{Recommendation:}
@@ -90,7 +90,7 @@ cumsum.
 Mask must be applied \textbf{before} aggregation:
 
 \begin{lstlisting}
-K_features = K_features * mask
+K\_features = K\_features * mask
 v = v * mask
 \end{lstlisting}
 
@@ -102,10 +102,10 @@ $\phi(x)$ has shape $(B, H, N, 2F)$, not $(B, H, N, F)$.
 
 \begin{lstlisting}
 # After init
-assert self.proj.shape == (H, d_h, F)
+assert self.proj.shape == (H, d\_h, F)
 
 # After forward
-assert context.shape == (B, H, N, d_h)
+assert context.shape == (B, H, N, d\_h)
 assert not torch.isnan(context).any()
 \end{lstlisting}
 

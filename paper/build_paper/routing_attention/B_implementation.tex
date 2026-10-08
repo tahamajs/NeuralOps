@@ -4,29 +4,29 @@
 \subsection{B.1 k-Means Implementation}
 
 \begin{lstlisting}
-def _kmeans_assign(self, feat, K, n_iters):
+def \_kmeans\_assign(self, feat, K, n\_iters):
     B, H, L, d = feat.shape
     step = max(1, L // K)
-    init_idx = torch.arange(0, L, step, device=feat.device)[:K]
-    if init_idx.size(0) < K:
-        extra = torch.zeros(K - init_idx.size(0), dtype=torch.long, device=feat.device)
-        init_idx = torch.cat([init_idx, extra])
+    init\_idx = torch.arange(0, L, step, device=feat.device)[:K]
+    if init\_idx.size(0) \textless{} K:
+        extra = torch.zeros(K - init\_idx.size(0), dtype=torch.long, device=feat.device)
+        init\_idx = torch.cat([init\_idx, extra])
 
-    centroids = feat[:, :, init_idx, :].clone()
-    cluster_ids = torch.zeros(B, H, L, dtype=torch.long, device=feat.device)
+    centroids = feat[:, :, init\_idx, :].clone()
+    cluster\_ids = torch.zeros(B, H, L, dtype=torch.long, device=feat.device)
 
-    feat_f = feat.float()
-    for _ in range(n_iters):
-        centroids_f = centroids.float()
-        dist = torch.cdist(feat_f, centroids_f)
-        cluster_ids = torch.argmin(dist, dim=-1)
+    feat\_f = feat.float()
+    for \_ in range(n\_iters):
+        centroids\_f = centroids.float()
+        dist = torch.cdist(feat\_f, centroids\_f)
+        cluster\_ids = torch.argmin(dist, dim=-1)
 
-        one_hot = F.one_hot(cluster_ids, num_classes=K).to(dtype=feat.dtype)
-        counts = one_hot.sum(dim=2).clamp(min=1.0).unsqueeze(-1)
-        sum_f = torch.einsum("bhlk,bhld->bhkd", one_hot, feat)
-        centroids = sum_f / counts
+        one\_hot = F.one\_hot(cluster\_ids, num\_classes=K).to(dtype=feat.dtype)
+        counts = one\_hot.sum(dim=2).clamp(min=1.0).unsqueeze(-1)
+        sum\_f = torch.einsum("bhlk,bhld-\textgreater{}bhkd", one\_hot, feat)
+        centroids = sum\_f / counts
 
-    return cluster_ids
+    return cluster\_ids
 \end{lstlisting}
 
 \textbf{Notes:}
@@ -39,27 +39,27 @@ def _kmeans_assign(self, feat, K, n_iters):
 \subsection{B.2 Attention Loop}
 
 \begin{lstlisting}
-outputs = torch.zeros_like(Q)
-for k in range(K_num):
-    mask_k = (cluster_ids == k) | (torch.arange(L, device=device).view(1, 1, -1) == 0)
-    mask_k = mask_k & valid_mask_2d.unsqueeze(1)
+outputs = torch.zeros\_like(Q)
+for k in range(K\_num):
+    mask\_k = (cluster\_ids == k) | (torch.arange(L, device=device).view(1, 1, -1) == 0)
+    mask\_k = mask\_k & valid\_mask\_2d.unsqueeze(1)
 
     scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
-    scores = scores.masked_fill(~mask_k.unsqueeze(2), -1e4)
+    scores = scores.masked\_fill(~mask\_k.unsqueeze(2), -1e4)
 
     eye = torch.eye(L, device=device, dtype=torch.bool).unsqueeze(0).unsqueeze(0)
-    scores = scores.masked_fill(eye, 0.0)
+    scores = scores.masked\_fill(eye, 0.0)
 
-    if is_causal:
-        causal_mask = torch.triu(torch.full((L, L), True, device=device), diagonal=1).unsqueeze(0).unsqueeze(0)
-        scores = scores.masked_fill(causal_mask & (~eye), -1e4)
+    if is\_causal:
+        causal\_mask = torch.triu(torch.full((L, L), True, device=device), diagonal=1).unsqueeze(0).unsqueeze(0)
+        scores = scores.masked\_fill(causal\_mask & (~eye), -1e4)
 
     attn = F.softmax(scores, dim=-1)
-    attn = torch.nan_to_num(attn, nan=0.0)
+    attn = torch.nan\_to\_num(attn, nan=0.0)
     attn = self.dropout(attn.to(dtype))
 
-    out_k = torch.matmul(attn, V)
-    outputs = torch.where(mask_k.unsqueeze(-1), out_k, outputs)
+    out\_k = torch.matmul(attn, V)
+    outputs = torch.where(mask\_k.unsqueeze(-1), out\_k, outputs)
 \end{lstlisting}
 
 \subsection{B.3 Common Pitfalls}
@@ -70,9 +70,9 @@ Padding tokens are included in \texttt{joint\_feat}. To exclude:
 
 \begin{lstlisting}
 # Exclude padding
-valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)
+valid\_mask\_2d = get\_token\_valid\_mask(attention\_mask, B, L, device)
 # Apply mask before clustering
-joint_feat = joint_feat * valid_mask_2d.unsqueeze(1).unsqueeze(-1)
+joint\_feat = joint\_feat * valid\_mask\_2d.unsqueeze(1).unsqueeze(-1)
 \end{lstlisting}
 
 \subsubsection{B.3.2 FP32 for Numerical Stability}
@@ -86,8 +86,8 @@ scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
 \subsection{B.4 Registry}
 
 \begin{lstlisting}
-@ATTENTION_REGISTRY.register("routing")
-@ATTENTION_REGISTRY.register("routing_attention")
+@ATTENTION\_REGISTRY.register("routing")
+@ATTENTION\_REGISTRY.register("routing\_attention")
 class RoutingAttention(BaseAttention):
     ...
 \end{lstlisting}
@@ -95,14 +95,14 @@ class RoutingAttention(BaseAttention):
 \subsection{B.5 Injection}
 
 \begin{lstlisting}
-def inject_routing(layer, model_config, ...):
+def inject\_routing(layer, model\_config, ...):
     try:
-        src = old_attn or extract_attention(layer)
-        new_attn = RoutingAttention(config=model_config, pretrained_attn=src)
-        replace_attention(layer, new_attn)
-        return new_attn
+        src = old\_attn or extract\_attention(layer)
+        new\_attn = RoutingAttention(config=model\_config, pretrained\_attn=src)
+        replace\_attention(layer, new\_attn)
+        return new\_attn
     except Exception as e:
-        logger.error("inject_routing failed: %s", e)
+        logger.error("inject\_routing failed: \%s", e)
         return None
 \end{lstlisting}
 
@@ -110,10 +110,10 @@ def inject_routing(layer, model_config, ...):
 
 \begin{lstlisting}
 # Check cluster assignment
-B, H, L, _ = Q.shape
+B, H, L, \_ = Q.shape
 K = 16
-cluster_ids = attn._kmeans_assign(joint_feat, K, n_iters=3)
-print(f"Cluster sizes: {[int((cluster_ids[0,0]==k).sum()) for k in range(K)]}")
+cluster\_ids = attn.\_kmeans\_assign(joint\_feat, K, n\_iters=3)
+print(f"Cluster sizes: {[int((cluster\_ids[0,0]==k).sum()) for k in range(K)]}")
 \end{lstlisting}
 \begin{lstlisting}
 

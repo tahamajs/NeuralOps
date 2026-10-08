@@ -26,7 +26,7 @@ EAT replaces the standard MHSA block with a version that:
                       
     +-------------------------------------------+
     |  Optional RoPE                            |
-    |  Optional GQA repeat_kv                   |
+    |  Optional GQA repeat\_kv                   |
     +----------------+--------------------------+
                      |
                       
@@ -62,7 +62,7 @@ transferred from the pretrained attention via \texttt{copy\_weights} ( 5).
 Each projection has trainable LoRA adapters:
 
 \[
-W_\text{eff} = W + \frac{\alpha}{r} B A
+W\_\text{eff} = W + \frac{\alpha}{r} B A
 \tag{4.1}
 \]
 
@@ -104,7 +104,7 @@ LoRA provides three benefits:
 The EAT forward pass is standard scaled dot-product attention:
 
 \[
-\text{head}_h = \text{softmax}\!\left(\frac{Q_h K_h^\top}{\sqrt{d_h}}\right) V_h
+\text{head}\_h = \text{softmax}\!\left(\frac{Q\_h K\_h^\top}{\sqrt{d\_h}}\right) V\_h
 \tag{4.2}
 \]
 
@@ -113,14 +113,14 @@ with $Q = W_Q X + \text{LoRA}_Q(X)$, etc.
 \textbf{Causal mask.} For decoders:
 
 \[
-M_{ij} = \begin{cases} 0 & j \leq i \\ -\infty & j > i \end{cases}
+M\_{ij} = \begin{cases} 0 & j \leq i \\ -\infty & j \textgreater{} i \end{cases}
 \tag{4.3}
 \]
 
 \textbf{Padding mask.} For all architectures:
 
 \[
-M_{ij} = M_{ij} - \infty \cdot \mathbb{1}[\text{pad}(j)]
+M\_{ij} = M\_{ij} - \infty \cdot \mathbb{1}[\text{pad}(j)]
 \tag{4.4}
 \]
 
@@ -149,8 +149,8 @@ where $\pi$ reduces the sequence dimension from $L$ to $k \leq L$.
 Pruning is \textbf{disabled during training}:
 
 \begin{lstlisting}
-if self.prune_layer is not None and not self.training:
-    out, _ = self.prune_layer(out)
+if self.prune\_layer is not None and not self.training:
+    out, \_ = self.prune\_layer(out)
 \end{lstlisting}
 
 This avoids gradient flow issues through \texttt{argsort}.
@@ -169,10 +169,10 @@ support four cases:
 \subsubsection{DistilBERT}
 
 \begin{lstlisting}
-target.q_lin.weight.copy_(src.q_lin.weight)
-target.k_lin.weight.copy_(src.k_lin.weight)
-target.v_lin.weight.copy_(src.v_lin.weight)
-target.out_lin.weight.copy_(src.out_lin.weight)
+target.q\_lin.weight.copy\_(src.q\_lin.weight)
+target.k\_lin.weight.copy\_(src.k\_lin.weight)
+target.v\_lin.weight.copy\_(src.v\_lin.weight)
+target.out\_lin.weight.copy\_(src.out\_lin.weight)
 \end{lstlisting}
 
 \texttt{is\_nested\_encoder = False} -- DistilBERT applies \texttt{out\_lin} internally.
@@ -180,10 +180,10 @@ target.out_lin.weight.copy_(src.out_lin.weight)
 \subsubsection{RoBERTa}
 
 \begin{lstlisting}
-target.q_lin.weight.copy_(src.self.query.weight)
-target.k_lin.weight.copy_(src.self.key.weight)
-target.v_lin.weight.copy_(src.self.value.weight)
-# out_proj skipped -- outer `attention.output.dense` applies it
+target.q\_lin.weight.copy\_(src.self.query.weight)
+target.k\_lin.weight.copy\_(src.self.key.weight)
+target.v\_lin.weight.copy\_(src.self.value.weight)
+# out\_proj skipped -- outer `attention.output.dense` applies it
 \end{lstlisting}
 
 \texttt{is\_nested\_encoder = True}.
@@ -191,12 +191,12 @@ target.v_lin.weight.copy_(src.self.value.weight)
 \subsubsection{GPT-2}
 
 \begin{lstlisting}
-w = src.c_attn.weight.t()  # Conv1D transpose
-q_w, k_w, v_w = w.chunk(3, dim=0)
-target.q_lin.weight.copy_(q_w)
-target.k_lin.weight.copy_(k_w)
-target.v_lin.weight.copy_(v_w)
-target.out_lin.weight.copy_(src.c_proj.weight.t())
+w = src.c\_attn.weight.t()  # Conv1D transpose
+q\_w, k\_w, v\_w = w.chunk(3, dim=0)
+target.q\_lin.weight.copy\_(q\_w)
+target.k\_lin.weight.copy\_(k\_w)
+target.v\_lin.weight.copy\_(v\_w)
+target.out\_lin.weight.copy\_(src.c\_proj.weight.t())
 \end{lstlisting}
 
 \subsubsection{Qwen}
@@ -210,10 +210,10 @@ EAT's \texttt{copy\_weights} is deliberately defensive: on failure, it logs a
 warning and \textbf{continues with random initialization}. This design was chosen 
 to prevent injection from crashing, but it has a \textbf{critical implication}:
 
-> If \texttt{copy\_weights} silently fails, the attention block keeps random 
-> weights, and the model's forward pass produces garbage. Recovery 
-> fine-tuning cannot recover from this because gradient signals are 
-> dominated by noise.
+\textgreater{} If \texttt{copy\_weights} silently fails, the attention block keeps random 
+\textgreater{} weights, and the model's forward pass produces garbage. Recovery 
+\textgreater{} fine-tuning cannot recover from this because gradient signals are 
+\textgreater{} dominated by noise.
 
 We encountered this failure mode in practice (see  8.2). We discuss 
 mitigation in  5.8.
@@ -222,22 +222,22 @@ mitigation in  5.8.
 
 \textbf{Algorithm 1:} EAT forward pass
 \begin{lstlisting}
-Input:  X $\in$ R^{B$\times$L$\times$d}, attention_mask, position_ids
+Input:  X $\in$ R^{B$\times$L$\times$d}, attention\_mask, position\_ids
 Output: Y $\in$ R^{B$\times$L'$\times$d}
 
-1:  Q $\leftarrow$ W_Q X + LoRA_Q(X)           Frozen W + trainable LoRA
-2:  K $\leftarrow$ W_K X + LoRA_K(X)
-3:  V $\leftarrow$ W_V X + LoRA_V(X)
+1:  Q $\leftarrow$ W\_Q X + LoRA\_Q(X)           Frozen W + trainable LoRA
+2:  K $\leftarrow$ W\_K X + LoRA\_K(X)
+3:  V $\leftarrow$ W\_V X + LoRA\_V(X)
 4:  if RoPE: (Q, K) $\leftarrow$ Rotary(Q, K)
-5:  if GQA:  K, V $\leftarrow$ repeat_kv(K, V)
-6:  S $\leftarrow$ Q K^T / $\sqrt{}$d_h
-7:  S $\leftarrow$ S + causal_mask + padding_mask
+5:  if GQA:  K, V $\leftarrow$ repeat\_kv(K, V)
+6:  S $\leftarrow$ Q K^T / $\sqrt{}$d\_h
+7:  S $\leftarrow$ S + causal\_mask + padding\_mask
 8:  P $\leftarrow$ softmax(S)
 9:  A $\leftarrow$ P V
-10: A $\leftarrow$ concat_heads(A)
-11: Y $\leftarrow$ W_O A + LoRA_O(A)
-12: if inference and prune_layer:
-13:     Y $\leftarrow$ prune_layer(Y)
+10: A $\leftarrow$ concat\_heads(A)
+11: Y $\leftarrow$ W\_O A + LoRA\_O(A)
+12: if inference and prune\_layer:
+13:     Y $\leftarrow$ prune\_layer(Y)
 14: return Y
 \end{lstlisting}
 
