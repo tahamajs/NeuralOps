@@ -132,8 +132,9 @@ class ClassificationAdapter:
             raise RuntimeError("Setup must be run before applying module.")
 
         if self.module_type in ("baseline", "none", "full", "dense"):
-            LOG.info("Baseline run: skipping module injection.")
+            logger.info("Baseline run: skipping module injection.")
             return
+
 
         if self.module_type == "attention":
             self.model = apply_attention_module(
