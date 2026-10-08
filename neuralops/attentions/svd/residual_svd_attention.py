@@ -19,6 +19,7 @@ from neuralops.compression_engine.residual_svd_compressor import ResSVDLinear
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
 
@@ -26,17 +27,6 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # RoPE (dtype-safe, past_len-aware)
 # ===========================================================================
-
-
-def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    d = x.shape[-1]
-    half = d // 2
-    x1 = x[..., :half]
-    x2 = x[..., half : 2 * half]
-    rotated = torch.cat((-x2, x1), dim=-1)
-    if d % 2 == 1:
-        rotated = torch.cat([rotated, x[..., -1:]], dim=-1)
-    return rotated
 
 
 def apply_rotary_pos_emb(

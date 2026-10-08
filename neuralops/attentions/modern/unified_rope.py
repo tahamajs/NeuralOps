@@ -20,6 +20,7 @@ from neuralops.core.attention_mask import apply_attention_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
 
@@ -31,18 +32,6 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if isinstance(cfg, dict):
         return cfg.get(key, default)
     return getattr(cfg, key, default)
-
-
-def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    """Rotates half the hidden dimensions of the input tensor safely handling odd dims."""
-    d = x.shape[-1]
-    half = d // 2
-    x1 = x[..., :half]
-    x2 = x[..., half : 2 * half]
-    rotated = torch.cat((-x2, x1), dim=-1)
-    if 2 * half < d:
-        return torch.cat((rotated, x[..., 2 * half :]), dim=-1)
-    return rotated
 
 
 def apply_rotary_pos_emb(

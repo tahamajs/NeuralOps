@@ -17,6 +17,7 @@ import torch.nn.functional as F
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
 
@@ -28,22 +29,6 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if isinstance(cfg, dict):
         return cfg.get(key, default)
     return getattr(cfg, key, default)
-
-
-def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    """Rotates half the hidden dimensions: [-x2, x1], safe for odd dimensions."""
-    d = x.shape[-1]
-    rotary_dim = 2 * (d // 2)
-    if rotary_dim == 0:
-        return x
-    x_rot = x[..., :rotary_dim]
-    half = rotary_dim // 2
-    x1 = x_rot[..., :half]
-    x2 = x_rot[..., half:]
-    rotated = torch.cat((-x2, x1), dim=-1)
-    if rotary_dim < d:
-        return torch.cat((rotated, x[..., rotary_dim:]), dim=-1)
-    return rotated
 
 
 def apply_rotary_pos_emb(
