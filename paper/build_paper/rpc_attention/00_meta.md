@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `rpc_attention`
+**Legacy Folder Name:** `rpc` (standardized in v1.2.0)
+
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 00_meta.md
      PURPOSE: Title, authors, abstract
