@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `primal_attention`
+**Legacy Folder Name:** `Primal` (standardized v1.2.0)
+
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 00_meta.md
      PURPOSE: Title, authors, abstract
