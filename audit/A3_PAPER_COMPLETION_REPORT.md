@@ -2,7 +2,7 @@
 
 **Date:** September 18, 2026  
 **Status:** COMPLETE / PUBLICATION-GRADE  
-**Author:** Taha Majs  
+**Author:** Taha Majlesi  
 **Scope:** `paper/A3/` (`main.tex`, modular sections 00--13, Appendices A--E) & Empirical Multi-Model / Multi-Dataset GPU Benchmarks  
 
 ---
