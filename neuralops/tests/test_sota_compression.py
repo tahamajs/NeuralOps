@@ -18,9 +18,6 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
 # Ensure framework is in search path
-_FRAMEWORK_PARENT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-if _FRAMEWORK_PARENT not in sys.path:
-
 from neuralops.compression_engine.dynamic_rank import (
     DynamicEntropySVDCompressor, DynamicSVDLinear, allocate_entropy_ranks,
     compute_singular_entropy)

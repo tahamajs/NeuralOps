@@ -5,9 +5,6 @@ import unittest
 import torch
 import torch.nn as nn
 
-_FRAMEWORK_PARENT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-if _FRAMEWORK_PARENT not in sys.path:
-
 import neuralops.attentions
 from neuralops.core.registry import ATTENTION_REGISTRY
 
