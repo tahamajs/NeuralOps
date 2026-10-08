@@ -65,4 +65,4 @@ class TestRegistryCore:
         assert len(ATTENTION_REGISTRY.keys()) > 10
         assert len(COMPRESSOR_REGISTRY.keys()) > 5
         assert "adaptive_svd" in ATTENTION_REGISTRY
-        assert "aasvd" in COMPRESSOR_REGISTRY
+        assert "aa_svd_compressor" in COMPRESSOR_REGISTRY
