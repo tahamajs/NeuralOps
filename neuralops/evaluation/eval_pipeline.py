@@ -798,6 +798,131 @@ def _finalize_benchmark_result(
     return result
 
 
+def _run_single_trial(
+    module_name: str,
+    module_type: str,
+    model_family: str,
+    dataset: str,
+    rank: int,
+    seq_len: int,
+    batch_size: int,
+    current_batch_size: int,
+    num_warmup: int,
+    num_steps: int,
+    allow_synthetic: bool,
+    device: torch.device,
+    retry_count: int,
+    run_log_lines: list[str],
+) -> dict[str, Any]:
+    """Execute a single evaluation attempt for the combination."""
+    is_lm = dataset.lower() in LM_DATASETS
+
+    # 1. Setup environment & base model
+    env = _setup_eval_environment(model_family, dataset, seq_len, device)
+    model = env["model"]
+    num_labels = env["num_labels"]
+    mem_phases = env["mem_phases"]
+    t_model_load = env["t_model_load"]
+    is_cuda = env["is_cuda"]
+
+    # 2. Compression & calibration phase
+    (
+        model,
+        comp_ratio,
+        comp_stats,
+        t_calib,
+        t_comp,
+        calib_used,
+        calib_source,
+    ) = _apply_compression_phase(
+        model,
+        module_name,
+        module_type,
+        model_family,
+        dataset,
+        rank,
+        seq_len,
+        device,
+        mem_phases,
+        run_log_lines,
+    )
+    params_before = sum(p.numel() for p in model.parameters())
+
+    # 3. Dynamic batch probing
+    if retry_count == 0 and is_cuda:
+        current_batch_size = probe_optimal_batch_size(
+            model=model,
+            model_family=model_family,
+            dataset=dataset,
+            seq_len=seq_len,
+            device=device,
+            max_batch_cap=min(batch_size, 512) if batch_size > 0 else 512,
+            allow_synthetic=allow_synthetic,
+        )
+
+    batch = get_dataset_batch(
+        dataset,
+        model_family,
+        current_batch_size,
+        seq_len,
+        num_labels=num_labels,
+        device=device,
+        allow_synthetic=allow_synthetic,
+    )
+    filtered_batch = _filter_batch(batch, model_family, model)
+    if is_lm and "labels" not in filtered_batch:
+        ids = filtered_batch["input_ids"]
+        filtered_batch["labels"] = ids.clone()
+        filtered_batch["labels"][:, :-1] = ids[:, 1:]
+        filtered_batch["labels"][:, -1] = -100
+
+    # 4. Latency & resource benchmark
+    bench = _benchmark_runtime_latency(
+        model,
+        filtered_batch,
+        num_steps,
+        num_warmup,
+        num_labels,
+        is_lm,
+        is_cuda,
+        device,
+        current_batch_size,
+        seq_len,
+    )
+
+    # 5. Full evaluation on validation set
+    eval_metrics = _evaluate_model_accuracy(
+        model,
+        model_family,
+        dataset,
+        num_labels,
+        seq_len,
+        current_batch_size,
+        is_lm,
+        is_cuda,
+        device,
+        mem_phases,
+        run_log_lines,
+    )
+    params_after = sum(p.numel() for p in model.parameters())
+
+    return {
+        "comp_ratio": comp_ratio,
+        "calib_used": calib_used,
+        "calib_source": calib_source,
+        "params_before": params_before,
+        "params_after": params_after,
+        "comp_stats": comp_stats,
+        "mem_phases": mem_phases,
+        "t_model_load": t_model_load,
+        "t_calib": t_calib,
+        "t_comp": t_comp,
+        "bench": bench,
+        "eval_metrics": eval_metrics,
+        "current_batch_size": current_batch_size,
+    }
+
+
 def evaluate_single_combination_opt(
     track: str,
     module_name: str,
@@ -845,7 +970,6 @@ def evaluate_single_combination_opt(
     max_retries = 6
     retry_count = 0
     success = False
-    is_lm = dataset.lower() in LM_DATASETS
 
     if skip_deprecated and module_name in DEPRECATED_MODULES:
         result.status = "SKIP_DEPRECATED"
@@ -854,83 +978,36 @@ def evaluate_single_combination_opt(
         success = True
 
     while retry_count < max_retries and not success:
-        model = None
         try:
-            # 1. Setup environment & base model
-            env = _setup_eval_environment(model_family, dataset, seq_len, device)
-            model = env["model"]
-            num_labels = env["num_labels"]
-            mem_phases = env["mem_phases"]
-            t_model_load = env["t_model_load"]
-            is_cuda = env["is_cuda"]
-
-            # 2. Compression & calibration phase
-            (
-                model,
-                comp_ratio,
-                comp_stats,
-                t_calib,
-                t_comp,
-                calib_used,
-                calib_source,
-            ) = _apply_compression_phase(
-                model,
-                module_name,
-                module_type,
-                model_family,
-                dataset,
-                rank,
-                seq_len,
-                device,
-                mem_phases,
-                run_log_lines,
-            )
-            result.compression_ratio = comp_ratio
-            result.calibration_used = calib_used
-            result.calibration_source = calib_source
-            result.params_before = sum(p.numel() for p in model.parameters())
-
-            # 3. Dynamic batch probing
-            if retry_count == 0 and is_cuda:
-                current_batch_size = probe_optimal_batch_size(
-                    model=model,
-                    model_family=model_family,
-                    dataset=dataset,
-                    seq_len=seq_len,
-                    device=device,
-                    max_batch_cap=min(batch_size, 512) if batch_size > 0 else 512,
-                    allow_synthetic=allow_synthetic,
-                )
-
-            batch = get_dataset_batch(
-                dataset,
-                model_family,
-                current_batch_size,
-                seq_len,
-                num_labels=num_labels,
-                device=device,
+            trial = _run_single_trial(
+                module_name=module_name,
+                module_type=module_type,
+                model_family=model_family,
+                dataset=dataset,
+                rank=rank,
+                seq_len=seq_len,
+                batch_size=batch_size,
+                current_batch_size=current_batch_size,
+                num_warmup=num_warmup,
+                num_steps=num_steps,
                 allow_synthetic=allow_synthetic,
+                device=device,
+                retry_count=retry_count,
+                run_log_lines=run_log_lines,
             )
-            filtered_batch = _filter_batch(batch, model_family, model)
-            if is_lm and "labels" not in filtered_batch:
-                ids = filtered_batch["input_ids"]
-                filtered_batch["labels"] = ids.clone()
-                filtered_batch["labels"][:, :-1] = ids[:, 1:]
-                filtered_batch["labels"][:, -1] = -100
+            result.compression_ratio = trial["comp_ratio"]
+            result.calibration_used = trial["calib_used"]
+            result.calibration_source = trial["calib_source"]
+            result.params_before = trial["params_before"]
+            result.params_after = trial["params_after"]
+            comp_stats = trial["comp_stats"]
+            mem_phases = trial["mem_phases"]
+            t_model_load = trial["t_model_load"]
+            t_calib = trial["t_calib"]
+            t_comp = trial["t_comp"]
+            current_batch_size = trial["current_batch_size"]
 
-            # 4. Latency & resource benchmark
-            bench = _benchmark_runtime_latency(
-                model,
-                filtered_batch,
-                num_steps,
-                num_warmup,
-                num_labels,
-                is_lm,
-                is_cuda,
-                device,
-                current_batch_size,
-                seq_len,
-            )
+            bench = trial["bench"]
             result.forward_latency_ms = bench["forward_latency_ms"]
             result.backward_latency_ms = bench["backward_latency_ms"]
             result.total_step_latency_ms = bench["total_step_latency_ms"]
@@ -943,33 +1020,19 @@ def evaluate_single_combination_opt(
             result.trajectories = bench["trajectories"]
             result.flops_macs = bench["flops_macs"]
 
-            # 5. Full evaluation on validation set
-            eval_metrics = _evaluate_model_accuracy(
-                model,
-                model_family,
-                dataset,
-                num_labels,
-                seq_len,
-                current_batch_size,
-                is_lm,
-                is_cuda,
-                device,
-                mem_phases,
-                run_log_lines,
-            )
-            result.perplexity = eval_metrics["perplexity"]
-            result.accuracy_pct = eval_metrics["accuracy_pct"]
-            result.f1_score = eval_metrics["f1_score"]
-            result.mcc = eval_metrics["mcc"]
-            result.pearson = eval_metrics["pearson"]
-            result.spearman = eval_metrics["spearman"]
-            result.fidelity_score = eval_metrics["fidelity_score"]
-            t_eval = eval_metrics["t_eval"]
-            baseline_logits_samples = eval_metrics["baseline_logits_samples"]
-            compressed_logits_samples = eval_metrics["compressed_logits_samples"]
-            sample_cosines = eval_metrics["sample_cosines"]
+            em = trial["eval_metrics"]
+            result.perplexity = em["perplexity"]
+            result.accuracy_pct = em["accuracy_pct"]
+            result.f1_score = em["f1_score"]
+            result.mcc = em["mcc"]
+            result.pearson = em["pearson"]
+            result.spearman = em["spearman"]
+            result.fidelity_score = em["fidelity_score"]
+            t_eval = em["t_eval"]
+            baseline_logits_samples = em["baseline_logits_samples"]
+            compressed_logits_samples = em["compressed_logits_samples"]
+            sample_cosines = em["sample_cosines"]
 
-            result.params_after = sum(p.numel() for p in model.parameters())
             result.status = "PASS"
             success = True
 
@@ -994,8 +1057,6 @@ def evaluate_single_combination_opt(
             result.error_message = f"{exc_type}: {e}"
             break
         finally:
-            if model is not None:
-                del model
             gc.collect()
             if device.type == "cuda":
                 torch.cuda.empty_cache()
