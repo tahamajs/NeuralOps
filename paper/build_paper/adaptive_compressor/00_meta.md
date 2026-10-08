@@ -1,5 +1,7 @@
 # Adaptive Compressor: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Track / Status:** Specialized Research Variant & Ablation Study (`adaptive_compressor`). Evaluated within unified empirical sweeps.
+
 **Module Name**: `adaptive_compressor`  
 **Class Name**: `AdaptiveTransformerCompressor`  
 **Base Architecture**: `AdaptiveRanksCompressor`  

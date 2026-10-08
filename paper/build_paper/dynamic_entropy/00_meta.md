@@ -1,5 +1,7 @@
 # Dynamic Entropy: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Track / Status:** Specialized Research Variant & Ablation Study (`dynamic_entropy`). Evaluated within unified empirical sweeps.
+
 **Module Name**: `dynamic_entropy`  
 **Class Name**: `DynamicSVDLinear`  
 **Base Architecture**: `nn.Module`  

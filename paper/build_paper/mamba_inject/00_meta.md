@@ -1,5 +1,7 @@
 # Mamba Inject: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Track / Status:** Specialized Research Variant & Ablation Study (`mamba_inject`). Evaluated within unified empirical sweeps.
+
 **Module Name**: `mamba_inject`  
 **Class Name**: `mamba_inject`  
 **Base Architecture**: `None`  

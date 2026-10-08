@@ -1,5 +1,7 @@
 # Smart Weighted Ensemble: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Architecture Type:** Composite Architecture / Ablation Benchmark Suite (Dynamic Attention Ensemble Architecture).
+
 **Module Name**: `smart_weighted_ensemble`  
 **Class Name**: `TaskAwareAttention`  
 **Base Architecture**: `nn.Module`  

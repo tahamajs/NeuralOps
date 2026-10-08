@@ -1,5 +1,7 @@
 # Svd Proj Attn: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Track / Status:** Specialized Research Variant & Ablation Study (`svd_proj_attn`). Evaluated within unified empirical sweeps.
+
 **Module Name**: `svd_proj_attn`  
 **Class Name**: `SVDProjectionLinear`  
 **Base Architecture**: `nn.Module`  

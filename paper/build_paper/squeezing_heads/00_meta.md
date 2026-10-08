@@ -1,5 +1,7 @@
 # Squeezing Heads: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Architecture Type:** Composite Architecture / Ablation Benchmark Suite (Multi-Head Attention Distillation and Squeezing).
+
 **Module Name**: `squeezing_heads`  
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  

@@ -1,5 +1,7 @@
 # HGRN2Layer: Element-Wise Linear Recurrence for Efficient Transformer Attention Replacement
 
+> **Track / Status:** Specialized Research Variant & Ablation Study (`hgrn2_layer`). Evaluated within unified empirical sweeps.
+
 **Authors:**
 - [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
 - [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]

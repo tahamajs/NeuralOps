@@ -1,5 +1,7 @@
 # Kronecker Linear: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Track / Status:** Specialized Research Variant & Ablation Study (`kronecker_linear`). Evaluated within unified empirical sweeps.
+
 **Module Name**: `kronecker_linear`  
 **Class Name**: `KroneckerLinear`  
 **Base Architecture**: `nn.Module`  

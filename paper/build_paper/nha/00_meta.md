@@ -1,4 +1,6 @@
 <!-- ═══════════════════════════════════════════════════════════════════════════
+
+> **Track / Status:** Specialized Research Variant & Ablation Study (`nha`). Evaluated within unified empirical sweeps.
      FILE: 00_meta.md
      PURPOSE: Title, authors, abstract
      DEPENDENCIES: None

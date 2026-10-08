@@ -1,5 +1,7 @@
 # Saes Svd: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Note:** This is a legacy experimental version of `saes_svd_v2`. See [`saes_svd_v2`](../saes_svd_v2/00_meta.md) for the current canonical implementation.
+
 **Module Name**: `saes_svd`  
 **Class Name**: `SAESSVDCompressorV2`  
 **Base Architecture**: `BaseCompressor`  

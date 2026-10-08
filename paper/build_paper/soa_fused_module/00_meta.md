@@ -1,5 +1,7 @@
 # Soa Fused Module: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Track / Status:** Specialized Research Variant & Ablation Study (`soa_fused_module`). Evaluated within unified empirical sweeps.
+
 **Module Name**: `soa_fused_module`  
 **Class Name**: `FactorizedLoRAUp`  
 **Base Architecture**: `nn.Module`  

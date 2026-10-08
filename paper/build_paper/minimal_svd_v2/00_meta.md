@@ -1,5 +1,7 @@
 # Minimal Svd V2: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Note:** This is a legacy experimental version of `minimal_svd`. See [`minimal_svd`](../minimal_svd/00_meta.md) for the current canonical implementation.
+
 **Module Name**: `minimal_svd_v2`  
 **Class Name**: `FactorisedLinear`  
 **Base Architecture**: `nn.Module`  

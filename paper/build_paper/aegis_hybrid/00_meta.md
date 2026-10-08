@@ -1,5 +1,7 @@
 # Aegis Hybrid: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Architecture Type:** Composite Architecture / Ablation Benchmark Suite (Hybrid Spectral-Spatial Attention Architecture).
+
 **Module Name**: `aegis_hybrid`  
 **Class Name**: `FactorizedLinear`  
 **Base Architecture**: `nn.Module`  

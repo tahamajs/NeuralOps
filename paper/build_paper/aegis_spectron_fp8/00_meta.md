@@ -1,5 +1,7 @@
 # Aegis Spectron Fp8: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Architecture Type:** Composite Architecture / Ablation Benchmark Suite (FP8 Quantized Spectral-Attention Architecture).
+
 **Module Name**: `aegis_spectron_fp8`  
 **Class Name**: `FactorizedLinear`  
 **Base Architecture**: `nn.Module`  
