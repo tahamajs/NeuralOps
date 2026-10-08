@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `frandi_compressor`
+**Legacy Folder Name:** `frandi` (standardized in v1.2.0)
+
 # Frandi: Formal Architectural Specification and Empirical Benchmark Evaluation
 
 **Module Name**: `frandi`  
