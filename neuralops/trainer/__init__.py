@@ -75,8 +75,50 @@ __all__ = [
     "plot_training_curves",
     "HuggingFaceTrainer",
     "CustomLoopTrainer",
-    "OPTIMIZER_REGISTRY",
     "RiemannianStiefelOptimizer",
     "project_stiefel_gradient",
     "stiefel_qr_retraction",
+]
+
+# Optimizer factories
+from .optimizers import (  # noqa: E402
+    create_adabelief,
+    create_adam,
+    create_adamw,
+    create_lamb,
+    create_lars,
+    create_muon,
+    create_muon_adamw_reg,
+    create_ranger,
+    create_riemannian_stiefel,
+    create_sgd,
+)
+
+# Scheduler factories
+from .schedulers import (  # noqa: E402
+    create_cosine,
+    create_linear,
+    create_onecycle,
+    create_poly,
+    create_rop,
+)
+
+__all__ += [
+    # Optimizers
+    "create_muon",
+    "create_muon_adamw_reg",
+    "create_riemannian_stiefel",
+    "create_adamw",
+    "create_sgd",
+    "create_adam",
+    "create_adabelief",
+    "create_ranger",
+    "create_lamb",
+    "create_lars",
+    # Schedulers
+    "create_linear",
+    "create_cosine",
+    "create_rop",
+    "create_onecycle",
+    "create_poly",
 ]
