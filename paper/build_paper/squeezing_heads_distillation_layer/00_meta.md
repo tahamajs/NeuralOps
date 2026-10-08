@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `squeezing_heads_distillation_layer`
+**Legacy Folder Name:** `SqueezingHeadsAttentionDistillationLayer` (standardized in v1.2.0)
+
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 00_meta.md
      PURPOSE: Title, authors, abstract
