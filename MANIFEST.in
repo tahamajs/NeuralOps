@@ -1,0 +1,28 @@
+include LICENSE
+include README.md
+include CHANGELOG.md
+include pyproject.toml
+
+recursive-include neuralops *.json
+recursive-include neuralops *.yaml
+recursive-include neuralops *.yml
+recursive-include neuralops *.pyi
+recursive-include neuralops py.typed
+
+recursive-exclude neuralops/tests *
+recursive-exclude neuralops/benchmarks/_legacy *
+recursive-exclude neuralops/_archive *
+recursive-exclude neuralops/attentions/_legacy *
+recursive-exclude neuralops/compression_engine/_legacy *
+recursive-exclude tests *
+recursive-exclude scripts *
+recursive-exclude results *
+
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude __pycache__
+global-exclude *.bak
+global-exclude *.err
+global-exclude *.log
+global-exclude .DS_Store
+global-exclude *.swp
