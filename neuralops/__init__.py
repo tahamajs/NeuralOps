@@ -8,7 +8,7 @@ and interactive visualization.
 """
 
 import importlib
-from typing import Any, List
+from typing import Any
 
 __version__ = "1.2.0"
 

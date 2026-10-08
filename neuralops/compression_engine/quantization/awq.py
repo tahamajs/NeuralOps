@@ -24,7 +24,7 @@ class AWQQuantizer:
 
     def _quantize_int4(self, W: torch.Tensor) -> torch.Tensor:
         """Symmetric per-channel INT4 quantization grid."""
-        q_levels = 2 ** self.bits
+        _q_levels = 2 ** self.bits
         q_max = 2 ** (self.bits - 1) - 1
         q_min = -2 ** (self.bits - 1)
         max_val = torch.amax(torch.abs(W), dim=-1, keepdim=True).clamp(min=1e-8)

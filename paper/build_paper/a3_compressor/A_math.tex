@@ -127,9 +127,9 @@ Dividing by $N_\text{total} = \sum_k N^{(k)}$:
 which converges to $\mathbb{E}[x x^\top]$ by the law of large numbers. $\square$
 
 \subsection{A.6 Complexity and Memory Footprint Analysis}
-\label{sec:app\_complexity}
+\label{sec:app_complexity}
 
-Table~\ref{tab:complexity\_analysis} provides an asymptotic breakdown of computational runtime complexity and auxiliary working memory across the five stages of A3.
+Table~\ref{tab:complexity_analysis} provides an asymptotic breakdown of computational runtime complexity and auxiliary working memory across the five stages of A3.
 
 \begin{table}[H]
 \centering
@@ -146,13 +146,13 @@ Phase 5: LayerNorm Recalibration & $\mathcal{O}(N \sum_\ell d_\ell)$ & $\mathcal
 \bottomrule
 \end{tabular}
 \caption{Asymptotic time and space complexity across A3 compression stages for $N$ calibration tokens, $N_l$ transformer layers, and maximum hidden dimension $d_\text{max}$.}
-\label{tab:complexity\_analysis}
+\label{tab:complexity_analysis}
 \end{table}
 
 On DistilBERT (66.95M parameters, $d=768$), total calibration and factorization consumes under 45 seconds of CPU/GPU wall-clock time on an NVIDIA RTX 4070 Laptop GPU, with maximum auxiliary host memory remaining below 17 MB.
 
 \subsection{A.7 Exact Parameter Counting and Dimensional Break-Even Bounds}
-\label{sec:app\_parameter\_counting}
+\label{sec:app_parameter_counting}
 
 For a linear projection matrix $W \in \mathbb{R}^{d_\text{out} \times d_\text{in}}$, the uncompressed parameter count is $P_\text{orig} = d_\text{out} \cdot d_\text{in}$. Factoring $W$ into $U \in \mathbb{R}^{d_\text{out} \times r}$ and $V \in \mathbb{R}^{r \times d_\text{in}}$ yields $P_\text{A3} = r(d_\text{out} + d_\text{in})$.
 
@@ -170,7 +170,7 @@ Single-Layer Reduction Factor & $\frac{d_\text{out} d_\text{in}}{r(d_\text{out} 
 \bottomrule
 \end{tabular}
 \caption{Parameter counting formulation and representative numerical values across benchmark transformer dimensions.}
-\label{tab:parameter\_counting\_formulation}
+\label{tab:parameter_counting_formulation}
 \end{table}
 
 \textbf{Dimensional Break-Even Condition.} Factorization achieves genuine parameter reduction ($P_\text{A3} < P_\text{orig}$) if and only if:
@@ -181,9 +181,9 @@ r \textless{} r\_\text{break-even} = \frac{d\_\text{out} d\_\text{in}}{d\_\text{
 For square projections where $d_\text{in} = d_\text{out} = d$, the break-even rank is exactly $r_\text{break-even} = d/2 = 384$. By enforcing a strict rank ceiling $r_{\mathrm{ceiling}} \le 256 < 384$, A3 mathematically guarantees that factorized layers never expand parameter counts.
 
 \subsection{A.8 Mathematical Notation and Dimensionality Reference}
-\label{sec:app\_notation}
+\label{sec:app_notation}
 
-Table~\ref{tab:app\_notation\_summary} catalogs all mathematical symbols, tensor shapes, and operational variables deployed throughout the methodological formulation and empirical evaluation of A3.
+Table~\ref{tab:app_notation_summary} catalogs all mathematical symbols, tensor shapes, and operational variables deployed throughout the methodological formulation and empirical evaluation of A3.
 
 \begin{table}[H]
 \centering
@@ -215,5 +215,5 @@ $B$ & Forward evaluation batch size & scalar integer \\
 \bottomrule
 \end{tabular}
 \caption{Consolidated reference catalog of mathematical notations, symbols, and tensor dimensions.}
-\label{tab:app\_notation\_summary}
+\label{tab:app_notation_summary}
 \end{table}

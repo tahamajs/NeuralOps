@@ -1,7 +1,7 @@
 \section{Empirical Results and Benchmark Evaluations}
 
 \subsection{Downstream Task Performance}
-Table~\ref{tab:results\_acc\_qcqaattention} details empirical evaluation metrics across target backbones.
+Table~\ref{tab:results_acc_qcqaattention} details empirical evaluation metrics across target backbones.
 
 \begin{table*}[t]
 \centering
@@ -19,11 +19,11 @@ GPT-2 & \textbf{Qcqa} & \textbf{50.92\%} & -9.86\% & PASS\_LOW & 0.6738 & 0 & \t
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main\_sst2}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results\_params\_qcqaattention} documents parameter compression factors and adapter overhead.
+Table~\ref{tab:results_params_qcqaattention} documents parameter compression factors and adapter overhead.
 
 \begin{table*}[t]
 \centering
@@ -41,11 +41,11 @@ Table~\ref{tab:results\_params\_qcqaattention} documents parameter compression f
 \bottomrule
 \end{tabular}
 \caption{Parameter scaling and recovery parameter counts for \texttt{qcqaattention}.}
-\label{tab:results\_params\_qcqaattention}
+\label{tab:results_params_qcqaattention}
 \end{table*}
 
 \subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results\_vram\_qcqaattention} presents memory profiling and execution throughput.
+Table~\ref{tab:results_vram_qcqaattention} presents memory profiling and execution throughput.
 
 \begin{table*}[t]
 \centering
@@ -63,7 +63,7 @@ Table~\ref{tab:results\_vram\_qcqaattention} presents memory profiling and execu
 \bottomrule
 \end{tabular}
 \caption{Inference throughput and VRAM footprint for \texttt{qcqaattention}.}
-\label{tab:results\_vram\_qcqaattention}
+\label{tab:results_vram_qcqaattention}
 \end{table*}
 
 
@@ -71,5 +71,5 @@ Table~\ref{tab:results\_vram\_qcqaattention} presents memory profiling and execu
 \centering
 \includegraphics[width=0.85\linewidth]{figures/qcqa\_roberta\_loss\_curve.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{qcqa\_attention}.}
-\label{fig:results\_qcqa\_attention}
+\label{fig:results_qcqa_attention}
 \end{figure}

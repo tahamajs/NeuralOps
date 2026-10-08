@@ -2,7 +2,7 @@
 \label{sec:analysis}
 
 \subsection{Why Does A3 Work?}
-\label{sec:why\_a3\_works}
+\label{sec:why_a3_works}
 
 The fundamental failure mode of classical unweighted singular value decomposition in transformer compression is its implicit assumption of isotropic activation geometry: $x \sim \mathcal{N}(0, I)$. In deep multi-head architectures, however, activation distributions exhibit extreme coordinate-wise anisotropy, where a tiny minority of outlier channels concentrate over 85\% of empirical signal energy. SVD on unweighted weights minimizes uniform Frobenius error $\|W - \tilde{W}\|_F^2$, inadvertently allocating limited rank capacity to reconstructing dormant or low-variance dimensions while corrupting critical task-salient coordinates.
 
@@ -12,13 +12,13 @@ A3 resolves this discordance through three coordinated mechanisms. First, \textb
 \centering
 \includegraphics[width=\columnwidth]{figures/fig\_8\_1.pdf}
 \caption{Sorted empirical Fisher diagonal energy distribution for an intermediate DistilBERT attention layer. The top 10\% of feature coordinates concentrate $\sim$85\% of the total sensitivity norm, justifying activation-weighted factorization. Source: \texttt{results/a3\_tests/fixed\_v4/a3\_stats.json}.}
-\label{fig:fisher\_diagonal}
+\label{fig:fisher_diagonal}
 \end{figure}
 
 \subsection{Comparison to Unweighted SVD and Baseline Modules}
-\label{sec:svd\_comparison}
+\label{sec:svd_comparison}
 
-To rigorously quantify the empirical benefit of Fisher subspace weighting, Table~\ref{tab:svd\_vs\_a3} contrasts A3 against classical unweighted truncated SVD across identical architectures at a uniform rank constraint $r = 128$.
+To rigorously quantify the empirical benefit of Fisher subspace weighting, Table~\ref{tab:svd_vs_a3} contrasts A3 against classical unweighted truncated SVD across identical architectures at a uniform rank constraint $r = 128$.
 
 \begin{table}[H]
 \centering
@@ -36,19 +36,19 @@ GPT-2 & \textbf{A3 (Fisher-Weighted)} & \textbf{63.19\%} & \textbf{0.341} & \tex
 \bottomrule
 \end{tabular}
 \caption{Systematic empirical comparison between standard unweighted truncated SVD and Fisher-weighted A3 at fixed rank $r=128$ under identical calibration budgets. Sources: \texttt{results/a3\_tests/fixed\_v4/a3\_stats.json}, \texttt{results/unified\_a3/roberta/roberta-base\_a3\_full\_metrics.json}, \texttt{results/unified\_a3/gpt2/gpt2\_a3\_full\_metrics.json}.}
-\label{tab:svd\_vs\_a3}
+\label{tab:svd_vs_a3}
 \end{table}
 
 The comparative benchmarks confirm that Fisher weighting reduces relative Frobenius reconstruction error by over 30\% across all architectures, delivering a $+3.60\%$ accuracy gain on DistilBERT (90.02\% vs 86.42\%) and $+8.04\%$ on RoBERTa-base (81.19\% vs 73.15\%). On RoBERTa, deeper 12-layer stacking amplifies activation kurtosis; unweighted SVD zeroes out sparse activation spikes, leading to representation collapse. A3 preserves these critical directional coordinates, proving second-order sensitivity guidance is essential for stable post-training factorization.
 
 \subsection{Operator Heterogeneity, Spectral Dynamics, and Safe Fallbacks}
-\label{sec:operator\_heterogeneity}
+\label{sec:operator_heterogeneity}
 
 Diagnostic analysis across transformer layers reveals fundamentally divergent functional geometries. Feed-forward expansions (\texttt{lin1}, \texttt{lin2}) exhibit near-zero relative Frobenius reconstruction error ($< 0.001$) under activation weighting, reflecting extreme representation redundancy in fourfold dimension expansions ($768 \to 3072 \to 768$). In contrast, attention value (\texttt{v\_lin}) and output (\texttt{out\_lin}) projections exhibit diffuse singular value spectra with heavy tails, generating reconstruction errors between 0.450 and 0.547. Under the production gate $\tau = 0.40$, these resistant projections automatically trigger deterministic fallback, retaining uncompressed dense parameters to safeguard task representations. 
 
-\textbf{Hyperparameter Sweep and Pareto Frontier.} To map the operational limits beyond the conservative $\tau=0.40$ baseline, an exhaustive 48-configuration sweep across threshold $\tau \in \{0.30, 0.40, 0.50, 0.60\}$, rank $r \in \{64, 128, 192, 256\}$, and operator scope identified high-efficiency Pareto operating points. When expanding tolerance to $\tau = 0.50$ ($r=64$, all 24 linear layers factorized), A3 unlocks an 8.96\% whole-model parameter reduction (0.9104$\times$) while maintaining 90.02\% accuracy ($\Delta -1.04\%$, 1.68s runtime). At $\tau = 0.60$ ($r=192$), whole-model compression reaches 10.57\% reduction (0.8943$\times$) with 89.68\% accuracy ($\Delta -1.38\%$), confirming that relaxing fallback tolerances on benign layers unlocks multi-megabyte parameter savings while respecting strict accuracy bounds. An exhaustive layer-by-layer breakdown of fallback decisions is cataloged in Appendix~\ref{sec:app\_failure\_taxonomy} (Table~\ref{tab:app\_failure\_cases}).
+\textbf{Hyperparameter Sweep and Pareto Frontier.} To map the operational limits beyond the conservative $\tau=0.40$ baseline, an exhaustive 48-configuration sweep across threshold $\tau \in \{0.30, 0.40, 0.50, 0.60\}$, rank $r \in \{64, 128, 192, 256\}$, and operator scope identified high-efficiency Pareto operating points. When expanding tolerance to $\tau = 0.50$ ($r=64$, all 24 linear layers factorized), A3 unlocks an 8.96\% whole-model parameter reduction (0.9104$\times$) while maintaining 90.02\% accuracy ($\Delta -1.04\%$, 1.68s runtime). At $\tau = 0.60$ ($r=192$), whole-model compression reaches 10.57\% reduction (0.8943$\times$) with 89.68\% accuracy ($\Delta -1.38\%$), confirming that relaxing fallback tolerances on benign layers unlocks multi-megabyte parameter savings while respecting strict accuracy bounds. An exhaustive layer-by-layer breakdown of fallback decisions is cataloged in Appendix~\ref{sec:app_failure_taxonomy} (Table~\ref{tab:app_failure_cases}).
 
 \subsection{Compound Post-Training Compression}
-\label{sec:compound\_compression}
+\label{sec:compound_compression}
 
-A crucial operational strength of A3 is its structural compatibility with orthogonal compression paradigms. When low-rank factorized checkpoints are cascaded with symmetric INT8 post-training quantization, total model storage drops to 65.8 MB on DistilBERT (2.04$\times$ overall reduction relative to FP16) and 124.1 MB on RoBERTa (2.01$\times$ reduction), while maintaining 89.84\% and 82.95\% accuracy respectively. Because A3 pre-stabilizes activation envelopes via LayerNorm recalibration, activation quantizers experience minimal clipping noise, enabling seamless compound compression without retraining. Detailed compound quantization benchmarks are documented in Appendix~\ref{sec:app\_compound\_ptq} (Table~\ref{tab:app\_compound\_quantization}).
+A crucial operational strength of A3 is its structural compatibility with orthogonal compression paradigms. When low-rank factorized checkpoints are cascaded with symmetric INT8 post-training quantization, total model storage drops to 65.8 MB on DistilBERT (2.04$\times$ overall reduction relative to FP16) and 124.1 MB on RoBERTa (2.01$\times$ reduction), while maintaining 89.84\% and 82.95\% accuracy respectively. Because A3 pre-stabilizes activation envelopes via LayerNorm recalibration, activation quantizers experience minimal clipping noise, enabling seamless compound compression without retraining. Detailed compound quantization benchmarks are documented in Appendix~\ref{sec:app_compound_ptq} (Table~\ref{tab:app_compound_quantization}).

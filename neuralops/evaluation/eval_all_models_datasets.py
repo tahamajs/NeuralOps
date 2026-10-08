@@ -14,7 +14,6 @@ Underlying implementations are factored into:
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 import torch
 
