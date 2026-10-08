@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `fusion_attention`
+**Legacy Folder Name:** `fusion` (standardized in v1.2.0)
+
 # FUSIONATTN: Multi-Paradigm Hybrid Sparse Attention with Block Gating and Short-Sequence Fast Path
 
 **Authors:**
