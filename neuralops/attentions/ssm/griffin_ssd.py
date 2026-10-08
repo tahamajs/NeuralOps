@@ -23,6 +23,7 @@ import torch.nn.functional as F
 from neuralops.attentions.gated_delta_net import LoRALinear
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.base import BaseAttention
+from neuralops.core.common import _cfg_get
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
@@ -41,14 +42,6 @@ def _env_float(name: str, default: float) -> float:
         return float(v) if v else default
     except ValueError:
         return default
-
-
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:

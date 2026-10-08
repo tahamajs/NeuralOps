@@ -5,6 +5,8 @@ SAMBA-M3: Hybrid Sliding-Window Attention and Spectral Mamba Block (Hardened).
 
 from __future__ import annotations
 
+from neuralops.core.common import _cfg_get
+
 import logging
 import math
 from typing import Any
@@ -32,14 +34,6 @@ logger = logging.getLogger(__name__)
 # =========================================================================
 # Helpers
 # =========================================================================
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
-
-
 def apply_rotary_pos_emb(
     q: torch.Tensor,
     k: torch.Tensor,
