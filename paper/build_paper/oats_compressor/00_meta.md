@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `oats_compressor`
+**Legacy Folder Name:** `oats` (standardized in v1.2.0)
+
 # Oats: Formal Architectural Specification and Empirical Benchmark Evaluation
 
 **Module Name**: `oats`  
