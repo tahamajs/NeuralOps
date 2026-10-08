@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `cluster_attention`
+**Legacy Folder Name:** `cluster` (standardized in v1.2.0)
+
 # ClusterFormer: Token Clustering Attention with Differentiable K-Means and Local Sliding Window
 
 **Authors:**
