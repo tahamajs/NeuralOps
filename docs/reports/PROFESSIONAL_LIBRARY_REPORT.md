@@ -18,12 +18,12 @@
 - **README.md**: 533 lines featuring News, Platform Support Matrix, Models taxonomy, Benchmarks, Hugging Face integrations, and Citations.
 - **API Reference**: Comprehensive HTML docs generated under `docs/` and synced for GitHub Pages deployment.
 - **Guides**:
-  - [`docs/QUICKSTART.md`](file:///Users/tahamajs/Documents/uni/Project/docs/QUICKSTART.md)
-  - [`docs/ARCHITECTURE.md`](file:///Users/tahamajs/Documents/uni/Project/docs/ARCHITECTURE.md)
-  - [`docs/TROUBLESHOOTING.md`](file:///Users/tahamajs/Documents/uni/Project/docs/TROUBLESHOOTING.md)
+  - [`docs/QUICKSTART.md`](docs/QUICKSTART.md)
+  - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+  - [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md)
 - **Migration & Backwards Compatibility**:
-  - [`docs/RENAME_MAP.md`](file:///Users/tahamajs/Documents/uni/Project/docs/RENAME_MAP.md) detailing 657 legacy alias mappings
-  - [`CHANGELOG.md`](file:///Users/tahamajs/Documents/uni/Project/CHANGELOG.md) covering full release history through v1.1.1
+  - [`docs/RENAME_MAP.md`](docs/RENAME_MAP.md) detailing 657 legacy alias mappings
+  - [`CHANGELOG.md`](CHANGELOG.md) covering full release history through v1.1.1
 
 ## 3. Models & Compression Engines
 - **159 Attention Mechanisms** across 11 families (adaptive, dense, experimental, fast_kernels, gated, hybrid, linear, modern, sparse, ssm, svd).
@@ -40,8 +40,8 @@
 - **PyPI Release**: `.github/workflows/publish.yml` with trusted publishing workflows.
 
 ## 6. Hugging Face Integration
-- **Model Card Template**: [`huggingface_models/distilbert-svd-attention/README.md`](file:///Users/tahamajs/Documents/uni/Project/huggingface_models/distilbert-svd-attention/README.md)
-- **Upload Guide**: [`docs/HUGGINGFACE_UPLOAD.md`](file:///Users/tahamajs/Documents/uni/Project/docs/HUGGINGFACE_UPLOAD.md)
+- **Model Card Template**: [`huggingface_models/distilbert-svd-attention/README.md`](huggingface_models/distilbert-svd-attention/README.md)
+- **Upload Guide**: [`docs/HUGGINGFACE_UPLOAD.md`](docs/HUGGINGFACE_UPLOAD.md)
 
 ## 7. Community & Standards
 - Author attribution: Taha Majlesi (`tahamaj4@gmail.com`).

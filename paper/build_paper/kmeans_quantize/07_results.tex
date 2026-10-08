@@ -20,11 +20,11 @@ GPT-2 & \textbf{Kmeans} & \textbf{62.04\%} & +1.26\% & PASS & 0.6783 & 0 & \text
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main\_sst2}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Scaling and Compression Dynamics}
-Table~\ref{tab:params\_kmeans\_quantize} compiles parameter profiles before and after transformation, detailing parameter counts, recovery parameters, and net compression ratios.
+Table~\ref{tab:params_kmeans_quantize} compiles parameter profiles before and after transformation, detailing parameter counts, recovery parameters, and net compression ratios.
 
 \begin{table*}[t]
 \centering
@@ -39,7 +39,7 @@ AG News & 66,956,548 & 24,498,436 & -42,458,112 (-63.41\%) & 602,884 & 36 & 0 \\
 \bottomrule
 \end{tabular}
 \caption{Parameter allocation and layer decomposition for \texttt{kmeans\_quantize}.}
-\label{tab:params\_kmeans\_quantize}
+\label{tab:params_kmeans_quantize}
 \end{table*}
 
 \subsection{Inference Efficiency and Memory Footprint}

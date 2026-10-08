@@ -2,7 +2,7 @@
 \label{sec:discussion}
 
 \subsection{Key Takeaways and Practical Guidance}
-\label{sec:practical\_guidance}
+\label{sec:practical_guidance}
 
 Our extensive benchmarking across DistilBERT, RoBERTa-base, and GPT-2 yields three foundational insights for the post-training compression literature:
 
@@ -13,21 +13,21 @@ Our extensive benchmarking across DistilBERT, RoBERTa-base, and GPT-2 yields thr
 \textbf{Closed-Form Variance Stabilization.} Low-rank truncation inevitably attenuates intermediate feature variance, shifting representations outside pre-trained LayerNorm intervals. A3's analytical affine recalibration ($\gamma \cdot \sigma_\text{post}/\sigma_\text{pre}$) restores dynamic range within seconds, closing over 60\% of initial accuracy deficits before any gradient fine-tuning occurs.
 
 \subsection{When to Use A3}
-\label{sec:when\_to\_use}
+\label{sec:when_to_use}
 
-A3 provides substantial engineering benefits in scenarios governed by strict static storage constraints, including edge deployment, over-the-air binary updates, and cold-start image transfers where uncompressed parameter volume dictates loading latency. It also functions as an effective structural foundation for compound INT8 post-training quantization. Conversely, A3 is unsuited for latency-critical online serving on modern GPUs: decomposing a single dense GEMM into two sequential low-rank matrix multiplications introduces intermediate activation materialization and kernel launch overhead, resulting in an approximate 10.5\% inference latency penalty on DistilBERT. Figure~\ref{fig:decision\_flowchart} provides a practitioner decision flowchart.
+A3 provides substantial engineering benefits in scenarios governed by strict static storage constraints, including edge deployment, over-the-air binary updates, and cold-start image transfers where uncompressed parameter volume dictates loading latency. It also functions as an effective structural foundation for compound INT8 post-training quantization. Conversely, A3 is unsuited for latency-critical online serving on modern GPUs: decomposing a single dense GEMM into two sequential low-rank matrix multiplications introduces intermediate activation materialization and kernel launch overhead, resulting in an approximate 10.5\% inference latency penalty on DistilBERT. Figure~\ref{fig:decision_flowchart} provides a practitioner decision flowchart.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{figures/decision\_flowchart.pdf}
 \caption{Decision flowchart for when to apply A3 compression. Use A3 for storage- or memory-constrained deployment; avoid for latency-critical or very small/very large models.}
-\label{fig:decision\_flowchart}
+\label{fig:decision_flowchart}
 \end{figure}
 
 \subsection{Comparison to Published Compression Paradigms}
-\label{sec:published\_comparison}
+\label{sec:published_comparison}
 
-Table~\ref{tab:published\_comparison} benchmarks A3 against published compression methods spanning knowledge distillation, parameter sharing, and post-training factorization.
+Table~\ref{tab:published_comparison} benchmarks A3 against published compression methods spanning knowledge distillation, parameter sharing, and post-training factorization.
 
 \begin{table}[H]
 \centering
@@ -45,14 +45,14 @@ DRONE & Data-aware singular projection & 1.92$\times$ & 89.10\% & Zero retrainin
 \bottomrule
 \end{tabular}
 \caption{Comparison of A3 against published compression paradigms on SST-2. Sources: Published literature baselines and \texttt{results/a3\_tests/fixed\_v4/distilbert\_sst2\_a3\_full\_metrics.json}.}
-\label{tab:published\_comparison}
+\label{tab:published_comparison}
 \end{table}
 
-While knowledge distillation paradigms achieve higher nominal ratios, they demand immense retraining compute (35--90 GPU-hours) and full training corpora. A3 establishes an attractive zero-shot Pareto operating point: retaining 90.02\% accuracy ($\Delta -0.69\%$) on DistilBERT in under 30 seconds of compute using only 500 unlabeled sequences. Figure~\ref{fig:comparison\_methods} visualizes this accuracy-compression trade-off frontier. Open research directions and broader societal impacts are discussed in Appendix D and Appendix E.
+While knowledge distillation paradigms achieve higher nominal ratios, they demand immense retraining compute (35--90 GPU-hours) and full training corpora. A3 establishes an attractive zero-shot Pareto operating point: retaining 90.02\% accuracy ($\Delta -0.69\%$) on DistilBERT in under 30 seconds of compute using only 500 unlabeled sequences. Figure~\ref{fig:comparison_methods} visualizes this accuracy-compression trade-off frontier. Open research directions and broader societal impacts are discussed in Appendix D and Appendix E.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{figures/accuracy\_vs\_compression.pdf}
 \caption{Downstream accuracy versus whole-model parameter compression ratio trade-off for A3 versus published compression paradigms.}
-\label{fig:comparison\_methods}
+\label{fig:comparison_methods}
 \end{figure}

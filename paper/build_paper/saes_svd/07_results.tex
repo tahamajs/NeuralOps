@@ -1,7 +1,7 @@
 \section{Empirical Results and Benchmark Evaluations}
 
 \subsection{Downstream Task Performance}
-Table~\ref{tab:results\_acc\_saessvd} details empirical evaluation metrics across target backbones.
+Table~\ref{tab:results_acc_saessvd} details empirical evaluation metrics across target backbones.
 
 \begin{table*}[t]
 \centering
@@ -19,11 +19,11 @@ GPT-2 & \textbf{Saes Svd Compressor} & \textbf{50.92\%} & -6.99\% & PASS\_LOW & 
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main\_sst2}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results\_params\_saessvd} documents parameter compression factors and adapter overhead.
+Table~\ref{tab:results_params_saessvd} documents parameter compression factors and adapter overhead.
 
 \begin{table*}[t]
 \centering
@@ -38,11 +38,11 @@ Table~\ref{tab:results\_params\_saessvd} documents parameter compression factors
 \bottomrule
 \end{tabular}
 \caption{Parameter scaling and recovery parameter counts for \texttt{saessvd}.}
-\label{tab:results\_params\_saessvd}
+\label{tab:results_params_saessvd}
 \end{table*}
 
 \subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results\_vram\_saessvd} presents memory profiling and execution throughput.
+Table~\ref{tab:results_vram_saessvd} presents memory profiling and execution throughput.
 
 \begin{table*}[t]
 \centering
@@ -57,7 +57,7 @@ Table~\ref{tab:results\_vram\_saessvd} presents memory profiling and execution t
 \bottomrule
 \end{tabular}
 \caption{Inference throughput and VRAM footprint for \texttt{saessvd}.}
-\label{tab:results\_vram\_saessvd}
+\label{tab:results_vram_saessvd}
 \end{table*}
 
 
@@ -65,5 +65,5 @@ Table~\ref{tab:results\_vram\_saessvd} presents memory profiling and execution t
 \centering
 \includegraphics[width=0.85\linewidth]{figures/saes\_svd\_compressor\_distilbert\_radar\_metrics.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{saes\_svd}.}
-\label{fig:results\_saes\_svd}
+\label{fig:results_saes_svd}
 \end{figure}

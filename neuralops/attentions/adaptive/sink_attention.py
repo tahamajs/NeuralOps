@@ -1,7 +1,6 @@
 """Attention sinks — StreamingLLM style."""
 from __future__ import annotations
 import torch
-import torch.nn as nn
 
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY

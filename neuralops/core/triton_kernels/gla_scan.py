@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import torch
 
-from neuralops.core.triton_kernels._common import HAS_TRITON, tl, triton
+from neuralops.core.triton_kernels._common import tl, triton
 
 MAX_REGISTER_DIM = 64
 

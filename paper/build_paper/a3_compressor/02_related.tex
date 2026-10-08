@@ -106,9 +106,9 @@ strictly smaller reconstruction error at the same rank, or equivalently,
 smaller rank at the same error.
 
 \subsection{Comparison Table}
-\label{sec:related\_comparison}
+\label{sec:related_comparison}
 
-To position A3 within the broader landscape of model efficiency research, Table~\ref{tab:prior\_work\_comparison} provides a comprehensive multi-axis comparison against classical matrix factorization, second-order data-aware SVD, post-training pruning, activation-aware quantization, and knowledge distillation. Unlike unconstrained uniform SVD baselines that suffer severe accuracy degradation or distillation techniques requiring extensive retraining cycles, A3 balances rapid zero-retraining execution with strict error-thresholded fallback guarantees.
+To position A3 within the broader landscape of model efficiency research, Table~\ref{tab:prior_work_comparison} provides a comprehensive multi-axis comparison against classical matrix factorization, second-order data-aware SVD, post-training pruning, activation-aware quantization, and knowledge distillation. Unlike unconstrained uniform SVD baselines that suffer severe accuracy degradation or distillation techniques requiring extensive retraining cycles, A3 balances rapid zero-retraining execution with strict error-thresholded fallback guarantees.
 
 \begin{table*}[t]
 \centering
@@ -133,5 +133,5 @@ Performer\footnotemark[12] & Linear Attn & 2021 & ICLR & Transformer & 1.00$\tim
 \bottomrule
 \end{tabular}
 \caption{Comprehensive comparison of representative model compression and efficiency methods. $^\dagger$N/R indicates not reported on SST-2 classification. $^\ddagger$Uniform SVD forces unconstrained factorization, achieving 1.25$\times$ reduction but suffering a 4.3\% accuracy drop. In contrast, A3 employs error-thresholded fallback to prioritize strict accuracy preservation over aggressive compression (resulting in a conservative 1.02$\times$ ratio). Source footnotes: $^1$Our baseline. $^2$Hsu et al., Table 2. $^3$Chen et al., Table 1. $^4$Yuan et al., Table 4. $^5$Sun et al., Table 3. $^6$Frantar et al., Table 2. $^7$Sun et al., Table 1. $^8$Lin et al., Table 2. $^9$Sanh et al., Table 1. $^{10}$Jiao et al., Table 2. $^{11}$Lan et al., Table 2. $^{12}$Choromanski et al., Table 2. $^{13}$Empirical evaluation.}
-\label{tab:prior\_work\_comparison}
+\label{tab:prior_work_comparison}
 \end{table*}

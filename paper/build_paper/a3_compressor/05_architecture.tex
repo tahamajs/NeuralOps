@@ -2,7 +2,7 @@
 \section{Architecture Integration}
 \label{sec:architecture}
 
-A3 supports any transformer architecture composed of linear or 1D-convolutional operators. We validate compression across four primary architectural families: DistilBERT-base (flat linear projections), RoBERTa-base (nested \texttt{BertAttention} projections), GPT-2 (fused and causal \texttt{Conv1D} projections), and Qwen2.5/LLaMA (Grouped-Query Attention with Rotary Position Embeddings). The integration engine selectively factorizes attention projections (\texttt{q\_lin}, \texttt{k\_lin}, \texttt{v\_lin}, \texttt{out\_lin}) and optional feed-forward expansions (\texttt{lin1}, \texttt{lin2}), while strictly preserving task-critical classification heads (\texttt{classifier}, \texttt{score}, \texttt{lm\_head}), embeddings, and 1D LayerNorm affine vectors. A full matrix of verified projections and layer-preservation criteria is cataloged in Table~\ref{tab:architecture\_support}.
+A3 supports any transformer architecture composed of linear or 1D-convolutional operators. We validate compression across four primary architectural families: DistilBERT-base (flat linear projections), RoBERTa-base (nested \texttt{BertAttention} projections), GPT-2 (fused and causal \texttt{Conv1D} projections), and Qwen2.5/LLaMA (Grouped-Query Attention with Rotary Position Embeddings). The integration engine selectively factorizes attention projections (\texttt{q\_lin}, \texttt{k\_lin}, \texttt{v\_lin}, \texttt{out\_lin}) and optional feed-forward expansions (\texttt{lin1}, \texttt{lin2}), while strictly preserving task-critical classification heads (\texttt{classifier}, \texttt{score}, \texttt{lm\_head}), embeddings, and 1D LayerNorm affine vectors. A full matrix of verified projections and layer-preservation criteria is cataloged in Table~\ref{tab:architecture_support}.
 
 \begin{table*}[t]
 \centering
@@ -18,9 +18,9 @@ Qwen2.5 / LLaMA & \texttt{q\_proj, k\_proj, v\_proj, o\_proj} & \texttt{gate\_pr
 \bottomrule
 \end{tabular}
 \caption{Architectures validated with A3 factorized compression and their linear projection types.}
-\label{tab:architecture\_support}
+\label{tab:architecture_support}
 \end{table*}
 
 \textbf{Cross-Architecture Adaptation.} For standard linear modules (DistilBERT, RoBERTa, Qwen), factorization proceeds directly on the two-dimensional weight tensors. For HuggingFace \texttt{Conv1D} modules in GPT-2, where weights are stored as $(d_\text{in}, d_\text{out})$, A3 transposes the operator prior to SVD and dynamically preserves the internal \texttt{nf} and \texttt{nx} attributes upon module substitution. For autoregressive decoders, calibration operates strictly on lower-triangular causal evaluations, preserving causal masking invariants.
 
-\textbf{Module Replacement and Fallbacks.} When a projection satisfies the error threshold $\tau \le 0.40$, it is replaced by an \texttt{A3FactorizedLinear} module computing $y = (x V^\top) U^\top + b$, with optional integrated LoRA parameters for downstream recovery. Layers exceeding the error ceiling or encountering numerical anomalies safely retain their original dense weights. Complete implementation listings for \texttt{A3FactorizedLinear}, wrapper integration, and the defensive failure handling taxonomy are provided in Appendix~\ref{sec:app\_algorithm1}, Appendix~\ref{sec:app\_lora\_wrapper}, and Appendix~\ref{sec:app\_defensive\_handling} (Table~\ref{tab:app\_failure\_responses}).
+\textbf{Module Replacement and Fallbacks.} When a projection satisfies the error threshold $\tau \le 0.40$, it is replaced by an \texttt{A3FactorizedLinear} module computing $y = (x V^\top) U^\top + b$, with optional integrated LoRA parameters for downstream recovery. Layers exceeding the error ceiling or encountering numerical anomalies safely retain their original dense weights. Complete implementation listings for \texttt{A3FactorizedLinear}, wrapper integration, and the defensive failure handling taxonomy are provided in Appendix~\ref{sec:app_algorithm1}, Appendix~\ref{sec:app_lora_wrapper}, and Appendix~\ref{sec:app_defensive_handling} (Table~\ref{tab:app_failure_responses}).

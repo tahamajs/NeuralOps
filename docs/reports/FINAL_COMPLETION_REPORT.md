@@ -30,22 +30,22 @@ All planned audit items, circular import resolutions, test harness refactorings,
 - Validated tensor output shapes and numerical stability on CPU for all fallbacks.
 
 ### Part 2: Circular Import & Registry Architecture (Session 1)
-- Guaranteed registry lazy-loading pattern in [`neuralops/core/registry.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/core/registry.py).
+- Guaranteed registry lazy-loading pattern in [`neuralops/core/registry.py`](neuralops/core/registry.py).
 - Verified zero circular dependencies when loading `neuralops.attentions` and `neuralops.compression_engine`.
 
 ### Part 3: Test Infrastructure Hardening (Session 7)
-- Created [`neuralops/tests/pytest.ini`](file:///Users/tahamajs/Documents/uni/Project/neuralops/tests/pytest.ini) ignoring obsolete `_archive/` artifacts.
-- Validated [`neuralops/tests/conftest.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/tests/conftest.py) with shared fixtures (`sample_batch`, `sample_hidden_states`, `device`).
+- Created [`neuralops/tests/pytest.ini`](neuralops/tests/pytest.ini) ignoring obsolete `_archive/` artifacts.
+- Validated [`neuralops/tests/conftest.py`](neuralops/tests/conftest.py) with shared fixtures (`sample_batch`, `sample_hidden_states`, `device`).
 - Cleaned brittle `sys.path.insert` from test suites to enforce standard packaging layout.
 
 ### Part 4: Comprehensive Test Coverage (Sessions 8-12)
 - Evaluated and verified test coverage across:
-  - Evaluation pipeline & metrics ([`test_eval_pipeline.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/tests/test_eval_pipeline.py))
-  - Model runners & benchmark harnesses ([`test_runners.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/tests/test_runners.py))
-  - Configuration parsing & serialization ([`test_config.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/tests/test_config.py))
-  - Custom optimizers & schedulers ([`test_optimizers.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/tests/test_optimizers.py))
-  - Adaptive rank compression mechanisms ([`test_adaptive_ranks_extra.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/tests/test_adaptive_ranks_extra.py))
-  - End-to-end integration and adapter replacement ([`test_integration_end_to_end.py`](file:///Users/tahamajs/Documents/uni/Project/neuralops/tests/test_integration_end_to_end.py))
+  - Evaluation pipeline & metrics ([`test_eval_pipeline.py`](neuralops/tests/test_eval_pipeline.py))
+  - Model runners & benchmark harnesses ([`test_runners.py`](neuralops/tests/test_runners.py))
+  - Configuration parsing & serialization ([`test_config.py`](neuralops/tests/test_config.py))
+  - Custom optimizers & schedulers ([`test_optimizers.py`](neuralops/tests/test_optimizers.py))
+  - Adaptive rank compression mechanisms ([`test_adaptive_ranks_extra.py`](neuralops/tests/test_adaptive_ranks_extra.py))
+  - End-to-end integration and adapter replacement ([`test_integration_end_to_end.py`](neuralops/tests/test_integration_end_to_end.py))
 
 ---
 

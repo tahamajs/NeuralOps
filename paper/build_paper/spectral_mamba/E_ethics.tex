@@ -35,10 +35,10 @@ Embedded System (Raspberry Pi) & INT8 & 5.0 & 0.02 & $3.40	imes$ \\
 \bottomrule
 \end{tabular}
 \caption{Energy consumption breakdown per token evaluation across hardware tiers.}
-\label{tab:energy\_breakdown}
+\label{tab:energy_breakdown}
 \end{table}
 
-The empirical energy evaluations in Table~\ref{tab:energy\_breakdown} illustrate that by optimizing tensor representations to fit inside L2 cache and on-chip SRAM, energy savings closely mirror the theoretical parameter reduction ratio, establishing low-rank and sparse attention techniques as essential components of green deep learning systems.
+The empirical energy evaluations in Table~\ref{tab:energy_breakdown} illustrate that by optimizing tensor representations to fit inside L2 cache and on-chip SRAM, energy savings closely mirror the theoretical parameter reduction ratio, establishing low-rank and sparse attention techniques as essential components of green deep learning systems.
 
 \subsection*{E.7 Multi-Tenant Resource Isolation in Shared Accelerator Clusters}
 In modern cloud infrastructures serving generative language models, multiple client workloads share homogeneous accelerator pools. Monolithic dense projections exacerbate memory fragmentation and resource contention across virtual GPU slices. By bounding tensor allocations and stabilizing memory footprints, \texttt{spectral\_mamba} enforces strict memory predictability. Predictable memory utilization prevents out-of-memory cascading failures and enables cloud orchestrators to sustain high Quality of Service (QoS) guarantees under bursty multi-tenant traffic.

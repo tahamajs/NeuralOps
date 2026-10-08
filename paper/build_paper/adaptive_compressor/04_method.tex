@@ -33,7 +33,7 @@ The \texttt{AdaptiveRanks} module executes a structured transformation replacing
 \subsection{Formal Mathematical Derivations}
 
 \subsubsection{Activation Covariance Whitening}
-\label{sec:covariance\_whitening}
+\label{sec:covariance_whitening}
 The core algorithmic feature of \texttt{AdaptiveRanks} is preconditioning projection matrices by the empirical activation covariance $\operatorname{Cov}(X)$ collected over calibration tokens:
 \[
 \operatorname{Cov}(X) = \frac{1}{N} \sum\_{i=1}^N X\_i^\top X\_i
@@ -55,7 +55,7 @@ M = W \cdot \operatorname{Cov}(X)^{1/2}
 where $M$ concentrates representational energy along principal activation directions.
 
 \subsubsection{Energy-Thresholded Adaptive Rank Selection}
-\label{sec:adaptive\_rank\_selection}
+\label{sec:adaptive_rank_selection}
 Following singular value decomposition $\operatorname{SVD}(M) = U \Sigma V^\top$, \texttt{AdaptiveRanks} dynamically determines the target rank $r^*$ according to cumulative singular value energy thresholding at $\tau = 0.92$:
 \[
 \mathcal{E}(r) = \frac{\sum\_{i=1}^r \sigma\_i^2}{\sum\_{j=1}^\rho \sigma\_j^2}
@@ -248,7 +248,7 @@ When rank $r$ satisfies $r < \frac{d_{\text{in}} d_{\text{out}}}{d_{\text{in}} +
 +-------------------------------------------------------------+
 \end{verbatim}
 \caption{Hardware-aligned memory hierarchy and on-chip SRAM data reuse.}
-\label{fig:memory\_hierarchy}
+\label{fig:memory_hierarchy}
 \end{figure}
 
 \subsection{Rigorous Proof of Theoretical Reconstruction Bounds}

@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from neuralops.analysis.module_analysis.constants import (
-    ALIASES,
     PAPERS_DIR,
     PROJECT_ROOT,
 )
