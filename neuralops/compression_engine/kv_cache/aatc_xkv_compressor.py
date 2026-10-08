@@ -302,7 +302,7 @@ class AATC_XKVCache(_HFDynamicCache if _HAS_HF_CACHE else object):
     def get_max_length(self) -> int | None:
         return None
 
-    def get_usable_length(self, new_seq_length: int, layer_idx: int = 0) -> int:
+    def get_usable_length(self, _new_seq_length: int, layer_idx: int = 0) -> int:
         return self.get_seq_length(layer_idx)
 
     def get_max_cache_shape(self) -> int:

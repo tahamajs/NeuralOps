@@ -339,16 +339,22 @@ def low_rank_pytorch_fallback(
     bias: torch.Tensor | None = None,
     **kwargs: Any,
 ) -> torch.Tensor:
-    """Pure PyTorch fallback for factorized linear projection: y = (x @ U) @ V + bias."""
-    x_f = x.float()
-    U_f = U.float()
-    V_f = V.float()
+    """Pure PyTorch fallback for factorized linear projection: y = (x @ V.T) @ U.T + bias."""
+    orig_shape = x.shape
+    D_in = orig_shape[-1]
+    x_2d = x.contiguous().view(-1, D_in).float()
 
-    h = torch.matmul(x_f, U_f)
-    y = torch.matmul(h, V_f).to(x.dtype)
+    V_mat = (V.t() if V.shape[-1] == D_in else V).float()
+    Rank = V_mat.shape[1]
+    U_mat = (U.t() if U.shape[-1] == Rank else U).float()
+    D_out = U_mat.shape[1]
+
+    h = torch.matmul(x_2d, V_mat)
+    y_2d = torch.matmul(h, U_mat)
     if bias is not None:
-        y = y + bias
-    return y
+        y_2d = y_2d + bias.float()
+    out_shape = list(orig_shape[:-1]) + [D_out]
+    return y_2d.to(x.dtype).view(*out_shape)
 
 
 def state_update_pytorch_fallback(

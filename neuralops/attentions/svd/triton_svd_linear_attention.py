@@ -315,7 +315,7 @@ if HAS_TRITON:
         stride_vh,
         stride_vn,
         stride_vd,
-        stride_dob,
+        _stride_dob,
         stride_doh,
         stride_don,
         stride_dod,
