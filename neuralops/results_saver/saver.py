@@ -115,27 +115,19 @@ class ResultsSaver:
             conn = self._get_sqlite_connection(target_db)
             try:
                 cursor = conn.cursor()
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS experiment_runs (
-                        run_id TEXT PRIMARY KEY,
-                        created_at TEXT,
-                        task_name TEXT,
-                        model_name TEXT,
-                        config_json TEXT,
-                        metrics_json TEXT,
-                        metadata_json TEXT
-                    )
-                    """)
+                cursor.execute(
+                    "CREATE TABLE IF NOT EXISTS experiment_runs ("
+                    "run_id TEXT PRIMARY KEY, created_at TEXT, task_name TEXT, "
+                    "model_name TEXT, config_json TEXT, metrics_json TEXT, metadata_json TEXT)"
+                )
                 now_str = datetime.now().isoformat()
                 task_name = str(cfg_dict.get("task_name", "unknown"))
                 model_name = str(cfg_dict.get("model_name", "unknown"))
 
                 cursor.execute(
-                    """
-                    INSERT OR REPLACE INTO experiment_runs
-                    (run_id, created_at, task_name, model_name, config_json, metrics_json, metadata_json)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """,
+                    "INSERT OR REPLACE INTO experiment_runs "
+                    "(run_id, created_at, task_name, model_name, config_json, metrics_json, metadata_json) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
                     (
                         self.run_id,
                         now_str,
@@ -175,21 +167,14 @@ class ResultsSaver:
             conn = self._get_sqlite_connection(target_db)
             try:
                 cursor = conn.cursor()
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS metric_logs (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        run_id TEXT,
-                        step INTEGER,
-                        metric_name TEXT,
-                        value REAL,
-                        timestamp TEXT
-                    )
-                    """)
                 cursor.execute(
-                    """
-                    INSERT INTO metric_logs (run_id, step, metric_name, value, timestamp)
-                    VALUES (?, ?, ?, ?, ?)
-                    """,
+                    "CREATE TABLE IF NOT EXISTS metric_logs ("
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT, step INTEGER, "
+                    "metric_name TEXT, value REAL, timestamp TEXT)"
+                )
+                cursor.execute(
+                    "INSERT INTO metric_logs (run_id, step, metric_name, value, timestamp) "
+                    "VALUES (?, ?, ?, ?, ?)",
                     (
                         self.run_id,
                         step,

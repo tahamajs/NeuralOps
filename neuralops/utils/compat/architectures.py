@@ -192,22 +192,10 @@ def should_compress_linear(model: Any, name: str, family: str | None = None) -> 
         return should_compress_qwen3_5(name)
 
     recognized_attn = [
-        "q_lin",
-        "k_lin",
-        "v_lin",
-        "out_lin",  # DistilBERT
-        "query",
-        "key",
-        "value",
-        "dense",
-        "output.dense",  # RoBERTa / BERT
-        "c_attn",
-        "c_proj",  # GPT-2
-        "q_proj",
-        "k_proj",
-        "v_proj",
-        "o_proj",
-        "out_proj",  # Qwen / LLaMA
+        "q_lin", "k_lin", "v_lin", "out_lin",  # DistilBERT
+        "query", "key", "value", "dense", "output.dense",  # RoBERTa / BERT
+        "c_attn", "c_proj",  # GPT-2
+        "q_proj", "k_proj", "v_proj", "o_proj", "out_proj",  # Qwen / LLaMA
     ]
 
     if any(leaf == k or k in name_low.split(".") for k in recognized_attn):
