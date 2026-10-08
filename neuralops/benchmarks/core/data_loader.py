@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import Any
 import torch
 from torch.utils.data import DataLoader, Dataset, TensorDataset
+
 
 from neuralops.benchmarks.result import DatasetMetadata
 
@@ -32,7 +32,13 @@ def get_num_labels(dataset_name: str) -> int:
     return 2
 
 
-def get_dataset_metadata(dataset: Any, name: str) -> DatasetMetadata:
+def get_dataset_metadata(
+    dataset: Any,
+    name: str,
+    split: str | None = None,
+    num_train: int | None = None,
+    num_eval: int | None = None,
+) -> DatasetMetadata:
     """Construct standard DatasetMetadata instance."""
     name_clean = name.lower().replace("glue_", "")
     info = GLUE_TASKS.get(name_clean, {"num_labels": 2, "task": "classification"})
@@ -41,9 +47,10 @@ def get_dataset_metadata(dataset: Any, name: str) -> DatasetMetadata:
         name=name,
         task=info.get("task", "classification"),
         num_labels=info.get("num_labels", 2),
-        num_train=total_samples,
-        num_eval=total_samples,
+        num_train=num_train if num_train is not None else total_samples,
+        num_eval=num_eval if num_eval is not None else total_samples,
     )
+
 
 
 def load_dataset_by_name(
@@ -65,8 +72,8 @@ def load_dataset_by_name(
         raw_ds = load_dataset("glue", name_clean, split=split)
         c1, c2 = cfg["cols"]
 
-        texts1 = raw_ds[c1]
-        texts2 = raw_ds[c2] if c2 else None
+        texts1 = list(raw_ds[c1])
+        texts2 = list(raw_ds[c2]) if c2 else None
 
         if texts2 is not None:
             enc = tokenizer(
