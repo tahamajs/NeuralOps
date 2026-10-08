@@ -850,7 +850,8 @@ class SpectronFP8Attention(BaseAttention):
             if extracted["k"][0] is not None:
                 U, _, _ = torch.linalg.svd(extracted["k"][0].float(), full_matrices=False)
                 r = min(self.rank, U.size(1), self.svd_U_k.size(1))
-                self.svd_U_k.data[:, :r].copy_(U[: self.svd_U_k.size(0), :r].to(self.svd_U_k.dtype))
+                rows_k = min(self.svd_U_k.size(0), U.size(0))
+                self.svd_U_k.data[:rows_k, :r].copy_(U[:rows_k, :r].to(self.svd_U_k.dtype))
 
         if hasattr(old_attn, "is_decoder"):
             self.is_decoder = bool(old_attn.is_decoder)
@@ -1185,6 +1186,8 @@ class SpectronFP8Attention(BaseAttention):
 # Injection
 # ===========================================================================
 
+
+AegisSpectronFP8Attention = SpectronFP8Attention
 
 def inject_aegis_spectron_fp8(
     layer: Any = None,
