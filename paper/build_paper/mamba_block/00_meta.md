@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `mamba_block`
+**Legacy Folder Name:** `mamba` (standardized in v1.2.0)
+
 # Mamba: Formal Architectural Specification and Empirical Benchmark Evaluation
 
 **Module Name**: `mamba`  
