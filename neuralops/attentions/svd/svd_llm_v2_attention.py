@@ -23,6 +23,7 @@ from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.triton_kernels import triton_dispatch
+from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
 
@@ -55,18 +56,6 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
     if b is not None:
         b = b.data.clone()
     return w, b
-
-
-def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    """Rotates half the hidden dimensions of the input tensor."""
-    d = x.shape[-1]
-    even_d = (d // 2) * 2
-    x1 = x[..., : even_d // 2]
-    x2 = x[..., even_d // 2 : even_d]
-    rotated = torch.cat((-x2, x1), dim=-1)
-    if d > even_d:
-        rotated = torch.cat([rotated, x[..., even_d:]], dim=-1)
-    return rotated
 
 
 def apply_rotary_pos_emb(

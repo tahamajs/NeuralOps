@@ -21,6 +21,7 @@ from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
 
@@ -34,18 +35,6 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if isinstance(cfg, dict):
         return cfg.get(key, default)
     return getattr(cfg, key, default)
-
-
-def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    """NHA-FIX-04: correct for odd head_dim."""
-    d = x.shape[-1]
-    half = d // 2
-    x1 = x[..., :half]
-    x2 = x[..., half : 2 * half]
-    rot = torch.cat((-x2, x1), dim=-1)
-    if d % 2 == 1:
-        rot = torch.cat([rot, x[..., -1:]], dim=-1)
-    return rot
 
 
 def apply_rotary_pos_emb(

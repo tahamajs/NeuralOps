@@ -20,6 +20,7 @@ import torch.nn.functional as F
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
 
@@ -27,19 +28,6 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # RoPE
 # ===========================================================================
-def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    d = x.shape[-1]
-    if d % 2 != 0:
-        x_even = x[..., :-1]
-        x1 = x_even[..., : (d - 1) // 2]
-        x2 = x_even[..., (d - 1) // 2 :]
-        rot_even = torch.cat((-x2, x1), dim=-1)
-        return torch.cat((rot_even, x[..., -1:]), dim=-1)
-    x1 = x[..., : d // 2]
-    x2 = x[..., d // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
-
-
 def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
     if cos is None or sin is None:
         return q, k

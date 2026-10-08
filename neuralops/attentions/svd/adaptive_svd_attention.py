@@ -20,6 +20,7 @@ import torch.nn.functional as F
 from neuralops.core.attention_mask import apply_attention_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.rope import _rotate_half
 from neuralops.utils.compat import repeat_kv
 
 logger = logging.getLogger(__name__)
@@ -28,17 +29,6 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # Module-level RoPE helper (ASVD-FIX-05)
 # ===========================================================================
-def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    d = x.shape[-1]
-    half = d // 2
-    x1 = x[..., :half]
-    x2 = x[..., half : 2 * half]
-    rot = torch.cat((-x2, x1), dim=-1)
-    if d % 2 == 1:
-        rot = torch.cat([rot, x[..., -1:]], dim=-1)
-    return rot
-
-
 # ===========================================================================
 # Factorized Linear
 # ===========================================================================
