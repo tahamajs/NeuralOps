@@ -7,7 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [1.2.0] - 2026-10-09
+
+### Added
+- Backend extras: `cuda`, `rocm`, `mps`, `cpu`, `eval`, `benchmark`, `dev`, `docs`, `all`.
+- Professional README with News, Model tables, Benchmarks section.
+- `RENAME_MAP.md` with 657 alias mappings.
+- Hugging Face Hub integration guide and pretrained model upload workflows.
+- CI matrix across Python 3.10, 3.11, 3.12.
+- GitHub Pages documentation deployment.
+- Trusted PyPI publishing workflow.
+- `QUICKSTART.md`, `ARCHITECTURE.md`, `TROUBLESHOOTING.md`.
+- 7 status badges in README.
+- `PROFESSIONAL_LIBRARY_REPORT.md`.
+
+### Changed
+- Core dependencies reduced to just `packaging`.
+- `torch` moved to backend extras.
+- Wheel size reduced from 63 MB to 1.9 MB.
+
+### Fixed
+- All circular imports eliminated.
+- 657 deprecation aliases verified working.
+- Documentation updated with author Taha Majlesi.
+
+### Deprecated
+- Old flat import paths (use subpackage imports).
+- `aegis_v*`, `leka_v*` names (use canonical names).
 
 ## [1.1.1] - 2026-10-09
 
