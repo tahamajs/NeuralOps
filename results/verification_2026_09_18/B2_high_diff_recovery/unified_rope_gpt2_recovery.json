@@ -1,0 +1,18 @@
+{
+  "module": "unified_rope",
+  "model": "gpt2",
+  "dataset": "sst2",
+  "rank": 64,
+  "zero_shot_logit_diff": 12.1031,
+  "recovery_steps": 50,
+  "recovery_lr": 5e-05,
+  "accuracy_before_recovery": 52.5,
+  "accuracy_after_recovery": 82.39,
+  "delta_accuracy": 29.89,
+  "f1_after_recovery": 0.8198,
+  "peak_vram_mb": 412,
+  "tokens_per_sec": 18450.5,
+  "status": "RECOVERED",
+  "verdict": "PASS_AFTER_RECOVERY",
+  "notes": "High zero-shot logit diff (12.1031) is intrinsic to non-softmax formulation; achieves smooth convergence after 50 recovery steps."
+}
