@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 import torch.nn as nn
-from neuralops.core.triton_kernels.triton_cosformer import (TritonCosformerAttention,
+from neuralops.attentions.linear.triton_cosformer import (TritonCosformerAttention,
                                                    inject_triton_cosformer,
                                                    triton_cosformer_attention)
 
