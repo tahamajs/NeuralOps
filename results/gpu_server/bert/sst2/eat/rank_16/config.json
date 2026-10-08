@@ -1,0 +1,13 @@
+{
+  "module_name": "eat",
+  "module_type": "attention",
+  "model_family": "bert",
+  "dataset": "sst2",
+  "rank": 16,
+  "seq_len": 256,
+  "batch_size": 128,
+  "num_warmup": 2,
+  "num_steps": 5,
+  "allow_synthetic": false,
+  "device": "cpu"
+}

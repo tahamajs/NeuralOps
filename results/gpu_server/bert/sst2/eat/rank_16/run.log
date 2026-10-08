@@ -1,0 +1,3 @@
+Command: evaluate_single_combination(module=eat, model=bert, dataset=sst2, rank=16)
+Environment: python=3.14.3 torch=2.11.0
+[SKIP] Module 'eat' is deprecated.

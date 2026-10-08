@@ -1,0 +1,6 @@
+{
+  "random": 42,
+  "numpy": 42,
+  "torch": 42,
+  "cuda": 42
+}
