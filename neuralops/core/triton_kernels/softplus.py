@@ -25,17 +25,21 @@ else:
     TRITON3 = False
 
 
-if TRITON3:
+if HAS_TRITON and TRITON3:
 
     @triton.jit
     def softplus(dt):
         return tl.math.log(tl.math.exp(dt) + 1)
 
-else:
+elif HAS_TRITON:
 
     @triton.jit
     def softplus(dt):
         return tl.math.log1p(tl.exp(dt))
+
+else:
+    def softplus(dt):
+        return F.softplus(dt)
 
 
 def _softplus_pytorch(x: torch.Tensor, beta: float = 1.0, threshold: float = 20.0) -> torch.Tensor:
