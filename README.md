@@ -58,30 +58,42 @@ graph TD
 
 ---
 
-## 🏛 Module Taxonomy (217+ Architectures)
+## 🏛 Module Taxonomy & Categorized Architecture
 
-The codebase is organized into modular subsystems under the root `neuralops` package:
+NeuralOps is organized into domain-specific subpackages under `neuralops/`, maintaining strict registry isolation and complete backward compatibility:
 
 ```
 neuralops/
-├── attentions/               # 115 subquadratic, linear, and hybrid attention modules
-│   ├── adaptive_span_attention.py, asvd_attention.py, cosformer.py,
-│   ├── decay_linear_attention.py, factorised_matrix_state.py, flash_attention3.py,
-│   ├── fused_svd_kernel.py, gated_delta_net.py, gated_linear_attention.py,
-│   ├── hgrn2_layer.py, linformer_attention.py, mamba_block.py, mla_attention.py,
-│   ├── performer_attention.py, simple_ssm.py, svd_attention.py,
-│   ├── svd_linear_attention.py, triton_cosformer.py, triton_svd_linear_attention.py ...
-├── compression_engine/       # 76 SVD factorizers, quantizers, and structural pruners
-│   ├── a3_compressor.py, adasvd_compressor.py, adaptive_ranks.py,
-│   ├── armor_pruner.py, compot_compressor.py, dobi_svd.py, dynamic_rank.py,
-│   ├── frandi_compressor.py, rotational_slicegpt_int4.py, slicegpt_pca.py,
-│   ├── sparsegpt.py, swift_svd_act.py, uniql_compressor.py ...
+├── attentions/               # 114 Attention Modules (159 Canonical Registry Keys)
+│   ├── svd/                  # SVD-based factorized attention (21 modules: svd_linear, asvd, minimal_svd, salt...)
+│   ├── linear/               # Linear & kernel attention (16 modules: cosformer, chela_slay, performer...)
+│   ├── ssm/                  # State-Space Models & recurrent scans (17 modules: mamba_block, selective_ssm, hgrn2...)
+│   ├── hybrid/               # Hybrid sliding-window & multi-branch (15 modules: split_head_hybrid, tri_branch...)
+│   ├── sparse/               # Sparse & cluster attention (12 modules: adaptive_sparse, cluster, lsh...)
+│   ├── gated/                # Gated recurrence & delta networks (9 modules: gated_delta_net, gla, hgrn2...)
+│   ├── adaptive/             # Adaptive span & dynamic token selection (9 modules: adaptive_span, token_compressed...)
+│   ├── modern/               # Modern LLM attention mechanisms (6 modules: mla, gqa, unified_rope, flash_attn3...)
+│   ├── fast_kernels/         # Optimized custom kernels (5 modules: triton_linear_attn, fast_linear...)
+│   ├── dense/                # Canonical baseline reference implementations (2 modules: full_attention, zeros)
+│   └── experimental/         # Research & exploratory prototypes (1 module: spec_gaussian)
+├── compression_engine/       # 73 Compression Engines (73 Canonical Registry Keys)
+│   ├── low_rank/             # Low-rank factorizers & matrix decompositions (24 engines: lsc, come, rpca, nmf...)
+│   ├── svd/                  # Singular Value Decomposition engines (18 engines: direct_svd, adasvd, swift_svd...)
+│   ├── pruning/              # Structured & unstructured pruners (9 engines: admm_pruner, bonsai, sparsegpt, flap...)
+│   ├── quantization/         # Calibration & codebook quantizers (8 engines: faq, kmeans, slicegpt, huffman...)
+│   ├── kv_cache/             # Runtime KV-cache token & memory compression (6 engines: zerokv_neo, cachenotes...)
+│   ├── tensor_decomp/        # Multi-way tensor decompositions (3 engines: kronecker, tt_compressor, tt_lora...)
+│   └── experimental/         # Hashing & exploratory compression (5 engines: hashed_net, roast, liftr...)
 ├── core/
+│   ├── base.py               # BaseAttention & BaseCompressor abstract base classes
+│   ├── registry.py           # Canonical ATTENTION_REGISTRY & COMPRESSOR_REGISTRY with alias deprecation
+│   ├── deprecated_aliases.json # 641 backward-compatibility aliases emitting DeprecationWarning
+│   ├── adapters.py           # UniversalAdapter for weight extraction across 7 transformer architectures
+│   ├── replace_attention.py  # Zero-shot module replacement engine for HuggingFace models
 │   ├── common.py             # Shared LoRALinear & FactorizedLinear with Triton acceleration
-│   ├── registry.py           # Canonical ATTENTION_REGISTRY & COMPRESSOR_REGISTRY
 │   ├── attention_mask.py     # Unified boolean and causal mask resolvers
 │   ├── gqa_utils.py          # Grouped-Query Attention repeat_kv utilities
-│   └── triton_kernels/       # Shared GPU Triton kernels & PyTorch CPU/MPS fallbacks
+│   └── triton_kernels/       # Shared GPU Triton kernels with automatic PyTorch CPU/MPS fallbacks
 │       ├── linear_attn.py    # Fused chunked causal linear attention
 │       ├── selective_scan.py # S6 selective scan recurrence for Mamba
 │       ├── fms_scan.py       # Factorised Matrix State scan
@@ -101,8 +113,29 @@ neuralops/
 ├── pipeline/                 # Production pipeline writers and artifact reporters
 ├── results_saver/            # Checkpoint persistence, metadata logging, and tracking
 ├── analysis/                 # Publication table generators, layer analyzers, and plotting
-└── runners/                  # 230+ unified 4-model execution wrappers
+└── runners/                  # Unified 4-model execution wrappers
 ```
+
+### Import Styles & Backward Compatibility
+
+Both legacy flat imports and domain subpackage imports are first-class and fully supported via PEP 451 dynamic meta path finders:
+
+```python
+# 1. New Subpackage Imports (Recommended)
+from neuralops.attentions.svd import SVDLinearAttention
+from neuralops.compression_engine.svd import DirectSVDCompressor
+
+# 2. Legacy Flat Imports (Fully Supported)
+from neuralops.attentions.svd_linear_attention import SVDLinearAttention
+from neuralops.compression_engine.direct_svd import DirectSVDCompressor
+
+# 3. Dynamic Registry Resolution
+from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+
+attention_cls = ATTENTION_REGISTRY.get("svd_linear_attention")
+compressor_cls = COMPRESSOR_REGISTRY.get("direct_svd")
+```
+
 
 ---
 
@@ -174,7 +207,8 @@ Use the built-in offline calibration DataLoader:
 ```python
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from neuralops.data import get_calibration_dataloader
-from neuralops.compression_engine.asvd_compressor import ASVDCompressor
+from neuralops.compression_engine.svd import ASVDCompressor
+
 
 model = AutoModelForSequenceClassification.from_pretrained("models/roberta_sst2")
 tokenizer = AutoTokenizer.from_pretrained("models/roberta_sst2")
