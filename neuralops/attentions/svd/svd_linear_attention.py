@@ -414,6 +414,12 @@ class SVDLinear(nn.Module):
 # SVDLinearAttention
 # ===========================================================================
 @ATTENTION_REGISTRY.register(
+    "svd_linear_attn",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
     "svd_linear_attention",
     supports_causal=True,
     supports_bidirectional=True,
