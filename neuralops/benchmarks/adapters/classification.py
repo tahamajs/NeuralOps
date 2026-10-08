@@ -80,19 +80,17 @@ class ClassificationAdapter:
         torch.manual_seed(self.seed)
 
         # 1. Determine number of labels for dataset
-        # Temporary load without tokenizer just to inspect labels if needed, or pass dummy
-        raw_train = load_dataset_by_name(self.dataset_name, tokenizer=None, split="train")
-        num_labels = get_num_labels(raw_train)
+        num_labels = get_num_labels(self.dataset_name)
 
         # 2. Load model and tokenizer with sequence classification head
-        self.model, self.tokenizer, _ = load_model_and_tokenizer(
+        self.model, self.tokenizer, model_cfg = load_model_and_tokenizer(
             self.model_name,
             device=self.device,
             dtype=self.dtype,
             task="classification",
             num_labels=num_labels,
         )
-        self.model_meta = get_model_metadata(self.model, model_name=self.model_name)
+        self.model_meta = get_model_metadata(self.model, model_cfg)
 
         # 3. Tokenize datasets
         tokenized_train = load_dataset_by_name(
