@@ -143,7 +143,9 @@ graph TD
 
 ---
 
-## Attention Mechanism Zoo (159)
+## 🧠 Models
+
+### Attention Mechanism Zoo (159)
 
 | # | Key | Class | Module | Causal | GQA | RoPE | Description |
 |---:|---|---|---|:---:|:---:|:---:|---|
@@ -310,7 +312,9 @@ graph TD
 
 ---
 
-## Compression Engine Registry (73)
+## 🗜️ Compression
+
+### Compression Engine Registry (73)
 
 | # | Key | Class | Subpackage | Description |
 |---:|---|---|---|---|
@@ -391,7 +395,9 @@ graph TD
 
 ---
 
-## Fused Triton Kernels
+## ⚡ Triton
+
+### Fused Triton Kernels (19)
 
 NeuralOps implements 21 custom Triton kernels with automatic fallback:
 - **Sliding Window Attention** (`sliding_window.py`)
@@ -417,7 +423,9 @@ All kernels automatically fall back to native PyTorch ops when running on non-CU
 
 ---
 
-## Performance and Tradeoffs
+## 📊 Benchmarks
+
+### Performance and Tradeoffs
 
 ![Accuracy vs Compression](docs/plots/pareto_frontier.png)
 
