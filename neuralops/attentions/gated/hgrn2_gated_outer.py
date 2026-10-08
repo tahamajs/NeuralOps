@@ -145,9 +145,6 @@ class LoRALinear(nn.Module):
 @ATTENTION_REGISTRY.register(
     "hgrn2_outer", supports_causal=True, supports_bidirectional=True, supports_gqa=True
 )
-@ATTENTION_REGISTRY.register(
-    "hgrn2_gated_outer", supports_causal=True, supports_bidirectional=True, supports_gqa=True
-)
 class HGRN2GatedOuterBlock(BaseAttention):
     supports_causal: bool = True
     supports_bidirectional: bool = True
