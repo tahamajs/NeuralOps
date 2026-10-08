@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+## [1.1.1] - 2026-10-09
+
+### Changed
+- Updated author identity to Taha Majlesi.
+- Regenerated full HTML API documentation via `pdoc`.
+- Refactored `pyproject.toml` dependencies into modular backend extras (`cuda`, `rocm`, `mps`, `cpu`, `eval`, `benchmark`, `dev`, `docs`, `all`).
+
+### Fixed
+- Fixed lazy export module path for `ResultWriter` in `neuralops.__init__`.
+- Guaranteed pure PyTorch fallbacks across 100% of the 19 Triton kernels on macOS and CPU.
+
 ## [1.1.0] - 2026-10-08
 
 ### Added
