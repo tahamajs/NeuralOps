@@ -306,34 +306,6 @@ def run_task_worker(task, total_pending, task_idx):
     return res
 
 
-def run_stream_worker(stream_name, task_list):
-    """Legacy stream worker kept for modular compatibility."""
-    log(f"############################################################")
-    log(f"### [LAUNCH STREAM] {stream_name}: {len(task_list)} Tasks Queued")
-    log(f"############################################################")
-    completed, failed = 0, 0
-    for task in task_list:
-        res = run_single_task(task)
-        if res:
-            completed += 1
-        else:
-            failed += 1
-
-        with global_lock:
-            global_completed_counter[0] += 1
-            cur_global = global_completed_counter[0]
-            if cur_global % 10 == 0:
-                auto_commit_and_push(f"Global 6-Stream Checkpoint ({cur_global} tasks completed)")
-
-        log(
-            f"[{stream_name} Stream Progress]: {completed}/{len(task_list)} completed ({failed} failed)"
-        )
-
-    log(f"### [STREAM FINISHED] {stream_name} finished all {len(task_list)} tasks.")
-    auto_commit_and_push(f"{stream_name} stream complete ({completed} passed, {failed} failed)")
-    return completed, failed
-
-
 def build_all_streams():
     """Builds 6 concurrent task streams covering the entire repository."""
     cat5a_all = [
@@ -663,7 +635,7 @@ def main():
         for future in as_completed(future_map):
             t_name = future_map[future]
             try:
-                res = future.result()
+                future.result()
             except Exception as e:
                 log(f"[TASK EXCEPTION] {t_name}: {e}")
 

@@ -21,6 +21,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from neuralops.core.memory import cleanup_gpu_memory
+from neuralops.utils.helpers import count_parameters  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
@@ -402,13 +403,6 @@ def benchmark_model(
     }
 
 
-def count_parameters(model: nn.Module, trainable_only: bool = True) -> int:
-    """Count trainable or total parameters."""
-    return (
-        sum(p.numel() for p in model.parameters() if p.requires_grad)
-        if trainable_only
-        else sum(p.numel() for p in model.parameters())
-    )
 
 
 def compute_metrics(
