@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `kvtc_compressor`
+**Legacy Folder Name:** `kvtc` (standardized in v1.2.0)
+
 # Kvtc: Formal Architectural Specification and Empirical Benchmark Evaluation
 
 **Module Name**: `kvtc`  
