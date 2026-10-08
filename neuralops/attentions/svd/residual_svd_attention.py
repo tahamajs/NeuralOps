@@ -775,4 +775,5 @@ def inject_res_svd(
         return None
 
 
+ResSVDAttention = ResidualSVDAttention
 inject_res_svd_attention = inject_res_svd

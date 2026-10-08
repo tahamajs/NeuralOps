@@ -73,7 +73,7 @@ def _cosformer_global_fwd_kernel(
 
 
 def cosformer_global_triton(q_cos, q_sin, k_cos, k_sin, v, is_decoder=True):
-    """Wrapper برای kernel بالا.
+    """Wrapper for kernel up.
 
     Args:
         q_cos, q_sin: (B, H, N, D)
