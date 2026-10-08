@@ -33,6 +33,7 @@ except ImportError:
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
+from neuralops.core.common import _cfg_get
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
@@ -43,14 +44,6 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 # Helpers
 # ============================================================================
-
-
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):
