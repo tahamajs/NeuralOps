@@ -48,20 +48,6 @@ ensures each DDP worker rank writes to an isolated log file (rank_{LOCAL_RANK}.l
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="neuralops.experiment_logging.logger.get_logger"><code class="name flex">
-<span>def <span class="ident">get_logger</span></span>(<span>name: str = 'neuralops') ‑> logging.Logger</span>
-</code></dt>
-<dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def get_logger(name: str = &#34;neuralops&#34;) -&gt; logging.Logger:
-    &#34;&#34;&#34;Return a logger for the given name.&#34;&#34;&#34;
-    return logging.getLogger(name)</code></pre>
-</details>
-<div class="desc"><p>Return a logger for the given name.</p></div>
-</dd>
 <dt id="neuralops.experiment_logging.logger.get_rank"><code class="name flex">
 <span>def <span class="ident">get_rank</span></span>(<span>configured_rank: int | None = None) ‑> int</span>
 </code></dt>
@@ -349,7 +335,6 @@ use one of %-formatting, :meth:<code>str.format</code> (<code>{}</code>) formatt
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="neuralops.experiment_logging.logger.get_logger" href="#neuralops.experiment_logging.logger.get_logger">get_logger</a></code></li>
 <li><code><a title="neuralops.experiment_logging.logger.get_rank" href="#neuralops.experiment_logging.logger.get_rank">get_rank</a></code></li>
 <li><code><a title="neuralops.experiment_logging.logger.setup_logging" href="#neuralops.experiment_logging.logger.setup_logging">setup_logging</a></code></li>
 <li><code><a title="neuralops.experiment_logging.logger.shutdown_logging" href="#neuralops.experiment_logging.logger.shutdown_logging">shutdown_logging</a></code></li>

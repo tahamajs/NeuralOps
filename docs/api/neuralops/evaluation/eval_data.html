@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.evaluation.eval_data API documentation</title>
+<meta name="description" content="Evaluation data loading, batch generation, and calibration loader builder …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.evaluation.eval_data</code></h1>
+</header>
+<section id="section-intro">
+<p>Evaluation data loading, batch generation, and calibration loader builder.</p>
+<p>Handles tokenized caching, real GLUE/LM dataset batch retrieval, synthetic data fallbacks,
+and real calibration DataLoaders for activation-aware model compression.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.evaluation.eval_data._generate_synthetic_batch"><code class="name flex">
+<span>def <span class="ident">_generate_synthetic_batch</span></span>(<span>dataset_name: str,<br>batch_size: int = 4,<br>seq_len: int = 32,<br>vocab_size: int = 30522,<br>num_labels: int = 2,<br>device: torch.device = device(type='cpu')) ‑> dict[str, torch.Tensor]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def _generate_synthetic_batch(
+    dataset_name: str,
+    batch_size: int = 4,
+    seq_len: int = 32,
+    vocab_size: int = 30522,
+    num_labels: int = 2,
+    device: torch.device = torch.device(&#34;cpu&#34;),
+) -&gt; dict[str, torch.Tensor]:
+    &#34;&#34;&#34;Generate reproducible synthetic tensor batches for smoke tests or offline environments.
+
+    Args:
+        dataset_name: Dataset name identifier (used to check if LM task).
+        batch_size: Number of samples in the batch.
+        seq_len: Sequence length dimension.
+        vocab_size: Maximum vocabulary size for random token IDs.
+        num_labels: Number of target classification classes.
+        device: PyTorch device on which tensors will be allocated.
+
+    Returns:
+        Dictionary mapping input names (&#39;input_ids&#39;, &#39;attention_mask&#39;, &#39;labels&#39;) to tensors.
+    &#34;&#34;&#34;
+    ds = dataset_name.lower()
+    torch.manual_seed(42)
+    input_ids = torch.randint(100, max(101, vocab_size - 100), (batch_size, seq_len), device=device)
+    attention_mask = torch.ones((batch_size, seq_len), dtype=torch.long, device=device)
+
+    is_lm = ds in LM_DATASETS
+    if batch_size &gt; 1 and not is_lm:
+        attention_mask[1:, -4:] = 0
+
+    if is_lm:
+        labels = input_ids.clone()
+        labels[:, :-1] = input_ids[:, 1:]
+        labels[:, -1] = -100
+    else:
+        labels = torch.randint(0, num_labels, (batch_size,), dtype=torch.long, device=device)
+
+    return {
+        &#34;input_ids&#34;: input_ids,
+        &#34;attention_mask&#34;: attention_mask,
+        &#34;labels&#34;: labels,
+    }</code></pre>
+</details>
+<div class="desc"><p>Generate reproducible synthetic tensor batches for smoke tests or offline environments.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>dataset_name</code></strong></dt>
+<dd>Dataset name identifier (used to check if LM task).</dd>
+<dt><strong><code>batch_size</code></strong></dt>
+<dd>Number of samples in the batch.</dd>
+<dt><strong><code>seq_len</code></strong></dt>
+<dd>Sequence length dimension.</dd>
+<dt><strong><code>vocab_size</code></strong></dt>
+<dd>Maximum vocabulary size for random token IDs.</dd>
+<dt><strong><code>num_labels</code></strong></dt>
+<dd>Number of target classification classes.</dd>
+<dt><strong><code>device</code></strong></dt>
+<dd>PyTorch device on which tensors will be allocated.</dd>
+</dl>
+<p>Returns
+-----=
+Dictionary mapping input names ('input_ids', 'attention_mask', 'labels') to tensors.</p></div>
+</dd>
+<dt id="neuralops.evaluation.eval_data.build_calibration_loader"><code class="name flex">
+<span>def <span class="ident">build_calibration_loader</span></span>(<span>dataset: str,<br>model_family: str,<br>seq_len: int,<br>device: torch.device,<br>n_samples: int = 500,<br>batch_size: int = 8) ‑> tuple[torch.utils.data.dataloader.DataLoader | None, Any | None, str | None]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def build_calibration_loader(
+    dataset: str,
+    model_family: str,
+    seq_len: int,
+    device: torch.device,
+    n_samples: int = 500,
+    batch_size: int = 8,
+) -&gt; tuple[DataLoader | None, Any | None, str | None]:
+    &#34;&#34;&#34;Build a calibration DataLoader from the training split for activation-aware compressors.
+
+    Args:
+        dataset: Dataset identifier string (GLUE or LM).
+        model_family: Architecture family to match tokenizer.
+        seq_len: Token sequence length.
+        device: Device to calibrate on.
+        n_samples: Maximum number of samples to tokenize for calibration.
+        batch_size: Batch size of the calibration loader.
+
+    Returns:
+        Tuple of (DataLoader, AutoTokenizer, source_name_str), or (None, None, None) on failure.
+    &#34;&#34;&#34;
+    from transformers import AutoTokenizer
+
+    tok_name = MODEL_TOKENIZER_MAPPING.get(model_family.lower(), &#34;bert-base-uncased&#34;)
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(tok_name)
+    except Exception as e:
+        logger.warning(&#34;[CALIB] tokenizer load failed: %s&#34;, e)
+        return None, None, None
+
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token or tokenizer.sep_token or tokenizer.pad_token
+
+    ds = dataset.lower()
+    source: str | None = None
+    texts: list[str] = []
+    try:
+        from datasets import load_dataset
+
+        if ds in GLUE_DATASETS:
+            raw = load_dataset(&#34;glue&#34;, ds, split=f&#34;train[:{n_samples}]&#34;)
+            text_cols = [c for c in raw.column_names if c not in (&#34;label&#34;, &#34;idx&#34;)]
+            if not text_cols:
+                return None, None, None
+            col = text_cols[0]
+            texts = raw[col][:n_samples]
+            source = f&#34;glue/{ds}_train&#34;
+        elif ds in LM_DATASETS:
+            raw = load_dataset(
+                &#34;Salesforce/wikitext&#34;, &#34;wikitext-2-raw-v1&#34;, split=f&#34;train[:{n_samples}]&#34;
+            )
+            texts = [t for t in raw[&#34;text&#34;] if len(t.strip()) &gt; 20][:n_samples]
+            source = &#34;wikitext2_train&#34;
+        else:
+            return None, None, None
+    except Exception as e:
+        logger.warning(&#34;[CALIB] dataset load failed: %s&#34;, e)
+        return None, None, None
+
+    if not texts:
+        return None, None, None
+
+    enc = tokenizer(
+        list(texts),
+        padding=&#34;max_length&#34;,
+        truncation=True,
+        max_length=seq_len,
+        return_tensors=&#34;pt&#34;,
+    )
+    items = [
+        {&#34;input_ids&#34;: enc[&#34;input_ids&#34;][i], &#34;attention_mask&#34;: enc[&#34;attention_mask&#34;][i]}
+        for i in range(enc[&#34;input_ids&#34;].shape[0])
+    ]
+
+    loader = DataLoader(items, batch_size=batch_size, shuffle=False)
+    logger.info(
+        &#34;[CALIB] Built calibration loader from %s: n=%d, batch_size=%d, seq_len=%d&#34;,
+        source,
+        len(items),
+        batch_size,
+        seq_len,
+    )
+    return loader, tokenizer, source</code></pre>
+</details>
+<div class="desc"><p>Build a calibration DataLoader from the training split for activation-aware compressors.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>dataset</code></strong></dt>
+<dd>Dataset identifier string (GLUE or LM).</dd>
+<dt><strong><code>model_family</code></strong></dt>
+<dd>Architecture family to match tokenizer.</dd>
+<dt><strong><code>seq_len</code></strong></dt>
+<dd>Token sequence length.</dd>
+<dt><strong><code>device</code></strong></dt>
+<dd>Device to calibrate on.</dd>
+<dt><strong><code>n_samples</code></strong></dt>
+<dd>Maximum number of samples to tokenize for calibration.</dd>
+<dt><strong><code>batch_size</code></strong></dt>
+<dd>Batch size of the calibration loader.</dd>
+</dl>
+<p>Returns
+-----=
+Tuple of (DataLoader, AutoTokenizer, source_name_str), or (None, None, None) on failure.</p></div>
+</dd>
+<dt id="neuralops.evaluation.eval_data.get_dataset_batch"><code class="name flex">
+<span>def <span class="ident">get_dataset_batch</span></span>(<span>dataset_name: str,<br>model_family: str,<br>batch_size: int = 128,<br>seq_len: int = 256,<br>vocab_size: int = 30522,<br>num_labels: int = 2,<br>device: torch.device = device(type='cpu'),<br>allow_synthetic: bool = False) ‑> dict[str, torch.Tensor]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_dataset_batch(
+    dataset_name: str,
+    model_family: str,
+    batch_size: int = 128,
+    seq_len: int = 256,
+    vocab_size: int = 30522,
+    num_labels: int = 2,
+    device: torch.device = torch.device(&#34;cpu&#34;),
+    allow_synthetic: bool = False,
+) -&gt; dict[str, torch.Tensor]:
+    &#34;&#34;&#34;Retrieve an evaluation batch from cache, genuine dataset (GLUE / WikiText), or synthetic fallback.
+
+    Args:
+        dataset_name: Target dataset (e.g., &#39;sst2&#39;, &#39;wikitext2&#39;, &#39;synthetic&#39;).
+        model_family: Target model family for matching the tokenizer.
+        batch_size: Number of samples requested.
+        seq_len: Target sequence length for truncation/padding.
+        vocab_size: Vocab size for synthetic fallback.
+        num_labels: Classification label count.
+        device: PyTorch device to move batch tensors to.
+        allow_synthetic: If False, raises RuntimeError if genuine dataset fails to download.
+
+    Returns:
+        Dictionary mapping tensor keys to torch.Tensor.
+    &#34;&#34;&#34;
+    ds = dataset_name.lower()
+    family = model_family.lower()
+    dev_str = str(device)
+    cache_key = (ds, family, batch_size, seq_len, dev_str)
+
+    if cache_key in _TOKENIZED_BATCH_CACHE:
+        cached = _TOKENIZED_BATCH_CACHE[cache_key]
+        return {k: v.clone() if isinstance(v, torch.Tensor) else v for k, v in cached.items()}
+
+    if ds == &#34;synthetic&#34;:
+        batch = _generate_synthetic_batch(ds, batch_size, seq_len, vocab_size, num_labels, device)
+        _TOKENIZED_BATCH_CACHE[cache_key] = batch
+        _evict_if_needed(_TOKENIZED_BATCH_CACHE)
+        return {k: v.clone() if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
+
+    tok_name = MODEL_TOKENIZER_MAPPING.get(family, &#34;bert-base-uncased&#34;)
+    dataset_cache_key = (ds, tok_name, seq_len)
+
+    try:
+        from neuralops.data.prepare_datasets import GLUE_TASK_CONFIG
+
+        val_tokenized = None
+        if ds in GLUE_TASK_CONFIG:
+            if dataset_cache_key not in _PREPARED_DATASET_CACHE:
+                from datasets import load_dataset
+                from transformers import AutoTokenizer
+
+                tokenizer = AutoTokenizer.from_pretrained(tok_name)
+                if tokenizer.pad_token is None:
+                    tokenizer.pad_token = tokenizer.eos_token
+                    tokenizer.pad_token_id = tokenizer.eos_token_id
+
+                config = GLUE_TASK_CONFIG[ds]
+                k1, k2 = config[&#34;keys&#34;]
+                val_data = load_dataset(&#34;glue&#34;, ds, split=&#34;validation&#34;)
+
+                def tok_fn(ex: dict[str, Any]) -&gt; Any:
+                    &#34;&#34;&#34;Execute tok_fn operation.&#34;&#34;&#34;
+                    args = (ex[k1],) if k2 is None else (ex[k1], ex[k2])
+                    return tokenizer(
+                        *args, padding=&#34;max_length&#34;, truncation=True, max_length=seq_len
+                    )
+
+                val_tokenized = val_data.map(tok_fn, batched=True)
+                val_tokenized.set_format(
+                    type=&#34;torch&#34;,
+                    columns=[
+                        c
+                        for c in (&#34;input_ids&#34;, &#34;attention_mask&#34;, &#34;label&#34;)
+                        if c in val_tokenized.column_names
+                    ],
+                )
+                _PREPARED_DATASET_CACHE[dataset_cache_key] = val_tokenized
+                _evict_if_needed(_PREPARED_DATASET_CACHE)
+            else:
+                val_tokenized = _PREPARED_DATASET_CACHE[dataset_cache_key]
+        elif ds in LM_DATASETS or &#34;wikitext&#34; in ds:
+            if dataset_cache_key not in _PREPARED_DATASET_CACHE:
+                from datasets import Dataset, load_dataset
+                from transformers import AutoTokenizer
+
+                tokenizer = AutoTokenizer.from_pretrained(tok_name)
+                if tokenizer.pad_token is None:
+                    tokenizer.pad_token = tokenizer.eos_token
+                    tokenizer.pad_token_id = tokenizer.eos_token_id
+
+                try:
+                    raw_val = load_dataset(&#34;Salesforce/wikitext&#34;, &#34;wikitext-2-raw-v1&#34;, split=&#34;test&#34;)
+                except Exception:
+                    raw_val = load_dataset(&#34;wikitext&#34;, &#34;wikitext-2-raw-v1&#34;, split=&#34;test&#34;)
+
+                valid_texts = [t for t in raw_val[&#34;text&#34;] if len(t.strip()) &gt; 10][:200]
+                if not valid_texts:
+                    valid_texts = [
+                        &#34;WikiText language model benchmark sample evaluation string.&#34;
+                    ] * 50
+
+                enc = tokenizer(
+                    valid_texts,
+                    padding=&#34;max_length&#34;,
+                    truncation=True,
+                    max_length=seq_len,
+                    return_tensors=&#34;pt&#34;,
+                )
+                val_tokenized = Dataset.from_dict(
+                    {
+                        &#34;input_ids&#34;: enc[&#34;input_ids&#34;],
+                        &#34;attention_mask&#34;: enc[&#34;attention_mask&#34;],
+                    }
+                )
+                val_tokenized.set_format(type=&#34;torch&#34;, columns=[&#34;input_ids&#34;, &#34;attention_mask&#34;])
+                _PREPARED_DATASET_CACHE[dataset_cache_key] = val_tokenized
+                _evict_if_needed(_PREPARED_DATASET_CACHE)
+            else:
+                val_tokenized = _PREPARED_DATASET_CACHE[dataset_cache_key]
+
+        if val_tokenized is not None and len(val_tokenized) &gt; 0:
+            is_cuda = device.type == &#34;cuda&#34;
+            n = min(batch_size, len(val_tokenized))
+            sample = val_tokenized[list(range(n))]
+            raw_batch = {}
+            for k in val_tokenized.column_names:
+                if k in sample:
+                    vals = sample[k]
+                    if isinstance(vals, torch.Tensor):
+                        raw_batch[k] = vals
+                    elif (
+                        isinstance(vals, (list, tuple))
+                        and len(vals) &gt; 0
+                        and isinstance(vals[0], torch.Tensor)
+                    ):
+                        raw_batch[k] = torch.stack(vals)
+                    elif (
+                        isinstance(vals, (list, tuple))
+                        and len(vals) &gt; 0
+                        and isinstance(vals[0], (int, float, bool))
+                    ):
+                        raw_batch[k] = torch.tensor(vals)
+                    elif isinstance(vals, (int, float, bool)):
+                        raw_batch[k] = torch.tensor([vals])
+                    else:
+                        raw_batch[k] = vals
+            batch = {
+                (&#34;labels&#34; if k == &#34;label&#34; else k): (
+                    v.to(device, non_blocking=is_cuda) if isinstance(v, torch.Tensor) else v
+                )
+                for k, v in raw_batch.items()
+            }
+            _TOKENIZED_BATCH_CACHE[cache_key] = batch
+            _evict_if_needed(_TOKENIZED_BATCH_CACHE)
+            return {k: v.clone() if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
+    except Exception as e:
+        logger.warning(&#34;Could not load GLUE dataset &#39;%s&#39;: %s&#34;, ds, e)
+        if not allow_synthetic:
+            raise RuntimeError(f&#34;Genuine dataset &#39;{ds}&#39; failed to load ({e})&#34;)
+
+    batch = _generate_synthetic_batch(ds, batch_size, seq_len, vocab_size, num_labels, device)
+    _TOKENIZED_BATCH_CACHE[cache_key] = batch
+    _evict_if_needed(_TOKENIZED_BATCH_CACHE)
+    return {k: v.clone() if isinstance(v, torch.Tensor) else v for k, v in batch.items()}</code></pre>
+</details>
+<div class="desc"><p>Retrieve an evaluation batch from cache, genuine dataset (GLUE / WikiText), or synthetic fallback.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>dataset_name</code></strong></dt>
+<dd>Target dataset (e.g., 'sst2', 'wikitext2', 'synthetic').</dd>
+<dt><strong><code>model_family</code></strong></dt>
+<dd>Target model family for matching the tokenizer.</dd>
+<dt><strong><code>batch_size</code></strong></dt>
+<dd>Number of samples requested.</dd>
+<dt><strong><code>seq_len</code></strong></dt>
+<dd>Target sequence length for truncation/padding.</dd>
+<dt><strong><code>vocab_size</code></strong></dt>
+<dd>Vocab size for synthetic fallback.</dd>
+<dt><strong><code>num_labels</code></strong></dt>
+<dd>Classification label count.</dd>
+<dt><strong><code>device</code></strong></dt>
+<dd>PyTorch device to move batch tensors to.</dd>
+<dt><strong><code>allow_synthetic</code></strong></dt>
+<dd>If False, raises RuntimeError if genuine dataset fails to download.</dd>
+</dl>
+<p>Returns
+-----=
+Dictionary mapping tensor keys to torch.Tensor.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.evaluation" href="index.html">neuralops.evaluation</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.evaluation.eval_data._generate_synthetic_batch" href="#neuralops.evaluation.eval_data._generate_synthetic_batch">_generate_synthetic_batch</a></code></li>
+<li><code><a title="neuralops.evaluation.eval_data.build_calibration_loader" href="#neuralops.evaluation.eval_data.build_calibration_loader">build_calibration_loader</a></code></li>
+<li><code><a title="neuralops.evaluation.eval_data.get_dataset_batch" href="#neuralops.evaluation.eval_data.get_dataset_batch">get_dataset_batch</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

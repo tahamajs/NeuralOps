@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.evaluation.eval_pipeline API documentation</title>
+<meta name="description" content="Evaluation pipeline and benchmark orchestration for NeuralOps …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.evaluation.eval_pipeline</code></h1>
+</header>
+<section id="section-intro">
+<p>Evaluation pipeline and benchmark orchestration for NeuralOps.</p>
+<p>Implements adaptive batch probing, multi-phase combination evaluation
+(environment setup, baseline scoring, compression injection, evaluation, artifact assembly),
+and convenience sweeps.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.evaluation.eval_pipeline.evaluate_single_combination"><code class="name flex">
+<span>def <span class="ident">evaluate_single_combination</span></span>(<span>track: str,<br>module_name: str,<br>module_type: str,<br>model_family: str,<br>dataset: str,<br>rank: int = 16,<br>num_warmup: int = 2,<br>num_steps: int = 5,<br>batch_size: int = 128,<br>seq_len: int = 256,<br>device: torch.device = device(type='cpu'),<br>results_dir: str = './results/gpu_server',<br>allow_synthetic: bool = False,<br>skip_deprecated: bool = True) ‑> <a title="neuralops.evaluation.eval_types.BenchmarkResult" href="eval_types.html#neuralops.evaluation.eval_types.BenchmarkResult">BenchmarkResult</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def evaluate_single_combination_opt(
+    track: str,
+    module_name: str,
+    module_type: str,
+    model_family: str,
+    dataset: str,
+    rank: int = 16,
+    num_warmup: int = 2,
+    num_steps: int = 5,
+    batch_size: int = 128,
+    seq_len: int = 256,
+    device: torch.device = torch.device(&#34;cpu&#34;),
+    results_dir: str = &#34;./results/gpu_server&#34;,
+    allow_synthetic: bool = False,
+    skip_deprecated: bool = True,
+) -&gt; BenchmarkResult:
+    &#34;&#34;&#34;Clean multi-phase orchestrator for single (module, model, dataset) combinations.&#34;&#34;&#34;
+    result = BenchmarkResult(
+        track=track,
+        module_name=module_name,
+        module_type=module_type,
+        model_family=model_family,
+        dataset=dataset,
+        status=&#34;RUNNING&#34;,
+    )
+
+    t_run_start = time.time()
+    t_model_load = 0.0
+    t_calib = 0.0
+    t_comp = 0.0
+    t_eval = 0.0
+    mem_phases: dict[str, dict[str, float]] = {}
+    run_log_lines: list[str] = [
+        f&#34;Command: evaluate_single_combination(module={module_name}, model={model_family}, dataset={dataset}, rank={rank})&#34;,
+        f&#34;Environment: python={sys.version.split()[0]} torch={torch.__version__}&#34;,
+    ]
+    exc_traceback: str | None = None
+    exc_type: str | None = None
+    comp_stats: dict[str, Any] = {}
+    baseline_logits_samples: list[list[float]] = []
+    compressed_logits_samples: list[list[float]] = []
+    sample_cosines: list[float] = []
+
+    current_batch_size = batch_size
+    max_retries = 6
+    retry_count = 0
+    success = False
+
+    if skip_deprecated and module_name in DEPRECATED_MODULES:
+        result.status = &#34;SKIP_DEPRECATED&#34;
+        result.error_message = f&#34;Module &#39;{module_name}&#39; is in DEPRECATED_MODULES.&#34;
+        run_log_lines.append(f&#34;[SKIP] Module &#39;{module_name}&#39; is deprecated.&#34;)
+        success = True
+
+    while retry_count &lt; max_retries and not success:
+        try:
+            trial = _run_single_trial(
+                module_name=module_name,
+                module_type=module_type,
+                model_family=model_family,
+                dataset=dataset,
+                rank=rank,
+                seq_len=seq_len,
+                batch_size=batch_size,
+                current_batch_size=current_batch_size,
+                num_warmup=num_warmup,
+                num_steps=num_steps,
+                allow_synthetic=allow_synthetic,
+                device=device,
+                retry_count=retry_count,
+                run_log_lines=run_log_lines,
+            )
+            result.compression_ratio = trial[&#34;comp_ratio&#34;]
+            result.calibration_used = trial[&#34;calib_used&#34;]
+            result.calibration_source = trial[&#34;calib_source&#34;]
+            result.params_before = trial[&#34;params_before&#34;]
+            result.params_after = trial[&#34;params_after&#34;]
+            comp_stats = trial[&#34;comp_stats&#34;]
+            mem_phases = trial[&#34;mem_phases&#34;]
+            t_model_load = trial[&#34;t_model_load&#34;]
+            t_calib = trial[&#34;t_calib&#34;]
+            t_comp = trial[&#34;t_comp&#34;]
+            current_batch_size = trial[&#34;current_batch_size&#34;]
+
+            bench = trial[&#34;bench&#34;]
+            result.forward_latency_ms = bench[&#34;forward_latency_ms&#34;]
+            result.backward_latency_ms = bench[&#34;backward_latency_ms&#34;]
+            result.total_step_latency_ms = bench[&#34;total_step_latency_ms&#34;]
+            result.latency_variance_ms = bench[&#34;latency_variance_ms&#34;]
+            result.throughput_samples_per_sec = bench[&#34;throughput_samples_per_sec&#34;]
+            result.throughput_tokens_sec = bench[&#34;throughput_tokens_sec&#34;]
+            result.peak_memory_mb = bench[&#34;peak_memory_mb&#34;]
+            result.loss = bench[&#34;loss&#34;]
+            result.grad_norm = bench[&#34;grad_norm&#34;]
+            result.trajectories = bench[&#34;trajectories&#34;]
+            result.flops_macs = bench[&#34;flops_macs&#34;]
+
+            em = trial[&#34;eval_metrics&#34;]
+            result.perplexity = em[&#34;perplexity&#34;]
+            result.accuracy_pct = em[&#34;accuracy_pct&#34;]
+            result.f1_score = em[&#34;f1_score&#34;]
+            result.mcc = em[&#34;mcc&#34;]
+            result.pearson = em[&#34;pearson&#34;]
+            result.spearman = em[&#34;spearman&#34;]
+            result.fidelity_score = em[&#34;fidelity_score&#34;]
+            t_eval = em[&#34;t_eval&#34;]
+            baseline_logits_samples = em[&#34;baseline_logits_samples&#34;]
+            compressed_logits_samples = em[&#34;compressed_logits_samples&#34;]
+            sample_cosines = em[&#34;sample_cosines&#34;]
+
+            result.status = &#34;PASS&#34;
+            success = True
+
+        except RuntimeError as e:
+            if &#34;out of memory&#34; in str(e).lower():
+                current_batch_size = max(1, current_batch_size // 2)
+                retry_count += 1
+                if device.type == &#34;cuda&#34;:
+                    gc.collect()
+                    torch.cuda.empty_cache()
+                continue
+            else:
+                exc_type = type(e).__name__
+                exc_traceback = traceback.format_exc()
+                result.status = &#34;FAIL&#34;
+                result.error_message = f&#34;{exc_type}: {e}&#34;
+                break
+        except Exception as e:
+            exc_type = type(e).__name__
+            exc_traceback = traceback.format_exc()
+            result.status = &#34;FAIL&#34;
+            result.error_message = f&#34;{exc_type}: {e}&#34;
+            break
+        finally:
+            gc.collect()
+            if device.type == &#34;cuda&#34;:
+                torch.cuda.empty_cache()
+
+    if not success and result.status not in (&#34;FAIL&#34;, &#34;SKIP_DEPRECATED&#34;):
+        result.status = &#34;FAIL&#34;
+        result.error_message = &#34;OOM limits exceeded after max retries.&#34;
+
+    return _finalize_benchmark_result(
+        result,
+        run_log_lines,
+        t_run_start,
+        module_name,
+        module_type,
+        model_family,
+        dataset,
+        rank,
+        seq_len,
+        batch_size,
+        current_batch_size,
+        num_warmup,
+        num_steps,
+        allow_synthetic,
+        device,
+        results_dir,
+        comp_stats,
+        mem_phases,
+        t_model_load,
+        t_calib,
+        t_comp,
+        t_eval,
+        baseline_logits_samples,
+        compressed_logits_samples,
+        sample_cosines,
+        exc_traceback,
+        exc_type,
+        retry_count,
+        success,
+    )</code></pre>
+</details>
+<div class="desc"><p>Clean multi-phase orchestrator for single (module, model, dataset) combinations.</p></div>
+</dd>
+<dt id="neuralops.evaluation.eval_pipeline.evaluate_single_combination_opt"><code class="name flex">
+<span>def <span class="ident">evaluate_single_combination_opt</span></span>(<span>track: str,<br>module_name: str,<br>module_type: str,<br>model_family: str,<br>dataset: str,<br>rank: int = 16,<br>num_warmup: int = 2,<br>num_steps: int = 5,<br>batch_size: int = 128,<br>seq_len: int = 256,<br>device: torch.device = device(type='cpu'),<br>results_dir: str = './results/gpu_server',<br>allow_synthetic: bool = False,<br>skip_deprecated: bool = True) ‑> <a title="neuralops.evaluation.eval_types.BenchmarkResult" href="eval_types.html#neuralops.evaluation.eval_types.BenchmarkResult">BenchmarkResult</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def evaluate_single_combination_opt(
+    track: str,
+    module_name: str,
+    module_type: str,
+    model_family: str,
+    dataset: str,
+    rank: int = 16,
+    num_warmup: int = 2,
+    num_steps: int = 5,
+    batch_size: int = 128,
+    seq_len: int = 256,
+    device: torch.device = torch.device(&#34;cpu&#34;),
+    results_dir: str = &#34;./results/gpu_server&#34;,
+    allow_synthetic: bool = False,
+    skip_deprecated: bool = True,
+) -&gt; BenchmarkResult:
+    &#34;&#34;&#34;Clean multi-phase orchestrator for single (module, model, dataset) combinations.&#34;&#34;&#34;
+    result = BenchmarkResult(
+        track=track,
+        module_name=module_name,
+        module_type=module_type,
+        model_family=model_family,
+        dataset=dataset,
+        status=&#34;RUNNING&#34;,
+    )
+
+    t_run_start = time.time()
+    t_model_load = 0.0
+    t_calib = 0.0
+    t_comp = 0.0
+    t_eval = 0.0
+    mem_phases: dict[str, dict[str, float]] = {}
+    run_log_lines: list[str] = [
+        f&#34;Command: evaluate_single_combination(module={module_name}, model={model_family}, dataset={dataset}, rank={rank})&#34;,
+        f&#34;Environment: python={sys.version.split()[0]} torch={torch.__version__}&#34;,
+    ]
+    exc_traceback: str | None = None
+    exc_type: str | None = None
+    comp_stats: dict[str, Any] = {}
+    baseline_logits_samples: list[list[float]] = []
+    compressed_logits_samples: list[list[float]] = []
+    sample_cosines: list[float] = []
+
+    current_batch_size = batch_size
+    max_retries = 6
+    retry_count = 0
+    success = False
+
+    if skip_deprecated and module_name in DEPRECATED_MODULES:
+        result.status = &#34;SKIP_DEPRECATED&#34;
+        result.error_message = f&#34;Module &#39;{module_name}&#39; is in DEPRECATED_MODULES.&#34;
+        run_log_lines.append(f&#34;[SKIP] Module &#39;{module_name}&#39; is deprecated.&#34;)
+        success = True
+
+    while retry_count &lt; max_retries and not success:
+        try:
+            trial = _run_single_trial(
+                module_name=module_name,
+                module_type=module_type,
+                model_family=model_family,
+                dataset=dataset,
+                rank=rank,
+                seq_len=seq_len,
+                batch_size=batch_size,
+                current_batch_size=current_batch_size,
+                num_warmup=num_warmup,
+                num_steps=num_steps,
+                allow_synthetic=allow_synthetic,
+                device=device,
+                retry_count=retry_count,
+                run_log_lines=run_log_lines,
+            )
+            result.compression_ratio = trial[&#34;comp_ratio&#34;]
+            result.calibration_used = trial[&#34;calib_used&#34;]
+            result.calibration_source = trial[&#34;calib_source&#34;]
+            result.params_before = trial[&#34;params_before&#34;]
+            result.params_after = trial[&#34;params_after&#34;]
+            comp_stats = trial[&#34;comp_stats&#34;]
+            mem_phases = trial[&#34;mem_phases&#34;]
+            t_model_load = trial[&#34;t_model_load&#34;]
+            t_calib = trial[&#34;t_calib&#34;]
+            t_comp = trial[&#34;t_comp&#34;]
+            current_batch_size = trial[&#34;current_batch_size&#34;]
+
+            bench = trial[&#34;bench&#34;]
+            result.forward_latency_ms = bench[&#34;forward_latency_ms&#34;]
+            result.backward_latency_ms = bench[&#34;backward_latency_ms&#34;]
+            result.total_step_latency_ms = bench[&#34;total_step_latency_ms&#34;]
+            result.latency_variance_ms = bench[&#34;latency_variance_ms&#34;]
+            result.throughput_samples_per_sec = bench[&#34;throughput_samples_per_sec&#34;]
+            result.throughput_tokens_sec = bench[&#34;throughput_tokens_sec&#34;]
+            result.peak_memory_mb = bench[&#34;peak_memory_mb&#34;]
+            result.loss = bench[&#34;loss&#34;]
+            result.grad_norm = bench[&#34;grad_norm&#34;]
+            result.trajectories = bench[&#34;trajectories&#34;]
+            result.flops_macs = bench[&#34;flops_macs&#34;]
+
+            em = trial[&#34;eval_metrics&#34;]
+            result.perplexity = em[&#34;perplexity&#34;]
+            result.accuracy_pct = em[&#34;accuracy_pct&#34;]
+            result.f1_score = em[&#34;f1_score&#34;]
+            result.mcc = em[&#34;mcc&#34;]
+            result.pearson = em[&#34;pearson&#34;]
+            result.spearman = em[&#34;spearman&#34;]
+            result.fidelity_score = em[&#34;fidelity_score&#34;]
+            t_eval = em[&#34;t_eval&#34;]
+            baseline_logits_samples = em[&#34;baseline_logits_samples&#34;]
+            compressed_logits_samples = em[&#34;compressed_logits_samples&#34;]
+            sample_cosines = em[&#34;sample_cosines&#34;]
+
+            result.status = &#34;PASS&#34;
+            success = True
+
+        except RuntimeError as e:
+            if &#34;out of memory&#34; in str(e).lower():
+                current_batch_size = max(1, current_batch_size // 2)
+                retry_count += 1
+                if device.type == &#34;cuda&#34;:
+                    gc.collect()
+                    torch.cuda.empty_cache()
+                continue
+            else:
+                exc_type = type(e).__name__
+                exc_traceback = traceback.format_exc()
+                result.status = &#34;FAIL&#34;
+                result.error_message = f&#34;{exc_type}: {e}&#34;
+                break
+        except Exception as e:
+            exc_type = type(e).__name__
+            exc_traceback = traceback.format_exc()
+            result.status = &#34;FAIL&#34;
+            result.error_message = f&#34;{exc_type}: {e}&#34;
+            break
+        finally:
+            gc.collect()
+            if device.type == &#34;cuda&#34;:
+                torch.cuda.empty_cache()
+
+    if not success and result.status not in (&#34;FAIL&#34;, &#34;SKIP_DEPRECATED&#34;):
+        result.status = &#34;FAIL&#34;
+        result.error_message = &#34;OOM limits exceeded after max retries.&#34;
+
+    return _finalize_benchmark_result(
+        result,
+        run_log_lines,
+        t_run_start,
+        module_name,
+        module_type,
+        model_family,
+        dataset,
+        rank,
+        seq_len,
+        batch_size,
+        current_batch_size,
+        num_warmup,
+        num_steps,
+        allow_synthetic,
+        device,
+        results_dir,
+        comp_stats,
+        mem_phases,
+        t_model_load,
+        t_calib,
+        t_comp,
+        t_eval,
+        baseline_logits_samples,
+        compressed_logits_samples,
+        sample_cosines,
+        exc_traceback,
+        exc_type,
+        retry_count,
+        success,
+    )</code></pre>
+</details>
+<div class="desc"><p>Clean multi-phase orchestrator for single (module, model, dataset) combinations.</p></div>
+</dd>
+<dt id="neuralops.evaluation.eval_pipeline.probe_optimal_batch_size"><code class="name flex">
+<span>def <span class="ident">probe_optimal_batch_size</span></span>(<span>model: nn.Module,<br>model_family: str,<br>dataset: str,<br>seq_len: int,<br>device: torch.device,<br>target_vram_ratio: float = 0.35,<br>max_batch_cap: int = 64,<br>min_batch_floor: int = 4,<br>allow_synthetic: bool = False) ‑> int</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def probe_optimal_batch_size(
+    model: nn.Module,
+    model_family: str,
+    dataset: str,
+    seq_len: int,
+    device: torch.device,
+    target_vram_ratio: float = 0.35,
+    max_batch_cap: int = 64,
+    min_batch_floor: int = 4,
+    allow_synthetic: bool = False,
+) -&gt; int:
+    &#34;&#34;&#34;Probes GPU memory to dynamically compute the largest power-of-two batch size fitting VRAM.
+
+    Args:
+        model: Model under evaluation.
+        model_family: Model family name for tokenizer resolution.
+        dataset: Target dataset name.
+        seq_len: Sequence length dimension.
+        device: Target execution device.
+        target_vram_ratio: Fraction of total VRAM budgeted for activation memory.
+        max_batch_cap: Ceiling on returned batch size.
+        min_batch_floor: Floor on returned batch size.
+        allow_synthetic: Whether to permit synthetic batch fallback during probe.
+
+    Returns:
+        Optimal integer batch size (power of 2).
+    &#34;&#34;&#34;
+    if device.type != &#34;cuda&#34;:
+        return 64
+
+    torch.cuda.synchronize(device)
+    gc.collect()
+    torch.cuda.empty_cache()
+    torch.cuda.reset_peak_memory_stats(device)
+
+    idle_vram = torch.cuda.memory_allocated(device)
+    total_vram = torch.cuda.get_device_properties(device).total_memory
+    target_usable_vram = total_vram * target_vram_ratio
+
+    probe_b = 4
+    num_labels = 1 if dataset.lower() == &#34;stsb&#34; else 2
+
+    try:
+        probe_batch = get_dataset_batch(
+            dataset,
+            model_family,
+            probe_b,
+            seq_len,
+            num_labels=num_labels,
+            device=device,
+            allow_synthetic=allow_synthetic,
+        )
+        filtered_batch = _filter_batch(probe_batch, model_family, model)
+
+        with torch.amp.autocast(&#34;cuda&#34;):
+            out = model(**filtered_batch)
+        torch.cuda.synchronize(device)
+        fwd_peak = torch.cuda.max_memory_allocated(device)
+        del out
+
+        try:
+            with torch.amp.autocast(&#34;cuda&#34;):
+                out2 = model(**filtered_batch)
+            _, loss = _extract_logits_and_loss(
+                out2,
+                num_labels=num_labels,
+                labels=filtered_batch.get(&#34;labels&#34;),
+                is_lm=dataset.lower() in LM_DATASETS,
+            )
+            if loss is not None and loss.requires_grad:
+                loss.backward()
+                model.zero_grad()
+            torch.cuda.synchronize(device)
+            peak_vram = torch.cuda.max_memory_allocated(device)
+        except Exception:
+            peak_vram = fwd_peak
+
+        activation_vram = max(1024 * 1024.0, peak_vram - idle_vram)
+        mem_per_sample = activation_vram / float(probe_b)
+        remaining_vram = max(1024 * 1024.0, target_usable_vram - idle_vram)
+        estimated_max_b = int(remaining_vram / mem_per_sample)
+
+        powers_of_2 = [4, 8, 16, 32, 64, 128, 256, 512, 1024]
+        selected_b = min_batch_floor
+        for p in powers_of_2:
+            if p &lt;= estimated_max_b and p &lt;= max_batch_cap:
+                selected_b = p
+
+        logger.info(
+            &#34;Batch probe: peak=%.1fMB, per_sample=%.2fMB -&gt; selected=%d&#34;,
+            peak_vram / (1024 * 1024),
+            mem_per_sample / (1024 * 1024),
+            selected_b,
+        )
+        return max(min_batch_floor, min(selected_b, max_batch_cap))
+    except Exception as e:
+        logger.warning(&#34;Batch probe failed (%s), defaulting to 64&#34;, e)
+        return 64
+    finally:
+        gc.collect()
+        torch.cuda.empty_cache()</code></pre>
+</details>
+<div class="desc"><p>Probes GPU memory to dynamically compute the largest power-of-two batch size fitting VRAM.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>model</code></strong></dt>
+<dd>Model under evaluation.</dd>
+<dt><strong><code>model_family</code></strong></dt>
+<dd>Model family name for tokenizer resolution.</dd>
+<dt><strong><code>dataset</code></strong></dt>
+<dd>Target dataset name.</dd>
+<dt><strong><code>seq_len</code></strong></dt>
+<dd>Sequence length dimension.</dd>
+<dt><strong><code>device</code></strong></dt>
+<dd>Target execution device.</dd>
+<dt><strong><code>target_vram_ratio</code></strong></dt>
+<dd>Fraction of total VRAM budgeted for activation memory.</dd>
+<dt><strong><code>max_batch_cap</code></strong></dt>
+<dd>Ceiling on returned batch size.</dd>
+<dt><strong><code>min_batch_floor</code></strong></dt>
+<dd>Floor on returned batch size.</dd>
+<dt><strong><code>allow_synthetic</code></strong></dt>
+<dd>Whether to permit synthetic batch fallback during probe.</dd>
+</dl>
+<p>Returns
+-----=
+Optimal integer batch size (power of 2).</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.evaluation" href="index.html">neuralops.evaluation</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.evaluation.eval_pipeline.evaluate_single_combination" href="#neuralops.evaluation.eval_pipeline.evaluate_single_combination">evaluate_single_combination</a></code></li>
+<li><code><a title="neuralops.evaluation.eval_pipeline.evaluate_single_combination_opt" href="#neuralops.evaluation.eval_pipeline.evaluate_single_combination_opt">evaluate_single_combination_opt</a></code></li>
+<li><code><a title="neuralops.evaluation.eval_pipeline.probe_optimal_batch_size" href="#neuralops.evaluation.eval_pipeline.probe_optimal_batch_size">probe_optimal_batch_size</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

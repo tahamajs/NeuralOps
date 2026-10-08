@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tests.test_triton_fms_scan API documentation</title>
+<meta name="description" content="Comprehensive test suite for neuralops.core.triton_kernels.fms_scan …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.tests.test_triton_fms_scan</code></h1>
+</header>
+<section id="section-intro">
+<p>Comprehensive test suite for neuralops.core.triton_kernels.fms_scan.</p>
+<p>Coverage:
+- Numerical correctness vs PyTorch reference
+- Multiple dtypes: fp32, fp16, bf16
+- Multiple shapes: batch, seq, head, dim variations
+- Edge cases: single-token, seq_len &gt; chunk_size, head_dim bounds
+- Fallback path &amp; error handling
+- Determinism
+- Gradient correctness</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.tests.test_triton_fms_scan.device"><code class="name flex">
+<span>def <span class="ident">device</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@pytest.fixture
+def device():
+    if torch.cuda.is_available():
+        return torch.device(&#34;cuda&#34;)
+    return torch.device(&#34;cpu&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_triton_fms_scan.reference_fms_scan_pytorch"><code class="name flex">
+<span>def <span class="ident">reference_fms_scan_pytorch</span></span>(<span>q, k, v, decay)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reference_fms_scan_pytorch(q, k, v, decay):
+    &#34;&#34;&#34;
+    Pure PyTorch sequential reference for Factorised Matrix State scan.
+    Recurrence:
+        q_feat = ELU(q) + 1.0
+        k_feat = (ELU(k) + 1.0) / sqrt(D)
+        S_t    = decay_h * S_{t-1} + k_feat_t^T @ v_t    # (D, D) matrix state
+        Z_t    = decay_h * Z_{t-1} + k_feat_t            # (D,) vector normalizer
+        num_t  = q_feat_t @ S_t                          # (D,)
+        den_t  = q_feat_t @ Z_t + 1e-5                   # scalar
+        y_t    = num_t / den_t                           # (D,)
+    &#34;&#34;&#34;
+    B, H, L, D = q.shape
+    q_f = (F.elu(q.float()) + 1.0)
+    k_f = (F.elu(k.float()) + 1.0) / (D ** 0.5)
+    v_f = v.float()
+    decay_f = decay.float()
+
+    y = torch.zeros(B, H, L, D, device=q.device, dtype=torch.float32)
+
+    for b in range(B):
+        for h in range(H):
+            d_h = decay_f[h]
+            S = torch.zeros(D, D, device=q.device, dtype=torch.float32)
+            Z = torch.zeros(D, device=q.device, dtype=torch.float32)
+            for t in range(L):
+                qt = q_f[b, h, t]  # (D,)
+                kt = k_f[b, h, t]  # (D,)
+                vt = v_f[b, h, t]  # (D,)
+
+                S = d_h * S + torch.outer(kt, vt)
+                Z = d_h * Z + kt
+
+                num = torch.matmul(qt, S)
+                den = torch.dot(qt, Z) + 1e-5
+                y[b, h, t] = num / den
+
+    return y.to(q.dtype)</code></pre>
+</details>
+<div class="desc"><p>Pure PyTorch sequential reference for Factorised Matrix State scan.</p>
+<p>Recurrence
+-----=
+q_feat = ELU(q) + 1.0
+k_feat = (ELU(k) + 1.0) / sqrt(D)
+S_t
+= decay_h * S_{t-1} + k_feat_t^T @ v_t
+# (D, D) matrix state
+Z_t
+= decay_h * Z_{t-1} + k_feat_t
+# (D,) vector normalizer
+num_t
+= q_feat_t @ S_t
+# (D,)
+den_t
+= q_feat_t @ Z_t + 1e-5
+# scalar
+y_t
+= num_t / den_t
+# (D,)</p></div>
+</dd>
+<dt id="neuralops.tests.test_triton_fms_scan.test_fms_scan_triton_backward"><code class="name flex">
+<span>def <span class="ident">test_fms_scan_triton_backward</span></span>(<span>device)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@pytest.mark.skipif(not HAS_TRITON or not torch.cuda.is_available(), reason=&#34;Requires Triton and CUDA&#34;)
+def test_fms_scan_triton_backward(device):
+    &#34;&#34;&#34;Verify backward gradient computation.&#34;&#34;&#34;
+    B, H, L, D = 1, 2, 16, 32
+    q = torch.randn(B, H, L, D, device=device, requires_grad=True)
+    k = torch.randn(B, H, L, D, device=device, requires_grad=True)
+    v = torch.randn(B, H, L, D, device=device, requires_grad=True)
+    decay = torch.sigmoid(torch.randn(H, device=device, requires_grad=True))
+
+    out = fms_scan_triton(q, k, v, decay)
+    loss = out.sum()
+    loss.backward()
+
+    assert q.grad is not None and torch.isfinite(q.grad).all()
+    assert k.grad is not None and torch.isfinite(k.grad).all()
+    assert v.grad is not None and torch.isfinite(v.grad).all()
+    assert decay.grad is not None and torch.isfinite(decay.grad).all()</code></pre>
+</details>
+<div class="desc"><p>Verify backward gradient computation.</p></div>
+</dd>
+<dt id="neuralops.tests.test_triton_fms_scan.test_fms_scan_triton_correctness"><code class="name flex">
+<span>def <span class="ident">test_fms_scan_triton_correctness</span></span>(<span>device, dtype, D)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@pytest.mark.skipif(not HAS_TRITON or not torch.cuda.is_available(), reason=&#34;Requires Triton and CUDA&#34;)
+@pytest.mark.parametrize(&#34;dtype&#34;, [torch.float32, torch.float16, torch.bfloat16])
+@pytest.mark.parametrize(&#34;D&#34;, [16, 32, 64])
+def test_fms_scan_triton_correctness(device, dtype, D):
+    &#34;&#34;&#34;Verify Triton FMS matches PyTorch reference on CUDA.&#34;&#34;&#34;
+    B, H, L = 2, 2, 32
+    q = torch.randn(B, H, L, D, device=device, dtype=dtype)
+    k = torch.randn(B, H, L, D, device=device, dtype=dtype)
+    v = torch.randn(B, H, L, D, device=device, dtype=dtype)
+    decay = torch.sigmoid(torch.randn(H, device=device, dtype=dtype))
+
+    out = fms_scan_triton(q, k, v, decay)
+    ref = reference_fms_scan_pytorch(q, k, v, decay)
+
+    tol = 1e-2 if dtype != torch.float32 else 1e-4
+    assert torch.allclose(out, ref, atol=tol, rtol=tol)</code></pre>
+</details>
+<div class="desc"><p>Verify Triton FMS matches PyTorch reference on CUDA.</p></div>
+</dd>
+<dt id="neuralops.tests.test_triton_fms_scan.test_fms_scan_triton_dim_exceeded"><code class="name flex">
+<span>def <span class="ident">test_fms_scan_triton_dim_exceeded</span></span>(<span>device)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@pytest.mark.skipif(not HAS_TRITON or not torch.cuda.is_available(), reason=&#34;Requires Triton and CUDA&#34;)
+def test_fms_scan_triton_dim_exceeded(device):
+    &#34;&#34;&#34;Verify exception raised when D &gt; MAX_REGISTER_DIM.&#34;&#34;&#34;
+    B, H, L, D = 1, 1, 8, MAX_REGISTER_DIM + 16
+    q = torch.randn(B, H, L, D, device=device)
+    k = torch.randn(B, H, L, D, device=device)
+    v = torch.randn(B, H, L, D, device=device)
+    decay = torch.sigmoid(torch.randn(H, device=device))
+
+    with pytest.raises(ValueError, match=&#34;head_dim&#34;):
+        fms_scan_triton(q, k, v, decay)</code></pre>
+</details>
+<div class="desc"><p>Verify exception raised when D &gt; MAX_REGISTER_DIM.</p></div>
+</dd>
+<dt id="neuralops.tests.test_triton_fms_scan.test_reference_fms_scan_pytorch_basic"><code class="name flex">
+<span>def <span class="ident">test_reference_fms_scan_pytorch_basic</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_reference_fms_scan_pytorch_basic():
+    &#34;&#34;&#34;Verify PyTorch reference runs and outputs correct shape on CPU.&#34;&#34;&#34;
+    B, H, L, D = 2, 4, 16, 32
+    q = torch.randn(B, H, L, D)
+    k = torch.randn(B, H, L, D)
+    v = torch.randn(B, H, L, D)
+    decay = torch.sigmoid(torch.randn(H))
+
+    out = reference_fms_scan_pytorch(q, k, v, decay)
+    assert out.shape == (B, H, L, D)
+    assert torch.isfinite(out).all()</code></pre>
+</details>
+<div class="desc"><p>Verify PyTorch reference runs and outputs correct shape on CPU.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.tests" href="index.html">neuralops.tests</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.tests.test_triton_fms_scan.device" href="#neuralops.tests.test_triton_fms_scan.device">device</a></code></li>
+<li><code><a title="neuralops.tests.test_triton_fms_scan.reference_fms_scan_pytorch" href="#neuralops.tests.test_triton_fms_scan.reference_fms_scan_pytorch">reference_fms_scan_pytorch</a></code></li>
+<li><code><a title="neuralops.tests.test_triton_fms_scan.test_fms_scan_triton_backward" href="#neuralops.tests.test_triton_fms_scan.test_fms_scan_triton_backward">test_fms_scan_triton_backward</a></code></li>
+<li><code><a title="neuralops.tests.test_triton_fms_scan.test_fms_scan_triton_correctness" href="#neuralops.tests.test_triton_fms_scan.test_fms_scan_triton_correctness">test_fms_scan_triton_correctness</a></code></li>
+<li><code><a title="neuralops.tests.test_triton_fms_scan.test_fms_scan_triton_dim_exceeded" href="#neuralops.tests.test_triton_fms_scan.test_fms_scan_triton_dim_exceeded">test_fms_scan_triton_dim_exceeded</a></code></li>
+<li><code><a title="neuralops.tests.test_triton_fms_scan.test_reference_fms_scan_pytorch_basic" href="#neuralops.tests.test_triton_fms_scan.test_reference_fms_scan_pytorch_basic">test_reference_fms_scan_pytorch_basic</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

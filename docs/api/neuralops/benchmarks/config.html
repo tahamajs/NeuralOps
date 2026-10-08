@@ -1,0 +1,983 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.benchmarks.config API documentation</title>
+<meta name="description" content="Benchmark configuration dataclasses for neuralops.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.benchmarks.config</code></h1>
+</header>
+<section id="section-intro">
+<p>Benchmark configuration dataclasses for neuralops.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.benchmarks.config.BenchmarkConfig"><code class="flex name class">
+<span>class <span class="ident">BenchmarkConfig</span></span>
+<span>(</span><span>model: str = 'distilbert-base-uncased',<br>dataset: str = 'sst2',<br>output_dir: Path = &lt;factory&gt;,<br>device: str = 'cuda',<br>seed: int = 42,<br>epochs: int = 3,<br>batch_size: int = 32,<br>lr: float = 2e-05,<br>seq_len: int = 128,<br>max_length: int = 128,<br>precision: str = 'float32',<br>eval_only: bool = False,<br>verbose: bool = False,<br>dry_run: bool = False,<br>timeout_s: int = 1800,<br>extra: dict[str, Any] = &lt;factory&gt;)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class BenchmarkConfig:
+    &#34;&#34;&#34;Unified configuration for benchmarking single runs or grid sweeps.&#34;&#34;&#34;
+
+    model: str = &#34;distilbert-base-uncased&#34;
+    dataset: str = &#34;sst2&#34;
+    output_dir: Path = field(default_factory=lambda: Path(&#34;results&#34;))
+    device: str = &#34;cuda&#34;
+    seed: int = 42
+    epochs: int = 3
+    batch_size: int = 32
+    lr: float = 2e-5
+    seq_len: int = 128
+    max_length: int = 128
+    precision: str = &#34;float32&#34;
+    eval_only: bool = False
+    verbose: bool = False
+    dry_run: bool = False
+    timeout_s: int = 1800
+    extra: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -&gt; None:
+        if self.eval_only:
+            LOG.warning(
+                &#34;eval_only=True specified: evaluating with a freshly initialized &#34;
+                &#34;classification head without fine-tuning may yield random accuracy.&#34;
+            )
+
+    def to_dict(self) -&gt; dict[str, Any]:
+        &#34;&#34;&#34;Convert config to dictionary representation.&#34;&#34;&#34;
+        data = asdict(self)
+        data[&#34;output_dir&#34;] = str(self.output_dir)
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -&gt; BenchmarkConfig:
+        &#34;&#34;&#34;Create config from dictionary.&#34;&#34;&#34;
+        d = dict(data)
+        if &#34;output_dir&#34; in d and isinstance(d[&#34;output_dir&#34;], (str, Path)):
+            d[&#34;output_dir&#34;] = Path(d[&#34;output_dir&#34;])
+        return cls(**d)</code></pre>
+</details>
+<div class="desc"><p>Unified configuration for benchmarking single runs or grid sweeps.</p></div>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="neuralops.benchmarks.config.BenchmarkRunConfig" href="#neuralops.benchmarks.config.BenchmarkRunConfig">BenchmarkRunConfig</a></li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="neuralops.benchmarks.config.BenchmarkConfig.from_dict"><code class="name flex">
+<span>def <span class="ident">from_dict</span></span>(<span>data: dict[str, Any]) ‑> <a title="neuralops.benchmarks.config.BenchmarkConfig" href="#neuralops.benchmarks.config.BenchmarkConfig">BenchmarkConfig</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create config from dictionary.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.benchmarks.config.BenchmarkConfig.batch_size"><code class="name">var <span class="ident">batch_size</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.BenchmarkConfig.dataset"><code class="name">var <span class="ident">dataset</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.BenchmarkConfig.device"><code class="name">var <span class="ident">device</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.BenchmarkConfig.dry_run"><code class="name">var <span class="ident">dry_run</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.BenchmarkConfig.epochs"><code class="name">var <span class="ident">epochs</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.BenchmarkConfig.eval_only"><code class="name">var <span class="ident">eval_only</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.BenchmarkConfig.extra"><code class="name">var <span class="ident">extra</span> : dict[str, typing.Any]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.BenchmarkConfig.lr"><code class="name">var <span class="ident">lr</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.BenchmarkConfig.max_length"><code class="name">var <span class="ident">max_length</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.BenchmarkConfig.model"><code class="name">var <span class="ident">model</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.BenchmarkConfig.output_dir"><code class="name">var <span class="ident">output_dir</span> : pathlib.Path</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.BenchmarkConfig.precision"><code class="name">var <span class="ident">precision</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.BenchmarkConfig.seed"><code class="name">var <span class="ident">seed</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.BenchmarkConfig.seq_len"><code class="name">var <span class="ident">seq_len</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.BenchmarkConfig.timeout_s"><code class="name">var <span class="ident">timeout_s</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.BenchmarkConfig.verbose"><code class="name">var <span class="ident">verbose</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.benchmarks.config.BenchmarkConfig.to_dict"><code class="name flex">
+<span>def <span class="ident">to_dict</span></span>(<span>self) ‑> dict[str, typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_dict(self) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Convert config to dictionary representation.&#34;&#34;&#34;
+    data = asdict(self)
+    data[&#34;output_dir&#34;] = str(self.output_dir)
+    return data</code></pre>
+</details>
+<div class="desc"><p>Convert config to dictionary representation.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.benchmarks.config.BenchmarkRunConfig"><code class="flex name class">
+<span>class <span class="ident">BenchmarkRunConfig</span></span>
+<span>(</span><span>model: str = 'distilbert-base-uncased',<br>dataset: str = 'sst2',<br>output_dir: Path = &lt;factory&gt;,<br>device: str = 'cuda',<br>seed: int = 42,<br>epochs: int = 3,<br>batch_size: int = 32,<br>lr: float = 2e-05,<br>seq_len: int = 128,<br>max_length: int = 128,<br>precision: str = 'float32',<br>eval_only: bool = False,<br>verbose: bool = False,<br>dry_run: bool = False,<br>timeout_s: int = 1800,<br>extra: dict[str, Any] = &lt;factory&gt;)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class BenchmarkRunConfig(BenchmarkConfig):
+    &#34;&#34;&#34;Base benchmark run configuration (alias for BenchmarkConfig).&#34;&#34;&#34;
+    pass</code></pre>
+</details>
+<div class="desc"><p>Base benchmark run configuration (alias for BenchmarkConfig).</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.benchmarks.config.BenchmarkConfig" href="#neuralops.benchmarks.config.BenchmarkConfig">BenchmarkConfig</a></li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="neuralops.benchmarks.config.GPT2SweepConfig" href="#neuralops.benchmarks.config.GPT2SweepConfig">GPT2SweepConfig</a></li>
+<li><a title="neuralops.benchmarks.config.KDTestConfig" href="#neuralops.benchmarks.config.KDTestConfig">KDTestConfig</a></li>
+<li><a title="neuralops.benchmarks.config.MultiModeConfig" href="#neuralops.benchmarks.config.MultiModeConfig">MultiModeConfig</a></li>
+<li><a title="neuralops.benchmarks.config.MultiseedConfig" href="#neuralops.benchmarks.config.MultiseedConfig">MultiseedConfig</a></li>
+<li><a title="neuralops.benchmarks.config.QualitySweepConfig" href="#neuralops.benchmarks.config.QualitySweepConfig">QualitySweepConfig</a></li>
+<li><a title="neuralops.benchmarks.config.RankSweepConfig" href="#neuralops.benchmarks.config.RankSweepConfig">RankSweepConfig</a></li>
+<li><a title="neuralops.benchmarks.config.RulerConfig" href="#neuralops.benchmarks.config.RulerConfig">RulerConfig</a></li>
+<li><a title="neuralops.benchmarks.config.SeqLenScalingConfig" href="#neuralops.benchmarks.config.SeqLenScalingConfig">SeqLenScalingConfig</a></li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.benchmarks.config.BenchmarkConfig" href="#neuralops.benchmarks.config.BenchmarkConfig">BenchmarkConfig</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.batch_size" href="#neuralops.benchmarks.config.BenchmarkConfig.batch_size">batch_size</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.dataset" href="#neuralops.benchmarks.config.BenchmarkConfig.dataset">dataset</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.device" href="#neuralops.benchmarks.config.BenchmarkConfig.device">device</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.dry_run" href="#neuralops.benchmarks.config.BenchmarkConfig.dry_run">dry_run</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.epochs" href="#neuralops.benchmarks.config.BenchmarkConfig.epochs">epochs</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.eval_only" href="#neuralops.benchmarks.config.BenchmarkConfig.eval_only">eval_only</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.extra" href="#neuralops.benchmarks.config.BenchmarkConfig.extra">extra</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.from_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.from_dict">from_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.lr" href="#neuralops.benchmarks.config.BenchmarkConfig.lr">lr</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.max_length" href="#neuralops.benchmarks.config.BenchmarkConfig.max_length">max_length</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.model" href="#neuralops.benchmarks.config.BenchmarkConfig.model">model</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.output_dir" href="#neuralops.benchmarks.config.BenchmarkConfig.output_dir">output_dir</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.precision" href="#neuralops.benchmarks.config.BenchmarkConfig.precision">precision</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.seed" href="#neuralops.benchmarks.config.BenchmarkConfig.seed">seed</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.seq_len" href="#neuralops.benchmarks.config.BenchmarkConfig.seq_len">seq_len</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.timeout_s" href="#neuralops.benchmarks.config.BenchmarkConfig.timeout_s">timeout_s</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.to_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.to_dict">to_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.verbose" href="#neuralops.benchmarks.config.BenchmarkConfig.verbose">verbose</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.benchmarks.config.GPT2SweepConfig"><code class="flex name class">
+<span>class <span class="ident">GPT2SweepConfig</span></span>
+<span>(</span><span>model: str = 'distilbert-base-uncased',<br>dataset: str = 'sst2',<br>output_dir: Path = &lt;factory&gt;,<br>device: str = 'cuda',<br>seed: int = 42,<br>epochs: int = 3,<br>batch_size: int = 32,<br>lr: float = 2e-05,<br>seq_len: int = 128,<br>max_length: int = 1024,<br>precision: str = 'float32',<br>eval_only: bool = False,<br>verbose: bool = False,<br>dry_run: bool = False,<br>timeout_s: int = 1800,<br>extra: dict[str, Any] = &lt;factory&gt;,<br>modules: list[str] = &lt;factory&gt;,<br>category: str = 'all',<br>rank: int = 64,<br>recovery_steps: int = 100,<br>learning_rate: float = 0.0001)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class GPT2SweepConfig(BenchmarkRunConfig):
+    &#34;&#34;&#34;Configuration for GPT-2 causal language model perplexity sweep.&#34;&#34;&#34;
+
+    modules: list[str] = field(default_factory=lambda: [&#34;all&#34;])
+    category: str = &#34;all&#34;
+    rank: int = 64
+    max_length: int = 1024
+    recovery_steps: int = 100
+    learning_rate: float = 1e-4</code></pre>
+</details>
+<div class="desc"><p>Configuration for GPT-2 causal language model perplexity sweep.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.benchmarks.config.BenchmarkRunConfig" href="#neuralops.benchmarks.config.BenchmarkRunConfig">BenchmarkRunConfig</a></li>
+<li><a title="neuralops.benchmarks.config.BenchmarkConfig" href="#neuralops.benchmarks.config.BenchmarkConfig">BenchmarkConfig</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.benchmarks.config.GPT2SweepConfig.category"><code class="name">var <span class="ident">category</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.GPT2SweepConfig.learning_rate"><code class="name">var <span class="ident">learning_rate</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.GPT2SweepConfig.modules"><code class="name">var <span class="ident">modules</span> : list[str]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.GPT2SweepConfig.rank"><code class="name">var <span class="ident">rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.GPT2SweepConfig.recovery_steps"><code class="name">var <span class="ident">recovery_steps</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.benchmarks.config.BenchmarkRunConfig" href="#neuralops.benchmarks.config.BenchmarkRunConfig">BenchmarkRunConfig</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.batch_size" href="#neuralops.benchmarks.config.BenchmarkConfig.batch_size">batch_size</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.dataset" href="#neuralops.benchmarks.config.BenchmarkConfig.dataset">dataset</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.device" href="#neuralops.benchmarks.config.BenchmarkConfig.device">device</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.dry_run" href="#neuralops.benchmarks.config.BenchmarkConfig.dry_run">dry_run</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.epochs" href="#neuralops.benchmarks.config.BenchmarkConfig.epochs">epochs</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.eval_only" href="#neuralops.benchmarks.config.BenchmarkConfig.eval_only">eval_only</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.extra" href="#neuralops.benchmarks.config.BenchmarkConfig.extra">extra</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.from_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.from_dict">from_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.lr" href="#neuralops.benchmarks.config.BenchmarkConfig.lr">lr</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.max_length" href="#neuralops.benchmarks.config.BenchmarkConfig.max_length">max_length</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.model" href="#neuralops.benchmarks.config.BenchmarkConfig.model">model</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.output_dir" href="#neuralops.benchmarks.config.BenchmarkConfig.output_dir">output_dir</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.precision" href="#neuralops.benchmarks.config.BenchmarkConfig.precision">precision</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.seed" href="#neuralops.benchmarks.config.BenchmarkConfig.seed">seed</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.seq_len" href="#neuralops.benchmarks.config.BenchmarkConfig.seq_len">seq_len</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.timeout_s" href="#neuralops.benchmarks.config.BenchmarkConfig.timeout_s">timeout_s</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.to_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.to_dict">to_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.verbose" href="#neuralops.benchmarks.config.BenchmarkConfig.verbose">verbose</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.benchmarks.config.KDTestConfig"><code class="flex name class">
+<span>class <span class="ident">KDTestConfig</span></span>
+<span>(</span><span>model: str = 'distilbert-base-uncased',<br>dataset: str = 'sst2',<br>output_dir: Path = &lt;factory&gt;,<br>device: str = 'cuda',<br>seed: int = 42,<br>epochs: int = 3,<br>batch_size: int = 32,<br>lr: float = 2e-05,<br>seq_len: int = 128,<br>max_length: int = 128,<br>precision: str = 'float32',<br>eval_only: bool = False,<br>verbose: bool = False,<br>dry_run: bool = False,<br>timeout_s: int = 1800,<br>extra: dict[str, Any] = &lt;factory&gt;,<br>modules: list[str] = &lt;factory&gt;,<br>rank: int = 64,<br>max_train_texts: int = 500,<br>kd_methods: list[str] = &lt;factory&gt;,<br>learning_rate: float = 0.0001)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class KDTestConfig(BenchmarkRunConfig):
+    &#34;&#34;&#34;Configuration for knowledge distillation validation test.&#34;&#34;&#34;
+
+    modules: list[str] = field(default_factory=list)
+    rank: int = 64
+    max_train_texts: int = 500
+    kd_methods: list[str] = field(default_factory=lambda: [&#34;logits&#34;, &#34;hidden&#34;, &#34;attention&#34;])
+    learning_rate: float = 1e-4</code></pre>
+</details>
+<div class="desc"><p>Configuration for knowledge distillation validation test.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.benchmarks.config.BenchmarkRunConfig" href="#neuralops.benchmarks.config.BenchmarkRunConfig">BenchmarkRunConfig</a></li>
+<li><a title="neuralops.benchmarks.config.BenchmarkConfig" href="#neuralops.benchmarks.config.BenchmarkConfig">BenchmarkConfig</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.benchmarks.config.KDTestConfig.kd_methods"><code class="name">var <span class="ident">kd_methods</span> : list[str]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.KDTestConfig.learning_rate"><code class="name">var <span class="ident">learning_rate</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.KDTestConfig.max_train_texts"><code class="name">var <span class="ident">max_train_texts</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.KDTestConfig.modules"><code class="name">var <span class="ident">modules</span> : list[str]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.KDTestConfig.rank"><code class="name">var <span class="ident">rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.benchmarks.config.BenchmarkRunConfig" href="#neuralops.benchmarks.config.BenchmarkRunConfig">BenchmarkRunConfig</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.batch_size" href="#neuralops.benchmarks.config.BenchmarkConfig.batch_size">batch_size</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.dataset" href="#neuralops.benchmarks.config.BenchmarkConfig.dataset">dataset</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.device" href="#neuralops.benchmarks.config.BenchmarkConfig.device">device</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.dry_run" href="#neuralops.benchmarks.config.BenchmarkConfig.dry_run">dry_run</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.epochs" href="#neuralops.benchmarks.config.BenchmarkConfig.epochs">epochs</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.eval_only" href="#neuralops.benchmarks.config.BenchmarkConfig.eval_only">eval_only</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.extra" href="#neuralops.benchmarks.config.BenchmarkConfig.extra">extra</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.from_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.from_dict">from_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.lr" href="#neuralops.benchmarks.config.BenchmarkConfig.lr">lr</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.max_length" href="#neuralops.benchmarks.config.BenchmarkConfig.max_length">max_length</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.model" href="#neuralops.benchmarks.config.BenchmarkConfig.model">model</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.output_dir" href="#neuralops.benchmarks.config.BenchmarkConfig.output_dir">output_dir</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.precision" href="#neuralops.benchmarks.config.BenchmarkConfig.precision">precision</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.seed" href="#neuralops.benchmarks.config.BenchmarkConfig.seed">seed</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.seq_len" href="#neuralops.benchmarks.config.BenchmarkConfig.seq_len">seq_len</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.timeout_s" href="#neuralops.benchmarks.config.BenchmarkConfig.timeout_s">timeout_s</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.to_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.to_dict">to_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.verbose" href="#neuralops.benchmarks.config.BenchmarkConfig.verbose">verbose</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.benchmarks.config.MultiModeConfig"><code class="flex name class">
+<span>class <span class="ident">MultiModeConfig</span></span>
+<span>(</span><span>model: str = 'distilbert-base-uncased',<br>dataset: str = 'sst2',<br>output_dir: Path = &lt;factory&gt;,<br>device: str = 'cuda',<br>seed: int = 42,<br>epochs: int = 3,<br>batch_size: int = 32,<br>lr: float = 2e-05,<br>seq_len: int = 128,<br>max_length: int = 128,<br>precision: str = 'float32',<br>eval_only: bool = False,<br>verbose: bool = False,<br>dry_run: bool = False,<br>timeout_s: int = 1800,<br>extra: dict[str, Any] = &lt;factory&gt;,<br>modes: list[str] = &lt;factory&gt;,<br>num_samples: int = 100,<br>rank: int = 64,<br>sparsity: float = 0.5)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class MultiModeConfig(BenchmarkRunConfig):
+    &#34;&#34;&#34;Configuration for multi-mode structural transformer benchmark.&#34;&#34;&#34;
+
+    modes: list[str] = field(default_factory=lambda: [&#34;dense&#34;, &#34;sparse&#34;, &#34;linear&#34;, &#34;svd&#34;])
+    num_samples: int = 100
+    rank: int = 64
+    sparsity: float = 0.5</code></pre>
+</details>
+<div class="desc"><p>Configuration for multi-mode structural transformer benchmark.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.benchmarks.config.BenchmarkRunConfig" href="#neuralops.benchmarks.config.BenchmarkRunConfig">BenchmarkRunConfig</a></li>
+<li><a title="neuralops.benchmarks.config.BenchmarkConfig" href="#neuralops.benchmarks.config.BenchmarkConfig">BenchmarkConfig</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.benchmarks.config.MultiModeConfig.modes"><code class="name">var <span class="ident">modes</span> : list[str]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.MultiModeConfig.num_samples"><code class="name">var <span class="ident">num_samples</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.MultiModeConfig.rank"><code class="name">var <span class="ident">rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.MultiModeConfig.sparsity"><code class="name">var <span class="ident">sparsity</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.benchmarks.config.BenchmarkRunConfig" href="#neuralops.benchmarks.config.BenchmarkRunConfig">BenchmarkRunConfig</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.batch_size" href="#neuralops.benchmarks.config.BenchmarkConfig.batch_size">batch_size</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.dataset" href="#neuralops.benchmarks.config.BenchmarkConfig.dataset">dataset</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.device" href="#neuralops.benchmarks.config.BenchmarkConfig.device">device</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.dry_run" href="#neuralops.benchmarks.config.BenchmarkConfig.dry_run">dry_run</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.epochs" href="#neuralops.benchmarks.config.BenchmarkConfig.epochs">epochs</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.eval_only" href="#neuralops.benchmarks.config.BenchmarkConfig.eval_only">eval_only</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.extra" href="#neuralops.benchmarks.config.BenchmarkConfig.extra">extra</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.from_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.from_dict">from_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.lr" href="#neuralops.benchmarks.config.BenchmarkConfig.lr">lr</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.max_length" href="#neuralops.benchmarks.config.BenchmarkConfig.max_length">max_length</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.model" href="#neuralops.benchmarks.config.BenchmarkConfig.model">model</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.output_dir" href="#neuralops.benchmarks.config.BenchmarkConfig.output_dir">output_dir</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.precision" href="#neuralops.benchmarks.config.BenchmarkConfig.precision">precision</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.seed" href="#neuralops.benchmarks.config.BenchmarkConfig.seed">seed</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.seq_len" href="#neuralops.benchmarks.config.BenchmarkConfig.seq_len">seq_len</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.timeout_s" href="#neuralops.benchmarks.config.BenchmarkConfig.timeout_s">timeout_s</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.to_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.to_dict">to_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.verbose" href="#neuralops.benchmarks.config.BenchmarkConfig.verbose">verbose</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.benchmarks.config.MultiseedConfig"><code class="flex name class">
+<span>class <span class="ident">MultiseedConfig</span></span>
+<span>(</span><span>model: str = 'distilbert-base-uncased',<br>dataset: str = 'sst2',<br>output_dir: Path = &lt;factory&gt;,<br>device: str = 'cuda',<br>seed: int = 42,<br>epochs: int = 3,<br>batch_size: int = 32,<br>lr: float = 2e-05,<br>seq_len: int = 128,<br>max_length: int = 128,<br>precision: str = 'float32',<br>eval_only: bool = False,<br>verbose: bool = False,<br>dry_run: bool = False,<br>timeout_s: int = 1800,<br>extra: dict[str, Any] = &lt;factory&gt;,<br>modules: list[str] = &lt;factory&gt;,<br>seeds: list[int] = &lt;factory&gt;,<br>recovery_steps: int = 50)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class MultiseedConfig(BenchmarkRunConfig):
+    &#34;&#34;&#34;Configuration for multi-seed statistical significance testing.&#34;&#34;&#34;
+
+    modules: list[str] = field(default_factory=list)
+    seeds: list[int] = field(default_factory=lambda: [42, 1337, 2024, 7, 99])
+    recovery_steps: int = 50</code></pre>
+</details>
+<div class="desc"><p>Configuration for multi-seed statistical significance testing.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.benchmarks.config.BenchmarkRunConfig" href="#neuralops.benchmarks.config.BenchmarkRunConfig">BenchmarkRunConfig</a></li>
+<li><a title="neuralops.benchmarks.config.BenchmarkConfig" href="#neuralops.benchmarks.config.BenchmarkConfig">BenchmarkConfig</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.benchmarks.config.MultiseedConfig.modules"><code class="name">var <span class="ident">modules</span> : list[str]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.MultiseedConfig.recovery_steps"><code class="name">var <span class="ident">recovery_steps</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.MultiseedConfig.seeds"><code class="name">var <span class="ident">seeds</span> : list[int]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.benchmarks.config.BenchmarkRunConfig" href="#neuralops.benchmarks.config.BenchmarkRunConfig">BenchmarkRunConfig</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.batch_size" href="#neuralops.benchmarks.config.BenchmarkConfig.batch_size">batch_size</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.dataset" href="#neuralops.benchmarks.config.BenchmarkConfig.dataset">dataset</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.device" href="#neuralops.benchmarks.config.BenchmarkConfig.device">device</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.dry_run" href="#neuralops.benchmarks.config.BenchmarkConfig.dry_run">dry_run</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.epochs" href="#neuralops.benchmarks.config.BenchmarkConfig.epochs">epochs</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.eval_only" href="#neuralops.benchmarks.config.BenchmarkConfig.eval_only">eval_only</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.extra" href="#neuralops.benchmarks.config.BenchmarkConfig.extra">extra</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.from_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.from_dict">from_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.lr" href="#neuralops.benchmarks.config.BenchmarkConfig.lr">lr</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.max_length" href="#neuralops.benchmarks.config.BenchmarkConfig.max_length">max_length</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.model" href="#neuralops.benchmarks.config.BenchmarkConfig.model">model</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.output_dir" href="#neuralops.benchmarks.config.BenchmarkConfig.output_dir">output_dir</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.precision" href="#neuralops.benchmarks.config.BenchmarkConfig.precision">precision</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.seed" href="#neuralops.benchmarks.config.BenchmarkConfig.seed">seed</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.seq_len" href="#neuralops.benchmarks.config.BenchmarkConfig.seq_len">seq_len</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.timeout_s" href="#neuralops.benchmarks.config.BenchmarkConfig.timeout_s">timeout_s</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.to_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.to_dict">to_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.verbose" href="#neuralops.benchmarks.config.BenchmarkConfig.verbose">verbose</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.benchmarks.config.QualitySweepConfig"><code class="flex name class">
+<span>class <span class="ident">QualitySweepConfig</span></span>
+<span>(</span><span>model: str = 'distilbert-base-uncased',<br>dataset: str = 'sst2',<br>output_dir: Path = &lt;factory&gt;,<br>device: str = 'cuda',<br>seed: int = 42,<br>epochs: int = 3,<br>batch_size: int = 32,<br>lr: float = 2e-05,<br>seq_len: int = 128,<br>max_length: int = 128,<br>precision: str = 'float32',<br>eval_only: bool = False,<br>verbose: bool = False,<br>dry_run: bool = False,<br>timeout_s: int = 600,<br>extra: dict[str, Any] = &lt;factory&gt;,<br>modules: list[str] = &lt;factory&gt;,<br>rank: int = 64,<br>recovery_steps: int = 50,<br>lora_rank: int = 16,<br>lora_alpha: float = 32.0,<br>learning_rate: float = 5e-05,<br>acceptable_drop: float = 5.0,<br>use_kd: bool = False,<br>kd_teacher: str | None = None,<br>isolated: bool = True)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class QualitySweepConfig(BenchmarkRunConfig):
+    &#34;&#34;&#34;Configuration for full quality and accuracy sweep.&#34;&#34;&#34;
+
+    modules: list[str] = field(default_factory=lambda: [&#34;all&#34;])
+    rank: int = 64
+
+    recovery_steps: int = 50
+    lora_rank: int = 16
+    lora_alpha: float = 32.0
+    learning_rate: float = 5e-5
+    acceptable_drop: float = 5.0
+    use_kd: bool = False
+    kd_teacher: str | None = None
+    isolated: bool = True
+    timeout_s: int = 600</code></pre>
+</details>
+<div class="desc"><p>Configuration for full quality and accuracy sweep.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.benchmarks.config.BenchmarkRunConfig" href="#neuralops.benchmarks.config.BenchmarkRunConfig">BenchmarkRunConfig</a></li>
+<li><a title="neuralops.benchmarks.config.BenchmarkConfig" href="#neuralops.benchmarks.config.BenchmarkConfig">BenchmarkConfig</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.benchmarks.config.QualitySweepConfig.acceptable_drop"><code class="name">var <span class="ident">acceptable_drop</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.QualitySweepConfig.isolated"><code class="name">var <span class="ident">isolated</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.QualitySweepConfig.kd_teacher"><code class="name">var <span class="ident">kd_teacher</span> : str | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.QualitySweepConfig.learning_rate"><code class="name">var <span class="ident">learning_rate</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.QualitySweepConfig.lora_alpha"><code class="name">var <span class="ident">lora_alpha</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.QualitySweepConfig.lora_rank"><code class="name">var <span class="ident">lora_rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.QualitySweepConfig.modules"><code class="name">var <span class="ident">modules</span> : list[str]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.QualitySweepConfig.rank"><code class="name">var <span class="ident">rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.QualitySweepConfig.recovery_steps"><code class="name">var <span class="ident">recovery_steps</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.QualitySweepConfig.use_kd"><code class="name">var <span class="ident">use_kd</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.benchmarks.config.BenchmarkRunConfig" href="#neuralops.benchmarks.config.BenchmarkRunConfig">BenchmarkRunConfig</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.batch_size" href="#neuralops.benchmarks.config.BenchmarkConfig.batch_size">batch_size</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.dataset" href="#neuralops.benchmarks.config.BenchmarkConfig.dataset">dataset</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.device" href="#neuralops.benchmarks.config.BenchmarkConfig.device">device</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.dry_run" href="#neuralops.benchmarks.config.BenchmarkConfig.dry_run">dry_run</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.epochs" href="#neuralops.benchmarks.config.BenchmarkConfig.epochs">epochs</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.eval_only" href="#neuralops.benchmarks.config.BenchmarkConfig.eval_only">eval_only</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.extra" href="#neuralops.benchmarks.config.BenchmarkConfig.extra">extra</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.from_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.from_dict">from_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.lr" href="#neuralops.benchmarks.config.BenchmarkConfig.lr">lr</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.max_length" href="#neuralops.benchmarks.config.BenchmarkConfig.max_length">max_length</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.model" href="#neuralops.benchmarks.config.BenchmarkConfig.model">model</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.output_dir" href="#neuralops.benchmarks.config.BenchmarkConfig.output_dir">output_dir</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.precision" href="#neuralops.benchmarks.config.BenchmarkConfig.precision">precision</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.seed" href="#neuralops.benchmarks.config.BenchmarkConfig.seed">seed</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.seq_len" href="#neuralops.benchmarks.config.BenchmarkConfig.seq_len">seq_len</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.timeout_s" href="#neuralops.benchmarks.config.BenchmarkConfig.timeout_s">timeout_s</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.to_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.to_dict">to_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.verbose" href="#neuralops.benchmarks.config.BenchmarkConfig.verbose">verbose</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.benchmarks.config.RankSweepConfig"><code class="flex name class">
+<span>class <span class="ident">RankSweepConfig</span></span>
+<span>(</span><span>model: str = 'distilbert-base-uncased',<br>dataset: str = 'sst2',<br>output_dir: Path = &lt;factory&gt;,<br>device: str = 'cuda',<br>seed: int = 42,<br>epochs: int = 3,<br>batch_size: int = 32,<br>lr: float = 2e-05,<br>seq_len: int = 128,<br>max_length: int = 128,<br>precision: str = 'float32',<br>eval_only: bool = False,<br>verbose: bool = False,<br>dry_run: bool = False,<br>timeout_s: int = 1800,<br>extra: dict[str, Any] = &lt;factory&gt;,<br>modules: list[str] = &lt;factory&gt;,<br>ranks: list[int] = &lt;factory&gt;,<br>recovery_steps: int = 50,<br>learning_rate: float = 5e-05)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class RankSweepConfig(BenchmarkRunConfig):
+    &#34;&#34;&#34;Configuration for rank vs accuracy sweep.&#34;&#34;&#34;
+
+    modules: list[str] = field(default_factory=list)
+    ranks: list[int] = field(default_factory=lambda: [16, 32, 64, 128, 256])
+    recovery_steps: int = 50
+    learning_rate: float = 5e-5</code></pre>
+</details>
+<div class="desc"><p>Configuration for rank vs accuracy sweep.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.benchmarks.config.BenchmarkRunConfig" href="#neuralops.benchmarks.config.BenchmarkRunConfig">BenchmarkRunConfig</a></li>
+<li><a title="neuralops.benchmarks.config.BenchmarkConfig" href="#neuralops.benchmarks.config.BenchmarkConfig">BenchmarkConfig</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.benchmarks.config.RankSweepConfig.learning_rate"><code class="name">var <span class="ident">learning_rate</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.RankSweepConfig.modules"><code class="name">var <span class="ident">modules</span> : list[str]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.RankSweepConfig.ranks"><code class="name">var <span class="ident">ranks</span> : list[int]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.RankSweepConfig.recovery_steps"><code class="name">var <span class="ident">recovery_steps</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.benchmarks.config.BenchmarkRunConfig" href="#neuralops.benchmarks.config.BenchmarkRunConfig">BenchmarkRunConfig</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.batch_size" href="#neuralops.benchmarks.config.BenchmarkConfig.batch_size">batch_size</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.dataset" href="#neuralops.benchmarks.config.BenchmarkConfig.dataset">dataset</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.device" href="#neuralops.benchmarks.config.BenchmarkConfig.device">device</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.dry_run" href="#neuralops.benchmarks.config.BenchmarkConfig.dry_run">dry_run</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.epochs" href="#neuralops.benchmarks.config.BenchmarkConfig.epochs">epochs</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.eval_only" href="#neuralops.benchmarks.config.BenchmarkConfig.eval_only">eval_only</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.extra" href="#neuralops.benchmarks.config.BenchmarkConfig.extra">extra</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.from_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.from_dict">from_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.lr" href="#neuralops.benchmarks.config.BenchmarkConfig.lr">lr</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.max_length" href="#neuralops.benchmarks.config.BenchmarkConfig.max_length">max_length</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.model" href="#neuralops.benchmarks.config.BenchmarkConfig.model">model</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.output_dir" href="#neuralops.benchmarks.config.BenchmarkConfig.output_dir">output_dir</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.precision" href="#neuralops.benchmarks.config.BenchmarkConfig.precision">precision</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.seed" href="#neuralops.benchmarks.config.BenchmarkConfig.seed">seed</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.seq_len" href="#neuralops.benchmarks.config.BenchmarkConfig.seq_len">seq_len</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.timeout_s" href="#neuralops.benchmarks.config.BenchmarkConfig.timeout_s">timeout_s</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.to_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.to_dict">to_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.verbose" href="#neuralops.benchmarks.config.BenchmarkConfig.verbose">verbose</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.benchmarks.config.RulerConfig"><code class="flex name class">
+<span>class <span class="ident">RulerConfig</span></span>
+<span>(</span><span>model: str = 'distilbert-base-uncased',<br>dataset: str = 'sst2',<br>output_dir: Path = &lt;factory&gt;,<br>device: str = 'cuda',<br>seed: int = 42,<br>epochs: int = 3,<br>batch_size: int = 32,<br>lr: float = 2e-05,<br>seq_len: int = 128,<br>max_length: int = 128,<br>precision: str = 'float32',<br>eval_only: bool = False,<br>verbose: bool = False,<br>dry_run: bool = False,<br>timeout_s: int = 1800,<br>extra: dict[str, Any] = &lt;factory&gt;,<br>modules: list[str] = &lt;factory&gt;,<br>context_lengths: list[int] = &lt;factory&gt;,<br>needle_depths: list[float] = &lt;factory&gt;,<br>num_samples_per_depth: int = 5)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class RulerConfig(BenchmarkRunConfig):
+    &#34;&#34;&#34;Configuration for long-context RULER / Needle-in-a-Haystack evaluation.&#34;&#34;&#34;
+
+    modules: list[str] = field(default_factory=list)
+    context_lengths: list[int] = field(default_factory=lambda: [1024, 2048, 4096, 8192])
+    needle_depths: list[float] = field(default_factory=lambda: [0.1, 0.25, 0.5, 0.75, 0.9])
+    num_samples_per_depth: int = 5</code></pre>
+</details>
+<div class="desc"><p>Configuration for long-context RULER / Needle-in-a-Haystack evaluation.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.benchmarks.config.BenchmarkRunConfig" href="#neuralops.benchmarks.config.BenchmarkRunConfig">BenchmarkRunConfig</a></li>
+<li><a title="neuralops.benchmarks.config.BenchmarkConfig" href="#neuralops.benchmarks.config.BenchmarkConfig">BenchmarkConfig</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.benchmarks.config.RulerConfig.context_lengths"><code class="name">var <span class="ident">context_lengths</span> : list[int]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.RulerConfig.modules"><code class="name">var <span class="ident">modules</span> : list[str]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.RulerConfig.needle_depths"><code class="name">var <span class="ident">needle_depths</span> : list[float]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.RulerConfig.num_samples_per_depth"><code class="name">var <span class="ident">num_samples_per_depth</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.benchmarks.config.BenchmarkRunConfig" href="#neuralops.benchmarks.config.BenchmarkRunConfig">BenchmarkRunConfig</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.batch_size" href="#neuralops.benchmarks.config.BenchmarkConfig.batch_size">batch_size</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.dataset" href="#neuralops.benchmarks.config.BenchmarkConfig.dataset">dataset</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.device" href="#neuralops.benchmarks.config.BenchmarkConfig.device">device</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.dry_run" href="#neuralops.benchmarks.config.BenchmarkConfig.dry_run">dry_run</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.epochs" href="#neuralops.benchmarks.config.BenchmarkConfig.epochs">epochs</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.eval_only" href="#neuralops.benchmarks.config.BenchmarkConfig.eval_only">eval_only</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.extra" href="#neuralops.benchmarks.config.BenchmarkConfig.extra">extra</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.from_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.from_dict">from_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.lr" href="#neuralops.benchmarks.config.BenchmarkConfig.lr">lr</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.max_length" href="#neuralops.benchmarks.config.BenchmarkConfig.max_length">max_length</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.model" href="#neuralops.benchmarks.config.BenchmarkConfig.model">model</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.output_dir" href="#neuralops.benchmarks.config.BenchmarkConfig.output_dir">output_dir</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.precision" href="#neuralops.benchmarks.config.BenchmarkConfig.precision">precision</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.seed" href="#neuralops.benchmarks.config.BenchmarkConfig.seed">seed</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.seq_len" href="#neuralops.benchmarks.config.BenchmarkConfig.seq_len">seq_len</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.timeout_s" href="#neuralops.benchmarks.config.BenchmarkConfig.timeout_s">timeout_s</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.to_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.to_dict">to_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.verbose" href="#neuralops.benchmarks.config.BenchmarkConfig.verbose">verbose</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="neuralops.benchmarks.config.SeqLenScalingConfig"><code class="flex name class">
+<span>class <span class="ident">SeqLenScalingConfig</span></span>
+<span>(</span><span>model: str = 'distilbert-base-uncased',<br>dataset: str = 'sst2',<br>output_dir: Path = &lt;factory&gt;,<br>device: str = 'cuda',<br>seed: int = 42,<br>epochs: int = 3,<br>batch_size: int = 32,<br>lr: float = 2e-05,<br>seq_len: int = 128,<br>max_length: int = 128,<br>precision: str = 'float32',<br>eval_only: bool = False,<br>verbose: bool = False,<br>dry_run: bool = False,<br>timeout_s: int = 1800,<br>extra: dict[str, Any] = &lt;factory&gt;,<br>modules: list[str] = &lt;factory&gt;,<br>seq_lens: list[int] = &lt;factory&gt;,<br>rank: int = 64,<br>warmup_steps: int = 5,<br>measure_steps: int = 20)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class SeqLenScalingConfig(BenchmarkRunConfig):
+    &#34;&#34;&#34;Configuration for sequence length scaling latency/VRAM sweep.&#34;&#34;&#34;
+
+    modules: list[str] = field(default_factory=list)
+    seq_lens: list[int] = field(default_factory=lambda: [128, 256, 512, 1024, 2048, 4096])
+    rank: int = 64
+    warmup_steps: int = 5
+    measure_steps: int = 20</code></pre>
+</details>
+<div class="desc"><p>Configuration for sequence length scaling latency/VRAM sweep.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.benchmarks.config.BenchmarkRunConfig" href="#neuralops.benchmarks.config.BenchmarkRunConfig">BenchmarkRunConfig</a></li>
+<li><a title="neuralops.benchmarks.config.BenchmarkConfig" href="#neuralops.benchmarks.config.BenchmarkConfig">BenchmarkConfig</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.benchmarks.config.SeqLenScalingConfig.measure_steps"><code class="name">var <span class="ident">measure_steps</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.SeqLenScalingConfig.modules"><code class="name">var <span class="ident">modules</span> : list[str]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.SeqLenScalingConfig.rank"><code class="name">var <span class="ident">rank</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.SeqLenScalingConfig.seq_lens"><code class="name">var <span class="ident">seq_lens</span> : list[int]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.config.SeqLenScalingConfig.warmup_steps"><code class="name">var <span class="ident">warmup_steps</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.benchmarks.config.BenchmarkRunConfig" href="#neuralops.benchmarks.config.BenchmarkRunConfig">BenchmarkRunConfig</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.batch_size" href="#neuralops.benchmarks.config.BenchmarkConfig.batch_size">batch_size</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.dataset" href="#neuralops.benchmarks.config.BenchmarkConfig.dataset">dataset</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.device" href="#neuralops.benchmarks.config.BenchmarkConfig.device">device</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.dry_run" href="#neuralops.benchmarks.config.BenchmarkConfig.dry_run">dry_run</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.epochs" href="#neuralops.benchmarks.config.BenchmarkConfig.epochs">epochs</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.eval_only" href="#neuralops.benchmarks.config.BenchmarkConfig.eval_only">eval_only</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.extra" href="#neuralops.benchmarks.config.BenchmarkConfig.extra">extra</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.from_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.from_dict">from_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.lr" href="#neuralops.benchmarks.config.BenchmarkConfig.lr">lr</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.max_length" href="#neuralops.benchmarks.config.BenchmarkConfig.max_length">max_length</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.model" href="#neuralops.benchmarks.config.BenchmarkConfig.model">model</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.output_dir" href="#neuralops.benchmarks.config.BenchmarkConfig.output_dir">output_dir</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.precision" href="#neuralops.benchmarks.config.BenchmarkConfig.precision">precision</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.seed" href="#neuralops.benchmarks.config.BenchmarkConfig.seed">seed</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.seq_len" href="#neuralops.benchmarks.config.BenchmarkConfig.seq_len">seq_len</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.timeout_s" href="#neuralops.benchmarks.config.BenchmarkConfig.timeout_s">timeout_s</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.to_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.to_dict">to_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig.verbose" href="#neuralops.benchmarks.config.BenchmarkConfig.verbose">verbose</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.benchmarks" href="index.html">neuralops.benchmarks</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.benchmarks.config.BenchmarkConfig" href="#neuralops.benchmarks.config.BenchmarkConfig">BenchmarkConfig</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.batch_size" href="#neuralops.benchmarks.config.BenchmarkConfig.batch_size">batch_size</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.dataset" href="#neuralops.benchmarks.config.BenchmarkConfig.dataset">dataset</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.device" href="#neuralops.benchmarks.config.BenchmarkConfig.device">device</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.dry_run" href="#neuralops.benchmarks.config.BenchmarkConfig.dry_run">dry_run</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.epochs" href="#neuralops.benchmarks.config.BenchmarkConfig.epochs">epochs</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.eval_only" href="#neuralops.benchmarks.config.BenchmarkConfig.eval_only">eval_only</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.extra" href="#neuralops.benchmarks.config.BenchmarkConfig.extra">extra</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.from_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.from_dict">from_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.lr" href="#neuralops.benchmarks.config.BenchmarkConfig.lr">lr</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.max_length" href="#neuralops.benchmarks.config.BenchmarkConfig.max_length">max_length</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.model" href="#neuralops.benchmarks.config.BenchmarkConfig.model">model</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.output_dir" href="#neuralops.benchmarks.config.BenchmarkConfig.output_dir">output_dir</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.precision" href="#neuralops.benchmarks.config.BenchmarkConfig.precision">precision</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.seed" href="#neuralops.benchmarks.config.BenchmarkConfig.seed">seed</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.seq_len" href="#neuralops.benchmarks.config.BenchmarkConfig.seq_len">seq_len</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.timeout_s" href="#neuralops.benchmarks.config.BenchmarkConfig.timeout_s">timeout_s</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.to_dict" href="#neuralops.benchmarks.config.BenchmarkConfig.to_dict">to_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.BenchmarkConfig.verbose" href="#neuralops.benchmarks.config.BenchmarkConfig.verbose">verbose</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.benchmarks.config.BenchmarkRunConfig" href="#neuralops.benchmarks.config.BenchmarkRunConfig">BenchmarkRunConfig</a></code></h4>
+</li>
+<li>
+<h4><code><a title="neuralops.benchmarks.config.GPT2SweepConfig" href="#neuralops.benchmarks.config.GPT2SweepConfig">GPT2SweepConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.benchmarks.config.GPT2SweepConfig.category" href="#neuralops.benchmarks.config.GPT2SweepConfig.category">category</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.GPT2SweepConfig.learning_rate" href="#neuralops.benchmarks.config.GPT2SweepConfig.learning_rate">learning_rate</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.GPT2SweepConfig.modules" href="#neuralops.benchmarks.config.GPT2SweepConfig.modules">modules</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.GPT2SweepConfig.rank" href="#neuralops.benchmarks.config.GPT2SweepConfig.rank">rank</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.GPT2SweepConfig.recovery_steps" href="#neuralops.benchmarks.config.GPT2SweepConfig.recovery_steps">recovery_steps</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.benchmarks.config.KDTestConfig" href="#neuralops.benchmarks.config.KDTestConfig">KDTestConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.benchmarks.config.KDTestConfig.kd_methods" href="#neuralops.benchmarks.config.KDTestConfig.kd_methods">kd_methods</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.KDTestConfig.learning_rate" href="#neuralops.benchmarks.config.KDTestConfig.learning_rate">learning_rate</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.KDTestConfig.max_train_texts" href="#neuralops.benchmarks.config.KDTestConfig.max_train_texts">max_train_texts</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.KDTestConfig.modules" href="#neuralops.benchmarks.config.KDTestConfig.modules">modules</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.KDTestConfig.rank" href="#neuralops.benchmarks.config.KDTestConfig.rank">rank</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.benchmarks.config.MultiModeConfig" href="#neuralops.benchmarks.config.MultiModeConfig">MultiModeConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.benchmarks.config.MultiModeConfig.modes" href="#neuralops.benchmarks.config.MultiModeConfig.modes">modes</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.MultiModeConfig.num_samples" href="#neuralops.benchmarks.config.MultiModeConfig.num_samples">num_samples</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.MultiModeConfig.rank" href="#neuralops.benchmarks.config.MultiModeConfig.rank">rank</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.MultiModeConfig.sparsity" href="#neuralops.benchmarks.config.MultiModeConfig.sparsity">sparsity</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.benchmarks.config.MultiseedConfig" href="#neuralops.benchmarks.config.MultiseedConfig">MultiseedConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.benchmarks.config.MultiseedConfig.modules" href="#neuralops.benchmarks.config.MultiseedConfig.modules">modules</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.MultiseedConfig.recovery_steps" href="#neuralops.benchmarks.config.MultiseedConfig.recovery_steps">recovery_steps</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.MultiseedConfig.seeds" href="#neuralops.benchmarks.config.MultiseedConfig.seeds">seeds</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.benchmarks.config.QualitySweepConfig" href="#neuralops.benchmarks.config.QualitySweepConfig">QualitySweepConfig</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.benchmarks.config.QualitySweepConfig.acceptable_drop" href="#neuralops.benchmarks.config.QualitySweepConfig.acceptable_drop">acceptable_drop</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.QualitySweepConfig.isolated" href="#neuralops.benchmarks.config.QualitySweepConfig.isolated">isolated</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.QualitySweepConfig.kd_teacher" href="#neuralops.benchmarks.config.QualitySweepConfig.kd_teacher">kd_teacher</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.QualitySweepConfig.learning_rate" href="#neuralops.benchmarks.config.QualitySweepConfig.learning_rate">learning_rate</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.QualitySweepConfig.lora_alpha" href="#neuralops.benchmarks.config.QualitySweepConfig.lora_alpha">lora_alpha</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.QualitySweepConfig.lora_rank" href="#neuralops.benchmarks.config.QualitySweepConfig.lora_rank">lora_rank</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.QualitySweepConfig.modules" href="#neuralops.benchmarks.config.QualitySweepConfig.modules">modules</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.QualitySweepConfig.rank" href="#neuralops.benchmarks.config.QualitySweepConfig.rank">rank</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.QualitySweepConfig.recovery_steps" href="#neuralops.benchmarks.config.QualitySweepConfig.recovery_steps">recovery_steps</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.QualitySweepConfig.use_kd" href="#neuralops.benchmarks.config.QualitySweepConfig.use_kd">use_kd</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.benchmarks.config.RankSweepConfig" href="#neuralops.benchmarks.config.RankSweepConfig">RankSweepConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.benchmarks.config.RankSweepConfig.learning_rate" href="#neuralops.benchmarks.config.RankSweepConfig.learning_rate">learning_rate</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.RankSweepConfig.modules" href="#neuralops.benchmarks.config.RankSweepConfig.modules">modules</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.RankSweepConfig.ranks" href="#neuralops.benchmarks.config.RankSweepConfig.ranks">ranks</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.RankSweepConfig.recovery_steps" href="#neuralops.benchmarks.config.RankSweepConfig.recovery_steps">recovery_steps</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.benchmarks.config.RulerConfig" href="#neuralops.benchmarks.config.RulerConfig">RulerConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.benchmarks.config.RulerConfig.context_lengths" href="#neuralops.benchmarks.config.RulerConfig.context_lengths">context_lengths</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.RulerConfig.modules" href="#neuralops.benchmarks.config.RulerConfig.modules">modules</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.RulerConfig.needle_depths" href="#neuralops.benchmarks.config.RulerConfig.needle_depths">needle_depths</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.RulerConfig.num_samples_per_depth" href="#neuralops.benchmarks.config.RulerConfig.num_samples_per_depth">num_samples_per_depth</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.benchmarks.config.SeqLenScalingConfig" href="#neuralops.benchmarks.config.SeqLenScalingConfig">SeqLenScalingConfig</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.benchmarks.config.SeqLenScalingConfig.measure_steps" href="#neuralops.benchmarks.config.SeqLenScalingConfig.measure_steps">measure_steps</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.SeqLenScalingConfig.modules" href="#neuralops.benchmarks.config.SeqLenScalingConfig.modules">modules</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.SeqLenScalingConfig.rank" href="#neuralops.benchmarks.config.SeqLenScalingConfig.rank">rank</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.SeqLenScalingConfig.seq_lens" href="#neuralops.benchmarks.config.SeqLenScalingConfig.seq_lens">seq_lens</a></code></li>
+<li><code><a title="neuralops.benchmarks.config.SeqLenScalingConfig.warmup_steps" href="#neuralops.benchmarks.config.SeqLenScalingConfig.warmup_steps">warmup_steps</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

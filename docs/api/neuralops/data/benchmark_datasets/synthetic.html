@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.data.benchmark_datasets.synthetic API documentation</title>
+<meta name="description" content="Synthetic data generators for benchmark datasets …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.data.benchmark_datasets.synthetic</code></h1>
+</header>
+<section id="section-intro">
+<p>Synthetic data generators for benchmark datasets.</p>
+<p>Provides offline synthetic generation of language modeling, reasoning, code,
+multiple-choice, and GLUE tasks for smoke tests and offline environments.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_arc"><code class="name flex">
+<span>def <span class="ident">_generate_synthetic_arc</span></span>(<span>num_samples: int, seed: int = 42) ‑> list[dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def _generate_synthetic_arc(num_samples: int, seed: int = 42) -&gt; list[dict[str, Any]]:
+    &#34;&#34;&#34;Generate synthetic AI2 Reasoning Challenge questions.&#34;&#34;&#34;
+    samples = []
+    for i in range(num_samples):
+        q = f&#34;Which process is primarily responsible for transferring thermal energy through fluid movement in system #{i + 1}?&#34;
+        choices_text = [&#34;Conduction&#34;, &#34;Convection&#34;, &#34;Radiation&#34;, &#34;Sublimation&#34;]
+        choices_labels = [&#34;A&#34;, &#34;B&#34;, &#34;C&#34;, &#34;D&#34;]
+        answer_key = &#34;B&#34;
+        label_idx = 1
+        samples.append(
+            {
+                &#34;id&#34;: f&#34;ARC_Synth_{i}&#34;,
+                &#34;question&#34;: q,
+                &#34;choices&#34;: {&#34;text&#34;: choices_text, &#34;label&#34;: choices_labels},
+                &#34;answerKey&#34;: answer_key,
+                &#34;label&#34;: label_idx,
+                &#34;text&#34;: f&#34;Question: {q}\nChoices: (A) Conduction (B) Convection (C) Radiation (D) Sublimation\nAnswer: {answer_key}&#34;,
+            }
+        )
+    return samples</code></pre>
+</details>
+<div class="desc"><p>Generate synthetic AI2 Reasoning Challenge questions.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_c4"><code class="name flex">
+<span>def <span class="ident">_generate_synthetic_c4</span></span>(<span>num_samples: int, seed: int = 42) ‑> list[dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def _generate_synthetic_c4(num_samples: int, seed: int = 42) -&gt; list[dict[str, Any]]:
+    &#34;&#34;&#34;Generate synthetic C4 web crawl samples.&#34;&#34;&#34;
+    random.Random(seed)
+    domains = [
+        &#34;news-digest.org&#34;,
+        &#34;tech-insights.io&#34;,
+        &#34;culinary-arts.net&#34;,
+        &#34;travel-chronicles.com&#34;,
+    ]
+    samples = []
+    for i in range(num_samples):
+        dom = domains[i % len(domains)]
+        text = (
+            f&#34;Published on {dom}: The rapid progression of contemporary computational methodologies has fundamentally transformed industry practices. &#34;
+            f&#34;Engineers and researchers in sample #{i} note that optimizing memory efficiency and attention mechanisms allows scalable throughput across distributed clusters. &#34;
+            f&#34;Read more at https://{dom}/article/{1000 + i} for in-depth evaluations and reproducible metrics.&#34;
+        )
+        samples.append(
+            {
+                &#34;text&#34;: text,
+                &#34;url&#34;: f&#34;https://{dom}/article/{1000 + i}&#34;,
+                &#34;timestamp&#34;: &#34;2024-01-01T12:00:00Z&#34;,
+            }
+        )
+    return samples</code></pre>
+</details>
+<div class="desc"><p>Generate synthetic C4 web crawl samples.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_glue"><code class="name flex">
+<span>def <span class="ident">_generate_synthetic_glue</span></span>(<span>task: str, num_samples: int, seed: int = 42) ‑> list[dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def _generate_synthetic_glue(task: str, num_samples: int, seed: int = 42) -&gt; list[dict[str, Any]]:
+    &#34;&#34;&#34;Generate synthetic GLUE task samples.&#34;&#34;&#34;
+    task = task.lower()
+    samples = []
+    if task == &#34;sst2&#34;:
+        for i in range(num_samples):
+            sentiment = i % 2
+            text = f&#34;This cinematic piece delivers {&#39;an extraordinarily compelling and nuanced masterpiece&#39; if sentiment == 1 else &#39;a completely tedious and utterly forgettable disaster&#39;}.&#34;
+            samples.append({&#34;sentence&#34;: text, &#34;label&#34;: sentiment, &#34;text&#34;: text})
+    elif task == &#34;mrpc&#34;:
+        for i in range(num_samples):
+            equiv = i % 2
+            s1 = f&#34;The technology corporation announced a profit increase of {10 + i}% this quarter.&#34;
+            s2 = (
+                f&#34;Profits for the tech firm grew by {10 + i}% during the current quarter.&#34;
+                if equiv == 1
+                else &#34;The firm announced massive layoffs across international divisions.&#34;
+            )
+            samples.append(
+                {
+                    &#34;sentence1&#34;: s1,
+                    &#34;sentence2&#34;: s2,
+                    &#34;label&#34;: equiv,
+                    &#34;text&#34;: f&#34;{s1} [SEP] {s2}&#34;,
+                }
+            )
+    elif task == &#34;qqp&#34;:
+        for i in range(num_samples):
+            dup = i % 2
+            q1 = f&#34;How can one efficiently optimize memory usage in neural networks for task {i}?&#34;
+            q2 = (
+                f&#34;What are the best methods to reduce GPU memory footprint during neural net training {i}?&#34;
+                if dup == 1
+                else f&#34;What is the best recipe for baking sourdough bread at home {i}?&#34;
+            )
+            samples.append(
+                {
+                    &#34;question1&#34;: q1,
+                    &#34;question2&#34;: q2,
+                    &#34;label&#34;: dup,
+                    &#34;text&#34;: f&#34;{q1} [SEP] {q2}&#34;,
+                }
+            )
+    elif task == &#34;stsb&#34;:
+        for i in range(num_samples):
+            score = round((i % 50) / 10.0, 1)
+            s1 = f&#34;A brown dog is running through the green grassy field {i}.&#34;
+            s2 = (
+                f&#34;A canine is sprinting across the lawn {i}.&#34;
+                if score &gt; 3.0
+                else f&#34;A man is playing guitar on a concert stage {i}.&#34;
+            )
+            samples.append(
+                {
+                    &#34;sentence1&#34;: s1,
+                    &#34;sentence2&#34;: s2,
+                    &#34;label&#34;: score,
+                    &#34;text&#34;: f&#34;{s1} [SEP] {s2}&#34;,
+                }
+            )
+    elif task in (&#34;mnli&#34;, &#34;qnli&#34;, &#34;rte&#34;, &#34;wnli&#34;):
+        for i in range(num_samples):
+            label = i % 2
+            premise = f&#34;Scientific observation {i} confirmed that gravitational waves propagate at the speed of light.&#34;
+            hypothesis = (
+                f&#34;Gravitational radiation travels at light speed in observation {i}.&#34;
+                if label == 0
+                else f&#34;Light travels infinitely faster than gravitational waves in experiment {i}.&#34;
+            )
+            samples.append(
+                {
+                    &#34;premise&#34;: premise,
+                    &#34;hypothesis&#34;: hypothesis,
+                    &#34;sentence1&#34;: premise,
+                    &#34;sentence2&#34;: hypothesis,
+                    &#34;label&#34;: label,
+                    &#34;text&#34;: f&#34;{premise} [SEP] {hypothesis}&#34;,
+                }
+            )
+    elif task == &#34;cola&#34;:
+        for i in range(num_samples):
+            acceptable = i % 2
+            sentence = (
+                &#34;The researcher submitted the journal paper yesterday.&#34;
+                if acceptable == 1
+                else &#34;Submitted the researcher paper yesterday journal.&#34;
+            )
+            samples.append({&#34;sentence&#34;: sentence, &#34;label&#34;: acceptable, &#34;text&#34;: sentence})
+    else:
+        for i in range(num_samples):
+            samples.append(
+                {
+                    &#34;sentence&#34;: f&#34;Synthetic GLUE sample #{i} for task {task}.&#34;,
+                    &#34;label&#34;: i % 2,
+                    &#34;text&#34;: f&#34;Synthetic GLUE sample #{i}.&#34;,
+                }
+            )
+    return samples</code></pre>
+</details>
+<div class="desc"><p>Generate synthetic GLUE task samples.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_gsm8k"><code class="name flex">
+<span>def <span class="ident">_generate_synthetic_gsm8k</span></span>(<span>num_samples: int, seed: int = 42) ‑> list[dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def _generate_synthetic_gsm8k(num_samples: int, seed: int = 42) -&gt; list[dict[str, Any]]:
+    &#34;&#34;&#34;Generate synthetic grade school math problems.&#34;&#34;&#34;
+    samples = []
+    for i in range(num_samples):
+        apples_per_basket = 5 + (i % 6)
+        num_baskets = 3 + (i % 4)
+        eaten = 2 + (i % 3)
+        total_apples = apples_per_basket * num_baskets
+        remaining = total_apples - eaten
+        q = f&#34;Janet has {num_baskets} baskets of apples. Each basket contains {apples_per_basket} apples. If she eats {eaten} apples, how many apples does she have left?&#34;
+        a = f&#34;First, calculate the total number of apples: {num_baskets} * {apples_per_basket} = {total_apples}. Next, subtract the eaten apples: {total_apples} - {eaten} = {remaining}.\n#### {remaining}&#34;
+        samples.append({&#34;question&#34;: q, &#34;answer&#34;: a, &#34;text&#34;: f&#34;Question: {q}\nAnswer: {a}&#34;})
+    return samples</code></pre>
+</details>
+<div class="desc"><p>Generate synthetic grade school math problems.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_hellaswag"><code class="name flex">
+<span>def <span class="ident">_generate_synthetic_hellaswag</span></span>(<span>num_samples: int, seed: int = 42) ‑> list[dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def _generate_synthetic_hellaswag(num_samples: int, seed: int = 42) -&gt; list[dict[str, Any]]:
+    &#34;&#34;&#34;Generate synthetic HellaSwag commonsense reasoning items.&#34;&#34;&#34;
+    samples = []
+    for i in range(num_samples):
+        ctx = &#34;A person is preparing ingredients in a bright kitchen. They slice fresh vegetables on a wooden cutting board&#34;
+        endings = [
+            &#34;and carefully place them into a preheated skillet with olive oil.&#34;,
+            &#34;and suddenly ride a bicycle across the highway without stopping.&#34;,
+            &#34;and throw the wooden board into the washing machine.&#34;,
+            &#34;and paint the vegetables blue using watercolor brushes.&#34;,
+        ]
+        label = 0
+        samples.append(
+            {
+                &#34;activity_label&#34;: &#34;Cooking&#34;,
+                &#34;ctx&#34;: ctx,
+                &#34;endings&#34;: endings,
+                &#34;label&#34;: label,
+                &#34;text&#34;: f&#34;{ctx} {endings[label]}&#34;,
+            }
+        )
+    return samples</code></pre>
+</details>
+<div class="desc"><p>Generate synthetic HellaSwag commonsense reasoning items.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_humaneval"><code class="name flex">
+<span>def <span class="ident">_generate_synthetic_humaneval</span></span>(<span>num_samples: int, seed: int = 42) ‑> list[dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def _generate_synthetic_humaneval(num_samples: int, seed: int = 42) -&gt; list[dict[str, Any]]:
+    &#34;&#34;&#34;Generate synthetic HumanEval Python function problems.&#34;&#34;&#34;
+    samples = []
+    functions = [
+        (
+            &#34;has_close_elements&#34;,
+            &#34;numbers: List[float], threshold: float -&gt; bool&#34;,
+            &#34;Check if in given list of numbers, are any two numbers closer to each other than threshold.&#34;,
+        ),
+        (
+            &#34;separate_paren_groups&#34;,
+            &#34;paren_string: str -&gt; List[str]&#34;,
+            &#34;Input to this function is a string containing multiple groups of nested parentheses. Separate them into individual strings.&#34;,
+        ),
+        (
+            &#34;truncate_number&#34;,
+            &#34;number: float -&gt; float&#34;,
+            &#34;Given a positive floating point number, it can be decomposed into integer part and decimals. Return the decimal part.&#34;,
+        ),
+        (
+            &#34;below_zero&#34;,
+            &#34;operations: List[int] -&gt; bool&#34;,
+            &#34;You&#39;re given a list of deposit and withdrawal operations on a bank account. Detect if balance falls below zero at any point.&#34;,
+        ),
+        (
+            &#34;mean_absolute_deviation&#34;,
+            &#34;numbers: List[float] -&gt; float&#34;,
+            &#34;For a given list of input numbers, calculate Mean Absolute Deviation around the mean of this dataset.&#34;,
+        ),
+    ]
+    for i in range(num_samples):
+        fn_name, sig, doc = functions[i % len(functions)]
+        fn_name_i = f&#34;{fn_name}_{i}&#34;
+        prompt = f&#39;from typing import List\n\n\ndef {fn_name_i}({sig}):\n    &#34;&#34;&#34; {doc}\n    &gt;&gt;&gt; {fn_name_i}([1.0, 2.0], 0.5)\n    &#34;&#34;&#34;\n&#39;
+        canonical_solution = &#34;    return True\n&#34;
+        test = &#34;def check(candidate):\n    assert candidate([1.0, 2.0], 0.5) is not None\n&#34;
+        entry_point = fn_name_i
+        samples.append(
+            {
+                &#34;task_id&#34;: f&#34;HumanEval/{i}&#34;,
+                &#34;prompt&#34;: prompt,
+                &#34;canonical_solution&#34;: canonical_solution,
+                &#34;test&#34;: test,
+                &#34;entry_point&#34;: entry_point,
+                &#34;text&#34;: f&#34;{prompt}{canonical_solution}&#34;,
+            }
+        )
+    return samples</code></pre>
+</details>
+<div class="desc"><p>Generate synthetic HumanEval Python function problems.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_lambada"><code class="name flex">
+<span>def <span class="ident">_generate_synthetic_lambada</span></span>(<span>num_samples: int, seed: int = 42) ‑> list[dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def _generate_synthetic_lambada(num_samples: int, seed: int = 42) -&gt; list[dict[str, Any]]:
+    &#34;&#34;&#34;Generate synthetic LAMBADA word prediction stories.&#34;&#34;&#34;
+    samples = []
+    stories = [
+        (
+            &#34;The young girl ran quickly across the open grass towards the tall oak tree, looking for her lost&#34;,
+            &#34;cat&#34;,
+        ),
+        (
+            &#34;He opened the dusty book and carefully read the handwritten note inscribed on the very first&#34;,
+            &#34;page&#34;,
+        ),
+        (
+            &#34;After hours of walking through the dense forest, the explorers finally arrived at the edge of the&#34;,
+            &#34;river&#34;,
+        ),
+        (
+            &#34;The chef tasted the simmering soup, nodded with satisfaction, and added a small pinch of&#34;,
+            &#34;salt&#34;,
+        ),
+        (
+            &#34;The astronomer adjusted the lens of the giant telescope and peered into the dark night&#34;,
+            &#34;sky&#34;,
+        ),
+    ]
+    for i in range(num_samples):
+        prefix, target_word = stories[i % len(stories)]
+        full_text = f&#34;{prefix} {target_word}.&#34;
+        samples.append(
+            {
+                &#34;text&#34;: full_text,
+                &#34;prefix&#34;: prefix,
+                &#34;target_word&#34;: target_word,
+                &#34;id&#34;: i,
+            }
+        )
+    return samples</code></pre>
+</details>
+<div class="desc"><p>Generate synthetic LAMBADA word prediction stories.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_mmlu"><code class="name flex">
+<span>def <span class="ident">_generate_synthetic_mmlu</span></span>(<span>num_samples: int, seed: int = 42) ‑> list[dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def _generate_synthetic_mmlu(num_samples: int, seed: int = 42) -&gt; list[dict[str, Any]]:
+    &#34;&#34;&#34;Generate synthetic MMLU multiple choice questions.&#34;&#34;&#34;
+    subjects = [
+        &#34;college_computer_science&#34;,
+        &#34;abstract_algebra&#34;,
+        &#34;high_school_physics&#34;,
+        &#34;econometrics&#34;,
+        &#34;philosophy&#34;,
+    ]
+    samples = []
+    for i in range(num_samples):
+        subject = subjects[i % len(subjects)]
+        q = f&#34;In the context of {subject.replace(&#39;_&#39;, &#39; &#39;)}, which statement regarding fundamental principle #{i + 1} is strictly valid?&#34;
+        choices = [
+            f&#34;Option A: Principle {i + 1} guarantees monotonic convergence under convexity constraints.&#34;,
+            f&#34;Option B: Principle {i + 1} always yields an asymptotic upper bound of O(N log N).&#34;,
+            f&#34;Option C: Principle {i + 1} implies invariance under orthonormal coordinate rotations.&#34;,
+            f&#34;Option D: Principle {i + 1} requires strict thermodynamic equilibrium.&#34;,
+        ]
+        label = i % 4
+        formatted_text = f&#34;Subject: {subject}\nQuestion: {q}\nA. {choices[0]}\nB. {choices[1]}\nC. {choices[2]}\nD. {choices[3]}\nAnswer: {chr(65 + label)}&#34;
+        samples.append(
+            {
+                &#34;question&#34;: q,
+                &#34;choices&#34;: choices,
+                &#34;answer&#34;: label,
+                &#34;subject&#34;: subject,
+                &#34;text&#34;: formatted_text,
+            }
+        )
+    return samples</code></pre>
+</details>
+<div class="desc"><p>Generate synthetic MMLU multiple choice questions.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_pg19"><code class="name flex">
+<span>def <span class="ident">_generate_synthetic_pg19</span></span>(<span>num_samples: int, seed: int = 42) ‑> list[dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def _generate_synthetic_pg19(num_samples: int, seed: int = 42) -&gt; list[dict[str, Any]]:
+    &#34;&#34;&#34;Generate synthetic PG-19 long book chapters.&#34;&#34;&#34;
+    samples = []
+    for i in range(num_samples):
+        chapters = []
+        for ch in range(1, 4):
+            chapters.append(
+                f&#34;CHAPTER {ch}.\n\nThe morning light broke over the distant horizon, casting long shadows across the valley. &#34;
+                f&#34;Protagonist {i} embarked on the long journey towards the old library, contemplating the secrets of natural philosophy. &#34;
+                f&#34;Every page turned in the ancient manuscripts revealed forgotten theorems and profound observations on mathematics and metaphysics.&#34;
+            )
+        text = &#34;\n\n&#34;.join(chapters)
+        samples.append(
+            {
+                &#34;text&#34;: text,
+                &#34;book_id&#34;: f&#34;pg19_book_{i}&#34;,
+                &#34;short_book_title&#34;: f&#34;The Chronicles of Explorer {i}&#34;,
+            }
+        )
+    return samples</code></pre>
+</details>
+<div class="desc"><p>Generate synthetic PG-19 long book chapters.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_pile"><code class="name flex">
+<span>def <span class="ident">_generate_synthetic_pile</span></span>(<span>num_samples: int, seed: int = 42) ‑> list[dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def _generate_synthetic_pile(num_samples: int, seed: int = 42) -&gt; list[dict[str, Any]]:
+    &#34;&#34;&#34;Generate synthetic The Pile document fragments.&#34;&#34;&#34;
+    subsets = [
+        &#34;ArXiv&#34;,
+        &#34;GitHub&#34;,
+        &#34;FreeLaw&#34;,
+        &#34;PubMed Central&#34;,
+        &#34;StackExchange&#34;,
+        &#34;Wikipedia (en)&#34;,
+    ]
+    samples = []
+    for i in range(num_samples):
+        subset = subsets[i % len(subsets)]
+        text = (
+            f&#34;[{subset} Document ID: {200000 + i}]\n&#34;
+            f&#34;Abstract / Content: This document addresses standard analytical methodologies in {subset.lower()}. &#34;
+            f&#34;Through rigorous verification of Lemma {i % 10 + 1}, we establish uniform bounds across all operational domains. &#34;
+            f&#34;Reference code and benchmarks verify empirical speedup of 4.2x with zero precision degradation.&#34;
+        )
+        samples.append({&#34;text&#34;: text, &#34;meta&#34;: {&#34;pile_set_name&#34;: subset}, &#34;id&#34;: i})
+    return samples</code></pre>
+</details>
+<div class="desc"><p>Generate synthetic The Pile document fragments.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_ptb"><code class="name flex">
+<span>def <span class="ident">_generate_synthetic_ptb</span></span>(<span>num_samples: int, seed: int = 42) ‑> list[dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def _generate_synthetic_ptb(num_samples: int, seed: int = 42) -&gt; list[dict[str, Any]]:
+    &#34;&#34;&#34;Generate synthetic Penn Treebank financial sentences.&#34;&#34;&#34;
+    templates = [
+        &#34;no it was n&#39;t black monday &lt;unk&gt; but the stock market did take a sharp dive yesterday&#34;,
+        &#34;the company said sales rose N % to $ N million from $ N million in the prior year&#34;,
+        &#34;treasury bonds fell sharply as investors reacted to new economic indicators&#34;,
+        &#34;yields on money market mutual funds fell again in the latest week &lt;unk&gt;&#34;,
+        &#34;a spokesman for the department declined to comment on pending litigation&#34;,
+    ]
+    samples = []
+    for i in range(num_samples):
+        base = templates[i % len(templates)]
+        samples.append({&#34;text&#34;: f&#34;{base} with index {i} &lt;unk&gt; .&#34;, &#34;id&#34;: i})
+    return samples</code></pre>
+</details>
+<div class="desc"><p>Generate synthetic Penn Treebank financial sentences.</p></div>
+</dd>
+<dt id="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_wikitext"><code class="name flex">
+<span>def <span class="ident">_generate_synthetic_wikitext</span></span>(<span>num_samples: int, seed: int = 42) ‑> list[dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def _generate_synthetic_wikitext(num_samples: int, seed: int = 42) -&gt; list[dict[str, Any]]:
+    &#34;&#34;&#34;Generate synthetic WikiText language modeling samples.&#34;&#34;&#34;
+    random.Random(seed)
+    topics = [
+        (
+            &#34;Valkyria Chronicles III&#34;,
+            &#34;is a tactical role-playing video game developed by Sega and Media.Vision for the PlayStation Portable.&#34;,
+        ),
+        (
+            &#34;Tower of London&#34;,
+            &#34;is a historic castle on the north bank of the River Thames in central London.&#34;,
+        ),
+        (
+            &#34;Supercell (thunderstorm)&#34;,
+            &#34;is a thunderstorm characterized by the presence of a mesocyclone: a deep, persistently rotating updraft.&#34;,
+        ),
+        (
+            &#34;Quantum chromodynamics&#34;,
+            &#34;is the theory of the strong interaction between quarks and gluons, the fundamental particles that make up hadrons.&#34;,
+        ),
+        (
+            &#34;Battle of Austerlitz&#34;,
+            &#34;also known as the Battle of the Three Emperors, was one of the most important and decisive engagements of the Napoleonic Wars.&#34;,
+        ),
+    ]
+    samples = []
+    for i in range(num_samples):
+        title, lead = topics[i % len(topics)]
+        text = f&#34; = {title} = \n\n {lead} In year {1900 + (i * 7) % 120}, significant developments took place regarding this subject. Furthermore, numerous scholarly investigations and experimental analyses have demonstrated the enduring significance of {title.lower()} within modern scientific and cultural discourse.&#34;
+        samples.append({&#34;text&#34;: text, &#34;id&#34;: f&#34;wikitext_synth_{i}&#34;})
+    return samples</code></pre>
+</details>
+<div class="desc"><p>Generate synthetic WikiText language modeling samples.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.data.benchmark_datasets" href="index.html">neuralops.data.benchmark_datasets</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_arc" href="#neuralops.data.benchmark_datasets.synthetic._generate_synthetic_arc">_generate_synthetic_arc</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_c4" href="#neuralops.data.benchmark_datasets.synthetic._generate_synthetic_c4">_generate_synthetic_c4</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_glue" href="#neuralops.data.benchmark_datasets.synthetic._generate_synthetic_glue">_generate_synthetic_glue</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_gsm8k" href="#neuralops.data.benchmark_datasets.synthetic._generate_synthetic_gsm8k">_generate_synthetic_gsm8k</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_hellaswag" href="#neuralops.data.benchmark_datasets.synthetic._generate_synthetic_hellaswag">_generate_synthetic_hellaswag</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_humaneval" href="#neuralops.data.benchmark_datasets.synthetic._generate_synthetic_humaneval">_generate_synthetic_humaneval</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_lambada" href="#neuralops.data.benchmark_datasets.synthetic._generate_synthetic_lambada">_generate_synthetic_lambada</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_mmlu" href="#neuralops.data.benchmark_datasets.synthetic._generate_synthetic_mmlu">_generate_synthetic_mmlu</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_pg19" href="#neuralops.data.benchmark_datasets.synthetic._generate_synthetic_pg19">_generate_synthetic_pg19</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_pile" href="#neuralops.data.benchmark_datasets.synthetic._generate_synthetic_pile">_generate_synthetic_pile</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_ptb" href="#neuralops.data.benchmark_datasets.synthetic._generate_synthetic_ptb">_generate_synthetic_ptb</a></code></li>
+<li><code><a title="neuralops.data.benchmark_datasets.synthetic._generate_synthetic_wikitext" href="#neuralops.data.benchmark_datasets.synthetic._generate_synthetic_wikitext">_generate_synthetic_wikitext</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

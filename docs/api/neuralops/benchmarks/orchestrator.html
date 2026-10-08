@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.benchmarks.orchestrator API documentation</title>
+<meta name="description" content="Orchestrator for managing single and multi-module benchmark sweeps.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.benchmarks.orchestrator</code></h1>
+</header>
+<section id="section-intro">
+<p>Orchestrator for managing single and multi-module benchmark sweeps.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.benchmarks.orchestrator.BenchmarkOrchestrator"><code class="flex name class">
+<span>class <span class="ident">BenchmarkOrchestrator</span></span>
+<span>(</span><span>config: BenchmarkConfig | None = None,<br>output_dir: Path | str = 'results',<br>modules: str | list[str] = 'all',<br>models: str | list[str] = 'distilbert-base-uncased',<br>datasets: str | list[str] = 'sst2',<br>ranks: int | list[int] = 64,<br>parallel: int = 1,<br>resume: bool = True,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class BenchmarkOrchestrator:
+    &#34;&#34;&#34;Manages sequential/parallel benchmark runs, resumability, and state tracking.&#34;&#34;&#34;
+
+    def __init__(
+        self,
+        config: BenchmarkConfig | None = None,
+        output_dir: Path | str = &#34;results&#34;,
+        modules: str | list[str] = &#34;all&#34;,
+        models: str | list[str] = &#34;distilbert-base-uncased&#34;,
+        datasets: str | list[str] = &#34;sst2&#34;,
+        ranks: int | list[int] = 64,
+        parallel: int = 1,
+        resume: bool = True,
+        **kwargs: Any,
+    ) -&gt; None:
+        self.config = config or BenchmarkConfig(**kwargs)
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.state_file = self.output_dir / &#34;run_state.json&#34;
+        self.jsonl_file = self.output_dir / &#34;results.jsonl&#34;
+
+        # Resolve modules list
+        self.modules = self._resolve_modules(modules)
+        self.models = [models] if isinstance(models, str) else list(models)
+        self.datasets = [datasets] if isinstance(datasets, str) else list(datasets)
+        self.ranks = [ranks] if isinstance(ranks, int) else list(ranks)
+        self.parallel = parallel
+        self.resume_mode = resume
+        self.extra_kwargs = kwargs
+
+        self._state: dict[str, Any] = self._load_state()
+
+    def _resolve_modules(self, mods: str | list[str]) -&gt; list[str]:
+        all_mods = discover_modules()
+        if isinstance(mods, str):
+            if mods in (&#34;all&#34;, &#34;all-modules&#34;):
+                return sorted(all_mods.keys())
+            elif mods in (&#34;all-attention&#34;, &#34;attention&#34;):
+                return sorted(k for k, v in all_mods.items() if v.type == &#34;attention&#34;)
+            elif mods in (&#34;all-compressors&#34;, &#34;compressors&#34;):
+                return sorted(k for k, v in all_mods.items() if v.type == &#34;compressor&#34;)
+            elif mods in (&#34;none&#34;, &#34;baseline&#34;, &#34;full&#34;):
+                return [&#34;baseline&#34;]
+            else:
+                return [m.strip() for m in mods.split(&#34;,&#34;) if m.strip()]
+        return list(mods)
+
+    def _load_state(self) -&gt; dict[str, Any]:
+        if self.resume_mode and self.state_file.exists():
+            try:
+                with open(self.state_file, &#34;r&#34;, encoding=&#34;utf-8&#34;) as fp:
+                    return json.load(fp)
+            except Exception as e:
+                LOG.warning(&#34;Could not read run_state.json: %s&#34;, e)
+        return {
+            &#34;run_id&#34;: str(uuid.uuid4()),
+            &#34;completed&#34;: [],
+            &#34;failed&#34;: [],
+            &#34;skipped&#34;: [],
+            &#34;total_runs&#34;: 0,
+            &#34;status&#34;: &#34;initialized&#34;,
+            &#34;start_time&#34;: time.time(),
+        }
+
+    def _save_state(self) -&gt; None:
+        try:
+            with open(self.state_file, &#34;w&#34;, encoding=&#34;utf-8&#34;) as fp:
+                json.dump(self._state, fp, indent=2)
+        except Exception as e:
+            LOG.warning(&#34;Could not write run_state.json: %s&#34;, e)
+
+    def _build_task_grid(self) -&gt; list[tuple[str, str, str, int]]:
+        tasks: list[tuple[str, str, str, int]] = []
+        for mod in self.modules:
+            for mdl in self.models:
+                for ds in self.datasets:
+                    for rk in self.ranks:
+                        tasks.append((mod, mdl, ds, rk))
+        return tasks
+
+    def stream(self) -&gt; Generator[BenchmarkResult, None, None]:
+        &#34;&#34;&#34;Yield results as individual benchmark runs finish.&#34;&#34;&#34;
+        grid = self._build_task_grid()
+        self._state[&#34;total_runs&#34;] = len(grid)
+        self._state[&#34;status&#34;] = &#34;running&#34;
+        self._save_state()
+
+        completed_set = set(tuple(x) for x in self._state.get(&#34;completed&#34;, []))
+
+        for mod, mdl, ds, rk in grid:
+            task_key = (mod, mdl, ds, rk)
+            if self.resume_mode and task_key in completed_set:
+                LOG.info(&#34;Skipping completed task: %s&#34;, task_key)
+                continue
+
+            # Execute run
+            res = execute_single(
+                module=mod,
+                model=mdl,
+                dataset=ds,
+                rank=rk,
+                device=self.config.device,
+                dtype=self.config.precision,
+                batch_size=self.config.batch_size,
+                max_length=self.config.max_length,
+                epochs=self.config.epochs,
+                lr=self.config.lr,
+                seed=self.config.seed,
+                eval_only=self.config.eval_only,
+                timeout_s=self.config.timeout_s,
+                **self.extra_kwargs,
+            )
+
+            # Persist individual result
+            run_file = self.output_dir / f&#34;{res.run_id}.json&#34;
+            save_result_json(res, run_file)
+            append_result_jsonl(res, self.jsonl_file)
+
+            # Update state
+            if res.status == &#34;success&#34;:
+                self._state[&#34;completed&#34;].append(list(task_key))
+            elif res.status == &#34;skipped&#34;:
+                self._state[&#34;skipped&#34;].append(list(task_key))
+            else:
+                self._state[&#34;failed&#34;].append(list(task_key))
+            self._save_state()
+
+            yield res
+
+        self._state[&#34;status&#34;] = &#34;finished&#34;
+        self._save_state()
+
+    def run(self) -&gt; list[BenchmarkResult]:
+        &#34;&#34;&#34;Execute all benchmarks synchronously.&#34;&#34;&#34;
+        return list(self.stream())
+
+    def resume(self) -&gt; list[BenchmarkResult]:
+        &#34;&#34;&#34;Resume an interrupted benchmark run.&#34;&#34;&#34;
+        self.resume_mode = True
+        return self.run()
+
+    def run_async(self) -&gt; None:
+        &#34;&#34;&#34;Spawn background process to execute benchmarks asynchronously.&#34;&#34;&#34;
+        cmd = [
+            sys.executable,
+            &#34;-m&#34;,
+            &#34;neuralops.benchmarks&#34;,
+            &#34;run&#34;,
+            f&#34;--modules={&#39;,&#39;.join(self.modules)}&#34;,
+            f&#34;--models={&#39;,&#39;.join(self.models)}&#34;,
+            f&#34;--datasets={&#39;,&#39;.join(self.datasets)}&#34;,
+            f&#34;--output-dir={self.output_dir}&#34;,
+        ]
+        subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    def status(self) -&gt; dict[str, Any]:
+        &#34;&#34;&#34;Return current execution progress information.&#34;&#34;&#34;
+        grid = self._build_task_grid()
+        return {
+            &#34;total&#34;: len(grid),
+            &#34;completed&#34;: len(self._state.get(&#34;completed&#34;, [])),
+            &#34;failed&#34;: len(self._state.get(&#34;failed&#34;, [])),
+            &#34;skipped&#34;: len(self._state.get(&#34;skipped&#34;, [])),
+            &#34;status&#34;: self._state.get(&#34;status&#34;, &#34;unknown&#34;),
+        }
+
+    def summary(self) -&gt; pd.DataFrame:
+        &#34;&#34;&#34;Read all produced run results from JSONL and return a summary DataFrame.&#34;&#34;&#34;
+        if not self.jsonl_file.exists():
+            return pd.DataFrame()
+
+        rows = []
+        with open(self.jsonl_file, &#34;r&#34;, encoding=&#34;utf-8&#34;) as fp:
+            for line in fp:
+                line = line.strip()
+                if not line:
+                    continue
+                d = json.loads(line)
+                row = {
+                    &#34;module&#34;: d.get(&#34;module&#34;, {}).get(&#34;name&#34;),
+                    &#34;type&#34;: d.get(&#34;module&#34;, {}).get(&#34;type&#34;),
+                    &#34;model&#34;: d.get(&#34;model&#34;, {}).get(&#34;name&#34;),
+                    &#34;dataset&#34;: d.get(&#34;dataset&#34;, {}).get(&#34;name&#34;),
+                    &#34;rank&#34;: d.get(&#34;config&#34;, {}).get(&#34;rank&#34;),
+                    &#34;status&#34;: d.get(&#34;status&#34;),
+                }
+                metrics = d.get(&#34;metrics&#34;) or {}
+                row.update(metrics)
+                resources = d.get(&#34;resources&#34;) or {}
+                row.update(resources)
+                rows.append(row)
+
+        return pd.DataFrame(rows)</code></pre>
+</details>
+<div class="desc"><p>Manages sequential/parallel benchmark runs, resumability, and state tracking.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.benchmarks.orchestrator.BenchmarkOrchestrator.resume"><code class="name flex">
+<span>def <span class="ident">resume</span></span>(<span>self) ‑> list[<a title="neuralops.benchmarks.result.BenchmarkResult" href="result.html#neuralops.benchmarks.result.BenchmarkResult">BenchmarkResult</a>]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def resume(self) -&gt; list[BenchmarkResult]:
+    &#34;&#34;&#34;Resume an interrupted benchmark run.&#34;&#34;&#34;
+    self.resume_mode = True
+    return self.run()</code></pre>
+</details>
+<div class="desc"><p>Resume an interrupted benchmark run.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.orchestrator.BenchmarkOrchestrator.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>self) ‑> list[<a title="neuralops.benchmarks.result.BenchmarkResult" href="result.html#neuralops.benchmarks.result.BenchmarkResult">BenchmarkResult</a>]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run(self) -&gt; list[BenchmarkResult]:
+    &#34;&#34;&#34;Execute all benchmarks synchronously.&#34;&#34;&#34;
+    return list(self.stream())</code></pre>
+</details>
+<div class="desc"><p>Execute all benchmarks synchronously.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.orchestrator.BenchmarkOrchestrator.run_async"><code class="name flex">
+<span>def <span class="ident">run_async</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_async(self) -&gt; None:
+    &#34;&#34;&#34;Spawn background process to execute benchmarks asynchronously.&#34;&#34;&#34;
+    cmd = [
+        sys.executable,
+        &#34;-m&#34;,
+        &#34;neuralops.benchmarks&#34;,
+        &#34;run&#34;,
+        f&#34;--modules={&#39;,&#39;.join(self.modules)}&#34;,
+        f&#34;--models={&#39;,&#39;.join(self.models)}&#34;,
+        f&#34;--datasets={&#39;,&#39;.join(self.datasets)}&#34;,
+        f&#34;--output-dir={self.output_dir}&#34;,
+    ]
+    subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)</code></pre>
+</details>
+<div class="desc"><p>Spawn background process to execute benchmarks asynchronously.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.orchestrator.BenchmarkOrchestrator.status"><code class="name flex">
+<span>def <span class="ident">status</span></span>(<span>self) ‑> dict[str, typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def status(self) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Return current execution progress information.&#34;&#34;&#34;
+    grid = self._build_task_grid()
+    return {
+        &#34;total&#34;: len(grid),
+        &#34;completed&#34;: len(self._state.get(&#34;completed&#34;, [])),
+        &#34;failed&#34;: len(self._state.get(&#34;failed&#34;, [])),
+        &#34;skipped&#34;: len(self._state.get(&#34;skipped&#34;, [])),
+        &#34;status&#34;: self._state.get(&#34;status&#34;, &#34;unknown&#34;),
+    }</code></pre>
+</details>
+<div class="desc"><p>Return current execution progress information.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.orchestrator.BenchmarkOrchestrator.stream"><code class="name flex">
+<span>def <span class="ident">stream</span></span>(<span>self) ‑> Generator[<a title="neuralops.benchmarks.result.BenchmarkResult" href="result.html#neuralops.benchmarks.result.BenchmarkResult">BenchmarkResult</a>, None, None]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def stream(self) -&gt; Generator[BenchmarkResult, None, None]:
+    &#34;&#34;&#34;Yield results as individual benchmark runs finish.&#34;&#34;&#34;
+    grid = self._build_task_grid()
+    self._state[&#34;total_runs&#34;] = len(grid)
+    self._state[&#34;status&#34;] = &#34;running&#34;
+    self._save_state()
+
+    completed_set = set(tuple(x) for x in self._state.get(&#34;completed&#34;, []))
+
+    for mod, mdl, ds, rk in grid:
+        task_key = (mod, mdl, ds, rk)
+        if self.resume_mode and task_key in completed_set:
+            LOG.info(&#34;Skipping completed task: %s&#34;, task_key)
+            continue
+
+        # Execute run
+        res = execute_single(
+            module=mod,
+            model=mdl,
+            dataset=ds,
+            rank=rk,
+            device=self.config.device,
+            dtype=self.config.precision,
+            batch_size=self.config.batch_size,
+            max_length=self.config.max_length,
+            epochs=self.config.epochs,
+            lr=self.config.lr,
+            seed=self.config.seed,
+            eval_only=self.config.eval_only,
+            timeout_s=self.config.timeout_s,
+            **self.extra_kwargs,
+        )
+
+        # Persist individual result
+        run_file = self.output_dir / f&#34;{res.run_id}.json&#34;
+        save_result_json(res, run_file)
+        append_result_jsonl(res, self.jsonl_file)
+
+        # Update state
+        if res.status == &#34;success&#34;:
+            self._state[&#34;completed&#34;].append(list(task_key))
+        elif res.status == &#34;skipped&#34;:
+            self._state[&#34;skipped&#34;].append(list(task_key))
+        else:
+            self._state[&#34;failed&#34;].append(list(task_key))
+        self._save_state()
+
+        yield res
+
+    self._state[&#34;status&#34;] = &#34;finished&#34;
+    self._save_state()</code></pre>
+</details>
+<div class="desc"><p>Yield results as individual benchmark runs finish.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.orchestrator.BenchmarkOrchestrator.summary"><code class="name flex">
+<span>def <span class="ident">summary</span></span>(<span>self) ‑> pandas.DataFrame</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def summary(self) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;Read all produced run results from JSONL and return a summary DataFrame.&#34;&#34;&#34;
+    if not self.jsonl_file.exists():
+        return pd.DataFrame()
+
+    rows = []
+    with open(self.jsonl_file, &#34;r&#34;, encoding=&#34;utf-8&#34;) as fp:
+        for line in fp:
+            line = line.strip()
+            if not line:
+                continue
+            d = json.loads(line)
+            row = {
+                &#34;module&#34;: d.get(&#34;module&#34;, {}).get(&#34;name&#34;),
+                &#34;type&#34;: d.get(&#34;module&#34;, {}).get(&#34;type&#34;),
+                &#34;model&#34;: d.get(&#34;model&#34;, {}).get(&#34;name&#34;),
+                &#34;dataset&#34;: d.get(&#34;dataset&#34;, {}).get(&#34;name&#34;),
+                &#34;rank&#34;: d.get(&#34;config&#34;, {}).get(&#34;rank&#34;),
+                &#34;status&#34;: d.get(&#34;status&#34;),
+            }
+            metrics = d.get(&#34;metrics&#34;) or {}
+            row.update(metrics)
+            resources = d.get(&#34;resources&#34;) or {}
+            row.update(resources)
+            rows.append(row)
+
+    return pd.DataFrame(rows)</code></pre>
+</details>
+<div class="desc"><p>Read all produced run results from JSONL and return a summary DataFrame.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.benchmarks" href="index.html">neuralops.benchmarks</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.benchmarks.orchestrator.BenchmarkOrchestrator" href="#neuralops.benchmarks.orchestrator.BenchmarkOrchestrator">BenchmarkOrchestrator</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.benchmarks.orchestrator.BenchmarkOrchestrator.resume" href="#neuralops.benchmarks.orchestrator.BenchmarkOrchestrator.resume">resume</a></code></li>
+<li><code><a title="neuralops.benchmarks.orchestrator.BenchmarkOrchestrator.run" href="#neuralops.benchmarks.orchestrator.BenchmarkOrchestrator.run">run</a></code></li>
+<li><code><a title="neuralops.benchmarks.orchestrator.BenchmarkOrchestrator.run_async" href="#neuralops.benchmarks.orchestrator.BenchmarkOrchestrator.run_async">run_async</a></code></li>
+<li><code><a title="neuralops.benchmarks.orchestrator.BenchmarkOrchestrator.status" href="#neuralops.benchmarks.orchestrator.BenchmarkOrchestrator.status">status</a></code></li>
+<li><code><a title="neuralops.benchmarks.orchestrator.BenchmarkOrchestrator.stream" href="#neuralops.benchmarks.orchestrator.BenchmarkOrchestrator.stream">stream</a></code></li>
+<li><code><a title="neuralops.benchmarks.orchestrator.BenchmarkOrchestrator.summary" href="#neuralops.benchmarks.orchestrator.BenchmarkOrchestrator.summary">summary</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

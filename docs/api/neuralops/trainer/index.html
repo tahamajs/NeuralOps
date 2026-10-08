@@ -74,10 +74,9 @@ All methods are registered via the METHOD_REGISTRY and can be …</p></div>
 <dd>
 <div class="desc"></div>
 </dd>
-<dt><code class="name"><a title="neuralops.trainer.optimizers" href="optimizers.html">neuralops.trainer.optimizers</a></code></dt>
+<dt><code class="name"><a title="neuralops.trainer.optimizers" href="optimizers/index.html">neuralops.trainer.optimizers</a></code></dt>
 <dd>
-<div class="desc"><p>Optimizers module for SOTA framework including Riemannian Stiefel Manifold Optimizers
-and standard registered optimizers (AdamW, SGD, Adam, AdaBelief, …</p></div>
+<div class="desc"><p>Optimizers package for NeuralOps.</p></div>
 </dd>
 <dt><code class="name"><a title="neuralops.trainer.registry" href="registry.html">neuralops.trainer.registry</a></code></dt>
 <dd>
@@ -293,22 +292,295 @@ Integrates Unsloth 2x faster cross-entropy and fast Triton kernels when …</p><
 <div class="desc"><p>Compute and return pearson spearman.</p></div>
 </dd>
 <dt id="neuralops.trainer.count_parameters"><code class="name flex">
-<span>def <span class="ident">count_parameters</span></span>(<span>model: nn.Module, trainable_only: bool = True) ‑> int</span>
+<span>def <span class="ident">count_parameters</span></span>(<span>model: torch.nn.modules.module.Module, trainable_only: bool = True) ‑> int</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def count_parameters(model: nn.Module, trainable_only: bool = True) -&gt; int:
-    &#34;&#34;&#34;Count trainable or total parameters.&#34;&#34;&#34;
-    return (
-        sum(p.numel() for p in model.parameters() if p.requires_grad)
-        if trainable_only
-        else sum(p.numel() for p in model.parameters())
+<pre><code class="python">def count_parameters(model: torch.nn.Module, trainable_only: bool = True) -&gt; int:
+    &#34;&#34;&#34;Count parameters.&#34;&#34;&#34;
+    if trainable_only:
+        return sum(p.numel() for p in model.parameters() if p.requires_grad)
+    return sum(p.numel() for p in model.parameters())</code></pre>
+</details>
+<div class="desc"><p>Count parameters.</p></div>
+</dd>
+<dt id="neuralops.trainer.create_adabelief"><code class="name flex">
+<span>def <span class="ident">create_adabelief</span></span>(<span>params: Any, lr: float = 0.001, weight_decay: float = 0.0, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;adabelief&#34;)
+def create_adabelief(
+    params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwargs: Any
+) -&gt; Any:
+    &#34;&#34;&#34;Build and return AdaBelief.&#34;&#34;&#34;
+    from adabelief_pytorch import AdaBelief
+
+    return AdaBelief(params, lr=lr, weight_decay=weight_decay, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Build and return AdaBelief.</p></div>
+</dd>
+<dt id="neuralops.trainer.create_adam"><code class="name flex">
+<span>def <span class="ident">create_adam</span></span>(<span>params: Any, lr: float = 0.001, weight_decay: float = 0.0, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;adam&#34;)
+def create_adam(params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Build and return Adam.&#34;&#34;&#34;
+    return optim.Adam(params, lr=lr, weight_decay=weight_decay, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Build and return Adam.</p></div>
+</dd>
+<dt id="neuralops.trainer.create_adamw"><code class="name flex">
+<span>def <span class="ident">create_adamw</span></span>(<span>params: Any, lr: float = 0.001, weight_decay: float = 0.01, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;adamw&#34;)
+def create_adamw(params: Any, lr: float = 1e-3, weight_decay: float = 0.01, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Build and return AdamW.&#34;&#34;&#34;
+    return optim.AdamW(params, lr=lr, weight_decay=weight_decay, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Build and return AdamW.</p></div>
+</dd>
+<dt id="neuralops.trainer.create_cosine"><code class="name flex">
+<span>def <span class="ident">create_cosine</span></span>(<span>optimizer, T_max=10000, **kwargs) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@SCHEDULER_REGISTRY.register(&#34;cosine&#34;)
+def create_cosine(optimizer, T_max=10000, **kwargs) -&gt; Any:
+    &#34;&#34;&#34;Build and return cosine.&#34;&#34;&#34;
+    return lr_scheduler.CosineAnnealingLR(optimizer, T_max=T_max)</code></pre>
+</details>
+<div class="desc"><p>Build and return cosine.</p></div>
+</dd>
+<dt id="neuralops.trainer.create_lamb"><code class="name flex">
+<span>def <span class="ident">create_lamb</span></span>(<span>params: Any, lr: float = 0.001, weight_decay: float = 0.01, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;lamb&#34;)
+def create_lamb(params: Any, lr: float = 1e-3, weight_decay: float = 0.01, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Build and return Lamb.&#34;&#34;&#34;
+    from torch_optimizer import Lamb
+
+    return Lamb(params, lr=lr, weight_decay=weight_decay, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Build and return Lamb.</p></div>
+</dd>
+<dt id="neuralops.trainer.create_lars"><code class="name flex">
+<span>def <span class="ident">create_lars</span></span>(<span>params: Any, lr: float = 0.001, weight_decay: float = 0.0, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;lars&#34;)
+def create_lars(params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Build and return Lars.&#34;&#34;&#34;
+    from torch_optimizer import Lars
+
+    return Lars(params, lr=lr, weight_decay=weight_decay, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Build and return Lars.</p></div>
+</dd>
+<dt id="neuralops.trainer.create_linear"><code class="name flex">
+<span>def <span class="ident">create_linear</span></span>(<span>optimizer, num_warmup_steps=0, num_training_steps=10000, **kwargs) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@SCHEDULER_REGISTRY.register(&#34;linear&#34;)
+def create_linear(optimizer, num_warmup_steps=0, num_training_steps=10000, **kwargs) -&gt; Any:
+    &#34;&#34;&#34;Build and return linear.&#34;&#34;&#34;
+    return lr_scheduler.LinearLR(
+        optimizer, start_factor=1.0, end_factor=0.0, total_iters=num_training_steps
     )</code></pre>
 </details>
-<div class="desc"><p>Count trainable or total parameters.</p></div>
+<div class="desc"><p>Build and return linear.</p></div>
+</dd>
+<dt id="neuralops.trainer.create_muon"><code class="name flex">
+<span>def <span class="ident">create_muon</span></span>(<span>params: Any,<br>lr: float = 0.02,<br>momentum: float = 0.95,<br>weight_decay: float = 0.01,<br>**kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;muon&#34;)
+def create_muon(
+    params: Any,
+    lr: float = 0.02,
+    momentum: float = 0.95,
+    weight_decay: float = 0.01,
+    **kwargs: Any,
+) -&gt; Any:
+    &#34;&#34;&#34;Build and return Muon optimizer.&#34;&#34;&#34;
+    return Muon(params, lr=lr, momentum=momentum, weight_decay=weight_decay, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Build and return Muon optimizer.</p></div>
+</dd>
+<dt id="neuralops.trainer.create_muon_adamw_reg"><code class="name flex">
+<span>def <span class="ident">create_muon_adamw_reg</span></span>(<span>params: Any,<br>lr: float = 0.02,<br>lr_adam: float = 5e-05,<br>weight_decay: float = 0.01,<br>**kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;muon_adamw&#34;)
+def create_muon_adamw_reg(
+    params: Any,
+    lr: float = 0.02,
+    lr_adam: float = 5e-5,
+    weight_decay: float = 0.01,
+    **kwargs: Any,
+) -&gt; Any:
+    &#34;&#34;&#34;Build and return MuonAdamW hybrid optimizer.&#34;&#34;&#34;
+    return create_muon_adamw_optimizer(
+        params, lr_muon=lr, lr_adam=lr_adam, weight_decay=weight_decay, **kwargs
+    )</code></pre>
+</details>
+<div class="desc"><p>Build and return MuonAdamW hybrid optimizer.</p></div>
+</dd>
+<dt id="neuralops.trainer.create_onecycle"><code class="name flex">
+<span>def <span class="ident">create_onecycle</span></span>(<span>optimizer, max_lr=0.01, steps_per_epoch=1000, epochs=10, **kwargs) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@SCHEDULER_REGISTRY.register(&#34;one_cycle&#34;)
+def create_onecycle(optimizer, max_lr=0.01, steps_per_epoch=1000, epochs=10, **kwargs) -&gt; Any:
+    &#34;&#34;&#34;Build and return onecycle.&#34;&#34;&#34;
+    return lr_scheduler.OneCycleLR(
+        optimizer, max_lr=max_lr, steps_per_epoch=steps_per_epoch, epochs=epochs
+    )</code></pre>
+</details>
+<div class="desc"><p>Build and return onecycle.</p></div>
+</dd>
+<dt id="neuralops.trainer.create_poly"><code class="name flex">
+<span>def <span class="ident">create_poly</span></span>(<span>optimizer, total_iters=10000, power=1.0, **kwargs) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@SCHEDULER_REGISTRY.register(&#34;polynomial&#34;)
+def create_poly(optimizer, total_iters=10000, power=1.0, **kwargs) -&gt; Any:
+    &#34;&#34;&#34;Build and return poly.&#34;&#34;&#34;
+    return lr_scheduler.PolynomialLR(optimizer, total_iters=total_iters, power=power)</code></pre>
+</details>
+<div class="desc"><p>Build and return poly.</p></div>
+</dd>
+<dt id="neuralops.trainer.create_ranger"><code class="name flex">
+<span>def <span class="ident">create_ranger</span></span>(<span>params: Any, lr: float = 0.001, weight_decay: float = 0.0, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;ranger&#34;)
+def create_ranger(params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Build and return Ranger.&#34;&#34;&#34;
+    from ranger import Ranger
+
+    return Ranger(params, lr=lr, weight_decay=weight_decay, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Build and return Ranger.</p></div>
+</dd>
+<dt id="neuralops.trainer.create_riemannian_stiefel"><code class="name flex">
+<span>def <span class="ident">create_riemannian_stiefel</span></span>(<span>params: Any,<br>lr: float = 0.001,<br>lr_stiefel: float | None = None,<br>base_optimizer: str = 'adamw',<br>weight_decay: float = 0.01,<br>**kwargs: Any) ‑> <a title="neuralops.trainer.optimizers.riemannian.RiemannianStiefelOptimizer" href="optimizers/riemannian.html#neuralops.trainer.optimizers.riemannian.RiemannianStiefelOptimizer">RiemannianStiefelOptimizer</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;riemannian_stiefel&#34;)
+@OPTIMIZER_REGISTRY.register(&#34;stiefel&#34;)
+@OPTIMIZER_REGISTRY.register(&#34;stiefel_optimizer&#34;)
+def create_riemannian_stiefel(
+    params: Any,
+    lr: float = 1e-3,
+    lr_stiefel: float | None = None,
+    base_optimizer: str = &#34;adamw&#34;,
+    weight_decay: float = 0.01,
+    **kwargs: Any,
+) -&gt; RiemannianStiefelOptimizer:
+    &#34;&#34;&#34;Build and return RiemannianStiefelOptimizer.&#34;&#34;&#34;
+    return RiemannianStiefelOptimizer(
+        params,
+        lr=lr,
+        lr_stiefel=lr_stiefel,
+        base_optimizer=base_optimizer,
+        weight_decay=weight_decay,
+        **kwargs,
+    )</code></pre>
+</details>
+<div class="desc"><p>Build and return RiemannianStiefelOptimizer.</p></div>
+</dd>
+<dt id="neuralops.trainer.create_rop"><code class="name flex">
+<span>def <span class="ident">create_rop</span></span>(<span>optimizer, factor=0.1, patience=10, **kwargs) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@SCHEDULER_REGISTRY.register(&#34;reduce_on_plateau&#34;)
+def create_rop(optimizer, factor=0.1, patience=10, **kwargs) -&gt; Any:
+    &#34;&#34;&#34;Build and return rop.&#34;&#34;&#34;
+    return lr_scheduler.ReduceLROnPlateau(optimizer, factor=factor, patience=patience)</code></pre>
+</details>
+<div class="desc"><p>Build and return rop.</p></div>
+</dd>
+<dt id="neuralops.trainer.create_sgd"><code class="name flex">
+<span>def <span class="ident">create_sgd</span></span>(<span>params: Any,<br>lr: float = 0.01,<br>momentum: float = 0.9,<br>weight_decay: float = 0.0,<br>**kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;sgd&#34;)
+def create_sgd(
+    params: Any,
+    lr: float = 0.01,
+    momentum: float = 0.9,
+    weight_decay: float = 0.0,
+    **kwargs: Any,
+) -&gt; Any:
+    &#34;&#34;&#34;Build and return SGD.&#34;&#34;&#34;
+    return optim.SGD(params, lr=lr, momentum=momentum, weight_decay=weight_decay, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Build and return SGD.</p></div>
 </dd>
 <dt id="neuralops.trainer.evaluate_model"><code class="name flex">
 <span>def <span class="ident">evaluate_model</span></span>(<span>model: nn.Module,<br>data_loader: DataLoader,<br>device: torch.device,<br>num_labels: int,<br>is_multichoice: bool = False,<br>compute_all_metrics: bool = False) ‑> float | dict[str, float]</span>
@@ -493,24 +765,15 @@ Integrates Unsloth 2x faster cross-entropy and fast Triton kernels when …</p><
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def project_stiefel_gradient(W: torch.Tensor, G: torch.Tensor) -&gt; torch.Tensor:
-    &#34;&#34;&#34;
-    Projects Euclidean gradient G onto the tangent space of the Stiefel manifold St(p, n).
-
-    For column-orthonormal matrices W in R^{n x p} with n &gt;= p (W^T W = I_p):
-        grad_R = G - W @ (W^T @ G + G^T @ W) / 2 = G - W @ sym(W^T G)
-
-    For row-orthonormal matrices W in R^{n x p} with n &lt; p (W W^T = I_n):
-        grad_R = G - (G @ W^T + W @ G^T) / 2 @ W = G - sym(G W^T) @ W
+    &#34;&#34;&#34;Project Euclidean gradient G onto the tangent space of the Stiefel manifold St(p, n).
 
     Args:
-        W: Current orthogonal parameter tensor on Stiefel manifold.
+        W: Current orthogonal parameter tensor.
         G: Euclidean gradient tensor (same shape as W).
 
     Returns:
-        torch.Tensor: Riemannian gradient in tangent space T_W St(p, n).
+        Riemannian gradient in tangent space T_W St(p, n).
     &#34;&#34;&#34;
-    # RESEARCH FIX: Canonical Riemannian gradient projection onto Stiefel tangent space
-    # ensuring skew-symmetry sym(W^T grad_R) = 0 so updates preserve orthogonality
     if W.dim() == 2:
         n, p = W.shape
         if n &gt;= p:
@@ -523,7 +786,6 @@ Integrates Unsloth 2x faster cross-entropy and fast Triton kernels when …</p><
             grad_r = G - torch.matmul(sym, W)
         return grad_r
     elif W.dim() &gt; 2:
-        # RESEARCH FIX: Batched Stiefel manifold tangent projection across arbitrary batch dimensions
         n, p = W.shape[-2], W.shape[-1]
         if n &gt;= p:
             wt = W.transpose(-2, -1)
@@ -543,23 +805,18 @@ Integrates Unsloth 2x faster cross-entropy and fast Triton kernels when …</p><
     else:
         return G</code></pre>
 </details>
-<div class="desc"><p>Projects Euclidean gradient G onto the tangent space of the Stiefel manifold St(p, n).</p>
-<p>For column-orthonormal matrices W in R^{n x p} with n &gt;= p (W^T W = I_p):
-grad_R = G - W @ (W^T @ G + G^T @ W) / 2 = G - W @ sym(W^T G)</p>
-<p>For row-orthonormal matrices W in R^{n x p} with n &lt; p (W W^T = I_n):
-grad_R = G - (G @ W^T + W @ G^T) / 2 @ W = G - sym(G W^T) @ W</p>
+<div class="desc"><p>Project Euclidean gradient G onto the tangent space of the Stiefel manifold St(p, n).</p>
 <dl>
 <dt>Args</dt>
 <dt>-----=</dt>
 <dt><strong><code>W</code></strong></dt>
-<dd>Current orthogonal parameter tensor on Stiefel manifold.</dd>
+<dd>Current orthogonal parameter tensor.</dd>
 <dt><strong><code>G</code></strong></dt>
 <dd>Euclidean gradient tensor (same shape as W).</dd>
-<dt>Returns</dt>
-<dt>-----=</dt>
-<dt><code>torch.Tensor</code></dt>
-<dd>Riemannian gradient in tangent space T_W St(p, n).</dd>
-</dl></div>
+</dl>
+<p>Returns
+-----=
+Riemannian gradient in tangent space T_W St(p, n).</p></div>
 </dd>
 <dt id="neuralops.trainer.quick_optimize"><code class="name flex">
 <span>def <span class="ident">quick_optimize</span></span>(<span>train_fn, eval_fn, n_trials=10, study_name='quick_opt') ‑> dict[str, typing.Any]</span>
@@ -608,21 +865,16 @@ grad_R = G - (G @ W^T + W @ G^T) / 2 @ W = G - sym(G W^T) @ W</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def stiefel_qr_retraction(W: torch.Tensor, grad_R: torch.Tensor, lr: float) -&gt; torch.Tensor:
-    &#34;&#34;&#34;
-    Applies retraction step via QR decomposition to project back onto the Stiefel manifold:
-        Q, R = torch.linalg.qr(W - lr * grad_R)
-        W_next = Q @ diag(sign(diag(R)))
+    &#34;&#34;&#34;Apply QR retraction step to project back onto the Stiefel manifold.
 
     Args:
         W: Current orthogonal parameter tensor.
         grad_R: Riemannian gradient in tangent space.
-        lr: Learning rate / step size along tangent vector.
+        lr: Learning rate step size along tangent vector.
 
     Returns:
-        torch.Tensor: Retracted orthogonal parameter tensor on Stiefel manifold.
+        Retracted orthogonal parameter tensor on Stiefel manifold.
     &#34;&#34;&#34;
-    # RESEARCH FIX: QR retraction with sign-flip correction diag(sign(diag(R)))
-    # to guarantee canonical orientation and strict machine-precision orthogonality ||W^T W - I|| &lt; 1e-5
     w_step = W - lr * grad_R
 
     if W.dim() == 2:
@@ -634,7 +886,6 @@ grad_R = G - (G @ W^T + W @ G^T) / 2 @ W = G - sym(G W^T) @ W</p>
             ph = torch.where(ph == 0, torch.ones_like(ph), ph)
             w_next = q * ph.unsqueeze(-2)
         else:
-            # Row-orthogonal: transpose, QR, and transpose back
             q, r = torch.linalg.qr(w_step.t(), mode=&#34;reduced&#34;)
             d = torch.diagonal(r, dim1=-2, dim2=-1)
             ph = torch.sign(d)
@@ -661,9 +912,7 @@ grad_R = G - (G @ W^T + W @ G^T) / 2 @ W = G - sym(G W^T) @ W</p>
         norm = torch.linalg.norm(w_step)
         return w_step / (norm + 1e-12)</code></pre>
 </details>
-<div class="desc"><p>Applies retraction step via QR decomposition to project back onto the Stiefel manifold:
-Q, R = torch.linalg.qr(W - lr * grad_R)
-W_next = Q @ diag(sign(diag(R)))</p>
+<div class="desc"><p>Apply QR retraction step to project back onto the Stiefel manifold.</p>
 <dl>
 <dt>Args</dt>
 <dt>-----=</dt>
@@ -672,12 +921,11 @@ W_next = Q @ diag(sign(diag(R)))</p>
 <dt><strong><code>grad_R</code></strong></dt>
 <dd>Riemannian gradient in tangent space.</dd>
 <dt><strong><code>lr</code></strong></dt>
-<dd>Learning rate / step size along tangent vector.</dd>
-<dt>Returns</dt>
-<dt>-----=</dt>
-<dt><code>torch.Tensor</code></dt>
-<dd>Retracted orthogonal parameter tensor on Stiefel manifold.</dd>
-</dl></div>
+<dd>Learning rate step size along tangent vector.</dd>
+</dl>
+<p>Returns
+-----=
+Retracted orthogonal parameter tensor on Stiefel manifold.</p></div>
 </dd>
 <dt id="neuralops.trainer.train_model"><code class="name flex">
 <span>def <span class="ident">train_model</span></span>(<span>model: nn.Module,<br>train_loader: DataLoader,<br>val_loader: DataLoader,<br>device: torch.device,<br>config: Any,<br>num_labels: int,<br>is_multichoice: bool = False) ‑> dict[str, float]</span>
@@ -901,6 +1149,154 @@ def train(self) -&gt; dict[str, Any]:
     pass</code></pre>
 </details>
 <div class="desc"><p>Fit the model on the provided dataset.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.trainer.ContrastiveLoss"><code class="flex name class">
+<span>class <span class="ident">ContrastiveLoss</span></span>
+<span>(</span><span>margin=1.0, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@LOSS_REGISTRY.register(&#34;contrastive&#34;)
+class ContrastiveLoss(nn.Module):
+    def __init__(self, margin=1.0, **kwargs) -&gt; None:
+        super().__init__()
+        self.margin = margin
+
+    def forward(self, embeddings, labels) -&gt; Any:
+        &#34;&#34;&#34;Forward pass — compute module output from inputs.&#34;&#34;&#34;
+        dist = F.pairwise_distance(embeddings[0], embeddings[1])
+        loss = (1 - labels) * 0.5 * dist.pow(2) + labels * 0.5 * torch.clamp(
+            self.margin - dist, min=0
+        ).pow(2)
+        return loss.mean()</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.trainer.ContrastiveLoss.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, embeddings, labels) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, embeddings, labels) -&gt; Any:
+    &#34;&#34;&#34;Forward pass — compute module output from inputs.&#34;&#34;&#34;
+    dist = F.pairwise_distance(embeddings[0], embeddings[1])
+    loss = (1 - labels) * 0.5 * dist.pow(2) + labels * 0.5 * torch.clamp(
+        self.margin - dist, min=0
+    ).pow(2)
+    return loss.mean()</code></pre>
+</details>
+<div class="desc"><p>Forward pass — compute module output from inputs.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.trainer.CrossEntropyLoss"><code class="flex name class">
+<span>class <span class="ident">CrossEntropyLoss</span></span>
+<span>(</span><span>weight=None, ignore_index=-100, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@LOSS_REGISTRY.register(&#34;cross_entropy&#34;)
+class CrossEntropyLoss(nn.Module):
+    def __init__(self, weight=None, ignore_index=-100, **kwargs) -&gt; None:
+        super().__init__()
+        self.loss = nn.CrossEntropyLoss(weight=weight, ignore_index=ignore_index)
+
+    def forward(self, logits, labels) -&gt; Any:
+        &#34;&#34;&#34;Forward pass — compute module output from inputs.&#34;&#34;&#34;
+        return self.loss(logits, labels)</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.trainer.CrossEntropyLoss.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, logits, labels) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, logits, labels) -&gt; Any:
+    &#34;&#34;&#34;Forward pass — compute module output from inputs.&#34;&#34;&#34;
+    return self.loss(logits, labels)</code></pre>
+</details>
+<div class="desc"><p>Forward pass — compute module output from inputs.</p></div>
 </dd>
 </dl>
 </dd>
@@ -1310,6 +1706,161 @@ and distributed data parallel (DDP) gradient accumulation without redundant all-
 </ul>
 </li>
 </ul>
+</dd>
+<dt id="neuralops.trainer.DiceLoss"><code class="flex name class">
+<span>class <span class="ident">DiceLoss</span></span>
+<span>(</span><span>smooth=1.0, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@LOSS_REGISTRY.register(&#34;dice&#34;)
+class DiceLoss(nn.Module):
+    def __init__(self, smooth=1.0, **kwargs) -&gt; None:
+        super().__init__()
+        self.smooth = smooth
+
+    def forward(self, logits, labels) -&gt; Any:
+        &#34;&#34;&#34;Forward pass — compute module output from inputs.&#34;&#34;&#34;
+        probs = F.softmax(logits, dim=-1)
+        one_hot = F.one_hot(labels, num_classes=probs.shape[-1]).float()
+        intersection = (probs * one_hot).sum(dim=0)
+        union = probs.sum(dim=0) + one_hot.sum(dim=0)
+        dice = (2.0 * intersection + self.smooth) / (union + self.smooth)
+        return 1 - dice.mean()</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.trainer.DiceLoss.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, logits, labels) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, logits, labels) -&gt; Any:
+    &#34;&#34;&#34;Forward pass — compute module output from inputs.&#34;&#34;&#34;
+    probs = F.softmax(logits, dim=-1)
+    one_hot = F.one_hot(labels, num_classes=probs.shape[-1]).float()
+    intersection = (probs * one_hot).sum(dim=0)
+    union = probs.sum(dim=0) + one_hot.sum(dim=0)
+    dice = (2.0 * intersection + self.smooth) / (union + self.smooth)
+    return 1 - dice.mean()</code></pre>
+</details>
+<div class="desc"><p>Forward pass — compute module output from inputs.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.trainer.FocalLoss"><code class="flex name class">
+<span>class <span class="ident">FocalLoss</span></span>
+<span>(</span><span>alpha=0.25, gamma=2.0, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@LOSS_REGISTRY.register(&#34;focal&#34;)
+class FocalLoss(nn.Module):
+    def __init__(self, alpha=0.25, gamma=2.0, **kwargs) -&gt; None:
+        super().__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+
+    def forward(self, logits, labels) -&gt; Any:
+        &#34;&#34;&#34;Forward pass — compute module output from inputs.&#34;&#34;&#34;
+        ce_loss = F.cross_entropy(logits, labels, reduction=&#34;none&#34;)
+        p_t = torch.exp(-ce_loss)
+        return (self.alpha * (1 - p_t) ** self.gamma * ce_loss).mean()</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.trainer.FocalLoss.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, logits, labels) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, logits, labels) -&gt; Any:
+    &#34;&#34;&#34;Forward pass — compute module output from inputs.&#34;&#34;&#34;
+    ce_loss = F.cross_entropy(logits, labels, reduction=&#34;none&#34;)
+    p_t = torch.exp(-ce_loss)
+    return (self.alpha * (1 - p_t) ** self.gamma * ce_loss).mean()</code></pre>
+</details>
+<div class="desc"><p>Forward pass — compute module output from inputs.</p></div>
+</dd>
+</dl>
 </dd>
 <dt id="neuralops.trainer.GradientNormCallback"><code class="flex name class">
 <span>class <span class="ident">GradientNormCallback</span></span>
@@ -1856,6 +2407,85 @@ def state(self) -&gt; Any:
 </dd>
 </dl>
 </dd>
+<dt id="neuralops.trainer.LabelSmoothingLoss"><code class="flex name class">
+<span>class <span class="ident">LabelSmoothingLoss</span></span>
+<span>(</span><span>smoothing=0.1, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@LOSS_REGISTRY.register(&#34;label_smoothing&#34;)
+class LabelSmoothingLoss(nn.Module):
+    def __init__(self, smoothing=0.1, **kwargs) -&gt; None:
+        super().__init__()
+        self.smoothing = smoothing
+        self.confidence = 1.0 - smoothing
+
+    def forward(self, logits, labels) -&gt; Any:
+        &#34;&#34;&#34;Forward pass — compute module output from inputs.&#34;&#34;&#34;
+        log_probs = F.log_softmax(logits, dim=-1)
+        labels = labels.to(log_probs.device)
+        nll = -log_probs.gather(dim=-1, index=labels.unsqueeze(1))
+        smooth = -log_probs.mean(dim=-1)
+        return (self.confidence * nll + self.smoothing * smooth).mean()</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.trainer.LabelSmoothingLoss.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, logits, labels) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, logits, labels) -&gt; Any:
+    &#34;&#34;&#34;Forward pass — compute module output from inputs.&#34;&#34;&#34;
+    log_probs = F.log_softmax(logits, dim=-1)
+    labels = labels.to(log_probs.device)
+    nll = -log_probs.gather(dim=-1, index=labels.unsqueeze(1))
+    smooth = -log_probs.mean(dim=-1)
+    return (self.confidence * nll + self.smoothing * smooth).mean()</code></pre>
+</details>
+<div class="desc"><p>Forward pass — compute module output from inputs.</p></div>
+</dd>
+</dl>
+</dd>
 <dt id="neuralops.trainer.MemoryCallback"><code class="flex name class">
 <span>class <span class="ident">MemoryCallback</span></span>
 </code></dt>
@@ -1903,6 +2533,80 @@ def state(self) -&gt; Any:
         logs[&#34;mps_memory&#34;] = torch.mps.current_allocated_memory() / 1024 / 1024</code></pre>
 </details>
 <div class="desc"><p>On log.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.trainer.PolyLoss"><code class="flex name class">
+<span>class <span class="ident">PolyLoss</span></span>
+<span>(</span><span>epsilon=1.0, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@LOSS_REGISTRY.register(&#34;poly&#34;)
+class PolyLoss(nn.Module):
+    def __init__(self, epsilon=1.0, **kwargs) -&gt; None:
+        super().__init__()
+        self.epsilon = epsilon
+
+    def forward(self, logits, labels) -&gt; Any:
+        &#34;&#34;&#34;Forward pass — compute module output from inputs.&#34;&#34;&#34;
+        ce = F.cross_entropy(logits, labels)
+        pt = torch.exp(-ce)
+        return ce + self.epsilon * (1 - pt)</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.trainer.PolyLoss.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, logits, labels) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, logits, labels) -&gt; Any:
+    &#34;&#34;&#34;Forward pass — compute module output from inputs.&#34;&#34;&#34;
+    ce = F.cross_entropy(logits, labels)
+    pt = torch.exp(-ce)
+    return ce + self.epsilon * (1 - pt)</code></pre>
+</details>
+<div class="desc"><p>Forward pass — compute module output from inputs.</p></div>
 </dd>
 </dl>
 </dd>
@@ -2349,29 +3053,7 @@ def state(self) -&gt; Any:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class RiemannianStiefelOptimizer(Optimizer):
-    &#34;&#34;&#34;
-    Riemannian Stiefel Manifold Optimizer with Retraction-based Updates.
-
-    Optimizes orthogonal low-rank components (U, V) on the Stiefel manifold:
-        St(p, n) = { W in R^{n x p} : W^T W = I_p }
-    via tangent space gradient projection and QR retraction, while optimizing
-    unconstrained Euclidean parameters (biases, layer norms, prediction heads)
-    using AdamW or SGD.
-
-    Args:
-        params: Model parameters, iterable of parameters or param groups, or nn.Module.
-        lr: Learning rate for Euclidean parameters (and default for Stiefel).
-        lr_stiefel: Specific learning rate for Stiefel manifold parameters (defaults to lr).
-        base_optimizer: Base optimizer for Euclidean parameters (&#39;adamw&#39; or &#39;sgd&#39;).
-        betas: AdamW beta coefficients (default: (0.9, 0.999)).
-        eps: AdamW epsilon for numerical stability (default: 1e-8).
-        weight_decay: Weight decay applied ONLY to Euclidean parameters (default: 0.01).
-        momentum: Momentum factor for SGD (default: 0.9).
-        stiefel_momentum: Optional Riemannian momentum factor (default: 0.0).
-        dampening: SGD dampening factor (default: 0.0).
-        nesterov: Enables Nesterov momentum for SGD (default: False).
-        orthogonality_threshold: Threshold for semi-orthogonality tensor auto-detection (default: 0.15).
-    &#34;&#34;&#34;
+    &#34;&#34;&#34;Riemannian Stiefel Manifold Optimizer with Retraction-based Updates.&#34;&#34;&#34;
 
     def __init__(
         self,
@@ -2424,7 +3106,6 @@ def state(self) -&gt; Any:
             **kwargs,
         )
 
-        # RESEARCH FIX: Extract named parameters or handle param groups robustly
         param_groups: list[dict[str, Any]] = []
 
         if isinstance(params, nn.Module):
@@ -2446,7 +3127,7 @@ def state(self) -&gt; Any:
                         &#34;manifold&#34;: &#34;stiefel&#34;,
                         &#34;lr&#34;: effective_lr_stiefel,
                         &#34;momentum&#34;: stiefel_momentum,
-                        &#34;weight_decay&#34;: 0.0,  # Zero weight decay on Stiefel manifold
+                        &#34;weight_decay&#34;: 0.0,
                     }
                 )
             if euclidean_p:
@@ -2465,7 +3146,6 @@ def state(self) -&gt; Any:
                     }
                 )
         elif isinstance(params, list) and len(params) &gt; 0 and isinstance(params[0], dict):
-            # List of param groups provided
             for group in params:
                 if &#34;manifold&#34; in group:
                     param_groups.append(group)
@@ -2499,7 +3179,6 @@ def state(self) -&gt; Any:
                         euc_group[&#34;manifold&#34;] = &#34;euclidean&#34;
                         param_groups.append(euc_group)
         else:
-            # Iterable of parameters or tuples (name, param)
             stiefel_p = []
             euclidean_p = []
             param_list = list(params)
@@ -2549,27 +3228,18 @@ def state(self) -&gt; Any:
 
     @staticmethod
     def project_gradient(W: torch.Tensor, G: torch.Tensor) -&gt; torch.Tensor:
-        &#34;&#34;&#34;Static utility for Riemannian gradient projection onto Stiefel tangent space.&#34;&#34;&#34;
+        &#34;&#34;&#34;Riemannian gradient projection onto Stiefel tangent space.&#34;&#34;&#34;
         return project_stiefel_gradient(W, G)
 
     @staticmethod
     def retract(W: torch.Tensor, grad_R: torch.Tensor, lr: float) -&gt; torch.Tensor:
-        &#34;&#34;&#34;Static utility for QR retraction onto Stiefel manifold.&#34;&#34;&#34;
+        &#34;&#34;&#34;QR retraction onto Stiefel manifold.&#34;&#34;&#34;
         return stiefel_qr_retraction(W, grad_R, lr)
 
     def check_orthogonality_error(
         self, param: torch.Tensor | None = None
     ) -&gt; float | dict[int, float]:
-        &#34;&#34;&#34;
-        Computes Frobenius norm orthogonality error ||W^T W - I||_F for manifold parameters.
-
-        Args:
-            param: Optional specific tensor to inspect. If None, checks all Stiefel parameters.
-
-        Returns:
-            float or Dict[int, float]: Orthogonality error (should be &lt; 1e-5).
-        &#34;&#34;&#34;
-        # RESEARCH FIX: Diagnostic validation of machine-precision orthogonality retention
+        &#34;&#34;&#34;Compute Frobenius norm orthogonality error for manifold parameters.&#34;&#34;&#34;
         if param is not None:
             w = param.detach()
             n, p = w.shape[-2], w.shape[-1]
@@ -2601,18 +3271,7 @@ def state(self) -&gt; Any:
 
     @torch.no_grad()
     def step(self, closure: Callable[[], float] | None = None) -&gt; float | None:
-        &#34;&#34;&#34;
-        Performs a single Riemannian optimization step.
-
-        Applies tangent space projection + QR retraction on Stiefel parameters
-        and AdamW or SGD updates on Euclidean parameters.
-
-        Args:
-            closure: Optional evaluation closure for reevaluating the model loss.
-
-        Returns:
-            Optional[float]: Loss evaluated by closure if provided.
-        &#34;&#34;&#34;
+        &#34;&#34;&#34;Execute single Riemannian optimization step.&#34;&#34;&#34;
         loss = None
         if closure is not None:
             with torch.enable_grad():
@@ -2623,7 +3282,6 @@ def state(self) -&gt; Any:
             lr = group[&#34;lr&#34;]
 
             if manifold == &#34;stiefel&#34;:
-                # RESEARCH FIX: Riemannian Stiefel update using tangent projection and QR retraction
                 momentum = group.get(&#34;momentum&#34;, 0.0)
                 for p in group[&#34;params&#34;]:
                     if p.grad is None:
@@ -2632,7 +3290,6 @@ def state(self) -&gt; Any:
                     if grad.is_sparse:
                         grad = grad.to_dense()
 
-                    # Project Euclidean gradient to Stiefel tangent space
                     grad_r = project_stiefel_gradient(p.data, grad)
 
                     state = self.state[p]
@@ -2646,17 +3303,14 @@ def state(self) -&gt; Any:
                     if momentum &gt; 0:
                         buf = state[&#34;momentum_buffer&#34;]
                         buf.mul_(momentum).add_(grad_r, alpha=1.0 - momentum)
-                        # Project momentum vector to ensure it remains in tangent space
                         tangent_update = project_stiefel_gradient(p.data, buf)
                     else:
                         tangent_update = grad_r
 
-                    # Retract along tangent direction onto Stiefel manifold
                     w_next = stiefel_qr_retraction(p.data, tangent_update, lr)
                     p.data.copy_(w_next)
 
             else:
-                # RESEARCH FIX: Euclidean AdamW / SGD updates for non-manifold parameters
                 base_opt = group.get(&#34;base_optimizer&#34;, &#34;adamw&#34;).lower()
                 weight_decay = group.get(&#34;weight_decay&#34;, 0.0)
 
@@ -2695,7 +3349,6 @@ def state(self) -&gt; Any:
                         p.data.add_(d_p, alpha=-lr)
 
                 else:
-                    # Default: AdamW with decoupled weight decay
                     betas = group.get(&#34;betas&#34;, (0.9, 0.999))
                     beta1, beta2 = betas
                     eps = group.get(&#34;eps&#34;, 1e-8)
@@ -2717,15 +3370,12 @@ def state(self) -&gt; Any:
                         exp_avg_sq = state[&#34;exp_avg_sq&#34;]
                         state[&#34;step&#34;] += 1
 
-                        # Decoupled weight decay
                         if weight_decay != 0.0:
                             p.data.mul_(1.0 - lr * weight_decay)
 
-                        # Biased first and second moment update
                         exp_avg.mul_(beta1).add_(grad, alpha=1.0 - beta1)
                         exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1.0 - beta2)
 
-                        # Bias corrections
                         bias_correction1 = 1.0 - beta1 ** state[&#34;step&#34;]
                         bias_correction2 = 1.0 - beta2 ** state[&#34;step&#34;]
                         step_size = lr / bias_correction1
@@ -2735,40 +3385,7 @@ def state(self) -&gt; Any:
 
         return loss</code></pre>
 </details>
-<div class="desc"><p>Riemannian Stiefel Manifold Optimizer with Retraction-based Updates.</p>
-<p>Optimizes orthogonal low-rank components (U, V) on the Stiefel manifold:
-St(p, n) = { W in R^{n x p} : W^T W = I_p }
-via tangent space gradient projection and QR retraction, while optimizing
-unconstrained Euclidean parameters (biases, layer norms, prediction heads)
-using AdamW or SGD.</p>
-<dl>
-<dt>Args</dt>
-<dt>-----=</dt>
-<dt><strong><code>params</code></strong></dt>
-<dd>Model parameters, iterable of parameters or param groups, or nn.Module.</dd>
-<dt><strong><code>lr</code></strong></dt>
-<dd>Learning rate for Euclidean parameters (and default for Stiefel).</dd>
-<dt><strong><code>lr_stiefel</code></strong></dt>
-<dd>Specific learning rate for Stiefel manifold parameters (defaults to lr).</dd>
-<dt><strong><code>base_optimizer</code></strong></dt>
-<dd>Base optimizer for Euclidean parameters ('adamw' or 'sgd').</dd>
-<dt><strong><code>betas</code></strong></dt>
-<dd>AdamW beta coefficients (default: (0.9, 0.999)).</dd>
-<dt><strong><code>eps</code></strong></dt>
-<dd>AdamW epsilon for numerical stability (default: 1e-8).</dd>
-<dt><strong><code>weight_decay</code></strong></dt>
-<dd>Weight decay applied ONLY to Euclidean parameters (default: 0.01).</dd>
-<dt><strong><code>momentum</code></strong></dt>
-<dd>Momentum factor for SGD (default: 0.9).</dd>
-<dt><strong><code>stiefel_momentum</code></strong></dt>
-<dd>Optional Riemannian momentum factor (default: 0.0).</dd>
-<dt><strong><code>dampening</code></strong></dt>
-<dd>SGD dampening factor (default: 0.0).</dd>
-<dt><strong><code>nesterov</code></strong></dt>
-<dd>Enables Nesterov momentum for SGD (default: False).</dd>
-<dt><strong><code>orthogonality_threshold</code></strong></dt>
-<dd>Threshold for semi-orthogonality tensor auto-detection (default: 0.15).</dd>
-</dl></div>
+<div class="desc"><p>Riemannian Stiefel Manifold Optimizer with Retraction-based Updates.</p></div>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>torch.optim.optimizer.Optimizer</li>
@@ -2785,10 +3402,10 @@ using AdamW or SGD.</p>
 </summary>
 <pre><code class="python">@staticmethod
 def project_gradient(W: torch.Tensor, G: torch.Tensor) -&gt; torch.Tensor:
-    &#34;&#34;&#34;Static utility for Riemannian gradient projection onto Stiefel tangent space.&#34;&#34;&#34;
+    &#34;&#34;&#34;Riemannian gradient projection onto Stiefel tangent space.&#34;&#34;&#34;
     return project_stiefel_gradient(W, G)</code></pre>
 </details>
-<div class="desc"><p>Static utility for Riemannian gradient projection onto Stiefel tangent space.</p></div>
+<div class="desc"><p>Riemannian gradient projection onto Stiefel tangent space.</p></div>
 </dd>
 <dt id="neuralops.trainer.RiemannianStiefelOptimizer.retract"><code class="name flex">
 <span>def <span class="ident">retract</span></span>(<span>W: torch.Tensor, grad_R: torch.Tensor, lr: float) ‑> torch.Tensor</span>
@@ -2800,10 +3417,10 @@ def project_gradient(W: torch.Tensor, G: torch.Tensor) -&gt; torch.Tensor:
 </summary>
 <pre><code class="python">@staticmethod
 def retract(W: torch.Tensor, grad_R: torch.Tensor, lr: float) -&gt; torch.Tensor:
-    &#34;&#34;&#34;Static utility for QR retraction onto Stiefel manifold.&#34;&#34;&#34;
+    &#34;&#34;&#34;QR retraction onto Stiefel manifold.&#34;&#34;&#34;
     return stiefel_qr_retraction(W, grad_R, lr)</code></pre>
 </details>
-<div class="desc"><p>Static utility for QR retraction onto Stiefel manifold.</p></div>
+<div class="desc"><p>QR retraction onto Stiefel manifold.</p></div>
 </dd>
 </dl>
 <h3>Methods</h3>
@@ -2819,16 +3436,7 @@ def retract(W: torch.Tensor, grad_R: torch.Tensor, lr: float) -&gt; torch.Tensor
 <pre><code class="python">def check_orthogonality_error(
     self, param: torch.Tensor | None = None
 ) -&gt; float | dict[int, float]:
-    &#34;&#34;&#34;
-    Computes Frobenius norm orthogonality error ||W^T W - I||_F for manifold parameters.
-
-    Args:
-        param: Optional specific tensor to inspect. If None, checks all Stiefel parameters.
-
-    Returns:
-        float or Dict[int, float]: Orthogonality error (should be &lt; 1e-5).
-    &#34;&#34;&#34;
-    # RESEARCH FIX: Diagnostic validation of machine-precision orthogonality retention
+    &#34;&#34;&#34;Compute Frobenius norm orthogonality error for manifold parameters.&#34;&#34;&#34;
     if param is not None:
         w = param.detach()
         n, p = w.shape[-2], w.shape[-1]
@@ -2858,17 +3466,7 @@ def retract(W: torch.Tensor, grad_R: torch.Tensor, lr: float) -&gt; torch.Tensor
                     idx += 1
     return errors</code></pre>
 </details>
-<div class="desc"><p>Computes Frobenius norm orthogonality error ||W^T W - I||_F for manifold parameters.</p>
-<dl>
-<dt>Args</dt>
-<dt>-----=</dt>
-<dt><strong><code>param</code></strong></dt>
-<dd>Optional specific tensor to inspect. If None, checks all Stiefel parameters.</dd>
-<dt>Returns</dt>
-<dt>-----=</dt>
-<dt><code>float</code> or <code>Dict[int, float]</code></dt>
-<dd>Orthogonality error (should be &lt; 1e-5).</dd>
-</dl></div>
+<div class="desc"><p>Compute Frobenius norm orthogonality error for manifold parameters.</p></div>
 </dd>
 <dt id="neuralops.trainer.RiemannianStiefelOptimizer.step"><code class="name flex">
 <span>def <span class="ident">step</span></span>(<span>self, closure: Callable[[], float] | None = None) ‑> float | None</span>
@@ -2880,18 +3478,7 @@ def retract(W: torch.Tensor, grad_R: torch.Tensor, lr: float) -&gt; torch.Tensor
 </summary>
 <pre><code class="python">@torch.no_grad()
 def step(self, closure: Callable[[], float] | None = None) -&gt; float | None:
-    &#34;&#34;&#34;
-    Performs a single Riemannian optimization step.
-
-    Applies tangent space projection + QR retraction on Stiefel parameters
-    and AdamW or SGD updates on Euclidean parameters.
-
-    Args:
-        closure: Optional evaluation closure for reevaluating the model loss.
-
-    Returns:
-        Optional[float]: Loss evaluated by closure if provided.
-    &#34;&#34;&#34;
+    &#34;&#34;&#34;Execute single Riemannian optimization step.&#34;&#34;&#34;
     loss = None
     if closure is not None:
         with torch.enable_grad():
@@ -2902,7 +3489,6 @@ def step(self, closure: Callable[[], float] | None = None) -&gt; float | None:
         lr = group[&#34;lr&#34;]
 
         if manifold == &#34;stiefel&#34;:
-            # RESEARCH FIX: Riemannian Stiefel update using tangent projection and QR retraction
             momentum = group.get(&#34;momentum&#34;, 0.0)
             for p in group[&#34;params&#34;]:
                 if p.grad is None:
@@ -2911,7 +3497,6 @@ def step(self, closure: Callable[[], float] | None = None) -&gt; float | None:
                 if grad.is_sparse:
                     grad = grad.to_dense()
 
-                # Project Euclidean gradient to Stiefel tangent space
                 grad_r = project_stiefel_gradient(p.data, grad)
 
                 state = self.state[p]
@@ -2925,17 +3510,14 @@ def step(self, closure: Callable[[], float] | None = None) -&gt; float | None:
                 if momentum &gt; 0:
                     buf = state[&#34;momentum_buffer&#34;]
                     buf.mul_(momentum).add_(grad_r, alpha=1.0 - momentum)
-                    # Project momentum vector to ensure it remains in tangent space
                     tangent_update = project_stiefel_gradient(p.data, buf)
                 else:
                     tangent_update = grad_r
 
-                # Retract along tangent direction onto Stiefel manifold
                 w_next = stiefel_qr_retraction(p.data, tangent_update, lr)
                 p.data.copy_(w_next)
 
         else:
-            # RESEARCH FIX: Euclidean AdamW / SGD updates for non-manifold parameters
             base_opt = group.get(&#34;base_optimizer&#34;, &#34;adamw&#34;).lower()
             weight_decay = group.get(&#34;weight_decay&#34;, 0.0)
 
@@ -2974,7 +3556,6 @@ def step(self, closure: Callable[[], float] | None = None) -&gt; float | None:
                     p.data.add_(d_p, alpha=-lr)
 
             else:
-                # Default: AdamW with decoupled weight decay
                 betas = group.get(&#34;betas&#34;, (0.9, 0.999))
                 beta1, beta2 = betas
                 eps = group.get(&#34;eps&#34;, 1e-8)
@@ -2996,15 +3577,12 @@ def step(self, closure: Callable[[], float] | None = None) -&gt; float | None:
                     exp_avg_sq = state[&#34;exp_avg_sq&#34;]
                     state[&#34;step&#34;] += 1
 
-                    # Decoupled weight decay
                     if weight_decay != 0.0:
                         p.data.mul_(1.0 - lr * weight_decay)
 
-                    # Biased first and second moment update
                     exp_avg.mul_(beta1).add_(grad, alpha=1.0 - beta1)
                     exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1.0 - beta2)
 
-                    # Bias corrections
                     bias_correction1 = 1.0 - beta1 ** state[&#34;step&#34;]
                     bias_correction2 = 1.0 - beta2 ** state[&#34;step&#34;]
                     step_size = lr / bias_correction1
@@ -3014,19 +3592,7 @@ def step(self, closure: Callable[[], float] | None = None) -&gt; float | None:
 
     return loss</code></pre>
 </details>
-<div class="desc"><p>Performs a single Riemannian optimization step.</p>
-<p>Applies tangent space projection + QR retraction on Stiefel parameters
-and AdamW or SGD updates on Euclidean parameters.</p>
-<dl>
-<dt>Args</dt>
-<dt>-----=</dt>
-<dt><strong><code>closure</code></strong></dt>
-<dd>Optional evaluation closure for reevaluating the model loss.</dd>
-<dt>Returns</dt>
-<dt>-----=</dt>
-<dt><code>Optional[float]</code></dt>
-<dd>Loss evaluated by closure if provided.</dd>
-</dl></div>
+<div class="desc"><p>Execute single Riemannian optimization step.</p></div>
 </dd>
 </dl>
 </dd>
@@ -3227,7 +3793,7 @@ and AdamW or SGD updates on Euclidean parameters.</p>
 <div class="desc"><p>Get.</p></div>
 </dd>
 <dt id="neuralops.trainer.TrainerRegistry.list"><code class="name flex">
-<span>def <span class="ident">list</span></span>(<span>) ‑> <classmethod(<function <a title="neuralops.trainer.TrainerRegistry.list" href="#neuralops.trainer.TrainerRegistry.list">TrainerRegistry.list()</a> at 0x12e97cb40>)></span>
+<span>def <span class="ident">list</span></span>(<span>) ‑> <classmethod(<function <a title="neuralops.trainer.TrainerRegistry.list" href="#neuralops.trainer.TrainerRegistry.list">TrainerRegistry.list()</a> at 0x12f024bf0>)></span>
 </code></dt>
 <dd>
 <div class="desc"><p>List.</p></div>
@@ -3263,7 +3829,7 @@ and AdamW or SGD updates on Euclidean parameters.</p>
 <li><code><a title="neuralops.trainer.losses" href="losses.html">neuralops.trainer.losses</a></code></li>
 <li><code><a title="neuralops.trainer.methods" href="methods/index.html">neuralops.trainer.methods</a></code></li>
 <li><code><a title="neuralops.trainer.metrics" href="metrics.html">neuralops.trainer.metrics</a></code></li>
-<li><code><a title="neuralops.trainer.optimizers" href="optimizers.html">neuralops.trainer.optimizers</a></code></li>
+<li><code><a title="neuralops.trainer.optimizers" href="optimizers/index.html">neuralops.trainer.optimizers</a></code></li>
 <li><code><a title="neuralops.trainer.registry" href="registry.html">neuralops.trainer.registry</a></code></li>
 <li><code><a title="neuralops.trainer.results_manager" href="results_manager.html">neuralops.trainer.results_manager</a></code></li>
 <li><code><a title="neuralops.trainer.rl_trainer" href="rl_trainer.html">neuralops.trainer.rl_trainer</a></code></li>
@@ -3286,6 +3852,21 @@ and AdamW or SGD updates on Euclidean parameters.</p>
 <li><code><a title="neuralops.trainer.compute_metrics" href="#neuralops.trainer.compute_metrics">compute_metrics</a></code></li>
 <li><code><a title="neuralops.trainer.compute_pearson_spearman" href="#neuralops.trainer.compute_pearson_spearman">compute_pearson_spearman</a></code></li>
 <li><code><a title="neuralops.trainer.count_parameters" href="#neuralops.trainer.count_parameters">count_parameters</a></code></li>
+<li><code><a title="neuralops.trainer.create_adabelief" href="#neuralops.trainer.create_adabelief">create_adabelief</a></code></li>
+<li><code><a title="neuralops.trainer.create_adam" href="#neuralops.trainer.create_adam">create_adam</a></code></li>
+<li><code><a title="neuralops.trainer.create_adamw" href="#neuralops.trainer.create_adamw">create_adamw</a></code></li>
+<li><code><a title="neuralops.trainer.create_cosine" href="#neuralops.trainer.create_cosine">create_cosine</a></code></li>
+<li><code><a title="neuralops.trainer.create_lamb" href="#neuralops.trainer.create_lamb">create_lamb</a></code></li>
+<li><code><a title="neuralops.trainer.create_lars" href="#neuralops.trainer.create_lars">create_lars</a></code></li>
+<li><code><a title="neuralops.trainer.create_linear" href="#neuralops.trainer.create_linear">create_linear</a></code></li>
+<li><code><a title="neuralops.trainer.create_muon" href="#neuralops.trainer.create_muon">create_muon</a></code></li>
+<li><code><a title="neuralops.trainer.create_muon_adamw_reg" href="#neuralops.trainer.create_muon_adamw_reg">create_muon_adamw_reg</a></code></li>
+<li><code><a title="neuralops.trainer.create_onecycle" href="#neuralops.trainer.create_onecycle">create_onecycle</a></code></li>
+<li><code><a title="neuralops.trainer.create_poly" href="#neuralops.trainer.create_poly">create_poly</a></code></li>
+<li><code><a title="neuralops.trainer.create_ranger" href="#neuralops.trainer.create_ranger">create_ranger</a></code></li>
+<li><code><a title="neuralops.trainer.create_riemannian_stiefel" href="#neuralops.trainer.create_riemannian_stiefel">create_riemannian_stiefel</a></code></li>
+<li><code><a title="neuralops.trainer.create_rop" href="#neuralops.trainer.create_rop">create_rop</a></code></li>
+<li><code><a title="neuralops.trainer.create_sgd" href="#neuralops.trainer.create_sgd">create_sgd</a></code></li>
 <li><code><a title="neuralops.trainer.evaluate_model" href="#neuralops.trainer.evaluate_model">evaluate_model</a></code></li>
 <li><code><a title="neuralops.trainer.get_task_metrics" href="#neuralops.trainer.get_task_metrics">get_task_metrics</a></code></li>
 <li><code><a title="neuralops.trainer.get_trainer" href="#neuralops.trainer.get_trainer">get_trainer</a></code></li>
@@ -3307,10 +3888,34 @@ and AdamW or SGD updates on Euclidean parameters.</p>
 </ul>
 </li>
 <li>
+<h4><code><a title="neuralops.trainer.ContrastiveLoss" href="#neuralops.trainer.ContrastiveLoss">ContrastiveLoss</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.trainer.ContrastiveLoss.forward" href="#neuralops.trainer.ContrastiveLoss.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.trainer.CrossEntropyLoss" href="#neuralops.trainer.CrossEntropyLoss">CrossEntropyLoss</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.trainer.CrossEntropyLoss.forward" href="#neuralops.trainer.CrossEntropyLoss.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
 <h4><code><a title="neuralops.trainer.CustomLoopTrainer" href="#neuralops.trainer.CustomLoopTrainer">CustomLoopTrainer</a></code></h4>
 <ul class="">
 <li><code><a title="neuralops.trainer.CustomLoopTrainer.train" href="#neuralops.trainer.CustomLoopTrainer.train">train</a></code></li>
 <li><code><a title="neuralops.trainer.CustomLoopTrainer.train_epoch" href="#neuralops.trainer.CustomLoopTrainer.train_epoch">train_epoch</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.trainer.DiceLoss" href="#neuralops.trainer.DiceLoss">DiceLoss</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.trainer.DiceLoss.forward" href="#neuralops.trainer.DiceLoss.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.trainer.FocalLoss" href="#neuralops.trainer.FocalLoss">FocalLoss</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.trainer.FocalLoss.forward" href="#neuralops.trainer.FocalLoss.forward">forward</a></code></li>
 </ul>
 </li>
 <li>
@@ -3340,9 +3945,21 @@ and AdamW or SGD updates on Euclidean parameters.</p>
 </ul>
 </li>
 <li>
+<h4><code><a title="neuralops.trainer.LabelSmoothingLoss" href="#neuralops.trainer.LabelSmoothingLoss">LabelSmoothingLoss</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.trainer.LabelSmoothingLoss.forward" href="#neuralops.trainer.LabelSmoothingLoss.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
 <h4><code><a title="neuralops.trainer.MemoryCallback" href="#neuralops.trainer.MemoryCallback">MemoryCallback</a></code></h4>
 <ul class="">
 <li><code><a title="neuralops.trainer.MemoryCallback.on_log" href="#neuralops.trainer.MemoryCallback.on_log">on_log</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.trainer.PolyLoss" href="#neuralops.trainer.PolyLoss">PolyLoss</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.trainer.PolyLoss.forward" href="#neuralops.trainer.PolyLoss.forward">forward</a></code></li>
 </ul>
 </li>
 <li>

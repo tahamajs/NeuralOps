@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.runners.monitor.server API documentation</title>
+<meta name="description" content="HTTP Server and request handler implementation for NeuralOps monitor.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.runners.monitor.server</code></h1>
+</header>
+<section id="section-intro">
+<p>HTTP Server and request handler implementation for NeuralOps monitor.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.runners.monitor.server.run_server"><code class="name flex">
+<span>def <span class="ident">run_server</span></span>(<span>port: int = 8080) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_server(port: int = 8080) -&gt; None:
+    &#34;&#34;&#34;Run monitor server forever on target port.&#34;&#34;&#34;
+    import socketserver
+
+    socketserver.ThreadingTCPServer.allow_reuse_address = True
+    with socketserver.ThreadingTCPServer((&#34;&#34;, port), ComprehensiveStudioHandler) as httpd:
+        print(f&#34;Full Studio UI &amp; Telemetry API active on http://localhost:{port}&#34;)
+        httpd.serve_forever()</code></pre>
+</details>
+<div class="desc"><p>Run monitor server forever on target port.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.runners.monitor.server.ComprehensiveStudioHandler"><code class="flex name class">
+<span>class <span class="ident">ComprehensiveStudioHandler</span></span>
+<span>(</span><span>*args: Any, **kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ComprehensiveStudioHandler(http.server.SimpleHTTPRequestHandler):
+    &#34;&#34;&#34;HTTP request handler routing telemetry, API, and static file endpoints.&#34;&#34;&#34;
+
+    project_dir: str = os.getcwd()
+    web_dir: str = os.path.join(os.getcwd(), &#34;Docs&#34;)
+    docs_dir: str = os.path.join(os.getcwd(), &#34;Docs&#34;)
+    harvested_json: str = os.path.join(os.getcwd(), &#34;results&#34;, &#34;harvested_benchmark_data.json&#34;)
+    is_local_gpu: bool = False
+
+    def __init__(self, *args: Any, **kwargs: Any) -&gt; None:
+        super().__init__(*args, directory=self.web_dir, **kwargs)
+
+    def _send_json(self, data: Any, status: int = 200) -&gt; None:
+        self.send_response(status)
+        self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
+        self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
+        self.end_headers()
+        self.wfile.write(json.dumps(data).encode(&#34;utf-8&#34;))
+
+    def do_GET(self) -&gt; None:
+        &#34;&#34;&#34;Route GET requests to specific API handlers or fall back to static files.&#34;&#34;&#34;
+        parsed = urllib.parse.urlparse(self.path)
+        path = parsed.path
+        query = urllib.parse.parse_qs(parsed.query)
+
+        if path == &#34;/favicon.ico&#34;:
+            self.send_response(200)
+            self.send_header(&#34;Content-Type&#34;, &#34;image/svg+xml&#34;)
+            self.send_header(&#34;Cache-Control&#34;, &#34;public, max-age=86400&#34;)
+            self.end_headers()
+            self.wfile.write(render_favicon())
+            return
+
+        if path == &#34;/api/stats&#34;:
+            stats = build_aggregated_stats(
+                self.project_dir, self.harvested_json, self.docs_dir, self.is_local_gpu
+            )
+            self._send_json(stats)
+            return
+
+        if path == &#34;/api/logs&#34;:
+            source = query.get(&#34;source&#34;, [&#34;active&#34;])[0]
+            module_arg = query.get(&#34;module&#34;, [None])[0]
+            lines_arg = int(query.get(&#34;lines&#34;, [&#34;200&#34;])[0])
+            logs_res = get_live_logs(
+                self.project_dir, source=source, module=module_arg, lines=lines_arg, is_local_gpu=self.is_local_gpu
+            )
+            self._send_json(logs_res)
+            return
+
+        if path == &#34;/api/loss_history&#34;:
+            module_arg = query.get(&#34;module&#34;, [None])[0]
+            model_arg = query.get(&#34;model&#34;, [None])[0]
+            loss_res = get_loss_history(
+                self.project_dir, module=module_arg, model=model_arg, is_local_gpu=self.is_local_gpu
+            )
+            self._send_json(loss_res)
+            return
+
+        if path == &#34;/api/module_detail&#34;:
+            mod_name = query.get(&#34;module&#34;, [&#34;hgrn2_gated_deltanet&#34;])[0]
+            detail_res = get_module_detail(self.docs_dir, self.project_dir, mod_name)
+            self._send_json(detail_res)
+            return
+
+        if path == &#34;/api/run/stop&#34;:
+            stop_res = stop_current_run()
+            self._send_json(stop_res)
+            return
+
+        if path == &#34;/api/doc&#34;:
+            mod_name = query.get(&#34;module&#34;, [&#34;svd_linear_attention&#34;])[0]
+            doc_res = get_doc_content(self.docs_dir, self.project_dir, mod_name)
+            self._send_json(doc_res)
+            return
+
+        if path == &#34;/api/export/csv&#34;:
+            stats = build_aggregated_stats(
+                self.project_dir, self.harvested_json, self.docs_dir, self.is_local_gpu
+            )
+            csv_bytes = render_csv_export(stats.get(&#34;results&#34;, []))
+            self.send_response(200)
+            self.send_header(&#34;Content-Type&#34;, &#34;text/csv; charset=utf-8&#34;)
+            self.send_header(
+                &#34;Content-Disposition&#34;, &#39;attachment; filename=&#34;neuralops_benchmark_results.csv&#34;&#39;
+            )
+            self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
+            self.end_headers()
+            self.wfile.write(csv_bytes)
+            return
+
+        if path == &#34;/api/export/json&#34;:
+            stats = build_aggregated_stats(
+                self.project_dir, self.harvested_json, self.docs_dir, self.is_local_gpu
+            )
+            json_bytes = render_json_export(stats)
+            self.send_response(200)
+            self.send_header(&#34;Content-Type&#34;, &#34;application/json; charset=utf-8&#34;)
+            self.send_header(
+                &#34;Content-Disposition&#34;, &#39;attachment; filename=&#34;neuralops_benchmark_results.json&#34;&#39;
+            )
+            self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
+            self.end_headers()
+            self.wfile.write(json_bytes)
+            return
+
+        if path == &#34;/api/docs_list&#34;:
+            idx = get_module_doc_index(self.docs_dir)
+            clean_list = sorted(list(set(idx.keys())))
+            self._send_json({&#34;success&#34;: True, &#34;modules&#34;: clean_list, &#34;count&#34;: len(clean_list)})
+            return
+
+        super().do_GET()
+
+    def do_POST(self) -&gt; None:
+        &#34;&#34;&#34;Route POST actions (stop, launch).&#34;&#34;&#34;
+        parsed = urllib.parse.urlparse(self.path)
+        path = parsed.path
+        if path == &#34;/api/run/stop&#34;:
+            stop_res = stop_current_run()
+            self._send_json(stop_res)
+        elif path == &#34;/api/run/launch&#34;:
+            length = int(self.headers.get(&#34;content-length&#34;, 0))
+            body = self.rfile.read(length).decode(&#34;utf-8&#34;) if length &gt; 0 else &#34;{}&#34;
+            try:
+                params = json.loads(body)
+            except Exception:
+                params = {}
+            launch_res = launch_new_run(params)
+            self._send_json(launch_res)
+        else:
+            self.send_response(404)
+            self.end_headers()</code></pre>
+</details>
+<div class="desc"><p>HTTP request handler routing telemetry, API, and static file endpoints.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>http.server.SimpleHTTPRequestHandler</li>
+<li>http.server.BaseHTTPRequestHandler</li>
+<li>socketserver.StreamRequestHandler</li>
+<li>socketserver.BaseRequestHandler</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.runners.monitor.server.ComprehensiveStudioHandler.docs_dir"><code class="name">var <span class="ident">docs_dir</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.runners.monitor.server.ComprehensiveStudioHandler.harvested_json"><code class="name">var <span class="ident">harvested_json</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.runners.monitor.server.ComprehensiveStudioHandler.is_local_gpu"><code class="name">var <span class="ident">is_local_gpu</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.runners.monitor.server.ComprehensiveStudioHandler.project_dir"><code class="name">var <span class="ident">project_dir</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.runners.monitor.server.ComprehensiveStudioHandler.web_dir"><code class="name">var <span class="ident">web_dir</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.runners.monitor.server.ComprehensiveStudioHandler.do_GET"><code class="name flex">
+<span>def <span class="ident">do_GET</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def do_GET(self) -&gt; None:
+    &#34;&#34;&#34;Route GET requests to specific API handlers or fall back to static files.&#34;&#34;&#34;
+    parsed = urllib.parse.urlparse(self.path)
+    path = parsed.path
+    query = urllib.parse.parse_qs(parsed.query)
+
+    if path == &#34;/favicon.ico&#34;:
+        self.send_response(200)
+        self.send_header(&#34;Content-Type&#34;, &#34;image/svg+xml&#34;)
+        self.send_header(&#34;Cache-Control&#34;, &#34;public, max-age=86400&#34;)
+        self.end_headers()
+        self.wfile.write(render_favicon())
+        return
+
+    if path == &#34;/api/stats&#34;:
+        stats = build_aggregated_stats(
+            self.project_dir, self.harvested_json, self.docs_dir, self.is_local_gpu
+        )
+        self._send_json(stats)
+        return
+
+    if path == &#34;/api/logs&#34;:
+        source = query.get(&#34;source&#34;, [&#34;active&#34;])[0]
+        module_arg = query.get(&#34;module&#34;, [None])[0]
+        lines_arg = int(query.get(&#34;lines&#34;, [&#34;200&#34;])[0])
+        logs_res = get_live_logs(
+            self.project_dir, source=source, module=module_arg, lines=lines_arg, is_local_gpu=self.is_local_gpu
+        )
+        self._send_json(logs_res)
+        return
+
+    if path == &#34;/api/loss_history&#34;:
+        module_arg = query.get(&#34;module&#34;, [None])[0]
+        model_arg = query.get(&#34;model&#34;, [None])[0]
+        loss_res = get_loss_history(
+            self.project_dir, module=module_arg, model=model_arg, is_local_gpu=self.is_local_gpu
+        )
+        self._send_json(loss_res)
+        return
+
+    if path == &#34;/api/module_detail&#34;:
+        mod_name = query.get(&#34;module&#34;, [&#34;hgrn2_gated_deltanet&#34;])[0]
+        detail_res = get_module_detail(self.docs_dir, self.project_dir, mod_name)
+        self._send_json(detail_res)
+        return
+
+    if path == &#34;/api/run/stop&#34;:
+        stop_res = stop_current_run()
+        self._send_json(stop_res)
+        return
+
+    if path == &#34;/api/doc&#34;:
+        mod_name = query.get(&#34;module&#34;, [&#34;svd_linear_attention&#34;])[0]
+        doc_res = get_doc_content(self.docs_dir, self.project_dir, mod_name)
+        self._send_json(doc_res)
+        return
+
+    if path == &#34;/api/export/csv&#34;:
+        stats = build_aggregated_stats(
+            self.project_dir, self.harvested_json, self.docs_dir, self.is_local_gpu
+        )
+        csv_bytes = render_csv_export(stats.get(&#34;results&#34;, []))
+        self.send_response(200)
+        self.send_header(&#34;Content-Type&#34;, &#34;text/csv; charset=utf-8&#34;)
+        self.send_header(
+            &#34;Content-Disposition&#34;, &#39;attachment; filename=&#34;neuralops_benchmark_results.csv&#34;&#39;
+        )
+        self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
+        self.end_headers()
+        self.wfile.write(csv_bytes)
+        return
+
+    if path == &#34;/api/export/json&#34;:
+        stats = build_aggregated_stats(
+            self.project_dir, self.harvested_json, self.docs_dir, self.is_local_gpu
+        )
+        json_bytes = render_json_export(stats)
+        self.send_response(200)
+        self.send_header(&#34;Content-Type&#34;, &#34;application/json; charset=utf-8&#34;)
+        self.send_header(
+            &#34;Content-Disposition&#34;, &#39;attachment; filename=&#34;neuralops_benchmark_results.json&#34;&#39;
+        )
+        self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
+        self.end_headers()
+        self.wfile.write(json_bytes)
+        return
+
+    if path == &#34;/api/docs_list&#34;:
+        idx = get_module_doc_index(self.docs_dir)
+        clean_list = sorted(list(set(idx.keys())))
+        self._send_json({&#34;success&#34;: True, &#34;modules&#34;: clean_list, &#34;count&#34;: len(clean_list)})
+        return
+
+    super().do_GET()</code></pre>
+</details>
+<div class="desc"><p>Route GET requests to specific API handlers or fall back to static files.</p></div>
+</dd>
+<dt id="neuralops.runners.monitor.server.ComprehensiveStudioHandler.do_POST"><code class="name flex">
+<span>def <span class="ident">do_POST</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def do_POST(self) -&gt; None:
+    &#34;&#34;&#34;Route POST actions (stop, launch).&#34;&#34;&#34;
+    parsed = urllib.parse.urlparse(self.path)
+    path = parsed.path
+    if path == &#34;/api/run/stop&#34;:
+        stop_res = stop_current_run()
+        self._send_json(stop_res)
+    elif path == &#34;/api/run/launch&#34;:
+        length = int(self.headers.get(&#34;content-length&#34;, 0))
+        body = self.rfile.read(length).decode(&#34;utf-8&#34;) if length &gt; 0 else &#34;{}&#34;
+        try:
+            params = json.loads(body)
+        except Exception:
+            params = {}
+        launch_res = launch_new_run(params)
+        self._send_json(launch_res)
+    else:
+        self.send_response(404)
+        self.end_headers()</code></pre>
+</details>
+<div class="desc"><p>Route POST actions (stop, launch).</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.runners.monitor" href="index.html">neuralops.runners.monitor</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.runners.monitor.server.run_server" href="#neuralops.runners.monitor.server.run_server">run_server</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.runners.monitor.server.ComprehensiveStudioHandler" href="#neuralops.runners.monitor.server.ComprehensiveStudioHandler">ComprehensiveStudioHandler</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.runners.monitor.server.ComprehensiveStudioHandler.do_GET" href="#neuralops.runners.monitor.server.ComprehensiveStudioHandler.do_GET">do_GET</a></code></li>
+<li><code><a title="neuralops.runners.monitor.server.ComprehensiveStudioHandler.do_POST" href="#neuralops.runners.monitor.server.ComprehensiveStudioHandler.do_POST">do_POST</a></code></li>
+<li><code><a title="neuralops.runners.monitor.server.ComprehensiveStudioHandler.docs_dir" href="#neuralops.runners.monitor.server.ComprehensiveStudioHandler.docs_dir">docs_dir</a></code></li>
+<li><code><a title="neuralops.runners.monitor.server.ComprehensiveStudioHandler.harvested_json" href="#neuralops.runners.monitor.server.ComprehensiveStudioHandler.harvested_json">harvested_json</a></code></li>
+<li><code><a title="neuralops.runners.monitor.server.ComprehensiveStudioHandler.is_local_gpu" href="#neuralops.runners.monitor.server.ComprehensiveStudioHandler.is_local_gpu">is_local_gpu</a></code></li>
+<li><code><a title="neuralops.runners.monitor.server.ComprehensiveStudioHandler.project_dir" href="#neuralops.runners.monitor.server.ComprehensiveStudioHandler.project_dir">project_dir</a></code></li>
+<li><code><a title="neuralops.runners.monitor.server.ComprehensiveStudioHandler.web_dir" href="#neuralops.runners.monitor.server.ComprehensiveStudioHandler.web_dir">web_dir</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

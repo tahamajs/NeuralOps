@@ -1,0 +1,1104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.utils.compat API documentation</title>
+<meta name="description" content="Family-aware, opt-in compatibility helpers for attention modules.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.utils.compat</code></h1>
+</header>
+<section id="section-intro">
+<p>Family-aware, opt-in compatibility helpers for attention modules.</p>
+</section>
+<section>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+<dl>
+<dt><code class="name"><a title="neuralops.utils.compat.aliases" href="aliases.html">neuralops.utils.compat.aliases</a></code></dt>
+<dd>
+<div class="desc"><p>Projection attribute alias helpers for cross-architecture attention modules.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.utils.compat.architectures" href="architectures.html">neuralops.utils.compat.architectures</a></code></dt>
+<dd>
+<div class="desc"><p>Architectural utilities and family-aware adapters for model compatibility.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.utils.compat.param_recovery" href="param_recovery.html">neuralops.utils.compat.param_recovery</a></code></dt>
+<dd>
+<div class="desc"><p>Parameter recovery selection and budget pruning for compressed models.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.utils.compat._is_protected_param"><code class="name flex">
+<span>def <span class="ident">_is_protected_param</span></span>(<span>name: str) ‑> bool</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def _is_protected_param(name: str) -&gt; bool:
+    &#34;&#34;&#34;Check if parameter name matches any protected recovery keyword.&#34;&#34;&#34;
+    n_l = name.lower()
+    return any(k in n_l for k in PROTECTED_KEYWORDS)</code></pre>
+</details>
+<div class="desc"><p>Check if parameter name matches any protected recovery keyword.</p></div>
+</dd>
+<dt id="neuralops.utils.compat.causal_mask_from_attention_mask"><code class="name flex">
+<span>def <span class="ident">causal_mask_from_attention_mask</span></span>(<span>attention_mask: torch.Tensor | None, adapter: ModelAdapter) ‑> torch.Tensor | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def causal_mask_from_attention_mask(
+    attention_mask: torch.Tensor | None,
+    adapter: ModelAdapter,
+) -&gt; torch.Tensor | None:
+    &#34;&#34;&#34;Return the mask without discarding decoder causal visibility semantics.
+
+    Args:
+        attention_mask: Source attention mask tensor or None.
+        adapter: ModelAdapter instance indicating whether model is causal.
+
+    Returns:
+        Adapted causal or non-causal boolean mask.
+    &#34;&#34;&#34;
+    if attention_mask is None:
+        return None
+    if adapter.causal and attention_mask.dim() == 4:
+        return attention_mask
+    if adapter.causal and attention_mask.dim() == 2:
+        bsz, seqlen = attention_mask.shape
+        causal = torch.ones(
+            (seqlen, seqlen),
+            dtype=torch.bool,
+            device=attention_mask.device,
+        ).tril()
+        return causal[None, None, :, :] &amp; attention_mask.bool()[:, None, None, :]
+    if not adapter.causal and attention_mask.dim() == 2:
+        return attention_mask.bool()[:, None, None, :]
+    if not adapter.causal:
+        return attention_mask
+    raise QwenIncompatibleError(f&#34;causal_mask_format_{attention_mask.dim()}d_unsupported&#34;)</code></pre>
+</details>
+<div class="desc"><p>Return the mask without discarding decoder causal visibility semantics.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>attention_mask</code></strong></dt>
+<dd>Source attention mask tensor or None.</dd>
+<dt><strong><code>adapter</code></strong></dt>
+<dd>ModelAdapter instance indicating whether model is causal.</dd>
+</dl>
+<p>Returns
+-----=
+Adapted causal or non-causal boolean mask.</p></div>
+</dd>
+<dt id="neuralops.utils.compat.convert_mask"><code class="name flex">
+<span>def <span class="ident">convert_mask</span></span>(<span>mask: torch.Tensor | None,<br>adapter: ModelAdapter,<br>expects_bidirectional: bool = False) ‑> torch.Tensor | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def convert_mask(
+    mask: torch.Tensor | None,
+    adapter: ModelAdapter,
+    expects_bidirectional: bool = False,
+) -&gt; torch.Tensor | None:
+    &#34;&#34;&#34;Convert an attention mask to expected shape and bool dtype.
+
+    Args:
+        mask: Optional input mask tensor.
+        adapter: ModelAdapter providing causal context.
+        expects_bidirectional: Whether the target module expects bidirectional masking.
+
+    Returns:
+        Converted mask tensor or None.
+    &#34;&#34;&#34;
+    if mask is None or not expects_bidirectional:
+        return mask
+    if mask.dim() == 2:
+        return mask[:, None, None, :].bool()
+    if mask.dim() == 3:
+        return mask[:, None, :, :].bool()
+    if mask.dim() == 4:
+        return mask &gt;= 0
+    return mask</code></pre>
+</details>
+<div class="desc"><p>Convert an attention mask to expected shape and bool dtype.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>mask</code></strong></dt>
+<dd>Optional input mask tensor.</dd>
+<dt><strong><code>adapter</code></strong></dt>
+<dd>ModelAdapter providing causal context.</dd>
+<dt><strong><code>expects_bidirectional</code></strong></dt>
+<dd>Whether the target module expects bidirectional masking.</dd>
+</dl>
+<p>Returns
+-----=
+Converted mask tensor or None.</p></div>
+</dd>
+<dt id="neuralops.utils.compat.fp32_linalg"><code class="name flex">
+<span>def <span class="ident">fp32_linalg</span></span>(<span>op: Any, *tensors: torch.Tensor, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fp32_linalg(op: Any, *tensors: torch.Tensor, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Execute a linear algebra operation with float32 precision and cast back.
+
+    Args:
+        op: Callable linear algebra function.
+        *tensors: Floating point tensor operands.
+        **kwargs: Additional keyword arguments for op.
+
+    Returns:
+        Result tensor(s) cast back to initial floating precision.
+    &#34;&#34;&#34;
+    dtypes = [x.dtype for x in tensors if isinstance(x, torch.Tensor) and x.is_floating_point()]
+    dtype = dtypes[0] if dtypes else torch.float32
+    result = op(
+        *[
+            (x.float() if isinstance(x, torch.Tensor) and x.is_floating_point() else x)
+            for x in tensors
+        ],
+        **kwargs,
+    )
+    if isinstance(result, tuple):
+        return tuple(
+            x.to(dtype) if isinstance(x, torch.Tensor) and x.is_floating_point() else x
+            for x in result
+        )
+    return (
+        result.to(dtype)
+        if isinstance(result, torch.Tensor) and result.is_floating_point()
+        else result
+    )</code></pre>
+</details>
+<div class="desc"><p>Execute a linear algebra operation with float32 precision and cast back.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>op</code></strong></dt>
+<dd>Callable linear algebra function.</dd>
+<dt><strong><code>*tensors</code></strong></dt>
+<dd>Floating point tensor operands.</dd>
+<dt><strong><code>**kwargs</code></strong></dt>
+<dd>Additional keyword arguments for op.</dd>
+</dl>
+<p>Returns
+-----=
+Result tensor(s) cast back to initial floating precision.</p></div>
+</dd>
+<dt id="neuralops.utils.compat.get_dynamic_compression_rank"><code class="name flex">
+<span>def <span class="ident">get_dynamic_compression_rank</span></span>(<span>in_features: int,<br>out_features: int,<br>model_or_family: Any = None,<br>default_rank: int = 16,<br>comp_config: dict | None = None) ‑> int</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_dynamic_compression_rank(
+    in_features: int,
+    out_features: int,
+    model_or_family: Any = None,
+    default_rank: int = 16,
+    comp_config: dict | None = None,
+) -&gt; int:
+    &#34;&#34;&#34;Compute architecture-aware dynamic compression rank.
+
+    For Qwen3.5: rank = min(256, max(128, min(in_features, out_features) // 4))
+    For other families: preserves default fixed/configured rank.
+
+    Args:
+        in_features: Layer input features dimension.
+        out_features: Layer output features dimension.
+        model_or_family: Model instance or family string identifier.
+        default_rank: Default fallback rank if not computed dynamically.
+        comp_config: Optional dictionary or config object specifying rank overrides.
+
+    Returns:
+        Integer rank to use for compression.
+    &#34;&#34;&#34;
+    if isinstance(comp_config, dict):
+        if &#34;qwen3_5_rank&#34; in comp_config and comp_config[&#34;qwen3_5_rank&#34;] is not None:
+            return int(comp_config[&#34;qwen3_5_rank&#34;])
+        if &#34;dynamic_rank&#34; in comp_config and comp_config[&#34;dynamic_rank&#34;] is not None:
+            return int(comp_config[&#34;dynamic_rank&#34;])
+        if &#34;rank&#34; in comp_config and comp_config[&#34;rank&#34;] is not None:
+            return int(comp_config[&#34;rank&#34;])
+    elif comp_config is not None:
+        if getattr(comp_config, &#34;qwen3_5_rank&#34;, None) is not None:
+            return int(comp_config.qwen3_5_rank)
+        if getattr(comp_config, &#34;dynamic_rank&#34;, None) is not None:
+            return int(comp_config.dynamic_rank)
+        if getattr(comp_config, &#34;rank&#34;, None) is not None:
+            return int(comp_config.rank)
+
+    if isinstance(model_or_family, str):
+        fam = model_or_family
+    elif model_or_family is not None:
+        fam = detect_family(model_or_family)
+    else:
+        fam = &#34;unknown&#34;
+    if fam == &#34;qwen3_5&#34;:
+        target = min(in_features, out_features) // 4
+        return max(128, min(256, target))
+    return default_rank</code></pre>
+</details>
+<div class="desc"><p>Compute architecture-aware dynamic compression rank.</p>
+<p>For Qwen3.5: rank = min(256, max(128, min(in_features, out_features) // 4))
+For other families: preserves default fixed/configured rank.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>in_features</code></strong></dt>
+<dd>Layer input features dimension.</dd>
+<dt><strong><code>out_features</code></strong></dt>
+<dd>Layer output features dimension.</dd>
+<dt><strong><code>model_or_family</code></strong></dt>
+<dd>Model instance or family string identifier.</dd>
+<dt><strong><code>default_rank</code></strong></dt>
+<dd>Default fallback rank if not computed dynamically.</dd>
+<dt><strong><code>comp_config</code></strong></dt>
+<dd>Optional dictionary or config object specifying rank overrides.</dd>
+</dl>
+<p>Returns
+-----=
+Integer rank to use for compression.</p></div>
+</dd>
+<dt id="neuralops.utils.compat.get_recovery_params"><code class="name flex">
+<span>def <span class="ident">get_recovery_params</span></span>(<span>model: nn.Module) ‑> list[torch.nn.parameter.Parameter]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_recovery_params(model: nn.Module) -&gt; list[nn.Parameter]:
+    &#34;&#34;&#34;Select recovery parameters for LoRA / SVD / injected attention modules.
+
+    Fix CP-01: SVDLinear U/V factor matrices are now preserved during the
+    parameter budget pruning step. Previously, their numel (e.g. 64 * 768 =
+    49152) exceeded the 32768 threshold and they were pruned, reducing recovery
+    to bias-only training.
+
+    Fix CP-02: Pruning now uses priority-based allocation:
+        Priority 0 (highest): protected params (LoRA / gates / classifier / alpha / beta)
+        Priority 1: SVDLinear U/V factors and factorized parameters
+        Priority 2: small params (1D, or numel &lt;= 32768)
+        Priority 3 (lowest): other large 2D params
+
+    Args:
+        model: The PyTorch neural network module.
+
+    Returns:
+        List of parameters chosen for gradient optimization.
+    &#34;&#34;&#34;
+    svd_modules = [
+        m
+        for m in model.modules()
+        if m.__class__.__name__ in (&#34;SVDLinear&#34;, &#34;SVDLinearLayer&#34;, &#34;FactorisedLinear&#34;)
+    ]
+    svd_param_ids = {id(p) for m in svd_modules for p in m.parameters()}
+    has_svd = len(svd_modules) &gt; 0
+
+    has_lora = any(any(t in n.lower() for t in LORA_KEYWORDS) for n, _ in model.named_parameters())
+
+    trainable_params = _collect_trainable_params(
+        model, svd_param_ids=svd_param_ids, has_svd=has_svd, has_lora=has_lora
+    )
+
+    # Set requires_grad across the model.
+    trainable_id_set = {id(p) for p in trainable_params}
+    for _, param in model.named_parameters():
+        param.requires_grad = id(param) in trainable_id_set
+
+    total_trainable = sum(p.numel() for p in trainable_params)
+    logger.info(
+        &#34;Recovery fine-tuning selected %d trainable parameters across %d tensors.&#34;,
+        total_trainable,
+        len(trainable_params),
+    )
+
+    is_nested_or_deep = any(
+        &#34;encoder&#34; in n.lower() or &#34;roberta&#34; in n.lower() or &#34;bert&#34; in n.lower()
+        for n, _ in model.named_parameters()
+    )
+    prune_threshold = 10_000_000 if (has_lora or is_nested_or_deep) else 2_000_000
+
+    # Fix CP-03: Shrink LoRA rank properly, preserving the r/alpha scaling.
+    if total_trainable &gt; 5_000_000:
+        for m in model.modules():
+            if hasattr(m, &#34;lora_rank&#34;) and getattr(m, &#34;lora_rank&#34;, 0) &gt; 8:
+                old_r = m.lora_rank
+                m.lora_rank = 8
+                if hasattr(m, &#34;lora_alpha&#34;):
+                    m.lora_alpha = m.lora_alpha * (8.0 / max(1, old_r))
+                if hasattr(m, &#34;lora_scaling&#34;) and hasattr(m, &#34;lora_alpha&#34;):
+                    m.lora_scaling = m.lora_alpha / 8
+
+    # Fix CP-01/CP-02: Priority-based pruning.
+    if total_trainable &gt; prune_threshold:
+        logger.warning(
+            &#34;Total trainable parameters (%d) exceeds %d threshold for recovery. &#34;
+            &#34;Pruning with priority-based allocation.&#34;,
+            total_trainable,
+            prune_threshold,
+        )
+        trainable_params = _prune_to_budget(
+            model=model,
+            trainable_id_set=trainable_id_set,
+            svd_param_ids=svd_param_ids,
+            prune_threshold=prune_threshold,
+        )
+        total_trainable = sum(p.numel() for p in trainable_params)
+        logger.info(
+            &#34;Reduced recovery parameters to %d trainable parameters across %d tensors.&#34;,
+            total_trainable,
+            len(trainable_params),
+        )
+
+    logger.info(
+        &#34;Discovered %d trainable tensors (%d params)&#34;,
+        len(trainable_params),
+        total_trainable,
+    )
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            logger.debug(&#34;  %s: %s (%d params)&#34;, name, tuple(param.shape), param.numel())
+
+    return trainable_params</code></pre>
+</details>
+<div class="desc"><p>Select recovery parameters for LoRA / SVD / injected attention modules.</p>
+<p>Fix CP-01: SVDLinear U/V factor matrices are now preserved during the
+parameter budget pruning step. Previously, their numel (e.g. 64 * 768 =
+49152) exceeded the 32768 threshold and they were pruned, reducing recovery
+to bias-only training.</p>
+<p>Fix CP-02: Pruning now uses priority-based allocation:
+Priority 0 (highest): protected params (LoRA / gates / classifier / alpha / beta)
+Priority 1: SVDLinear U/V factors and factorized parameters
+Priority 2: small params (1D, or numel &lt;= 32768)
+Priority 3 (lowest): other large 2D params</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>model</code></strong></dt>
+<dd>The PyTorch neural network module.</dd>
+</dl>
+<p>Returns
+-----=
+List of parameters chosen for gradient optimization.</p></div>
+</dd>
+<dt id="neuralops.utils.compat.init_output_scale"><code class="name flex">
+<span>def <span class="ident">init_output_scale</span></span>(<span>module: nn.Module, name: str = 'output_scale') ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def init_output_scale(module: nn.Module, name: str = &#34;output_scale&#34;) -&gt; None:
+    &#34;&#34;&#34;Register output_scale learnable parameter if not already present.
+
+    Args:
+        module: The target PyTorch module.
+        name: Parameter attribute name to register.
+    &#34;&#34;&#34;
+    if not hasattr(module, name):
+        module.register_parameter(name, nn.Parameter(torch.ones(1)))</code></pre>
+</details>
+<div class="desc"><p>Register output_scale learnable parameter if not already present.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>module</code></strong></dt>
+<dd>The target PyTorch module.</dd>
+<dt><strong><code>name</code></strong></dt>
+<dd>Parameter attribute name to register.</dd>
+</dl></div>
+</dd>
+<dt id="neuralops.utils.compat.install_projection_aliases"><code class="name flex">
+<span>def <span class="ident">install_projection_aliases</span></span>(<span>module: nn.Module) ‑> torch.nn.modules.module.Module</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def install_projection_aliases(module: nn.Module) -&gt; nn.Module:
+    &#34;&#34;&#34;Install bidirectional attribute aliases across canonical projection names.
+
+    Args:
+        module: PyTorch module whose child modules may need alias attributes.
+
+    Returns:
+        The modified module with aliases attached.
+    &#34;&#34;&#34;
+    from neuralops.core.adapters import CANONICAL_PROJECTION_ALIASES
+
+    for child in module.modules():
+        if hasattr(child, &#34;self&#34;) and hasattr(child.self, &#34;query&#34;):
+            for attr_name in [&#34;query&#34;, &#34;key&#34;, &#34;value&#34;]:
+                val = getattr(child.self, attr_name, None)
+                if val is not None:
+                    try:
+                        object.__setattr__(child, attr_name, val)
+                    except (AttributeError, TypeError):
+                        pass
+        if hasattr(child, &#34;output&#34;) and hasattr(child.output, &#34;dense&#34;):
+            val = getattr(child.output, &#34;dense&#34;, None)
+            if val is not None:
+                try:
+                    object.__setattr__(child, &#34;dense&#34;, val)
+                    object.__setattr__(child, &#34;out_proj&#34;, val)
+                    object.__setattr__(child, &#34;out_lin&#34;, val)
+                    object.__setattr__(child, &#34;o_proj&#34;, val)
+                except (AttributeError, TypeError):
+                    pass
+
+        for group in CANONICAL_PROJECTION_ALIASES.values():
+            present_attr = next((name for name in group if hasattr(child, name)), None)
+            if present_attr is not None:
+                mod = getattr(child, present_attr)
+                for alias in group:
+                    if not hasattr(child, alias):
+                        try:
+                            object.__setattr__(child, alias, mod)
+                        except (AttributeError, TypeError):
+                            pass
+    return module</code></pre>
+</details>
+<div class="desc"><p>Install bidirectional attribute aliases across canonical projection names.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>module</code></strong></dt>
+<dd>PyTorch module whose child modules may need alias attributes.</dd>
+</dl>
+<p>Returns
+-----=
+The modified module with aliases attached.</p></div>
+</dd>
+<dt id="neuralops.utils.compat.is_decoder_family"><code class="name flex">
+<span>def <span class="ident">is_decoder_family</span></span>(<span>family: str) ‑> bool</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_decoder_family(family: str) -&gt; bool:
+    &#34;&#34;&#34;Check whether a family (canonical or raw) is a causal decoder.
+
+    Args:
+        family: Model family name identifier.
+
+    Returns:
+        True if the family is in CAUSAL_FAMILIES.
+    &#34;&#34;&#34;
+    return family in CAUSAL_FAMILIES</code></pre>
+</details>
+<div class="desc"><p>Check whether a family (canonical or raw) is a causal decoder.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>family</code></strong></dt>
+<dd>Model family name identifier.</dd>
+</dl>
+<p>Returns
+-----=
+True if the family is in CAUSAL_FAMILIES.</p></div>
+</dd>
+<dt id="neuralops.utils.compat.is_decoder_projection_name"><code class="name flex">
+<span>def <span class="ident">is_decoder_projection_name</span></span>(<span>name: str) ‑> bool</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_decoder_projection_name(name: str) -&gt; bool:
+    &#34;&#34;&#34;Whether a parameter name denotes a decoder attention projection.
+
+    Args:
+        name: Name of parameter or sub-module.
+
+    Returns:
+        True if the name matches standard decoder projection patterns.
+    &#34;&#34;&#34;
+    name_low = name.lower()
+    if any(
+        p in name_low
+        for p in [
+            &#34;c_attn&#34;,
+            &#34;c_proj&#34;,
+            &#34;q_proj&#34;,
+            &#34;k_proj&#34;,
+            &#34;v_proj&#34;,
+            &#34;o_proj&#34;,
+            &#34;out_proj&#34;,
+        ]
+    ):
+        if &#34;attn&#34; in name_low or &#34;attention&#34; in name_low or &#34;self_attn&#34; in name_low:
+            return True
+    leaf = name.rsplit(&#34;.&#34;, 1)[-1].lower()
+    if leaf in {&#34;weight&#34;, &#34;bias&#34;, &#34;base_layer&#34;}:
+        parts = name.rsplit(&#34;.&#34;, 2)
+        leaf = parts[-2].lower() if len(parts) &gt;= 2 else leaf
+    return leaf in {
+        &#34;q_proj&#34;,
+        &#34;k_proj&#34;,
+        &#34;v_proj&#34;,
+        &#34;o_proj&#34;,
+        &#34;out_proj&#34;,
+        &#34;c_attn&#34;,
+        &#34;c_proj&#34;,
+    }</code></pre>
+</details>
+<div class="desc"><p>Whether a parameter name denotes a decoder attention projection.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>name</code></strong></dt>
+<dd>Name of parameter or sub-module.</dd>
+</dl>
+<p>Returns
+-----=
+True if the name matches standard decoder projection patterns.</p></div>
+</dd>
+<dt id="neuralops.utils.compat.maybe_apply_rotary"><code class="name flex">
+<span>def <span class="ident">maybe_apply_rotary</span></span>(<span>q: torch.Tensor,<br>k: torch.Tensor,<br>adapter: ModelAdapter,<br>rotary_emb: Any,<br>position_ids: torch.Tensor | None) ‑> tuple[torch.Tensor, torch.Tensor]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def maybe_apply_rotary(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    adapter: ModelAdapter,
+    rotary_emb: Any,
+    position_ids: torch.Tensor | None,
+) -&gt; tuple[torch.Tensor, torch.Tensor]:
+    &#34;&#34;&#34;Apply a native rotary module when required; never silently drop RoPE.
+
+    Args:
+        q: Query tensor.
+        k: Key tensor.
+        adapter: ModelAdapter instance with position_embedding metadata.
+        rotary_emb: Rotary embedding module or callable.
+        position_ids: Optional tensor of sequence position ids.
+
+    Returns:
+        Tuple of (rotated_q, rotated_k) tensors.
+    &#34;&#34;&#34;
+    if adapter.position_embedding != &#34;rotary&#34;:
+        return q, k
+    if rotary_emb is None:
+        raise QwenIncompatibleError(&#34;rotary_position_embedding_required&#34;)
+    try:
+        rotary = rotary_emb(q, position_ids)
+    except TypeError:
+        try:
+            rotary = rotary_emb(q, position_ids=position_ids)
+        except TypeError as exc:
+            raise QwenIncompatibleError(f&#34;rotary_forward_signature: {exc}&#34;) from exc
+    if hasattr(rotary, &#34;cos&#34;) and hasattr(rotary, &#34;sin&#34;):
+        cos, sin = rotary.cos, rotary.sin
+    elif isinstance(rotary, (tuple, list)) and len(rotary) &gt;= 2:
+        cos, sin = rotary[0], rotary[1]
+    else:
+        raise QwenIncompatibleError(&#34;rotary_forward_invalid_output&#34;)
+
+    def rotate_half(x: torch.Tensor) -&gt; torch.Tensor:
+        return torch.cat(
+            (-x[..., x.shape[-1] // 2 :], x[..., : x.shape[-1] // 2]),
+            dim=-1,
+        )
+
+    if cos.dim() == 3:
+        cos, sin = cos.unsqueeze(1), sin.unsqueeze(1)
+    while cos.dim() &lt; q.dim():
+        cos, sin = cos.unsqueeze(0), sin.unsqueeze(0)
+    if cos.shape[-2] != q.shape[-2]:
+        cos, sin = cos[..., : q.shape[-2], :], sin[..., : q.shape[-2], :]
+    return (
+        (q * cos) + (rotate_half(q) * sin),
+        (k * cos) + (rotate_half(k) * sin),
+    )</code></pre>
+</details>
+<div class="desc"><p>Apply a native rotary module when required; never silently drop RoPE.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>q</code></strong></dt>
+<dd>Query tensor.</dd>
+<dt><strong><code>k</code></strong></dt>
+<dd>Key tensor.</dd>
+<dt><strong><code>adapter</code></strong></dt>
+<dd>ModelAdapter instance with position_embedding metadata.</dd>
+<dt><strong><code>rotary_emb</code></strong></dt>
+<dd>Rotary embedding module or callable.</dd>
+<dt><strong><code>position_ids</code></strong></dt>
+<dd>Optional tensor of sequence position ids.</dd>
+</dl>
+<p>Returns
+-----=
+Tuple of (rotated_q, rotated_k) tensors.</p></div>
+</dd>
+<dt id="neuralops.utils.compat.module_family_support"><code class="name flex">
+<span>def <span class="ident">module_family_support</span></span>(<span>name: str) ‑> dict[str, str]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def module_family_support(name: str) -&gt; dict[str, str]:
+    &#34;&#34;&#34;Return dictionary of compatibility support tags per model family.
+
+    Args:
+        name: Name of architecture/attention module.
+
+    Returns:
+        Dict mapping family names to compatibility status strings.
+    &#34;&#34;&#34;
+    if name.lower() in {&#34;mamba&#34;}:
+        return {
+            &#34;bert&#34;: &#34;encoder_compatible&#34;,
+            &#34;roberta&#34;: &#34;encoder_compatible&#34;,
+            &#34;gpt&#34;: &#34;adapted&#34;,
+            &#34;qwen&#34;: &#34;incompatible&#34;,
+            &#34;qwen3_5&#34;: &#34;incompatible&#34;,
+            &#34;t5&#34;: &#34;encoder_decoder_compatible&#34;,
+            &#34;ssm&#34;: &#34;adapted&#34;,
+            &#34;unknown&#34;: &#34;adapted&#34;,
+        }
+    return {
+        &#34;bert&#34;: &#34;encoder_compatible&#34;,
+        &#34;roberta&#34;: &#34;encoder_compatible&#34;,
+        &#34;gpt&#34;: &#34;adapted&#34;,
+        &#34;qwen&#34;: &#34;adapted&#34;,
+        &#34;qwen3_5&#34;: &#34;adapted&#34;,
+        &#34;t5&#34;: &#34;encoder_decoder_compatible&#34;,
+        &#34;ssm&#34;: &#34;adapted&#34;,
+        &#34;unknown&#34;: &#34;adapted&#34;,
+    }</code></pre>
+</details>
+<div class="desc"><p>Return dictionary of compatibility support tags per model family.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>name</code></strong></dt>
+<dd>Name of architecture/attention module.</dd>
+</dl>
+<p>Returns
+-----=
+Dict mapping family names to compatibility status strings.</p></div>
+</dd>
+<dt id="neuralops.utils.compat.repeat_kv"><code class="name flex">
+<span>def <span class="ident">repeat_kv</span></span>(<span>x: torch.Tensor, n_rep: int) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def repeat_kv(x: torch.Tensor, n_rep: int) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Expand grouped-query K/V heads: [B, Hkv, L, D] -&gt; [B, H, L, D].
+
+    Args:
+        x: Input tensor of shape [B, Hkv, L, D].
+        n_rep: Replication factor.
+
+    Returns:
+        Expanded tensor of shape [B, Hkv * n_rep, L, D].
+    &#34;&#34;&#34;
+    if n_rep &lt;= 1:
+        return x
+    if x.dim() != 4:
+        raise ValueError(f&#34;repeat_kv expects [B,H,L,D], got {tuple(x.shape)}&#34;)
+    return (
+        x[:, :, None, :, :]
+        .expand(x.size(0), x.size(1), n_rep, x.size(2), x.size(3))
+        .reshape(x.size(0), x.size(1) * n_rep, x.size(2), x.size(3))
+    )</code></pre>
+</details>
+<div class="desc"><p>Expand grouped-query K/V heads: [B, Hkv, L, D] -&gt; [B, H, L, D].</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>x</code></strong></dt>
+<dd>Input tensor of shape [B, Hkv, L, D].</dd>
+<dt><strong><code>n_rep</code></strong></dt>
+<dd>Replication factor.</dd>
+</dl>
+<p>Returns
+-----=
+Expanded tensor of shape [B, Hkv * n_rep, L, D].</p></div>
+</dd>
+<dt id="neuralops.utils.compat.should_compress_linear"><code class="name flex">
+<span>def <span class="ident">should_compress_linear</span></span>(<span>model: Any, name: str, family: str | None = None) ‑> bool</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def should_compress_linear(model: Any, name: str, family: str | None = None) -&gt; bool:
+    &#34;&#34;&#34;Family-aware check for whether a linear layer should be compressed.
+
+    For qwen3_5: sensitive layers (attention, DeltaNet, GQA, MoE routers/experts,
+    norms, RoPE, embeddings, heads) are protected; only ordinary FFN dense layers
+    are compressed. For other families, safe linear layer compression is preserved.
+
+    Args:
+        model: Target model instance or family string.
+        name: Parameter or module path name.
+        family: Optional explicit model family name.
+
+    Returns:
+        True if the linear layer can be safely compressed.
+    &#34;&#34;&#34;
+    leaf = name.rsplit(&#34;.&#34;, 1)[-1].lower()
+    if leaf in {&#34;weight&#34;, &#34;bias&#34;, &#34;base_layer&#34;}:
+        parts = name.rsplit(&#34;.&#34;, 2)
+        leaf = parts[-2].lower() if len(parts) &gt;= 2 else leaf
+
+    name_low = name.lower()
+    if leaf in {&#34;classifier&#34;, &#34;score&#34;, &#34;lm_head&#34;, &#34;pooler&#34;, &#34;pre_classifier&#34;} or any(
+        k in name_low
+        for k in [
+            &#34;classifier&#34;,
+            &#34;score&#34;,
+            &#34;lm_head&#34;,
+            &#34;pooler&#34;,
+            &#34;pre_classifier&#34;,
+            &#34;classification_head&#34;,
+        ]
+    ):
+        return False
+
+    if &#34;c_attn&#34; in name_low or &#34;c_proj&#34; in name_low:
+        if &#34;attn&#34; in name_low or &#34;attention&#34; in name_low:
+            return True
+
+    fam = family or (detect_family(model) if not isinstance(model, str) else model)
+
+    if fam == &#34;qwen3_5&#34;:
+        return should_compress_qwen3_5(name)
+
+    recognized_attn = [
+        &#34;q_lin&#34;, &#34;k_lin&#34;, &#34;v_lin&#34;, &#34;out_lin&#34;,  # DistilBERT
+        &#34;query&#34;, &#34;key&#34;, &#34;value&#34;, &#34;dense&#34;, &#34;output.dense&#34;,  # RoBERTa / BERT
+        &#34;c_attn&#34;, &#34;c_proj&#34;,  # GPT-2
+        &#34;q_proj&#34;, &#34;k_proj&#34;, &#34;v_proj&#34;, &#34;o_proj&#34;, &#34;out_proj&#34;,  # Qwen / LLaMA
+    ]
+
+    if any(leaf == k or k in name_low.split(&#34;.&#34;) for k in recognized_attn):
+        return True
+
+    if is_decoder_family(fam):
+        return is_decoder_projection_name(name) or any(
+            kw in name_low for kw in [&#34;mlp&#34;, &#34;ffn&#34;, &#34;dense&#34;, &#34;feed_forward&#34;]
+        )
+
+    return True</code></pre>
+</details>
+<div class="desc"><p>Family-aware check for whether a linear layer should be compressed.</p>
+<p>For qwen3_5: sensitive layers (attention, DeltaNet, GQA, MoE routers/experts,
+norms, RoPE, embeddings, heads) are protected; only ordinary FFN dense layers
+are compressed. For other families, safe linear layer compression is preserved.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>model</code></strong></dt>
+<dd>Target model instance or family string.</dd>
+<dt><strong><code>name</code></strong></dt>
+<dd>Parameter or module path name.</dd>
+<dt><strong><code>family</code></strong></dt>
+<dd>Optional explicit model family name.</dd>
+</dl>
+<p>Returns
+-----=
+True if the linear layer can be safely compressed.</p></div>
+</dd>
+<dt id="neuralops.utils.compat.should_compress_qwen3_5"><code class="name flex">
+<span>def <span class="ident">should_compress_qwen3_5</span></span>(<span>name: str) ‑> bool</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def should_compress_qwen3_5(name: str) -&gt; bool:
+    &#34;&#34;&#34;Check whether a layer in Qwen3.5 should undergo compression.
+
+    Args:
+        name: Full parameter or module name.
+
+    Returns:
+        True if the layer is an allowed FFN layer and not sensitive.
+    &#34;&#34;&#34;
+    n = name.lower()
+    if any(p in n for p in SENSITIVE_PATTERNS):
+        return False
+    return any(p in n for p in ALLOWED_FFN_PATTERNS)</code></pre>
+</details>
+<div class="desc"><p>Check whether a layer in Qwen3.5 should undergo compression.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>name</code></strong></dt>
+<dd>Full parameter or module name.</dd>
+</dl>
+<p>Returns
+-----=
+True if the layer is an allowed FFN layer and not sensitive.</p></div>
+</dd>
+<dt id="neuralops.utils.compat.wrap_for_family"><code class="name flex">
+<span>def <span class="ident">wrap_for_family</span></span>(<span>module: nn.Module, model_family: str | None = None) ‑> torch.nn.modules.module.Module</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def wrap_for_family(module: nn.Module, model_family: str | None = None) -&gt; nn.Module:
+    &#34;&#34;&#34;Wrap a module with FamilyModuleWrapper if required by family rules.
+
+    Args:
+        module: PyTorch module to wrap.
+        model_family: Family identifier string, or detected automatically if None.
+
+    Returns:
+        Wrapped module or original module if no wrapping is necessary.
+    &#34;&#34;&#34;
+    from .aliases import install_projection_aliases
+
+    family = model_family or detect_family(module)
+    install_projection_aliases(module)
+    family_aliases = globals().get(&#34;FAMILY_ALIASES&#34;, {})
+    canonical = family_aliases.get(family, family) if isinstance(family_aliases, dict) else family
+    return (
+        module
+        if canonical in {&#34;bert&#34;, &#34;roberta&#34;, &#34;unknown&#34;}
+        else FamilyModuleWrapper(module, family)
+    )</code></pre>
+</details>
+<div class="desc"><p>Wrap a module with FamilyModuleWrapper if required by family rules.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>module</code></strong></dt>
+<dd>PyTorch module to wrap.</dd>
+<dt><strong><code>model_family</code></strong></dt>
+<dd>Family identifier string, or detected automatically if None.</dd>
+</dl>
+<p>Returns
+-----=
+Wrapped module or original module if no wrapping is necessary.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.utils.compat.FamilyModuleWrapper"><code class="flex name class">
+<span>class <span class="ident">FamilyModuleWrapper</span></span>
+<span>(</span><span>module: nn.Module, family: str)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FamilyModuleWrapper(nn.Module):
+    &#34;&#34;&#34;Wrapper that applies family adaptations such as mask conversions and RoPE checks.&#34;&#34;&#34;
+
+    def __init__(self, module: nn.Module, family: str) -&gt; None:
+        super().__init__()
+        from .aliases import install_projection_aliases
+
+        self.module = install_projection_aliases(module)
+        self.adapter = ModelAdapter(module, family)
+
+    def forward(self, *args: Any, **kwargs: Any) -&gt; Any:
+        mask = kwargs.get(&#34;attention_mask&#34;, kwargs.get(&#34;mask&#34;, kwargs.get(&#34;attn_mask&#34;)))
+        if (
+            self.adapter.position_embedding == &#34;rotary&#34;
+            and not getattr(self.module, &#34;supports_rope&#34;, False)
+            and (
+                &#34;position_embeddings&#34; in kwargs
+                or &#34;position_ids&#34; in kwargs
+                or getattr(self.module, &#34;requires_rope&#34;, False)
+            )
+        ):
+            raise QwenIncompatibleError(&#34;module_does_not_support_rope&#34;)
+        if mask is not None:
+            adapted = convert_mask(
+                mask,
+                self.adapter,
+                bool(getattr(self.module, &#34;expects_bidirectional&#34;, False)),
+            )
+            if &#34;attention_mask&#34; in kwargs:
+                kwargs[&#34;attention_mask&#34;] = adapted
+            elif &#34;mask&#34; in kwargs:
+                kwargs[&#34;mask&#34;] = adapted
+            elif &#34;attn_mask&#34; in kwargs:
+                kwargs[&#34;attn_mask&#34;] = adapted
+        return self.module(*args, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Wrapper that applies family adaptations such as mask conversions and RoPE checks.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.utils.compat.FamilyModuleWrapper.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, *args: Any, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, *args: Any, **kwargs: Any) -&gt; Any:
+    mask = kwargs.get(&#34;attention_mask&#34;, kwargs.get(&#34;mask&#34;, kwargs.get(&#34;attn_mask&#34;)))
+    if (
+        self.adapter.position_embedding == &#34;rotary&#34;
+        and not getattr(self.module, &#34;supports_rope&#34;, False)
+        and (
+            &#34;position_embeddings&#34; in kwargs
+            or &#34;position_ids&#34; in kwargs
+            or getattr(self.module, &#34;requires_rope&#34;, False)
+        )
+    ):
+        raise QwenIncompatibleError(&#34;module_does_not_support_rope&#34;)
+    if mask is not None:
+        adapted = convert_mask(
+            mask,
+            self.adapter,
+            bool(getattr(self.module, &#34;expects_bidirectional&#34;, False)),
+        )
+        if &#34;attention_mask&#34; in kwargs:
+            kwargs[&#34;attention_mask&#34;] = adapted
+        elif &#34;mask&#34; in kwargs:
+            kwargs[&#34;mask&#34;] = adapted
+        elif &#34;attn_mask&#34; in kwargs:
+            kwargs[&#34;attn_mask&#34;] = adapted
+    return self.module(*args, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.utils" href="../index.html">neuralops.utils</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="neuralops.utils.compat.aliases" href="aliases.html">neuralops.utils.compat.aliases</a></code></li>
+<li><code><a title="neuralops.utils.compat.architectures" href="architectures.html">neuralops.utils.compat.architectures</a></code></li>
+<li><code><a title="neuralops.utils.compat.param_recovery" href="param_recovery.html">neuralops.utils.compat.param_recovery</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.utils.compat._is_protected_param" href="#neuralops.utils.compat._is_protected_param">_is_protected_param</a></code></li>
+<li><code><a title="neuralops.utils.compat.causal_mask_from_attention_mask" href="#neuralops.utils.compat.causal_mask_from_attention_mask">causal_mask_from_attention_mask</a></code></li>
+<li><code><a title="neuralops.utils.compat.convert_mask" href="#neuralops.utils.compat.convert_mask">convert_mask</a></code></li>
+<li><code><a title="neuralops.utils.compat.fp32_linalg" href="#neuralops.utils.compat.fp32_linalg">fp32_linalg</a></code></li>
+<li><code><a title="neuralops.utils.compat.get_dynamic_compression_rank" href="#neuralops.utils.compat.get_dynamic_compression_rank">get_dynamic_compression_rank</a></code></li>
+<li><code><a title="neuralops.utils.compat.get_recovery_params" href="#neuralops.utils.compat.get_recovery_params">get_recovery_params</a></code></li>
+<li><code><a title="neuralops.utils.compat.init_output_scale" href="#neuralops.utils.compat.init_output_scale">init_output_scale</a></code></li>
+<li><code><a title="neuralops.utils.compat.install_projection_aliases" href="#neuralops.utils.compat.install_projection_aliases">install_projection_aliases</a></code></li>
+<li><code><a title="neuralops.utils.compat.is_decoder_family" href="#neuralops.utils.compat.is_decoder_family">is_decoder_family</a></code></li>
+<li><code><a title="neuralops.utils.compat.is_decoder_projection_name" href="#neuralops.utils.compat.is_decoder_projection_name">is_decoder_projection_name</a></code></li>
+<li><code><a title="neuralops.utils.compat.maybe_apply_rotary" href="#neuralops.utils.compat.maybe_apply_rotary">maybe_apply_rotary</a></code></li>
+<li><code><a title="neuralops.utils.compat.module_family_support" href="#neuralops.utils.compat.module_family_support">module_family_support</a></code></li>
+<li><code><a title="neuralops.utils.compat.repeat_kv" href="#neuralops.utils.compat.repeat_kv">repeat_kv</a></code></li>
+<li><code><a title="neuralops.utils.compat.should_compress_linear" href="#neuralops.utils.compat.should_compress_linear">should_compress_linear</a></code></li>
+<li><code><a title="neuralops.utils.compat.should_compress_qwen3_5" href="#neuralops.utils.compat.should_compress_qwen3_5">should_compress_qwen3_5</a></code></li>
+<li><code><a title="neuralops.utils.compat.wrap_for_family" href="#neuralops.utils.compat.wrap_for_family">wrap_for_family</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.utils.compat.FamilyModuleWrapper" href="#neuralops.utils.compat.FamilyModuleWrapper">FamilyModuleWrapper</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.utils.compat.FamilyModuleWrapper.forward" href="#neuralops.utils.compat.FamilyModuleWrapper.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

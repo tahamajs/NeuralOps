@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.attentions.ssm.simple_ssm API documentation</title>
+<meta name="description" content="Simple SSM: Simplified State Space Attention Block …">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Namespace <code>neuralops.attentions.ssm.simple_ssm</code></h1>
+</header>
+<section id="section-intro">
+<p>Simple SSM: Simplified State Space Attention Block.</p>
+<p>Production-hardened across DistilBERT, RoBERTa, GPT-2, and Qwen architectures.
+Supports:
+- Multi-architecture weight copy (GPT-2, RoBERTa/BERT nested, DistilBERT, Qwen/LLaMA)
+- Trainable LoRA adapters with frozen base weights
+- GQA repeating with repeat_kv
+- Rotary position embeddings (RoPE)
+- Forward / bidirectional state-space scan
+- Complete fp16/bf16 dtype safety</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.attentions.ssm.simple_ssm.apply_rotary_pos_emb"><code class="name flex">
+<span>def <span class="ident">apply_rotary_pos_emb</span></span>(<span>q: torch.Tensor,<br>k: torch.Tensor,<br>cos: torch.Tensor,<br>sin: torch.Tensor,<br>position_ids: torch.Tensor | None = None) ‑> tuple[torch.Tensor, torch.Tensor]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_rotary_pos_emb(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+    position_ids: torch.Tensor | None = None,
+) -&gt; tuple[torch.Tensor, torch.Tensor]:
+    if cos is None or sin is None:
+        return q, k
+
+    if cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(0)
+        sin = sin.unsqueeze(0).unsqueeze(0)
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)
+        sin = sin.unsqueeze(1)
+    while cos.dim() &lt; q.dim():
+        cos = cos.unsqueeze(0)
+        sin = sin.unsqueeze(0)
+
+    rotary_dim = cos.shape[-1]
+    head_dim = q.shape[-1]
+    rotary_dim_even = 2 * (min(rotary_dim, head_dim) // 2)
+    if rotary_dim_even == 0:
+        return q, k
+
+    q_rot, q_pass = q[..., :rotary_dim_even], q[..., rotary_dim_even:]
+    k_rot, k_pass = k[..., :rotary_dim_even], k[..., rotary_dim_even:]
+    cos_cut = cos[..., :rotary_dim_even].to(q.device, q.dtype)
+    sin_cut = sin[..., :rotary_dim_even].to(q.device, q.dtype)
+
+    q_rot_embed = (q_rot * cos_cut) + (_rotate_half(q_rot) * sin_cut)
+    k_rot_embed = (k_rot * cos_cut) + (_rotate_half(k_rot) * sin_cut)
+
+    q_out = torch.cat([q_rot_embed, q_pass], dim=-1) if q_pass.numel() &gt; 0 else q_rot_embed
+    k_out = torch.cat([k_rot_embed, k_pass], dim=-1) if k_pass.numel() &gt; 0 else k_rot_embed
+    return q_out, k_out</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.ssm.simple_ssm.inject_simple_ssm"><code class="name flex">
+<span>def <span class="ident">inject_simple_ssm</span></span>(<span>layer: Any = None,<br>model: Any = None,<br>model_config: Any = None,<br>comp_config: Any = None,<br>layer_idx: int = 0,<br>total_layers: int = 12,<br>old_attn: nn.Module | None = None,<br>lora_rank: int = 16,<br>**kwargs: Any) ‑> Any | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def inject_simple_ssm(
+    layer: Any = None,
+    model: Any = None,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: nn.Module | None = None,
+    lora_rank: int = 16,
+    **kwargs: Any,
+) -&gt; Any | None:
+    target = layer if layer is not None else model
+    cfg = model_config or getattr(target, &#34;config&#34;, None) or kwargs.get(&#34;config&#34;)
+
+    if target is None:
+        return None
+
+    # Replace attention submodule if present
+    for attr in (&#34;attention&#34;, &#34;self_attn&#34;, &#34;attn&#34;, &#34;self&#34;):
+        if hasattr(target, attr):
+            old = getattr(target, attr)
+            new_block = SimpleSSM(config=cfg, old_attn=old, lora_rank=lora_rank, **kwargs)
+            setattr(target, attr, new_block)
+            return new_block
+
+    if isinstance(target, nn.Module) and not hasattr(target, &#34;forward&#34;):
+        new_block = SimpleSSM(config=cfg, old_attn=old_attn, lora_rank=lora_rank, **kwargs)
+        return new_block
+
+    return None</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.attentions.ssm.simple_ssm.SimpleSSM"><code class="flex name class">
+<span>class <span class="ident">SimpleSSM</span></span>
+<span>(</span><span>config: Any | None = None,<br>rank: int | None = 64,<br>d_model: int | None = None,<br>num_heads: int | None = None,<br>num_kv_heads: int | None = None,<br>lora_rank: int = 16,<br>lora_alpha: float = 32.0,<br>old_attn: nn.Module | None = None,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@ATTENTION_REGISTRY.register(&#34;simple_ssm&#34;)
+class SimpleSSM(BaseAttention):
+    is_custom_attention: bool = True
+    supports_causal: bool = True
+    supports_bidirectional: bool = True
+    triton_kernel: str = &#34;state_update&#34;
+
+    def __init__(
+        self,
+        config: Any | None = None,
+        rank: int | None = 64,
+        d_model: int | None = None,
+        num_heads: int | None = None,
+        num_kv_heads: int | None = None,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        old_attn: nn.Module | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        super().__init__(config, rank)
+        self.config = config
+
+        def _get(k: str, default: Any = None) -&gt; Any:
+            for obj in (config, getattr(config, &#34;compression_config&#34;, None)):
+                if obj is not None:
+                    if isinstance(obj, dict) and k in obj and obj[k] is not None:
+                        return obj[k]
+                    elif hasattr(obj, k):
+                        val = getattr(obj, k)
+                        if val is not None:
+                            return val
+            return kwargs.get(k, default)
+
+        dim = d_model or _get(&#34;hidden_size&#34;) or _get(&#34;d_model&#34;) or _get(&#34;dim&#34;) or 64
+        self.dim = int(dim)
+
+        heads = num_heads or _get(&#34;num_attention_heads&#34;) or _get(&#34;num_heads&#34;) or _get(&#34;n_head&#34;) or 4
+        self.num_heads = int(heads)
+
+        kv_heads = (
+            num_kv_heads or _get(&#34;num_key_value_heads&#34;) or _get(&#34;num_kv_heads&#34;) or self.num_heads
+        )
+        self.num_kv_heads = int(kv_heads)
+        self.head_dim = int(_get(&#34;head_dim&#34;, self.dim // max(1, self.num_heads)))
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
+
+        self.lora_rank = int(_get(&#34;lora_rank&#34;, kwargs.get(&#34;lora_rank&#34;, lora_rank)))
+        self.lora_alpha = float(_get(&#34;lora_alpha&#34;, kwargs.get(&#34;lora_alpha&#34;, lora_alpha)))
+        self.freeze_base = self.lora_rank &gt; 0
+
+        # Projections
+        self.in_proj = LoRALinear(
+            self.dim,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+        self.out_proj = LoRALinear(
+            self.dim,
+            self.dim,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+        )
+
+        # Recurrence decay gate
+        self.decay_param = nn.Parameter(torch.zeros(self.num_heads, 1, 1))
+
+        # Architecture detection
+        model_type = str(_get(&#34;model_type&#34;, &#34;&#34;)).lower()
+        is_dec = _get(&#34;is_decoder&#34;, kwargs.get(&#34;is_decoder&#34;, False))
+        if any(
+            model_type.startswith(pfx)
+            for pfx in (&#34;gpt&#34;, &#34;qwen&#34;, &#34;llama&#34;, &#34;mistral&#34;, &#34;opt&#34;, &#34;bloom&#34;)
+        ):
+            is_dec = True
+        self.is_decoder = bool(is_dec)
+
+        is_nested = False
+        if old_attn is not None:
+            src_cls = old_attn.__class__.__name__
+            if (
+                &#34;Roberta&#34; in src_cls
+                or &#34;Bert&#34; in src_cls
+                or (hasattr(old_attn, &#34;self&#34;) and hasattr(old_attn, &#34;output&#34;))
+            ):
+                is_nested = True
+        if not is_nested and model_type in [&#34;roberta&#34;, &#34;bert&#34;] and not self.is_decoder:
+            is_nested = True
+        self.is_nested_encoder = bool(is_nested)
+        self.triton_kwargs = {}
+
+        if old_attn is not None:
+            self.copy_weights(old_attn)
+
+    def copy_weights(self, old_attn: Any) -&gt; None:
+        if old_attn is None:
+            return
+
+        src_cls = old_attn.__class__.__name__
+        if (
+            &#34;Roberta&#34; in src_cls
+            or &#34;Bert&#34; in src_cls
+            or (hasattr(old_attn, &#34;self&#34;) and hasattr(old_attn, &#34;output&#34;))
+        ):
+            self.is_nested_encoder = True
+
+        target_dtype = self.in_proj.weight.dtype
+        with torch.no_grad():
+            w, b = None, None
+            try:
+                adapter = UniversalAdapter()
+                w, b = adapter.get_weight_bias(old_attn, &#34;q&#34;)
+                if w is None:
+                    w, b = adapter.get_weight_bias(old_attn, &#34;in&#34;)
+            except Exception:
+                pass
+
+            if w is None and hasattr(old_attn, &#34;c_attn&#34;):
+                c_w = getattr(
+                    getattr(old_attn.c_attn, &#34;base_layer&#34;, old_attn.c_attn),
+                    &#34;weight&#34;,
+                    None,
+                )
+                if c_w is not None:
+                    w_t = c_w.data.t() if c_w.shape[0] &lt; c_w.shape[1] else c_w.data
+                    split = w_t.shape[0] // 3
+                    w = w_t[:split, :]
+                    self.is_decoder = True
+
+            if w is None:
+                for cand in (&#34;q_lin&#34;, &#34;query&#34;, &#34;q_proj&#34;, &#34;in_proj&#34;):
+                    mod = getattr(old_attn, cand, None)
+                    if mod is not None and hasattr(mod, &#34;weight&#34;):
+                        w = mod.weight.data
+                        b = getattr(mod, &#34;bias&#34;, None)
+                        if b is not None:
+                            b = b.data
+                        break
+
+            if w is not None:
+                d_out = min(w.shape[0], self.dim)
+                d_in = min(w.shape[1], self.dim)
+                self.in_proj.weight.data[:d_out, :d_in].copy_(w[:d_out, :d_in].to(target_dtype))
+                if b is not None and self.in_proj.bias is not None:
+                    self.in_proj.bias.data[: min(b.shape[0], self.dim)].copy_(
+                        b[: min(b.shape[0], self.dim)].to(target_dtype)
+                    )
+
+        if self.freeze_base:
+            self.in_proj.freeze_base_weights()
+            self.out_proj.freeze_base_weights()
+
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -&gt; tuple[torch.Tensor, torch.Tensor | None]:
+        if encoder_hidden_states is not None:
+            return hidden_states, None
+
+        while isinstance(hidden_states, (tuple, list)):
+            hidden_states = hidden_states[0]
+
+        target_dtype = hidden_states.dtype
+        B, L, D = hidden_states.shape
+        H = self.num_heads
+        d = self.head_dim
+
+        # In-projection
+        u = self.in_proj(hidden_states).to(target_dtype)
+        u_heads = u.view(B, L, H, d).transpose(1, 2)  # [B, H, L, d]
+
+        # RoPE
+        pos_emb = position_embeddings or kwargs.get(&#34;position_embeddings&#34;)
+        pos_ids = kwargs.get(&#34;position_ids&#34;)
+        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) &gt;= 2:
+            cos, sin = pos_emb[0], pos_emb[1]
+            if cos is not None and sin is not None:
+                u_heads, _ = apply_rotary_pos_emb(u_heads, u_heads, cos, sin, position_ids=pos_ids)
+
+        decay = torch.sigmoid(self.decay_param.to(target_dtype)).view(1, H, 1, 1)
+        log_decay = torch.log(decay.clamp(min=1e-4, max=1.0 - 1e-4))
+
+        pos = torch.arange(L, device=hidden_states.device, dtype=target_dtype)
+        pos_diff = pos.unsqueeze(-1) - pos.unsqueeze(-2)
+
+        if self.is_decoder:
+            # Replace O(L^2) dense matrix with O(L) recurrent scan
+            y_heads = torch.empty_like(u_heads)
+            state = torch.zeros(B, H, 1, d, device=u_heads.device, dtype=target_dtype)
+            decay_val = decay.to(target_dtype)
+            for t in range(L):
+                state = state * decay_val + u_heads[:, :, t:t+1, :]
+                y_heads[:, :, t:t+1, :] = state
+            y = y_heads.transpose(1, 2).contiguous().view(B, L, H * d)
+        else:
+            dist = torch.abs(pos_diff).unsqueeze(0).unsqueeze(0)
+            decay_mat = torch.exp((dist * log_decay).clamp(min=-30.0, max=0.0))
+            y = (decay_mat.to(target_dtype) @ u_heads).transpose(1, 2).contiguous().view(B, L, H * d)
+        if y.shape[-1] != self.dim:
+            if y.shape[-1] &lt; self.dim:
+                y = F.pad(y, (0, self.dim - y.shape[-1]))
+            else:
+                y = y[..., : self.dim]
+
+        if self.is_nested_encoder:
+            out = y.to(target_dtype)
+        else:
+            out = self.out_proj(y).to(target_dtype)
+
+        if attention_mask is not None and attention_mask.dim() == 2:
+            out = out * attention_mask.unsqueeze(-1).to(target_dtype)
+
+        return out.to(target_dtype), None</code></pre>
+</details>
+<div class="desc"><p>Every custom attention module must inherit from this.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseAttention" href="../../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.ssm.simple_ssm.SimpleSSM.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.ssm.simple_ssm.SimpleSSM.supports_bidirectional"><code class="name">var <span class="ident">supports_bidirectional</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.ssm.simple_ssm.SimpleSSM.supports_causal"><code class="name">var <span class="ident">supports_causal</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.ssm.simple_ssm.SimpleSSM.triton_kernel"><code class="name">var <span class="ident">triton_kernel</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseAttention" href="../../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseAttention.copy_weights" href="../../core/base.html#neuralops.core.base.BaseAttention.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.extra_repr" href="../../core/base.html#neuralops.core.base.BaseAttention.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.forward" href="../../core/base.html#neuralops.core.base.BaseAttention.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.attentions.ssm" href="index.html">neuralops.attentions.ssm</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.attentions.ssm.simple_ssm.apply_rotary_pos_emb" href="#neuralops.attentions.ssm.simple_ssm.apply_rotary_pos_emb">apply_rotary_pos_emb</a></code></li>
+<li><code><a title="neuralops.attentions.ssm.simple_ssm.inject_simple_ssm" href="#neuralops.attentions.ssm.simple_ssm.inject_simple_ssm">inject_simple_ssm</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.attentions.ssm.simple_ssm.SimpleSSM" href="#neuralops.attentions.ssm.simple_ssm.SimpleSSM">SimpleSSM</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.ssm.simple_ssm.SimpleSSM.is_custom_attention" href="#neuralops.attentions.ssm.simple_ssm.SimpleSSM.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.ssm.simple_ssm.SimpleSSM.supports_bidirectional" href="#neuralops.attentions.ssm.simple_ssm.SimpleSSM.supports_bidirectional">supports_bidirectional</a></code></li>
+<li><code><a title="neuralops.attentions.ssm.simple_ssm.SimpleSSM.supports_causal" href="#neuralops.attentions.ssm.simple_ssm.SimpleSSM.supports_causal">supports_causal</a></code></li>
+<li><code><a title="neuralops.attentions.ssm.simple_ssm.SimpleSSM.triton_kernel" href="#neuralops.attentions.ssm.simple_ssm.SimpleSSM.triton_kernel">triton_kernel</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

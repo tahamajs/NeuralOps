@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.benchmarks.result API documentation</title>
+<meta name="description" content="BenchmarkResult and metadata dataclasses matching canonical schema.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.benchmarks.result</code></h1>
+</header>
+<section id="section-intro">
+<p>BenchmarkResult and metadata dataclasses matching canonical schema.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.benchmarks.result.BenchmarkResult"><code class="flex name class">
+<span>class <span class="ident">BenchmarkResult</span></span>
+<span>(</span><span>run_id: str = &lt;factory&gt;,<br>run_name: str = 'benchmark_run',<br>timestamp_start: str = &lt;factory&gt;,<br>timestamp_end: str = &lt;factory&gt;,<br>git_commit: str = &lt;factory&gt;,<br>module: dict[str, Any] = &lt;factory&gt;,<br>model: dict[str, Any] = &lt;factory&gt;,<br>dataset: dict[str, Any] = &lt;factory&gt;,<br>config: dict[str, Any] = &lt;factory&gt;,<br>metrics: dict[str, Any] | None = None,<br>resources: dict[str, Any] | None = None,<br>status: str = 'success',<br>error: str | None = None,<br>traceback: str | None = None,<br>warnings: list[str] = &lt;factory&gt;,<br>timeout_s: int = 1800,<br>timed_out: bool = False)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class BenchmarkResult:
+    &#34;&#34;&#34;Canonical schema for every single benchmark evaluation run.&#34;&#34;&#34;
+
+    run_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    run_name: str = &#34;benchmark_run&#34;
+    timestamp_start: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+    timestamp_end: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+    git_commit: str = field(default_factory=_get_git_commit)
+
+    module: dict[str, Any] = field(default_factory=dict)
+    model: dict[str, Any] = field(default_factory=dict)
+    dataset: dict[str, Any] = field(default_factory=dict)
+    config: dict[str, Any] = field(default_factory=dict)
+
+    metrics: dict[str, Any] | None = None
+    resources: dict[str, Any] | None = None
+
+    status: str = &#34;success&#34;  # &#34;success&#34; | &#34;failed&#34; | &#34;skipped&#34;
+    error: str | None = None
+    traceback: str | None = None
+    warnings: list[str] = field(default_factory=list)
+
+    timeout_s: int = 1800
+    timed_out: bool = False
+
+    def to_dict(self) -&gt; dict[str, Any]:
+        &#34;&#34;&#34;Convert result dataclass to dictionary.&#34;&#34;&#34;
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -&gt; BenchmarkResult:
+        &#34;&#34;&#34;Construct BenchmarkResult from dictionary.&#34;&#34;&#34;
+        return cls(**data)</code></pre>
+</details>
+<div class="desc"><p>Canonical schema for every single benchmark evaluation run.</p></div>
+<h3>Static methods</h3>
+<dl>
+<dt id="neuralops.benchmarks.result.BenchmarkResult.from_dict"><code class="name flex">
+<span>def <span class="ident">from_dict</span></span>(<span>data: dict[str, Any]) ‑> <a title="neuralops.benchmarks.result.BenchmarkResult" href="#neuralops.benchmarks.result.BenchmarkResult">BenchmarkResult</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Construct BenchmarkResult from dictionary.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.benchmarks.result.BenchmarkResult.config"><code class="name">var <span class="ident">config</span> : dict[str, typing.Any]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.BenchmarkResult.dataset"><code class="name">var <span class="ident">dataset</span> : dict[str, typing.Any]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.BenchmarkResult.error"><code class="name">var <span class="ident">error</span> : str | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.BenchmarkResult.git_commit"><code class="name">var <span class="ident">git_commit</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.BenchmarkResult.metrics"><code class="name">var <span class="ident">metrics</span> : dict[str, typing.Any] | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.BenchmarkResult.model"><code class="name">var <span class="ident">model</span> : dict[str, typing.Any]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.BenchmarkResult.module"><code class="name">var <span class="ident">module</span> : dict[str, typing.Any]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.BenchmarkResult.resources"><code class="name">var <span class="ident">resources</span> : dict[str, typing.Any] | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.BenchmarkResult.run_id"><code class="name">var <span class="ident">run_id</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.BenchmarkResult.run_name"><code class="name">var <span class="ident">run_name</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.BenchmarkResult.status"><code class="name">var <span class="ident">status</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.BenchmarkResult.timed_out"><code class="name">var <span class="ident">timed_out</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.BenchmarkResult.timeout_s"><code class="name">var <span class="ident">timeout_s</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.BenchmarkResult.timestamp_end"><code class="name">var <span class="ident">timestamp_end</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.BenchmarkResult.timestamp_start"><code class="name">var <span class="ident">timestamp_start</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.BenchmarkResult.traceback"><code class="name">var <span class="ident">traceback</span> : str | None</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.BenchmarkResult.warnings"><code class="name">var <span class="ident">warnings</span> : list[str]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.benchmarks.result.BenchmarkResult.to_dict"><code class="name flex">
+<span>def <span class="ident">to_dict</span></span>(<span>self) ‑> dict[str, typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_dict(self) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Convert result dataclass to dictionary.&#34;&#34;&#34;
+    return asdict(self)</code></pre>
+</details>
+<div class="desc"><p>Convert result dataclass to dictionary.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.benchmarks.result.DatasetMetadata"><code class="flex name class">
+<span>class <span class="ident">DatasetMetadata</span></span>
+<span>(</span><span>name: str,<br>task: str = 'classification',<br>num_labels: int = 2,<br>num_train: int = 0,<br>num_eval: int = 0)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class DatasetMetadata:
+    &#34;&#34;&#34;Metadata describing evaluation dataset task.&#34;&#34;&#34;
+
+    name: str
+    task: str = &#34;classification&#34;
+    num_labels: int = 2
+    num_train: int = 0
+    num_eval: int = 0</code></pre>
+</details>
+<div class="desc"><p>Metadata describing evaluation dataset task.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.benchmarks.result.DatasetMetadata.name"><code class="name">var <span class="ident">name</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.DatasetMetadata.num_eval"><code class="name">var <span class="ident">num_eval</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.DatasetMetadata.num_labels"><code class="name">var <span class="ident">num_labels</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.DatasetMetadata.num_train"><code class="name">var <span class="ident">num_train</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.DatasetMetadata.task"><code class="name">var <span class="ident">task</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.benchmarks.result.ModelMetadata"><code class="flex name class">
+<span>class <span class="ident">ModelMetadata</span></span>
+<span>(</span><span>name: str,<br>family: str = 'unknown',<br>num_params: int = 0,<br>hidden_size: int = 0,<br>num_heads: int = 0,<br>num_layers: int = 0)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class ModelMetadata:
+    &#34;&#34;&#34;Metadata describing evaluated target model architecture.&#34;&#34;&#34;
+
+    name: str
+    family: str = &#34;unknown&#34;
+    num_params: int = 0
+    hidden_size: int = 0
+    num_heads: int = 0
+    num_layers: int = 0</code></pre>
+</details>
+<div class="desc"><p>Metadata describing evaluated target model architecture.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.benchmarks.result.ModelMetadata.family"><code class="name">var <span class="ident">family</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.ModelMetadata.hidden_size"><code class="name">var <span class="ident">hidden_size</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.ModelMetadata.name"><code class="name">var <span class="ident">name</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.ModelMetadata.num_heads"><code class="name">var <span class="ident">num_heads</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.ModelMetadata.num_layers"><code class="name">var <span class="ident">num_layers</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.ModelMetadata.num_params"><code class="name">var <span class="ident">num_params</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.benchmarks.result.ModuleMetadata"><code class="flex name class">
+<span>class <span class="ident">ModuleMetadata</span></span>
+<span>(</span><span>name: str,<br>type: str,<br>family: str = 'unknown',<br>supports_causal: bool = False,<br>supports_gqa: bool = False,<br>supports_rope: bool = False,<br>requires_cuda: bool = False,<br>timeout_s: int = 1800)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class ModuleMetadata:
+    &#34;&#34;&#34;Metadata describing candidate attention or compression module.&#34;&#34;&#34;
+
+    name: str
+    type: str  # &#34;attention&#34; | &#34;compressor&#34;
+    family: str = &#34;unknown&#34;
+    supports_causal: bool = False
+    supports_gqa: bool = False
+    supports_rope: bool = False
+    requires_cuda: bool = False
+    timeout_s: int = 1800</code></pre>
+</details>
+<div class="desc"><p>Metadata describing candidate attention or compression module.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.benchmarks.result.ModuleMetadata.family"><code class="name">var <span class="ident">family</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.ModuleMetadata.name"><code class="name">var <span class="ident">name</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.ModuleMetadata.requires_cuda"><code class="name">var <span class="ident">requires_cuda</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.ModuleMetadata.supports_causal"><code class="name">var <span class="ident">supports_causal</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.ModuleMetadata.supports_gqa"><code class="name">var <span class="ident">supports_gqa</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.ModuleMetadata.supports_rope"><code class="name">var <span class="ident">supports_rope</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.ModuleMetadata.timeout_s"><code class="name">var <span class="ident">timeout_s</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.result.ModuleMetadata.type"><code class="name">var <span class="ident">type</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.benchmarks" href="index.html">neuralops.benchmarks</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.benchmarks.result.BenchmarkResult" href="#neuralops.benchmarks.result.BenchmarkResult">BenchmarkResult</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.benchmarks.result.BenchmarkResult.config" href="#neuralops.benchmarks.result.BenchmarkResult.config">config</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.BenchmarkResult.dataset" href="#neuralops.benchmarks.result.BenchmarkResult.dataset">dataset</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.BenchmarkResult.error" href="#neuralops.benchmarks.result.BenchmarkResult.error">error</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.BenchmarkResult.from_dict" href="#neuralops.benchmarks.result.BenchmarkResult.from_dict">from_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.BenchmarkResult.git_commit" href="#neuralops.benchmarks.result.BenchmarkResult.git_commit">git_commit</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.BenchmarkResult.metrics" href="#neuralops.benchmarks.result.BenchmarkResult.metrics">metrics</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.BenchmarkResult.model" href="#neuralops.benchmarks.result.BenchmarkResult.model">model</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.BenchmarkResult.module" href="#neuralops.benchmarks.result.BenchmarkResult.module">module</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.BenchmarkResult.resources" href="#neuralops.benchmarks.result.BenchmarkResult.resources">resources</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.BenchmarkResult.run_id" href="#neuralops.benchmarks.result.BenchmarkResult.run_id">run_id</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.BenchmarkResult.run_name" href="#neuralops.benchmarks.result.BenchmarkResult.run_name">run_name</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.BenchmarkResult.status" href="#neuralops.benchmarks.result.BenchmarkResult.status">status</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.BenchmarkResult.timed_out" href="#neuralops.benchmarks.result.BenchmarkResult.timed_out">timed_out</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.BenchmarkResult.timeout_s" href="#neuralops.benchmarks.result.BenchmarkResult.timeout_s">timeout_s</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.BenchmarkResult.timestamp_end" href="#neuralops.benchmarks.result.BenchmarkResult.timestamp_end">timestamp_end</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.BenchmarkResult.timestamp_start" href="#neuralops.benchmarks.result.BenchmarkResult.timestamp_start">timestamp_start</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.BenchmarkResult.to_dict" href="#neuralops.benchmarks.result.BenchmarkResult.to_dict">to_dict</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.BenchmarkResult.traceback" href="#neuralops.benchmarks.result.BenchmarkResult.traceback">traceback</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.BenchmarkResult.warnings" href="#neuralops.benchmarks.result.BenchmarkResult.warnings">warnings</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.benchmarks.result.DatasetMetadata" href="#neuralops.benchmarks.result.DatasetMetadata">DatasetMetadata</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.benchmarks.result.DatasetMetadata.name" href="#neuralops.benchmarks.result.DatasetMetadata.name">name</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.DatasetMetadata.num_eval" href="#neuralops.benchmarks.result.DatasetMetadata.num_eval">num_eval</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.DatasetMetadata.num_labels" href="#neuralops.benchmarks.result.DatasetMetadata.num_labels">num_labels</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.DatasetMetadata.num_train" href="#neuralops.benchmarks.result.DatasetMetadata.num_train">num_train</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.DatasetMetadata.task" href="#neuralops.benchmarks.result.DatasetMetadata.task">task</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.benchmarks.result.ModelMetadata" href="#neuralops.benchmarks.result.ModelMetadata">ModelMetadata</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.benchmarks.result.ModelMetadata.family" href="#neuralops.benchmarks.result.ModelMetadata.family">family</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.ModelMetadata.hidden_size" href="#neuralops.benchmarks.result.ModelMetadata.hidden_size">hidden_size</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.ModelMetadata.name" href="#neuralops.benchmarks.result.ModelMetadata.name">name</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.ModelMetadata.num_heads" href="#neuralops.benchmarks.result.ModelMetadata.num_heads">num_heads</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.ModelMetadata.num_layers" href="#neuralops.benchmarks.result.ModelMetadata.num_layers">num_layers</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.ModelMetadata.num_params" href="#neuralops.benchmarks.result.ModelMetadata.num_params">num_params</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.benchmarks.result.ModuleMetadata" href="#neuralops.benchmarks.result.ModuleMetadata">ModuleMetadata</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.benchmarks.result.ModuleMetadata.family" href="#neuralops.benchmarks.result.ModuleMetadata.family">family</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.ModuleMetadata.name" href="#neuralops.benchmarks.result.ModuleMetadata.name">name</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.ModuleMetadata.requires_cuda" href="#neuralops.benchmarks.result.ModuleMetadata.requires_cuda">requires_cuda</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.ModuleMetadata.supports_causal" href="#neuralops.benchmarks.result.ModuleMetadata.supports_causal">supports_causal</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.ModuleMetadata.supports_gqa" href="#neuralops.benchmarks.result.ModuleMetadata.supports_gqa">supports_gqa</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.ModuleMetadata.supports_rope" href="#neuralops.benchmarks.result.ModuleMetadata.supports_rope">supports_rope</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.ModuleMetadata.timeout_s" href="#neuralops.benchmarks.result.ModuleMetadata.timeout_s">timeout_s</a></code></li>
+<li><code><a title="neuralops.benchmarks.result.ModuleMetadata.type" href="#neuralops.benchmarks.result.ModuleMetadata.type">type</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

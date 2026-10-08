@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.benchmarks.adapters.classification API documentation</title>
+<meta name="description" content="Classification task adapter for neuralops benchmark suite.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.benchmarks.adapters.classification</code></h1>
+</header>
+<section id="section-intro">
+<p>Classification task adapter for neuralops benchmark suite.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.benchmarks.adapters.classification.ClassificationAdapter"><code class="flex name class">
+<span>class <span class="ident">ClassificationAdapter</span></span>
+<span>(</span><span>module_name: str,<br>module_type: str,<br>model_name: str,<br>dataset_name: str,<br>rank: Optional[int] = None,<br>device: Optional[str] = None,<br>dtype: Optional[str] = None,<br>batch_size: int = 32,<br>max_length: int = 128,<br>epochs: int = 3,<br>lr: float = 2e-05,<br>seed: int = 42,<br>eval_only: bool = False,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ClassificationAdapter:
+    &#34;&#34;&#34;Task adapter for sequence classification benchmarks (e.g. GLUE tasks).&#34;&#34;&#34;
+
+    def __init__(
+        self,
+        module_name: str,
+        module_type: str,
+        model_name: str,
+        dataset_name: str,
+        rank: Optional[int] = None,
+        device: Optional[str] = None,
+        dtype: Optional[str] = None,
+        batch_size: int = 32,
+        max_length: int = 128,
+        epochs: int = 3,
+        lr: float = 2e-5,
+        seed: int = 42,
+        eval_only: bool = False,
+        **kwargs: Any,
+    ):
+        self.module_name = module_name
+        self.module_type = module_type
+        self.model_name = model_name
+        self.dataset_name = dataset_name
+        self.rank = rank
+        self.device = device or (&#34;cuda&#34; if torch.cuda.is_available() else &#34;cpu&#34;)
+        self.dtype = dtype or &#34;float32&#34;
+        self.batch_size = batch_size
+        self.max_length = max_length
+        self.epochs = epochs
+        self.lr = lr
+        self.seed = seed
+        self.eval_only = eval_only
+        self.extra_kwargs = kwargs
+
+        self.model = None
+        self.tokenizer = None
+        self.train_loader = None
+        self.eval_loader = None
+        self.model_meta: Optional[ModelMetadata] = None
+        self.dataset_meta: Optional[DatasetMetadata] = None
+
+    def setup(self) -&gt; None:
+        &#34;&#34;&#34;Load datasets, tokenizers, and base model with classification head.&#34;&#34;&#34;
+        torch.manual_seed(self.seed)
+
+        # 1. Determine number of labels for dataset
+        num_labels = get_num_labels(self.dataset_name)
+
+        # 2. Load model and tokenizer with sequence classification head
+        self.model, self.tokenizer, model_cfg = load_model_and_tokenizer(
+            self.model_name,
+            device=self.device,
+            dtype=self.dtype,
+            task=&#34;classification&#34;,
+            num_labels=num_labels,
+        )
+        self.model_meta = get_model_metadata(self.model, model_cfg)
+
+        # 3. Tokenize datasets
+        tokenized_train = load_dataset_by_name(
+            self.dataset_name,
+            tokenizer=self.tokenizer,
+            max_length=self.max_length,
+            split=&#34;train&#34;,
+        )
+        # Determine eval split
+        eval_split = &#34;validation&#34;
+        try:
+            tokenized_eval = load_dataset_by_name(
+                self.dataset_name,
+                tokenizer=self.tokenizer,
+                max_length=self.max_length,
+                split=&#34;validation&#34;,
+            )
+        except Exception:
+            eval_split = &#34;test&#34;
+            tokenized_eval = load_dataset_by_name(
+                self.dataset_name,
+                tokenizer=self.tokenizer,
+                max_length=self.max_length,
+                split=&#34;test&#34;,
+            )
+
+        self.dataset_meta = get_dataset_metadata(
+            tokenized_train,
+            name=self.dataset_name,
+            split=f&#34;train+{eval_split}&#34;,
+        )
+
+        self.train_loader = make_dataloader(tokenized_train, batch_size=self.batch_size, shuffle=True)
+        self.eval_loader = make_dataloader(tokenized_eval, batch_size=self.batch_size, shuffle=False)
+
+    def apply_module(self) -&gt; None:
+        &#34;&#34;&#34;Apply attention module replacement or compression algorithm.&#34;&#34;&#34;
+        if self.model is None:
+            raise RuntimeError(&#34;Setup must be run before applying module.&#34;)
+
+        if self.module_type in (&#34;baseline&#34;, &#34;none&#34;, &#34;full&#34;, &#34;dense&#34;):
+            logger.info(&#34;Baseline run: skipping module injection.&#34;)
+            return
+
+
+        if self.module_type == &#34;attention&#34;:
+            self.model = apply_attention_module(
+                self.model,
+                module_name=self.module_name,
+                rank=self.rank,
+                **self.extra_kwargs,
+            )
+        elif self.module_type == &#34;compressor&#34;:
+            self.model = apply_compressor(
+                self.model,
+                module_name=self.module_name,
+                rank=self.rank,
+                calibration_loader=self.train_loader,
+                **self.extra_kwargs,
+            )
+        else:
+            raise ValueError(f&#34;Unknown module type: {self.module_type}&#34;)
+
+
+        # Update params in metadata
+        if self.model_meta is not None:
+            self.model_meta.num_params = count_parameters(self.model)
+
+    def run(self) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Execute setup, module injection, training (if applicable), and evaluation.&#34;&#34;&#34;
+        self.setup()
+        self.apply_module()
+
+        train_metrics = {}
+        if not self.eval_only and self.epochs &gt; 0:
+            train_metrics = finetune_classification(
+                model=self.model,
+                train_loader=self.train_loader,
+                eval_loader=self.eval_loader,
+                epochs=self.epochs,
+                lr=self.lr,
+                device=self.device,
+            )
+
+        # Baseline evaluation
+        eval_metrics = evaluate_classification(
+            model=self.model,
+            eval_loader=self.eval_loader,
+            device=self.device,
+        )
+
+        # Latency and throughput
+        latency_stats = measure_latency_and_throughput(
+            model=self.model,
+            dataloader=self.eval_loader,
+            device=self.device,
+        )
+
+        # Memory measurement
+        peak_mem = measure_peak_memory_mb(self.device)
+
+        return {
+            &#34;model_metadata&#34;: self.model_meta,
+            &#34;dataset_metadata&#34;: self.dataset_meta,
+            &#34;train_metrics&#34;: train_metrics,
+            &#34;eval_metrics&#34;: eval_metrics,
+            &#34;latency&#34;: latency_stats,
+            &#34;peak_memory_mb&#34;: peak_mem,
+        }
+
+    def cleanup(self) -&gt; None:
+        &#34;&#34;&#34;Clean up memory and resources.&#34;&#34;&#34;
+        if self.model is not None:
+            cleanup_model(self.model)
+            self.model = None
+        self.train_loader = None
+        self.eval_loader = None
+        self.tokenizer = None</code></pre>
+</details>
+<div class="desc"><p>Task adapter for sequence classification benchmarks (e.g. GLUE tasks).</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.benchmarks.adapters.classification.ClassificationAdapter.apply_module"><code class="name flex">
+<span>def <span class="ident">apply_module</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_module(self) -&gt; None:
+    &#34;&#34;&#34;Apply attention module replacement or compression algorithm.&#34;&#34;&#34;
+    if self.model is None:
+        raise RuntimeError(&#34;Setup must be run before applying module.&#34;)
+
+    if self.module_type in (&#34;baseline&#34;, &#34;none&#34;, &#34;full&#34;, &#34;dense&#34;):
+        logger.info(&#34;Baseline run: skipping module injection.&#34;)
+        return
+
+
+    if self.module_type == &#34;attention&#34;:
+        self.model = apply_attention_module(
+            self.model,
+            module_name=self.module_name,
+            rank=self.rank,
+            **self.extra_kwargs,
+        )
+    elif self.module_type == &#34;compressor&#34;:
+        self.model = apply_compressor(
+            self.model,
+            module_name=self.module_name,
+            rank=self.rank,
+            calibration_loader=self.train_loader,
+            **self.extra_kwargs,
+        )
+    else:
+        raise ValueError(f&#34;Unknown module type: {self.module_type}&#34;)
+
+
+    # Update params in metadata
+    if self.model_meta is not None:
+        self.model_meta.num_params = count_parameters(self.model)</code></pre>
+</details>
+<div class="desc"><p>Apply attention module replacement or compression algorithm.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.adapters.classification.ClassificationAdapter.cleanup"><code class="name flex">
+<span>def <span class="ident">cleanup</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cleanup(self) -&gt; None:
+    &#34;&#34;&#34;Clean up memory and resources.&#34;&#34;&#34;
+    if self.model is not None:
+        cleanup_model(self.model)
+        self.model = None
+    self.train_loader = None
+    self.eval_loader = None
+    self.tokenizer = None</code></pre>
+</details>
+<div class="desc"><p>Clean up memory and resources.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.adapters.classification.ClassificationAdapter.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>self) ‑> Dict[str, Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run(self) -&gt; Dict[str, Any]:
+    &#34;&#34;&#34;Execute setup, module injection, training (if applicable), and evaluation.&#34;&#34;&#34;
+    self.setup()
+    self.apply_module()
+
+    train_metrics = {}
+    if not self.eval_only and self.epochs &gt; 0:
+        train_metrics = finetune_classification(
+            model=self.model,
+            train_loader=self.train_loader,
+            eval_loader=self.eval_loader,
+            epochs=self.epochs,
+            lr=self.lr,
+            device=self.device,
+        )
+
+    # Baseline evaluation
+    eval_metrics = evaluate_classification(
+        model=self.model,
+        eval_loader=self.eval_loader,
+        device=self.device,
+    )
+
+    # Latency and throughput
+    latency_stats = measure_latency_and_throughput(
+        model=self.model,
+        dataloader=self.eval_loader,
+        device=self.device,
+    )
+
+    # Memory measurement
+    peak_mem = measure_peak_memory_mb(self.device)
+
+    return {
+        &#34;model_metadata&#34;: self.model_meta,
+        &#34;dataset_metadata&#34;: self.dataset_meta,
+        &#34;train_metrics&#34;: train_metrics,
+        &#34;eval_metrics&#34;: eval_metrics,
+        &#34;latency&#34;: latency_stats,
+        &#34;peak_memory_mb&#34;: peak_mem,
+    }</code></pre>
+</details>
+<div class="desc"><p>Execute setup, module injection, training (if applicable), and evaluation.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.adapters.classification.ClassificationAdapter.setup"><code class="name flex">
+<span>def <span class="ident">setup</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setup(self) -&gt; None:
+    &#34;&#34;&#34;Load datasets, tokenizers, and base model with classification head.&#34;&#34;&#34;
+    torch.manual_seed(self.seed)
+
+    # 1. Determine number of labels for dataset
+    num_labels = get_num_labels(self.dataset_name)
+
+    # 2. Load model and tokenizer with sequence classification head
+    self.model, self.tokenizer, model_cfg = load_model_and_tokenizer(
+        self.model_name,
+        device=self.device,
+        dtype=self.dtype,
+        task=&#34;classification&#34;,
+        num_labels=num_labels,
+    )
+    self.model_meta = get_model_metadata(self.model, model_cfg)
+
+    # 3. Tokenize datasets
+    tokenized_train = load_dataset_by_name(
+        self.dataset_name,
+        tokenizer=self.tokenizer,
+        max_length=self.max_length,
+        split=&#34;train&#34;,
+    )
+    # Determine eval split
+    eval_split = &#34;validation&#34;
+    try:
+        tokenized_eval = load_dataset_by_name(
+            self.dataset_name,
+            tokenizer=self.tokenizer,
+            max_length=self.max_length,
+            split=&#34;validation&#34;,
+        )
+    except Exception:
+        eval_split = &#34;test&#34;
+        tokenized_eval = load_dataset_by_name(
+            self.dataset_name,
+            tokenizer=self.tokenizer,
+            max_length=self.max_length,
+            split=&#34;test&#34;,
+        )
+
+    self.dataset_meta = get_dataset_metadata(
+        tokenized_train,
+        name=self.dataset_name,
+        split=f&#34;train+{eval_split}&#34;,
+    )
+
+    self.train_loader = make_dataloader(tokenized_train, batch_size=self.batch_size, shuffle=True)
+    self.eval_loader = make_dataloader(tokenized_eval, batch_size=self.batch_size, shuffle=False)</code></pre>
+</details>
+<div class="desc"><p>Load datasets, tokenizers, and base model with classification head.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.benchmarks.adapters" href="index.html">neuralops.benchmarks.adapters</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.benchmarks.adapters.classification.ClassificationAdapter" href="#neuralops.benchmarks.adapters.classification.ClassificationAdapter">ClassificationAdapter</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.benchmarks.adapters.classification.ClassificationAdapter.apply_module" href="#neuralops.benchmarks.adapters.classification.ClassificationAdapter.apply_module">apply_module</a></code></li>
+<li><code><a title="neuralops.benchmarks.adapters.classification.ClassificationAdapter.cleanup" href="#neuralops.benchmarks.adapters.classification.ClassificationAdapter.cleanup">cleanup</a></code></li>
+<li><code><a title="neuralops.benchmarks.adapters.classification.ClassificationAdapter.run" href="#neuralops.benchmarks.adapters.classification.ClassificationAdapter.run">run</a></code></li>
+<li><code><a title="neuralops.benchmarks.adapters.classification.ClassificationAdapter.setup" href="#neuralops.benchmarks.adapters.classification.ClassificationAdapter.setup">setup</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

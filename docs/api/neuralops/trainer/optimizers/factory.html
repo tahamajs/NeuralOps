@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.trainer.optimizers.factory API documentation</title>
+<meta name="description" content="Optimizer factories and registry bindings.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.trainer.optimizers.factory</code></h1>
+</header>
+<section id="section-intro">
+<p>Optimizer factories and registry bindings.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.trainer.optimizers.factory.create_adabelief"><code class="name flex">
+<span>def <span class="ident">create_adabelief</span></span>(<span>params: Any, lr: float = 0.001, weight_decay: float = 0.0, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;adabelief&#34;)
+def create_adabelief(
+    params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwargs: Any
+) -&gt; Any:
+    &#34;&#34;&#34;Build and return AdaBelief.&#34;&#34;&#34;
+    from adabelief_pytorch import AdaBelief
+
+    return AdaBelief(params, lr=lr, weight_decay=weight_decay, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Build and return AdaBelief.</p></div>
+</dd>
+<dt id="neuralops.trainer.optimizers.factory.create_adam"><code class="name flex">
+<span>def <span class="ident">create_adam</span></span>(<span>params: Any, lr: float = 0.001, weight_decay: float = 0.0, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;adam&#34;)
+def create_adam(params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Build and return Adam.&#34;&#34;&#34;
+    return optim.Adam(params, lr=lr, weight_decay=weight_decay, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Build and return Adam.</p></div>
+</dd>
+<dt id="neuralops.trainer.optimizers.factory.create_adamw"><code class="name flex">
+<span>def <span class="ident">create_adamw</span></span>(<span>params: Any, lr: float = 0.001, weight_decay: float = 0.01, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;adamw&#34;)
+def create_adamw(params: Any, lr: float = 1e-3, weight_decay: float = 0.01, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Build and return AdamW.&#34;&#34;&#34;
+    return optim.AdamW(params, lr=lr, weight_decay=weight_decay, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Build and return AdamW.</p></div>
+</dd>
+<dt id="neuralops.trainer.optimizers.factory.create_lamb"><code class="name flex">
+<span>def <span class="ident">create_lamb</span></span>(<span>params: Any, lr: float = 0.001, weight_decay: float = 0.01, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;lamb&#34;)
+def create_lamb(params: Any, lr: float = 1e-3, weight_decay: float = 0.01, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Build and return Lamb.&#34;&#34;&#34;
+    from torch_optimizer import Lamb
+
+    return Lamb(params, lr=lr, weight_decay=weight_decay, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Build and return Lamb.</p></div>
+</dd>
+<dt id="neuralops.trainer.optimizers.factory.create_lars"><code class="name flex">
+<span>def <span class="ident">create_lars</span></span>(<span>params: Any, lr: float = 0.001, weight_decay: float = 0.0, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;lars&#34;)
+def create_lars(params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Build and return Lars.&#34;&#34;&#34;
+    from torch_optimizer import Lars
+
+    return Lars(params, lr=lr, weight_decay=weight_decay, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Build and return Lars.</p></div>
+</dd>
+<dt id="neuralops.trainer.optimizers.factory.create_muon"><code class="name flex">
+<span>def <span class="ident">create_muon</span></span>(<span>params: Any,<br>lr: float = 0.02,<br>momentum: float = 0.95,<br>weight_decay: float = 0.01,<br>**kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;muon&#34;)
+def create_muon(
+    params: Any,
+    lr: float = 0.02,
+    momentum: float = 0.95,
+    weight_decay: float = 0.01,
+    **kwargs: Any,
+) -&gt; Any:
+    &#34;&#34;&#34;Build and return Muon optimizer.&#34;&#34;&#34;
+    return Muon(params, lr=lr, momentum=momentum, weight_decay=weight_decay, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Build and return Muon optimizer.</p></div>
+</dd>
+<dt id="neuralops.trainer.optimizers.factory.create_muon_adamw_reg"><code class="name flex">
+<span>def <span class="ident">create_muon_adamw_reg</span></span>(<span>params: Any,<br>lr: float = 0.02,<br>lr_adam: float = 5e-05,<br>weight_decay: float = 0.01,<br>**kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;muon_adamw&#34;)
+def create_muon_adamw_reg(
+    params: Any,
+    lr: float = 0.02,
+    lr_adam: float = 5e-5,
+    weight_decay: float = 0.01,
+    **kwargs: Any,
+) -&gt; Any:
+    &#34;&#34;&#34;Build and return MuonAdamW hybrid optimizer.&#34;&#34;&#34;
+    return create_muon_adamw_optimizer(
+        params, lr_muon=lr, lr_adam=lr_adam, weight_decay=weight_decay, **kwargs
+    )</code></pre>
+</details>
+<div class="desc"><p>Build and return MuonAdamW hybrid optimizer.</p></div>
+</dd>
+<dt id="neuralops.trainer.optimizers.factory.create_ranger"><code class="name flex">
+<span>def <span class="ident">create_ranger</span></span>(<span>params: Any, lr: float = 0.001, weight_decay: float = 0.0, **kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;ranger&#34;)
+def create_ranger(params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwargs: Any) -&gt; Any:
+    &#34;&#34;&#34;Build and return Ranger.&#34;&#34;&#34;
+    from ranger import Ranger
+
+    return Ranger(params, lr=lr, weight_decay=weight_decay, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Build and return Ranger.</p></div>
+</dd>
+<dt id="neuralops.trainer.optimizers.factory.create_riemannian_stiefel"><code class="name flex">
+<span>def <span class="ident">create_riemannian_stiefel</span></span>(<span>params: Any,<br>lr: float = 0.001,<br>lr_stiefel: float | None = None,<br>base_optimizer: str = 'adamw',<br>weight_decay: float = 0.01,<br>**kwargs: Any) ‑> <a title="neuralops.trainer.optimizers.riemannian.RiemannianStiefelOptimizer" href="riemannian.html#neuralops.trainer.optimizers.riemannian.RiemannianStiefelOptimizer">RiemannianStiefelOptimizer</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;riemannian_stiefel&#34;)
+@OPTIMIZER_REGISTRY.register(&#34;stiefel&#34;)
+@OPTIMIZER_REGISTRY.register(&#34;stiefel_optimizer&#34;)
+def create_riemannian_stiefel(
+    params: Any,
+    lr: float = 1e-3,
+    lr_stiefel: float | None = None,
+    base_optimizer: str = &#34;adamw&#34;,
+    weight_decay: float = 0.01,
+    **kwargs: Any,
+) -&gt; RiemannianStiefelOptimizer:
+    &#34;&#34;&#34;Build and return RiemannianStiefelOptimizer.&#34;&#34;&#34;
+    return RiemannianStiefelOptimizer(
+        params,
+        lr=lr,
+        lr_stiefel=lr_stiefel,
+        base_optimizer=base_optimizer,
+        weight_decay=weight_decay,
+        **kwargs,
+    )</code></pre>
+</details>
+<div class="desc"><p>Build and return RiemannianStiefelOptimizer.</p></div>
+</dd>
+<dt id="neuralops.trainer.optimizers.factory.create_sgd"><code class="name flex">
+<span>def <span class="ident">create_sgd</span></span>(<span>params: Any,<br>lr: float = 0.01,<br>momentum: float = 0.9,<br>weight_decay: float = 0.0,<br>**kwargs: Any) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@OPTIMIZER_REGISTRY.register(&#34;sgd&#34;)
+def create_sgd(
+    params: Any,
+    lr: float = 0.01,
+    momentum: float = 0.9,
+    weight_decay: float = 0.0,
+    **kwargs: Any,
+) -&gt; Any:
+    &#34;&#34;&#34;Build and return SGD.&#34;&#34;&#34;
+    return optim.SGD(params, lr=lr, momentum=momentum, weight_decay=weight_decay, **kwargs)</code></pre>
+</details>
+<div class="desc"><p>Build and return SGD.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.trainer.optimizers" href="index.html">neuralops.trainer.optimizers</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.trainer.optimizers.factory.create_adabelief" href="#neuralops.trainer.optimizers.factory.create_adabelief">create_adabelief</a></code></li>
+<li><code><a title="neuralops.trainer.optimizers.factory.create_adam" href="#neuralops.trainer.optimizers.factory.create_adam">create_adam</a></code></li>
+<li><code><a title="neuralops.trainer.optimizers.factory.create_adamw" href="#neuralops.trainer.optimizers.factory.create_adamw">create_adamw</a></code></li>
+<li><code><a title="neuralops.trainer.optimizers.factory.create_lamb" href="#neuralops.trainer.optimizers.factory.create_lamb">create_lamb</a></code></li>
+<li><code><a title="neuralops.trainer.optimizers.factory.create_lars" href="#neuralops.trainer.optimizers.factory.create_lars">create_lars</a></code></li>
+<li><code><a title="neuralops.trainer.optimizers.factory.create_muon" href="#neuralops.trainer.optimizers.factory.create_muon">create_muon</a></code></li>
+<li><code><a title="neuralops.trainer.optimizers.factory.create_muon_adamw_reg" href="#neuralops.trainer.optimizers.factory.create_muon_adamw_reg">create_muon_adamw_reg</a></code></li>
+<li><code><a title="neuralops.trainer.optimizers.factory.create_ranger" href="#neuralops.trainer.optimizers.factory.create_ranger">create_ranger</a></code></li>
+<li><code><a title="neuralops.trainer.optimizers.factory.create_riemannian_stiefel" href="#neuralops.trainer.optimizers.factory.create_riemannian_stiefel">create_riemannian_stiefel</a></code></li>
+<li><code><a title="neuralops.trainer.optimizers.factory.create_sgd" href="#neuralops.trainer.optimizers.factory.create_sgd">create_sgd</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

@@ -73,6 +73,32 @@ Tests offline synthetic fallback, registered benchmarks, and data formats.</p>
 </details>
 <div class="desc"></div>
 </dd>
+<dt id="neuralops.tests.test_benchmark_datasets.test_manifest_and_torch_dataset"><code class="name flex">
+<span>def <span class="ident">test_manifest_and_torch_dataset</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_manifest_and_torch_dataset():
+    from neuralops.data.benchmark_datasets.manifest import BenchmarkDatasetRegistry
+    from neuralops.data.benchmark_datasets.loaders import BenchmarkTorchDataset
+    from neuralops.data.benchmark_datasets.synthetic import _generate_synthetic_wikitext
+    
+    info = BenchmarkDatasetRegistry.get(&#34;wikitext2&#34;)
+    assert info is not None
+    assert info.category == &#34;language_modeling&#34;
+
+    samples = _generate_synthetic_wikitext(5)
+    assert len(samples) == 5
+    ds = BenchmarkTorchDataset(samples)
+    assert len(ds) == 5
+    item = ds[0]
+    assert &#34;text&#34; in item</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
 <dt id="neuralops.tests.test_benchmark_datasets.test_registry_contains_standard_benchmarks"><code class="name flex">
 <span>def <span class="ident">test_registry_contains_standard_benchmarks</span></span>(<span>)</span>
 </code></dt>
@@ -154,6 +180,67 @@ Tests offline synthetic fallback, registered benchmarks, and data formats.</p>
 </dl>
 </section>
 <section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.tests.test_benchmark_datasets.TestBenchmarkRegistryExtended"><code class="flex name class">
+<span>class <span class="ident">TestBenchmarkRegistryExtended</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TestBenchmarkRegistryExtended:
+    &#34;&#34;&#34;Extended test cases for benchmark registry queries and edge cases.&#34;&#34;&#34;
+
+    def test_registry_contains_glue(self):
+        benchmarks = BenchmarkDatasetRegistry.list_benchmarks()
+        glue_names = [d for d in benchmarks if &#34;glue&#34; in str(d).lower()]
+        assert len(glue_names) &gt; 0
+
+    def test_load_unregistered_fallback(self):
+        # Unregistered dataset safely falls back to synthetic generator
+        res = load_benchmark_dataset(&#34;nonexistent_dataset_xyz&#34;, use_synthetic=True, max_samples=3, return_dataloader=False)
+        assert len(res) == 3
+        assert &#34;text&#34; in res[0]</code></pre>
+</details>
+<div class="desc"><p>Extended test cases for benchmark registry queries and edge cases.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_benchmark_datasets.TestBenchmarkRegistryExtended.test_load_unregistered_fallback"><code class="name flex">
+<span>def <span class="ident">test_load_unregistered_fallback</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_load_unregistered_fallback(self):
+    # Unregistered dataset safely falls back to synthetic generator
+    res = load_benchmark_dataset(&#34;nonexistent_dataset_xyz&#34;, use_synthetic=True, max_samples=3, return_dataloader=False)
+    assert len(res) == 3
+    assert &#34;text&#34; in res[0]</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.tests.test_benchmark_datasets.TestBenchmarkRegistryExtended.test_registry_contains_glue"><code class="name flex">
+<span>def <span class="ident">test_registry_contains_glue</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_registry_contains_glue(self):
+    benchmarks = BenchmarkDatasetRegistry.list_benchmarks()
+    glue_names = [d for d in benchmarks if &#34;glue&#34; in str(d).lower()]
+    assert len(glue_names) &gt; 0</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -169,8 +256,20 @@ Tests offline synthetic fallback, registered benchmarks, and data formats.</p>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="neuralops.tests.test_benchmark_datasets.test_custom_registration" href="#neuralops.tests.test_benchmark_datasets.test_custom_registration">test_custom_registration</a></code></li>
+<li><code><a title="neuralops.tests.test_benchmark_datasets.test_manifest_and_torch_dataset" href="#neuralops.tests.test_benchmark_datasets.test_manifest_and_torch_dataset">test_manifest_and_torch_dataset</a></code></li>
 <li><code><a title="neuralops.tests.test_benchmark_datasets.test_registry_contains_standard_benchmarks" href="#neuralops.tests.test_benchmark_datasets.test_registry_contains_standard_benchmarks">test_registry_contains_standard_benchmarks</a></code></li>
 <li><code><a title="neuralops.tests.test_benchmark_datasets.test_synthetic_loading_all_benchmarks" href="#neuralops.tests.test_benchmark_datasets.test_synthetic_loading_all_benchmarks">test_synthetic_loading_all_benchmarks</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.tests.test_benchmark_datasets.TestBenchmarkRegistryExtended" href="#neuralops.tests.test_benchmark_datasets.TestBenchmarkRegistryExtended">TestBenchmarkRegistryExtended</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_benchmark_datasets.TestBenchmarkRegistryExtended.test_load_unregistered_fallback" href="#neuralops.tests.test_benchmark_datasets.TestBenchmarkRegistryExtended.test_load_unregistered_fallback">test_load_unregistered_fallback</a></code></li>
+<li><code><a title="neuralops.tests.test_benchmark_datasets.TestBenchmarkRegistryExtended.test_registry_contains_glue" href="#neuralops.tests.test_benchmark_datasets.TestBenchmarkRegistryExtended.test_registry_contains_glue">test_registry_contains_glue</a></code></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

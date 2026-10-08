@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.tests.test_eval_pipeline API documentation</title>
+<meta name="description" content="Unit tests for neuralops.evaluation.eval_pipeline.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.tests.test_eval_pipeline</code></h1>
+</header>
+<section id="section-intro">
+<p>Unit tests for neuralops.evaluation.eval_pipeline.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.tests.test_eval_pipeline.DummyModel"><code class="flex name class">
+<span>class <span class="ident">DummyModel</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DummyModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc = nn.Linear(32, 2)
+
+    def forward(self, input_ids=None, **kwargs):
+        if input_ids is not None:
+            batch_size = input_ids.shape[0]
+            logits = torch.randn(batch_size, 2)
+        else:
+            logits = torch.randn(2, 2)
+        return type(&#34;Output&#34;, (), {&#34;logits&#34;: logits, &#34;loss&#34;: torch.tensor(0.5)})()</code></pre>
+</details>
+<div class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+
+class Model(nn.Module):
+    def __init__(self) -&gt; None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call :meth:<code>to</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code>__init__()</code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_eval_pipeline.DummyModel.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, input_ids=None, **kwargs) ‑> Callable[..., typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, input_ids=None, **kwargs):
+    if input_ids is not None:
+        batch_size = input_ids.shape[0]
+        logits = torch.randn(batch_size, 2)
+    else:
+        logits = torch.randn(2, 2)
+    return type(&#34;Output&#34;, (), {&#34;logits&#34;: logits, &#34;loss&#34;: torch.tensor(0.5)})()</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_eval_pipeline.TestBenchmarkResultDataclass"><code class="flex name class">
+<span>class <span class="ident">TestBenchmarkResultDataclass</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TestBenchmarkResultDataclass:
+    def test_benchmark_result_to_dict(self):
+        result = BenchmarkResult(
+            timestamp=&#34;2026-10-08T00:00:00&#34;,
+            track=&#34;track1&#34;,
+            module_name=&#34;direct_svd&#34;,
+            module_type=&#34;compressor&#34;,
+            model_family=&#34;bert&#34;,
+            dataset=&#34;sst2&#34;,
+            status=&#34;PASS&#34;,
+            accuracy_pct=92.5,
+            loss=0.32,
+        )
+        d = result.to_dict()
+        assert isinstance(d, dict)
+        assert d[&#34;module_name&#34;] == &#34;direct_svd&#34;
+        assert d[&#34;accuracy_pct&#34;] == 92.5
+        assert d[&#34;loss&#34;] == 0.32</code></pre>
+</details>
+<div class="desc"></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_eval_pipeline.TestBenchmarkResultDataclass.test_benchmark_result_to_dict"><code class="name flex">
+<span>def <span class="ident">test_benchmark_result_to_dict</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_benchmark_result_to_dict(self):
+    result = BenchmarkResult(
+        timestamp=&#34;2026-10-08T00:00:00&#34;,
+        track=&#34;track1&#34;,
+        module_name=&#34;direct_svd&#34;,
+        module_type=&#34;compressor&#34;,
+        model_family=&#34;bert&#34;,
+        dataset=&#34;sst2&#34;,
+        status=&#34;PASS&#34;,
+        accuracy_pct=92.5,
+        loss=0.32,
+    )
+    d = result.to_dict()
+    assert isinstance(d, dict)
+    assert d[&#34;module_name&#34;] == &#34;direct_svd&#34;
+    assert d[&#34;accuracy_pct&#34;] == 92.5
+    assert d[&#34;loss&#34;] == 0.32</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_eval_pipeline.TestEvaluateSingleCombination"><code class="flex name class">
+<span>class <span class="ident">TestEvaluateSingleCombination</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TestEvaluateSingleCombination:
+    def test_evaluate_single_combination_alias(self):
+        &#34;&#34;&#34;Verify alias points to optimize implementation.&#34;&#34;&#34;
+        assert evaluate_single_combination is evaluate_single_combination_opt
+
+    def test_evaluate_error_handling_invalid_model(self, tmp_path):
+        &#34;&#34;&#34;Should catch invalid model family gracefully and return BenchmarkResult with FAIL status.&#34;&#34;&#34;
+        res = evaluate_single_combination_opt(
+            track=&#34;track1&#34;,
+            module_name=&#34;svd_linear_attention&#34;,
+            module_type=&#34;attention&#34;,
+            model_family=&#34;nonexistent_model_family_123&#34;,
+            dataset=&#34;sst2&#34;,
+            results_dir=str(tmp_path),
+            device=torch.device(&#34;cpu&#34;),
+            allow_synthetic=True,
+        )
+        assert isinstance(res, BenchmarkResult)
+        assert res.status == &#34;FAIL&#34;
+
+    def test_evaluate_error_handling_invalid_module(self, tmp_path):
+        &#34;&#34;&#34;Should catch unknown module gracefully.&#34;&#34;&#34;
+        res = evaluate_single_combination_opt(
+            track=&#34;track1&#34;,
+            module_name=&#34;nonexistent_attention_module_xyz&#34;,
+            module_type=&#34;attention&#34;,
+            model_family=&#34;bert&#34;,
+            dataset=&#34;sst2&#34;,
+            results_dir=str(tmp_path),
+            device=torch.device(&#34;cpu&#34;),
+            allow_synthetic=True,
+        )
+        assert isinstance(res, BenchmarkResult)
+        assert res.status == &#34;FAIL&#34;</code></pre>
+</details>
+<div class="desc"></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_eval_pipeline.TestEvaluateSingleCombination.test_evaluate_error_handling_invalid_model"><code class="name flex">
+<span>def <span class="ident">test_evaluate_error_handling_invalid_model</span></span>(<span>self, tmp_path)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_evaluate_error_handling_invalid_model(self, tmp_path):
+    &#34;&#34;&#34;Should catch invalid model family gracefully and return BenchmarkResult with FAIL status.&#34;&#34;&#34;
+    res = evaluate_single_combination_opt(
+        track=&#34;track1&#34;,
+        module_name=&#34;svd_linear_attention&#34;,
+        module_type=&#34;attention&#34;,
+        model_family=&#34;nonexistent_model_family_123&#34;,
+        dataset=&#34;sst2&#34;,
+        results_dir=str(tmp_path),
+        device=torch.device(&#34;cpu&#34;),
+        allow_synthetic=True,
+    )
+    assert isinstance(res, BenchmarkResult)
+    assert res.status == &#34;FAIL&#34;</code></pre>
+</details>
+<div class="desc"><p>Should catch invalid model family gracefully and return BenchmarkResult with FAIL status.</p></div>
+</dd>
+<dt id="neuralops.tests.test_eval_pipeline.TestEvaluateSingleCombination.test_evaluate_error_handling_invalid_module"><code class="name flex">
+<span>def <span class="ident">test_evaluate_error_handling_invalid_module</span></span>(<span>self, tmp_path)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_evaluate_error_handling_invalid_module(self, tmp_path):
+    &#34;&#34;&#34;Should catch unknown module gracefully.&#34;&#34;&#34;
+    res = evaluate_single_combination_opt(
+        track=&#34;track1&#34;,
+        module_name=&#34;nonexistent_attention_module_xyz&#34;,
+        module_type=&#34;attention&#34;,
+        model_family=&#34;bert&#34;,
+        dataset=&#34;sst2&#34;,
+        results_dir=str(tmp_path),
+        device=torch.device(&#34;cpu&#34;),
+        allow_synthetic=True,
+    )
+    assert isinstance(res, BenchmarkResult)
+    assert res.status == &#34;FAIL&#34;</code></pre>
+</details>
+<div class="desc"><p>Should catch unknown module gracefully.</p></div>
+</dd>
+<dt id="neuralops.tests.test_eval_pipeline.TestEvaluateSingleCombination.test_evaluate_single_combination_alias"><code class="name flex">
+<span>def <span class="ident">test_evaluate_single_combination_alias</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_evaluate_single_combination_alias(self):
+    &#34;&#34;&#34;Verify alias points to optimize implementation.&#34;&#34;&#34;
+    assert evaluate_single_combination is evaluate_single_combination_opt</code></pre>
+</details>
+<div class="desc"><p>Verify alias points to optimize implementation.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_eval_pipeline.TestFinalizeBenchmarkResult"><code class="flex name class">
+<span>class <span class="ident">TestFinalizeBenchmarkResult</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TestFinalizeBenchmarkResult:
+    def test_finalize_pass(self, tmp_path):
+        &#34;&#34;&#34;Test finalizing a successful benchmark result.&#34;&#34;&#34;
+        base_res = BenchmarkResult(
+            timestamp=&#34;2026-10-08T00:00:00&#34;,
+            track=&#34;track1&#34;,
+            module_name=&#34;test_mod&#34;,
+            module_type=&#34;compressor&#34;,
+            model_family=&#34;bert&#34;,
+            dataset=&#34;sst2&#34;,
+            status=&#34;PASS&#34;,
+            accuracy_pct=92.5,
+            loss=0.3,
+            compression_ratio=0.75,
+        )
+        res = _finalize_benchmark_result(
+            result=base_res,
+            run_log_lines=[],
+            t_run_start=time.time(),
+            module_name=&#34;test_mod&#34;,
+            module_type=&#34;compressor&#34;,
+            model_family=&#34;bert&#34;,
+            dataset=&#34;sst2&#34;,
+            rank=16,
+            seq_len=32,
+            batch_size=16,
+            current_batch_size=16,
+            num_warmup=2,
+            num_steps=5,
+            allow_synthetic=True,
+            device=torch.device(&#34;cpu&#34;),
+            results_dir=str(tmp_path),
+            comp_stats={&#34;rank&#34;: 16},
+            mem_phases={&#34;peak_mb&#34;: {&#34;allocated_mb&#34;: 128.0}},
+            t_model_load=0.1,
+            t_calib=0.05,
+            t_comp=0.2,
+            t_eval=0.3,
+            baseline_logits_samples=[[0.1, 0.2]],
+            compressed_logits_samples=[[0.1, 0.2]],
+            sample_cosines=[0.99, 0.98],
+            exc_traceback=None,
+            exc_type=None,
+            retry_count=0,
+            success=True,
+        )
+        assert isinstance(res, BenchmarkResult)
+        assert res.status == &#34;PASS&#34;
+        assert res.module_name == &#34;test_mod&#34;
+        assert res.model_family == &#34;bert&#34;
+
+    def test_finalize_failure(self, tmp_path):
+        &#34;&#34;&#34;Test finalizing an errored benchmark result.&#34;&#34;&#34;
+        base_res = BenchmarkResult(
+            timestamp=&#34;2026-10-08T00:00:00&#34;,
+            track=&#34;track2&#34;,
+            module_name=&#34;broken_mod&#34;,
+            module_type=&#34;attention&#34;,
+            model_family=&#34;gpt2&#34;,
+            dataset=&#34;wikitext2&#34;,
+            status=&#34;FAIL&#34;,
+        )
+        res = _finalize_benchmark_result(
+            result=base_res,
+            run_log_lines=[],
+            t_run_start=time.time(),
+            module_name=&#34;broken_mod&#34;,
+            module_type=&#34;attention&#34;,
+            model_family=&#34;gpt2&#34;,
+            dataset=&#34;wikitext2&#34;,
+            rank=16,
+            seq_len=64,
+            batch_size=8,
+            current_batch_size=8,
+            num_warmup=0,
+            num_steps=0,
+            allow_synthetic=True,
+            device=torch.device(&#34;cpu&#34;),
+            results_dir=str(tmp_path),
+            comp_stats={},
+            mem_phases={},
+            t_model_load=0.1,
+            t_calib=0.0,
+            t_comp=0.0,
+            t_eval=0.0,
+            baseline_logits_samples=[],
+            compressed_logits_samples=[],
+            sample_cosines=[],
+            exc_traceback=&#34;ValueError: Invalid config&#34;,
+            exc_type=&#34;ValueError&#34;,
+            retry_count=1,
+            success=False,
+        )
+        assert isinstance(res, BenchmarkResult)
+        assert res.status == &#34;FAIL&#34;</code></pre>
+</details>
+<div class="desc"></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_eval_pipeline.TestFinalizeBenchmarkResult.test_finalize_failure"><code class="name flex">
+<span>def <span class="ident">test_finalize_failure</span></span>(<span>self, tmp_path)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_finalize_failure(self, tmp_path):
+    &#34;&#34;&#34;Test finalizing an errored benchmark result.&#34;&#34;&#34;
+    base_res = BenchmarkResult(
+        timestamp=&#34;2026-10-08T00:00:00&#34;,
+        track=&#34;track2&#34;,
+        module_name=&#34;broken_mod&#34;,
+        module_type=&#34;attention&#34;,
+        model_family=&#34;gpt2&#34;,
+        dataset=&#34;wikitext2&#34;,
+        status=&#34;FAIL&#34;,
+    )
+    res = _finalize_benchmark_result(
+        result=base_res,
+        run_log_lines=[],
+        t_run_start=time.time(),
+        module_name=&#34;broken_mod&#34;,
+        module_type=&#34;attention&#34;,
+        model_family=&#34;gpt2&#34;,
+        dataset=&#34;wikitext2&#34;,
+        rank=16,
+        seq_len=64,
+        batch_size=8,
+        current_batch_size=8,
+        num_warmup=0,
+        num_steps=0,
+        allow_synthetic=True,
+        device=torch.device(&#34;cpu&#34;),
+        results_dir=str(tmp_path),
+        comp_stats={},
+        mem_phases={},
+        t_model_load=0.1,
+        t_calib=0.0,
+        t_comp=0.0,
+        t_eval=0.0,
+        baseline_logits_samples=[],
+        compressed_logits_samples=[],
+        sample_cosines=[],
+        exc_traceback=&#34;ValueError: Invalid config&#34;,
+        exc_type=&#34;ValueError&#34;,
+        retry_count=1,
+        success=False,
+    )
+    assert isinstance(res, BenchmarkResult)
+    assert res.status == &#34;FAIL&#34;</code></pre>
+</details>
+<div class="desc"><p>Test finalizing an errored benchmark result.</p></div>
+</dd>
+<dt id="neuralops.tests.test_eval_pipeline.TestFinalizeBenchmarkResult.test_finalize_pass"><code class="name flex">
+<span>def <span class="ident">test_finalize_pass</span></span>(<span>self, tmp_path)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_finalize_pass(self, tmp_path):
+    &#34;&#34;&#34;Test finalizing a successful benchmark result.&#34;&#34;&#34;
+    base_res = BenchmarkResult(
+        timestamp=&#34;2026-10-08T00:00:00&#34;,
+        track=&#34;track1&#34;,
+        module_name=&#34;test_mod&#34;,
+        module_type=&#34;compressor&#34;,
+        model_family=&#34;bert&#34;,
+        dataset=&#34;sst2&#34;,
+        status=&#34;PASS&#34;,
+        accuracy_pct=92.5,
+        loss=0.3,
+        compression_ratio=0.75,
+    )
+    res = _finalize_benchmark_result(
+        result=base_res,
+        run_log_lines=[],
+        t_run_start=time.time(),
+        module_name=&#34;test_mod&#34;,
+        module_type=&#34;compressor&#34;,
+        model_family=&#34;bert&#34;,
+        dataset=&#34;sst2&#34;,
+        rank=16,
+        seq_len=32,
+        batch_size=16,
+        current_batch_size=16,
+        num_warmup=2,
+        num_steps=5,
+        allow_synthetic=True,
+        device=torch.device(&#34;cpu&#34;),
+        results_dir=str(tmp_path),
+        comp_stats={&#34;rank&#34;: 16},
+        mem_phases={&#34;peak_mb&#34;: {&#34;allocated_mb&#34;: 128.0}},
+        t_model_load=0.1,
+        t_calib=0.05,
+        t_comp=0.2,
+        t_eval=0.3,
+        baseline_logits_samples=[[0.1, 0.2]],
+        compressed_logits_samples=[[0.1, 0.2]],
+        sample_cosines=[0.99, 0.98],
+        exc_traceback=None,
+        exc_type=None,
+        retry_count=0,
+        success=True,
+    )
+    assert isinstance(res, BenchmarkResult)
+    assert res.status == &#34;PASS&#34;
+    assert res.module_name == &#34;test_mod&#34;
+    assert res.model_family == &#34;bert&#34;</code></pre>
+</details>
+<div class="desc"><p>Test finalizing a successful benchmark result.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_eval_pipeline.TestProbeOptimalBatchSize"><code class="flex name class">
+<span>class <span class="ident">TestProbeOptimalBatchSize</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TestProbeOptimalBatchSize:
+    def test_probe_with_cpu(self):
+        &#34;&#34;&#34;Probe should return 64 default when executed on CPU.&#34;&#34;&#34;
+        model = DummyModel()
+        res = probe_optimal_batch_size(
+            model=model,
+            model_family=&#34;bert&#34;,
+            dataset=&#34;sst2&#34;,
+            seq_len=32,
+            device=torch.device(&#34;cpu&#34;),
+            allow_synthetic=True,
+        )
+        assert isinstance(res, int)
+        assert res == 64
+
+    def test_probe_handles_exception_fallback(self):
+        &#34;&#34;&#34;Probe falls back safely if forward execution errors.&#34;&#34;&#34;
+        model = DummyModel()
+        with patch.object(model, &#34;forward&#34;, side_effect=RuntimeError(&#34;OOM&#34;)):
+            res = probe_optimal_batch_size(
+                model=model,
+                model_family=&#34;bert&#34;,
+                dataset=&#34;sst2&#34;,
+                seq_len=32,
+                device=torch.device(&#34;cpu&#34;),
+                allow_synthetic=True,
+            )
+            assert res == 64</code></pre>
+</details>
+<div class="desc"></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_eval_pipeline.TestProbeOptimalBatchSize.test_probe_handles_exception_fallback"><code class="name flex">
+<span>def <span class="ident">test_probe_handles_exception_fallback</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_probe_handles_exception_fallback(self):
+    &#34;&#34;&#34;Probe falls back safely if forward execution errors.&#34;&#34;&#34;
+    model = DummyModel()
+    with patch.object(model, &#34;forward&#34;, side_effect=RuntimeError(&#34;OOM&#34;)):
+        res = probe_optimal_batch_size(
+            model=model,
+            model_family=&#34;bert&#34;,
+            dataset=&#34;sst2&#34;,
+            seq_len=32,
+            device=torch.device(&#34;cpu&#34;),
+            allow_synthetic=True,
+        )
+        assert res == 64</code></pre>
+</details>
+<div class="desc"><p>Probe falls back safely if forward execution errors.</p></div>
+</dd>
+<dt id="neuralops.tests.test_eval_pipeline.TestProbeOptimalBatchSize.test_probe_with_cpu"><code class="name flex">
+<span>def <span class="ident">test_probe_with_cpu</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_probe_with_cpu(self):
+    &#34;&#34;&#34;Probe should return 64 default when executed on CPU.&#34;&#34;&#34;
+    model = DummyModel()
+    res = probe_optimal_batch_size(
+        model=model,
+        model_family=&#34;bert&#34;,
+        dataset=&#34;sst2&#34;,
+        seq_len=32,
+        device=torch.device(&#34;cpu&#34;),
+        allow_synthetic=True,
+    )
+    assert isinstance(res, int)
+    assert res == 64</code></pre>
+</details>
+<div class="desc"><p>Probe should return 64 default when executed on CPU.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.tests.test_eval_pipeline.TestSetupEvalEnvironment"><code class="flex name class">
+<span>class <span class="ident">TestSetupEvalEnvironment</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class TestSetupEvalEnvironment:
+    def test_setup_eval_env_cpu(self):
+        &#34;&#34;&#34;Test environment setup with CPU device.&#34;&#34;&#34;
+        env = _setup_eval_environment(
+            model_family=&#34;bert&#34;,
+            dataset=&#34;sst2&#34;,
+            seq_len=32,
+            device=torch.device(&#34;cpu&#34;),
+        )
+        assert isinstance(env, dict)
+        assert &#34;model&#34; in env
+        assert &#34;cfg&#34; in env</code></pre>
+</details>
+<div class="desc"></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.tests.test_eval_pipeline.TestSetupEvalEnvironment.test_setup_eval_env_cpu"><code class="name flex">
+<span>def <span class="ident">test_setup_eval_env_cpu</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def test_setup_eval_env_cpu(self):
+    &#34;&#34;&#34;Test environment setup with CPU device.&#34;&#34;&#34;
+    env = _setup_eval_environment(
+        model_family=&#34;bert&#34;,
+        dataset=&#34;sst2&#34;,
+        seq_len=32,
+        device=torch.device(&#34;cpu&#34;),
+    )
+    assert isinstance(env, dict)
+    assert &#34;model&#34; in env
+    assert &#34;cfg&#34; in env</code></pre>
+</details>
+<div class="desc"><p>Test environment setup with CPU device.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.tests" href="index.html">neuralops.tests</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.tests.test_eval_pipeline.DummyModel" href="#neuralops.tests.test_eval_pipeline.DummyModel">DummyModel</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_eval_pipeline.DummyModel.forward" href="#neuralops.tests.test_eval_pipeline.DummyModel.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_eval_pipeline.TestBenchmarkResultDataclass" href="#neuralops.tests.test_eval_pipeline.TestBenchmarkResultDataclass">TestBenchmarkResultDataclass</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_eval_pipeline.TestBenchmarkResultDataclass.test_benchmark_result_to_dict" href="#neuralops.tests.test_eval_pipeline.TestBenchmarkResultDataclass.test_benchmark_result_to_dict">test_benchmark_result_to_dict</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_eval_pipeline.TestEvaluateSingleCombination" href="#neuralops.tests.test_eval_pipeline.TestEvaluateSingleCombination">TestEvaluateSingleCombination</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_eval_pipeline.TestEvaluateSingleCombination.test_evaluate_error_handling_invalid_model" href="#neuralops.tests.test_eval_pipeline.TestEvaluateSingleCombination.test_evaluate_error_handling_invalid_model">test_evaluate_error_handling_invalid_model</a></code></li>
+<li><code><a title="neuralops.tests.test_eval_pipeline.TestEvaluateSingleCombination.test_evaluate_error_handling_invalid_module" href="#neuralops.tests.test_eval_pipeline.TestEvaluateSingleCombination.test_evaluate_error_handling_invalid_module">test_evaluate_error_handling_invalid_module</a></code></li>
+<li><code><a title="neuralops.tests.test_eval_pipeline.TestEvaluateSingleCombination.test_evaluate_single_combination_alias" href="#neuralops.tests.test_eval_pipeline.TestEvaluateSingleCombination.test_evaluate_single_combination_alias">test_evaluate_single_combination_alias</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_eval_pipeline.TestFinalizeBenchmarkResult" href="#neuralops.tests.test_eval_pipeline.TestFinalizeBenchmarkResult">TestFinalizeBenchmarkResult</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_eval_pipeline.TestFinalizeBenchmarkResult.test_finalize_failure" href="#neuralops.tests.test_eval_pipeline.TestFinalizeBenchmarkResult.test_finalize_failure">test_finalize_failure</a></code></li>
+<li><code><a title="neuralops.tests.test_eval_pipeline.TestFinalizeBenchmarkResult.test_finalize_pass" href="#neuralops.tests.test_eval_pipeline.TestFinalizeBenchmarkResult.test_finalize_pass">test_finalize_pass</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_eval_pipeline.TestProbeOptimalBatchSize" href="#neuralops.tests.test_eval_pipeline.TestProbeOptimalBatchSize">TestProbeOptimalBatchSize</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_eval_pipeline.TestProbeOptimalBatchSize.test_probe_handles_exception_fallback" href="#neuralops.tests.test_eval_pipeline.TestProbeOptimalBatchSize.test_probe_handles_exception_fallback">test_probe_handles_exception_fallback</a></code></li>
+<li><code><a title="neuralops.tests.test_eval_pipeline.TestProbeOptimalBatchSize.test_probe_with_cpu" href="#neuralops.tests.test_eval_pipeline.TestProbeOptimalBatchSize.test_probe_with_cpu">test_probe_with_cpu</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.tests.test_eval_pipeline.TestSetupEvalEnvironment" href="#neuralops.tests.test_eval_pipeline.TestSetupEvalEnvironment">TestSetupEvalEnvironment</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.tests.test_eval_pipeline.TestSetupEvalEnvironment.test_setup_eval_env_cpu" href="#neuralops.tests.test_eval_pipeline.TestSetupEvalEnvironment.test_setup_eval_env_cpu">test_setup_eval_env_cpu</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.core.autograd API documentation</title>
+<meta name="description" content="Custom Autograd Functions for NeuralOps.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.core.autograd</code></h1>
+</header>
+<section id="section-intro">
+<p>Custom Autograd Functions for NeuralOps.</p>
+</section>
+<section>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+<dl>
+<dt><code class="name"><a title="neuralops.core.autograd.flash_attention" href="flash_attention.html">neuralops.core.autograd.flash_attention</a></code></dt>
+<dd>
+<div class="desc"><p>FlashAttention autograd Function with forward/backward tiling reference.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.core.autograd.fused_backward" href="fused_backward.html">neuralops.core.autograd.fused_backward</a></code></dt>
+<dd>
+<div class="desc"><p>Fused attention backward pass reference implementation.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.core.autograd.FlashAttentionFunction"><code class="flex name class">
+<span>class <span class="ident">FlashAttentionFunction</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FlashAttentionFunction(Function):
+    &#34;&#34;&#34;Custom autograd Function for memory-efficient tiled attention with exact backward pass.&#34;&#34;&#34;
+
+    @staticmethod
+    def forward(
+        ctx,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        softmax_scale: float | None = None,
+        causal: bool = False,
+    ) -&gt; torch.Tensor:
+        if softmax_scale is None:
+            softmax_scale = 1.0 / math.sqrt(q.shape[-1])
+
+        # Reference forward pass
+        scores = torch.matmul(q, k.transpose(-2, -1)) * softmax_scale
+        if causal:
+            N_q, N_k = q.shape[-2], k.shape[-2]
+            causal_mask = torch.triu(torch.full((N_q, N_k), float(&#34;-inf&#34;), device=q.device), diagonal=1)
+            scores = scores + causal_mask
+
+        # Softmax with logsumexp saved for backward
+        lse = torch.logsumexp(scores, dim=-1, keepdim=True)
+        p = torch.exp(scores - lse)
+        out = torch.matmul(p, v)
+
+        ctx.save_for_backward(q, k, v, out, lse)
+        ctx.softmax_scale = softmax_scale
+        ctx.causal = causal
+        return out
+
+    @staticmethod
+    def backward(ctx, grad_out: torch.Tensor):
+        q, k, v, out, lse = ctx.saved_tensors
+        softmax_scale = ctx.softmax_scale
+        causal = ctx.causal
+
+        # Recompute P in backward from saved LSE (saving SRAM/HBM footprint)
+        scores = torch.matmul(q, k.transpose(-2, -1)) * softmax_scale
+        if causal:
+            N_q, N_k = q.shape[-2], k.shape[-2]
+            causal_mask = torch.triu(torch.full((N_q, N_k), float(&#34;-inf&#34;), device=q.device), diagonal=1)
+            scores = scores + causal_mask
+
+        p = torch.exp(scores - lse)
+
+        # dV = P^T * grad_out
+        grad_v = torch.matmul(p.transpose(-2, -1), grad_out)
+
+        # dP = grad_out * V^T
+        grad_p = torch.matmul(grad_out, v.transpose(-2, -1))
+
+        # dS = P * (dP - D) where D = sum(grad_out * out, dim=-1, keepdim=True)
+        # Using standard softmax backward: dS = P * (dP - (P * dP).sum(-1, keepdim=True))
+        sum_p_dp = (p * grad_p).sum(dim=-1, keepdim=True)
+        grad_s = p * (grad_p - sum_p_dp) * softmax_scale
+
+        # dQ = dS * K
+        grad_q = torch.matmul(grad_s, k)
+
+        # dK = dS^T * Q
+        grad_k = torch.matmul(grad_s.transpose(-2, -1), q)
+
+        return grad_q, grad_k, grad_v, None, None</code></pre>
+</details>
+<div class="desc"><p>Custom autograd Function for memory-efficient tiled attention with exact backward pass.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.autograd.function.Function</li>
+<li>torch.autograd.function._SingleLevelFunction</li>
+<li>torch._C._FunctionBase</li>
+<li>torch.autograd.function.FunctionCtx</li>
+<li>torch.autograd.function._HookMixin</li>
+</ul>
+<h3>Static methods</h3>
+<dl>
+<dt id="neuralops.core.autograd.FlashAttentionFunction.backward"><code class="name flex">
+<span>def <span class="ident">backward</span></span>(<span>ctx, grad_out: torch.Tensor)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def backward(ctx, grad_out: torch.Tensor):
+    q, k, v, out, lse = ctx.saved_tensors
+    softmax_scale = ctx.softmax_scale
+    causal = ctx.causal
+
+    # Recompute P in backward from saved LSE (saving SRAM/HBM footprint)
+    scores = torch.matmul(q, k.transpose(-2, -1)) * softmax_scale
+    if causal:
+        N_q, N_k = q.shape[-2], k.shape[-2]
+        causal_mask = torch.triu(torch.full((N_q, N_k), float(&#34;-inf&#34;), device=q.device), diagonal=1)
+        scores = scores + causal_mask
+
+    p = torch.exp(scores - lse)
+
+    # dV = P^T * grad_out
+    grad_v = torch.matmul(p.transpose(-2, -1), grad_out)
+
+    # dP = grad_out * V^T
+    grad_p = torch.matmul(grad_out, v.transpose(-2, -1))
+
+    # dS = P * (dP - D) where D = sum(grad_out * out, dim=-1, keepdim=True)
+    # Using standard softmax backward: dS = P * (dP - (P * dP).sum(-1, keepdim=True))
+    sum_p_dp = (p * grad_p).sum(dim=-1, keepdim=True)
+    grad_s = p * (grad_p - sum_p_dp) * softmax_scale
+
+    # dQ = dS * K
+    grad_q = torch.matmul(grad_s, k)
+
+    # dK = dS^T * Q
+    grad_k = torch.matmul(grad_s.transpose(-2, -1), q)
+
+    return grad_q, grad_k, grad_v, None, None</code></pre>
+</details>
+<div class="desc"><p>Define a formula for differentiating the operation with backward mode automatic differentiation.</p>
+<p>This function is to be overridden by all subclasses.
+(Defining this function is equivalent to defining the <code>vjp</code> function.)</p>
+<p>It must accept a context :attr:<code>ctx</code> as the first argument, followed by
+as many outputs as the :func:<code>forward</code> returned (None will be passed in
+for non tensor outputs of the forward function),
+and it should return as many tensors, as there were inputs to
+:func:<code>forward</code>. Each argument is the gradient w.r.t the given output,
+and each returned value should be the gradient w.r.t. the
+corresponding input. If an input is not a Tensor or is a Tensor not
+requiring grads, you can just pass None as a gradient for that input.</p>
+<p>The context can be used to retrieve tensors saved during the forward
+pass. It also has an attribute :attr:<code>ctx.needs_input_grad</code> as a tuple
+of booleans representing whether each input needs gradient. E.g.,
+:func:<code>backward</code> will have <code>ctx.needs_input_grad[0] = True</code> if the
+first input to :func:<code>forward</code> needs gradient computed w.r.t. the
+output.</p></div>
+</dd>
+<dt id="neuralops.core.autograd.FlashAttentionFunction.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>ctx,<br>q: torch.Tensor,<br>k: torch.Tensor,<br>v: torch.Tensor,<br>softmax_scale: float | None = None,<br>causal: bool = False) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def forward(
+    ctx,
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    softmax_scale: float | None = None,
+    causal: bool = False,
+) -&gt; torch.Tensor:
+    if softmax_scale is None:
+        softmax_scale = 1.0 / math.sqrt(q.shape[-1])
+
+    # Reference forward pass
+    scores = torch.matmul(q, k.transpose(-2, -1)) * softmax_scale
+    if causal:
+        N_q, N_k = q.shape[-2], k.shape[-2]
+        causal_mask = torch.triu(torch.full((N_q, N_k), float(&#34;-inf&#34;), device=q.device), diagonal=1)
+        scores = scores + causal_mask
+
+    # Softmax with logsumexp saved for backward
+    lse = torch.logsumexp(scores, dim=-1, keepdim=True)
+    p = torch.exp(scores - lse)
+    out = torch.matmul(p, v)
+
+    ctx.save_for_backward(q, k, v, out, lse)
+    ctx.softmax_scale = softmax_scale
+    ctx.causal = causal
+    return out</code></pre>
+</details>
+<div class="desc"><p>Define the forward of the custom autograd Function.</p>
+<p>This function is to be overridden by all subclasses.
+There are two ways to define forward:</p>
+<p>Usage 1 (Combined forward and ctx)::</p>
+<pre><code>@staticmethod
+def forward(ctx: Any, *args: Any, **kwargs: Any) -&gt; Any:
+    pass
+</code></pre>
+<ul>
+<li>It must accept a context ctx as the first argument, followed by any
+number of arguments (tensors or other types).</li>
+<li>See :ref:<code>combining-forward-context</code> for more details</li>
+</ul>
+<p>Usage 2 (Separate forward and ctx)::</p>
+<pre><code>@staticmethod
+def forward(*args: Any, **kwargs: Any) -&gt; Any:
+    pass
+
+
+@staticmethod
+def setup_context(ctx: Any, inputs: Tuple[Any, ...], output: Any) -&gt; None:
+    pass
+</code></pre>
+<ul>
+<li>The forward no longer accepts a ctx argument.</li>
+<li>Instead, you must also override the :meth:<code>torch.autograd.Function.setup_context</code>
+staticmethod to handle setting up the <code>ctx</code> object.
+<code>output</code> is the output of the forward, <code>inputs</code> are a Tuple of inputs
+to the forward.</li>
+<li>See :ref:<code>extending-autograd</code> for more details</li>
+</ul>
+<p>The context can be used to store arbitrary data that can be then
+retrieved during the backward pass. Tensors should not be stored
+directly on <code>ctx</code> (though this is not currently enforced for
+backward compatibility). Instead, tensors should be saved either with
+:func:<code>ctx.save_for_backward</code> if they are intended to be used in
+<code>backward</code> (equivalently, <code>vjp</code>) or :func:<code>ctx.save_for_forward</code>
+if they are intended to be used for in <code>jvp</code>.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.core" href="../index.html">neuralops.core</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="neuralops.core.autograd.flash_attention" href="flash_attention.html">neuralops.core.autograd.flash_attention</a></code></li>
+<li><code><a title="neuralops.core.autograd.fused_backward" href="fused_backward.html">neuralops.core.autograd.fused_backward</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.core.autograd.FlashAttentionFunction" href="#neuralops.core.autograd.FlashAttentionFunction">FlashAttentionFunction</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.core.autograd.FlashAttentionFunction.backward" href="#neuralops.core.autograd.FlashAttentionFunction.backward">backward</a></code></li>
+<li><code><a title="neuralops.core.autograd.FlashAttentionFunction.forward" href="#neuralops.core.autograd.FlashAttentionFunction.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

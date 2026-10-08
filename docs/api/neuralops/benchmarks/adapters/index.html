@@ -1,0 +1,1487 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.benchmarks.adapters API documentation</title>
+<meta name="description" content="Task adapters for neuralops benchmarking suite.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.benchmarks.adapters</code></h1>
+</header>
+<section id="section-intro">
+<p>Task adapters for neuralops benchmarking suite.</p>
+</section>
+<section>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+<dl>
+<dt><code class="name"><a title="neuralops.benchmarks.adapters.classification" href="classification.html">neuralops.benchmarks.adapters.classification</a></code></dt>
+<dd>
+<div class="desc"><p>Classification task adapter for neuralops benchmark suite.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.benchmarks.adapters.perplexity" href="perplexity.html">neuralops.benchmarks.adapters.perplexity</a></code></dt>
+<dd>
+<div class="desc"><p>Perplexity / Language Modeling task adapter for neuralops benchmark suite.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.benchmarks.adapters.ruler" href="ruler.html">neuralops.benchmarks.adapters.ruler</a></code></dt>
+<dd>
+<div class="desc"><p>RULER / Needle-in-a-Haystack long-context benchmark adapter.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.benchmarks.adapters.zeroshot" href="zeroshot.html">neuralops.benchmarks.adapters.zeroshot</a></code></dt>
+<dd>
+<div class="desc"><p>Zero-shot multiple-choice and reasoning evaluation adapter.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.benchmarks.adapters.ClassificationAdapter"><code class="flex name class">
+<span>class <span class="ident">ClassificationAdapter</span></span>
+<span>(</span><span>module_name: str,<br>module_type: str,<br>model_name: str,<br>dataset_name: str,<br>rank: Optional[int] = None,<br>device: Optional[str] = None,<br>dtype: Optional[str] = None,<br>batch_size: int = 32,<br>max_length: int = 128,<br>epochs: int = 3,<br>lr: float = 2e-05,<br>seed: int = 42,<br>eval_only: bool = False,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ClassificationAdapter:
+    &#34;&#34;&#34;Task adapter for sequence classification benchmarks (e.g. GLUE tasks).&#34;&#34;&#34;
+
+    def __init__(
+        self,
+        module_name: str,
+        module_type: str,
+        model_name: str,
+        dataset_name: str,
+        rank: Optional[int] = None,
+        device: Optional[str] = None,
+        dtype: Optional[str] = None,
+        batch_size: int = 32,
+        max_length: int = 128,
+        epochs: int = 3,
+        lr: float = 2e-5,
+        seed: int = 42,
+        eval_only: bool = False,
+        **kwargs: Any,
+    ):
+        self.module_name = module_name
+        self.module_type = module_type
+        self.model_name = model_name
+        self.dataset_name = dataset_name
+        self.rank = rank
+        self.device = device or (&#34;cuda&#34; if torch.cuda.is_available() else &#34;cpu&#34;)
+        self.dtype = dtype or &#34;float32&#34;
+        self.batch_size = batch_size
+        self.max_length = max_length
+        self.epochs = epochs
+        self.lr = lr
+        self.seed = seed
+        self.eval_only = eval_only
+        self.extra_kwargs = kwargs
+
+        self.model = None
+        self.tokenizer = None
+        self.train_loader = None
+        self.eval_loader = None
+        self.model_meta: Optional[ModelMetadata] = None
+        self.dataset_meta: Optional[DatasetMetadata] = None
+
+    def setup(self) -&gt; None:
+        &#34;&#34;&#34;Load datasets, tokenizers, and base model with classification head.&#34;&#34;&#34;
+        torch.manual_seed(self.seed)
+
+        # 1. Determine number of labels for dataset
+        num_labels = get_num_labels(self.dataset_name)
+
+        # 2. Load model and tokenizer with sequence classification head
+        self.model, self.tokenizer, model_cfg = load_model_and_tokenizer(
+            self.model_name,
+            device=self.device,
+            dtype=self.dtype,
+            task=&#34;classification&#34;,
+            num_labels=num_labels,
+        )
+        self.model_meta = get_model_metadata(self.model, model_cfg)
+
+        # 3. Tokenize datasets
+        tokenized_train = load_dataset_by_name(
+            self.dataset_name,
+            tokenizer=self.tokenizer,
+            max_length=self.max_length,
+            split=&#34;train&#34;,
+        )
+        # Determine eval split
+        eval_split = &#34;validation&#34;
+        try:
+            tokenized_eval = load_dataset_by_name(
+                self.dataset_name,
+                tokenizer=self.tokenizer,
+                max_length=self.max_length,
+                split=&#34;validation&#34;,
+            )
+        except Exception:
+            eval_split = &#34;test&#34;
+            tokenized_eval = load_dataset_by_name(
+                self.dataset_name,
+                tokenizer=self.tokenizer,
+                max_length=self.max_length,
+                split=&#34;test&#34;,
+            )
+
+        self.dataset_meta = get_dataset_metadata(
+            tokenized_train,
+            name=self.dataset_name,
+            split=f&#34;train+{eval_split}&#34;,
+        )
+
+        self.train_loader = make_dataloader(tokenized_train, batch_size=self.batch_size, shuffle=True)
+        self.eval_loader = make_dataloader(tokenized_eval, batch_size=self.batch_size, shuffle=False)
+
+    def apply_module(self) -&gt; None:
+        &#34;&#34;&#34;Apply attention module replacement or compression algorithm.&#34;&#34;&#34;
+        if self.model is None:
+            raise RuntimeError(&#34;Setup must be run before applying module.&#34;)
+
+        if self.module_type in (&#34;baseline&#34;, &#34;none&#34;, &#34;full&#34;, &#34;dense&#34;):
+            logger.info(&#34;Baseline run: skipping module injection.&#34;)
+            return
+
+
+        if self.module_type == &#34;attention&#34;:
+            self.model = apply_attention_module(
+                self.model,
+                module_name=self.module_name,
+                rank=self.rank,
+                **self.extra_kwargs,
+            )
+        elif self.module_type == &#34;compressor&#34;:
+            self.model = apply_compressor(
+                self.model,
+                module_name=self.module_name,
+                rank=self.rank,
+                calibration_loader=self.train_loader,
+                **self.extra_kwargs,
+            )
+        else:
+            raise ValueError(f&#34;Unknown module type: {self.module_type}&#34;)
+
+
+        # Update params in metadata
+        if self.model_meta is not None:
+            self.model_meta.num_params = count_parameters(self.model)
+
+    def run(self) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Execute setup, module injection, training (if applicable), and evaluation.&#34;&#34;&#34;
+        self.setup()
+        self.apply_module()
+
+        train_metrics = {}
+        if not self.eval_only and self.epochs &gt; 0:
+            train_metrics = finetune_classification(
+                model=self.model,
+                train_loader=self.train_loader,
+                eval_loader=self.eval_loader,
+                epochs=self.epochs,
+                lr=self.lr,
+                device=self.device,
+            )
+
+        # Baseline evaluation
+        eval_metrics = evaluate_classification(
+            model=self.model,
+            eval_loader=self.eval_loader,
+            device=self.device,
+        )
+
+        # Latency and throughput
+        latency_stats = measure_latency_and_throughput(
+            model=self.model,
+            dataloader=self.eval_loader,
+            device=self.device,
+        )
+
+        # Memory measurement
+        peak_mem = measure_peak_memory_mb(self.device)
+
+        return {
+            &#34;model_metadata&#34;: self.model_meta,
+            &#34;dataset_metadata&#34;: self.dataset_meta,
+            &#34;train_metrics&#34;: train_metrics,
+            &#34;eval_metrics&#34;: eval_metrics,
+            &#34;latency&#34;: latency_stats,
+            &#34;peak_memory_mb&#34;: peak_mem,
+        }
+
+    def cleanup(self) -&gt; None:
+        &#34;&#34;&#34;Clean up memory and resources.&#34;&#34;&#34;
+        if self.model is not None:
+            cleanup_model(self.model)
+            self.model = None
+        self.train_loader = None
+        self.eval_loader = None
+        self.tokenizer = None</code></pre>
+</details>
+<div class="desc"><p>Task adapter for sequence classification benchmarks (e.g. GLUE tasks).</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.benchmarks.adapters.ClassificationAdapter.apply_module"><code class="name flex">
+<span>def <span class="ident">apply_module</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_module(self) -&gt; None:
+    &#34;&#34;&#34;Apply attention module replacement or compression algorithm.&#34;&#34;&#34;
+    if self.model is None:
+        raise RuntimeError(&#34;Setup must be run before applying module.&#34;)
+
+    if self.module_type in (&#34;baseline&#34;, &#34;none&#34;, &#34;full&#34;, &#34;dense&#34;):
+        logger.info(&#34;Baseline run: skipping module injection.&#34;)
+        return
+
+
+    if self.module_type == &#34;attention&#34;:
+        self.model = apply_attention_module(
+            self.model,
+            module_name=self.module_name,
+            rank=self.rank,
+            **self.extra_kwargs,
+        )
+    elif self.module_type == &#34;compressor&#34;:
+        self.model = apply_compressor(
+            self.model,
+            module_name=self.module_name,
+            rank=self.rank,
+            calibration_loader=self.train_loader,
+            **self.extra_kwargs,
+        )
+    else:
+        raise ValueError(f&#34;Unknown module type: {self.module_type}&#34;)
+
+
+    # Update params in metadata
+    if self.model_meta is not None:
+        self.model_meta.num_params = count_parameters(self.model)</code></pre>
+</details>
+<div class="desc"><p>Apply attention module replacement or compression algorithm.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.adapters.ClassificationAdapter.cleanup"><code class="name flex">
+<span>def <span class="ident">cleanup</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cleanup(self) -&gt; None:
+    &#34;&#34;&#34;Clean up memory and resources.&#34;&#34;&#34;
+    if self.model is not None:
+        cleanup_model(self.model)
+        self.model = None
+    self.train_loader = None
+    self.eval_loader = None
+    self.tokenizer = None</code></pre>
+</details>
+<div class="desc"><p>Clean up memory and resources.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.adapters.ClassificationAdapter.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>self) ‑> Dict[str, Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run(self) -&gt; Dict[str, Any]:
+    &#34;&#34;&#34;Execute setup, module injection, training (if applicable), and evaluation.&#34;&#34;&#34;
+    self.setup()
+    self.apply_module()
+
+    train_metrics = {}
+    if not self.eval_only and self.epochs &gt; 0:
+        train_metrics = finetune_classification(
+            model=self.model,
+            train_loader=self.train_loader,
+            eval_loader=self.eval_loader,
+            epochs=self.epochs,
+            lr=self.lr,
+            device=self.device,
+        )
+
+    # Baseline evaluation
+    eval_metrics = evaluate_classification(
+        model=self.model,
+        eval_loader=self.eval_loader,
+        device=self.device,
+    )
+
+    # Latency and throughput
+    latency_stats = measure_latency_and_throughput(
+        model=self.model,
+        dataloader=self.eval_loader,
+        device=self.device,
+    )
+
+    # Memory measurement
+    peak_mem = measure_peak_memory_mb(self.device)
+
+    return {
+        &#34;model_metadata&#34;: self.model_meta,
+        &#34;dataset_metadata&#34;: self.dataset_meta,
+        &#34;train_metrics&#34;: train_metrics,
+        &#34;eval_metrics&#34;: eval_metrics,
+        &#34;latency&#34;: latency_stats,
+        &#34;peak_memory_mb&#34;: peak_mem,
+    }</code></pre>
+</details>
+<div class="desc"><p>Execute setup, module injection, training (if applicable), and evaluation.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.adapters.ClassificationAdapter.setup"><code class="name flex">
+<span>def <span class="ident">setup</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setup(self) -&gt; None:
+    &#34;&#34;&#34;Load datasets, tokenizers, and base model with classification head.&#34;&#34;&#34;
+    torch.manual_seed(self.seed)
+
+    # 1. Determine number of labels for dataset
+    num_labels = get_num_labels(self.dataset_name)
+
+    # 2. Load model and tokenizer with sequence classification head
+    self.model, self.tokenizer, model_cfg = load_model_and_tokenizer(
+        self.model_name,
+        device=self.device,
+        dtype=self.dtype,
+        task=&#34;classification&#34;,
+        num_labels=num_labels,
+    )
+    self.model_meta = get_model_metadata(self.model, model_cfg)
+
+    # 3. Tokenize datasets
+    tokenized_train = load_dataset_by_name(
+        self.dataset_name,
+        tokenizer=self.tokenizer,
+        max_length=self.max_length,
+        split=&#34;train&#34;,
+    )
+    # Determine eval split
+    eval_split = &#34;validation&#34;
+    try:
+        tokenized_eval = load_dataset_by_name(
+            self.dataset_name,
+            tokenizer=self.tokenizer,
+            max_length=self.max_length,
+            split=&#34;validation&#34;,
+        )
+    except Exception:
+        eval_split = &#34;test&#34;
+        tokenized_eval = load_dataset_by_name(
+            self.dataset_name,
+            tokenizer=self.tokenizer,
+            max_length=self.max_length,
+            split=&#34;test&#34;,
+        )
+
+    self.dataset_meta = get_dataset_metadata(
+        tokenized_train,
+        name=self.dataset_name,
+        split=f&#34;train+{eval_split}&#34;,
+    )
+
+    self.train_loader = make_dataloader(tokenized_train, batch_size=self.batch_size, shuffle=True)
+    self.eval_loader = make_dataloader(tokenized_eval, batch_size=self.batch_size, shuffle=False)</code></pre>
+</details>
+<div class="desc"><p>Load datasets, tokenizers, and base model with classification head.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.benchmarks.adapters.PerplexityAdapter"><code class="flex name class">
+<span>class <span class="ident">PerplexityAdapter</span></span>
+<span>(</span><span>module_name: str,<br>module_type: str,<br>model_name: str,<br>dataset_name: str,<br>rank: Optional[int] = None,<br>device: Optional[str] = None,<br>dtype: Optional[str] = None,<br>batch_size: int = 4,<br>max_length: int = 512,<br>stride: int = 512,<br>seed: int = 42,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class PerplexityAdapter:
+    &#34;&#34;&#34;Task adapter for language modeling / perplexity benchmarks (e.g. WikiText-2, PTB).&#34;&#34;&#34;
+
+    def __init__(
+        self,
+        module_name: str,
+        module_type: str,
+        model_name: str,
+        dataset_name: str,
+        rank: Optional[int] = None,
+        device: Optional[str] = None,
+        dtype: Optional[str] = None,
+        batch_size: int = 4,
+        max_length: int = 512,
+        stride: int = 512,
+        seed: int = 42,
+        **kwargs: Any,
+    ):
+        self.module_name = module_name
+        self.module_type = module_type
+        self.model_name = model_name
+        self.dataset_name = dataset_name
+        self.rank = rank
+        self.device = device or (&#34;cuda&#34; if torch.cuda.is_available() else &#34;cpu&#34;)
+        self.dtype = dtype or &#34;float32&#34;
+        self.batch_size = batch_size
+        self.max_length = max_length
+        self.stride = stride
+        self.seed = seed
+        self.extra_kwargs = kwargs
+
+        self.model = None
+        self.tokenizer = None
+        self.eval_loader = None
+        self.model_meta: Optional[ModelMetadata] = None
+        self.dataset_meta: Optional[DatasetMetadata] = None
+
+    def setup(self) -&gt; None:
+        &#34;&#34;&#34;Load causal LM / masked LM model, tokenizer, and tokenized dataset.&#34;&#34;&#34;
+        torch.manual_seed(self.seed)
+
+        self.model, self.tokenizer, model_cfg = load_model_and_tokenizer(
+            self.model_name,
+            device=self.device,
+            dtype=self.dtype,
+            task=&#34;lm&#34;,
+        )
+        self.model_meta = get_model_metadata(self.model, model_cfg)
+
+        # Load validation / test split
+        eval_split = &#34;validation&#34;
+        try:
+            tokenized_eval = load_dataset_by_name(
+                self.dataset_name,
+                tokenizer=self.tokenizer,
+                max_length=self.max_length,
+                split=&#34;validation&#34;,
+            )
+        except Exception:
+            eval_split = &#34;test&#34;
+            tokenized_eval = load_dataset_by_name(
+                self.dataset_name,
+                tokenizer=self.tokenizer,
+                max_length=self.max_length,
+                split=&#34;test&#34;,
+            )
+
+        self.dataset_meta = get_dataset_metadata(
+            tokenized_eval,
+            name=self.dataset_name,
+            split=eval_split,
+        )
+
+        self.eval_loader = make_dataloader(tokenized_eval, batch_size=self.batch_size, shuffle=False)
+
+    def apply_module(self) -&gt; None:
+        &#34;&#34;&#34;Apply attention module replacement or compression algorithm.&#34;&#34;&#34;
+        if self.model is None:
+            raise RuntimeError(&#34;Setup must be run before applying module.&#34;)
+
+        if self.module_type == &#34;attention&#34;:
+            self.model = apply_attention_module(
+                self.model,
+                module_name=self.module_name,
+                rank=self.rank,
+                **self.extra_kwargs,
+            )
+        elif self.module_type == &#34;compressor&#34;:
+            self.model = apply_compressor(
+                self.model,
+                module_name=self.module_name,
+                rank=self.rank,
+                calibration_loader=self.eval_loader,
+                **self.extra_kwargs,
+            )
+        else:
+            raise ValueError(f&#34;Unknown module type: {self.module_type}&#34;)
+
+        if self.model_meta is not None:
+            self.model_meta.num_params = count_parameters(self.model)
+
+    def run(self) -&gt; Dict[str, Any]:
+        &#34;&#34;&#34;Execute setup, module injection, perplexity evaluation, and latency benchmarking.&#34;&#34;&#34;
+        self.setup()
+        self.apply_module()
+
+        # Evaluate perplexity
+        eval_metrics = evaluate_perplexity(
+            model=self.model,
+            eval_loader=self.eval_loader,
+            device=self.device,
+            stride=self.stride,
+        )
+
+        # Measure latency and throughput
+        latency_stats = measure_latency_and_throughput(
+            model=self.model,
+            dataloader=self.eval_loader,
+            device=self.device,
+        )
+
+        # Memory measurement
+        peak_mem = measure_peak_memory_mb(self.device)
+
+        return {
+            &#34;model_metadata&#34;: self.model_meta,
+            &#34;dataset_metadata&#34;: self.dataset_meta,
+            &#34;train_metrics&#34;: {},
+            &#34;eval_metrics&#34;: eval_metrics,
+            &#34;latency&#34;: latency_stats,
+            &#34;peak_memory_mb&#34;: peak_mem,
+        }
+
+    def cleanup(self) -&gt; None:
+        &#34;&#34;&#34;Clean up memory and resources.&#34;&#34;&#34;
+        if self.model is not None:
+            cleanup_model(self.model)
+            self.model = None
+        self.eval_loader = None
+        self.tokenizer = None</code></pre>
+</details>
+<div class="desc"><p>Task adapter for language modeling / perplexity benchmarks (e.g. WikiText-2, PTB).</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.benchmarks.adapters.PerplexityAdapter.apply_module"><code class="name flex">
+<span>def <span class="ident">apply_module</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_module(self) -&gt; None:
+    &#34;&#34;&#34;Apply attention module replacement or compression algorithm.&#34;&#34;&#34;
+    if self.model is None:
+        raise RuntimeError(&#34;Setup must be run before applying module.&#34;)
+
+    if self.module_type == &#34;attention&#34;:
+        self.model = apply_attention_module(
+            self.model,
+            module_name=self.module_name,
+            rank=self.rank,
+            **self.extra_kwargs,
+        )
+    elif self.module_type == &#34;compressor&#34;:
+        self.model = apply_compressor(
+            self.model,
+            module_name=self.module_name,
+            rank=self.rank,
+            calibration_loader=self.eval_loader,
+            **self.extra_kwargs,
+        )
+    else:
+        raise ValueError(f&#34;Unknown module type: {self.module_type}&#34;)
+
+    if self.model_meta is not None:
+        self.model_meta.num_params = count_parameters(self.model)</code></pre>
+</details>
+<div class="desc"><p>Apply attention module replacement or compression algorithm.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.adapters.PerplexityAdapter.cleanup"><code class="name flex">
+<span>def <span class="ident">cleanup</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cleanup(self) -&gt; None:
+    &#34;&#34;&#34;Clean up memory and resources.&#34;&#34;&#34;
+    if self.model is not None:
+        cleanup_model(self.model)
+        self.model = None
+    self.eval_loader = None
+    self.tokenizer = None</code></pre>
+</details>
+<div class="desc"><p>Clean up memory and resources.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.adapters.PerplexityAdapter.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>self) ‑> Dict[str, Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run(self) -&gt; Dict[str, Any]:
+    &#34;&#34;&#34;Execute setup, module injection, perplexity evaluation, and latency benchmarking.&#34;&#34;&#34;
+    self.setup()
+    self.apply_module()
+
+    # Evaluate perplexity
+    eval_metrics = evaluate_perplexity(
+        model=self.model,
+        eval_loader=self.eval_loader,
+        device=self.device,
+        stride=self.stride,
+    )
+
+    # Measure latency and throughput
+    latency_stats = measure_latency_and_throughput(
+        model=self.model,
+        dataloader=self.eval_loader,
+        device=self.device,
+    )
+
+    # Memory measurement
+    peak_mem = measure_peak_memory_mb(self.device)
+
+    return {
+        &#34;model_metadata&#34;: self.model_meta,
+        &#34;dataset_metadata&#34;: self.dataset_meta,
+        &#34;train_metrics&#34;: {},
+        &#34;eval_metrics&#34;: eval_metrics,
+        &#34;latency&#34;: latency_stats,
+        &#34;peak_memory_mb&#34;: peak_mem,
+    }</code></pre>
+</details>
+<div class="desc"><p>Execute setup, module injection, perplexity evaluation, and latency benchmarking.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.adapters.PerplexityAdapter.setup"><code class="name flex">
+<span>def <span class="ident">setup</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setup(self) -&gt; None:
+    &#34;&#34;&#34;Load causal LM / masked LM model, tokenizer, and tokenized dataset.&#34;&#34;&#34;
+    torch.manual_seed(self.seed)
+
+    self.model, self.tokenizer, model_cfg = load_model_and_tokenizer(
+        self.model_name,
+        device=self.device,
+        dtype=self.dtype,
+        task=&#34;lm&#34;,
+    )
+    self.model_meta = get_model_metadata(self.model, model_cfg)
+
+    # Load validation / test split
+    eval_split = &#34;validation&#34;
+    try:
+        tokenized_eval = load_dataset_by_name(
+            self.dataset_name,
+            tokenizer=self.tokenizer,
+            max_length=self.max_length,
+            split=&#34;validation&#34;,
+        )
+    except Exception:
+        eval_split = &#34;test&#34;
+        tokenized_eval = load_dataset_by_name(
+            self.dataset_name,
+            tokenizer=self.tokenizer,
+            max_length=self.max_length,
+            split=&#34;test&#34;,
+        )
+
+    self.dataset_meta = get_dataset_metadata(
+        tokenized_eval,
+        name=self.dataset_name,
+        split=eval_split,
+    )
+
+    self.eval_loader = make_dataloader(tokenized_eval, batch_size=self.batch_size, shuffle=False)</code></pre>
+</details>
+<div class="desc"><p>Load causal LM / masked LM model, tokenizer, and tokenized dataset.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.benchmarks.adapters.RulerAdapter"><code class="flex name class">
+<span>class <span class="ident">RulerAdapter</span></span>
+<span>(</span><span>module_name: str,<br>module_type: str,<br>model_name: str,<br>dataset_name: str = 'ruler',<br>rank: int | None = 64,<br>device: str | None = None,<br>dtype: str = 'float32',<br>context_length: int = 4096,<br>num_samples: int = 10,<br>seed: int = 42,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class RulerAdapter:
+    &#34;&#34;&#34;Evaluates long-context effective capacity using Needle-in-a-Haystack synthetic tasks.&#34;&#34;&#34;
+
+    def __init__(
+        self,
+        module_name: str,
+        module_type: str,
+        model_name: str,
+        dataset_name: str = &#34;ruler&#34;,
+        rank: int | None = 64,
+        device: str | None = None,
+        dtype: str = &#34;float32&#34;,
+        context_length: int = 4096,
+        num_samples: int = 10,
+        seed: int = 42,
+        **kwargs: Any,
+    ) -&gt; None:
+        self.module_name = module_name
+        self.module_type = module_type
+        self.model_name = model_name
+        self.dataset_name = dataset_name
+        self.rank = rank
+        self.device = device or (&#34;cuda&#34; if torch.cuda.is_available() else &#34;cpu&#34;)
+        self.dtype = dtype
+        self.context_length = context_length
+        self.num_samples = num_samples
+        self.seed = seed
+        self.extra_kwargs = kwargs
+
+        self.model: nn.Module | None = None
+        self.tokenizer: Any = None
+        self.model_meta: ModelMetadata | None = None
+        self.dataset_meta: DatasetMetadata | None = None
+
+    def setup(self) -&gt; None:
+        &#34;&#34;&#34;Load target model and tokenizer with extended position context.&#34;&#34;&#34;
+        torch.manual_seed(self.seed)
+        random.seed(self.seed)
+
+        self.model, self.tokenizer, model_cfg = load_model_and_tokenizer(
+            self.model_name,
+            device=self.device,
+            dtype=self.dtype,
+            task=&#34;lm&#34;,
+        )
+        self.model_meta = get_model_metadata(self.model, model_cfg)
+
+        self.dataset_meta = DatasetMetadata(
+            name=f&#34;ruler_{self.context_length}&#34;,
+            task=&#34;ruler&#34;,
+            num_labels=1,
+            num_train=0,
+            num_eval=self.num_samples,
+        )
+
+    def apply_module(self) -&gt; None:
+        &#34;&#34;&#34;Inject candidate attention replacement or compression algorithm.&#34;&#34;&#34;
+        if self.model is None:
+            raise RuntimeError(&#34;Setup must be called before applying module.&#34;)
+
+        if self.module_type in (&#34;baseline&#34;, &#34;none&#34;, &#34;full&#34;, &#34;dense&#34;):
+            LOG.info(&#34;Baseline RULER run: skipping module injection.&#34;)
+            return
+
+        if self.module_type == &#34;attention&#34;:
+            self.model = apply_attention_module(
+                self.model,
+                module_name=self.module_name,
+                rank=self.rank or 64,
+                **self.extra_kwargs,
+            )
+        elif self.module_type == &#34;compressor&#34;:
+            self.model = apply_compressor(
+                self.model,
+                module_name=self.module_name,
+                rank=self.rank or 64,
+                **self.extra_kwargs,
+            )
+
+        if self.model_meta is not None:
+            self.model_meta.num_params = count_parameters(self.model)
+
+    def _generate_synthetic_niah(self, depth: float) -&gt; tuple[str, str, str]:
+        &#34;&#34;&#34;Generate needle, haystack, and query question at a relative context depth.&#34;&#34;&#34;
+        secret_number = str(random.randint(100000, 999999))
+        needle = f&#34; The special magic passcode is {secret_number}. Remember this passcode.&#34;
+        haystack_filler = &#34; The grass is green. The sky is blue. Numbers and facts surround us every day.&#34;
+
+        # Estimate repetitions to reach desired context token length
+        tokens_per_filler = max(len(self.tokenizer(haystack_filler).input_ids), 1) if self.tokenizer else 15
+        needed_fillers = max(self.context_length // tokens_per_filler, 20)
+
+        insertion_index = int(needed_fillers * depth)
+        parts = [haystack_filler] * needed_fillers
+        parts.insert(insertion_index, needle)
+
+        prompt = &#34;&#34;.join(parts) + &#34;\nQuestion: What is the special magic passcode?\nAnswer: The special magic passcode is&#34;
+        return prompt, secret_number, secret_number
+
+    def run(self) -&gt; dict[str, Any]:
+        &#34;&#34;&#34;Execute Needle-in-a-Haystack sweeps across various depths.&#34;&#34;&#34;
+        self.setup()
+        self.apply_module()
+
+        depths = [0.1, 0.25, 0.5, 0.75, 0.9]
+        found_count = 0
+        total_tests = 0
+        total_latency_s = 0.0
+
+        self.model.eval()
+        for i in range(self.num_samples):
+            depth = depths[i % len(depths)]
+            prompt, expected, _ = self._generate_synthetic_niah(depth)
+
+            inputs = self.tokenizer(prompt, return_tensors=&#34;pt&#34;, truncation=True, max_length=self.context_length)
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
+            start_t = time.perf_counter()
+            with torch.no_grad():
+                gen_out = self.model.generate(
+                    **inputs,
+                    max_new_tokens=10,
+                    do_sample=False,
+                ) if hasattr(self.model, &#34;generate&#34;) else None
+
+            duration = time.perf_counter() - start_t
+            total_latency_s += duration
+
+            if gen_out is not None:
+                decoded = self.tokenizer.decode(gen_out[0], skip_special_tokens=True)
+                if expected in decoded:
+                    found_count += 1
+            total_tests += 1
+
+        accuracy = found_count / max(total_tests, 1)
+        peak_mem = measure_peak_memory_mb(self.device)
+        avg_latency_ms = (total_latency_s / max(total_tests, 1)) * 1000.0
+
+        return {
+            &#34;model_metadata&#34;: self.model_meta,
+            &#34;dataset_metadata&#34;: self.dataset_meta,
+            &#34;eval_metrics&#34;: {
+                &#34;accuracy&#34;: float(accuracy),
+                &#34;needle_found_rate&#34;: float(accuracy),
+                &#34;context_length&#34;: self.context_length,
+                &#34;num_samples&#34;: total_tests,
+            },
+            &#34;latency&#34;: {
+                &#34;latency_ms_per_pass&#34;: float(avg_latency_ms),
+                &#34;throughput_tok_per_sec&#34;: float((self.context_length * total_tests) / max(total_latency_s, 1e-6)),
+            },
+            &#34;peak_memory_mb&#34;: peak_mem,
+        }
+
+    def cleanup(self) -&gt; None:
+        &#34;&#34;&#34;Clean up model and memory.&#34;&#34;&#34;
+        if self.model is not None:
+            cleanup_model(self.model)
+            self.model = None
+        self.tokenizer = None</code></pre>
+</details>
+<div class="desc"><p>Evaluates long-context effective capacity using Needle-in-a-Haystack synthetic tasks.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.benchmarks.adapters.RulerAdapter.apply_module"><code class="name flex">
+<span>def <span class="ident">apply_module</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_module(self) -&gt; None:
+    &#34;&#34;&#34;Inject candidate attention replacement or compression algorithm.&#34;&#34;&#34;
+    if self.model is None:
+        raise RuntimeError(&#34;Setup must be called before applying module.&#34;)
+
+    if self.module_type in (&#34;baseline&#34;, &#34;none&#34;, &#34;full&#34;, &#34;dense&#34;):
+        LOG.info(&#34;Baseline RULER run: skipping module injection.&#34;)
+        return
+
+    if self.module_type == &#34;attention&#34;:
+        self.model = apply_attention_module(
+            self.model,
+            module_name=self.module_name,
+            rank=self.rank or 64,
+            **self.extra_kwargs,
+        )
+    elif self.module_type == &#34;compressor&#34;:
+        self.model = apply_compressor(
+            self.model,
+            module_name=self.module_name,
+            rank=self.rank or 64,
+            **self.extra_kwargs,
+        )
+
+    if self.model_meta is not None:
+        self.model_meta.num_params = count_parameters(self.model)</code></pre>
+</details>
+<div class="desc"><p>Inject candidate attention replacement or compression algorithm.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.adapters.RulerAdapter.cleanup"><code class="name flex">
+<span>def <span class="ident">cleanup</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cleanup(self) -&gt; None:
+    &#34;&#34;&#34;Clean up model and memory.&#34;&#34;&#34;
+    if self.model is not None:
+        cleanup_model(self.model)
+        self.model = None
+    self.tokenizer = None</code></pre>
+</details>
+<div class="desc"><p>Clean up model and memory.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.adapters.RulerAdapter.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>self) ‑> dict[str, typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run(self) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Execute Needle-in-a-Haystack sweeps across various depths.&#34;&#34;&#34;
+    self.setup()
+    self.apply_module()
+
+    depths = [0.1, 0.25, 0.5, 0.75, 0.9]
+    found_count = 0
+    total_tests = 0
+    total_latency_s = 0.0
+
+    self.model.eval()
+    for i in range(self.num_samples):
+        depth = depths[i % len(depths)]
+        prompt, expected, _ = self._generate_synthetic_niah(depth)
+
+        inputs = self.tokenizer(prompt, return_tensors=&#34;pt&#34;, truncation=True, max_length=self.context_length)
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
+        start_t = time.perf_counter()
+        with torch.no_grad():
+            gen_out = self.model.generate(
+                **inputs,
+                max_new_tokens=10,
+                do_sample=False,
+            ) if hasattr(self.model, &#34;generate&#34;) else None
+
+        duration = time.perf_counter() - start_t
+        total_latency_s += duration
+
+        if gen_out is not None:
+            decoded = self.tokenizer.decode(gen_out[0], skip_special_tokens=True)
+            if expected in decoded:
+                found_count += 1
+        total_tests += 1
+
+    accuracy = found_count / max(total_tests, 1)
+    peak_mem = measure_peak_memory_mb(self.device)
+    avg_latency_ms = (total_latency_s / max(total_tests, 1)) * 1000.0
+
+    return {
+        &#34;model_metadata&#34;: self.model_meta,
+        &#34;dataset_metadata&#34;: self.dataset_meta,
+        &#34;eval_metrics&#34;: {
+            &#34;accuracy&#34;: float(accuracy),
+            &#34;needle_found_rate&#34;: float(accuracy),
+            &#34;context_length&#34;: self.context_length,
+            &#34;num_samples&#34;: total_tests,
+        },
+        &#34;latency&#34;: {
+            &#34;latency_ms_per_pass&#34;: float(avg_latency_ms),
+            &#34;throughput_tok_per_sec&#34;: float((self.context_length * total_tests) / max(total_latency_s, 1e-6)),
+        },
+        &#34;peak_memory_mb&#34;: peak_mem,
+    }</code></pre>
+</details>
+<div class="desc"><p>Execute Needle-in-a-Haystack sweeps across various depths.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.adapters.RulerAdapter.setup"><code class="name flex">
+<span>def <span class="ident">setup</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setup(self) -&gt; None:
+    &#34;&#34;&#34;Load target model and tokenizer with extended position context.&#34;&#34;&#34;
+    torch.manual_seed(self.seed)
+    random.seed(self.seed)
+
+    self.model, self.tokenizer, model_cfg = load_model_and_tokenizer(
+        self.model_name,
+        device=self.device,
+        dtype=self.dtype,
+        task=&#34;lm&#34;,
+    )
+    self.model_meta = get_model_metadata(self.model, model_cfg)
+
+    self.dataset_meta = DatasetMetadata(
+        name=f&#34;ruler_{self.context_length}&#34;,
+        task=&#34;ruler&#34;,
+        num_labels=1,
+        num_train=0,
+        num_eval=self.num_samples,
+    )</code></pre>
+</details>
+<div class="desc"><p>Load target model and tokenizer with extended position context.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.benchmarks.adapters.ZeroShotAdapter"><code class="flex name class">
+<span>class <span class="ident">ZeroShotAdapter</span></span>
+<span>(</span><span>module_name: str,<br>module_type: str,<br>model_name: str,<br>dataset_name: str = 'arc_challenge',<br>rank: int | None = 64,<br>device: str | None = None,<br>dtype: str = 'float32',<br>batch_size: int = 16,<br>max_length: int = 512,<br>seed: int = 42,<br>num_samples: int | None = 100,<br>**kwargs: Any)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ZeroShotAdapter:
+    &#34;&#34;&#34;Zero-shot evaluation adapter using logprob-based choice ranking without fine-tuning.&#34;&#34;&#34;
+
+    def __init__(
+        self,
+        module_name: str,
+        module_type: str,
+        model_name: str,
+        dataset_name: str = &#34;arc_challenge&#34;,
+        rank: int | None = 64,
+        device: str | None = None,
+        dtype: str = &#34;float32&#34;,
+        batch_size: int = 16,
+        max_length: int = 512,
+        seed: int = 42,
+        num_samples: int | None = 100,
+        **kwargs: Any,
+    ) -&gt; None:
+        self.module_name = module_name
+        self.module_type = module_type
+        self.model_name = model_name
+        self.dataset_name = dataset_name.lower()
+        self.rank = rank
+        self.device = device or (&#34;cuda&#34; if torch.cuda.is_available() else &#34;cpu&#34;)
+        self.dtype = dtype
+        self.batch_size = batch_size
+        self.max_length = max_length
+        self.seed = seed
+        self.num_samples = num_samples
+        self.extra_kwargs = kwargs
+
+        self.model: nn.Module | None = None
+        self.tokenizer: Any = None
+        self.model_meta: ModelMetadata | None = None
+        self.dataset_meta: DatasetMetadata | None = None
+        self.samples: list[dict[str, Any]] = []
+
+    def setup(self) -&gt; None:
+        &#34;&#34;&#34;Load causal LM model, tokenizer, and zero-shot prompts.&#34;&#34;&#34;
+        torch.manual_seed(self.seed)
+
+        self.model, self.tokenizer, model_cfg = load_model_and_tokenizer(
+            self.model_name,
+            device=self.device,
+            dtype=self.dtype,
+            task=&#34;lm&#34;,
+        )
+        self.model_meta = get_model_metadata(self.model, model_cfg)
+
+        self.dataset_meta = DatasetMetadata(
+            name=self.dataset_name,
+            task=&#34;zeroshot&#34;,
+            num_labels=4,
+            num_train=0,
+            num_eval=self.num_samples or 100,
+        )
+
+        # Build prompt samples (cached from datasets or generated for evaluation)
+        self.samples = self._load_samples()
+
+    def _load_samples(self) -&gt; list[dict[str, Any]]:
+        &#34;&#34;&#34;Load evaluation prompts and choice completions.&#34;&#34;&#34;
+        try:
+            from datasets import load_dataset
+            if &#34;arc&#34; in self.dataset_name:
+                subset = &#34;ARC-Challenge&#34; if &#34;challenge&#34; in self.dataset_name else &#34;ARC-Easy&#34;
+                ds = load_dataset(&#34;ai2_arc&#34;, subset, split=&#34;test&#34;)
+                items = []
+                limit = self.num_samples or len(ds)
+                for i, row in enumerate(ds):
+                    if i &gt;= limit:
+                        break
+                    choices = row[&#34;choices&#34;][&#34;text&#34;]
+                    labels = row[&#34;choices&#34;][&#34;label&#34;]
+                    answer_key = row[&#34;answerKey&#34;]
+                    correct_idx = labels.index(answer_key) if answer_key in labels else 0
+                    items.append({
+                        &#34;prompt&#34;: f&#34;Question: {row[&#39;question&#39;]}\nAnswer:&#34;,
+                        &#34;choices&#34;: choices,
+                        &#34;answer_idx&#34;: correct_idx,
+                    })
+                return items
+            elif &#34;hellaswag&#34; in self.dataset_name:
+                ds = load_dataset(&#34;hellaswag&#34;, split=&#34;validation&#34;)
+                items = []
+                limit = self.num_samples or len(ds)
+                for i, row in enumerate(ds):
+                    if i &gt;= limit:
+                        break
+                    items.append({
+                        &#34;prompt&#34;: f&#34;Context: {row[&#39;ctx&#39;]}\nCompletion:&#34;,
+                        &#34;choices&#34;: row[&#34;endings&#34;],
+                        &#34;answer_idx&#34;: int(row[&#34;label&#34;]),
+                    })
+                return items
+        except Exception as e:
+            LOG.warning(&#34;Falling back to local zero-shot sample format: %s&#34;, e)
+
+        # Fallback dummy sample structure when offline
+        return [
+            {
+                &#34;prompt&#34;: f&#34;Evaluation prompt {i}: Which is the best answer?&#34;,
+                &#34;choices&#34;: [&#34;Option A&#34;, &#34;Option B&#34;, &#34;Option C&#34;, &#34;Option D&#34;],
+                &#34;answer_idx&#34;: 0,
+            }
+            for i in range(min(self.num_samples or 10, 10))
+        ]
+
+    def apply_module(self) -&gt; None:
+        &#34;&#34;&#34;Apply attention module replacement or compressor.&#34;&#34;&#34;
+        if self.model is None:
+            raise RuntimeError(&#34;Setup must be run before applying module.&#34;)
+
+        if self.module_type in (&#34;baseline&#34;, &#34;none&#34;, &#34;full&#34;, &#34;dense&#34;):
+            LOG.info(&#34;Baseline zero-shot run: skipping module injection.&#34;)
+            return
+
+        if self.module_type == &#34;attention&#34;:
+            self.model = apply_attention_module(
+                self.model,
+                module_name=self.module_name,
+                rank=self.rank or 64,
+                **self.extra_kwargs,
+            )
+        elif self.module_type == &#34;compressor&#34;:
+            self.model = apply_compressor(
+                self.model,
+                module_name=self.module_name,
+                rank=self.rank or 64,
+                **self.extra_kwargs,
+            )
+
+        if self.model_meta is not None:
+            self.model_meta.num_params = count_parameters(self.model)
+
+    def _compute_logprobs(self, prompt: str, choice: str) -&gt; float:
+        &#34;&#34;&#34;Compute sum of log probabilities for a choice given prompt.&#34;&#34;&#34;
+        if self.model is None or self.tokenizer is None:
+            return 0.0
+
+        full_text = prompt + &#34; &#34; + choice
+        enc_full = self.tokenizer(full_text, return_tensors=&#34;pt&#34;).to(self.device)
+        enc_prompt = self.tokenizer(prompt, return_tensors=&#34;pt&#34;)
+
+        prompt_len = enc_prompt.input_ids.shape[1]
+        input_ids = enc_full.input_ids
+
+        with torch.no_grad():
+            outputs = self.model(**enc_full)
+            logits = outputs.logits
+
+        # Log-softmax over vocabulary
+        log_probs = torch.log_softmax(logits, dim=-1)
+
+        # Sum logprobs of tokens belonging to choice
+        total_logprob = 0.0
+        for i in range(prompt_len, input_ids.shape[1]):
+            token_id = input_ids[0, i]
+            total_logprob += float(log_probs[0, i - 1, token_id].item())
+
+        return total_logprob
+
+    def run(self) -&gt; dict[str, Any]:
+        &#34;&#34;&#34;Execute zero-shot evaluation across prompts.&#34;&#34;&#34;
+        self.setup()
+        self.apply_module()
+
+        correct = 0
+        total = 0
+
+        self.model.eval()
+        for sample in self.samples:
+            prompt = sample[&#34;prompt&#34;]
+            choices = sample[&#34;choices&#34;]
+            target = sample[&#34;answer_idx&#34;]
+
+            choice_logprobs = [self._compute_logprobs(prompt, c) for c in choices]
+            pred_idx = int(torch.argmax(torch.tensor(choice_logprobs)).item())
+
+            if pred_idx == target:
+                correct += 1
+            total += 1
+
+        accuracy = correct / max(total, 1)
+        peak_mem = measure_peak_memory_mb(self.device)
+
+        return {
+            &#34;model_metadata&#34;: self.model_meta,
+            &#34;dataset_metadata&#34;: self.dataset_meta,
+            &#34;eval_metrics&#34;: {
+                &#34;accuracy&#34;: float(accuracy),
+                &#34;num_samples&#34;: total,
+                &#34;correct&#34;: correct,
+            },
+            &#34;latency&#34;: {
+                &#34;latency_ms_per_token&#34;: 0.0,
+                &#34;throughput_tok_per_sec&#34;: 0.0,
+            },
+            &#34;peak_memory_mb&#34;: peak_mem,
+        }
+
+    def cleanup(self) -&gt; None:
+        &#34;&#34;&#34;Clean up model and memory.&#34;&#34;&#34;
+        if self.model is not None:
+            cleanup_model(self.model)
+            self.model = None
+        self.tokenizer = None
+        self.samples.clear()</code></pre>
+</details>
+<div class="desc"><p>Zero-shot evaluation adapter using logprob-based choice ranking without fine-tuning.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.benchmarks.adapters.ZeroShotAdapter.apply_module"><code class="name flex">
+<span>def <span class="ident">apply_module</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_module(self) -&gt; None:
+    &#34;&#34;&#34;Apply attention module replacement or compressor.&#34;&#34;&#34;
+    if self.model is None:
+        raise RuntimeError(&#34;Setup must be run before applying module.&#34;)
+
+    if self.module_type in (&#34;baseline&#34;, &#34;none&#34;, &#34;full&#34;, &#34;dense&#34;):
+        LOG.info(&#34;Baseline zero-shot run: skipping module injection.&#34;)
+        return
+
+    if self.module_type == &#34;attention&#34;:
+        self.model = apply_attention_module(
+            self.model,
+            module_name=self.module_name,
+            rank=self.rank or 64,
+            **self.extra_kwargs,
+        )
+    elif self.module_type == &#34;compressor&#34;:
+        self.model = apply_compressor(
+            self.model,
+            module_name=self.module_name,
+            rank=self.rank or 64,
+            **self.extra_kwargs,
+        )
+
+    if self.model_meta is not None:
+        self.model_meta.num_params = count_parameters(self.model)</code></pre>
+</details>
+<div class="desc"><p>Apply attention module replacement or compressor.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.adapters.ZeroShotAdapter.cleanup"><code class="name flex">
+<span>def <span class="ident">cleanup</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cleanup(self) -&gt; None:
+    &#34;&#34;&#34;Clean up model and memory.&#34;&#34;&#34;
+    if self.model is not None:
+        cleanup_model(self.model)
+        self.model = None
+    self.tokenizer = None
+    self.samples.clear()</code></pre>
+</details>
+<div class="desc"><p>Clean up model and memory.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.adapters.ZeroShotAdapter.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>self) ‑> dict[str, typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run(self) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Execute zero-shot evaluation across prompts.&#34;&#34;&#34;
+    self.setup()
+    self.apply_module()
+
+    correct = 0
+    total = 0
+
+    self.model.eval()
+    for sample in self.samples:
+        prompt = sample[&#34;prompt&#34;]
+        choices = sample[&#34;choices&#34;]
+        target = sample[&#34;answer_idx&#34;]
+
+        choice_logprobs = [self._compute_logprobs(prompt, c) for c in choices]
+        pred_idx = int(torch.argmax(torch.tensor(choice_logprobs)).item())
+
+        if pred_idx == target:
+            correct += 1
+        total += 1
+
+    accuracy = correct / max(total, 1)
+    peak_mem = measure_peak_memory_mb(self.device)
+
+    return {
+        &#34;model_metadata&#34;: self.model_meta,
+        &#34;dataset_metadata&#34;: self.dataset_meta,
+        &#34;eval_metrics&#34;: {
+            &#34;accuracy&#34;: float(accuracy),
+            &#34;num_samples&#34;: total,
+            &#34;correct&#34;: correct,
+        },
+        &#34;latency&#34;: {
+            &#34;latency_ms_per_token&#34;: 0.0,
+            &#34;throughput_tok_per_sec&#34;: 0.0,
+        },
+        &#34;peak_memory_mb&#34;: peak_mem,
+    }</code></pre>
+</details>
+<div class="desc"><p>Execute zero-shot evaluation across prompts.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.adapters.ZeroShotAdapter.setup"><code class="name flex">
+<span>def <span class="ident">setup</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setup(self) -&gt; None:
+    &#34;&#34;&#34;Load causal LM model, tokenizer, and zero-shot prompts.&#34;&#34;&#34;
+    torch.manual_seed(self.seed)
+
+    self.model, self.tokenizer, model_cfg = load_model_and_tokenizer(
+        self.model_name,
+        device=self.device,
+        dtype=self.dtype,
+        task=&#34;lm&#34;,
+    )
+    self.model_meta = get_model_metadata(self.model, model_cfg)
+
+    self.dataset_meta = DatasetMetadata(
+        name=self.dataset_name,
+        task=&#34;zeroshot&#34;,
+        num_labels=4,
+        num_train=0,
+        num_eval=self.num_samples or 100,
+    )
+
+    # Build prompt samples (cached from datasets or generated for evaluation)
+    self.samples = self._load_samples()</code></pre>
+</details>
+<div class="desc"><p>Load causal LM model, tokenizer, and zero-shot prompts.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.benchmarks" href="../index.html">neuralops.benchmarks</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="neuralops.benchmarks.adapters.classification" href="classification.html">neuralops.benchmarks.adapters.classification</a></code></li>
+<li><code><a title="neuralops.benchmarks.adapters.perplexity" href="perplexity.html">neuralops.benchmarks.adapters.perplexity</a></code></li>
+<li><code><a title="neuralops.benchmarks.adapters.ruler" href="ruler.html">neuralops.benchmarks.adapters.ruler</a></code></li>
+<li><code><a title="neuralops.benchmarks.adapters.zeroshot" href="zeroshot.html">neuralops.benchmarks.adapters.zeroshot</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.benchmarks.adapters.ClassificationAdapter" href="#neuralops.benchmarks.adapters.ClassificationAdapter">ClassificationAdapter</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.benchmarks.adapters.ClassificationAdapter.apply_module" href="#neuralops.benchmarks.adapters.ClassificationAdapter.apply_module">apply_module</a></code></li>
+<li><code><a title="neuralops.benchmarks.adapters.ClassificationAdapter.cleanup" href="#neuralops.benchmarks.adapters.ClassificationAdapter.cleanup">cleanup</a></code></li>
+<li><code><a title="neuralops.benchmarks.adapters.ClassificationAdapter.run" href="#neuralops.benchmarks.adapters.ClassificationAdapter.run">run</a></code></li>
+<li><code><a title="neuralops.benchmarks.adapters.ClassificationAdapter.setup" href="#neuralops.benchmarks.adapters.ClassificationAdapter.setup">setup</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.benchmarks.adapters.PerplexityAdapter" href="#neuralops.benchmarks.adapters.PerplexityAdapter">PerplexityAdapter</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.benchmarks.adapters.PerplexityAdapter.apply_module" href="#neuralops.benchmarks.adapters.PerplexityAdapter.apply_module">apply_module</a></code></li>
+<li><code><a title="neuralops.benchmarks.adapters.PerplexityAdapter.cleanup" href="#neuralops.benchmarks.adapters.PerplexityAdapter.cleanup">cleanup</a></code></li>
+<li><code><a title="neuralops.benchmarks.adapters.PerplexityAdapter.run" href="#neuralops.benchmarks.adapters.PerplexityAdapter.run">run</a></code></li>
+<li><code><a title="neuralops.benchmarks.adapters.PerplexityAdapter.setup" href="#neuralops.benchmarks.adapters.PerplexityAdapter.setup">setup</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.benchmarks.adapters.RulerAdapter" href="#neuralops.benchmarks.adapters.RulerAdapter">RulerAdapter</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.benchmarks.adapters.RulerAdapter.apply_module" href="#neuralops.benchmarks.adapters.RulerAdapter.apply_module">apply_module</a></code></li>
+<li><code><a title="neuralops.benchmarks.adapters.RulerAdapter.cleanup" href="#neuralops.benchmarks.adapters.RulerAdapter.cleanup">cleanup</a></code></li>
+<li><code><a title="neuralops.benchmarks.adapters.RulerAdapter.run" href="#neuralops.benchmarks.adapters.RulerAdapter.run">run</a></code></li>
+<li><code><a title="neuralops.benchmarks.adapters.RulerAdapter.setup" href="#neuralops.benchmarks.adapters.RulerAdapter.setup">setup</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.benchmarks.adapters.ZeroShotAdapter" href="#neuralops.benchmarks.adapters.ZeroShotAdapter">ZeroShotAdapter</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.benchmarks.adapters.ZeroShotAdapter.apply_module" href="#neuralops.benchmarks.adapters.ZeroShotAdapter.apply_module">apply_module</a></code></li>
+<li><code><a title="neuralops.benchmarks.adapters.ZeroShotAdapter.cleanup" href="#neuralops.benchmarks.adapters.ZeroShotAdapter.cleanup">cleanup</a></code></li>
+<li><code><a title="neuralops.benchmarks.adapters.ZeroShotAdapter.run" href="#neuralops.benchmarks.adapters.ZeroShotAdapter.run">run</a></code></li>
+<li><code><a title="neuralops.benchmarks.adapters.ZeroShotAdapter.setup" href="#neuralops.benchmarks.adapters.ZeroShotAdapter.setup">setup</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

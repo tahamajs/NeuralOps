@@ -53,16 +53,386 @@ Storage-backend package for ResultsSaver …</p></div>
 <dd>
 <div class="desc"><p>SaveConfig – dataclass that controls all aspects of result persistence.</p></div>
 </dd>
+<dt><code class="name"><a title="neuralops.results_saver.pipeline" href="pipeline/index.html">neuralops.results_saver.pipeline</a></code></dt>
+<dd>
+<div class="desc"><p>Pipeline package — result writing, run management, and sweep orchestration.</p></div>
+</dd>
 <dt><code class="name"><a title="neuralops.results_saver.saver" href="saver.html">neuralops.results_saver.saver</a></code></dt>
 <dd>
-<div class="desc"><p>ResultsSaver – central orchestrator for result persistence.
-Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and all backends.</p></div>
+<div class="desc"><p>Core ResultsSaver orchestrator class.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.results_saver.storage" href="storage/index.html">neuralops.results_saver.storage</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="neuralops.results_saver.writers" href="writers/index.html">neuralops.results_saver.writers</a></code></dt>
+<dd>
+<div class="desc"></div>
 </dd>
 </dl>
 </section>
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.results_saver.configure_sqlite_pragmas"><code class="name flex">
+<span>def <span class="ident">configure_sqlite_pragmas</span></span>(<span>conn: sqlite3.Connection) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def configure_sqlite_pragmas(conn: sqlite3.Connection) -&gt; None:
+    &#34;&#34;&#34;Configure high-performance, concurrency-safe SQLite pragmas for multi-GPU training.
+
+    Enables Write-Ahead Logging (WAL) and NORMAL synchronous mode.
+
+    Args:
+        conn: Open SQLite database connection.
+    &#34;&#34;&#34;
+    cursor = conn.cursor()
+    cursor.execute(&#34;PRAGMA journal_mode=WAL;&#34;)
+    cursor.execute(&#34;PRAGMA synchronous=NORMAL;&#34;)
+    cursor.execute(&#34;PRAGMA busy_timeout=30000;&#34;)
+    cursor.close()</code></pre>
+</details>
+<div class="desc"><p>Configure high-performance, concurrency-safe SQLite pragmas for multi-GPU training.</p>
+<p>Enables Write-Ahead Logging (WAL) and NORMAL synchronous mode.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>conn</code></strong></dt>
+<dd>Open SQLite database connection.</dd>
+</dl></div>
+</dd>
+<dt id="neuralops.results_saver.save_result"><code class="name flex">
+<span>def <span class="ident">save_result</span></span>(<span>result: dict[str, Any] | Any,<br>results_dir: str | Path = '07_misc_tests/benchmark_results',<br>csv_filename: str = 'master_results.csv') ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def save_result(
+    result: dict[str, Any] | Any,
+    results_dir: str | Path = &#34;07_misc_tests/benchmark_results&#34;,
+    csv_filename: str = &#34;master_results.csv&#34;,
+) -&gt; str:
+    &#34;&#34;&#34;Append a benchmark result row to the master CSV file.
+
+    1. Master CSV is located at results_dir / csv_filename.
+    2. Header is written only if file does not exist.
+    3. Each call appends one row using csv.DictWriter with extrasaction=&#39;ignore&#39;.
+    4. All float fields are rounded to 4 decimal places before writing.
+
+    Args:
+        result: Dictionary or object with to_dict / vars attributes.
+        results_dir: Directory path where CSV is stored.
+        csv_filename: Filename of the target CSV.
+
+    Returns:
+        Absolute string path to the updated CSV file.
+    &#34;&#34;&#34;
+    target_dir = Path(results_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    csv_path = target_dir / csv_filename
+
+    if hasattr(result, &#34;to_dict&#34;) and callable(result.to_dict):
+        row = dict(result.to_dict())
+    elif hasattr(result, &#34;__dict__&#34;):
+        row = dict(vars(result))
+    elif isinstance(result, dict):
+        row = dict(result)
+    else:
+        row = dict(result)
+
+    if &#34;timestamp&#34; not in row or not row[&#34;timestamp&#34;]:
+        row[&#34;timestamp&#34;] = datetime.now().isoformat()
+
+    # Format fields: round floats to 4 decimal places, None to empty string
+    formatted_row: dict[str, Any] = {}
+    for k, v in row.items():
+        if isinstance(v, float):
+            formatted_row[k] = round(v, 4) if math.isfinite(v) else &#34;&#34;
+        elif v is None:
+            formatted_row[k] = &#34;&#34;
+        else:
+            formatted_row[k] = v
+
+    write_header = not csv_path.exists()
+    with open(csv_path, &#34;a&#34;, newline=&#34;&#34;, encoding=&#34;utf-8&#34;) as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=MASTER_CSV_COLUMNS,
+            extrasaction=&#34;ignore&#34;,
+        )
+        if write_header:
+            writer.writeheader()
+        writer.writerow(formatted_row)
+
+    return str(csv_path)</code></pre>
+</details>
+<div class="desc"><p>Append a benchmark result row to the master CSV file.</p>
+<ol>
+<li>Master CSV is located at results_dir / csv_filename.</li>
+<li>Header is written only if file does not exist.</li>
+<li>Each call appends one row using csv.DictWriter with extrasaction='ignore'.</li>
+<li>All float fields are rounded to 4 decimal places before writing.</li>
+</ol>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>result</code></strong></dt>
+<dd>Dictionary or object with to_dict / vars attributes.</dd>
+<dt><strong><code>results_dir</code></strong></dt>
+<dd>Directory path where CSV is stored.</dd>
+<dt><strong><code>csv_filename</code></strong></dt>
+<dd>Filename of the target CSV.</dd>
+</dl>
+<p>Returns
+-----=
+Absolute string path to the updated CSV file.</p></div>
+</dd>
+<dt id="neuralops.results_saver.save_result_json"><code class="name flex">
+<span>def <span class="ident">save_result_json</span></span>(<span>result: dict[str, Any] | Any,<br>results_dir: str | Path = '07_misc_tests/benchmark_results',<br>filename: str | None = None) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def save_result_json(
+    result: dict[str, Any] | Any,
+    results_dir: str | Path = &#34;07_misc_tests/benchmark_results&#34;,
+    filename: str | None = None,
+) -&gt; str:
+    &#34;&#34;&#34;Save complete benchmark result including fine-grained trajectories to JSON.
+
+    Used for generating conference-grade loss curves and variance plots.
+
+    Args:
+        result: Dictionary or object with to_dict / vars.
+        results_dir: Target directory for JSON output.
+        filename: Optional custom filename. If None, derived from metadata.
+
+    Returns:
+        String path to the saved JSON file.
+    &#34;&#34;&#34;
+    target_dir = Path(results_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    if hasattr(result, &#34;to_dict&#34;) and callable(result.to_dict):
+        data = result.to_dict()
+    elif hasattr(result, &#34;__dict__&#34;):
+        data = vars(result)
+    else:
+        data = dict(result)
+
+    if not filename:
+        mod = data.get(&#34;module_name&#34;, &#34;unknown&#34;)
+        fam = data.get(&#34;model_family&#34;, &#34;unknown&#34;)
+        ds = data.get(&#34;dataset&#34;, &#34;unknown&#34;)
+        filename = f&#34;{mod}_{fam}_{ds}.json&#34;
+
+    json_path = target_dir / filename
+    with open(json_path, &#34;w&#34;, encoding=&#34;utf-8&#34;) as f:
+        json.dump(sanitize_json_value(data), f, indent=2, allow_nan=False)
+
+    return str(json_path)</code></pre>
+</details>
+<div class="desc"><p>Save complete benchmark result including fine-grained trajectories to JSON.</p>
+<p>Used for generating conference-grade loss curves and variance plots.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>result</code></strong></dt>
+<dd>Dictionary or object with to_dict / vars.</dd>
+<dt><strong><code>results_dir</code></strong></dt>
+<dd>Target directory for JSON output.</dd>
+<dt><strong><code>filename</code></strong></dt>
+<dd>Optional custom filename. If None, derived from metadata.</dd>
+</dl>
+<p>Returns
+-----=
+String path to the saved JSON file.</p></div>
+</dd>
+<dt id="neuralops.results_saver.save_trajectories_parquet"><code class="name flex">
+<span>def <span class="ident">save_trajectories_parquet</span></span>(<span>detailed_results: list[dict[str, Any]],<br>output_dir: str | Path = 'results/06_adhoc_experiments/trajectories') ‑> str | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def save_trajectories_parquet(
+    detailed_results: list[dict[str, Any]],
+    output_dir: str | Path = &#34;results/06_adhoc_experiments/trajectories&#34;,
+) -&gt; str | None:
+    &#34;&#34;&#34;Write step-level trajectories (loss, grad_norm, latency) as Apache Parquet.
+
+    Falls back to JSON if pyarrow/pandas is unavailable.
+
+    Args:
+        detailed_results: List of result dictionaries containing &#39;trajectories&#39;.
+        output_dir: Output directory path.
+
+    Returns:
+        String path to the created parquet or json file, or None on total failure.
+    &#34;&#34;&#34;
+    target_dir = Path(output_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    parquet_path = target_dir / &#34;trajectories.parquet&#34;
+
+    rows: list[dict[str, Any]] = []
+    for entry in detailed_results:
+        mod = entry.get(&#34;module_name&#34;, &#34;unknown&#34;)
+        fam = entry.get(&#34;model_family&#34;, &#34;unknown&#34;)
+        ds = entry.get(&#34;dataset&#34;, &#34;unknown&#34;)
+        run_id = entry.get(&#34;run_id&#34;, &#34;unknown&#34;)
+        trajs = entry.get(&#34;trajectories&#34;, {})
+        loss_list = trajs.get(&#34;loss&#34;, [])
+        grad_list = trajs.get(&#34;grad_norm&#34;, [])
+
+        for step, loss_val in enumerate(loss_list):
+            grad_val = grad_list[step] if step &lt; len(grad_list) else None
+            rows.append(
+                {
+                    &#34;run_id&#34;: run_id,
+                    &#34;module_name&#34;: mod,
+                    &#34;model_family&#34;: fam,
+                    &#34;dataset&#34;: ds,
+                    &#34;step&#34;: step,
+                    &#34;loss&#34;: loss_val,
+                    &#34;grad_norm&#34;: grad_val,
+                }
+            )
+
+    try:
+        import pandas as pd
+
+        df = pd.DataFrame(rows)
+        df.to_parquet(str(parquet_path), engine=&#34;pyarrow&#34;, index=False)
+        return str(parquet_path)
+    except Exception:
+        json_fallback = target_dir / &#34;trajectories.json&#34;
+        with open(json_fallback, &#34;w&#34;, encoding=&#34;utf-8&#34;) as f:
+            json.dump(rows, f, indent=2)
+        return str(json_fallback)</code></pre>
+</details>
+<div class="desc"><p>Write step-level trajectories (loss, grad_norm, latency) as Apache Parquet.</p>
+<p>Falls back to JSON if pyarrow/pandas is unavailable.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>detailed_results</code></strong></dt>
+<dd>List of result dictionaries containing 'trajectories'.</dd>
+<dt><strong><code>output_dir</code></strong></dt>
+<dd>Output directory path.</dd>
+</dl>
+<p>Returns
+-----=
+String path to the created parquet or json file, or None on total failure.</p></div>
+</dd>
+<dt id="neuralops.results_saver.sqlite_file_lock"><code class="name flex">
+<span>def <span class="ident">sqlite_file_lock</span></span>(<span>lock_file_path: str | Path, timeout: float = 30.0)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@contextlib.contextmanager
+def sqlite_file_lock(lock_file_path: str | Path, timeout: float = 30.0):
+    &#34;&#34;&#34;Acquire an exclusive cross-process / multi-GPU file lock to serialize SQLite writes.
+
+    Args:
+        lock_file_path: Path to the lock file.
+        timeout: Maximum seconds to wait before falling back or raising.
+
+    Yields:
+        None while holding the lock.
+    &#34;&#34;&#34;
+    lock_path = Path(lock_file_path)
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_fd: int | None = None
+    start_time = time.time()
+    try:
+        lock_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR)
+        has_fcntl = True
+        try:
+            import fcntl
+        except ImportError:
+            has_fcntl = False
+
+        if has_fcntl:
+            acquired = False
+            while time.time() - start_time &lt; timeout:
+                try:
+                    fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    acquired = True
+                    break
+                except (BlockingIOError, OSError):
+                    time.sleep(0.05)
+
+            if not acquired:
+                try:
+                    fcntl.flock(lock_fd, fcntl.LOCK_EX)
+                except (
+                    AttributeError,
+                    KeyError,
+                    RuntimeError,
+                    TypeError,
+                    ValueError,
+                    OSError,
+                ):
+                    pass
+
+        yield
+    finally:
+        if lock_fd is not None:
+            try:
+                import fcntl
+
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            except (
+                AttributeError,
+                KeyError,
+                RuntimeError,
+                TypeError,
+                ValueError,
+                OSError,
+                ImportError,
+            ):
+                pass
+            try:
+                os.close(lock_fd)
+            except (
+                AttributeError,
+                KeyError,
+                RuntimeError,
+                TypeError,
+                ValueError,
+                OSError,
+                ImportError,
+            ):
+                pass</code></pre>
+</details>
+<div class="desc"><p>Acquire an exclusive cross-process / multi-GPU file lock to serialize SQLite writes.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>lock_file_path</code></strong></dt>
+<dd>Path to the lock file.</dd>
+<dt><strong><code>timeout</code></strong></dt>
+<dd>Maximum seconds to wait before falling back or raising.</dd>
+</dl>
+<p>Yields
+-----=
+None while holding the lock.</p></div>
+</dd>
+</dl>
 </section>
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
@@ -77,7 +447,8 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class ResultsSaver:
-    &#34;&#34;&#34;
+    &#34;&#34;&#34;Central orchestrator for experiment result persistence and cloud tracking.
+
     Usage:
         saver = ResultsSaver(run_id, base_dir, save_config_dict)
         saver.save_all(model, config, history, final_metrics, tokenizer, input_example)
@@ -85,6 +456,13 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
     &#34;&#34;&#34;
 
     def __init__(self, run_id: str, base_dir: Path, config: dict[str, Any] | None = None) -&gt; None:
+        &#34;&#34;&#34;Initialize ResultsSaver directory layouts and configuration.
+
+        Args:
+            run_id: Unique identifier string for this run.
+            base_dir: Base directory where run directory is created.
+            config: Optional configuration dictionary.
+        &#34;&#34;&#34;
         self.run_id = run_id
         self.base_dir = Path(base_dir)
         self.run_dir = self.base_dir / run_id
@@ -92,9 +470,6 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
         self._init_dirs()
         self.saved_paths: dict[str, str] = {}
 
-    # ------------------------------------------------------------------
-    # Directory setup
-    # ------------------------------------------------------------------
     def _init_dirs(self) -&gt; None:
         &#34;&#34;&#34;Initialize required result directory structures.&#34;&#34;&#34;
         dirs = [self.run_dir]
@@ -110,21 +485,24 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
             d.mkdir(parents=True, exist_ok=True)
 
     def should_save_heavy(self, final_metrics: dict[str, Any]) -&gt; bool:
-        &#34;&#34;&#34;Evaluate if metric meets auto_save_if_better_than threshold.&#34;&#34;&#34;
+        &#34;&#34;&#34;Evaluate if metric meets auto_save_if_better_than threshold.
+
+        Args:
+            final_metrics: Mapping of evaluation metric names to values.
+
+        Returns:
+            True if heavy model artifacts should be persisted.
+        &#34;&#34;&#34;
         threshold = self.cfg.auto_save_if_better_than
         if threshold is None:
             return True
         metric = final_metrics.get(&#34;eval_accuracy&#34;, 0)
         return metric &gt;= threshold
 
-    # ------------------------------------------------------------------
-    # SQLite Multi-GPU Concurrency Methods
-    # ------------------------------------------------------------------
     def _get_sqlite_connection(self, db_path: Path) -&gt; sqlite3.Connection:
         &#34;&#34;&#34;Open and configure an SQLite database connection with WAL mode and pragmas.&#34;&#34;&#34;
         db_path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(str(db_path), timeout=30.0)
-        # FIX: Ensure PRAGMA journal_mode=WAL; and PRAGMA synchronous=NORMAL; are applied
         configure_sqlite_pragmas(conn)
         return conn
 
@@ -135,50 +513,47 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
         metrics: dict[str, Any] | None = None,
         extra_metadata: dict[str, Any] | None = None,
     ) -&gt; str:
-        &#34;&#34;&#34;
-        Save run metadata, configuration, and final metrics into SQLite database with multi-GPU write safety.
+        &#34;&#34;&#34;Save run metadata, config, and metrics into SQLite with multi-GPU write safety.
 
-        # FIX: Uses PRAGMA journal_mode=WAL;, PRAGMA synchronous=NORMAL;, and file locking for multi-GPU database write safety.
+        Args:
+            db_path: Target SQLite database file path.
+            config: Configuration dictionary or object.
+            metrics: Optional final metrics dictionary.
+            extra_metadata: Optional extra metadata dictionary.
+
+        Returns:
+            String path to the SQLite database.
         &#34;&#34;&#34;
         target_db = Path(db_path) if db_path is not None else (self.base_dir / &#34;experiments.db&#34;)
         lock_path = target_db.with_suffix(&#34;.db.lock&#34;)
 
         cfg_dict = self._flatten_config(config) if config is not None else {}
-        metrics_dict = _sanitize_json_value(metrics or {})
-        meta_dict = _sanitize_json_value(extra_metadata or {})
+        metrics_dict = sanitize_json_value(metrics or {})
+        meta_dict = sanitize_json_value(extra_metadata or {})
 
-        # FIX: Wrap database transaction in cross-process file lock
         with sqlite_file_lock(lock_path):
             conn = self._get_sqlite_connection(target_db)
             try:
                 cursor = conn.cursor()
-                cursor.execute(&#34;&#34;&#34;
-                    CREATE TABLE IF NOT EXISTS experiment_runs (
-                        run_id TEXT PRIMARY KEY,
-                        created_at TEXT,
-                        task_name TEXT,
-                        model_name TEXT,
-                        config_json TEXT,
-                        metrics_json TEXT,
-                        metadata_json TEXT
-                    )
-                    &#34;&#34;&#34;)
+                cursor.execute(
+                    &#34;CREATE TABLE IF NOT EXISTS experiment_runs (&#34;
+                    &#34;run_id TEXT PRIMARY KEY, created_at TEXT, task_name TEXT, &#34;
+                    &#34;model_name TEXT, config_json TEXT, metrics_json TEXT, metadata_json TEXT)&#34;
+                )
                 now_str = datetime.now().isoformat()
                 task_name = str(cfg_dict.get(&#34;task_name&#34;, &#34;unknown&#34;))
                 model_name = str(cfg_dict.get(&#34;model_name&#34;, &#34;unknown&#34;))
 
                 cursor.execute(
-                    &#34;&#34;&#34;
-                    INSERT OR REPLACE INTO experiment_runs
-                    (run_id, created_at, task_name, model_name, config_json, metrics_json, metadata_json)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                    &#34;&#34;&#34;,
+                    &#34;INSERT OR REPLACE INTO experiment_runs &#34;
+                    &#34;(run_id, created_at, task_name, model_name, config_json, metrics_json, metadata_json) &#34;
+                    &#34;VALUES (?, ?, ?, ?, ?, ?, ?)&#34;,
                     (
                         self.run_id,
                         now_str,
                         task_name,
                         model_name,
-                        json.dumps(_sanitize_json_value(cfg_dict), allow_nan=False),
+                        json.dumps(sanitize_json_value(cfg_dict), allow_nan=False),
                         json.dumps(metrics_dict, allow_nan=False),
                         json.dumps(meta_dict, allow_nan=False),
                     ),
@@ -197,10 +572,13 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
         value: float,
         db_path: str | Path | None = None,
     ) -&gt; None:
-        &#34;&#34;&#34;
-        Append a single step metric into SQLite database with multi-GPU concurrency safety.
+        &#34;&#34;&#34;Append a single step metric into SQLite with multi-GPU concurrency safety.
 
-        # FIX: Uses PRAGMA journal_mode=WAL; and PRAGMA synchronous=NORMAL; with file locking to ensure safe step metric logging.
+        Args:
+            step: Training or evaluation step index.
+            metric_name: Metric name identifier.
+            value: Numeric metric value.
+            db_path: Optional explicit SQLite path.
         &#34;&#34;&#34;
         target_db = Path(db_path) if db_path is not None else (self.run_dir / &#34;metrics.db&#34;)
         lock_path = target_db.with_suffix(&#34;.db.lock&#34;)
@@ -209,21 +587,14 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
             conn = self._get_sqlite_connection(target_db)
             try:
                 cursor = conn.cursor()
-                cursor.execute(&#34;&#34;&#34;
-                    CREATE TABLE IF NOT EXISTS metric_logs (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        run_id TEXT,
-                        step INTEGER,
-                        metric_name TEXT,
-                        value REAL,
-                        timestamp TEXT
-                    )
-                    &#34;&#34;&#34;)
                 cursor.execute(
-                    &#34;&#34;&#34;
-                    INSERT INTO metric_logs (run_id, step, metric_name, value, timestamp)
-                    VALUES (?, ?, ?, ?, ?)
-                    &#34;&#34;&#34;,
+                    &#34;CREATE TABLE IF NOT EXISTS metric_logs (&#34;
+                    &#34;id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT, step INTEGER, &#34;
+                    &#34;metric_name TEXT, value REAL, timestamp TEXT)&#34;
+                )
+                cursor.execute(
+                    &#34;INSERT INTO metric_logs (run_id, step, metric_name, value, timestamp) &#34;
+                    &#34;VALUES (?, ?, ?, ?, ?)&#34;,
                     (
                         self.run_id,
                         step,
@@ -236,11 +607,15 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
             finally:
                 conn.close()
 
-    # ------------------------------------------------------------------
-    # Public convenience methods
-    # ------------------------------------------------------------------
     def save_metrics(self, metrics: dict[str, Any]) -&gt; str:
-        &#34;&#34;&#34;Save a dictionary of evaluation/training metrics to JSON and SQLite.&#34;&#34;&#34;
+        &#34;&#34;&#34;Save a dictionary of evaluation/training metrics to JSON and SQLite.
+
+        Args:
+            metrics: Metrics mapping.
+
+        Returns:
+            Path to final_metrics.json.
+        &#34;&#34;&#34;
         self._save_final_metrics(metrics)
         self.save_to_sqlite(metrics=metrics)
         path = str(self.run_dir / &#34;artifacts&#34; / &#34;final_metrics.json&#34;)
@@ -248,7 +623,14 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
         return path
 
     def save_config(self, config: Any) -&gt; str:
-        &#34;&#34;&#34;Save experiment configuration dictionary or object.&#34;&#34;&#34;
+        &#34;&#34;&#34;Save experiment configuration dictionary or object.
+
+        Args:
+            config: Config dict or object.
+
+        Returns:
+            Path to config.json.
+        &#34;&#34;&#34;
         self._save_config(config)
         self.save_to_sqlite(config=config)
         path = str(self.run_dir / &#34;artifacts&#34; / &#34;config.json&#34;)
@@ -256,7 +638,15 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
         return path
 
     def save_model_weights(self, model: Any, filename: str = &#34;model.pt&#34;) -&gt; str:
-        &#34;&#34;&#34;Save PyTorch model state dict or checkpoint.&#34;&#34;&#34;
+        &#34;&#34;&#34;Save PyTorch model state dict or checkpoint.
+
+        Args:
+            model: PyTorch model instance.
+            filename: Target file name in artifacts directory.
+
+        Returns:
+            Path to saved model weights.
+        &#34;&#34;&#34;
         import torch
 
         art_dir = self.run_dir / &#34;artifacts&#34;
@@ -278,20 +668,40 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
         results_dir: str | Path | None = None,
         csv_filename: str = &#34;master_results.csv&#34;,
     ) -&gt; str:
-        &#34;&#34;&#34;Append a benchmark result to master CSV.&#34;&#34;&#34;
+        &#34;&#34;&#34;Append a benchmark result to master CSV.
+
+        Args:
+            result: Result dictionary or object.
+            results_dir: Optional custom results dir.
+            csv_filename: Master CSV filename.
+
+        Returns:
+            Path to master CSV.
+        &#34;&#34;&#34;
         target_dir = results_dir if results_dir is not None else self.base_dir
         path = save_result(result, results_dir=target_dir, csv_filename=csv_filename)
         self.saved_paths[&#34;master_csv&#34;] = path
         return path
 
-    # ------------------------------------------------------------------
-    # Main save entry point
-    # ------------------------------------------------------------------
     def save_all(
-        self, model, config, history, final_metrics, tokenizer=None, input_example=None
+        self,
+        model: Any,
+        config: Any,
+        history: Any,
+        final_metrics: dict[str, Any],
+        tokenizer: Any = None,
+        input_example: Any = None,
     ) -&gt; None:
-        &#34;&#34;&#34;Save everything selected in the config.&#34;&#34;&#34;
+        &#34;&#34;&#34;Save everything configured: metrics, config, model, plots, and trackers.
 
+        Args:
+            model: Trained model.
+            config: Run configuration.
+            history: Training history log.
+            final_metrics: Summary evaluation metrics.
+            tokenizer: Optional tokenizer to save.
+            input_example: Optional sample input for export conversions.
+        &#34;&#34;&#34;
         self._save_config(config)
         self._save_history(history)
         self._save_final_metrics(final_metrics)
@@ -309,14 +719,12 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
         self._save_archive()
         self._save_model_card(config, final_metrics)
 
-        # Automatically track to experiment trackers (wandb, mlflow, etc.)
         if self.cfg.experiment_trackers:
-            # Delegate to the unified tracking module if available, else use legacy backends
             try:
                 from neuralops.tracking import ExperimentTracker
 
                 tracker = ExperimentTracker(
-                    backend=self.cfg.experiment_trackers[0],  # supports one primary
+                    backend=self.cfg.experiment_trackers[0],
                     log_dir=str(self.run_dir / &#34;tracking&#34;),
                     experiment_name=self.run_id,
                 )
@@ -327,13 +735,10 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
             except ImportError:
                 self.track_all(final_metrics, self._flatten_config(config))
 
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
-    def _write_json(self, rel_path: str, obj) -&gt; None:
-        &#34;&#34;&#34;write json.&#34;&#34;&#34;
+    def _write_json(self, rel_path: str, obj: Any) -&gt; None:
+        &#34;&#34;&#34;Serialize an object to JSON at run_dir / rel_path.&#34;&#34;&#34;
 
-        def _default_serializer(o):
+        def _default_serializer(o: Any) -&gt; Any:
             if hasattr(o, &#34;to_dict&#34;) and callable(o.to_dict):
                 return o.to_dict()
             if hasattr(o, &#34;__dict__&#34;):
@@ -345,10 +750,10 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
             return str(o)
 
         fp = self.run_dir / rel_path
-        fp.parent.mkdir(exist_ok=True)
-        with open(fp, &#34;w&#34;) as f:
+        fp.parent.mkdir(parents=True, exist_ok=True)
+        with open(fp, &#34;w&#34;, encoding=&#34;utf-8&#34;) as f:
             json.dump(
-                _sanitize_json_value(obj),
+                sanitize_json_value(obj),
                 f,
                 indent=2,
                 default=_default_serializer,
@@ -356,56 +761,53 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
             )
 
     def _write_text(self, rel_path: str, text: str) -&gt; None:
-        &#34;&#34;&#34;write text.&#34;&#34;&#34;
+        &#34;&#34;&#34;Write plaintext content to run_dir / rel_path.&#34;&#34;&#34;
         fp = self.run_dir / rel_path
-        fp.parent.mkdir(exist_ok=True)
-        with open(fp, &#34;w&#34;) as f:
+        fp.parent.mkdir(parents=True, exist_ok=True)
+        with open(fp, &#34;w&#34;, encoding=&#34;utf-8&#34;) as f:
             f.write(text)
 
-    def _flatten_config(self, config) -&gt; dict[str, Any]:
-        &#34;&#34;&#34;flatten config.&#34;&#34;&#34;
+    def _flatten_config(self, config: Any) -&gt; dict[str, Any]:
+        &#34;&#34;&#34;Convert a configuration object to a flat dictionary.&#34;&#34;&#34;
         if hasattr(config, &#34;__dict__&#34;):
             return vars(config)
-        return config
+        return config if isinstance(config, dict) else {&#34;config&#34;: str(config)}
 
-    def _save_config(self, config) -&gt; None:
-        &#34;&#34;&#34;save config.&#34;&#34;&#34;
+    def _save_config(self, config: Any) -&gt; None:
         self._write_json(&#34;artifacts/config.json&#34;, self._flatten_config(config))
 
-    def _save_history(self, history) -&gt; None:
-        &#34;&#34;&#34;save history.&#34;&#34;&#34;
+    def _save_history(self, history: Any) -&gt; None:
         self._write_json(&#34;artifacts/history.json&#34;, history)
 
-    def _save_final_metrics(self, metrics) -&gt; None:
-        &#34;&#34;&#34;save final metrics.&#34;&#34;&#34;
+    def _save_final_metrics(self, metrics: dict[str, Any]) -&gt; None:
         self._write_json(&#34;artifacts/final_metrics.json&#34;, metrics)
 
-    def _save_metrics_log(self, history) -&gt; None:
-        &#34;&#34;&#34;save metrics log.&#34;&#34;&#34;
-        with open(self.run_dir / &#34;logs&#34; / &#34;metrics.jsonl&#34;, &#34;w&#34;) as f:
+    def _save_metrics_log(self, history: Any) -&gt; None:
+        log_dir = self.run_dir / &#34;logs&#34;
+        log_dir.mkdir(parents=True, exist_ok=True)
+        with open(log_dir / &#34;metrics.jsonl&#34;, &#34;w&#34;, encoding=&#34;utf-8&#34;) as f:
             for entry in history:
-                f.write(json.dumps(_sanitize_json_value(entry), allow_nan=False) + &#34;\n&#34;)
+                f.write(json.dumps(sanitize_json_value(entry), allow_nan=False) + &#34;\n&#34;)
 
-    def _save_model(self, model, tokenizer=None) -&gt; None:
-        &#34;&#34;&#34;save model.&#34;&#34;&#34;
+    def _save_model(self, model: Any, tokenizer: Any = None) -&gt; None:
         p = self.run_dir / &#34;artifacts&#34; / &#34;model&#34;
-        p.mkdir(exist_ok=True)
-        model.save_pretrained(str(p))
-        if tokenizer:
+        p.mkdir(parents=True, exist_ok=True)
+        if hasattr(model, &#34;save_pretrained&#34;):
+            model.save_pretrained(str(p))
+        if tokenizer and hasattr(tokenizer, &#34;save_pretrained&#34;):
             tokenizer.save_pretrained(str(p))
-        if self.cfg.save_optimizer:
+        if self.cfg.save_optimizer and hasattr(model, &#34;state_dict&#34;):
             import torch
 
             torch.save(model.state_dict(), p / &#34;optimizer.pt&#34;)
 
-    def _save_checkpoint(self, model, name=&#34;best&#34;) -&gt; None:
-        &#34;&#34;&#34;save checkpoint.&#34;&#34;&#34;
+    def _save_checkpoint(self, model: Any, name: str = &#34;best&#34;) -&gt; None:
         p = self.run_dir / &#34;checkpoints&#34; / name
-        p.mkdir(exist_ok=True)
-        model.save_pretrained(str(p))
+        p.mkdir(parents=True, exist_ok=True)
+        if hasattr(model, &#34;save_pretrained&#34;):
+            model.save_pretrained(str(p))
 
     def _save_archive(self) -&gt; None:
-        &#34;&#34;&#34;save archive safely.&#34;&#34;&#34;
         try:
             with tarfile.open(self.run_dir / &#34;results.tar.gz&#34;, &#34;w:gz&#34;) as tar:
                 for sub in [&#34;artifacts&#34;, &#34;logs&#34;, &#34;plots&#34;]:
@@ -415,102 +817,11 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
         except Exception as e:
             logger.warning(f&#34;Archive creation skipped due to warning/error: {e}&#34;)
 
-    # ------------------------------------------------------------------
-    # Plots – delegates to framework.analysis.plotting
-    # ------------------------------------------------------------------
-    def _generate_plots(self, history, final_metrics) -&gt; None:
-        &#34;&#34;&#34;generate plots.&#34;&#34;&#34;
-        try:
-            import matplotlib.pyplot as plt
+    def _generate_plots(self, history: Any, final_metrics: dict[str, Any]) -&gt; None:
+        generate_plots_for_run(self.run_dir, self.cfg, history, final_metrics)
 
-            from neuralops.analysis.plotting import (
-                plot_accuracy_curves,
-                plot_confusion_matrix,
-                plot_loss_curves,
-                plot_lr_schedule,
-                plot_radar_chart,
-                plot_rank_allocation,
-                plot_training_time,
-            )
-
-            opts = self.cfg.plot_options
-            dpi = opts.get(&#34;dpi&#34;, 150)
-
-            def save_fig(name, fig) -&gt; None:
-                &#34;&#34;&#34;Persist fig to disk.&#34;&#34;&#34;
-                fig.savefig(self.run_dir / &#34;plots&#34; / f&#34;{name}.png&#34;, dpi=dpi, bbox_inches=&#34;tight&#34;)
-                plt.close(fig)
-
-            if opts.get(&#34;loss_curve&#34;, True):
-                try:
-                    plot_loss_curves(history, final_metrics, self.cfg, self.run_dir / &#34;plots&#34;, opts)
-                except Exception as e:
-                    logger.debug(f&#34;plot_loss_curves error: {e}&#34;)
-
-            if opts.get(&#34;accuracy_curve&#34;, True):
-                try:
-                    plot_accuracy_curves(
-                        history, final_metrics, self.cfg, self.run_dir / &#34;plots&#34;, opts
-                    )
-                except Exception as e:
-                    logger.debug(f&#34;plot_accuracy_curves error: {e}&#34;)
-
-            if opts.get(&#34;lr_schedule&#34;, True):
-                try:
-                    plot_lr_schedule(history, final_metrics, self.cfg, self.run_dir / &#34;plots&#34;, opts)
-                except Exception as e:
-                    logger.debug(f&#34;plot_lr_schedule error: {e}&#34;)
-
-            if opts.get(&#34;training_time&#34;, True):
-                try:
-                    plot_training_time(
-                        history, final_metrics, self.cfg, self.run_dir / &#34;plots&#34;, opts
-                    )
-                except Exception as e:
-                    logger.debug(f&#34;plot_training_time error: {e}&#34;)
-
-            if opts.get(&#34;confusion_matrix&#34;, False):
-                preds_path = self.run_dir / &#34;artifacts&#34; / &#34;eval_predictions.json&#34;
-                if preds_path.exists():
-                    with open(preds_path) as f:
-                        data = json.load(f)
-                    fig = plot_confusion_matrix(
-                        data[&#34;labels&#34;],
-                        data[&#34;predictions&#34;],
-                        class_names=opts.get(&#34;class_names&#34;),
-                        figsize=tuple(opts.get(&#34;figsize&#34;, [10, 8])),
-                    )
-                    save_fig(&#34;confusion_matrix&#34;, fig)
-
-            if opts.get(&#34;radar_chart&#34;, False):
-                fig = plot_radar_chart(final_metrics, figsize=tuple(opts.get(&#34;figsize&#34;, [8, 8])))
-                save_fig(&#34;radar_chart&#34;, fig)
-
-            if opts.get(&#34;rank_allocation&#34;, False):
-                rank_path = self.run_dir / &#34;artifacts&#34; / &#34;rank_allocation.json&#34;
-                if rank_path.exists():
-                    with open(rank_path) as f:
-                        rank_data = json.load(f)
-                    fig = plot_rank_allocation(
-                        rank_data, figsize=tuple(opts.get(&#34;figsize&#34;, [10, 4]))
-                    )
-                    save_fig(&#34;rank_allocation&#34;, fig)
-
-            if opts.get(&#34;attention_heatmap&#34;, False):
-                logger.info(
-                    &#34;Attention heatmap requested but model not available in saver context; &#34;
-                    &#34;use framework.callbacks.AttentionHeatmapCallback during training.&#34;
-                )
-
-        except Exception:
-            logger.exception(&#34;Plot generation failed&#34;)
-
-    # ------------------------------------------------------------------
-    # Model card
-    # ------------------------------------------------------------------
-    def _save_model_card(self, config, metrics) -&gt; None:
-        &#34;&#34;&#34;save model card.&#34;&#34;&#34;
-        cfg_dict = self._flatten_config(config) if hasattr(config, &#34;__dict__&#34;) else config
+    def _save_model_card(self, config: Any, metrics: dict[str, Any]) -&gt; None:
+        cfg_dict = self._flatten_config(config)
         model_name = cfg_dict.get(&#34;model_name&#34;, &#34;Model&#34;)
         task_name = cfg_dict.get(&#34;task_name&#34;, &#34;Task&#34;)
         acc = metrics.get(&#34;eval_accuracy&#34;, &#34;N/A&#34;)
@@ -526,13 +837,9 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
 &#34;&#34;&#34;
         self._write_text(&#34;artifacts/model_card.md&#34;, card)
 
-    # ------------------------------------------------------------------
-    # Export formats
-    # ------------------------------------------------------------------
-    def _export_format(self, fmt: str, model, input_example) -&gt; None:
-        &#34;&#34;&#34;export format.&#34;&#34;&#34;
+    def _export_format(self, fmt: str, model: Any, input_example: Any) -&gt; None:
         try:
-            from .backends.exports import EXPORTERS
+            from neuralops.results_saver.backends.exports import EXPORTERS
 
             exporter = EXPORTERS.get(fmt)
             if exporter:
@@ -540,16 +847,12 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
         except Exception:
             logger.exception(f&#34;Export {fmt} failed&#34;)
 
-    # ------------------------------------------------------------------
-    # Push to storage backends
-    # ------------------------------------------------------------------
     def push_all(self) -&gt; None:
-        &#34;&#34;&#34;Push all.&#34;&#34;&#34;
+        &#34;&#34;&#34;Push results to all configured storage backends.&#34;&#34;&#34;
         for be in self.cfg.storage_backends:
             self._push_backend(be)
 
     def _push_backend(self, name: str) -&gt; None:
-        &#34;&#34;&#34;push backend.&#34;&#34;&#34;
         try:
             if name == &#34;local&#34;:
                 return
@@ -560,30 +863,24 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
         except Exception:
             logger.exception(f&#34;Push to {name} failed&#34;)
 
-    # ------------------------------------------------------------------
-    # Git / DVC
-    # ------------------------------------------------------------------
     def git_commit_and_push(self) -&gt; None:
-        &#34;&#34;&#34;Git commit and push.&#34;&#34;&#34;
+        &#34;&#34;&#34;Trigger git commit and push if enabled in git_options.&#34;&#34;&#34;
         if not self.cfg.git_options.get(&#34;commit_results&#34;):
             return
-        from .backends.git import git_commit_and_push
+        from neuralops.results_saver.backends.git import git_commit_and_push
 
         git_commit_and_push(self.run_dir, self.cfg)
 
     def dvc_track(self) -&gt; None:
-        &#34;&#34;&#34;Dvc track.&#34;&#34;&#34;
+        &#34;&#34;&#34;Track result directory with DVC if enabled.&#34;&#34;&#34;
         if not self.cfg.dvc_options.get(&#34;track_model&#34;):
             return
-        from .backends.dvc import dvc_track
+        from neuralops.results_saver.backends.dvc import dvc_track
 
         dvc_track(self.run_dir, self.cfg)
 
-    # ------------------------------------------------------------------
-    # Experiment trackers (legacy backends – prefer framework.tracking)
-    # ------------------------------------------------------------------
     def track_all(self, metrics: dict[str, Any], params: dict[str, Any]) -&gt; None:
-        &#34;&#34;&#34;Track all.&#34;&#34;&#34;
+        &#34;&#34;&#34;Dispatch metrics and params to configured experiment trackers.&#34;&#34;&#34;
         for t in self.cfg.experiment_trackers:
             try:
                 mod = __import__(
@@ -595,11 +892,8 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
             except Exception:
                 logger.exception(f&#34;Tracking to {t} failed&#34;)
 
-    # ------------------------------------------------------------------
-    # Model registries
-    # ------------------------------------------------------------------
     def push_to_registries(self) -&gt; None:
-        &#34;&#34;&#34;Push to registries.&#34;&#34;&#34;
+        &#34;&#34;&#34;Upload model checkpoints to configured registries.&#34;&#34;&#34;
         for r in self.cfg.model_registries:
             try:
                 mod = __import__(f&#34;neuralops.results_saver.backends.{r}&#34;, fromlist=[&#34;push&#34;])
@@ -609,31 +903,37 @@ Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and 
             except Exception:
                 logger.exception(f&#34;Push to registry {r} failed&#34;)
 
-    # ------------------------------------------------------------------
-    # GitHub Release
-    # ------------------------------------------------------------------
     def create_github_release(self, metrics: dict[str, Any]) -&gt; str | None:
-        &#34;&#34;&#34;Build and return github release.&#34;&#34;&#34;
+        &#34;&#34;&#34;Create a GitHub release if enabled in release options.&#34;&#34;&#34;
         if not self.cfg.release_options.get(&#34;create_github_release&#34;):
             return None
-        from .backends.github_release import create_release
+        from neuralops.results_saver.backends.github_release import create_release
 
         return create_release(self.run_id, self.run_dir, metrics, self.cfg)
 
-    # ------------------------------------------------------------------
-    # Notifications
-    # ------------------------------------------------------------------
     def notify(self, success: bool, metrics: dict[str, Any]) -&gt; None:
-        &#34;&#34;&#34;Notify.&#34;&#34;&#34;
-        from .backends.notification import notify
+        &#34;&#34;&#34;Send run completion notifications.&#34;&#34;&#34;
+        from neuralops.results_saver.backends.notification import notify
 
         notify(self.run_id, success, metrics, self.cfg)</code></pre>
 </details>
-<div class="desc"><p>Usage
+<div class="desc"><p>Central orchestrator for experiment result persistence and cloud tracking.</p>
+<p>Usage
 -----=
 saver = ResultsSaver(run_id, base_dir, save_config_dict)
 saver.save_all(model, config, history, final_metrics, tokenizer, input_example)
-saver.push_all()</p></div>
+saver.push_all()</p>
+<p>Initialize ResultsSaver directory layouts and configuration.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>run_id</code></strong></dt>
+<dd>Unique identifier string for this run.</dd>
+<dt><strong><code>base_dir</code></strong></dt>
+<dd>Base directory where run directory is created.</dd>
+<dt><strong><code>config</code></strong></dt>
+<dd>Optional configuration dictionary.</dd>
+</dl></div>
 <h3>Subclasses</h3>
 <ul class="hlist">
 <li><a title="neuralops.utils.results_saver.ResultsSaver" href="../utils/results_saver.html#neuralops.utils.results_saver.ResultsSaver">ResultsSaver</a></li>
@@ -649,14 +949,14 @@ saver.push_all()</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def create_github_release(self, metrics: dict[str, Any]) -&gt; str | None:
-    &#34;&#34;&#34;Build and return github release.&#34;&#34;&#34;
+    &#34;&#34;&#34;Create a GitHub release if enabled in release options.&#34;&#34;&#34;
     if not self.cfg.release_options.get(&#34;create_github_release&#34;):
         return None
-    from .backends.github_release import create_release
+    from neuralops.results_saver.backends.github_release import create_release
 
     return create_release(self.run_id, self.run_dir, metrics, self.cfg)</code></pre>
 </details>
-<div class="desc"><p>Build and return github release.</p></div>
+<div class="desc"><p>Create a GitHub release if enabled in release options.</p></div>
 </dd>
 <dt id="neuralops.results_saver.ResultsSaver.dvc_track"><code class="name flex">
 <span>def <span class="ident">dvc_track</span></span>(<span>self) ‑> None</span>
@@ -667,14 +967,14 @@ saver.push_all()</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def dvc_track(self) -&gt; None:
-    &#34;&#34;&#34;Dvc track.&#34;&#34;&#34;
+    &#34;&#34;&#34;Track result directory with DVC if enabled.&#34;&#34;&#34;
     if not self.cfg.dvc_options.get(&#34;track_model&#34;):
         return
-    from .backends.dvc import dvc_track
+    from neuralops.results_saver.backends.dvc import dvc_track
 
     dvc_track(self.run_dir, self.cfg)</code></pre>
 </details>
-<div class="desc"><p>Dvc track.</p></div>
+<div class="desc"><p>Track result directory with DVC if enabled.</p></div>
 </dd>
 <dt id="neuralops.results_saver.ResultsSaver.git_commit_and_push"><code class="name flex">
 <span>def <span class="ident">git_commit_and_push</span></span>(<span>self) ‑> None</span>
@@ -685,14 +985,14 @@ saver.push_all()</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def git_commit_and_push(self) -&gt; None:
-    &#34;&#34;&#34;Git commit and push.&#34;&#34;&#34;
+    &#34;&#34;&#34;Trigger git commit and push if enabled in git_options.&#34;&#34;&#34;
     if not self.cfg.git_options.get(&#34;commit_results&#34;):
         return
-    from .backends.git import git_commit_and_push
+    from neuralops.results_saver.backends.git import git_commit_and_push
 
     git_commit_and_push(self.run_dir, self.cfg)</code></pre>
 </details>
-<div class="desc"><p>Git commit and push.</p></div>
+<div class="desc"><p>Trigger git commit and push if enabled in git_options.</p></div>
 </dd>
 <dt id="neuralops.results_saver.ResultsSaver.log_metric_to_sqlite"><code class="name flex">
 <span>def <span class="ident">log_metric_to_sqlite</span></span>(<span>self, step: int, metric_name: str, value: float, db_path: str | Path | None = None) ‑> None</span>
@@ -709,10 +1009,13 @@ saver.push_all()</p></div>
     value: float,
     db_path: str | Path | None = None,
 ) -&gt; None:
-    &#34;&#34;&#34;
-    Append a single step metric into SQLite database with multi-GPU concurrency safety.
+    &#34;&#34;&#34;Append a single step metric into SQLite with multi-GPU concurrency safety.
 
-    # FIX: Uses PRAGMA journal_mode=WAL; and PRAGMA synchronous=NORMAL; with file locking to ensure safe step metric logging.
+    Args:
+        step: Training or evaluation step index.
+        metric_name: Metric name identifier.
+        value: Numeric metric value.
+        db_path: Optional explicit SQLite path.
     &#34;&#34;&#34;
     target_db = Path(db_path) if db_path is not None else (self.run_dir / &#34;metrics.db&#34;)
     lock_path = target_db.with_suffix(&#34;.db.lock&#34;)
@@ -721,21 +1024,14 @@ saver.push_all()</p></div>
         conn = self._get_sqlite_connection(target_db)
         try:
             cursor = conn.cursor()
-            cursor.execute(&#34;&#34;&#34;
-                CREATE TABLE IF NOT EXISTS metric_logs (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    run_id TEXT,
-                    step INTEGER,
-                    metric_name TEXT,
-                    value REAL,
-                    timestamp TEXT
-                )
-                &#34;&#34;&#34;)
             cursor.execute(
-                &#34;&#34;&#34;
-                INSERT INTO metric_logs (run_id, step, metric_name, value, timestamp)
-                VALUES (?, ?, ?, ?, ?)
-                &#34;&#34;&#34;,
+                &#34;CREATE TABLE IF NOT EXISTS metric_logs (&#34;
+                &#34;id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT, step INTEGER, &#34;
+                &#34;metric_name TEXT, value REAL, timestamp TEXT)&#34;
+            )
+            cursor.execute(
+                &#34;INSERT INTO metric_logs (run_id, step, metric_name, value, timestamp) &#34;
+                &#34;VALUES (?, ?, ?, ?, ?)&#34;,
                 (
                     self.run_id,
                     step,
@@ -748,8 +1044,19 @@ saver.push_all()</p></div>
         finally:
             conn.close()</code></pre>
 </details>
-<div class="desc"><p>Append a single step metric into SQLite database with multi-GPU concurrency safety.</p>
-<h1 id="fix-uses-pragma-journal_modewal-and-pragma-synchronousnormal-with-file-locking-to-ensure-safe-step-metric-logging">FIX: Uses PRAGMA journal_mode=WAL; and PRAGMA synchronous=NORMAL; with file locking to ensure safe step metric logging.</h1></div>
+<div class="desc"><p>Append a single step metric into SQLite with multi-GPU concurrency safety.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>step</code></strong></dt>
+<dd>Training or evaluation step index.</dd>
+<dt><strong><code>metric_name</code></strong></dt>
+<dd>Metric name identifier.</dd>
+<dt><strong><code>value</code></strong></dt>
+<dd>Numeric metric value.</dd>
+<dt><strong><code>db_path</code></strong></dt>
+<dd>Optional explicit SQLite path.</dd>
+</dl></div>
 </dd>
 <dt id="neuralops.results_saver.ResultsSaver.notify"><code class="name flex">
 <span>def <span class="ident">notify</span></span>(<span>self, success: bool, metrics: dict[str, Any]) ‑> None</span>
@@ -760,12 +1067,12 @@ saver.push_all()</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def notify(self, success: bool, metrics: dict[str, Any]) -&gt; None:
-    &#34;&#34;&#34;Notify.&#34;&#34;&#34;
-    from .backends.notification import notify
+    &#34;&#34;&#34;Send run completion notifications.&#34;&#34;&#34;
+    from neuralops.results_saver.backends.notification import notify
 
     notify(self.run_id, success, metrics, self.cfg)</code></pre>
 </details>
-<div class="desc"><p>Notify.</p></div>
+<div class="desc"><p>Send run completion notifications.</p></div>
 </dd>
 <dt id="neuralops.results_saver.ResultsSaver.push_all"><code class="name flex">
 <span>def <span class="ident">push_all</span></span>(<span>self) ‑> None</span>
@@ -776,11 +1083,11 @@ saver.push_all()</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def push_all(self) -&gt; None:
-    &#34;&#34;&#34;Push all.&#34;&#34;&#34;
+    &#34;&#34;&#34;Push results to all configured storage backends.&#34;&#34;&#34;
     for be in self.cfg.storage_backends:
         self._push_backend(be)</code></pre>
 </details>
-<div class="desc"><p>Push all.</p></div>
+<div class="desc"><p>Push results to all configured storage backends.</p></div>
 </dd>
 <dt id="neuralops.results_saver.ResultsSaver.push_to_registries"><code class="name flex">
 <span>def <span class="ident">push_to_registries</span></span>(<span>self) ‑> None</span>
@@ -791,7 +1098,7 @@ saver.push_all()</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def push_to_registries(self) -&gt; None:
-    &#34;&#34;&#34;Push to registries.&#34;&#34;&#34;
+    &#34;&#34;&#34;Upload model checkpoints to configured registries.&#34;&#34;&#34;
     for r in self.cfg.model_registries:
         try:
             mod = __import__(f&#34;neuralops.results_saver.backends.{r}&#34;, fromlist=[&#34;push&#34;])
@@ -801,10 +1108,10 @@ saver.push_all()</p></div>
         except Exception:
             logger.exception(f&#34;Push to registry {r} failed&#34;)</code></pre>
 </details>
-<div class="desc"><p>Push to registries.</p></div>
+<div class="desc"><p>Upload model checkpoints to configured registries.</p></div>
 </dd>
 <dt id="neuralops.results_saver.ResultsSaver.save_all"><code class="name flex">
-<span>def <span class="ident">save_all</span></span>(<span>self, model, config, history, final_metrics, tokenizer=None, input_example=None) ‑> None</span>
+<span>def <span class="ident">save_all</span></span>(<span>self,<br>model: Any,<br>config: Any,<br>history: Any,<br>final_metrics: dict[str, Any],<br>tokenizer: Any = None,<br>input_example: Any = None) ‑> None</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -812,10 +1119,24 @@ saver.push_all()</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def save_all(
-    self, model, config, history, final_metrics, tokenizer=None, input_example=None
+    self,
+    model: Any,
+    config: Any,
+    history: Any,
+    final_metrics: dict[str, Any],
+    tokenizer: Any = None,
+    input_example: Any = None,
 ) -&gt; None:
-    &#34;&#34;&#34;Save everything selected in the config.&#34;&#34;&#34;
+    &#34;&#34;&#34;Save everything configured: metrics, config, model, plots, and trackers.
 
+    Args:
+        model: Trained model.
+        config: Run configuration.
+        history: Training history log.
+        final_metrics: Summary evaluation metrics.
+        tokenizer: Optional tokenizer to save.
+        input_example: Optional sample input for export conversions.
+    &#34;&#34;&#34;
     self._save_config(config)
     self._save_history(history)
     self._save_final_metrics(final_metrics)
@@ -833,14 +1154,12 @@ saver.push_all()</p></div>
     self._save_archive()
     self._save_model_card(config, final_metrics)
 
-    # Automatically track to experiment trackers (wandb, mlflow, etc.)
     if self.cfg.experiment_trackers:
-        # Delegate to the unified tracking module if available, else use legacy backends
         try:
             from neuralops.tracking import ExperimentTracker
 
             tracker = ExperimentTracker(
-                backend=self.cfg.experiment_trackers[0],  # supports one primary
+                backend=self.cfg.experiment_trackers[0],
                 log_dir=str(self.run_dir / &#34;tracking&#34;),
                 experiment_name=self.run_id,
             )
@@ -851,7 +1170,23 @@ saver.push_all()</p></div>
         except ImportError:
             self.track_all(final_metrics, self._flatten_config(config))</code></pre>
 </details>
-<div class="desc"><p>Save everything selected in the config.</p></div>
+<div class="desc"><p>Save everything configured: metrics, config, model, plots, and trackers.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>model</code></strong></dt>
+<dd>Trained model.</dd>
+<dt><strong><code>config</code></strong></dt>
+<dd>Run configuration.</dd>
+<dt><strong><code>history</code></strong></dt>
+<dd>Training history log.</dd>
+<dt><strong><code>final_metrics</code></strong></dt>
+<dd>Summary evaluation metrics.</dd>
+<dt><strong><code>tokenizer</code></strong></dt>
+<dd>Optional tokenizer to save.</dd>
+<dt><strong><code>input_example</code></strong></dt>
+<dd>Optional sample input for export conversions.</dd>
+</dl></div>
 </dd>
 <dt id="neuralops.results_saver.ResultsSaver.save_config"><code class="name flex">
 <span>def <span class="ident">save_config</span></span>(<span>self, config: Any) ‑> str</span>
@@ -862,14 +1197,30 @@ saver.push_all()</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def save_config(self, config: Any) -&gt; str:
-    &#34;&#34;&#34;Save experiment configuration dictionary or object.&#34;&#34;&#34;
+    &#34;&#34;&#34;Save experiment configuration dictionary or object.
+
+    Args:
+        config: Config dict or object.
+
+    Returns:
+        Path to config.json.
+    &#34;&#34;&#34;
     self._save_config(config)
     self.save_to_sqlite(config=config)
     path = str(self.run_dir / &#34;artifacts&#34; / &#34;config.json&#34;)
     self.saved_paths[&#34;config&#34;] = path
     return path</code></pre>
 </details>
-<div class="desc"><p>Save experiment configuration dictionary or object.</p></div>
+<div class="desc"><p>Save experiment configuration dictionary or object.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>config</code></strong></dt>
+<dd>Config dict or object.</dd>
+</dl>
+<p>Returns
+-----=
+Path to config.json.</p></div>
 </dd>
 <dt id="neuralops.results_saver.ResultsSaver.save_metrics"><code class="name flex">
 <span>def <span class="ident">save_metrics</span></span>(<span>self, metrics: dict[str, Any]) ‑> str</span>
@@ -880,14 +1231,30 @@ saver.push_all()</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def save_metrics(self, metrics: dict[str, Any]) -&gt; str:
-    &#34;&#34;&#34;Save a dictionary of evaluation/training metrics to JSON and SQLite.&#34;&#34;&#34;
+    &#34;&#34;&#34;Save a dictionary of evaluation/training metrics to JSON and SQLite.
+
+    Args:
+        metrics: Metrics mapping.
+
+    Returns:
+        Path to final_metrics.json.
+    &#34;&#34;&#34;
     self._save_final_metrics(metrics)
     self.save_to_sqlite(metrics=metrics)
     path = str(self.run_dir / &#34;artifacts&#34; / &#34;final_metrics.json&#34;)
     self.saved_paths[&#34;metrics&#34;] = path
     return path</code></pre>
 </details>
-<div class="desc"><p>Save a dictionary of evaluation/training metrics to JSON and SQLite.</p></div>
+<div class="desc"><p>Save a dictionary of evaluation/training metrics to JSON and SQLite.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>metrics</code></strong></dt>
+<dd>Metrics mapping.</dd>
+</dl>
+<p>Returns
+-----=
+Path to final_metrics.json.</p></div>
 </dd>
 <dt id="neuralops.results_saver.ResultsSaver.save_model_weights"><code class="name flex">
 <span>def <span class="ident">save_model_weights</span></span>(<span>self, model: Any, filename: str = 'model.pt') ‑> str</span>
@@ -898,7 +1265,15 @@ saver.push_all()</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def save_model_weights(self, model: Any, filename: str = &#34;model.pt&#34;) -&gt; str:
-    &#34;&#34;&#34;Save PyTorch model state dict or checkpoint.&#34;&#34;&#34;
+    &#34;&#34;&#34;Save PyTorch model state dict or checkpoint.
+
+    Args:
+        model: PyTorch model instance.
+        filename: Target file name in artifacts directory.
+
+    Returns:
+        Path to saved model weights.
+    &#34;&#34;&#34;
     import torch
 
     art_dir = self.run_dir / &#34;artifacts&#34;
@@ -914,7 +1289,18 @@ saver.push_all()</p></div>
     self.saved_paths[&#34;model_weights&#34;] = str(dest)
     return str(dest)</code></pre>
 </details>
-<div class="desc"><p>Save PyTorch model state dict or checkpoint.</p></div>
+<div class="desc"><p>Save PyTorch model state dict or checkpoint.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>model</code></strong></dt>
+<dd>PyTorch model instance.</dd>
+<dt><strong><code>filename</code></strong></dt>
+<dd>Target file name in artifacts directory.</dd>
+</dl>
+<p>Returns
+-----=
+Path to saved model weights.</p></div>
 </dd>
 <dt id="neuralops.results_saver.ResultsSaver.save_result"><code class="name flex">
 <span>def <span class="ident">save_result</span></span>(<span>self,<br>result: dict[str, Any] | Any,<br>results_dir: str | Path | None = None,<br>csv_filename: str = 'master_results.csv') ‑> str</span>
@@ -930,13 +1316,35 @@ saver.push_all()</p></div>
     results_dir: str | Path | None = None,
     csv_filename: str = &#34;master_results.csv&#34;,
 ) -&gt; str:
-    &#34;&#34;&#34;Append a benchmark result to master CSV.&#34;&#34;&#34;
+    &#34;&#34;&#34;Append a benchmark result to master CSV.
+
+    Args:
+        result: Result dictionary or object.
+        results_dir: Optional custom results dir.
+        csv_filename: Master CSV filename.
+
+    Returns:
+        Path to master CSV.
+    &#34;&#34;&#34;
     target_dir = results_dir if results_dir is not None else self.base_dir
     path = save_result(result, results_dir=target_dir, csv_filename=csv_filename)
     self.saved_paths[&#34;master_csv&#34;] = path
     return path</code></pre>
 </details>
-<div class="desc"><p>Append a benchmark result to master CSV.</p></div>
+<div class="desc"><p>Append a benchmark result to master CSV.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>result</code></strong></dt>
+<dd>Result dictionary or object.</dd>
+<dt><strong><code>results_dir</code></strong></dt>
+<dd>Optional custom results dir.</dd>
+<dt><strong><code>csv_filename</code></strong></dt>
+<dd>Master CSV filename.</dd>
+</dl>
+<p>Returns
+-----=
+Path to master CSV.</p></div>
 </dd>
 <dt id="neuralops.results_saver.ResultsSaver.save_to_sqlite"><code class="name flex">
 <span>def <span class="ident">save_to_sqlite</span></span>(<span>self,<br>db_path: str | Path | None = None,<br>config: Any | None = None,<br>metrics: dict[str, Any] | None = None,<br>extra_metadata: dict[str, Any] | None = None) ‑> str</span>
@@ -953,50 +1361,47 @@ saver.push_all()</p></div>
     metrics: dict[str, Any] | None = None,
     extra_metadata: dict[str, Any] | None = None,
 ) -&gt; str:
-    &#34;&#34;&#34;
-    Save run metadata, configuration, and final metrics into SQLite database with multi-GPU write safety.
+    &#34;&#34;&#34;Save run metadata, config, and metrics into SQLite with multi-GPU write safety.
 
-    # FIX: Uses PRAGMA journal_mode=WAL;, PRAGMA synchronous=NORMAL;, and file locking for multi-GPU database write safety.
+    Args:
+        db_path: Target SQLite database file path.
+        config: Configuration dictionary or object.
+        metrics: Optional final metrics dictionary.
+        extra_metadata: Optional extra metadata dictionary.
+
+    Returns:
+        String path to the SQLite database.
     &#34;&#34;&#34;
     target_db = Path(db_path) if db_path is not None else (self.base_dir / &#34;experiments.db&#34;)
     lock_path = target_db.with_suffix(&#34;.db.lock&#34;)
 
     cfg_dict = self._flatten_config(config) if config is not None else {}
-    metrics_dict = _sanitize_json_value(metrics or {})
-    meta_dict = _sanitize_json_value(extra_metadata or {})
+    metrics_dict = sanitize_json_value(metrics or {})
+    meta_dict = sanitize_json_value(extra_metadata or {})
 
-    # FIX: Wrap database transaction in cross-process file lock
     with sqlite_file_lock(lock_path):
         conn = self._get_sqlite_connection(target_db)
         try:
             cursor = conn.cursor()
-            cursor.execute(&#34;&#34;&#34;
-                CREATE TABLE IF NOT EXISTS experiment_runs (
-                    run_id TEXT PRIMARY KEY,
-                    created_at TEXT,
-                    task_name TEXT,
-                    model_name TEXT,
-                    config_json TEXT,
-                    metrics_json TEXT,
-                    metadata_json TEXT
-                )
-                &#34;&#34;&#34;)
+            cursor.execute(
+                &#34;CREATE TABLE IF NOT EXISTS experiment_runs (&#34;
+                &#34;run_id TEXT PRIMARY KEY, created_at TEXT, task_name TEXT, &#34;
+                &#34;model_name TEXT, config_json TEXT, metrics_json TEXT, metadata_json TEXT)&#34;
+            )
             now_str = datetime.now().isoformat()
             task_name = str(cfg_dict.get(&#34;task_name&#34;, &#34;unknown&#34;))
             model_name = str(cfg_dict.get(&#34;model_name&#34;, &#34;unknown&#34;))
 
             cursor.execute(
-                &#34;&#34;&#34;
-                INSERT OR REPLACE INTO experiment_runs
-                (run_id, created_at, task_name, model_name, config_json, metrics_json, metadata_json)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                &#34;&#34;&#34;,
+                &#34;INSERT OR REPLACE INTO experiment_runs &#34;
+                &#34;(run_id, created_at, task_name, model_name, config_json, metrics_json, metadata_json) &#34;
+                &#34;VALUES (?, ?, ?, ?, ?, ?, ?)&#34;,
                 (
                     self.run_id,
                     now_str,
                     task_name,
                     model_name,
-                    json.dumps(_sanitize_json_value(cfg_dict), allow_nan=False),
+                    json.dumps(sanitize_json_value(cfg_dict), allow_nan=False),
                     json.dumps(metrics_dict, allow_nan=False),
                     json.dumps(meta_dict, allow_nan=False),
                 ),
@@ -1008,8 +1413,22 @@ saver.push_all()</p></div>
     self.saved_paths[&#34;sqlite_db&#34;] = str(target_db)
     return str(target_db)</code></pre>
 </details>
-<div class="desc"><p>Save run metadata, configuration, and final metrics into SQLite database with multi-GPU write safety.</p>
-<h1 id="fix-uses-pragma-journal_modewal-pragma-synchronousnormal-and-file-locking-for-multi-gpu-database-write-safety">FIX: Uses PRAGMA journal_mode=WAL;, PRAGMA synchronous=NORMAL;, and file locking for multi-GPU database write safety.</h1></div>
+<div class="desc"><p>Save run metadata, config, and metrics into SQLite with multi-GPU write safety.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>db_path</code></strong></dt>
+<dd>Target SQLite database file path.</dd>
+<dt><strong><code>config</code></strong></dt>
+<dd>Configuration dictionary or object.</dd>
+<dt><strong><code>metrics</code></strong></dt>
+<dd>Optional final metrics dictionary.</dd>
+<dt><strong><code>extra_metadata</code></strong></dt>
+<dd>Optional extra metadata dictionary.</dd>
+</dl>
+<p>Returns
+-----=
+String path to the SQLite database.</p></div>
 </dd>
 <dt id="neuralops.results_saver.ResultsSaver.should_save_heavy"><code class="name flex">
 <span>def <span class="ident">should_save_heavy</span></span>(<span>self, final_metrics: dict[str, Any]) ‑> bool</span>
@@ -1020,14 +1439,30 @@ saver.push_all()</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def should_save_heavy(self, final_metrics: dict[str, Any]) -&gt; bool:
-    &#34;&#34;&#34;Evaluate if metric meets auto_save_if_better_than threshold.&#34;&#34;&#34;
+    &#34;&#34;&#34;Evaluate if metric meets auto_save_if_better_than threshold.
+
+    Args:
+        final_metrics: Mapping of evaluation metric names to values.
+
+    Returns:
+        True if heavy model artifacts should be persisted.
+    &#34;&#34;&#34;
     threshold = self.cfg.auto_save_if_better_than
     if threshold is None:
         return True
     metric = final_metrics.get(&#34;eval_accuracy&#34;, 0)
     return metric &gt;= threshold</code></pre>
 </details>
-<div class="desc"><p>Evaluate if metric meets auto_save_if_better_than threshold.</p></div>
+<div class="desc"><p>Evaluate if metric meets auto_save_if_better_than threshold.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>final_metrics</code></strong></dt>
+<dd>Mapping of evaluation metric names to values.</dd>
+</dl>
+<p>Returns
+-----=
+True if heavy model artifacts should be persisted.</p></div>
 </dd>
 <dt id="neuralops.results_saver.ResultsSaver.track_all"><code class="name flex">
 <span>def <span class="ident">track_all</span></span>(<span>self, metrics: dict[str, Any], params: dict[str, Any]) ‑> None</span>
@@ -1038,7 +1473,7 @@ saver.push_all()</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def track_all(self, metrics: dict[str, Any], params: dict[str, Any]) -&gt; None:
-    &#34;&#34;&#34;Track all.&#34;&#34;&#34;
+    &#34;&#34;&#34;Dispatch metrics and params to configured experiment trackers.&#34;&#34;&#34;
     for t in self.cfg.experiment_trackers:
         try:
             mod = __import__(
@@ -1050,7 +1485,7 @@ saver.push_all()</p></div>
         except Exception:
             logger.exception(f&#34;Tracking to {t} failed&#34;)</code></pre>
 </details>
-<div class="desc"><p>Track all.</p></div>
+<div class="desc"><p>Dispatch metrics and params to configured experiment trackers.</p></div>
 </dd>
 </dl>
 </dd>
@@ -1253,7 +1688,19 @@ class SaveConfig:
 <ul>
 <li><code><a title="neuralops.results_saver.backends" href="backends/index.html">neuralops.results_saver.backends</a></code></li>
 <li><code><a title="neuralops.results_saver.config" href="config.html">neuralops.results_saver.config</a></code></li>
+<li><code><a title="neuralops.results_saver.pipeline" href="pipeline/index.html">neuralops.results_saver.pipeline</a></code></li>
 <li><code><a title="neuralops.results_saver.saver" href="saver.html">neuralops.results_saver.saver</a></code></li>
+<li><code><a title="neuralops.results_saver.storage" href="storage/index.html">neuralops.results_saver.storage</a></code></li>
+<li><code><a title="neuralops.results_saver.writers" href="writers/index.html">neuralops.results_saver.writers</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.results_saver.configure_sqlite_pragmas" href="#neuralops.results_saver.configure_sqlite_pragmas">configure_sqlite_pragmas</a></code></li>
+<li><code><a title="neuralops.results_saver.save_result" href="#neuralops.results_saver.save_result">save_result</a></code></li>
+<li><code><a title="neuralops.results_saver.save_result_json" href="#neuralops.results_saver.save_result_json">save_result_json</a></code></li>
+<li><code><a title="neuralops.results_saver.save_trajectories_parquet" href="#neuralops.results_saver.save_trajectories_parquet">save_trajectories_parquet</a></code></li>
+<li><code><a title="neuralops.results_saver.sqlite_file_lock" href="#neuralops.results_saver.sqlite_file_lock">sqlite_file_lock</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>

@@ -130,6 +130,7 @@ LRA requires training from scratch, NOT fine-tuning.</p>
     warmup_steps: int = None,
     precision: str = &#34;bf16&#34;,
 ):
+    &#34;&#34;&#34;Orchestrate training of small Transformer on LRA benchmark tasks.&#34;&#34;&#34;
     cfg = TASK_CONFIG[task]
     num_epochs = epochs if epochs is not None else cfg.get(&#34;epochs&#34;, 100)
     current_batch_size = batch_size if batch_size is not None else cfg[&#34;batch_size&#34;]
@@ -137,74 +138,7 @@ LRA requires training from scratch, NOT fine-tuning.</p>
     current_lr = lr if lr is not None else cfg.get(&#34;lr&#34;, 5e-4)
     device = torch.device(&#34;cuda&#34; if torch.cuda.is_available() else &#34;cpu&#34;)
 
-    try:
-        if task == &#34;listops&#34;:
-            if ListOpsDataset is None:
-                raise ImportError(&#34;ListOpsDataset not installed&#34;)
-            train_ds = ListOpsDataset(split=&#34;train&#34;, seq_len=current_seq_len)
-            test_ds = ListOpsDataset(split=&#34;test&#34;, seq_len=current_seq_len)
-        else:
-            if IMDbByteDataset is None:
-                raise ImportError(&#34;IMDbByteDataset not installed&#34;)
-            train_ds = IMDbByteDataset(split=&#34;train&#34;, seq_len=current_seq_len)
-            test_ds = IMDbByteDataset(split=&#34;test&#34;, seq_len=current_seq_len)
-    except Exception as e:
-        print(
-            f&#34;Error loading {task} dataset: {e}. Generating synthetic fallback.&#34;,
-            flush=True,
-        )
-
-        class SyntheticDataset(torch.utils.data.Dataset):
-            def __init__(self, size, seq_len, vocab_size, num_labels, seed=42):
-                super().__init__()
-                torch.manual_seed(seed)
-                self.input_ids = torch.randint(1, vocab_size, (size, seq_len))
-                # Deterministic prefix reasoning (mimicking ListOps hierarchical operations)
-                op = self.input_ids[:, 0] % 3  # 0: sum, 1: max, 2: min
-                labels = torch.zeros(size, dtype=torch.long)
-                for i in range(size):
-                    if op[i] == 0:
-                        labels[i] = int(self.input_ids[i, 1:16].sum().item() % num_labels)
-                    elif op[i] == 1:
-                        labels[i] = int(self.input_ids[i, 1:16].max().item() % num_labels)
-                    else:
-                        labels[i] = int(self.input_ids[i, 1:16].min().item() % num_labels)
-                self.labels = labels
-                self.size = size
-
-            def __len__(self):
-                return self.size
-
-            def __getitem__(self, idx):
-                return {
-                    &#34;input_ids&#34;: self.input_ids[idx],
-                    &#34;labels&#34;: self.labels[idx],
-                }
-
-        train_ds = SyntheticDataset(
-            2000, current_seq_len, cfg[&#34;vocab_size&#34;], cfg[&#34;num_labels&#34;], seed=42
-        )
-        test_ds = SyntheticDataset(
-            500, current_seq_len, cfg[&#34;vocab_size&#34;], cfg[&#34;num_labels&#34;], seed=100
-        )
-
-    model = build_small_transformer(
-        current_seq_len,
-        cfg[&#34;num_labels&#34;],
-        cfg[&#34;vocab_size&#34;],
-        hidden_size=hidden_size,
-        num_layers=num_layers,
-        num_heads=num_heads,
-        intermediate_size=intermediate_size,
-    ).to(device)
-
-    if gradient_checkpointing and hasattr(model, &#34;gradient_checkpointing_enable&#34;):
-        model.gradient_checkpointing_enable()
-
-    if module_name != &#34;none&#34;:
-        model, _ = apply_module_to_model(model, module_name, device=device)
-
-    optimizer = torch.optim.AdamW(model.parameters(), lr=current_lr, weight_decay=0.01)
+    train_ds, test_ds = _setup_datasets(task, current_seq_len, cfg)
     train_loader = DataLoader(train_ds, batch_size=current_batch_size, shuffle=True, num_workers=0)
 
     total_steps = (
@@ -216,12 +150,19 @@ LRA requires training from scratch, NOT fine-tuning.</p>
         warmup_steps if warmup_steps is not None else max(1, int(total_steps * warmup_ratio))
     )
 
-    from transformers import get_cosine_schedule_with_warmup
-
-    scheduler = get_cosine_schedule_with_warmup(
-        optimizer,
-        num_warmup_steps=actual_warmup_steps,
-        num_training_steps=total_steps,
+    model, optimizer, scheduler = _setup_model_and_optimizer(
+        module_name=module_name,
+        device=device,
+        current_seq_len=current_seq_len,
+        cfg=cfg,
+        hidden_size=hidden_size,
+        num_layers=num_layers,
+        num_heads=num_heads,
+        intermediate_size=intermediate_size,
+        gradient_checkpointing=gradient_checkpointing,
+        current_lr=current_lr,
+        total_steps=total_steps,
+        actual_warmup_steps=actual_warmup_steps,
     )
 
     if precision == &#34;fp16&#34;:
@@ -242,30 +183,17 @@ LRA requires training from scratch, NOT fine-tuning.</p>
     )
 
     for epoch in range(num_epochs):
-        model.train()
-        epoch_loss = 0.0
-        batches = 0
-        for batch in train_loader:
-            input_ids = batch[&#34;input_ids&#34;].to(device)
-            labels = batch[&#34;labels&#34;].to(device)
-
-            optimizer.zero_grad(set_to_none=True)
-            with torch.autocast(&#34;cuda&#34;, dtype=amp_dtype, enabled=use_amp):
-                outputs = model(input_ids, labels=labels)
-                loss = outputs.loss
-
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            optimizer.step()
-            scheduler.step()
-
-            epoch_loss += loss.item()
-            batches += 1
-            global_step += 1
-            if max_steps is not None and global_step &gt;= max_steps:
-                break
-
-        avg_loss = epoch_loss / max(1, batches)
+        avg_loss, global_step = _train_single_epoch(
+            model=model,
+            train_loader=train_loader,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            device=device,
+            amp_dtype=amp_dtype,
+            use_amp=use_amp,
+            global_step=global_step,
+            max_steps=max_steps,
+        )
 
         # Evaluate every 5 epochs or last epoch
         if (
@@ -289,26 +217,20 @@ LRA requires training from scratch, NOT fine-tuning.</p>
         if max_steps is not None and global_step &gt;= max_steps:
             break
 
-    # Save result
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
-    with open(Path(output_dir) / &#34;lra_result.json&#34;, &#34;w&#34;) as f:
-        json.dump(
-            {
-                &#34;task&#34;: task,
-                &#34;module&#34;: module_name,
-                &#34;best_accuracy&#34;: best_acc,
-                &#34;epochs&#34;: num_epochs,
-                &#34;seq_len&#34;: current_seq_len,
-                &#34;batch_size&#34;: current_batch_size,
-                &#34;lr&#34;: current_lr,
-                &#34;hidden_size&#34;: hidden_size,
-                &#34;num_layers&#34;: num_layers,
-                &#34;num_heads&#34;: num_heads,
-                &#34;intermediate_size&#34;: intermediate_size,
-            },
-            f,
-            indent=2,
-        )
+    metadata = {
+        &#34;task&#34;: task,
+        &#34;module&#34;: module_name,
+        &#34;best_accuracy&#34;: best_acc,
+        &#34;epochs&#34;: num_epochs,
+        &#34;seq_len&#34;: current_seq_len,
+        &#34;batch_size&#34;: current_batch_size,
+        &#34;lr&#34;: current_lr,
+        &#34;hidden_size&#34;: hidden_size,
+        &#34;num_layers&#34;: num_layers,
+        &#34;num_heads&#34;: num_heads,
+        &#34;intermediate_size&#34;: intermediate_size,
+    }
+    _save_training_results(output_dir, metadata)
 
     del model
     if torch.cuda.is_available():
@@ -316,7 +238,7 @@ LRA requires training from scratch, NOT fine-tuning.</p>
 
     return best_acc</code></pre>
 </details>
-<div class="desc"></div>
+<div class="desc"><p>Orchestrate training of small Transformer on LRA benchmark tasks.</p></div>
 </dd>
 </dl>
 </section>

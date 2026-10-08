@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.compression_engine.quantization.gptq API documentation</title>
+<meta name="description" content="Production-grade GPTQ (Exact Second-Order Hessian-Guided Quantization).">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.compression_engine.quantization.gptq</code></h1>
+</header>
+<section id="section-intro">
+<p>Production-grade GPTQ (Exact Second-Order Hessian-Guided Quantization).</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.compression_engine.quantization.gptq.quantize_model_gptq"><code class="name flex">
+<span>def <span class="ident">quantize_model_gptq</span></span>(<span>model: nn.Module,<br>calibration_data: list[torch.Tensor],<br>bits: int = 4,<br>damp: float = 0.01,<br>group_size: int = -1) ‑> torch.nn.modules.module.Module</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def quantize_model_gptq(
+    model: nn.Module,
+    calibration_data: list[torch.Tensor],
+    bits: int = 4,
+    damp: float = 0.01,
+    group_size: int = -1,
+) -&gt; nn.Module:
+    &#34;&#34;&#34;Quantizes all nn.Linear layers in model using GPTQ.&#34;&#34;&#34;
+    for name, module in model.named_modules():
+        if isinstance(module, nn.Linear):
+            quantizer = GPTQQuantizer(module, bits=bits, group_size=group_size)
+            for batch in calibration_data:
+                quantizer.add_batch(batch)
+            quantizer.quantize(damp=damp)
+    return model</code></pre>
+</details>
+<div class="desc"><p>Quantizes all nn.Linear layers in model using GPTQ.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.compression_engine.quantization.gptq.GPTQQuantizer"><code class="flex name class">
+<span>class <span class="ident">GPTQQuantizer</span></span>
+<span>(</span><span>layer: nn.Linear, bits: int = 4, sym: bool = True, group_size: int = -1)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class GPTQQuantizer:
+    &#34;&#34;&#34;Second-order Hessian-guided post-training weight quantization with column error propagation.&#34;&#34;&#34;
+
+    def __init__(
+        self,
+        layer: nn.Linear,
+        bits: int = 4,
+        sym: bool = True,
+        group_size: int = -1,
+    ) -&gt; None:
+        self.layer = layer
+        self.bits = bits
+        self.sym = sym
+        self.group_size = group_size
+        self.columns = layer.weight.shape[1]
+        self.rows = layer.weight.shape[0]
+        self.H = torch.zeros((self.columns, self.columns), device=layer.weight.device, dtype=torch.float32)
+        self.nsamples = 0
+
+    def add_batch(self, x: torch.Tensor) -&gt; None:
+        &#34;&#34;&#34;Accumulates Hessian matrix H from activations: H += X^T @ X.&#34;&#34;&#34;
+        if x.dim() == 3:
+            x = x.reshape(-1, x.shape[-1])
+        x = x.to(dtype=torch.float32, device=self.layer.weight.device)
+        self.H += torch.matmul(x.t(), x)
+        self.nsamples += x.shape[0]
+
+    def _quantize_column(self, W: torch.Tensor, H_inv: torch.Tensor, i: int) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Quantize column i and propagate error across subsequent unquantized columns.&#34;&#34;&#34;
+        w = W[:, i]
+        # Quantization grid
+        q_max = 2 ** (self.bits - 1) - 1 if self.sym else 2 ** self.bits - 1
+        scale = (w.abs().max() / max(q_max, 1)).clamp(min=1e-8)
+        q = torch.round(w / scale).clamp(-2 ** (self.bits - 1), q_max)
+        w_q = q * scale
+
+        # Compute error scaled by inverse Hessian diagonal entry
+        h_ii = H_inv[i, i].clamp(min=1e-8)
+        err = (w - w_q) / h_ii
+
+        # Propagate error to remaining columns: W[:, i+1:] -= err * H_inv[i, i+1:]
+        if i + 1 &lt; self.columns:
+            W[:, i + 1 :] -= err.unsqueeze(1) * H_inv[i, i + 1 :].unsqueeze(0)
+
+        W[:, i] = w_q
+        return W
+
+    def quantize(self, damp: float = 0.01) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Runs exact column-by-column GPTQ quantization.&#34;&#34;&#34;
+        W = self.layer.weight.data.clone().to(torch.float32)
+        H = self.H / max(self.nsamples, 1)
+
+        dead = torch.diag(H) == 0
+        H[dead, dead] = 1.0
+
+        # Damping to ensure numerical stability and positive-definiteness
+        damp_val = damp * torch.mean(torch.diag(H))
+        H[torch.eye(self.columns, dtype=torch.bool, device=H.device)] += damp_val
+
+        try:
+            H_inv = torch.linalg.inv(H)
+        except Exception:
+            H_inv = torch.linalg.pinv(H)
+
+        if self.group_size &gt; 0:
+            for g in range(0, self.columns, self.group_size):
+                end = min(g + self.group_size, self.columns)
+                for i in range(g, end):
+                    W = self._quantize_column(W, H_inv, i)
+        else:
+            for i in range(self.columns):
+                W = self._quantize_column(W, H_inv, i)
+
+        self.layer.weight.data.copy_(W.to(self.layer.weight.dtype))
+        return W</code></pre>
+</details>
+<div class="desc"><p>Second-order Hessian-guided post-training weight quantization with column error propagation.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.compression_engine.quantization.gptq.GPTQQuantizer.add_batch"><code class="name flex">
+<span>def <span class="ident">add_batch</span></span>(<span>self, x: torch.Tensor) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_batch(self, x: torch.Tensor) -&gt; None:
+    &#34;&#34;&#34;Accumulates Hessian matrix H from activations: H += X^T @ X.&#34;&#34;&#34;
+    if x.dim() == 3:
+        x = x.reshape(-1, x.shape[-1])
+    x = x.to(dtype=torch.float32, device=self.layer.weight.device)
+    self.H += torch.matmul(x.t(), x)
+    self.nsamples += x.shape[0]</code></pre>
+</details>
+<div class="desc"><p>Accumulates Hessian matrix H from activations: H += X^T @ X.</p></div>
+</dd>
+<dt id="neuralops.compression_engine.quantization.gptq.GPTQQuantizer.quantize"><code class="name flex">
+<span>def <span class="ident">quantize</span></span>(<span>self, damp: float = 0.01) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def quantize(self, damp: float = 0.01) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Runs exact column-by-column GPTQ quantization.&#34;&#34;&#34;
+    W = self.layer.weight.data.clone().to(torch.float32)
+    H = self.H / max(self.nsamples, 1)
+
+    dead = torch.diag(H) == 0
+    H[dead, dead] = 1.0
+
+    # Damping to ensure numerical stability and positive-definiteness
+    damp_val = damp * torch.mean(torch.diag(H))
+    H[torch.eye(self.columns, dtype=torch.bool, device=H.device)] += damp_val
+
+    try:
+        H_inv = torch.linalg.inv(H)
+    except Exception:
+        H_inv = torch.linalg.pinv(H)
+
+    if self.group_size &gt; 0:
+        for g in range(0, self.columns, self.group_size):
+            end = min(g + self.group_size, self.columns)
+            for i in range(g, end):
+                W = self._quantize_column(W, H_inv, i)
+    else:
+        for i in range(self.columns):
+            W = self._quantize_column(W, H_inv, i)
+
+    self.layer.weight.data.copy_(W.to(self.layer.weight.dtype))
+    return W</code></pre>
+</details>
+<div class="desc"><p>Runs exact column-by-column GPTQ quantization.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.compression_engine.quantization" href="index.html">neuralops.compression_engine.quantization</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.quantization.gptq.quantize_model_gptq" href="#neuralops.compression_engine.quantization.gptq.quantize_model_gptq">quantize_model_gptq</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.compression_engine.quantization.gptq.GPTQQuantizer" href="#neuralops.compression_engine.quantization.gptq.GPTQQuantizer">GPTQQuantizer</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.compression_engine.quantization.gptq.GPTQQuantizer.add_batch" href="#neuralops.compression_engine.quantization.gptq.GPTQQuantizer.add_batch">add_batch</a></code></li>
+<li><code><a title="neuralops.compression_engine.quantization.gptq.GPTQQuantizer.quantize" href="#neuralops.compression_engine.quantization.gptq.GPTQQuantizer.quantize">quantize</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

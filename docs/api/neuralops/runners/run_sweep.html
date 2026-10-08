@@ -74,24 +74,26 @@ Replaces the 200+ duplicated run_all_4_*.py scripts.</p>
 <pre><code class="python">def main():
     parser = argparse.ArgumentParser(description=&#34;Master runner for module sweeps.&#34;)
     parser.add_argument(
-        &#34;--module&#34;, 
-        type=str, 
+        &#34;--module&#34;,
+        type=str,
         required=True,
-        help=&#34;The key of the module to sweep (e.g. &#39;cur_linear&#39;).&#34;
+        help=&#34;The key of the module to sweep (e.g. &#39;cur_linear&#39;).&#34;,
     )
     # Allows passing remaining arguments to the orchestrator
     args, unknown_args = parser.parse_known_args()
-    
+
     registry = get_registry()
     if args.module not in registry:
-        logger.error(f&#34;Module &#39;{args.module}&#39; not found in registry. Available modules: {list(registry.keys())[:5]}...&#34;)
+        logger.error(
+            f&#34;Module &#39;{args.module}&#39; not found in registry. Available modules: {list(registry.keys())[:5]}...&#34;
+        )
         sys.exit(1)
-        
+
     default_args = registry[args.module]
-    
+
     # Prepend unknown_args so sys.argv is manipulated correctly for run_orchestrator
     sys.argv = [sys.argv[0]] + unknown_args
-    
+
     logger.info(f&#34;Running sweep for {args.module} with default args: {default_args}&#34;)
     run_orchestrator(args.module, default_args)</code></pre>
 </details>

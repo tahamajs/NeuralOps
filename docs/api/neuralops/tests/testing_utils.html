@@ -62,7 +62,7 @@ el.replaceWith(d);
         self.k_lin = nn.Linear(dim, dim)
         self.v_lin = nn.Linear(dim, dim)
         self.out_lin = nn.Linear(dim, dim)
-        
+
     def forward(self, hidden_states, *args, **kwargs):
         return (hidden_states, None)</code></pre>
 </details>
@@ -145,7 +145,7 @@ registered hooks while the latter silently ignores them.</p>
         self.attention_dropout = self.dropout
         self.is_decoder = kwargs.get(&#34;is_decoder&#34;, False)
         self.model_type = kwargs.get(&#34;model_type&#34;, &#34;bert&#34;)
-        
+
         # Hyperparams
         self.rank = kwargs.get(&#34;rank&#34;, 16)
         self.lora_rank = kwargs.get(&#34;lora_rank&#34;, 16)
@@ -154,7 +154,7 @@ registered hooks while the latter silently ignores them.</p>
         self.k_experts = kwargs.get(&#34;k_experts&#34;, 2)
         self.svd_rank = kwargs.get(&#34;svd_rank&#34;, 4)
         self.alpha = kwargs.get(&#34;alpha&#34;, 1.5)
-        
+
         self.max_position_embeddings = kwargs.get(&#34;max_seq_len&#34;, 128)
         self.max_seq_len = self.max_position_embeddings
         self.layer_norm_eps = kwargs.get(&#34;layer_norm_eps&#34;, 1e-12)

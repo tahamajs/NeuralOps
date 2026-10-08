@@ -225,6 +225,7 @@ class RetrainPolicy:
     &#34;&#34;&#34;
 
     def __init__(self, policy: RetrainPolicy = None) -&gt; None:
+        &#34;&#34;&#34;Execute __init__ operation.&#34;&#34;&#34;
         self.policy = policy or RetrainPolicy()
         self._retrain_count_today: int = 0
         self._last_retrain_date: str = &#34;&#34;
@@ -401,7 +402,8 @@ new_data_count=5000,
 days_since_last_train=35,
 )
 if decision.should_retrain:
-orch.trigger_retraining(run_id="model-v3", training_fn=my_train_func)</p></div>
+orch.trigger_retraining(run_id="model-v3", training_fn=my_train_func)</p>
+<p>Execute <strong>init</strong> operation.</p></div>
 <h3>Methods</h3>
 <dl>
 <dt id="neuralops.evaluation.retraining.RetrainingOrchestrator.evaluate"><code class="name flex">

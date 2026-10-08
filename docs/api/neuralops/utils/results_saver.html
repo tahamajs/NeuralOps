@@ -121,7 +121,18 @@ and Hugging Face Hub uploads.</p>
         self._save_model_card(self.config or {}, metrics)</code></pre>
 </details>
 <div class="desc"><p>Enhanced ResultsSaver compatible with Django API, experiment runners, and CLI scripts.
-Supports structured report generation and Hugging Face Hub uploads.</p></div>
+Supports structured report generation and Hugging Face Hub uploads.</p>
+<p>Initialize ResultsSaver directory layouts and configuration.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>run_id</code></strong></dt>
+<dd>Unique identifier string for this run.</dd>
+<dt><strong><code>base_dir</code></strong></dt>
+<dd>Base directory where run directory is created.</dd>
+<dt><strong><code>config</code></strong></dt>
+<dd>Optional configuration dictionary.</dd>
+</dl></div>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li><a title="neuralops.results_saver.saver.ResultsSaver" href="../results_saver/saver.html#neuralops.results_saver.saver.ResultsSaver">ResultsSaver</a></li>

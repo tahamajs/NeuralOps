@@ -797,6 +797,7 @@ evaluation mode.
 </summary>
 <pre><code class="python">class DoRALinear(nn.Module):
     def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float) -&gt; None:
+        &#34;&#34;&#34;Execute __init__ operation.&#34;&#34;&#34;
         super().__init__()
         self.linear = linear
         self.linear.weight.requires_grad = False
@@ -856,7 +857,7 @@ must be made before assignment on the child.</p>
 <p>:ivar training: Boolean represents whether this module is in training or
 evaluation mode.
 :vartype training: bool</p>
-<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<p>Execute <strong>init</strong> operation.</p></div>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>torch.nn.modules.module.Module</li>
@@ -888,7 +889,7 @@ evaluation mode.
 </dd>
 <dt id="neuralops.trainer.methods.LoRALinear"><code class="flex name class">
 <span>class <span class="ident">LoRALinear</span></span>
-<span>(</span><span>linear: torch.nn.modules.linear.Linear, r: int, alpha: float, dropout: float)</span>
+<span>(</span><span>linear: nn.Module, r: int = 16, alpha: float = 32.0, dropout: float = 0.05)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -896,85 +897,230 @@ evaluation mode.
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class LoRALinear(nn.Module):
-    def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float) -&gt; None:
+    &#34;&#34;&#34;Linear layer wrapped with Low-Rank Adaptation (LoRA) adapters.&#34;&#34;&#34;
+
+    def __init__(
+        self,
+        linear: nn.Module,
+        r: int = 16,
+        alpha: float = 32.0,
+        dropout: float = 0.05,
+    ) -&gt; None:
         super().__init__()
-        self.linear = linear
-        self.linear.weight.requires_grad = False
-        if linear.bias is not None:
-            linear.bias.requires_grad = False
-        self.r = r
-        if r &gt; 0:
-            self.lora_A = nn.Linear(linear.in_features, r, bias=False)
-            self.lora_B = nn.Linear(r, linear.out_features, bias=False)
+        if hasattr(linear, &#34;in_features&#34;):
+            self.in_features = linear.in_features
+            self.out_features = linear.out_features
+        elif hasattr(linear, &#34;weight&#34;):
+            # HuggingFace Conv1D (used in GPT-2) has weight shape [in_features, out_features]
+            self.in_features = linear.weight.shape[0]
+            self.out_features = linear.weight.shape[1]
+        else:
+            raise ValueError(f&#34;Unsupported linear module: {type(linear)}&#34;)
+        self.r = int(r)
+        self.alpha = float(alpha)
+        self.scaling = float(alpha) / max(1, self.r) if self.r &gt; 0 else 1.0
+        self.merged = False
+
+        # Base linear layer (frozen)
+        self.base_layer = linear
+        self.base_layer.weight.requires_grad = False
+        if self.base_layer.bias is not None:
+            self.base_layer.bias.requires_grad = False
+
+        device = linear.weight.device
+        # Trainable LoRA parameters are kept in FP32 for numerical stability
+        # and compatibility with torch.amp.GradScaler in mixed precision.
+        dtype = torch.float32
+
+        # LoRA trainable low-rank matrices
+        if self.r &gt; 0:
+            self.lora_A = nn.Linear(
+                self.in_features, self.r, bias=False, device=device, dtype=dtype
+            )
+            self.lora_B = nn.Linear(
+                self.r, self.out_features, bias=False, device=device, dtype=dtype
+            )
+            self.lora_dropout = nn.Dropout(dropout) if dropout &gt; 0.0 else nn.Identity()
+            self.reset_parameters()
+        else:
+            self.lora_A = None
+            self.lora_B = None
+            self.lora_dropout = nn.Identity()
+
+    def reset_parameters(self) -&gt; None:
+        &#34;&#34;&#34;Initialize lora_A with Kaiming uniform and lora_B with zeros.&#34;&#34;&#34;
+        if self.r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
             kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
             zeros_(self.lora_B.weight)
-            self.scaling = alpha / r
-            self.dropout = nn.Dropout(dropout)
-        else:
-            self.lora_A = self.lora_B = None
-            self.scaling = 1.0
-            self.dropout = nn.Identity()
 
-    def forward(self, x) -&gt; Any:
-        &#34;&#34;&#34;Forward pass — compute module output from inputs.&#34;&#34;&#34;
-        base = self.linear(x)
-        if self.r &gt; 0:
-            lora = self.lora_B(self.lora_A(self.dropout(x))) * self.scaling
-            return base + lora
-        return base</code></pre>
+    @property
+    def weight(self) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Expose base layer weight for compatibility with hooks and inspectors.&#34;&#34;&#34;
+        return self.base_layer.weight
+
+    @property
+    def bias(self) -&gt; torch.Tensor | None:
+        &#34;&#34;&#34;Expose base layer bias for compatibility with hooks and inspectors.&#34;&#34;&#34;
+        return self.base_layer.bias
+
+    def merge(self) -&gt; None:
+        &#34;&#34;&#34;In-place merge LoRA delta weight into the base linear layer.&#34;&#34;&#34;
+        if self.r &gt; 0 and not self.merged and self.lora_A is not None and self.lora_B is not None:
+            delta_w = (self.lora_B.weight @ self.lora_A.weight) * self.scaling
+            is_conv1d = &#34;conv1d&#34; in self.base_layer.__class__.__name__.lower() or (
+                not isinstance(self.base_layer, nn.Linear)
+                and self.base_layer.weight.shape == (self.in_features, self.out_features)
+            )
+            if is_conv1d:
+                delta_w = delta_w.t()
+            self.base_layer.weight.data.add_(delta_w.to(self.base_layer.weight.dtype))
+            self.merged = True
+
+    def unmerge(self) -&gt; None:
+        &#34;&#34;&#34;Subtract LoRA delta weight to revert the base linear layer to unmerged state.&#34;&#34;&#34;
+        if self.r &gt; 0 and self.merged and self.lora_A is not None and self.lora_B is not None:
+            delta_w = (self.lora_B.weight @ self.lora_A.weight) * self.scaling
+            is_conv1d = &#34;conv1d&#34; in self.base_layer.__class__.__name__.lower() or (
+                not isinstance(self.base_layer, nn.Linear)
+                and self.base_layer.weight.shape == (self.in_features, self.out_features)
+            )
+            if is_conv1d:
+                delta_w = delta_w.t()
+            self.base_layer.weight.data.sub_(delta_w.to(self.base_layer.weight.dtype))
+            self.merged = False
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Forward pass combining base projection with low-rank adapter delta.&#34;&#34;&#34;
+        base_out = self.base_layer(x)
+        if self.r &gt; 0 and not self.merged and self.lora_A is not None and self.lora_B is not None:
+            lora_in = self.lora_dropout(x).to(dtype=self.lora_A.weight.dtype)
+            lora_out = self.lora_B(self.lora_A(lora_in)) * self.scaling
+            return base_out + lora_out.to(dtype=base_out.dtype)
+        return base_out
+
+    def __repr__(self) -&gt; str:
+        return (
+            f&#34;LoRALinear(in_features={self.in_features}, out_features={self.out_features}, &#34;
+            f&#34;r={self.r}, alpha={self.alpha}, scaling={self.scaling:.4f})&#34;
+        )</code></pre>
 </details>
-<div class="desc"><p>Base class for all neural network modules.</p>
-<p>Your models should also subclass this class.</p>
-<p>Modules can also contain other Modules, allowing them to be nested in
-a tree structure. You can assign the submodules as regular attributes::</p>
-<pre><code>import torch.nn as nn
-import torch.nn.functional as F
-
-
-class Model(nn.Module):
-    def __init__(self) -&gt; None:
-        super().__init__()
-        self.conv1 = nn.Conv2d(1, 20, 5)
-        self.conv2 = nn.Conv2d(20, 20, 5)
-
-    def forward(self, x):
-        x = F.relu(self.conv1(x))
-        return F.relu(self.conv2(x))
-</code></pre>
-<p>Submodules assigned in this way will be registered, and will also have their
-parameters converted when you call :meth:<code>to</code>, etc.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>As per the example above, an <code>__init__()</code> call to the parent class
-must be made before assignment on the child.</p>
-</div>
-<p>:ivar training: Boolean represents whether this module is in training or
-evaluation mode.
-:vartype training: bool</p>
+<div class="desc"><p>Linear layer wrapped with Low-Rank Adaptation (LoRA) adapters.</p>
 <p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>torch.nn.modules.module.Module</li>
 </ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.trainer.methods.LoRALinear.bias"><code class="name">prop <span class="ident">bias</span> : torch.Tensor | None</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def bias(self) -&gt; torch.Tensor | None:
+    &#34;&#34;&#34;Expose base layer bias for compatibility with hooks and inspectors.&#34;&#34;&#34;
+    return self.base_layer.bias</code></pre>
+</details>
+<div class="desc"><p>Expose base layer bias for compatibility with hooks and inspectors.</p></div>
+</dd>
+<dt id="neuralops.trainer.methods.LoRALinear.weight"><code class="name">prop <span class="ident">weight</span> : torch.Tensor</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def weight(self) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Expose base layer weight for compatibility with hooks and inspectors.&#34;&#34;&#34;
+    return self.base_layer.weight</code></pre>
+</details>
+<div class="desc"><p>Expose base layer weight for compatibility with hooks and inspectors.</p></div>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="neuralops.trainer.methods.LoRALinear.forward"><code class="name flex">
-<span>def <span class="ident">forward</span></span>(<span>self, x) ‑> Any</span>
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def forward(self, x) -&gt; Any:
-    &#34;&#34;&#34;Forward pass — compute module output from inputs.&#34;&#34;&#34;
-    base = self.linear(x)
-    if self.r &gt; 0:
-        lora = self.lora_B(self.lora_A(self.dropout(x))) * self.scaling
-        return base + lora
-    return base</code></pre>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Forward pass combining base projection with low-rank adapter delta.&#34;&#34;&#34;
+    base_out = self.base_layer(x)
+    if self.r &gt; 0 and not self.merged and self.lora_A is not None and self.lora_B is not None:
+        lora_in = self.lora_dropout(x).to(dtype=self.lora_A.weight.dtype)
+        lora_out = self.lora_B(self.lora_A(lora_in)) * self.scaling
+        return base_out + lora_out.to(dtype=base_out.dtype)
+    return base_out</code></pre>
 </details>
-<div class="desc"><p>Forward pass — compute module output from inputs.</p></div>
+<div class="desc"><p>Forward pass combining base projection with low-rank adapter delta.</p></div>
+</dd>
+<dt id="neuralops.trainer.methods.LoRALinear.merge"><code class="name flex">
+<span>def <span class="ident">merge</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def merge(self) -&gt; None:
+    &#34;&#34;&#34;In-place merge LoRA delta weight into the base linear layer.&#34;&#34;&#34;
+    if self.r &gt; 0 and not self.merged and self.lora_A is not None and self.lora_B is not None:
+        delta_w = (self.lora_B.weight @ self.lora_A.weight) * self.scaling
+        is_conv1d = &#34;conv1d&#34; in self.base_layer.__class__.__name__.lower() or (
+            not isinstance(self.base_layer, nn.Linear)
+            and self.base_layer.weight.shape == (self.in_features, self.out_features)
+        )
+        if is_conv1d:
+            delta_w = delta_w.t()
+        self.base_layer.weight.data.add_(delta_w.to(self.base_layer.weight.dtype))
+        self.merged = True</code></pre>
+</details>
+<div class="desc"><p>In-place merge LoRA delta weight into the base linear layer.</p></div>
+</dd>
+<dt id="neuralops.trainer.methods.LoRALinear.reset_parameters"><code class="name flex">
+<span>def <span class="ident">reset_parameters</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_parameters(self) -&gt; None:
+    &#34;&#34;&#34;Initialize lora_A with Kaiming uniform and lora_B with zeros.&#34;&#34;&#34;
+    if self.r &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
+        zeros_(self.lora_B.weight)</code></pre>
+</details>
+<div class="desc"><p>Initialize lora_A with Kaiming uniform and lora_B with zeros.</p></div>
+</dd>
+<dt id="neuralops.trainer.methods.LoRALinear.unmerge"><code class="name flex">
+<span>def <span class="ident">unmerge</span></span>(<span>self) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def unmerge(self) -&gt; None:
+    &#34;&#34;&#34;Subtract LoRA delta weight to revert the base linear layer to unmerged state.&#34;&#34;&#34;
+    if self.r &gt; 0 and self.merged and self.lora_A is not None and self.lora_B is not None:
+        delta_w = (self.lora_B.weight @ self.lora_A.weight) * self.scaling
+        is_conv1d = &#34;conv1d&#34; in self.base_layer.__class__.__name__.lower() or (
+            not isinstance(self.base_layer, nn.Linear)
+            and self.base_layer.weight.shape == (self.in_features, self.out_features)
+        )
+        if is_conv1d:
+            delta_w = delta_w.t()
+        self.base_layer.weight.data.sub_(delta_w.to(self.base_layer.weight.dtype))
+        self.merged = False</code></pre>
+</details>
+<div class="desc"><p>Subtract LoRA delta weight to revert the base linear layer to unmerged state.</p></div>
 </dd>
 </dl>
 </dd>
@@ -989,6 +1135,7 @@ evaluation mode.
 </summary>
 <pre><code class="python">class MethodTrainer(Trainer):
     def __init__(self, method, rdrop_alpha, r3f_epsilon, is_regression, *args, **kwargs) -&gt; None:
+        &#34;&#34;&#34;Execute __init__ operation.&#34;&#34;&#34;
         super().__init__(*args, **kwargs)
         self.method = method
         self.rdrop_alpha = rdrop_alpha
@@ -1107,7 +1254,8 @@ by this function will be reflected in the predictions received by <code>compute_
   overridden by subclassing &lt;code&gt;TrainingArguments&lt;/code&gt; and overriding the &lt;code&gt;place\_model\_on\_device&lt;/code&gt; property.
 - **is_in_train** -- Whether or not a model is currently running &lt;code&gt;train&lt;/code&gt; (e.g. when &lt;code&gt;evaluate&lt;/code&gt; is called while
   in &lt;code&gt;train&lt;/code&gt;)
-</code></pre></div>
+</code></pre>
+<p>Execute <strong>init</strong> operation.</p></div>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>transformers.trainer.Trainer</li>
@@ -1310,8 +1458,13 @@ evaluation mode.
 </li>
 <li>
 <h4><code><a title="neuralops.trainer.methods.LoRALinear" href="#neuralops.trainer.methods.LoRALinear">LoRALinear</a></code></h4>
-<ul class="">
+<ul class="two-column">
+<li><code><a title="neuralops.trainer.methods.LoRALinear.bias" href="#neuralops.trainer.methods.LoRALinear.bias">bias</a></code></li>
 <li><code><a title="neuralops.trainer.methods.LoRALinear.forward" href="#neuralops.trainer.methods.LoRALinear.forward">forward</a></code></li>
+<li><code><a title="neuralops.trainer.methods.LoRALinear.merge" href="#neuralops.trainer.methods.LoRALinear.merge">merge</a></code></li>
+<li><code><a title="neuralops.trainer.methods.LoRALinear.reset_parameters" href="#neuralops.trainer.methods.LoRALinear.reset_parameters">reset_parameters</a></code></li>
+<li><code><a title="neuralops.trainer.methods.LoRALinear.unmerge" href="#neuralops.trainer.methods.LoRALinear.unmerge">unmerge</a></code></li>
+<li><code><a title="neuralops.trainer.methods.LoRALinear.weight" href="#neuralops.trainer.methods.LoRALinear.weight">weight</a></code></li>
 </ul>
 </li>
 <li>

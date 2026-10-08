@@ -72,7 +72,8 @@ el.replaceWith(d);
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def test_module(module_name):
+<pre><code class="python">@pytest.mark.parametrize(&#34;module_name&#34;, MODULES_TO_TEST)
+def test_module(module_name):
     print(f&#34;Testing {module_name}...&#34;)
     try:
         module_class = ATTENTION_REGISTRY.get(module_name)

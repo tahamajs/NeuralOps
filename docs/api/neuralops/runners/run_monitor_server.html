@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 <meta name="generator" content="pdoc3 0.11.6">
 <title>neuralops.runners.run_monitor_server API documentation</title>
-<meta name="description" content="Production-grade NeuralOps Telemetry, Benchmark Database &amp; Documentation Studio Server
-Serves the neuralops/web application on port 8080 with 100% …">
+<meta name="description" content="Production-grade NeuralOps Telemetry, Benchmark Database &amp; Documentation Studio Server …">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
@@ -37,9 +36,8 @@ el.replaceWith(d);
 <h1 class="title">Module <code>neuralops.runners.run_monitor_server</code></h1>
 </header>
 <section id="section-intro">
-<p>Production-grade NeuralOps Telemetry, Benchmark Database &amp; Documentation Studio Server
-Serves the neuralops/web application on port 8080 with 100% code-accurate metrics
-and an interactive Documentation Reader API.</p>
+<p>Production-grade NeuralOps Telemetry, Benchmark Database &amp; Documentation Studio Server.</p>
+<p>Backward-compatibility shim. Logic has been decomposed into <code><a title="neuralops.runners.monitor" href="monitor/index.html">neuralops.runners.monitor</a></code>.</p>
 </section>
 <section>
 </section>
@@ -49,18 +47,34 @@ and an interactive Documentation Reader API.</p>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="neuralops.runners.run_monitor_server.build_aggregated_stats"><code class="name flex">
-<span>def <span class="ident">build_aggregated_stats</span></span>(<span>)</span>
+<span>def <span class="ident">build_aggregated_stats</span></span>(<span>project_dir: str,<br>harvested_json_path: str,<br>docs_dir: str,<br>is_local_gpu: bool = False) ‑> dict[str, typing.Any]</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def build_aggregated_stats():
-    global _CACHE_DATA, _CACHE_TIME
+<pre><code class="python">def build_aggregated_stats(
+    project_dir: str,
+    harvested_json_path: str,
+    docs_dir: str,
+    is_local_gpu: bool = False,
+) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Calculate aggregated leaderboard, memory profiles, and sweep metrics.
+
+    Args:
+        project_dir: Base project root.
+        harvested_json_path: Path to harvested json.
+        docs_dir: Path to documentation dir.
+        is_local_gpu: True if local machine has GPU runner.
+
+    Returns:
+        Structured statistics payload.
+    &#34;&#34;&#34;
+    global _CACHE_DATA, _CACHE_TIME, _ALL_MODULE_RUNS_MAP
     now = time.time()
     if _CACHE_DATA and (now - _CACHE_TIME &lt; 2.0):
-        gpu = get_live_gpu_telemetry()
+        gpu = get_live_gpu_telemetry(project_dir, is_local_gpu)
         _CACHE_DATA[&#34;gpu&#34;] = {
             &#34;gpu_util&#34;: gpu[&#34;gpu_util&#34;],
             &#34;mem_used_mb&#34;: gpu[&#34;mem_used_mb&#34;],
@@ -71,313 +85,49 @@ and an interactive Documentation Reader API.</p>
         }
         _CACHE_DATA[&#34;active_module&#34;] = gpu.get(&#34;active_module&#34;, &#34;hgrn2_gated_deltanet&#34;)
         _CACHE_DATA[&#34;logs&#34;] = gpu.get(&#34;logs&#34;, &#34;&#34;)
-        if gpu.get(&#34;live_progress&#34;):
-            _CACHE_DATA[&#34;live_progress&#34;] = gpu[&#34;live_progress&#34;]
-            l_curve = gpu[&#34;live_progress&#34;].get(&#34;loss_trajectory&#34;, [])
-            _CACHE_DATA[&#34;trajectories&#34;] = {
-                gpu.get(&#34;active_module&#34;, &#34;hgrn2_gated_deltanet&#34;): {&#34;loss&#34;: l_curve},
-                &#34;live&#34;: {&#34;loss&#34;: l_curve},
-            }
         return _CACHE_DATA
 
-    gpu_data = get_live_gpu_telemetry()
-    raw_records = load_harvested_benchmark_records()
-    doc_index = get_module_doc_index()
+    gpu_data = get_live_gpu_telemetry(project_dir, is_local_gpu)
+    raw_records = load_harvested_benchmark_records(project_dir, harvested_json_path)
 
-    module_runs = {}
-    distinct_runs_map = {}
-
-    for r in raw_records:
-        path = str(r.get(&#34;_source_path&#34;, &#34;&#34;)).replace(&#34;\\&#34;, &#34;/&#34;)
-        m_name = str(r.get(&#34;module_name&#34;, r.get(&#34;module&#34;, r.get(&#34;attention_type&#34;, &#34;&#34;)))).strip()
-        if not m_name or m_name.lower() in [&#34;nan&#34;, &#34;none&#34;, &#34;&#34;]:
-            parts = path.split(&#34;/&#34;)
-            for p in parts:
-                if p.startswith(&#34;unified_&#34;):
-                    m_name = p.replace(&#34;unified_&#34;, &#34;&#34;)
-                    break
-
-        mod = (
-            m_name.replace(&#34;unified_&#34;, &#34;&#34;)
-            .replace(&#34;_attention&#34;, &#34;&#34;)
-            .replace(&#34;_compressor&#34;, &#34;&#34;)
-            .replace(&#34;-&#34;, &#34;_&#34;)
-            .strip()
-            .lower()
-        )
-        if mod in [&#34;full&#34;, &#34;&#34;, &#34;nan&#34;, &#34;none&#34;, &#34;results&#34;, &#34;benchmark&#34;]:
-            continue
-        if any(
-            x in mod for x in [&#34;_summary&#34;, &#34;_inject&#34;, &#34;_fn&#34;, &#34;#&#34;, &#34;summary.csv&#34;, &#34;summary&#34;, &#34;.csv&#34;]
-        ):
-            continue
-
-        arch = &#34;distilbert&#34;
-        for a in [&#34;roberta&#34;, &#34;gpt2&#34;, &#34;qwen3_5&#34;, &#34;qwen&#34;, &#34;distilbert&#34;]:
-            if (
-                a in str(r.get(&#34;model_name&#34;, &#34;&#34;)).lower()
-                or a in str(r.get(&#34;model&#34;, &#34;&#34;)).lower()
-                or f&#34;/{a}/&#34; in path.lower()
-            ):
-                arch = &#34;qwen3_5&#34; if &#34;qwen&#34; in a else a
-                break
-
-        acc = None
-        for fld in [&#34;accuracy_pct&#34;, &#34;accuracy&#34;, &#34;eval_accuracy&#34;, &#34;acc&#34;]:
-            v = r.get(fld)
-            if v is not None and str(v).strip() != &#34;&#34; and str(v).lower() != &#34;nan&#34;:
-                try:
-                    acc = float(v)
-                    break
-                except Exception:
-                    pass
-
-        f1 = None
-        for fld in [&#34;f1_score&#34;, &#34;f1&#34;, &#34;eval_f1&#34;]:
-            v = r.get(fld)
-            if v is not None and str(v).strip() != &#34;&#34; and str(v).lower() != &#34;nan&#34;:
-                try:
-                    f1 = float(v)
-                    break
-                except Exception:
-                    pass
-
-        status = str(r.get(&#34;status&#34;, &#34;&#34;))
-        if not status or status.lower() == &#34;nan&#34;:
-            if acc is not None:
-                status = &#34;PASS&#34; if acc &gt;= 56.0 else (&#34;FAIL&#34; if acc &gt; 0 else &#34;CHECK&#34;)
-            else:
-                status = &#34;QUEUED&#34;
-
-        fwd = 0.0
-        for fld in [&#34;forward_latency_ms&#34;, &#34;fwd_ms&#34;, &#34;elapsed_s&#34;, &#34;latency_ms&#34;]:
-            v = r.get(fld)
-            if v is not None and str(v).strip() != &#34;&#34; and str(v).lower() != &#34;nan&#34;:
-                try:
-                    fwd = float(v)
-                    if fld == &#34;elapsed_s&#34;:
-                        fwd *= 10.0
-                    break
-                except Exception:
-                    pass
-
-        mem = 0.0
-        for fld in [&#34;peak_vram_mb&#34;, &#34;peak_memory_mb&#34;, &#34;mem_mb&#34;]:
-            v = r.get(fld)
-            if v is not None and str(v).strip() != &#34;&#34; and str(v).lower() != &#34;nan&#34;:
-                try:
-                    mem = float(v)
-                    break
-                except Exception:
-                    pass
-
-        tps = float(r.get(&#34;tokens_per_sec&#34;, 15000.0) or 15000.0)
-        timestamp = str(r.get(&#34;timestamp&#34;, &#34;2026-09-08 22:50&#34;))[:19].replace(&#34;T&#34;, &#34; &#34;)
-
-        run_obj = {
-            &#34;time&#34;: timestamp,
-            &#34;track&#34;: &#34;Track 1: SVD Subquadratic&#34;,
-            &#34;module&#34;: mod,
-            &#34;module_name&#34;: mod,
-            &#34;model&#34;: arch,
-            &#34;dataset&#34;: &#34;sst2&#34;,
-            &#34;status&#34;: status,
-            &#34;acc&#34;: round(acc, 2) if acc is not None else 0.0,
-            &#34;acc_pct&#34;: round(acc, 2) if acc is not None else 0.0,
-            &#34;accuracy&#34;: round(acc, 2) if acc is not None else 0.0,
-            &#34;f1_score&#34;: round(f1, 4) if f1 is not None else 0.0,
-            &#34;f1&#34;: f&#34;{f1:.4f}&#34; if f1 is not None and f1 &gt; 0 else &#34;-&#34;,
-            &#34;fwd_ms&#34;: round(fwd or 22.4, 2),
-            &#34;bwd_ms&#34;: round((fwd or 22.4) * 1.5, 2),
-            &#34;mem_mb&#34;: round(mem or 380.0, 1),
-            &#34;metrics&#34;: {
-                &#34;forward_latency_ms&#34;: round(fwd or 22.4, 2),
-                &#34;backward_latency_ms&#34;: round((fwd or 22.4) * 1.5, 2),
-                &#34;peak_memory_mb&#34;: round(mem or 380.0, 1),
-                &#34;accuracy&#34;: round(acc, 2) if acc is not None else 0.0,
-            },
-            &#34;tokens_per_sec&#34;: tps,
-            &#34;delta&#34;: f&#34;{acc - 90.48:+.2f}%&#34;
-            if acc is not None and arch == &#34;distilbert&#34;
-            else (f&#34;{acc - 88.76:+.2f}%&#34; if acc is not None else &#34;-&#34;),
-        }
-
-        # Clean mod name from CSV filename suffix if present
-        if mod.endswith(&#34;_4models_summary.csv&#34;):
-            mod = mod.replace(&#34;_4models_summary.csv&#34;, &#34;&#34;)
-
-        run_obj[&#34;module&#34;] = mod
-        run_obj[&#34;module_name&#34;] = mod
-
-        key = (mod, arch)
-        # Prioritize newer execution timestamp, or higher accuracy if same timestamp
-        if key not in distinct_runs_map:
-            distinct_runs_map[key] = run_obj
-        else:
-            prev_time = str(distinct_runs_map[key].get(&#34;time&#34;, &#34;&#34;))
-            curr_time = str(run_obj.get(&#34;time&#34;, &#34;&#34;))
-            if curr_time &gt; prev_time or (
-                curr_time == prev_time and acc is not None and acc &gt; distinct_runs_map[key][&#34;acc&#34;]
-            ):
-                distinct_runs_map[key] = run_obj
-
-        if mod not in module_runs:
-            module_runs[mod] = []
-        module_runs[mod].append(run_obj)
-
-    catalog_path = os.path.join(WEB_DIR, &#34;catalog.json&#34;)
-    all_catalog_mods = []
-    if os.path.exists(catalog_path):
-        try:
-            with open(catalog_path, &#34;r&#34;, encoding=&#34;utf-8&#34;) as f:
-                cat = json.load(f)
-                for item in cat.get(&#34;attentions&#34;, []):
-                    all_catalog_mods.append(item[&#34;title&#34;].replace(&#34; &#34;, &#34;_&#34;).lower())
-                for item in cat.get(&#34;compressions&#34;, []):
-                    all_catalog_mods.append(item[&#34;title&#34;].replace(&#34; &#34;, &#34;_&#34;).lower())
-        except Exception:
-            pass
-
-    all_mods_union = sorted(set(all_catalog_mods + list(module_runs.keys())))
-    active_m = gpu_data.get(&#34;active_module&#34;, &#34;optimized_hybrid_attention&#34;)
-
-    leaderboard = []
-    module_progress = []
+    module_runs: dict[str, list[dict[str, Any]]] = {}
     pass_cnt = 0
     fail_cnt = 0
     timeout_cnt = 0
 
-    for mod in all_mods_union:
-        runs = module_runs.get(mod, [])
-        valid_accs = [r[&#34;acc&#34;] for r in runs if r[&#34;acc&#34;] &gt; 0]
-        valid_f1s = [r[&#34;f1_score&#34;] for r in runs if r[&#34;f1_score&#34;] &gt; 0]
-        valid_fwds = [r[&#34;fwd_ms&#34;] for r in runs if r[&#34;fwd_ms&#34;] &gt; 0]
-        valid_mems = [r[&#34;mem_mb&#34;] for r in runs if r[&#34;mem_mb&#34;] &gt; 0]
-
-        best_acc = max(valid_accs) if valid_accs else None
-        avg_acc = round(sum(valid_accs) / len(valid_accs), 2) if valid_accs else 0.0
-        avg_f1 = round(sum(valid_f1s) / len(valid_f1s), 4) if valid_f1s else 0.0
-        avg_fwd = round(sum(valid_fwds) / len(valid_fwds), 2) if valid_fwds else 24.5
-        avg_mem = round(sum(valid_mems) / len(valid_mems), 1) if valid_mems else 420.0
-
-        is_running = active_m in mod or mod in active_m
-        is_completed = len(runs) &gt; 0
-
-        if is_running:
-            status = &#34;running&#34;
-            result_status = &#34;RUNNING&#34;
-        elif is_completed:
-            status = &#34;completed&#34;
-            if any(&#34;TIMEOUT&#34; in r[&#34;status&#34;] for r in runs):
-                result_status = &#34;TIMEOUT&#34;
-                timeout_cnt += 1
-            elif best_acc is not None and best_acc &gt;= 56.0:
-                result_status = &#34;PASS&#34;
-                pass_cnt += 1
-            else:
-                result_status = &#34;FAIL&#34;
-                fail_cnt += 1
+    for r in raw_records:
+        m_name = str(r.get(&#34;module_name&#34;, r.get(&#34;module&#34;, &#34;unknown&#34;))).strip().lower()
+        if not m_name or m_name in (&#34;none&#34;, &#34;nan&#34;):
+            continue
+        st = str(r.get(&#34;status&#34;, &#34;pass&#34;)).lower()
+        if &#34;pass&#34; in st:
+            pass_cnt += 1
+        elif &#34;fail&#34; in st:
+            fail_cnt += 1
         else:
-            status = &#34;pending&#34;
-            result_status = &#34;QUEUED&#34;
+            timeout_cnt += 1
 
-        fidelity = (
-            round(min(1.0, (avg_acc / 90.48)), 4)
-            if avg_acc &gt; 0
-            else (0.985 if result_status == &#34;PASS&#34; else 0.55)
-        )
-        seeds_done = min(4, len(runs)) if is_completed else 0
-        dur_sec = round(avg_fwd * 2.5, 1) if is_completed else (45.0 if is_running else 0.0)
+        if m_name not in module_runs:
+            module_runs[m_name] = []
+        module_runs[m_name].append(r)
 
-        has_doc = (
-            mod in doc_index or f&#34;{mod}_attention&#34; in doc_index or f&#34;{mod}_compressor&#34; in doc_index
-        )
-
-        module_progress.append(
-            {
-                &#34;module&#34;: mod,
-                &#34;name&#34;: mod,
-                &#34;status&#34;: status,
-                &#34;result_status&#34;: result_status,
-                &#34;current_seed&#34;: &#34;42&#34; if status == &#34;running&#34; else &#34;42&#34;,
-                &#34;completed_seeds&#34;: seeds_done,
-                &#34;total_seeds&#34;: 4,
-                &#34;epoch&#34;: &#34;1 / 3&#34;
-                if status == &#34;running&#34;
-                else (&#34;3 / 3&#34; if status == &#34;completed&#34; else &#34;-&#34;),
-                &#34;step&#34;: &#34;75 / 200&#34;
-                if status == &#34;running&#34;
-                else (&#34;200 / 200&#34; if status == &#34;completed&#34; else &#34;-&#34;),
-                &#34;loss&#34;: 0.382
-                if status == &#34;running&#34;
-                else (0.245 if result_status == &#34;PASS&#34; else 0.695),
-                &#34;accuracy&#34;: avg_acc
-                if avg_acc &gt; 0
-                else (best_acc if best_acc is not None else None),
-                &#34;mean_accuracy&#34;: avg_acc,
-                &#34;best_accuracy&#34;: best_acc,
-                &#34;f1&#34;: avg_f1 if avg_f1 &gt; 0 else None,
-                &#34;fidelity&#34;: fidelity,
-                &#34;duration_seconds&#34;: dur_sec,
-                &#34;progress_percent&#34;: 65
-                if status == &#34;running&#34;
-                else (100 if status == &#34;completed&#34; else 0),
-                &#34;eta_str&#34;: &#34;1m 15s&#34;
-                if status == &#34;running&#34;
-                else (&#34;Done&#34; if status == &#34;completed&#34; else &#34;-&#34;),
-                &#34;has_doc&#34;: has_doc,
-            }
-        )
-
-        if is_completed:
-            leaderboard.append(
-                {
-                    &#34;module_name&#34;: mod,
-                    &#34;track&#34;: &#34;Track 1: SVD Subquadratic&#34;,
-                    &#34;total_runs&#34;: len(runs),
-                    &#34;success_runs&#34;: len([r for r in runs if r[&#34;acc&#34;] &gt;= 56.0]),
-                    &#34;avg_fwd&#34;: avg_fwd,
-                    &#34;avg_bwd&#34;: round(avg_fwd * 1.5, 2),
-                    &#34;avg_mem&#34;: avg_mem,
-                    &#34;avg_acc&#34;: avg_acc,
-                    &#34;avg_f1&#34;: avg_f1,
-                    &#34;avg_fidelity&#34;: fidelity,
-                    &#34;avg_throughput&#34;: 15000.0,
-                    &#34;has_doc&#34;: has_doc,
-                }
-            )
-
-    leaderboard.sort(key=lambda x: x[&#34;avg_acc&#34;], reverse=True)
-    all_runs_list = list(distinct_runs_map.values())
-    all_runs_list.sort(key=lambda x: x[&#34;time&#34;], reverse=True)
-
-    global _ALL_MODULE_RUNS_MAP, _DISTINCT_RUNS_MAP
     _ALL_MODULE_RUNS_MAP = module_runs
-    _DISTINCT_RUNS_MAP = distinct_runs_map
 
-    lp = gpu_data.get(&#34;live_progress&#34;)
-    if not lp:
-        lp = {
-            &#34;module_name&#34;: active_m,
-            &#34;model_family&#34;: &#34;Gpt2&#34;,
-            &#34;dataset&#34;: &#34;SST-2&#34;,
-            &#34;seed&#34;: 42,
-            &#34;epoch&#34;: &#34;1/3&#34;,
-            &#34;step&#34;: &#34;50/50&#34;,
-            &#34;loss&#34;: 0.4521,
-            &#34;progress_percent&#34;: 100,
-            &#34;eta_formatted&#34;: &#34;Live&#34;,
-            &#34;loss_trajectory&#34;: [0.85, 0.72, 0.65, 0.58, 0.52, 0.48, 0.4521],
-        }
+    leaderboard = []
+    for mod, runs in module_runs.items():
+        accs = [
+            float(x.get(&#34;accuracy&#34;, x.get(&#34;acc&#34;, 0.0)))
+            for x in runs
+            if x.get(&#34;accuracy&#34;) is not None or x.get(&#34;acc&#34;) is not None
+        ]
+        avg_acc = round(sum(accs) / max(1, len(accs)), 2) if accs else 0.0
+        leaderboard.append({&#34;module&#34;: mod, &#34;avg_accuracy&#34;: avg_acc, &#34;total_runs&#34;: len(runs)})
 
-    loss_curve = lp.get(&#34;loss_trajectory&#34;, [])
-    trajectories = {active_m: {&#34;loss&#34;: loss_curve}, &#34;live&#34;: {&#34;loss&#34;: loss_curve}}
+    leaderboard.sort(key=lambda x: x[&#34;avg_accuracy&#34;], reverse=True)
 
     _CACHE_DATA = {
         &#34;is_running&#34;: True,
         &#34;last_updated&#34;: time.strftime(&#34;%H:%M:%S&#34;),
-        &#34;live_progress&#34;: lp,
-        &#34;trajectories&#34;: trajectories,
         &#34;gpu&#34;: {
             &#34;name&#34;: gpu_data.get(&#34;gpu_name&#34;, &#34;NVIDIA GeForce RTX 4070 (8GB)&#34;),
             &#34;gpu_name&#34;: gpu_data.get(&#34;gpu_name&#34;, &#34;NVIDIA GeForce RTX 4070 (8GB)&#34;),
@@ -388,46 +138,43 @@ and an interactive Documentation Reader API.</p>
             &#34;power_w&#34;: gpu_data[&#34;power_w&#34;],
             &#34;temp_c&#34;: gpu_data[&#34;temp_c&#34;],
         },
-        &#34;progress&#34;: {
-            &#34;completed&#34;: pass_cnt + fail_cnt + timeout_cnt,
-            &#34;total&#34;: len(module_progress) * 4,
-            &#34;avg_sec&#34;: 42.0,
-            &#34;eta_formatted&#34;: &#34;2h 30m&#34;,
-        },
         &#34;counts&#34;: {&#34;pass&#34;: pass_cnt, &#34;fail&#34;: fail_cnt, &#34;timeout&#34;: timeout_cnt},
-        &#34;summary&#34;: {
-            &#34;total_modules&#34;: len(module_progress),
-            &#34;completed&#34;: pass_cnt + fail_cnt + timeout_cnt,
-            &#34;passed&#34;: pass_cnt,
-            &#34;failed&#34;: fail_cnt,
-            &#34;timeout&#34;: timeout_cnt,
-            &#34;running&#34;: 1,
-            &#34;queued&#34;: len([m for m in module_progress if m[&#34;status&#34;] == &#34;pending&#34;]),
-        },
-        &#34;recent_results&#34;: all_runs_list[:100],
-        &#34;results&#34;: all_runs_list[:100],
-        &#34;module_progress&#34;: module_progress,
         &#34;analytics&#34;: {&#34;modules&#34;: leaderboard},
-        &#34;comparative_analytics&#34;: {&#34;module_leaderboard&#34;: leaderboard},
-        &#34;active_module&#34;: active_m,
+        &#34;results&#34;: raw_records[:100],
+        &#34;active_module&#34;: gpu_data.get(&#34;active_module&#34;, &#34;idle&#34;),
         &#34;logs&#34;: gpu_data.get(&#34;logs&#34;, &#34;&#34;),
     }
     _CACHE_TIME = now
     return _CACHE_DATA</code></pre>
 </details>
-<div class="desc"></div>
+<div class="desc"><p>Calculate aggregated leaderboard, memory profiles, and sweep metrics.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>project_dir</code></strong></dt>
+<dd>Base project root.</dd>
+<dt><strong><code>harvested_json_path</code></strong></dt>
+<dd>Path to harvested json.</dd>
+<dt><strong><code>docs_dir</code></strong></dt>
+<dd>Path to documentation dir.</dd>
+<dt><strong><code>is_local_gpu</code></strong></dt>
+<dd>True if local machine has GPU runner.</dd>
+</dl>
+<p>Returns
+-----=
+Structured statistics payload.</p></div>
 </dd>
 <dt id="neuralops.runners.run_monitor_server.get_doc_content"><code class="name flex">
-<span>def <span class="ident">get_doc_content</span></span>(<span>mod_query)</span>
+<span>def <span class="ident">get_doc_content</span></span>(<span>docs_dir: str, project_dir: str, mod_query: str) ‑> dict[str, typing.Any]</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_doc_content(mod_query):
-    &#34;&#34;&#34;Retrieves the Markdown documentation for a requested module or topic.&#34;&#34;&#34;
-    doc_index = get_module_doc_index()
+<pre><code class="python">def get_doc_content(docs_dir: str, project_dir: str, mod_query: str) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Retrieve markdown documentation for a requested module or topic.&#34;&#34;&#34;
+    doc_index = get_module_doc_index(docs_dir)
     q = (
         mod_query.strip()
         .lower()
@@ -436,7 +183,6 @@ and an interactive Documentation Reader API.</p>
         .replace(&#34;_compressor&#34;, &#34;&#34;)
         .replace(&#34;-&#34;, &#34;_&#34;)
     )
-
     target_file = doc_index.get(q)
     if not target_file:
         for k, p in doc_index.items():
@@ -451,7 +197,7 @@ and an interactive Documentation Reader API.</p>
             return {
                 &#34;success&#34;: True,
                 &#34;module&#34;: mod_query,
-                &#34;path&#34;: target_file.replace(PROJECT_DIR, &#34;&#34;).lstrip(&#34;/&#34;),
+                &#34;path&#34;: target_file.replace(project_dir, &#34;&#34;).lstrip(&#34;/&#34;),
                 &#34;content&#34;: content,
             }
         except Exception as e:
@@ -461,118 +207,112 @@ and an interactive Documentation Reader API.</p>
         &#34;success&#34;: True,
         &#34;module&#34;: mod_query,
         &#34;path&#34;: f&#34;Docs/generated/{mod_query}.md&#34;,
-        &#34;content&#34;: f&#34;&#34;&#34;# {mod_query.upper().replace(&#34;_&#34;, &#34; &#34;)} Architectural Documentation
-
-## 1. Module Overview
-**{mod_query}** is a subquadratic sequence operator integrated into the **Hoosha AI NeuralOps** benchmark suite.
-It optimizes the standard $O(N^2)$ quadratic attention mechanism by decomposing token projections using truncated Singular Value Decomposition (SVD) and low-rank state recurrence.
-
-## 2. Mathematical Formulation
-$$\\text{{Context}} = \\text{{Scan}}(Q, K, V) \\cdot \\gamma_{{output}}$$
-where:
-- $\\gamma_{{output}}$ is a trainable scale bridging low-rank singular vectors to pretrained dimension manifolds.
-- SVD bottleneck energy target: $\\ge 95\\%$ singular spectrum variance retained.
-
-## 3. Empirical Evaluation
-Tested across **DistilBERT, RoBERTa, GPT-2, and Qwen3.5** under GLUE SST-2 quality gates with strict single-process GPU constraints.
-&#34;&#34;&#34;,
+        &#34;content&#34;: f&#34;# {mod_query.upper()} Documentation\n\nSubquadratic attention module documentation.&#34;,
     }</code></pre>
 </details>
-<div class="desc"><p>Retrieves the Markdown documentation for a requested module or topic.</p></div>
+<div class="desc"><p>Retrieve markdown documentation for a requested module or topic.</p></div>
 </dd>
 <dt id="neuralops.runners.run_monitor_server.get_live_gpu_telemetry"><code class="name flex">
-<span>def <span class="ident">get_live_gpu_telemetry</span></span>(<span>)</span>
+<span>def <span class="ident">get_live_gpu_telemetry</span></span>(<span>project_dir: str, is_local_gpu: bool = False) ‑> dict[str, typing.Any]</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_live_gpu_telemetry():
+<pre><code class="python">def get_live_gpu_telemetry(project_dir: str, is_local_gpu: bool = False) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Retrieve live GPU metrics including utilization, VRAM usage, power, and temperature.
+
+    Args:
+        project_dir: Base root path of the project.
+        is_local_gpu: True if running on machine with local Windows/CUDA path.
+
+    Returns:
+        Dictionary with GPU telemetry metrics.
+    &#34;&#34;&#34;
     global _GPU_CACHE, _GPU_CACHE_TIME
     now = time.time()
     if _GPU_CACHE and (now - _GPU_CACHE_TIME &lt; 2.0):
         return _GPU_CACHE
 
     try:
-        if IS_LOCAL_GPU and HAS_LOCAL_PROBE:
-            t = gpu_live_probe.get_telemetry()
-            active_m, active_arch, q_logs = gpu_live_probe.get_active_process_and_logs()
-            lp = gpu_live_probe.get_live_progress_and_trajectory(target_module=active_m)
-            _GPU_CACHE = {
-                &#34;gpu_name&#34;: t.get(&#34;gpu_name&#34;, &#34;NVIDIA GeForce RTX 4070 (8GB)&#34;),
-                &#34;mem_used_mb&#34;: t.get(&#34;mem_used_mb&#34;, 450),
-                &#34;mem_total_mb&#34;: t.get(&#34;mem_total_mb&#34;, 8188),
-                &#34;gpu_util&#34;: t.get(&#34;gpu_util&#34;, 0),
-                &#34;temp_c&#34;: t.get(&#34;temp_c&#34;, 45),
-                &#34;power_w&#34;: t.get(&#34;power_w&#34;, 25.0),
-                &#34;active_module&#34;: active_m,
-                &#34;logs&#34;: q_logs or &#34;Mutex-Locked Sequential GPU Queue Active.&#34;,
-                &#34;live_progress&#34;: lp,
-            }
-            _GPU_CACHE_TIME = now
-            return _GPU_CACHE
-        elif IS_LOCAL_GPU:
-            cmd = [sys.executable, os.path.join(PROJECT_DIR, &#34;scripts&#34;, &#34;gpu_live_probe.py&#34;)]
-            g_res = subprocess.run(cmd, capture_output=True, text=True, timeout=4)
+        if is_local_gpu:
+            cmd = [sys.executable, os.path.join(project_dir, &#34;gpu_live_probe.py&#34;)]
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=4)
         else:
-            cmd = &#39;ssh -o ConnectTimeout=2 -o BatchMode=yes gpu &#34;python D:/SVD_Project/scripts/gpu_live_probe.py&#34;&#39;
-            g_res = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=4)
+            cmd = &#39;ssh -o ConnectTimeout=2 -o BatchMode=yes gpu &#34;python D:/SVD_Project/gpu_live_probe.py&#34;&#39;
+            res = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=4)
 
-        if g_res.returncode == 0:
-            lines = [l for l in g_res.stdout.splitlines() if not l.startswith(&#34;**&#34;) and l.strip()]
+        if res.returncode == 0 and res.stdout:
+            lines = [l for l in res.stdout.splitlines() if not l.startswith(&#34;**&#34;) and l.strip()]
             if lines:
                 data = json.loads(lines[-1])
-                t = data.get(&#34;telemetry&#34;, {})
-                lp = data.get(&#34;live_progress&#34;)
-                _GPU_CACHE = {
-                    &#34;gpu_name&#34;: t.get(&#34;gpu_name&#34;, &#34;NVIDIA GeForce RTX 4070 (8GB)&#34;),
-                    &#34;mem_used_mb&#34;: t.get(&#34;mem_used_mb&#34;, 450),
-                    &#34;mem_total_mb&#34;: t.get(&#34;mem_total_mb&#34;, 8188),
-                    &#34;gpu_util&#34;: t.get(&#34;gpu_util&#34;, 0),
-                    &#34;temp_c&#34;: t.get(&#34;temp_c&#34;, 45),
-                    &#34;power_w&#34;: t.get(&#34;power_w&#34;, 25.0),
-                    &#34;active_module&#34;: data.get(&#34;active_module&#34;, &#34;cur_linear&#34;),
-                    &#34;logs&#34;: data.get(&#34;queue_logs&#34;, &#34;Mutex-Locked Sequential GPU Queue Active.&#34;),
-                    &#34;live_progress&#34;: lp,
-                }
+                _GPU_CACHE = data
                 _GPU_CACHE_TIME = now
-                return _GPU_CACHE
-    except Exception as e:
-        print(f&#34;Error probing GPU telemetry: {e}&#34;)
+                return data
+    except Exception:
+        pass
 
-    if not _GPU_CACHE:
-        _GPU_CACHE = {
-            &#34;gpu_name&#34;: &#34;NVIDIA GeForce RTX 4070 (8GB)&#34;,
-            &#34;mem_used_mb&#34;: 420,
-            &#34;mem_total_mb&#34;: 8188,
-            &#34;gpu_util&#34;: 0,
-            &#34;temp_c&#34;: 48,
-            &#34;power_w&#34;: 25.0,
-            &#34;active_module&#34;: &#34;hgrn2_gated_deltanet&#34;,
-            &#34;logs&#34;: &#34;Running sequential mutex-locked queue...&#34;,
-            &#34;live_progress&#34;: None,
-        }
-        _GPU_CACHE_TIME = now
-    return _GPU_CACHE</code></pre>
+    fallback_data = {
+        &#34;gpu_util&#34;: 0.0,
+        &#34;mem_used_mb&#34;: 0.0,
+        &#34;mem_total_mb&#34;: 8192.0,
+        &#34;power_w&#34;: 0.0,
+        &#34;temp_c&#34;: 0.0,
+        &#34;gpu_name&#34;: &#34;CPU/Fallback&#34;,
+        &#34;logs&#34;: &#34;No active GPU telemetry stream.&#34;,
+        &#34;active_module&#34;: &#34;idle&#34;,
+        &#34;live_progress&#34;: None,
+    }
+    _GPU_CACHE = fallback_data
+    _GPU_CACHE_TIME = now
+    return fallback_data</code></pre>
 </details>
-<div class="desc"></div>
+<div class="desc"><p>Retrieve live GPU metrics including utilization, VRAM usage, power, and temperature.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>project_dir</code></strong></dt>
+<dd>Base root path of the project.</dd>
+<dt><strong><code>is_local_gpu</code></strong></dt>
+<dd>True if running on machine with local Windows/CUDA path.</dd>
+</dl>
+<p>Returns
+-----=
+Dictionary with GPU telemetry metrics.</p></div>
 </dd>
 <dt id="neuralops.runners.run_monitor_server.get_live_logs"><code class="name flex">
-<span>def <span class="ident">get_live_logs</span></span>(<span>source='active', module=None, lines=200)</span>
+<span>def <span class="ident">get_live_logs</span></span>(<span>project_dir: str,<br>source: str = 'active',<br>module: str | None = None,<br>lines: int = 200,<br>is_local_gpu: bool = False) ‑> dict[str, typing.Any]</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_live_logs(source=&#34;active&#34;, module=None, lines=200):
-    &#34;&#34;&#34;Fetches real-time log lines from the GPU server via gpu_live_probe or local disk.&#34;&#34;&#34;
+<pre><code class="python">def get_live_logs(
+    project_dir: str,
+    source: str = &#34;active&#34;,
+    module: str | None = None,
+    lines: int = 200,
+    is_local_gpu: bool = False,
+) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Fetch recent log lines from active execution on GPU server or local disk.
+
+    Args:
+        project_dir: Base project root.
+        source: Log source (&#39;active&#39; or &#39;local_disk&#39;).
+        module: Optional module filter.
+        lines: Number of trailing lines to return.
+        is_local_gpu: True if local GPU runner.
+
+    Returns:
+        Dictionary containing lines and metadata.
+    &#34;&#34;&#34;
     try:
-        if IS_LOCAL_GPU:
+        if is_local_gpu:
             cmd = [
                 sys.executable,
-                os.path.join(PROJECT_DIR, &#34;gpu_live_probe.py&#34;),
+                os.path.join(project_dir, &#34;gpu_live_probe.py&#34;),
                 &#34;--action&#34;,
                 &#34;logs&#34;,
                 &#34;--source&#34;,
@@ -606,9 +346,8 @@ Tested across **DistilBERT, RoBERTa, GPT-2, and Qwen3.5** under GLUE SST-2 quali
     except Exception:
         pass
 
-    # Fallback to local files
     local_logs = sorted(
-        glob.glob(os.path.join(PROJECT_DIR, &#34;results&#34;, &#34;**&#34;, &#34;console.log&#34;), recursive=True),
+        glob.glob(os.path.join(project_dir, &#34;results&#34;, &#34;**&#34;, &#34;console.log&#34;), recursive=True),
         key=os.path.getmtime,
     )
     if local_logs:
@@ -636,19 +375,41 @@ Tested across **DistilBERT, RoBERTa, GPT-2, and Qwen3.5** under GLUE SST-2 quali
         &#34;timestamp&#34;: time.strftime(&#34;%H:%M:%S&#34;),
     }</code></pre>
 </details>
-<div class="desc"><p>Fetches real-time log lines from the GPU server via gpu_live_probe or local disk.</p></div>
+<div class="desc"><p>Fetch recent log lines from active execution on GPU server or local disk.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>project_dir</code></strong></dt>
+<dd>Base project root.</dd>
+<dt><strong><code>source</code></strong></dt>
+<dd>Log source ('active' or 'local_disk').</dd>
+<dt><strong><code>module</code></strong></dt>
+<dd>Optional module filter.</dd>
+<dt><strong><code>lines</code></strong></dt>
+<dd>Number of trailing lines to return.</dd>
+<dt><strong><code>is_local_gpu</code></strong></dt>
+<dd>True if local GPU runner.</dd>
+</dl>
+<p>Returns
+-----=
+Dictionary containing lines and metadata.</p></div>
 </dd>
 <dt id="neuralops.runners.run_monitor_server.get_loss_history"><code class="name flex">
-<span>def <span class="ident">get_loss_history</span></span>(<span>module=None, model=None)</span>
+<span>def <span class="ident">get_loss_history</span></span>(<span>project_dir: str,<br>module: str | None = None,<br>model: str | None = None,<br>is_local_gpu: bool = False) ‑> dict[str, typing.Any]</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_loss_history(module=None, model=None):
-    &#34;&#34;&#34;Returns step loss history array and current step for active or requested module.&#34;&#34;&#34;
-    gpu = get_live_gpu_telemetry()
+<pre><code class="python">def get_loss_history(
+    project_dir: str,
+    module: str | None = None,
+    model: str | None = None,
+    is_local_gpu: bool = False,
+) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Return step loss history for active or requested module.&#34;&#34;&#34;
+    gpu = get_live_gpu_telemetry(project_dir, is_local_gpu)
     lp = gpu.get(&#34;live_progress&#34;)
     if lp and lp.get(&#34;loss_trajectory&#34;):
         hist = lp.get(&#34;history&#34;) or [
@@ -662,7 +423,6 @@ Tested across **DistilBERT, RoBERTa, GPT-2, and Qwen3.5** under GLUE SST-2 quali
             &#34;losses&#34;: lp[&#34;loss_trajectory&#34;],
             &#34;current_step&#34;: lp.get(&#34;step&#34;, &#34;50/50&#34;),
             &#34;latest_loss&#34;: lp.get(&#34;loss&#34;, None),
-            &#34;timestamp&#34;: time.strftime(&#34;%H:%M:%S&#34;),
         }
     return {
         &#34;success&#34;: True,
@@ -675,19 +435,21 @@ Tested across **DistilBERT, RoBERTa, GPT-2, and Qwen3.5** under GLUE SST-2 quali
         &#34;message&#34;: &#34;Waiting for first training step...&#34;,
     }</code></pre>
 </details>
-<div class="desc"><p>Returns step loss history array and current step for active or requested module.</p></div>
+<div class="desc"><p>Return step loss history for active or requested module.</p></div>
 </dd>
 <dt id="neuralops.runners.run_monitor_server.get_module_detail"><code class="name flex">
-<span>def <span class="ident">get_module_detail</span></span>(<span>mod_query)</span>
+<span>def <span class="ident">get_module_detail</span></span>(<span>docs_dir: str, project_dir: str, mod_query: str) ‑> dict[str, typing.Any]</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_module_detail(mod_query):
-    &#34;&#34;&#34;Returns comprehensive run-level details, loss trajectory, and dataset breakdown for a specific module.&#34;&#34;&#34;
-    doc_res = get_doc_content(mod_query)
+<pre><code class="python">def get_module_detail(
+    docs_dir: str, project_dir: str, mod_query: str
+) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Return run details, loss history and documentation for a specific module.&#34;&#34;&#34;
+    doc_res = get_doc_content(docs_dir, project_dir, mod_query)
     q = (
         mod_query.strip()
         .lower()
@@ -696,91 +458,41 @@ Tested across **DistilBERT, RoBERTa, GPT-2, and Qwen3.5** under GLUE SST-2 quali
         .replace(&#34;_compressor&#34;, &#34;&#34;)
         .replace(&#34;-&#34;, &#34;_&#34;)
     )
-
-    global _ALL_MODULE_RUNS_MAP
-    if not _ALL_MODULE_RUNS_MAP:
-        build_aggregated_stats()
-
-    runs = _ALL_MODULE_RUNS_MAP.get(q, [])
-    if not runs:
-        for k, v in _ALL_MODULE_RUNS_MAP.items():
-            if q in k or k in q:
-                runs = v
-                break
-
-    breakdown = {}
-    valid_accs = []
-    for r in runs:
-        arch = (r.get(&#34;model&#34;) or &#34;DistilBERT&#34;).upper()
-        acc = r.get(&#34;acc&#34;) if r.get(&#34;acc&#34;) is not None else r.get(&#34;accuracy&#34;)
-        if acc is not None and acc &gt; 0:
-            label = f&#34;{arch} ({r.get(&#39;dataset&#39;, &#39;SST2&#39;).upper()})&#34;
-            breakdown[label] = round(float(acc), 2)
-            valid_accs.append(acc)
-
-    if not breakdown:
-        breakdown = {
-            &#34;DISTILBERT (SST-2)&#34;: 88.5,
-            &#34;ROBERTA (SST-2)&#34;: 87.2,
-            &#34;GPT2 (SST-2)&#34;: 82.4,
-            &#34;QWEN3.5 (SST-2)&#34;: 78.6,
-        }
-
-    loss_trajectory = []
-    gpu = get_live_gpu_telemetry()
-    lp = gpu.get(&#34;live_progress&#34;)
-    if lp and (q in str(lp.get(&#34;module_name&#34;, &#34;&#34;)).lower()):
-        loss_trajectory = lp.get(&#34;loss_trajectory&#34;, [])
-
-    if not loss_trajectory:
-        mod_logs = glob.glob(
-            os.path.join(PROJECT_DIR, &#34;results&#34;, f&#34;*{q}*&#34;, &#34;**&#34;, &#34;console.log&#34;), recursive=True
-        )
-        for ml in mod_logs:
-            try:
-                with open(ml, &#34;r&#34;, encoding=&#34;utf-8&#34;, errors=&#34;ignore&#34;) as fp:
-                    content = fp.read()
-                matches = re.findall(r&#34;loss=([0-9.]+)&#34;, content)
-                if matches:
-                    loss_trajectory = [round(float(x), 4) for x in matches[-40:]]
-                    break
-            except Exception:
-                pass
-
-    if not loss_trajectory:
-        avg_a = sum(valid_accs) / len(valid_accs) if valid_accs else 50.92
-        start_loss = 0.85
-        end_loss = 0.22 if avg_a &gt;= 85 else (0.45 if avg_a &gt;= 56 else 0.69)
-        loss_trajectory = [
-            round(start_loss - (start_loss - end_loss) * (1 - (0.85**i)), 4) for i in range(15)
-        ]
-
     return {
         &#34;success&#34;: True,
         &#34;module&#34;: mod_query,
         &#34;clean_name&#34;: q,
-        &#34;runs&#34;: runs,
-        &#34;total_runs&#34;: len(runs),
-        &#34;dataset_breakdown&#34;: breakdown,
-        &#34;loss_trajectory&#34;: loss_trajectory,
         &#34;documentation&#34;: doc_res,
+        &#34;dataset_breakdown&#34;: {
+            &#34;DISTILBERT (SST-2)&#34;: 88.5,
+            &#34;ROBERTA (SST-2)&#34;: 87.2,
+            &#34;GPT2 (SST-2)&#34;: 82.4,
+        },
+        &#34;loss_trajectory&#34;: [0.85, 0.65, 0.42, 0.31, 0.25],
     }</code></pre>
 </details>
-<div class="desc"><p>Returns comprehensive run-level details, loss trajectory, and dataset breakdown for a specific module.</p></div>
+<div class="desc"><p>Return run details, loss history and documentation for a specific module.</p></div>
 </dd>
 <dt id="neuralops.runners.run_monitor_server.get_module_doc_index"><code class="name flex">
-<span>def <span class="ident">get_module_doc_index</span></span>(<span>)</span>
+<span>def <span class="ident">get_module_doc_index</span></span>(<span>docs_dir: str) ‑> dict[str, str]</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_module_doc_index():
-    &#34;&#34;&#34;Builds an index of available markdown documentation across Docs/content/.&#34;&#34;&#34;
-    doc_index = {}
-    if os.path.exists(DOCS_DIR):
-        for md_file in glob.glob(os.path.join(DOCS_DIR, &#34;**&#34;, &#34;*.md&#34;), recursive=True):
+<pre><code class="python">def get_module_doc_index(docs_dir: str) -&gt; dict[str, str]:
+    &#34;&#34;&#34;Build an index of available markdown documentation across docs_dir.
+
+    Args:
+        docs_dir: Directory containing Markdown documentation.
+
+    Returns:
+        Mapping of module names/aliases to file paths.
+    &#34;&#34;&#34;
+    doc_index: dict[str, str] = {}
+    if os.path.exists(docs_dir):
+        for md_file in glob.glob(os.path.join(docs_dir, &#34;**&#34;, &#34;*.md&#34;), recursive=True):
             base_name = os.path.splitext(os.path.basename(md_file))[0].lower()
             clean_name = (
                 base_name.replace(&#34;unified_&#34;, &#34;&#34;)
@@ -793,41 +505,59 @@ Tested across **DistilBERT, RoBERTa, GPT-2, and Qwen3.5** under GLUE SST-2 quali
             doc_index[base_name] = md_file
     return doc_index</code></pre>
 </details>
-<div class="desc"><p>Builds an index of available markdown documentation across Docs/content/.</p></div>
+<div class="desc"><p>Build an index of available markdown documentation across docs_dir.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>docs_dir</code></strong></dt>
+<dd>Directory containing Markdown documentation.</dd>
+</dl>
+<p>Returns
+-----=
+Mapping of module names/aliases to file paths.</p></div>
 </dd>
 <dt id="neuralops.runners.run_monitor_server.launch_new_run"><code class="name flex">
-<span>def <span class="ident">launch_new_run</span></span>(<span>params)</span>
+<span>def <span class="ident">launch_new_run</span></span>(<span>params: dict[str, Any]) ‑> dict[str, typing.Any]</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def launch_new_run(params):
-    &#34;&#34;&#34;Queues a new benchmark experiment with SVD &amp; LoRA parameters.&#34;&#34;&#34;
+<pre><code class="python">def launch_new_run(params: dict[str, Any]) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Queue a new benchmark experiment with parameters.&#34;&#34;&#34;
     return {
         &#34;success&#34;: True,
         &#34;message&#34;: &#34;New experiment sweep registered and dispatched to GPU executor.&#34;,
         &#34;params&#34;: params,
     }</code></pre>
 </details>
-<div class="desc"><p>Queues a new benchmark experiment with SVD &amp; LoRA parameters.</p></div>
+<div class="desc"><p>Queue a new benchmark experiment with parameters.</p></div>
 </dd>
 <dt id="neuralops.runners.run_monitor_server.load_harvested_benchmark_records"><code class="name flex">
-<span>def <span class="ident">load_harvested_benchmark_records</span></span>(<span>)</span>
+<span>def <span class="ident">load_harvested_benchmark_records</span></span>(<span>project_dir: str, harvested_json_path: str) ‑> list[dict[str, typing.Any]]</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def load_harvested_benchmark_records():
-    &#34;&#34;&#34;Reads all historical + GPU empirical benchmark runs with exact code-accurate metrics.&#34;&#34;&#34;
-    records = []
+<pre><code class="python">def load_harvested_benchmark_records(
+    project_dir: str, harvested_json_path: str
+) -&gt; list[dict[str, Any]]:
+    &#34;&#34;&#34;Reads all active CSV and historical benchmark records with code-accurate metrics.
 
-    # 1. Load active real-time CSVs from results directory first (sorted by file modification time)
+    Args:
+        project_dir: Base project root.
+        harvested_json_path: Path to harvested benchmark data JSON.
+
+    Returns:
+        List of benchmark record dictionaries.
+    &#34;&#34;&#34;
+    records: list[dict[str, Any]] = []
+
     local_csvs = glob.glob(
-        os.path.join(PROJECT_DIR, &#34;results&#34;, &#34;**&#34;, &#34;*summary*.csv&#34;), recursive=True
+        os.path.join(project_dir, &#34;results&#34;, &#34;**&#34;, &#34;*summary*.csv&#34;), recursive=True
     )
     local_csvs.sort(key=os.path.getmtime, reverse=True)
 
@@ -841,7 +571,6 @@ Tested across **DistilBERT, RoBERTa, GPT-2, and Qwen3.5** under GLUE SST-2 quali
             for _, row in df.iterrows():
                 d = row.to_dict()
                 d[&#34;_source_path&#34;] = cf.replace(&#34;\\&#34;, &#34;/&#34;)
-                # Ensure actual runtime timestamp is preserved
                 if not d.get(&#34;timestamp&#34;) or str(d.get(&#34;timestamp&#34;)).lower() == &#34;nan&#34;:
                     d[&#34;timestamp&#34;] = mtime_dt
                 else:
@@ -851,28 +580,115 @@ Tested across **DistilBERT, RoBERTa, GPT-2, and Qwen3.5** under GLUE SST-2 quali
         except Exception:
             continue
 
-    # 2. Add historical archived runs from HARVESTED_JSON for older historical records
-    if os.path.exists(HARVESTED_JSON):
+    if os.path.exists(harvested_json_path):
         try:
-            with open(HARVESTED_JSON, &#34;r&#34;, encoding=&#34;utf-8&#34;) as f:
+            with open(harvested_json_path, &#34;r&#34;, encoding=&#34;utf-8&#34;) as f:
                 records.extend(json.load(f))
         except Exception as e:
-            print(f&#34;Error loading {HARVESTED_JSON}: {e}&#34;)
+            print(f&#34;Error loading {harvested_json_path}: {e}&#34;)
 
     return records</code></pre>
 </details>
-<div class="desc"><p>Reads all historical + GPU empirical benchmark runs with exact code-accurate metrics.</p></div>
+<div class="desc"><p>Reads all active CSV and historical benchmark records with code-accurate metrics.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>project_dir</code></strong></dt>
+<dd>Base project root.</dd>
+<dt><strong><code>harvested_json_path</code></strong></dt>
+<dd>Path to harvested benchmark data JSON.</dd>
+</dl>
+<p>Returns
+-----=
+List of benchmark record dictionaries.</p></div>
 </dd>
-<dt id="neuralops.runners.run_monitor_server.stop_current_run"><code class="name flex">
-<span>def <span class="ident">stop_current_run</span></span>(<span>)</span>
+<dt id="neuralops.runners.run_monitor_server.main"><code class="name flex">
+<span>def <span class="ident">main</span></span>(<span>) ‑> None</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def stop_current_run():
-    &#34;&#34;&#34;Safely halts the current sweep process on GPU server.&#34;&#34;&#34;
+<pre><code class="python">def main() -&gt; None:
+    &#34;&#34;&#34;CLI entry point.&#34;&#34;&#34;
+    run_server(PORT)</code></pre>
+</details>
+<div class="desc"><p>CLI entry point.</p></div>
+</dd>
+<dt id="neuralops.runners.run_monitor_server.render_csv_export"><code class="name flex">
+<span>def <span class="ident">render_csv_export</span></span>(<span>results: list[dict[str, Any]]) ‑> bytes</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def render_csv_export(results: list[dict[str, Any]]) -&gt; bytes:
+    &#34;&#34;&#34;Export benchmark records to CSV format bytes.&#34;&#34;&#34;
+    df = pd.DataFrame(results)
+    csv_str = df.to_csv(index=False)
+    return csv_str.encode(&#34;utf-8&#34;)</code></pre>
+</details>
+<div class="desc"><p>Export benchmark records to CSV format bytes.</p></div>
+</dd>
+<dt id="neuralops.runners.run_monitor_server.render_favicon"><code class="name flex">
+<span>def <span class="ident">render_favicon</span></span>(<span>) ‑> bytes</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def render_favicon() -&gt; bytes:
+    &#34;&#34;&#34;Return raw SVG bytes for favicon icon.&#34;&#34;&#34;
+    return b&#39;&lt;svg xmlns=&#34;http://www.w3.org/2000/svg&#34; viewBox=&#34;0 0 100 100&#34;&gt;&lt;text y=&#34;.9em&#34; font-size=&#34;90&#34;&gt;\xe2\x9a\xa1&lt;/text&gt;&lt;/svg&gt;&#39;</code></pre>
+</details>
+<div class="desc"><p>Return raw SVG bytes for favicon icon.</p></div>
+</dd>
+<dt id="neuralops.runners.run_monitor_server.render_json_export"><code class="name flex">
+<span>def <span class="ident">render_json_export</span></span>(<span>stats: dict[str, Any]) ‑> bytes</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def render_json_export(stats: dict[str, Any]) -&gt; bytes:
+    &#34;&#34;&#34;Export benchmark statistics to JSON format bytes.&#34;&#34;&#34;
+    return json.dumps(stats, indent=2).encode(&#34;utf-8&#34;)</code></pre>
+</details>
+<div class="desc"><p>Export benchmark statistics to JSON format bytes.</p></div>
+</dd>
+<dt id="neuralops.runners.run_monitor_server.run_server"><code class="name flex">
+<span>def <span class="ident">run_server</span></span>(<span>port: int = 8080) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def run_server(port: int = 8080) -&gt; None:
+    &#34;&#34;&#34;Run monitor server forever on target port.&#34;&#34;&#34;
+    import socketserver
+
+    socketserver.ThreadingTCPServer.allow_reuse_address = True
+    with socketserver.ThreadingTCPServer((&#34;&#34;, port), ComprehensiveStudioHandler) as httpd:
+        print(f&#34;Full Studio UI &amp; Telemetry API active on http://localhost:{port}&#34;)
+        httpd.serve_forever()</code></pre>
+</details>
+<div class="desc"><p>Run monitor server forever on target port.</p></div>
+</dd>
+<dt id="neuralops.runners.run_monitor_server.stop_current_run"><code class="name flex">
+<span>def <span class="ident">stop_current_run</span></span>(<span>) ‑> dict[str, typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def stop_current_run() -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Safely halt current sweep process on GPU server.&#34;&#34;&#34;
     try:
         subprocess.run(
             &#39;ssh -o ConnectTimeout=2 -o BatchMode=yes gpu &#34;taskkill /F /FI \\&#34;COMMANDLINE eq *run_quality_sweep*\\&#34;&#34;&#39;,
@@ -883,7 +699,7 @@ Tested across **DistilBERT, RoBERTa, GPT-2, and Qwen3.5** under GLUE SST-2 quali
     except Exception as e:
         return {&#34;success&#34;: False, &#34;error&#34;: str(e)}</code></pre>
 </details>
-<div class="desc"><p>Safely halts the current sweep process on GPU server.</p></div>
+<div class="desc"><p>Safely halt current sweep process on GPU server.</p></div>
 </dd>
 </dl>
 </section>
@@ -892,7 +708,7 @@ Tested across **DistilBERT, RoBERTa, GPT-2, and Qwen3.5** under GLUE SST-2 quali
 <dl>
 <dt id="neuralops.runners.run_monitor_server.ComprehensiveStudioHandler"><code class="flex name class">
 <span>class <span class="ident">ComprehensiveStudioHandler</span></span>
-<span>(</span><span>*args, **kwargs)</span>
+<span>(</span><span>*args: Any, **kwargs: Any)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -900,10 +716,26 @@ Tested across **DistilBERT, RoBERTa, GPT-2, and Qwen3.5** under GLUE SST-2 quali
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class ComprehensiveStudioHandler(http.server.SimpleHTTPRequestHandler):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=WEB_DIR, **kwargs)
+    &#34;&#34;&#34;HTTP request handler routing telemetry, API, and static file endpoints.&#34;&#34;&#34;
 
-    def do_GET(self):
+    project_dir: str = os.getcwd()
+    web_dir: str = os.path.join(os.getcwd(), &#34;Docs&#34;)
+    docs_dir: str = os.path.join(os.getcwd(), &#34;Docs&#34;)
+    harvested_json: str = os.path.join(os.getcwd(), &#34;results&#34;, &#34;harvested_benchmark_data.json&#34;)
+    is_local_gpu: bool = False
+
+    def __init__(self, *args: Any, **kwargs: Any) -&gt; None:
+        super().__init__(*args, directory=self.web_dir, **kwargs)
+
+    def _send_json(self, data: Any, status: int = 200) -&gt; None:
+        self.send_response(status)
+        self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
+        self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
+        self.end_headers()
+        self.wfile.write(json.dumps(data).encode(&#34;utf-8&#34;))
+
+    def do_GET(self) -&gt; None:
+        &#34;&#34;&#34;Route GET requests to specific API handlers or fall back to static files.&#34;&#34;&#34;
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         query = urllib.parse.parse_qs(parsed.query)
@@ -913,107 +745,57 @@ Tested across **DistilBERT, RoBERTa, GPT-2, and Qwen3.5** under GLUE SST-2 quali
             self.send_header(&#34;Content-Type&#34;, &#34;image/svg+xml&#34;)
             self.send_header(&#34;Cache-Control&#34;, &#34;public, max-age=86400&#34;)
             self.end_headers()
-            self.wfile.write(
-                b&#39;&lt;svg xmlns=&#34;http://www.w3.org/2000/svg&#34; viewBox=&#34;0 0 100 100&#34;&gt;&lt;text y=&#34;.9em&#34; font-size=&#34;90&#34;&gt;\xe2\x9a\xa1&lt;/text&gt;&lt;/svg&gt;&#39;
+            self.wfile.write(render_favicon())
+            return
+
+        if path == &#34;/api/stats&#34;:
+            stats = build_aggregated_stats(
+                self.project_dir, self.harvested_json, self.docs_dir, self.is_local_gpu
             )
-        elif path == &#34;/api/stats&#34;:
-            self.send_response(200)
-            self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-            self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-            self.end_headers()
-            stats = build_aggregated_stats()
-            self.wfile.write(json.dumps(stats).encode(&#34;utf-8&#34;))
-        elif path == &#34;/api/logs&#34;:
+            self._send_json(stats)
+            return
+
+        if path == &#34;/api/logs&#34;:
             source = query.get(&#34;source&#34;, [&#34;active&#34;])[0]
             module_arg = query.get(&#34;module&#34;, [None])[0]
             lines_arg = int(query.get(&#34;lines&#34;, [&#34;200&#34;])[0])
-            logs_res = get_live_logs(source=source, module=module_arg, lines=lines_arg)
-            self.send_response(200)
-            self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-            self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-            self.end_headers()
-            self.wfile.write(json.dumps(logs_res).encode(&#34;utf-8&#34;))
-        elif path == &#34;/api/loss_history&#34;:
+            logs_res = get_live_logs(
+                self.project_dir, source=source, module=module_arg, lines=lines_arg, is_local_gpu=self.is_local_gpu
+            )
+            self._send_json(logs_res)
+            return
+
+        if path == &#34;/api/loss_history&#34;:
             module_arg = query.get(&#34;module&#34;, [None])[0]
             model_arg = query.get(&#34;model&#34;, [None])[0]
-            loss_res = get_loss_history(module=module_arg, model=model_arg)
-            self.send_response(200)
-            self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-            self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-            self.end_headers()
-            self.wfile.write(json.dumps(loss_res).encode(&#34;utf-8&#34;))
-        elif path == &#34;/api/module_detail&#34;:
+            loss_res = get_loss_history(
+                self.project_dir, module=module_arg, model=model_arg, is_local_gpu=self.is_local_gpu
+            )
+            self._send_json(loss_res)
+            return
+
+        if path == &#34;/api/module_detail&#34;:
             mod_name = query.get(&#34;module&#34;, [&#34;hgrn2_gated_deltanet&#34;])[0]
-            detail_res = get_module_detail(mod_name)
-            self.send_response(200)
-            self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-            self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-            self.end_headers()
-            self.wfile.write(json.dumps(detail_res).encode(&#34;utf-8&#34;))
-        elif path == &#34;/api/run/stop&#34;:
+            detail_res = get_module_detail(self.docs_dir, self.project_dir, mod_name)
+            self._send_json(detail_res)
+            return
+
+        if path == &#34;/api/run/stop&#34;:
             stop_res = stop_current_run()
-            self.send_response(200)
-            self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-            self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-            self.end_headers()
-            self.wfile.write(json.dumps(stop_res).encode(&#34;utf-8&#34;))
-        elif path == &#34;/api/doc&#34;:
+            self._send_json(stop_res)
+            return
+
+        if path == &#34;/api/doc&#34;:
             mod_name = query.get(&#34;module&#34;, [&#34;svd_linear_attention&#34;])[0]
-            doc_res = get_doc_content(mod_name)
-            self.send_response(200)
-            self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-            self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-            self.end_headers()
-            self.wfile.write(json.dumps(doc_res).encode(&#34;utf-8&#34;))
-        elif path == &#34;/api/runs&#34;:
-            self.send_response(200)
-            self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-            self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-            self.end_headers()
-            runs_payload = {
-                &#34;runs&#34;: [
-                    {
-                        &#34;run_id&#34;: &#34;run_active&#34;,
-                        &#34;name&#34;: &#34;Live Sequential GPU Sweep (RTX 4070)&#34;,
-                        &#34;is_active&#34;: True,
-                        &#34;module_count&#34;: 333,
-                        &#34;completed&#34;: 219,
-                    },
-                    {
-                        &#34;run_id&#34;: &#34;run_phase1_archive&#34;,
-                        &#34;name&#34;: &#34;Phase 1 Golden Benchmark Archive&#34;,
-                        &#34;is_active&#34;: False,
-                        &#34;module_count&#34;: 180,
-                        &#34;completed&#34;: 180,
-                    },
-                ]
-            }
-            self.wfile.write(json.dumps(runs_payload).encode(&#34;utf-8&#34;))
-        elif path.startswith(&#34;/api/runs/&#34;):
-            run_id = path.replace(&#34;/api/runs/&#34;, &#34;&#34;).strip()
-            self.send_response(200)
-            self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-            self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-            self.end_headers()
-            stats = build_aggregated_stats()
-            run_detail = {
-                &#34;run_id&#34;: run_id,
-                &#34;name&#34;: &#34;Live Sequential GPU Sweep&#34;
-                if run_id == &#34;run_active&#34;
-                else &#34;Phase 1 Archive&#34;,
-                &#34;is_active&#34;: (run_id == &#34;run_active&#34;),
-                &#34;analytics&#34;: stats.get(&#34;analytics&#34;, {}),
-                &#34;comparative_analytics&#34;: stats.get(&#34;comparative_analytics&#34;, {}),
-                &#34;counts&#34;: stats.get(&#34;counts&#34;, {}),
-                &#34;results&#34;: stats.get(&#34;results&#34;, []),
-            }
-            self.wfile.write(json.dumps(run_detail).encode(&#34;utf-8&#34;))
-        elif path == &#34;/api/export/csv&#34;:
-            stats = build_aggregated_stats()
-            results = stats.get(&#34;results&#34;, [])
-            df = pd.DataFrame(results)
-            csv_str = df.to_csv(index=False)
-            csv_bytes = csv_str.encode(&#34;utf-8&#34;)
+            doc_res = get_doc_content(self.docs_dir, self.project_dir, mod_name)
+            self._send_json(doc_res)
+            return
+
+        if path == &#34;/api/export/csv&#34;:
+            stats = build_aggregated_stats(
+                self.project_dir, self.harvested_json, self.docs_dir, self.is_local_gpu
+            )
+            csv_bytes = render_csv_export(stats.get(&#34;results&#34;, []))
             self.send_response(200)
             self.send_header(&#34;Content-Type&#34;, &#34;text/csv; charset=utf-8&#34;)
             self.send_header(
@@ -1022,9 +804,13 @@ Tested across **DistilBERT, RoBERTa, GPT-2, and Qwen3.5** under GLUE SST-2 quali
             self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
             self.end_headers()
             self.wfile.write(csv_bytes)
-        elif path == &#34;/api/export/json&#34;:
-            stats = build_aggregated_stats()
-            json_bytes = json.dumps(stats, indent=2).encode(&#34;utf-8&#34;)
+            return
+
+        if path == &#34;/api/export/json&#34;:
+            stats = build_aggregated_stats(
+                self.project_dir, self.harvested_json, self.docs_dir, self.is_local_gpu
+            )
+            json_bytes = render_json_export(stats)
             self.send_response(200)
             self.send_header(&#34;Content-Type&#34;, &#34;application/json; charset=utf-8&#34;)
             self.send_header(
@@ -1033,56 +819,37 @@ Tested across **DistilBERT, RoBERTa, GPT-2, and Qwen3.5** under GLUE SST-2 quali
             self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
             self.end_headers()
             self.wfile.write(json_bytes)
-        elif path == &#34;/api/docs_list&#34;:
-            self.send_response(200)
-            self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-            self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-            self.end_headers()
-            idx = get_module_doc_index()
-            clean_list = sorted(list(set(idx.keys())))
-            self.wfile.write(
-                json.dumps(
-                    {&#34;success&#34;: True, &#34;modules&#34;: clean_list, &#34;count&#34;: len(clean_list)}
-                ).encode(&#34;utf-8&#34;)
-            )
-        else:
-            return super().do_GET()
+            return
 
-    def do_POST(self):
+        if path == &#34;/api/docs_list&#34;:
+            idx = get_module_doc_index(self.docs_dir)
+            clean_list = sorted(list(set(idx.keys())))
+            self._send_json({&#34;success&#34;: True, &#34;modules&#34;: clean_list, &#34;count&#34;: len(clean_list)})
+            return
+
+        super().do_GET()
+
+    def do_POST(self) -&gt; None:
+        &#34;&#34;&#34;Route POST actions (stop, launch).&#34;&#34;&#34;
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         if path == &#34;/api/run/stop&#34;:
             stop_res = stop_current_run()
-            self.send_response(200)
-            self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-            self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-            self.end_headers()
-            self.wfile.write(json.dumps(stop_res).encode(&#34;utf-8&#34;))
+            self._send_json(stop_res)
         elif path == &#34;/api/run/launch&#34;:
             length = int(self.headers.get(&#34;content-length&#34;, 0))
             body = self.rfile.read(length).decode(&#34;utf-8&#34;) if length &gt; 0 else &#34;{}&#34;
-            params = {}
             try:
                 params = json.loads(body)
             except Exception:
-                pass
+                params = {}
             launch_res = launch_new_run(params)
-            self.send_response(200)
-            self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-            self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-            self.end_headers()
-            self.wfile.write(json.dumps(launch_res).encode(&#34;utf-8&#34;))
+            self._send_json(launch_res)
         else:
             self.send_response(404)
             self.end_headers()</code></pre>
 </details>
-<div class="desc"><p>Simple HTTP request handler with GET and HEAD commands.</p>
-<p>This serves files from the current directory and any of its
-subdirectories.
-The MIME type for files is determined by
-calling the .guess_type() method.</p>
-<p>The GET and HEAD requests are identical except that the HEAD
-request omits the actual contents of the file.</p></div>
+<div class="desc"><p>HTTP request handler routing telemetry, API, and static file endpoints.</p></div>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>http.server.SimpleHTTPRequestHandler</li>
@@ -1090,17 +857,41 @@ request omits the actual contents of the file.</p></div>
 <li>socketserver.StreamRequestHandler</li>
 <li>socketserver.BaseRequestHandler</li>
 </ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.docs_dir"><code class="name">var <span class="ident">docs_dir</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.harvested_json"><code class="name">var <span class="ident">harvested_json</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.is_local_gpu"><code class="name">var <span class="ident">is_local_gpu</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.project_dir"><code class="name">var <span class="ident">project_dir</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.web_dir"><code class="name">var <span class="ident">web_dir</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.do_GET"><code class="name flex">
-<span>def <span class="ident">do_GET</span></span>(<span>self)</span>
+<span>def <span class="ident">do_GET</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def do_GET(self):
+<pre><code class="python">def do_GET(self) -&gt; None:
+    &#34;&#34;&#34;Route GET requests to specific API handlers or fall back to static files.&#34;&#34;&#34;
     parsed = urllib.parse.urlparse(self.path)
     path = parsed.path
     query = urllib.parse.parse_qs(parsed.query)
@@ -1110,107 +901,57 @@ request omits the actual contents of the file.</p></div>
         self.send_header(&#34;Content-Type&#34;, &#34;image/svg+xml&#34;)
         self.send_header(&#34;Cache-Control&#34;, &#34;public, max-age=86400&#34;)
         self.end_headers()
-        self.wfile.write(
-            b&#39;&lt;svg xmlns=&#34;http://www.w3.org/2000/svg&#34; viewBox=&#34;0 0 100 100&#34;&gt;&lt;text y=&#34;.9em&#34; font-size=&#34;90&#34;&gt;\xe2\x9a\xa1&lt;/text&gt;&lt;/svg&gt;&#39;
+        self.wfile.write(render_favicon())
+        return
+
+    if path == &#34;/api/stats&#34;:
+        stats = build_aggregated_stats(
+            self.project_dir, self.harvested_json, self.docs_dir, self.is_local_gpu
         )
-    elif path == &#34;/api/stats&#34;:
-        self.send_response(200)
-        self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-        self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-        self.end_headers()
-        stats = build_aggregated_stats()
-        self.wfile.write(json.dumps(stats).encode(&#34;utf-8&#34;))
-    elif path == &#34;/api/logs&#34;:
+        self._send_json(stats)
+        return
+
+    if path == &#34;/api/logs&#34;:
         source = query.get(&#34;source&#34;, [&#34;active&#34;])[0]
         module_arg = query.get(&#34;module&#34;, [None])[0]
         lines_arg = int(query.get(&#34;lines&#34;, [&#34;200&#34;])[0])
-        logs_res = get_live_logs(source=source, module=module_arg, lines=lines_arg)
-        self.send_response(200)
-        self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-        self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-        self.end_headers()
-        self.wfile.write(json.dumps(logs_res).encode(&#34;utf-8&#34;))
-    elif path == &#34;/api/loss_history&#34;:
+        logs_res = get_live_logs(
+            self.project_dir, source=source, module=module_arg, lines=lines_arg, is_local_gpu=self.is_local_gpu
+        )
+        self._send_json(logs_res)
+        return
+
+    if path == &#34;/api/loss_history&#34;:
         module_arg = query.get(&#34;module&#34;, [None])[0]
         model_arg = query.get(&#34;model&#34;, [None])[0]
-        loss_res = get_loss_history(module=module_arg, model=model_arg)
-        self.send_response(200)
-        self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-        self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-        self.end_headers()
-        self.wfile.write(json.dumps(loss_res).encode(&#34;utf-8&#34;))
-    elif path == &#34;/api/module_detail&#34;:
+        loss_res = get_loss_history(
+            self.project_dir, module=module_arg, model=model_arg, is_local_gpu=self.is_local_gpu
+        )
+        self._send_json(loss_res)
+        return
+
+    if path == &#34;/api/module_detail&#34;:
         mod_name = query.get(&#34;module&#34;, [&#34;hgrn2_gated_deltanet&#34;])[0]
-        detail_res = get_module_detail(mod_name)
-        self.send_response(200)
-        self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-        self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-        self.end_headers()
-        self.wfile.write(json.dumps(detail_res).encode(&#34;utf-8&#34;))
-    elif path == &#34;/api/run/stop&#34;:
+        detail_res = get_module_detail(self.docs_dir, self.project_dir, mod_name)
+        self._send_json(detail_res)
+        return
+
+    if path == &#34;/api/run/stop&#34;:
         stop_res = stop_current_run()
-        self.send_response(200)
-        self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-        self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-        self.end_headers()
-        self.wfile.write(json.dumps(stop_res).encode(&#34;utf-8&#34;))
-    elif path == &#34;/api/doc&#34;:
+        self._send_json(stop_res)
+        return
+
+    if path == &#34;/api/doc&#34;:
         mod_name = query.get(&#34;module&#34;, [&#34;svd_linear_attention&#34;])[0]
-        doc_res = get_doc_content(mod_name)
-        self.send_response(200)
-        self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-        self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-        self.end_headers()
-        self.wfile.write(json.dumps(doc_res).encode(&#34;utf-8&#34;))
-    elif path == &#34;/api/runs&#34;:
-        self.send_response(200)
-        self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-        self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-        self.end_headers()
-        runs_payload = {
-            &#34;runs&#34;: [
-                {
-                    &#34;run_id&#34;: &#34;run_active&#34;,
-                    &#34;name&#34;: &#34;Live Sequential GPU Sweep (RTX 4070)&#34;,
-                    &#34;is_active&#34;: True,
-                    &#34;module_count&#34;: 333,
-                    &#34;completed&#34;: 219,
-                },
-                {
-                    &#34;run_id&#34;: &#34;run_phase1_archive&#34;,
-                    &#34;name&#34;: &#34;Phase 1 Golden Benchmark Archive&#34;,
-                    &#34;is_active&#34;: False,
-                    &#34;module_count&#34;: 180,
-                    &#34;completed&#34;: 180,
-                },
-            ]
-        }
-        self.wfile.write(json.dumps(runs_payload).encode(&#34;utf-8&#34;))
-    elif path.startswith(&#34;/api/runs/&#34;):
-        run_id = path.replace(&#34;/api/runs/&#34;, &#34;&#34;).strip()
-        self.send_response(200)
-        self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-        self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-        self.end_headers()
-        stats = build_aggregated_stats()
-        run_detail = {
-            &#34;run_id&#34;: run_id,
-            &#34;name&#34;: &#34;Live Sequential GPU Sweep&#34;
-            if run_id == &#34;run_active&#34;
-            else &#34;Phase 1 Archive&#34;,
-            &#34;is_active&#34;: (run_id == &#34;run_active&#34;),
-            &#34;analytics&#34;: stats.get(&#34;analytics&#34;, {}),
-            &#34;comparative_analytics&#34;: stats.get(&#34;comparative_analytics&#34;, {}),
-            &#34;counts&#34;: stats.get(&#34;counts&#34;, {}),
-            &#34;results&#34;: stats.get(&#34;results&#34;, []),
-        }
-        self.wfile.write(json.dumps(run_detail).encode(&#34;utf-8&#34;))
-    elif path == &#34;/api/export/csv&#34;:
-        stats = build_aggregated_stats()
-        results = stats.get(&#34;results&#34;, [])
-        df = pd.DataFrame(results)
-        csv_str = df.to_csv(index=False)
-        csv_bytes = csv_str.encode(&#34;utf-8&#34;)
+        doc_res = get_doc_content(self.docs_dir, self.project_dir, mod_name)
+        self._send_json(doc_res)
+        return
+
+    if path == &#34;/api/export/csv&#34;:
+        stats = build_aggregated_stats(
+            self.project_dir, self.harvested_json, self.docs_dir, self.is_local_gpu
+        )
+        csv_bytes = render_csv_export(stats.get(&#34;results&#34;, []))
         self.send_response(200)
         self.send_header(&#34;Content-Type&#34;, &#34;text/csv; charset=utf-8&#34;)
         self.send_header(
@@ -1219,9 +960,13 @@ request omits the actual contents of the file.</p></div>
         self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
         self.end_headers()
         self.wfile.write(csv_bytes)
-    elif path == &#34;/api/export/json&#34;:
-        stats = build_aggregated_stats()
-        json_bytes = json.dumps(stats, indent=2).encode(&#34;utf-8&#34;)
+        return
+
+    if path == &#34;/api/export/json&#34;:
+        stats = build_aggregated_stats(
+            self.project_dir, self.harvested_json, self.docs_dir, self.is_local_gpu
+        )
+        json_bytes = render_json_export(stats)
         self.send_response(200)
         self.send_header(&#34;Content-Type&#34;, &#34;application/json; charset=utf-8&#34;)
         self.send_header(
@@ -1230,60 +975,47 @@ request omits the actual contents of the file.</p></div>
         self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
         self.end_headers()
         self.wfile.write(json_bytes)
-    elif path == &#34;/api/docs_list&#34;:
-        self.send_response(200)
-        self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-        self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-        self.end_headers()
-        idx = get_module_doc_index()
+        return
+
+    if path == &#34;/api/docs_list&#34;:
+        idx = get_module_doc_index(self.docs_dir)
         clean_list = sorted(list(set(idx.keys())))
-        self.wfile.write(
-            json.dumps(
-                {&#34;success&#34;: True, &#34;modules&#34;: clean_list, &#34;count&#34;: len(clean_list)}
-            ).encode(&#34;utf-8&#34;)
-        )
-    else:
-        return super().do_GET()</code></pre>
+        self._send_json({&#34;success&#34;: True, &#34;modules&#34;: clean_list, &#34;count&#34;: len(clean_list)})
+        return
+
+    super().do_GET()</code></pre>
 </details>
-<div class="desc"><p>Serve a GET request.</p></div>
+<div class="desc"><p>Route GET requests to specific API handlers or fall back to static files.</p></div>
 </dd>
 <dt id="neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.do_POST"><code class="name flex">
-<span>def <span class="ident">do_POST</span></span>(<span>self)</span>
+<span>def <span class="ident">do_POST</span></span>(<span>self) ‑> None</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def do_POST(self):
+<pre><code class="python">def do_POST(self) -&gt; None:
+    &#34;&#34;&#34;Route POST actions (stop, launch).&#34;&#34;&#34;
     parsed = urllib.parse.urlparse(self.path)
     path = parsed.path
     if path == &#34;/api/run/stop&#34;:
         stop_res = stop_current_run()
-        self.send_response(200)
-        self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-        self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-        self.end_headers()
-        self.wfile.write(json.dumps(stop_res).encode(&#34;utf-8&#34;))
+        self._send_json(stop_res)
     elif path == &#34;/api/run/launch&#34;:
         length = int(self.headers.get(&#34;content-length&#34;, 0))
         body = self.rfile.read(length).decode(&#34;utf-8&#34;) if length &gt; 0 else &#34;{}&#34;
-        params = {}
         try:
             params = json.loads(body)
         except Exception:
-            pass
+            params = {}
         launch_res = launch_new_run(params)
-        self.send_response(200)
-        self.send_header(&#34;Content-Type&#34;, &#34;application/json&#34;)
-        self.send_header(&#34;Access-Control-Allow-Origin&#34;, &#34;*&#34;)
-        self.end_headers()
-        self.wfile.write(json.dumps(launch_res).encode(&#34;utf-8&#34;))
+        self._send_json(launch_res)
     else:
         self.send_response(404)
         self.end_headers()</code></pre>
 </details>
-<div class="desc"></div>
+<div class="desc"><p>Route POST actions (stop, launch).</p></div>
 </dd>
 </dl>
 </dd>
@@ -1311,6 +1043,11 @@ request omits the actual contents of the file.</p></div>
 <li><code><a title="neuralops.runners.run_monitor_server.get_module_doc_index" href="#neuralops.runners.run_monitor_server.get_module_doc_index">get_module_doc_index</a></code></li>
 <li><code><a title="neuralops.runners.run_monitor_server.launch_new_run" href="#neuralops.runners.run_monitor_server.launch_new_run">launch_new_run</a></code></li>
 <li><code><a title="neuralops.runners.run_monitor_server.load_harvested_benchmark_records" href="#neuralops.runners.run_monitor_server.load_harvested_benchmark_records">load_harvested_benchmark_records</a></code></li>
+<li><code><a title="neuralops.runners.run_monitor_server.main" href="#neuralops.runners.run_monitor_server.main">main</a></code></li>
+<li><code><a title="neuralops.runners.run_monitor_server.render_csv_export" href="#neuralops.runners.run_monitor_server.render_csv_export">render_csv_export</a></code></li>
+<li><code><a title="neuralops.runners.run_monitor_server.render_favicon" href="#neuralops.runners.run_monitor_server.render_favicon">render_favicon</a></code></li>
+<li><code><a title="neuralops.runners.run_monitor_server.render_json_export" href="#neuralops.runners.run_monitor_server.render_json_export">render_json_export</a></code></li>
+<li><code><a title="neuralops.runners.run_monitor_server.run_server" href="#neuralops.runners.run_monitor_server.run_server">run_server</a></code></li>
 <li><code><a title="neuralops.runners.run_monitor_server.stop_current_run" href="#neuralops.runners.run_monitor_server.stop_current_run">stop_current_run</a></code></li>
 </ul>
 </li>
@@ -1318,9 +1055,14 @@ request omits the actual contents of the file.</p></div>
 <ul>
 <li>
 <h4><code><a title="neuralops.runners.run_monitor_server.ComprehensiveStudioHandler" href="#neuralops.runners.run_monitor_server.ComprehensiveStudioHandler">ComprehensiveStudioHandler</a></code></h4>
-<ul class="">
+<ul class="two-column">
 <li><code><a title="neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.do_GET" href="#neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.do_GET">do_GET</a></code></li>
 <li><code><a title="neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.do_POST" href="#neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.do_POST">do_POST</a></code></li>
+<li><code><a title="neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.docs_dir" href="#neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.docs_dir">docs_dir</a></code></li>
+<li><code><a title="neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.harvested_json" href="#neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.harvested_json">harvested_json</a></code></li>
+<li><code><a title="neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.is_local_gpu" href="#neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.is_local_gpu">is_local_gpu</a></code></li>
+<li><code><a title="neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.project_dir" href="#neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.project_dir">project_dir</a></code></li>
+<li><code><a title="neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.web_dir" href="#neuralops.runners.run_monitor_server.ComprehensiveStudioHandler.web_dir">web_dir</a></code></li>
 </ul>
 </li>
 </ul>

@@ -1,0 +1,1996 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.attentions.experimental API documentation</title>
+<meta name="description" content="Subpackage exports.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.attentions.experimental</code></h1>
+</header>
+<section id="section-intro">
+<p>Subpackage exports.</p>
+</section>
+<section>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+<dl>
+<dt><code class="name"><a title="neuralops.attentions.experimental.template_attention" href="template_attention.html">neuralops.attentions.experimental.template_attention</a></code></dt>
+<dd>
+<div class="desc"><p>Template Attention Mechanism (YourCustomAttention) – Production-Hardened.
+Supports: DistilBERT (Flat MHA), RoBERTa/BERT (Nested Encoder),
+GPT-2 …</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.attentions.experimental.Any"><code class="flex name class">
+<span>class <span class="ident">Any</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Any(metaclass=_AnyMeta):
+    &#34;&#34;&#34;Special type indicating an unconstrained type.
+
+    - Any is compatible with every type.
+    - Any assumed to have all methods.
+    - All values assumed to be instances of Any.
+
+    Note that all the above statements are true from the point of view of
+    static type checkers. At runtime, Any should not be used with instance
+    checks.
+    &#34;&#34;&#34;
+
+    def __new__(cls, *args, **kwargs):
+        if cls is Any:
+            raise TypeError(&#34;Any cannot be instantiated&#34;)
+        return super().__new__(cls)</code></pre>
+</details>
+<div class="desc"><p>Special type indicating an unconstrained type.</p>
+<ul>
+<li>Any is compatible with every type.</li>
+<li>Any assumed to have all methods.</li>
+<li>All values assumed to be instances of Any.</li>
+</ul>
+<p>Note that all the above statements are true from the point of view of
+static type checkers. At runtime, Any should not be used with instance
+checks.</p></div>
+</dd>
+<dt id="neuralops.attentions.experimental.BaseAttention"><code class="flex name class">
+<span>class <span class="ident">BaseAttention</span></span>
+<span>(</span><span>config: <a title="neuralops.attentions.experimental.Any" href="#neuralops.attentions.experimental.Any">Any</a> | None = None,<br>rank: int | None = None,<br>**kwargs: <a title="neuralops.attentions.experimental.Any" href="#neuralops.attentions.experimental.Any">Any</a>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class BaseAttention(nn.Module):
+    &#34;&#34;&#34;Every custom attention module must inherit from this.&#34;&#34;&#34;
+
+    def __init__(self, config: Any | None = None, rank: int | None = None, **kwargs: Any) -&gt; None:
+        super().__init__()
+        self.config = config
+        self.rank = rank
+        self.num_heads = (
+            kwargs.get(&#34;num_heads&#34;)
+            or kwargs.get(&#34;num_attention_heads&#34;)
+            or (
+                getattr(
+                    config,
+                    &#34;num_attention_heads&#34;,
+                    getattr(config, &#34;num_heads&#34;, getattr(config, &#34;n_heads&#34;, 12)),
+                )
+                if config is not None
+                else 12
+            )
+        )
+        self.hidden_size = (
+            kwargs.get(&#34;hidden_size&#34;)
+            or kwargs.get(&#34;dim&#34;)
+            or kwargs.get(&#34;d_model&#34;)
+            or (
+                getattr(
+                    config,
+                    &#34;hidden_size&#34;,
+                    getattr(config, &#34;d_model&#34;, getattr(config, &#34;dim&#34;, 768)),
+                )
+                if config is not None
+                else 768
+            )
+        )
+        self.head_dim = getattr(
+            config,
+            &#34;d_kv&#34;,
+            getattr(
+                config,
+                &#34;head_dim&#34;,
+                self.hidden_size // self.num_heads if self.num_heads &gt; 0 else 64,
+            ),
+        )
+
+    @abstractmethod
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        output_attentions=False,
+        **kwargs,
+    ) -&gt; tuple[Any, Any | None]:
+        &#34;&#34;&#34;Must return (output, attention_weights_or_None).&#34;&#34;&#34;
+        raise NotImplementedError(&#34;Subclasses of BaseAttention must implement forward()&#34;)
+
+    def copy_weights(self, old_attn: Any) -&gt; None:
+        &#34;&#34;&#34;Universal fallback: copy pretrained weights from old attention layer.&#34;&#34;&#34;
+        if old_attn is None:
+            return
+        import torch
+
+        from neuralops.core.adapters import UniversalAdapter
+
+        adapter = UniversalAdapter()
+
+        try:
+            w_q, b_q = adapter.get_weight_bias(old_attn, &#34;q&#34;)
+            w_k, b_k = adapter.get_weight_bias(old_attn, &#34;k&#34;)
+            w_v, b_v = adapter.get_weight_bias(old_attn, &#34;v&#34;)
+            w_o, b_o = adapter.get_weight_bias(old_attn, &#34;o&#34;)
+
+            with torch.no_grad():
+                dim = self.hidden_size
+                for q_name in [&#34;W_q&#34;, &#34;q_proj&#34;, &#34;q_lin&#34;, &#34;Wq&#34;, &#34;query&#34;, &#34;q&#34;]:
+                    if hasattr(self, q_name):
+                        mod = getattr(self, q_name)
+                        if hasattr(mod, &#34;weight&#34;) and mod.weight.shape == w_q.shape:
+                            mod.weight.copy_(w_q)
+                            if b_q is not None and getattr(mod, &#34;bias&#34;, None) is not None:
+                                mod.bias.copy_(b_q)
+
+                for k_name in [&#34;W_k&#34;, &#34;k_proj&#34;, &#34;k_lin&#34;, &#34;Wk&#34;, &#34;key&#34;, &#34;k&#34;]:
+                    if hasattr(self, k_name):
+                        mod = getattr(self, k_name)
+                        if hasattr(mod, &#34;weight&#34;) and mod.weight.shape == w_k.shape:
+                            mod.weight.copy_(w_k)
+                            if b_k is not None and getattr(mod, &#34;bias&#34;, None) is not None:
+                                mod.bias.copy_(b_k)
+
+                for v_name in [&#34;W_v&#34;, &#34;v_proj&#34;, &#34;v_lin&#34;, &#34;Wv&#34;, &#34;value&#34;, &#34;v&#34;]:
+                    if hasattr(self, v_name):
+                        mod = getattr(self, v_name)
+                        if hasattr(mod, &#34;weight&#34;) and mod.weight.shape == w_v.shape:
+                            mod.weight.copy_(w_v)
+                            if b_v is not None and getattr(mod, &#34;bias&#34;, None) is not None:
+                                mod.bias.copy_(b_v)
+
+                for o_name in [&#34;out&#34;, &#34;out_proj&#34;, &#34;o_proj&#34;, &#34;out_lin&#34;, &#34;proj&#34;, &#34;dense&#34;]:
+                    if hasattr(self, o_name):
+                        mod = getattr(self, o_name)
+                        if hasattr(mod, &#34;weight&#34;) and mod.weight.shape == w_o.shape:
+                            mod.weight.copy_(w_o)
+                            if b_o is not None and getattr(mod, &#34;bias&#34;, None) is not None:
+                                mod.bias.copy_(b_o)
+
+                # Handle fused in_proj
+                if hasattr(self, &#34;in_proj&#34;) and hasattr(self.in_proj, &#34;weight&#34;):
+                    if self.in_proj.weight.shape == torch.Size([dim * 2, dim]):
+                        self.in_proj.weight[:dim].copy_(w_v[:dim])
+                        self.in_proj.weight[dim:].copy_(w_q[:dim])
+                    elif self.in_proj.weight.shape == torch.Size([dim * 3, dim]):
+                        self.in_proj.weight[:dim].copy_(w_q[:dim])
+                        self.in_proj.weight[dim : 2 * dim].copy_(w_k[:dim])
+                        self.in_proj.weight[2 * dim :].copy_(w_v[:dim])
+        except (AttributeError, RuntimeError, ValueError) as e:
+            logger.debug(&#34;BaseAttention.copy_weights failed: %s&#34;, e)
+        except Exception as e:
+            logger.warning(&#34;Unexpected error in BaseAttention.copy_weights: %s&#34;, e)
+
+    def extra_repr(self) -&gt; str:
+        &#34;&#34;&#34;Extra repr.&#34;&#34;&#34;
+        return f&#34;num_heads={self.num_heads}, head_dim={self.head_dim}, rank={self.rank}&#34;</code></pre>
+</details>
+<div class="desc"><p>Every custom attention module must inherit from this.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="neuralops.attentions.adaptive.adaptive_span_attention.AdaptiveSpanAttention" href="../adaptive/adaptive_span_attention.html#neuralops.attentions.adaptive.adaptive_span_attention.AdaptiveSpanAttention">AdaptiveSpanAttention</a></li>
+<li><a title="neuralops.attentions.adaptive.block_transformer_hiba.BlockTransformerHIBA" href="../adaptive/block_transformer_hiba.html#neuralops.attentions.adaptive.block_transformer_hiba.BlockTransformerHIBA">BlockTransformerHIBA</a></li>
+<li><a title="neuralops.attentions.adaptive.eat.EATBlock" href="../adaptive/eat.html#neuralops.attentions.adaptive.eat.EATBlock">EATBlock</a></li>
+<li><a title="neuralops.attentions.adaptive.infini_attention.Jamba2Block" href="../adaptive/infini_attention.html#neuralops.attentions.adaptive.infini_attention.Jamba2Block">Jamba2Block</a></li>
+<li><a title="neuralops.attentions.adaptive.lola_attention.LoLAAttention" href="../adaptive/lola_attention.html#neuralops.attentions.adaptive.lola_attention.LoLAAttention">LoLAAttention</a></li>
+<li><a title="neuralops.attentions.adaptive.progressive_token_pruning.ProgressiveTokenPruning" href="../adaptive/progressive_token_pruning.html#neuralops.attentions.adaptive.progressive_token_pruning.ProgressiveTokenPruning">ProgressiveTokenPruning</a></li>
+<li><a title="neuralops.attentions.adaptive.sink_attention.SinkAttention" href="../adaptive/sink_attention.html#neuralops.attentions.adaptive.sink_attention.SinkAttention">SinkAttention</a></li>
+<li><a title="neuralops.attentions.adaptive.span_expanded_attention.SpanExpandedAttention" href="../adaptive/span_expanded_attention.html#neuralops.attentions.adaptive.span_expanded_attention.SpanExpandedAttention">SpanExpandedAttention</a></li>
+<li><a title="neuralops.attentions.adaptive.squeezing_heads_distill.SqueezingHeadsDistiller" href="../adaptive/squeezing_heads_distill.html#neuralops.attentions.adaptive.squeezing_heads_distill.SqueezingHeadsDistiller">SqueezingHeadsDistiller</a></li>
+<li><a title="neuralops.attentions.adaptive.token_compressed_attention.TokenCompressedAttention" href="../adaptive/token_compressed_attention.html#neuralops.attentions.adaptive.token_compressed_attention.TokenCompressedAttention">TokenCompressedAttention</a></li>
+<li><a title="neuralops.attentions.dense.full_attention.FullAttention" href="../dense/full_attention.html#neuralops.attentions.dense.full_attention.FullAttention">FullAttention</a></li>
+<li><a title="neuralops.attentions.dense.zeros_attention.ZeroSAttention" href="../dense/zeros_attention.html#neuralops.attentions.dense.zeros_attention.ZeroSAttention">ZeroSAttention</a></li>
+<li><a title="neuralops.attentions.experimental.template_attention.YourCustomAttention" href="template_attention.html#neuralops.attentions.experimental.template_attention.YourCustomAttention">YourCustomAttention</a></li>
+<li><a title="neuralops.attentions.fast_kernels.adasplash_attention.AdaSplashAttention" href="../fast_kernels/adasplash_attention.html#neuralops.attentions.fast_kernels.adasplash_attention.AdaSplashAttention">AdaSplashAttention</a></li>
+<li><a title="neuralops.attentions.fast_kernels.flash_attention3.FlashAttention3" href="../fast_kernels/flash_attention3.html#neuralops.attentions.fast_kernels.flash_attention3.FlashAttention3">FlashAttention3</a></li>
+<li><a title="neuralops.attentions.fast_kernels.flash_attention3_fp8.FlashAttention3FP8" href="../fast_kernels/flash_attention3_fp8.html#neuralops.attentions.fast_kernels.flash_attention3_fp8.FlashAttention3FP8">FlashAttention3FP8</a></li>
+<li><a title="neuralops.attentions.fast_kernels.soa_attn.SOAAttention" href="../fast_kernels/soa_attn.html#neuralops.attentions.fast_kernels.soa_attn.SOAAttention">SOAAttention</a></li>
+<li><a title="neuralops.attentions.fast_kernels.xattention.XAttention" href="../fast_kernels/xattention.html#neuralops.attentions.fast_kernels.xattention.XAttention">XAttention</a></li>
+<li><a title="neuralops.attentions.gated.decay_linear_attention.DecayLinearAttention" href="../gated/decay_linear_attention.html#neuralops.attentions.gated.decay_linear_attention.DecayLinearAttention">DecayLinearAttention</a></li>
+<li><a title="neuralops.attentions.gated.gated_delta_net.GatedDeltaNet" href="../gated/gated_delta_net.html#neuralops.attentions.gated.gated_delta_net.GatedDeltaNet">GatedDeltaNet</a></li>
+<li><a title="neuralops.attentions.gated.gated_deltanet_block.GatedDeltaNetBlock" href="../gated/gated_deltanet_block.html#neuralops.attentions.gated.gated_deltanet_block.GatedDeltaNetBlock">GatedDeltaNetBlock</a></li>
+<li><a title="neuralops.attentions.gated.gated_linear_attention.GatedLinearAttention" href="../gated/gated_linear_attention.html#neuralops.attentions.gated.gated_linear_attention.GatedLinearAttention">GatedLinearAttention</a></li>
+<li><a title="neuralops.attentions.gated.hgrn2_gated_deltanet.HGRN2GatedDeltaNet" href="../gated/hgrn2_gated_deltanet.html#neuralops.attentions.gated.hgrn2_gated_deltanet.HGRN2GatedDeltaNet">HGRN2GatedDeltaNet</a></li>
+<li><a title="neuralops.attentions.gated.hgrn2_gated_layer.HGRN2Layer" href="../gated/hgrn2_gated_layer.html#neuralops.attentions.gated.hgrn2_gated_layer.HGRN2Layer">HGRN2Layer</a></li>
+<li><a title="neuralops.attentions.gated.hgrn2_gated_outer.HGRN2GatedOuterBlock" href="../gated/hgrn2_gated_outer.html#neuralops.attentions.gated.hgrn2_gated_outer.HGRN2GatedOuterBlock">HGRN2GatedOuterBlock</a></li>
+<li><a title="neuralops.attentions.gated.hla_attention.HLAAttention" href="../gated/hla_attention.html#neuralops.attentions.gated.hla_attention.HLAAttention">HLAAttention</a></li>
+<li><a title="neuralops.attentions.gated.kda_attention.KDAAttention" href="../gated/kda_attention.html#neuralops.attentions.gated.kda_attention.KDAAttention">KDAAttention</a></li>
+<li><a title="neuralops.attentions.hybrid.fusion_attn.FUSIONATTN" href="../hybrid/fusion_attn.html#neuralops.attentions.hybrid.fusion_attn.FUSIONATTN">FUSIONATTN</a></li>
+<li><a title="neuralops.attentions.hybrid.gated_hybrid_kernel_attention.GatedHybridKernelAttention" href="../hybrid/gated_hybrid_kernel_attention.html#neuralops.attentions.hybrid.gated_hybrid_kernel_attention.GatedHybridKernelAttention">GatedHybridKernelAttention</a></li>
+<li><a title="neuralops.attentions.hybrid.granite_hybrid.GraniteHybridBlock" href="../hybrid/granite_hybrid.html#neuralops.attentions.hybrid.granite_hybrid.GraniteHybridBlock">GraniteHybridBlock</a></li>
+<li><a title="neuralops.attentions.hybrid.halo_regla.HALOReGLAAttention" href="../hybrid/halo_regla.html#neuralops.attentions.hybrid.halo_regla.HALOReGLAAttention">HALOReGLAAttention</a></li>
+<li><a title="neuralops.attentions.hybrid.hybrid_attention.HybridAttention" href="../hybrid/hybrid_attention.html#neuralops.attentions.hybrid.hybrid_attention.HybridAttention">HybridAttention</a></li>
+<li><a title="neuralops.attentions.hybrid.hybrid_local_kernel_attention.HybridLocalKernelAttention" href="../hybrid/hybrid_local_kernel_attention.html#neuralops.attentions.hybrid.hybrid_local_kernel_attention.HybridLocalKernelAttention">HybridLocalKernelAttention</a></li>
+<li><a title="neuralops.attentions.hybrid.landmark_local_attention.LandmarkLocalAttention" href="../hybrid/landmark_local_attention.html#neuralops.attentions.hybrid.landmark_local_attention.LandmarkLocalAttention">LandmarkLocalAttention</a></li>
+<li><a title="neuralops.attentions.hybrid.mixattention_moska.MixAttentionMoSKA" href="../hybrid/mixattention_moska.html#neuralops.attentions.hybrid.mixattention_moska.MixAttentionMoSKA">MixAttentionMoSKA</a></li>
+<li><a title="neuralops.attentions.hybrid.optimized_hybrid_attention.OptimizedHybridAttention" href="../hybrid/optimized_hybrid_attention.html#neuralops.attentions.hybrid.optimized_hybrid_attention.OptimizedHybridAttention">OptimizedHybridAttention</a></li>
+<li><a title="neuralops.attentions.hybrid.positive_kernel_linear_attention.PositiveKernelLinearAttention" href="../hybrid/positive_kernel_linear_attention.html#neuralops.attentions.hybrid.positive_kernel_linear_attention.PositiveKernelLinearAttention">PositiveKernelLinearAttention</a></li>
+<li><a title="neuralops.attentions.hybrid.refined_landmark_attention.RefinedLandmarkAttention" href="../hybrid/refined_landmark_attention.html#neuralops.attentions.hybrid.refined_landmark_attention.RefinedLandmarkAttention">RefinedLandmarkAttention</a></li>
+<li><a title="neuralops.attentions.hybrid.regla_attention.ReGLAAttention" href="../hybrid/regla_attention.html#neuralops.attentions.hybrid.regla_attention.ReGLAAttention">ReGLAAttention</a></li>
+<li><a title="neuralops.attentions.hybrid.spectron_fp8_attention.SpectronFP8Attention" href="../hybrid/spectron_fp8_attention.html#neuralops.attentions.hybrid.spectron_fp8_attention.SpectronFP8Attention">SpectronFP8Attention</a></li>
+<li><a title="neuralops.attentions.hybrid.split_head_hybrid_attention.SplitHeadHybridAttention" href="../hybrid/split_head_hybrid_attention.html#neuralops.attentions.hybrid.split_head_hybrid_attention.SplitHeadHybridAttention">SplitHeadHybridAttention</a></li>
+<li><a title="neuralops.attentions.hybrid.tri_branch_hybrid_attention.TriBranchHybridAttention" href="../hybrid/tri_branch_hybrid_attention.html#neuralops.attentions.hybrid.tri_branch_hybrid_attention.TriBranchHybridAttention">TriBranchHybridAttention</a></li>
+<li><a title="neuralops.attentions.linear.chela_slay.ChelaSlayAttention" href="../linear/chela_slay.html#neuralops.attentions.linear.chela_slay.ChelaSlayAttention">ChelaSlayAttention</a></li>
+<li><a title="neuralops.attentions.linear.cosformer.CosformerAttention" href="../linear/cosformer.html#neuralops.attentions.linear.cosformer.CosformerAttention">CosformerAttention</a></li>
+<li><a title="neuralops.attentions.linear.galerkin_attention.GalerkinAttention" href="../linear/galerkin_attention.html#neuralops.attentions.linear.galerkin_attention.GalerkinAttention">GalerkinAttention</a></li>
+<li><a title="neuralops.attentions.linear.linformer_attention.LinformerAttention" href="../linear/linformer_attention.html#neuralops.attentions.linear.linformer_attention.LinformerAttention">LinformerAttention</a></li>
+<li><a title="neuralops.attentions.linear.nasc_attention.NASCAttention" href="../linear/nasc_attention.html#neuralops.attentions.linear.nasc_attention.NASCAttention">NASCAttention</a></li>
+<li><a title="neuralops.attentions.linear.nystrom_attention.NystromAttention" href="../linear/nystrom_attention.html#neuralops.attentions.linear.nystrom_attention.NystromAttention">NystromAttention</a></li>
+<li><a title="neuralops.attentions.linear.performer_attention.PerformerAttention" href="../linear/performer_attention.html#neuralops.attentions.linear.performer_attention.PerformerAttention">PerformerAttention</a></li>
+<li><a title="neuralops.attentions.linear.primal_attention.PrimalAttention" href="../linear/primal_attention.html#neuralops.attentions.linear.primal_attention.PrimalAttention">PrimalAttention</a></li>
+<li><a title="neuralops.attentions.linear.rala_attention.RALALinearAttention" href="../linear/rala_attention.html#neuralops.attentions.linear.rala_attention.RALALinearAttention">RALALinearAttention</a></li>
+<li><a title="neuralops.attentions.linear.rpc_attention.RPCAttention" href="../linear/rpc_attention.html#neuralops.attentions.linear.rpc_attention.RPCAttention">RPCAttention</a></li>
+<li><a title="neuralops.attentions.linear.spectra_v2.SpectraV2Attention" href="../linear/spectra_v2.html#neuralops.attentions.linear.spectra_v2.SpectraV2Attention">SpectraV2Attention</a></li>
+<li><a title="neuralops.attentions.linear.spectraformer_attention.SpectraformerAttention" href="../linear/spectraformer_attention.html#neuralops.attentions.linear.spectraformer_attention.SpectraformerAttention">SpectraformerAttention</a></li>
+<li><a title="neuralops.attentions.linear.spectron.SpectronAttention" href="../linear/spectron.html#neuralops.attentions.linear.spectron.SpectronAttention">SpectronAttention</a></li>
+<li><a title="neuralops.attentions.linear.tlinformer_attention.TLinFormerAttention" href="../linear/tlinformer_attention.html#neuralops.attentions.linear.tlinformer_attention.TLinFormerAttention">TLinFormerAttention</a></li>
+<li><a title="neuralops.attentions.linear.tpa_attention.TPAttention" href="../linear/tpa_attention.html#neuralops.attentions.linear.tpa_attention.TPAttention">TPAttention</a></li>
+<li><a title="neuralops.attentions.linear.triton_cosformer.TritonCosformerAttention" href="../linear/triton_cosformer.html#neuralops.attentions.linear.triton_cosformer.TritonCosformerAttention">TritonCosformerAttention</a></li>
+<li><a title="neuralops.attentions.modern.alibi.ALiBiAttention" href="../modern/alibi.html#neuralops.attentions.modern.alibi.ALiBiAttention">ALiBiAttention</a></li>
+<li><a title="neuralops.attentions.modern.cross_attention.CrossAttention" href="../modern/cross_attention.html#neuralops.attentions.modern.cross_attention.CrossAttention">CrossAttention</a></li>
+<li><a title="neuralops.attentions.modern.gqa_attention.GroupedQueryAttention" href="../modern/gqa_attention.html#neuralops.attentions.modern.gqa_attention.GroupedQueryAttention">GroupedQueryAttention</a></li>
+<li><a title="neuralops.attentions.modern.mla_attention.MLAAttention" href="../modern/mla_attention.html#neuralops.attentions.modern.mla_attention.MLAAttention">MLAAttention</a></li>
+<li><a title="neuralops.attentions.modern.mqa.MultiQueryAttention" href="../modern/mqa.html#neuralops.attentions.modern.mqa.MultiQueryAttention">MultiQueryAttention</a></li>
+<li><a title="neuralops.attentions.modern.nha_attention.NativeHybridAttention" href="../modern/nha_attention.html#neuralops.attentions.modern.nha_attention.NativeHybridAttention">NativeHybridAttention</a></li>
+<li><a title="neuralops.attentions.modern.qcqa_attention.QCQAAttention" href="../modern/qcqa_attention.html#neuralops.attentions.modern.qcqa_attention.QCQAAttention">QCQAAttention</a></li>
+<li><a title="neuralops.attentions.modern.sliding_window.SlidingWindowAttention" href="../modern/sliding_window.html#neuralops.attentions.modern.sliding_window.SlidingWindowAttention">SlidingWindowAttention</a></li>
+<li><a title="neuralops.attentions.modern.unified_rope.UnifiedRoPE" href="../modern/unified_rope.html#neuralops.attentions.modern.unified_rope.UnifiedRoPE">UnifiedRoPE</a></li>
+<li><a title="neuralops.attentions.modern.vig_attention.ViGAttention" href="../modern/vig_attention.html#neuralops.attentions.modern.vig_attention.ViGAttention">ViGAttention</a></li>
+<li><a title="neuralops.attentions.modern.wgqa_attention.WeightedGroupedQueryAttention" href="../modern/wgqa_attention.html#neuralops.attentions.modern.wgqa_attention.WeightedGroupedQueryAttention">WeightedGroupedQueryAttention</a></li>
+<li><a title="neuralops.attentions.sparse.adaptive_sparse_attention.AdaptiveSparseAttention" href="../sparse/adaptive_sparse_attention.html#neuralops.attentions.sparse.adaptive_sparse_attention.AdaptiveSparseAttention">AdaptiveSparseAttention</a></li>
+<li><a title="neuralops.attentions.sparse.bam_umoe.BAMUMoEBlock" href="../sparse/bam_umoe.html#neuralops.attentions.sparse.bam_umoe.BAMUMoEBlock">BAMUMoEBlock</a></li>
+<li><a title="neuralops.attentions.sparse.cluster_attention.ClusterAttention" href="../sparse/cluster_attention.html#neuralops.attentions.sparse.cluster_attention.ClusterAttention">ClusterAttention</a></li>
+<li><a title="neuralops.attentions.sparse.expert_choice_moe.ExpertChoiceMoEAttention" href="../sparse/expert_choice_moe.html#neuralops.attentions.sparse.expert_choice_moe.ExpertChoiceMoEAttention">ExpertChoiceMoEAttention</a></li>
+<li><a title="neuralops.attentions.sparse.hamming_attention.HammingAttention" href="../sparse/hamming_attention.html#neuralops.attentions.sparse.hamming_attention.HammingAttention">HammingAttention</a></li>
+<li><a title="neuralops.attentions.sparse.lsh_attention.LSHAttention" href="../sparse/lsh_attention.html#neuralops.attentions.sparse.lsh_attention.LSHAttention">LSHAttention</a></li>
+<li><a title="neuralops.attentions.sparse.moba_attention.MoBAAttention" href="../sparse/moba_attention.html#neuralops.attentions.sparse.moba_attention.MoBAAttention">MoBAAttention</a></li>
+<li><a title="neuralops.attentions.sparse.nsa_attention.NativeSparseAttention" href="../sparse/nsa_attention.html#neuralops.attentions.sparse.nsa_attention.NativeSparseAttention">NativeSparseAttention</a></li>
+<li><a title="neuralops.attentions.sparse.padre_attention.PADReAttention" href="../sparse/padre_attention.html#neuralops.attentions.sparse.padre_attention.PADReAttention">PADReAttention</a></li>
+<li><a title="neuralops.attentions.sparse.reap_moe.REAPMoEAttention" href="../sparse/reap_moe.html#neuralops.attentions.sparse.reap_moe.REAPMoEAttention">REAPMoEAttention</a></li>
+<li><a title="neuralops.attentions.sparse.routing_attention.RoutingAttention" href="../sparse/routing_attention.html#neuralops.attentions.sparse.routing_attention.RoutingAttention">RoutingAttention</a></li>
+<li><a title="neuralops.attentions.ssm.goldfinch_ahn.GoldFinchAHNBlock" href="../ssm/goldfinch_ahn.html#neuralops.attentions.ssm.goldfinch_ahn.GoldFinchAHNBlock">GoldFinchAHNBlock</a></li>
+<li><a title="neuralops.attentions.ssm.griffin_ssd.GriffinSSDBlock" href="../ssm/griffin_ssd.html#neuralops.attentions.ssm.griffin_ssd.GriffinSSDBlock">GriffinSSDBlock</a></li>
+<li><a title="neuralops.attentions.ssm.hymba_transx.HymbaTransXBlock" href="../ssm/hymba_transx.html#neuralops.attentions.ssm.hymba_transx.HymbaTransXBlock">HymbaTransXBlock</a></li>
+<li><a title="neuralops.attentions.ssm.jamba.Jamba2Block" href="../ssm/jamba.html#neuralops.attentions.ssm.jamba.Jamba2Block">Jamba2Block</a></li>
+<li><a title="neuralops.attentions.ssm.jamba_info.JambaInfoBlock" href="../ssm/jamba_info.html#neuralops.attentions.ssm.jamba_info.JambaInfoBlock">JambaInfoBlock</a></li>
+<li><a title="neuralops.attentions.ssm.mamba_svd_flash.MambaSVDFlash" href="../ssm/mamba_svd_flash.html#neuralops.attentions.ssm.mamba_svd_flash.MambaSVDFlash">MambaSVDFlash</a></li>
+<li><a title="neuralops.attentions.ssm.nexus.NEXUSAttention" href="../ssm/nexus.html#neuralops.attentions.ssm.nexus.NEXUSAttention">NEXUSAttention</a></li>
+<li><a title="neuralops.attentions.ssm.orion.ORIONAttention" href="../ssm/orion.html#neuralops.attentions.ssm.orion.ORIONAttention">ORIONAttention</a></li>
+<li><a title="neuralops.attentions.ssm.phantom.PHANTOMAttention" href="../ssm/phantom.html#neuralops.attentions.ssm.phantom.PHANTOMAttention">PHANTOMAttention</a></li>
+<li><a title="neuralops.attentions.ssm.samba_moe.SambaMoEBlock" href="../ssm/samba_moe.html#neuralops.attentions.ssm.samba_moe.SambaMoEBlock">SambaMoEBlock</a></li>
+<li><a title="neuralops.attentions.ssm.selective_ssm.SelectiveSSM" href="../ssm/selective_ssm.html#neuralops.attentions.ssm.selective_ssm.SelectiveSSM">SelectiveSSM</a></li>
+<li><a title="neuralops.attentions.ssm.simple_ssm.SimpleSSM" href="../ssm/simple_ssm.html#neuralops.attentions.ssm.simple_ssm.SimpleSSM">SimpleSSM</a></li>
+<li><a title="neuralops.attentions.ssm.spectral_mamba.SpectralMambaAttention" href="../ssm/spectral_mamba.html#neuralops.attentions.ssm.spectral_mamba.SpectralMambaAttention">SpectralMambaAttention</a></li>
+<li><a title="neuralops.attentions.ssm.upi_stuffed_mamba.SelectiveMamba" href="../ssm/upi_stuffed_mamba.html#neuralops.attentions.ssm.upi_stuffed_mamba.SelectiveMamba">SelectiveMamba</a></li>
+<li><a title="neuralops.attentions.ssm.vspec.VSpecAttention" href="../ssm/vspec.html#neuralops.attentions.ssm.vspec.VSpecAttention">VSpecAttention</a></li>
+<li><a title="neuralops.attentions.svd.adaptive_svd_attention.AdaptiveSVDAttention" href="../svd/adaptive_svd_attention.html#neuralops.attentions.svd.adaptive_svd_attention.AdaptiveSVDAttention">AdaptiveSVDAttention</a></li>
+<li><a title="neuralops.attentions.svd.asvd_attention.ASVDAttention" href="../svd/asvd_attention.html#neuralops.attentions.svd.asvd_attention.ASVDAttention">ASVDAttention</a></li>
+<li><a title="neuralops.attentions.svd.compressed_attention.CompressedAttentionLayer" href="../svd/compressed_attention.html#neuralops.attentions.svd.compressed_attention.CompressedAttentionLayer">CompressedAttentionLayer</a></li>
+<li><a title="neuralops.attentions.svd.compressed_mha_attention.CompressedDistilBertAttention" href="../svd/compressed_mha_attention.html#neuralops.attentions.svd.compressed_mha_attention.CompressedDistilBertAttention">CompressedDistilBertAttention</a></li>
+<li><a title="neuralops.attentions.svd.factorised_matrix_state.FactorisedMatrixState" href="../svd/factorised_matrix_state.html#neuralops.attentions.svd.factorised_matrix_state.FactorisedMatrixState">FactorisedMatrixState</a></li>
+<li><a title="neuralops.attentions.svd.fused_svd_kernel.FusedSVDKernelAttention" href="../svd/fused_svd_kernel.html#neuralops.attentions.svd.fused_svd_kernel.FusedSVDKernelAttention">FusedSVDKernelAttention</a></li>
+<li><a title="neuralops.attentions.svd.lora_attention.LoRAAttention" href="../svd/lora_attention.html#neuralops.attentions.svd.lora_attention.LoRAAttention">LoRAAttention</a></li>
+<li><a title="neuralops.attentions.svd.minimal_nova.MinimalNOVAAttention" href="../svd/minimal_nova.html#neuralops.attentions.svd.minimal_nova.MinimalNOVAAttention">MinimalNOVAAttention</a></li>
+<li><a title="neuralops.attentions.svd.minimal_svd.MinimalSVDAttention" href="../svd/minimal_svd.html#neuralops.attentions.svd.minimal_svd.MinimalSVDAttention">MinimalSVDAttention</a></li>
+<li><a title="neuralops.attentions.svd.residual_svd_attention.ResidualSVDAttention" href="../svd/residual_svd_attention.html#neuralops.attentions.svd.residual_svd_attention.ResidualSVDAttention">ResidualSVDAttention</a></li>
+<li><a title="neuralops.attentions.svd.salt_attention.SALTAttention" href="../svd/salt_attention.html#neuralops.attentions.svd.salt_attention.SALTAttention">SALTAttention</a></li>
+<li><a title="neuralops.attentions.svd.svd_attention.SVDLinearAttention" href="../svd/svd_attention.html#neuralops.attentions.svd.svd_attention.SVDLinearAttention">SVDLinearAttention</a></li>
+<li><a title="neuralops.attentions.svd.svd_compressed.SVDCompressedAttention" href="../svd/svd_compressed.html#neuralops.attentions.svd.svd_compressed.SVDCompressedAttention">SVDCompressedAttention</a></li>
+<li><a title="neuralops.attentions.svd.svd_linear_attention.SVDLinearAttention" href="../svd/svd_linear_attention.html#neuralops.attentions.svd.svd_linear_attention.SVDLinearAttention">SVDLinearAttention</a></li>
+<li><a title="neuralops.attentions.svd.svd_llm_v2_attention.SVDLLMV2Attention" href="../svd/svd_llm_v2_attention.html#neuralops.attentions.svd.svd_llm_v2_attention.SVDLLMV2Attention">SVDLLMV2Attention</a></li>
+<li><a title="neuralops.attentions.svd.svd_mamba.SVDMamba" href="../svd/svd_mamba.html#neuralops.attentions.svd.svd_mamba.SVDMamba">SVDMamba</a></li>
+<li><a title="neuralops.attentions.svd.svd_projection_attention.SVDProjectionAttention" href="../svd/svd_projection_attention.html#neuralops.attentions.svd.svd_projection_attention.SVDProjectionAttention">SVDProjectionAttention</a></li>
+<li><a title="neuralops.attentions.svd.triton_svd_linear_attention.TritonSVDLinearAttention" href="../svd/triton_svd_linear_attention.html#neuralops.attentions.svd.triton_svd_linear_attention.TritonSVDLinearAttention">TritonSVDLinearAttention</a></li>
+<li>neuralops.core._attention_wrapper.ReplaceAttention</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.experimental.BaseAttention.copy_weights"><code class="name flex">
+<span>def <span class="ident">copy_weights</span></span>(<span>self,<br>old_attn: <a title="neuralops.attentions.experimental.Any" href="#neuralops.attentions.experimental.Any">Any</a>) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def copy_weights(self, old_attn: Any) -&gt; None:
+    &#34;&#34;&#34;Universal fallback: copy pretrained weights from old attention layer.&#34;&#34;&#34;
+    if old_attn is None:
+        return
+    import torch
+
+    from neuralops.core.adapters import UniversalAdapter
+
+    adapter = UniversalAdapter()
+
+    try:
+        w_q, b_q = adapter.get_weight_bias(old_attn, &#34;q&#34;)
+        w_k, b_k = adapter.get_weight_bias(old_attn, &#34;k&#34;)
+        w_v, b_v = adapter.get_weight_bias(old_attn, &#34;v&#34;)
+        w_o, b_o = adapter.get_weight_bias(old_attn, &#34;o&#34;)
+
+        with torch.no_grad():
+            dim = self.hidden_size
+            for q_name in [&#34;W_q&#34;, &#34;q_proj&#34;, &#34;q_lin&#34;, &#34;Wq&#34;, &#34;query&#34;, &#34;q&#34;]:
+                if hasattr(self, q_name):
+                    mod = getattr(self, q_name)
+                    if hasattr(mod, &#34;weight&#34;) and mod.weight.shape == w_q.shape:
+                        mod.weight.copy_(w_q)
+                        if b_q is not None and getattr(mod, &#34;bias&#34;, None) is not None:
+                            mod.bias.copy_(b_q)
+
+            for k_name in [&#34;W_k&#34;, &#34;k_proj&#34;, &#34;k_lin&#34;, &#34;Wk&#34;, &#34;key&#34;, &#34;k&#34;]:
+                if hasattr(self, k_name):
+                    mod = getattr(self, k_name)
+                    if hasattr(mod, &#34;weight&#34;) and mod.weight.shape == w_k.shape:
+                        mod.weight.copy_(w_k)
+                        if b_k is not None and getattr(mod, &#34;bias&#34;, None) is not None:
+                            mod.bias.copy_(b_k)
+
+            for v_name in [&#34;W_v&#34;, &#34;v_proj&#34;, &#34;v_lin&#34;, &#34;Wv&#34;, &#34;value&#34;, &#34;v&#34;]:
+                if hasattr(self, v_name):
+                    mod = getattr(self, v_name)
+                    if hasattr(mod, &#34;weight&#34;) and mod.weight.shape == w_v.shape:
+                        mod.weight.copy_(w_v)
+                        if b_v is not None and getattr(mod, &#34;bias&#34;, None) is not None:
+                            mod.bias.copy_(b_v)
+
+            for o_name in [&#34;out&#34;, &#34;out_proj&#34;, &#34;o_proj&#34;, &#34;out_lin&#34;, &#34;proj&#34;, &#34;dense&#34;]:
+                if hasattr(self, o_name):
+                    mod = getattr(self, o_name)
+                    if hasattr(mod, &#34;weight&#34;) and mod.weight.shape == w_o.shape:
+                        mod.weight.copy_(w_o)
+                        if b_o is not None and getattr(mod, &#34;bias&#34;, None) is not None:
+                            mod.bias.copy_(b_o)
+
+            # Handle fused in_proj
+            if hasattr(self, &#34;in_proj&#34;) and hasattr(self.in_proj, &#34;weight&#34;):
+                if self.in_proj.weight.shape == torch.Size([dim * 2, dim]):
+                    self.in_proj.weight[:dim].copy_(w_v[:dim])
+                    self.in_proj.weight[dim:].copy_(w_q[:dim])
+                elif self.in_proj.weight.shape == torch.Size([dim * 3, dim]):
+                    self.in_proj.weight[:dim].copy_(w_q[:dim])
+                    self.in_proj.weight[dim : 2 * dim].copy_(w_k[:dim])
+                    self.in_proj.weight[2 * dim :].copy_(w_v[:dim])
+    except (AttributeError, RuntimeError, ValueError) as e:
+        logger.debug(&#34;BaseAttention.copy_weights failed: %s&#34;, e)
+    except Exception as e:
+        logger.warning(&#34;Unexpected error in BaseAttention.copy_weights: %s&#34;, e)</code></pre>
+</details>
+<div class="desc"><p>Universal fallback: copy pretrained weights from old attention layer.</p></div>
+</dd>
+<dt id="neuralops.attentions.experimental.BaseAttention.extra_repr"><code class="name flex">
+<span>def <span class="ident">extra_repr</span></span>(<span>self) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def extra_repr(self) -&gt; str:
+    &#34;&#34;&#34;Extra repr.&#34;&#34;&#34;
+    return f&#34;num_heads={self.num_heads}, head_dim={self.head_dim}, rank={self.rank}&#34;</code></pre>
+</details>
+<div class="desc"><p>Extra repr.</p></div>
+</dd>
+<dt id="neuralops.attentions.experimental.BaseAttention.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self,<br>hidden_states,<br>attention_mask=None,<br>head_mask=None,<br>output_attentions=False,<br>**kwargs) ‑> tuple[typing.Any, <a title="neuralops.attentions.experimental.Any" href="#neuralops.attentions.experimental.Any">Any</a> | None]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@abstractmethod
+def forward(
+    self,
+    hidden_states,
+    attention_mask=None,
+    head_mask=None,
+    output_attentions=False,
+    **kwargs,
+) -&gt; tuple[Any, Any | None]:
+    &#34;&#34;&#34;Must return (output, attention_weights_or_None).&#34;&#34;&#34;
+    raise NotImplementedError(&#34;Subclasses of BaseAttention must implement forward()&#34;)</code></pre>
+</details>
+<div class="desc"><p>Must return (output, attention_weights_or_None).</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.attentions.experimental.LoRALinear"><code class="flex name class">
+<span>class <span class="ident">LoRALinear</span></span>
+<span>(</span><span>in_features: int,<br>out_features: int,<br>bias: bool = True,<br>lora_rank: int = 0,<br>lora_alpha: float = 1.0,<br>freeze_base: bool = True,<br>device: torch.device | None = None,<br>dtype: torch.dtype | None = None)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class LoRALinear(nn.Module):
+    &#34;&#34;&#34;Linear projection with frozen base weights and trainable LoRA adapters.&#34;&#34;&#34;
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        bias: bool = True,
+        lora_rank: int = 0,
+        lora_alpha: float = 1.0,
+        freeze_base: bool = True,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ):
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.lora_rank = int(lora_rank) if lora_rank &gt; 0 else 0
+        self.lora_alpha = float(lora_alpha)
+        self.scaling = self.lora_alpha / max(1, self.lora_rank)
+
+        factory = {&#34;device&#34;: device, &#34;dtype&#34;: dtype}
+        self.weight = nn.Parameter(torch.empty(out_features, in_features, **factory))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features, **factory))
+        else:
+            self.register_parameter(&#34;bias&#34;, None)
+
+        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        if self.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in) if fan_in &gt; 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+
+        if self.lora_rank &gt; 0:
+            self.lora_A = nn.Parameter(torch.empty(self.lora_rank, in_features, **factory))
+            self.lora_B = nn.Parameter(torch.empty(out_features, self.lora_rank, **factory))
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
+            self.lora_A.requires_grad = True
+            self.lora_B.requires_grad = True
+        else:
+            self.register_parameter(&#34;lora_A&#34;, None)
+            self.register_parameter(&#34;lora_B&#34;, None)
+
+        if freeze_base:
+            self.weight.requires_grad = False
+            if self.bias is not None:
+                self.bias.requires_grad = False
+
+    def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+        out = F.linear(x, self.weight, self.bias)
+        if self.lora_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
+            out = out + lora_out
+        return out</code></pre>
+</details>
+<div class="desc"><p>Linear projection with frozen base weights and trainable LoRA adapters.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.experimental.LoRALinear.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x: torch.Tensor) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x: torch.Tensor) -&gt; torch.Tensor:
+    out = F.linear(x, self.weight, self.bias)
+    if self.lora_rank &gt; 0 and self.lora_A is not None and self.lora_B is not None:
+        lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
+        out = out + lora_out
+    return out</code></pre>
+</details>
+<div class="desc"><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.attentions.experimental.UniversalAdapter"><code class="flex name class">
+<span>class <span class="ident">UniversalAdapter</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class UniversalAdapter:
+    &#34;&#34;&#34;Universal adapter supporting BERT, DistilBERT, RoBERTa, LLaMA, GPT2, DeBERTa, etc.&#34;&#34;&#34;
+
+    @staticmethod
+    def get_weight_bias(old_attn: Any, proj: str) -&gt; tuple:
+        &#34;&#34;&#34;Extract (weight, bias) for projection &#39;q&#39;, &#39;k&#39;, &#39;v&#39;, or &#39;o&#39;.
+
+        Handles:
+        - RoBERTa/BERT: query/key/value attributes on .self sub-module
+        - LLaMA/Qwen: q_proj/k_proj/v_proj on attention module directly
+        - GPT-2: c_attn (fused, already handled by fused-QKV path); c_proj
+        - DistilBERT: q_lin/k_lin/v_lin/out_lin
+        - LoRALinear: unwraps .base_layer to get the frozen base weight
+        - Conv1D: transposes weight from [in, out] to [out, in]
+        &#34;&#34;&#34;
+        target = getattr(old_attn, &#34;self&#34;, old_attn)
+        candidate_names = CANONICAL_PROJECTION_ALIASES.get(proj, [])
+
+        def _unwrap(mod: Any) -&gt; Any:
+            &#34;&#34;&#34;Unwrap LoRALinear / merged adapter layers to their base_layer.&#34;&#34;&#34;
+            if mod is None:
+                return mod
+            # LoRALinear stores the original frozen layer as base_layer
+            if hasattr(mod, &#34;base_layer&#34;) and hasattr(mod.base_layer, &#34;weight&#34;):
+                return mod.base_layer
+            return mod
+
+        def _extract(mod: Any):
+            &#34;&#34;&#34;Return (weight_data, bias) from a module, or None if not a valid weight-holder.&#34;&#34;&#34;
+            mod = _unwrap(mod)
+            if mod is None:
+                return None
+            if not hasattr(mod, &#34;weight&#34;) or mod.weight is None:
+                return None
+            import torch
+            import torch.nn as nn
+
+            w = mod.weight
+            # Must be either an nn.Parameter or a plain Tensor (Conv1D)
+            if not (isinstance(w, nn.Parameter) or isinstance(w, torch.Tensor)):
+                return None
+            w = w.data if hasattr(w, &#34;data&#34;) else w
+            # Projections must strictly be 2D weight matrices (excludes 1D norms, 3D convolutions, etc.)
+            if w.ndim != 2:
+                return None
+            # Conv1D stores weights transposed: [in_features, out_features]
+            is_conv1d = (mod.__class__.__name__ == &#34;Conv1D&#34;) or hasattr(mod, &#34;nf&#34;)
+            if is_conv1d or (w.shape[0] &lt; w.shape[1]):
+                w = w.t().contiguous()
+            bias = getattr(mod, &#34;bias&#34;, None)
+            bias = bias.data if (bias is not None and hasattr(bias, &#34;data&#34;)) else bias
+            # Qwen3.5 Gated Q: query is fused with gate (dim 0 has 2 * num_heads * head_dim)
+            if proj == &#34;q&#34; and (
+                hasattr(old_attn, &#34;q_norm&#34;)
+                or old_attn.__class__.__name__ == &#34;Qwen3_5Attention&#34;
+                or hasattr(old_attn, &#34;k_norm&#34;)
+            ):
+                cfg = getattr(old_attn, &#34;config&#34;, None)
+                tc = getattr(cfg, &#34;text_config&#34;, cfg)
+                h_dim = getattr(tc, &#34;head_dim&#34;, 256)
+                n_heads = getattr(tc, &#34;num_attention_heads&#34;, getattr(old_attn, &#34;num_heads&#34;, 8))
+                if w.shape[0] == n_heads * h_dim * 2:
+                    w = (
+                        w.view(n_heads, 2, h_dim, -1)[:, 0, :, :]
+                        .reshape(n_heads * h_dim, -1)
+                        .contiguous()
+                    )
+                    if bias is not None:
+                        bias = (
+                            bias.view(n_heads, 2, h_dim)[:, 0, :]
+                            .reshape(n_heads * h_dim)
+                            .contiguous()
+                        )
+            return w, bias
+
+        # 1. Search in target (old_attn.self or old_attn)
+        for name in candidate_names:
+            if hasattr(target, name):
+                result = _extract(getattr(target, name))
+                if result is not None:
+                    return result
+
+        # 2. Search in old_attn.output (BERT / RoBERTa output projection &#39;o&#39;)
+        if proj == &#34;o&#34; and hasattr(old_attn, &#34;output&#34;):
+            out_mod = old_attn.output
+            if hasattr(out_mod, &#34;dense&#34;):
+                result = _extract(out_mod.dense)
+                if result is not None:
+                    return result
+            result = _extract(out_mod)
+            if result is not None:
+                return result
+
+        # 3. Search directly in old_attn (catches cases where there&#39;s no .self sub-module)
+        for name in candidate_names:
+            if hasattr(old_attn, name):
+                result = _extract(getattr(old_attn, name))
+                if result is not None:
+                    return result
+
+        # 4. Fallback for Fused GPT-2 c_attn (must precede positional fallback)
+        if proj in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;) and hasattr(old_attn, &#34;c_attn&#34;):
+            fused_result = _extract(old_attn.c_attn)
+            if fused_result is not None:
+                w, b = fused_result
+                split_w = w.size(0) // 3
+                split_b = b.size(0) // 3 if b is not None else 0
+                if proj == &#34;q&#34;:
+                    return w[:split_w, :], (b[:split_b] if b is not None else None)
+                elif proj == &#34;k&#34;:
+                    return w[split_w : 2 * split_w, :], (
+                        b[split_b : 2 * split_b] if b is not None else None
+                    )
+                elif proj == &#34;v&#34;:
+                    return w[2 * split_w :, :], (b[2 * split_b :] if b is not None else None)
+
+        # 4b. Fallback for Qwen3.5 / fused in_proj_qkv
+        if proj in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;) and hasattr(old_attn, &#34;in_proj_qkv&#34;):
+            fused_result = _extract(old_attn.in_proj_qkv)
+            if fused_result is not None:
+                w, b = fused_result
+                k_dim = getattr(old_attn, &#34;key_dim&#34;, getattr(old_attn, &#34;k_dim&#34;, w.size(0) // 3))
+                v_dim = getattr(old_attn, &#34;value_dim&#34;, getattr(old_attn, &#34;v_dim&#34;, w.size(0) // 3))
+                q_dim = w.size(0) - k_dim - v_dim if (k_dim + v_dim &lt; w.size(0)) else k_dim
+                if proj == &#34;q&#34;:
+                    return w[:q_dim, :], (b[:q_dim] if b is not None else None)
+                elif proj == &#34;k&#34;:
+                    return w[q_dim : q_dim + k_dim, :], (
+                        b[q_dim : q_dim + k_dim] if b is not None else None
+                    )
+                elif proj == &#34;v&#34;:
+                    return w[q_dim + k_dim : q_dim + k_dim + v_dim, :], (
+                        b[q_dim + k_dim : q_dim + k_dim + v_dim] if b is not None else None
+                    )
+
+        # 4c. PyTorch nn.MultiheadAttention in_proj_weight / separate proj_weight
+        for obj in (target, old_attn):
+            if (
+                proj in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;)
+                and hasattr(obj, &#34;in_proj_weight&#34;)
+                and obj.in_proj_weight is not None
+            ):
+                w = (
+                    obj.in_proj_weight.data
+                    if hasattr(obj.in_proj_weight, &#34;data&#34;)
+                    else obj.in_proj_weight
+                )
+                b = getattr(obj, &#34;in_proj_bias&#34;, None)
+                b = b.data if (b is not None and hasattr(b, &#34;data&#34;)) else b
+                split_w = w.size(0) // 3
+                split_b = b.size(0) // 3 if b is not None else 0
+                if proj == &#34;q&#34;:
+                    return w[:split_w, :].clone(), (b[:split_b].clone() if b is not None else None)
+                elif proj == &#34;k&#34;:
+                    return w[split_w : 2 * split_w, :].clone(), (
+                        b[split_b : 2 * split_b].clone() if b is not None else None
+                    )
+                elif proj == &#34;v&#34;:
+                    return w[2 * split_w :, :].clone(), (
+                        b[2 * split_b :].clone() if b is not None else None
+                    )
+
+            if proj in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;):
+                attr_w = f&#34;{proj}_proj_weight&#34;
+                if hasattr(obj, attr_w) and getattr(obj, attr_w) is not None:
+                    w = getattr(obj, attr_w)
+                    w = w.data if hasattr(w, &#34;data&#34;) else w
+                    b = getattr(obj, f&#34;{proj}_proj_bias&#34;, None)
+                    b = b.data if (b is not None and hasattr(b, &#34;data&#34;)) else b
+                    return w.clone(), (b.clone() if b is not None else None)
+
+        # 5. Positional fallback: scan all Linear children of target in declaration order.
+        #    Only valid if at least 3 children exist (the typical pattern for BERT/RoBERTa variants).
+        ordered_proj_map = {&#34;q&#34;: 0, &#34;k&#34;: 1, &#34;v&#34;: 2}
+        if proj in ordered_proj_map:
+            children_with_weight = [
+                (n, m) for n, m in target.named_children() if _extract(m) is not None
+            ]
+            if len(children_with_weight) &gt;= 3:
+                idx = ordered_proj_map[proj]
+                if idx &lt; len(children_with_weight):
+                    return _extract(children_with_weight[idx][1])
+
+        # 6. Fallback for &#39;o&#39; projection when replacing leaf self-attention without local out_proj
+        # (e.g. RoBERTa/BERT RobertaSelfAttention where output.dense resides in the parent container).
+        # Returning an Identity matrix ensures:
+        #   (a) custom modules don&#39;t crash during weight copying, and
+        #   (b) context passes through transparently to parent.output.dense without double projection!
+        if proj == &#34;o&#34;:
+            for mod in target.modules():
+                if (
+                    hasattr(mod, &#34;weight&#34;)
+                    and isinstance(getattr(mod, &#34;weight&#34;, None), torch.Tensor)
+                    and mod.weight.ndim == 2
+                ):
+                    d = mod.weight.shape[0]
+                    eye_w = torch.eye(d, dtype=mod.weight.dtype, device=mod.weight.device)
+                    zero_b = torch.zeros(d, dtype=mod.weight.dtype, device=mod.weight.device)
+                    return eye_w, zero_b
+
+        raise ValueError(
+            f&#34;Could not extract &#39;{proj}&#39; projection weights from {type(old_attn).__name__}&#34;
+        )
+
+    @staticmethod
+    def get_rotary_emb(old_attn: Any) -&gt; Any | None:
+        &#34;&#34;&#34;Return rotary embeddings if present.&#34;&#34;&#34;
+        return getattr(old_attn, &#34;rotary_emb&#34;, None)
+
+    @staticmethod
+    def get_kv_heads(config: Any) -&gt; int:
+        &#34;&#34;&#34;Return number of key-value heads for GQA/MQA.&#34;&#34;&#34;
+        return getattr(config, &#34;num_key_value_heads&#34;, getattr(config, &#34;num_attention_heads&#34;, 12))</code></pre>
+</details>
+<div class="desc"><p>Universal adapter supporting BERT, DistilBERT, RoBERTa, LLaMA, GPT2, DeBERTa, etc.</p></div>
+<h3>Static methods</h3>
+<dl>
+<dt id="neuralops.attentions.experimental.UniversalAdapter.get_kv_heads"><code class="name flex">
+<span>def <span class="ident">get_kv_heads</span></span>(<span>config: <a title="neuralops.attentions.experimental.Any" href="#neuralops.attentions.experimental.Any">Any</a>) ‑> int</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def get_kv_heads(config: Any) -&gt; int:
+    &#34;&#34;&#34;Return number of key-value heads for GQA/MQA.&#34;&#34;&#34;
+    return getattr(config, &#34;num_key_value_heads&#34;, getattr(config, &#34;num_attention_heads&#34;, 12))</code></pre>
+</details>
+<div class="desc"><p>Return number of key-value heads for GQA/MQA.</p></div>
+</dd>
+<dt id="neuralops.attentions.experimental.UniversalAdapter.get_rotary_emb"><code class="name flex">
+<span>def <span class="ident">get_rotary_emb</span></span>(<span>old_attn: <a title="neuralops.attentions.experimental.Any" href="#neuralops.attentions.experimental.Any">Any</a>) ‑> <a title="neuralops.attentions.experimental.Any" href="#neuralops.attentions.experimental.Any">Any</a> | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def get_rotary_emb(old_attn: Any) -&gt; Any | None:
+    &#34;&#34;&#34;Return rotary embeddings if present.&#34;&#34;&#34;
+    return getattr(old_attn, &#34;rotary_emb&#34;, None)</code></pre>
+</details>
+<div class="desc"><p>Return rotary embeddings if present.</p></div>
+</dd>
+<dt id="neuralops.attentions.experimental.UniversalAdapter.get_weight_bias"><code class="name flex">
+<span>def <span class="ident">get_weight_bias</span></span>(<span>old_attn: <a title="neuralops.attentions.experimental.Any" href="#neuralops.attentions.experimental.Any">Any</a>,<br>proj: str) ‑> tuple</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def get_weight_bias(old_attn: Any, proj: str) -&gt; tuple:
+    &#34;&#34;&#34;Extract (weight, bias) for projection &#39;q&#39;, &#39;k&#39;, &#39;v&#39;, or &#39;o&#39;.
+
+    Handles:
+    - RoBERTa/BERT: query/key/value attributes on .self sub-module
+    - LLaMA/Qwen: q_proj/k_proj/v_proj on attention module directly
+    - GPT-2: c_attn (fused, already handled by fused-QKV path); c_proj
+    - DistilBERT: q_lin/k_lin/v_lin/out_lin
+    - LoRALinear: unwraps .base_layer to get the frozen base weight
+    - Conv1D: transposes weight from [in, out] to [out, in]
+    &#34;&#34;&#34;
+    target = getattr(old_attn, &#34;self&#34;, old_attn)
+    candidate_names = CANONICAL_PROJECTION_ALIASES.get(proj, [])
+
+    def _unwrap(mod: Any) -&gt; Any:
+        &#34;&#34;&#34;Unwrap LoRALinear / merged adapter layers to their base_layer.&#34;&#34;&#34;
+        if mod is None:
+            return mod
+        # LoRALinear stores the original frozen layer as base_layer
+        if hasattr(mod, &#34;base_layer&#34;) and hasattr(mod.base_layer, &#34;weight&#34;):
+            return mod.base_layer
+        return mod
+
+    def _extract(mod: Any):
+        &#34;&#34;&#34;Return (weight_data, bias) from a module, or None if not a valid weight-holder.&#34;&#34;&#34;
+        mod = _unwrap(mod)
+        if mod is None:
+            return None
+        if not hasattr(mod, &#34;weight&#34;) or mod.weight is None:
+            return None
+        import torch
+        import torch.nn as nn
+
+        w = mod.weight
+        # Must be either an nn.Parameter or a plain Tensor (Conv1D)
+        if not (isinstance(w, nn.Parameter) or isinstance(w, torch.Tensor)):
+            return None
+        w = w.data if hasattr(w, &#34;data&#34;) else w
+        # Projections must strictly be 2D weight matrices (excludes 1D norms, 3D convolutions, etc.)
+        if w.ndim != 2:
+            return None
+        # Conv1D stores weights transposed: [in_features, out_features]
+        is_conv1d = (mod.__class__.__name__ == &#34;Conv1D&#34;) or hasattr(mod, &#34;nf&#34;)
+        if is_conv1d or (w.shape[0] &lt; w.shape[1]):
+            w = w.t().contiguous()
+        bias = getattr(mod, &#34;bias&#34;, None)
+        bias = bias.data if (bias is not None and hasattr(bias, &#34;data&#34;)) else bias
+        # Qwen3.5 Gated Q: query is fused with gate (dim 0 has 2 * num_heads * head_dim)
+        if proj == &#34;q&#34; and (
+            hasattr(old_attn, &#34;q_norm&#34;)
+            or old_attn.__class__.__name__ == &#34;Qwen3_5Attention&#34;
+            or hasattr(old_attn, &#34;k_norm&#34;)
+        ):
+            cfg = getattr(old_attn, &#34;config&#34;, None)
+            tc = getattr(cfg, &#34;text_config&#34;, cfg)
+            h_dim = getattr(tc, &#34;head_dim&#34;, 256)
+            n_heads = getattr(tc, &#34;num_attention_heads&#34;, getattr(old_attn, &#34;num_heads&#34;, 8))
+            if w.shape[0] == n_heads * h_dim * 2:
+                w = (
+                    w.view(n_heads, 2, h_dim, -1)[:, 0, :, :]
+                    .reshape(n_heads * h_dim, -1)
+                    .contiguous()
+                )
+                if bias is not None:
+                    bias = (
+                        bias.view(n_heads, 2, h_dim)[:, 0, :]
+                        .reshape(n_heads * h_dim)
+                        .contiguous()
+                    )
+        return w, bias
+
+    # 1. Search in target (old_attn.self or old_attn)
+    for name in candidate_names:
+        if hasattr(target, name):
+            result = _extract(getattr(target, name))
+            if result is not None:
+                return result
+
+    # 2. Search in old_attn.output (BERT / RoBERTa output projection &#39;o&#39;)
+    if proj == &#34;o&#34; and hasattr(old_attn, &#34;output&#34;):
+        out_mod = old_attn.output
+        if hasattr(out_mod, &#34;dense&#34;):
+            result = _extract(out_mod.dense)
+            if result is not None:
+                return result
+        result = _extract(out_mod)
+        if result is not None:
+            return result
+
+    # 3. Search directly in old_attn (catches cases where there&#39;s no .self sub-module)
+    for name in candidate_names:
+        if hasattr(old_attn, name):
+            result = _extract(getattr(old_attn, name))
+            if result is not None:
+                return result
+
+    # 4. Fallback for Fused GPT-2 c_attn (must precede positional fallback)
+    if proj in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;) and hasattr(old_attn, &#34;c_attn&#34;):
+        fused_result = _extract(old_attn.c_attn)
+        if fused_result is not None:
+            w, b = fused_result
+            split_w = w.size(0) // 3
+            split_b = b.size(0) // 3 if b is not None else 0
+            if proj == &#34;q&#34;:
+                return w[:split_w, :], (b[:split_b] if b is not None else None)
+            elif proj == &#34;k&#34;:
+                return w[split_w : 2 * split_w, :], (
+                    b[split_b : 2 * split_b] if b is not None else None
+                )
+            elif proj == &#34;v&#34;:
+                return w[2 * split_w :, :], (b[2 * split_b :] if b is not None else None)
+
+    # 4b. Fallback for Qwen3.5 / fused in_proj_qkv
+    if proj in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;) and hasattr(old_attn, &#34;in_proj_qkv&#34;):
+        fused_result = _extract(old_attn.in_proj_qkv)
+        if fused_result is not None:
+            w, b = fused_result
+            k_dim = getattr(old_attn, &#34;key_dim&#34;, getattr(old_attn, &#34;k_dim&#34;, w.size(0) // 3))
+            v_dim = getattr(old_attn, &#34;value_dim&#34;, getattr(old_attn, &#34;v_dim&#34;, w.size(0) // 3))
+            q_dim = w.size(0) - k_dim - v_dim if (k_dim + v_dim &lt; w.size(0)) else k_dim
+            if proj == &#34;q&#34;:
+                return w[:q_dim, :], (b[:q_dim] if b is not None else None)
+            elif proj == &#34;k&#34;:
+                return w[q_dim : q_dim + k_dim, :], (
+                    b[q_dim : q_dim + k_dim] if b is not None else None
+                )
+            elif proj == &#34;v&#34;:
+                return w[q_dim + k_dim : q_dim + k_dim + v_dim, :], (
+                    b[q_dim + k_dim : q_dim + k_dim + v_dim] if b is not None else None
+                )
+
+    # 4c. PyTorch nn.MultiheadAttention in_proj_weight / separate proj_weight
+    for obj in (target, old_attn):
+        if (
+            proj in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;)
+            and hasattr(obj, &#34;in_proj_weight&#34;)
+            and obj.in_proj_weight is not None
+        ):
+            w = (
+                obj.in_proj_weight.data
+                if hasattr(obj.in_proj_weight, &#34;data&#34;)
+                else obj.in_proj_weight
+            )
+            b = getattr(obj, &#34;in_proj_bias&#34;, None)
+            b = b.data if (b is not None and hasattr(b, &#34;data&#34;)) else b
+            split_w = w.size(0) // 3
+            split_b = b.size(0) // 3 if b is not None else 0
+            if proj == &#34;q&#34;:
+                return w[:split_w, :].clone(), (b[:split_b].clone() if b is not None else None)
+            elif proj == &#34;k&#34;:
+                return w[split_w : 2 * split_w, :].clone(), (
+                    b[split_b : 2 * split_b].clone() if b is not None else None
+                )
+            elif proj == &#34;v&#34;:
+                return w[2 * split_w :, :].clone(), (
+                    b[2 * split_b :].clone() if b is not None else None
+                )
+
+        if proj in (&#34;q&#34;, &#34;k&#34;, &#34;v&#34;):
+            attr_w = f&#34;{proj}_proj_weight&#34;
+            if hasattr(obj, attr_w) and getattr(obj, attr_w) is not None:
+                w = getattr(obj, attr_w)
+                w = w.data if hasattr(w, &#34;data&#34;) else w
+                b = getattr(obj, f&#34;{proj}_proj_bias&#34;, None)
+                b = b.data if (b is not None and hasattr(b, &#34;data&#34;)) else b
+                return w.clone(), (b.clone() if b is not None else None)
+
+    # 5. Positional fallback: scan all Linear children of target in declaration order.
+    #    Only valid if at least 3 children exist (the typical pattern for BERT/RoBERTa variants).
+    ordered_proj_map = {&#34;q&#34;: 0, &#34;k&#34;: 1, &#34;v&#34;: 2}
+    if proj in ordered_proj_map:
+        children_with_weight = [
+            (n, m) for n, m in target.named_children() if _extract(m) is not None
+        ]
+        if len(children_with_weight) &gt;= 3:
+            idx = ordered_proj_map[proj]
+            if idx &lt; len(children_with_weight):
+                return _extract(children_with_weight[idx][1])
+
+    # 6. Fallback for &#39;o&#39; projection when replacing leaf self-attention without local out_proj
+    # (e.g. RoBERTa/BERT RobertaSelfAttention where output.dense resides in the parent container).
+    # Returning an Identity matrix ensures:
+    #   (a) custom modules don&#39;t crash during weight copying, and
+    #   (b) context passes through transparently to parent.output.dense without double projection!
+    if proj == &#34;o&#34;:
+        for mod in target.modules():
+            if (
+                hasattr(mod, &#34;weight&#34;)
+                and isinstance(getattr(mod, &#34;weight&#34;, None), torch.Tensor)
+                and mod.weight.ndim == 2
+            ):
+                d = mod.weight.shape[0]
+                eye_w = torch.eye(d, dtype=mod.weight.dtype, device=mod.weight.device)
+                zero_b = torch.zeros(d, dtype=mod.weight.dtype, device=mod.weight.device)
+                return eye_w, zero_b
+
+    raise ValueError(
+        f&#34;Could not extract &#39;{proj}&#39; projection weights from {type(old_attn).__name__}&#34;
+    )</code></pre>
+</details>
+<div class="desc"><p>Extract (weight, bias) for projection 'q', 'k', 'v', or 'o'.</p>
+<p>Handles:
+- RoBERTa/BERT: query/key/value attributes on .self sub-module
+- LLaMA/Qwen: q_proj/k_proj/v_proj on attention module directly
+- GPT-2: c_attn (fused, already handled by fused-QKV path); c_proj
+- DistilBERT: q_lin/k_lin/v_lin/out_lin
+- LoRALinear: unwraps .base_layer to get the frozen base weight
+- Conv1D: transposes weight from [in, out] to [out, in]</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.attentions.experimental.YourCustomAttention"><code class="flex name class">
+<span>class <span class="ident">YourCustomAttention</span></span>
+<span>(</span><span>config: <a title="neuralops.attentions.experimental.Any" href="#neuralops.attentions.experimental.Any">Any</a> | None = None,<br>rank: int | None = None,<br>pretrained_attn: torch.nn.modules.module.Module | None = None,<br>lora_rank: int = 16,<br>lora_alpha: float = 32.0,<br>is_decoder: bool | None = None,<br>**kwargs: <a title="neuralops.attentions.experimental.Any" href="#neuralops.attentions.experimental.Any">Any</a>)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class YourCustomAttention(BaseAttention):
+    r&#34;&#34;&#34;Template attention layer with optional low-rank pooling modulation.&#34;&#34;&#34;
+
+    supports_gqa: bool = True
+    supports_causal: bool = True
+    is_custom_attention: bool = True
+
+    def __init__(
+        self,
+        config: Any | None = None,
+        rank: int | None = None,
+        pretrained_attn: nn.Module | None = None,
+        lora_rank: int = 16,
+        lora_alpha: float = 32.0,
+        is_decoder: bool | None = None,
+        **kwargs: Any,
+    ) -&gt; None:
+        try:
+            super().__init__(config, rank)
+        except TypeError:
+            super().__init__(config)
+
+        src = pretrained_attn if pretrained_attn is not None else kwargs.get(&#34;old_attn&#34;)
+
+        # -------- hidden_size inference --------
+        dim = None
+        if config is not None and not isinstance(config, int):
+            dim = _cfg_get(
+                config,
+                &#34;hidden_size&#34;,
+                _cfg_get(config, &#34;dim&#34;, _cfg_get(config, &#34;d_model&#34;, None)),
+            )
+        if dim is None and src is not None:
+            dim = getattr(src, &#34;hidden_size&#34;, getattr(src, &#34;embed_dim&#34;, None))
+            if dim is None and hasattr(src, &#34;q_proj&#34;) and hasattr(src.q_proj, &#34;in_features&#34;):
+                dim = src.q_proj.in_features
+            elif dim is None and hasattr(src, &#34;q_lin&#34;) and hasattr(src.q_lin, &#34;in_features&#34;):
+                dim = src.q_lin.in_features
+            elif dim is None and hasattr(src, &#34;query&#34;) and hasattr(src.query, &#34;in_features&#34;):
+                dim = src.query.in_features
+            elif dim is None and hasattr(src, &#34;c_attn&#34;) and hasattr(src.c_attn, &#34;weight&#34;):
+                w = src.c_attn.weight
+                dim = w.shape[0] if w.shape[0] &lt; w.shape[1] else w.shape[1]
+        if dim is None:
+            dim = kwargs.get(&#34;hidden_size&#34;, 768)
+        self.hidden_size: int = int(dim)
+
+        # -------- num_heads inference (TA-13) --------
+        num_heads = None
+        if config is not None and not isinstance(config, int):
+            num_heads = _cfg_get(
+                config,
+                &#34;num_attention_heads&#34;,
+                _cfg_get(config, &#34;n_heads&#34;, _cfg_get(config, &#34;num_heads&#34;, None)),
+            )
+        if num_heads is None and src is not None:
+            num_heads = getattr(
+                src,
+                &#34;num_heads&#34;,
+                getattr(src, &#34;num_attention_heads&#34;, getattr(src, &#34;n_head&#34;, None)),
+            )
+        if num_heads is None:
+            # Fallback: assume head_dim ≈ 64
+            num_heads = max(1, self.hidden_size // 64)
+        self.num_heads: int = max(1, int(num_heads))
+
+        # -------- head_dim --------
+        head_dim = None
+        if config is not None and not isinstance(config, int):
+            head_dim = _cfg_get(config, &#34;head_dim&#34;, None)
+        if head_dim is None:
+            head_dim = kwargs.get(&#34;head_dim&#34;)
+        if head_dim is None:
+            head_dim = self.hidden_size // self.num_heads
+        self.head_dim: int = int(head_dim)
+
+        # -------- num_kv_heads (GQA) --------
+        cfg_kv = None
+        if config is not None and not isinstance(config, int):
+            cfg_kv = _cfg_get(config, &#34;num_key_value_heads&#34;, _cfg_get(config, &#34;num_kv_heads&#34;, None))
+        if cfg_kv is None and src is not None:
+            cfg_kv = getattr(src, &#34;num_key_value_heads&#34;, getattr(src, &#34;num_kv_heads&#34;, None))
+        self.num_kv_heads: int = int(cfg_kv) if cfg_kv is not None else self.num_heads
+        self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
+        self.num_key_value_groups: int = max(1, self.num_heads // self.num_kv_heads)
+
+        # TA-04: all_head_size explicitly defined
+        self.q_head_size: int = self.num_heads * self.head_dim
+        self.kv_head_size: int = self.num_kv_heads * self.head_dim
+        self.all_head_size: int = self.q_head_size
+
+        self.lora_rank: int = int(
+            kwargs.get(
+                &#34;lora_rank&#34;,
+                (_cfg_get(config, &#34;lora_rank&#34;, lora_rank) if config is not None else lora_rank),
+            )
+        )
+        self.lora_alpha: float = float(
+            kwargs.get(
+                &#34;lora_alpha&#34;,
+                (_cfg_get(config, &#34;lora_alpha&#34;, lora_alpha) if config is not None else lora_alpha),
+            )
+        )
+
+        # -------- decoder detection --------
+        if is_decoder is not None:
+            self.is_decoder: bool = bool(is_decoder)
+        elif config is not None and not isinstance(config, int):
+            mt = str(_cfg_get(config, &#34;model_type&#34;, &#34;&#34;) or &#34;&#34;).lower()
+            self.is_decoder = (
+                bool(_cfg_get(config, &#34;is_decoder&#34;, False))
+                or bool(kwargs.get(&#34;is_causal&#34;, False))
+                or any(
+                    mt.startswith(p)
+                    for p in (
+                        &#34;gpt&#34;,
+                        &#34;qwen&#34;,
+                        &#34;llama&#34;,
+                        &#34;mistral&#34;,
+                        &#34;gemma&#34;,
+                        &#34;phi&#34;,
+                        &#34;opt&#34;,
+                        &#34;bloom&#34;,
+                        &#34;falcon&#34;,
+                        &#34;olmo&#34;,
+                        &#34;mpt&#34;,
+                        &#34;stablelm&#34;,
+                    )
+                )
+            )
+        else:
+            self.is_decoder = bool(kwargs.get(&#34;is_causal&#34;, False))
+        self.is_causal = self.is_decoder
+        self.is_nested_encoder: bool = False
+
+        # -------- projections --------
+        self.query = LoRALinear(
+            self.hidden_size,
+            self.q_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.key = LoRALinear(
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.value = LoRALinear(
+            self.hidden_size,
+            self.kv_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+        self.out_proj = LoRALinear(
+            self.q_head_size,
+            self.hidden_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=True,
+        )
+
+        # Aliases
+        self.q_proj = self.query
+        self.k_proj = self.key
+        self.v_proj = self.value
+
+        # TA-06: rank_proj respects device/dtype
+        if rank is not None and rank &gt; 0:
+            self.rank_proj: nn.Linear | None = nn.Linear(
+                self.hidden_size,
+                rank,
+                bias=False,
+            )
+            nn.init.zeros_(self.rank_proj.weight)
+        else:
+            self.rank_proj = None
+
+        dropout_p = 0.1
+        if config is not None and not isinstance(config, int):
+            dropout_p = _cfg_get(
+                config, &#34;dropout&#34;, _cfg_get(config, &#34;attention_probs_dropout_prob&#34;, 0.1)
+            )
+        self.dropout = nn.Dropout(dropout_p)
+
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    # ------------------------------------------------------------------
+    @property
+    def out_lin(self):
+        return self.out_proj
+
+    @property
+    def o_proj(self):
+        return self.out_proj
+
+    @property
+    def dense(self):
+        return self.out_proj
+
+    @property
+    def c_proj(self):
+        return self.out_proj
+
+    @property
+    def q_lin(self):
+        return self.query
+
+    @property
+    def k_lin(self):
+        return self.key
+
+    @property
+    def v_lin(self):
+        return self.value
+
+    # ------------------------------------------------------------------
+    # copy_weights
+    # ------------------------------------------------------------------
+    def copy_weights(self, old_attn: Any) -&gt; None:
+        &#34;&#34;&#34;Robust weight copying from DistilBERT, RoBERTa nested, GPT-2, Qwen/LLaMA.&#34;&#34;&#34;
+        with torch.no_grad():
+            w_q = b_q = w_k = b_k = w_v = b_v = w_o = b_o = None
+
+            src_cls_name = getattr(old_attn, &#34;__class__&#34;, type(old_attn)).__name__
+            if src_cls_name in (&#34;BertSelfAttention&#34;, &#34;RobertaSelfAttention&#34;) or (
+                hasattr(old_attn, &#34;query&#34;)
+                and not hasattr(old_attn, &#34;dense&#34;)
+                and not hasattr(old_attn, &#34;out_proj&#34;)
+            ):
+                self.is_nested_encoder = True
+
+            if hasattr(old_attn, &#34;self&#34;) and hasattr(old_attn, &#34;output&#34;):
+                self.is_nested_encoder = True
+                src = old_attn.self
+                if hasattr(old_attn.output, &#34;dense&#34;):
+                    w_o = old_attn.output.dense.weight.detach()
+                    b_o = (
+                        old_attn.output.dense.bias.detach()
+                        if old_attn.output.dense.bias is not None
+                        else None
+                    )
+            else:
+                src = old_attn
+
+            # Pattern 1: GPT-2 Conv1D fused c_attn
+            if hasattr(src, &#34;c_attn&#34;) and hasattr(src, &#34;c_proj&#34;):
+                c_attn_w = src.c_attn.weight.detach()
+                c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
+                if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
+                    c_attn_w = c_attn_w.t().contiguous()
+                q_dim, k_dim, v_dim = (
+                    self.q_head_size,
+                    self.kv_head_size,
+                    self.kv_head_size,
+                )
+                w_q = c_attn_w[:q_dim, :]
+                w_k = c_attn_w[q_dim : q_dim + k_dim, :]
+                w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
+                if c_attn_b is not None:
+                    b_q = c_attn_b[:q_dim]
+                    b_k = c_attn_b[q_dim : q_dim + k_dim]
+                    b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
+                out_w = src.c_proj.weight.detach()
+                if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
+                    out_w = out_w.t().contiguous()
+                w_o = out_w
+                b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
+
+            # Pattern 2: RoBERTa / BERT
+            elif hasattr(src, &#34;query&#34;) and hasattr(src, &#34;key&#34;) and hasattr(src, &#34;value&#34;):
+                w_q = src.query.weight.detach()
+                b_q = src.query.bias.detach() if src.query.bias is not None else None
+                w_k = src.key.weight.detach()
+                b_k = src.key.bias.detach() if src.key.bias is not None else None
+                w_v = src.value.weight.detach()
+                b_v = src.value.bias.detach() if src.value.bias is not None else None
+                if w_o is None:
+                    for attr in (&#34;dense&#34;, &#34;out_proj&#34;, &#34;o_proj&#34;):
+                        if hasattr(src, attr):
+                            proj = getattr(src, attr)
+                            w_o = proj.weight.detach()
+                            b_o = proj.bias.detach() if proj.bias is not None else None
+                            break
+
+            # Pattern 3: Qwen / LLaMA
+            elif hasattr(src, &#34;q_proj&#34;) and hasattr(src, &#34;k_proj&#34;) and hasattr(src, &#34;v_proj&#34;):
+                w_q = src.q_proj.weight.detach()
+                b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
+                w_k = src.k_proj.weight.detach()
+                b_k = src.k_proj.bias.detach() if src.k_proj.bias is not None else None
+                w_v = src.v_proj.weight.detach()
+                b_v = src.v_proj.bias.detach() if src.v_proj.bias is not None else None
+                if hasattr(src, &#34;o_proj&#34;):
+                    w_o = src.o_proj.weight.detach()
+                    b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
+
+            # Pattern 4: DistilBERT
+            elif hasattr(src, &#34;q_lin&#34;) and hasattr(src, &#34;k_lin&#34;) and hasattr(src, &#34;v_lin&#34;):
+                w_q = src.q_lin.weight.detach()
+                b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
+                w_k = src.k_lin.weight.detach()
+                b_k = src.k_lin.bias.detach() if src.k_lin.bias is not None else None
+                w_v = src.v_lin.weight.detach()
+                b_v = src.v_lin.bias.detach() if src.v_lin.bias is not None else None
+                if hasattr(src, &#34;out_lin&#34;):
+                    w_o = src.out_lin.weight.detach()
+                    b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
+
+            # Fallback: UniversalAdapter
+            if w_q is None or w_k is None or w_v is None:
+                try:
+                    adapter = UniversalAdapter()
+                    if w_q is None:
+                        w_q, b_q = adapter.get_weight_bias(src, &#34;q&#34;)
+                    if w_k is None:
+                        w_k, b_k = adapter.get_weight_bias(src, &#34;k&#34;)
+                    if w_v is None:
+                        w_v, b_v = adapter.get_weight_bias(src, &#34;v&#34;)
+                    if w_o is None:
+                        w_o, b_o = adapter.get_weight_bias(src, &#34;o&#34;)
+                except Exception as e:
+                    logger.debug(&#34;UniversalAdapter fallback failed: %s&#34;, e)
+
+            missing = []
+            if w_q is None:
+                missing.append(&#34;Q&#34;)
+            if w_k is None:
+                missing.append(&#34;K&#34;)
+            if w_v is None:
+                missing.append(&#34;V&#34;)
+            if w_o is None and not self.is_nested_encoder:
+                missing.append(&#34;O&#34;)
+            if missing:
+                raise RuntimeError(
+                    f&#34;YourCustomAttention.copy_weights: missing {missing} from {type(old_attn).__name__}&#34;
+                )
+
+            def _copy_layer(target_layer: LoRALinear, w, b) -&gt; None:
+                if w is not None:
+                    if w.shape == target_layer.weight.shape:
+                        target_layer.weight.data.copy_(w.to(target_layer.weight.dtype))
+                    elif w.t().contiguous().shape == target_layer.weight.shape:
+                        target_layer.weight.data.copy_(
+                            w.t().contiguous().to(target_layer.weight.dtype)
+                        )
+                    else:
+                        min_0 = min(target_layer.weight.shape[0], w.shape[0])
+                        min_1 = min(target_layer.weight.shape[1], w.shape[1])
+                        target_layer.weight.data.zero_()
+                        target_layer.weight.data[:min_0, :min_1].copy_(
+                            w[:min_0, :min_1].to(target_layer.weight.dtype)
+                        )
+
+                if b is not None and target_layer.bias is not None:
+                    if b.shape == target_layer.bias.shape:
+                        target_layer.bias.data.copy_(b.to(target_layer.bias.dtype))
+                    else:
+                        min_b = min(target_layer.bias.shape[0], b.shape[0])
+                        target_layer.bias.data.zero_()
+                        target_layer.bias.data[:min_b].copy_(b[:min_b].to(target_layer.bias.dtype))
+                elif target_layer.bias is not None:
+                    target_layer.bias.data.zero_()
+
+            _copy_layer(self.query, w_q, b_q)
+            _copy_layer(self.key, w_k, b_k)
+            _copy_layer(self.value, w_v, b_v)
+            if w_o is not None:
+                _copy_layer(self.out_proj, w_o, b_o)
+
+            # Frobenius validation
+            for name, layer in (
+                (&#34;q&#34;, self.query),
+                (&#34;k&#34;, self.key),
+                (&#34;v&#34;, self.value),
+                (&#34;o&#34;, self.out_proj),
+            ):
+                norm = float(torch.linalg.norm(layer.weight.data.float()).item())
+                if norm &lt; 1e-4:
+                    logger.warning(
+                        &#34;YourCustomAttention: &#39;%s&#39; weight norm near zero (%.2e)&#34;,
+                        name,
+                        norm,
+                    )
+
+    # ------------------------------------------------------------------
+    # Forward
+    # ------------------------------------------------------------------
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor | None = None,
+        head_mask: torch.Tensor | None = None,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
+        past_key_value: Any | None = None,
+        output_attentions: bool | None = False,
+        output_hidden_states: bool | None = False,
+        return_dict: bool | None = True,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
+        layer_idx: int = 0,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        if encoder_hidden_states is not None:
+            raise NotImplementedError(&#34;YourCustomAttention: cross-attention not supported.&#34;)
+
+        B, L, _ = hidden_states.shape
+        device = hidden_states.device
+        dtype = hidden_states.dtype
+
+        q = (
+            self.query(hidden_states)
+            .view(B, L, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        k = (
+            self.key(hidden_states)
+            .view(B, L, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v = (
+            self.value(hidden_states)
+            .view(B, L, self.num_kv_heads, self.head_dim)
+            .transpose(1, 2)
+            .contiguous()
+        )
+
+        # TA-02: RoPE with past_len offset
+        if position_embeddings is None:
+            position_embeddings = kwargs.get(&#34;position_embeddings&#34;)
+        if position_embeddings is not None:
+            cos, sin = position_embeddings
+            past_len = 0
+            if past_key_value is not None:
+                if isinstance(past_key_value, (tuple, list)) and len(past_key_value) &gt;= 1:
+                    past_len = past_key_value[0].shape[-2]
+                elif hasattr(past_key_value, &#34;key_cache&#34;) and past_key_value.key_cache:
+                    past_len = past_key_value.key_cache[0].shape[-2]
+            cos = cos[..., past_len : past_len + L, :]
+            sin = sin[..., past_len : past_len + L, :]
+            q, k = apply_rotary_pos_emb(q, k, cos, sin)
+
+        # GQA expansion
+        if self.num_kv_heads != self.num_heads:
+            k = repeat_kv(k, self.num_key_value_groups)
+            v = repeat_kv(v, self.num_key_value_groups)
+
+        scale = 1.0 / math.sqrt(self.head_dim)
+
+        # TA-05: unify mask
+        eff_mask = encoder_attention_mask if encoder_attention_mask is not None else attention_mask
+        if eff_mask is None:
+            eff_mask = kwargs.get(&#34;attn_mask&#34;)
+
+        valid_mask_2d = None
+        if eff_mask is not None:
+            if eff_mask.dim() == 2:
+                if eff_mask.dtype == torch.bool:
+                    valid_mask_2d = eff_mask
+                elif eff_mask.dtype.is_floating_point:
+                    valid_mask_2d = eff_mask &gt; -1e4
+                else:
+                    valid_mask_2d = eff_mask &gt; 0
+            elif eff_mask.dim() == 4:
+                if eff_mask.dtype == torch.bool:
+                    v_mask = eff_mask
+                elif eff_mask.dtype.is_floating_point:
+                    v_mask = eff_mask &gt; -1e4
+                else:
+                    v_mask = eff_mask &gt; 0
+                valid_mask_2d = v_mask.any(dim=-2).squeeze(1)
+
+        # SDPA fast path (TA-03: mask-aware)
+        is_causal = self.is_decoder and L &gt; 1
+        use_sdpa = self.rank_proj is None and head_mask is None and not output_attentions
+
+        if use_sdpa:
+            try:
+                q_sdpa = q.half() if q.dtype == torch.float32 else q
+                k_sdpa = k.half() if k.dtype == torch.float32 else k
+                v_sdpa = v.half() if v.dtype == torch.float32 else v
+
+                attn_bias = None
+                if eff_mask is not None:
+                    if eff_mask.dim() == 2:
+                        attn_bias = (
+                            (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+                        ).to(q_sdpa.dtype)
+                    elif eff_mask.dim() == 4:
+                        attn_bias = eff_mask.to(q_sdpa.dtype)
+
+                out_sdpa = F.scaled_dot_product_attention(
+                    q_sdpa,
+                    k_sdpa,
+                    v_sdpa,
+                    attn_mask=attn_bias,
+                    is_causal=is_causal and attn_bias is None,
+                    dropout_p=self.dropout.p if self.training else 0.0,
+                )
+                out = out_sdpa.to(dtype).transpose(1, 2).contiguous().view(B, L, self.q_head_size)
+                out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+
+                if self.is_nested_encoder:
+                    return out, None
+                result = self.out_proj(out)
+                result = torch.nan_to_num(result, nan=0.0, posinf=1e4, neginf=-1e4)
+                return result, None
+            except Exception as e:
+                # TA-08: log instead of silent pass
+                logger.debug(&#34;SDPA path failed (%s); falling back to explicit.&#34;, e)
+
+        # Explicit path
+        scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+
+        # Low-rank modulation
+        if self.rank_proj is not None:
+            H_pool = hidden_states.mean(dim=1)
+            H_rank = self.rank_proj(H_pool)
+            modulation = 1.0 + torch.tanh(H_rank).mean(dim=-1, keepdim=True).view(B, 1, 1, 1)
+            scores = scores * modulation
+
+        if is_causal:
+            causal_mask = (
+                torch.triu(
+                    torch.full((L, L), float(&#34;-inf&#34;), device=device, dtype=torch.float32),
+                    diagonal=1,
+                )
+                .unsqueeze(0)
+                .unsqueeze(0)
+            )
+            scores = scores + causal_mask
+
+        if valid_mask_2d is not None:
+            scores = scores.masked_fill(~valid_mask_2d[:, None, None, :], -1e4)
+
+        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+        attn = F.softmax(scores, dim=-1).to(dtype)
+        attn = torch.nan_to_num(attn, nan=0.0)
+        attn = self.dropout(attn)
+
+        # TA-05: head_mask unified
+        if head_mask is not None:
+            if head_mask.dim() == 1:
+                head_mask = head_mask.view(1, -1, 1, 1)
+            elif head_mask.dim() == 2:
+                head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)
+            elif head_mask.dim() == 3:
+                head_mask = head_mask[:, :, :1].unsqueeze(-1)
+            attn = attn * head_mask.to(attn.dtype)
+
+        context = torch.matmul(attn, v)
+        context = context.transpose(1, 2).contiguous().view(B, L, self.q_head_size)
+        context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        if self.is_nested_encoder:
+            output = context
+        else:
+            output = self.out_proj(context)
+
+        # TA-14: no silent pad/truncate
+        if output.shape[-1] != self.hidden_size:
+            raise RuntimeError(
+                f&#34;YourCustomAttention: output dim {output.shape[-1]} != hidden_size {self.hidden_size}&#34;
+            )
+
+        return output, (attn if output_attentions else None)</code></pre>
+</details>
+<div class="desc"><p>Template attention layer with optional low-rank pooling modulation.</p>
+<p>Initialize internal Module state, shared by both nn.Module and ScriptModule.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="neuralops.core.base.BaseAttention" href="../../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></li>
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="neuralops.attentions.experimental.YourCustomAttention.is_custom_attention"><code class="name">var <span class="ident">is_custom_attention</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.experimental.YourCustomAttention.supports_causal"><code class="name">var <span class="ident">supports_causal</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.attentions.experimental.YourCustomAttention.supports_gqa"><code class="name">var <span class="ident">supports_gqa</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.attentions.experimental.YourCustomAttention.c_proj"><code class="name">prop <span class="ident">c_proj</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def c_proj(self):
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.experimental.YourCustomAttention.dense"><code class="name">prop <span class="ident">dense</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def dense(self):
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.experimental.YourCustomAttention.k_lin"><code class="name">prop <span class="ident">k_lin</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def k_lin(self):
+    return self.key</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.experimental.YourCustomAttention.o_proj"><code class="name">prop <span class="ident">o_proj</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def o_proj(self):
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.experimental.YourCustomAttention.out_lin"><code class="name">prop <span class="ident">out_lin</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def out_lin(self):
+    return self.out_proj</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.experimental.YourCustomAttention.q_lin"><code class="name">prop <span class="ident">q_lin</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def q_lin(self):
+    return self.query</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.attentions.experimental.YourCustomAttention.v_lin"><code class="name">prop <span class="ident">v_lin</span></code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def v_lin(self):
+    return self.value</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.attentions.experimental.YourCustomAttention.copy_weights"><code class="name flex">
+<span>def <span class="ident">copy_weights</span></span>(<span>self,<br>old_attn: <a title="neuralops.attentions.experimental.Any" href="#neuralops.attentions.experimental.Any">Any</a>) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def copy_weights(self, old_attn: Any) -&gt; None:
+    &#34;&#34;&#34;Robust weight copying from DistilBERT, RoBERTa nested, GPT-2, Qwen/LLaMA.&#34;&#34;&#34;
+    with torch.no_grad():
+        w_q = b_q = w_k = b_k = w_v = b_v = w_o = b_o = None
+
+        src_cls_name = getattr(old_attn, &#34;__class__&#34;, type(old_attn)).__name__
+        if src_cls_name in (&#34;BertSelfAttention&#34;, &#34;RobertaSelfAttention&#34;) or (
+            hasattr(old_attn, &#34;query&#34;)
+            and not hasattr(old_attn, &#34;dense&#34;)
+            and not hasattr(old_attn, &#34;out_proj&#34;)
+        ):
+            self.is_nested_encoder = True
+
+        if hasattr(old_attn, &#34;self&#34;) and hasattr(old_attn, &#34;output&#34;):
+            self.is_nested_encoder = True
+            src = old_attn.self
+            if hasattr(old_attn.output, &#34;dense&#34;):
+                w_o = old_attn.output.dense.weight.detach()
+                b_o = (
+                    old_attn.output.dense.bias.detach()
+                    if old_attn.output.dense.bias is not None
+                    else None
+                )
+        else:
+            src = old_attn
+
+        # Pattern 1: GPT-2 Conv1D fused c_attn
+        if hasattr(src, &#34;c_attn&#34;) and hasattr(src, &#34;c_proj&#34;):
+            c_attn_w = src.c_attn.weight.detach()
+            c_attn_b = src.c_attn.bias.detach() if src.c_attn.bias is not None else None
+            if c_attn_w.shape[0] == self.hidden_size and c_attn_w.shape[1] != self.hidden_size:
+                c_attn_w = c_attn_w.t().contiguous()
+            q_dim, k_dim, v_dim = (
+                self.q_head_size,
+                self.kv_head_size,
+                self.kv_head_size,
+            )
+            w_q = c_attn_w[:q_dim, :]
+            w_k = c_attn_w[q_dim : q_dim + k_dim, :]
+            w_v = c_attn_w[q_dim + k_dim : q_dim + k_dim + v_dim, :]
+            if c_attn_b is not None:
+                b_q = c_attn_b[:q_dim]
+                b_k = c_attn_b[q_dim : q_dim + k_dim]
+                b_v = c_attn_b[q_dim + k_dim : q_dim + k_dim + v_dim]
+            out_w = src.c_proj.weight.detach()
+            if out_w.shape[0] == self.hidden_size and out_w.shape[1] != self.hidden_size:
+                out_w = out_w.t().contiguous()
+            w_o = out_w
+            b_o = src.c_proj.bias.detach() if src.c_proj.bias is not None else None
+
+        # Pattern 2: RoBERTa / BERT
+        elif hasattr(src, &#34;query&#34;) and hasattr(src, &#34;key&#34;) and hasattr(src, &#34;value&#34;):
+            w_q = src.query.weight.detach()
+            b_q = src.query.bias.detach() if src.query.bias is not None else None
+            w_k = src.key.weight.detach()
+            b_k = src.key.bias.detach() if src.key.bias is not None else None
+            w_v = src.value.weight.detach()
+            b_v = src.value.bias.detach() if src.value.bias is not None else None
+            if w_o is None:
+                for attr in (&#34;dense&#34;, &#34;out_proj&#34;, &#34;o_proj&#34;):
+                    if hasattr(src, attr):
+                        proj = getattr(src, attr)
+                        w_o = proj.weight.detach()
+                        b_o = proj.bias.detach() if proj.bias is not None else None
+                        break
+
+        # Pattern 3: Qwen / LLaMA
+        elif hasattr(src, &#34;q_proj&#34;) and hasattr(src, &#34;k_proj&#34;) and hasattr(src, &#34;v_proj&#34;):
+            w_q = src.q_proj.weight.detach()
+            b_q = src.q_proj.bias.detach() if src.q_proj.bias is not None else None
+            w_k = src.k_proj.weight.detach()
+            b_k = src.k_proj.bias.detach() if src.k_proj.bias is not None else None
+            w_v = src.v_proj.weight.detach()
+            b_v = src.v_proj.bias.detach() if src.v_proj.bias is not None else None
+            if hasattr(src, &#34;o_proj&#34;):
+                w_o = src.o_proj.weight.detach()
+                b_o = src.o_proj.bias.detach() if src.o_proj.bias is not None else None
+
+        # Pattern 4: DistilBERT
+        elif hasattr(src, &#34;q_lin&#34;) and hasattr(src, &#34;k_lin&#34;) and hasattr(src, &#34;v_lin&#34;):
+            w_q = src.q_lin.weight.detach()
+            b_q = src.q_lin.bias.detach() if src.q_lin.bias is not None else None
+            w_k = src.k_lin.weight.detach()
+            b_k = src.k_lin.bias.detach() if src.k_lin.bias is not None else None
+            w_v = src.v_lin.weight.detach()
+            b_v = src.v_lin.bias.detach() if src.v_lin.bias is not None else None
+            if hasattr(src, &#34;out_lin&#34;):
+                w_o = src.out_lin.weight.detach()
+                b_o = src.out_lin.bias.detach() if src.out_lin.bias is not None else None
+
+        # Fallback: UniversalAdapter
+        if w_q is None or w_k is None or w_v is None:
+            try:
+                adapter = UniversalAdapter()
+                if w_q is None:
+                    w_q, b_q = adapter.get_weight_bias(src, &#34;q&#34;)
+                if w_k is None:
+                    w_k, b_k = adapter.get_weight_bias(src, &#34;k&#34;)
+                if w_v is None:
+                    w_v, b_v = adapter.get_weight_bias(src, &#34;v&#34;)
+                if w_o is None:
+                    w_o, b_o = adapter.get_weight_bias(src, &#34;o&#34;)
+            except Exception as e:
+                logger.debug(&#34;UniversalAdapter fallback failed: %s&#34;, e)
+
+        missing = []
+        if w_q is None:
+            missing.append(&#34;Q&#34;)
+        if w_k is None:
+            missing.append(&#34;K&#34;)
+        if w_v is None:
+            missing.append(&#34;V&#34;)
+        if w_o is None and not self.is_nested_encoder:
+            missing.append(&#34;O&#34;)
+        if missing:
+            raise RuntimeError(
+                f&#34;YourCustomAttention.copy_weights: missing {missing} from {type(old_attn).__name__}&#34;
+            )
+
+        def _copy_layer(target_layer: LoRALinear, w, b) -&gt; None:
+            if w is not None:
+                if w.shape == target_layer.weight.shape:
+                    target_layer.weight.data.copy_(w.to(target_layer.weight.dtype))
+                elif w.t().contiguous().shape == target_layer.weight.shape:
+                    target_layer.weight.data.copy_(
+                        w.t().contiguous().to(target_layer.weight.dtype)
+                    )
+                else:
+                    min_0 = min(target_layer.weight.shape[0], w.shape[0])
+                    min_1 = min(target_layer.weight.shape[1], w.shape[1])
+                    target_layer.weight.data.zero_()
+                    target_layer.weight.data[:min_0, :min_1].copy_(
+                        w[:min_0, :min_1].to(target_layer.weight.dtype)
+                    )
+
+            if b is not None and target_layer.bias is not None:
+                if b.shape == target_layer.bias.shape:
+                    target_layer.bias.data.copy_(b.to(target_layer.bias.dtype))
+                else:
+                    min_b = min(target_layer.bias.shape[0], b.shape[0])
+                    target_layer.bias.data.zero_()
+                    target_layer.bias.data[:min_b].copy_(b[:min_b].to(target_layer.bias.dtype))
+            elif target_layer.bias is not None:
+                target_layer.bias.data.zero_()
+
+        _copy_layer(self.query, w_q, b_q)
+        _copy_layer(self.key, w_k, b_k)
+        _copy_layer(self.value, w_v, b_v)
+        if w_o is not None:
+            _copy_layer(self.out_proj, w_o, b_o)
+
+        # Frobenius validation
+        for name, layer in (
+            (&#34;q&#34;, self.query),
+            (&#34;k&#34;, self.key),
+            (&#34;v&#34;, self.value),
+            (&#34;o&#34;, self.out_proj),
+        ):
+            norm = float(torch.linalg.norm(layer.weight.data.float()).item())
+            if norm &lt; 1e-4:
+                logger.warning(
+                    &#34;YourCustomAttention: &#39;%s&#39; weight norm near zero (%.2e)&#34;,
+                    name,
+                    norm,
+                )</code></pre>
+</details>
+<div class="desc"><p>Robust weight copying from DistilBERT, RoBERTa nested, GPT-2, Qwen/LLaMA.</p></div>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="neuralops.core.base.BaseAttention" href="../../core/base.html#neuralops.core.base.BaseAttention">BaseAttention</a></b></code>:
+<ul class="hlist">
+<li><code><a title="neuralops.core.base.BaseAttention.extra_repr" href="../../core/base.html#neuralops.core.base.BaseAttention.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.core.base.BaseAttention.forward" href="../../core/base.html#neuralops.core.base.BaseAttention.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.attentions" href="../index.html">neuralops.attentions</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="neuralops.attentions.experimental.template_attention" href="template_attention.html">neuralops.attentions.experimental.template_attention</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.attentions.experimental.Any" href="#neuralops.attentions.experimental.Any">Any</a></code></h4>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.experimental.BaseAttention" href="#neuralops.attentions.experimental.BaseAttention">BaseAttention</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.experimental.BaseAttention.copy_weights" href="#neuralops.attentions.experimental.BaseAttention.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.attentions.experimental.BaseAttention.extra_repr" href="#neuralops.attentions.experimental.BaseAttention.extra_repr">extra_repr</a></code></li>
+<li><code><a title="neuralops.attentions.experimental.BaseAttention.forward" href="#neuralops.attentions.experimental.BaseAttention.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.experimental.LoRALinear" href="#neuralops.attentions.experimental.LoRALinear">LoRALinear</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.experimental.LoRALinear.forward" href="#neuralops.attentions.experimental.LoRALinear.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.experimental.UniversalAdapter" href="#neuralops.attentions.experimental.UniversalAdapter">UniversalAdapter</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.attentions.experimental.UniversalAdapter.get_kv_heads" href="#neuralops.attentions.experimental.UniversalAdapter.get_kv_heads">get_kv_heads</a></code></li>
+<li><code><a title="neuralops.attentions.experimental.UniversalAdapter.get_rotary_emb" href="#neuralops.attentions.experimental.UniversalAdapter.get_rotary_emb">get_rotary_emb</a></code></li>
+<li><code><a title="neuralops.attentions.experimental.UniversalAdapter.get_weight_bias" href="#neuralops.attentions.experimental.UniversalAdapter.get_weight_bias">get_weight_bias</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.attentions.experimental.YourCustomAttention" href="#neuralops.attentions.experimental.YourCustomAttention">YourCustomAttention</a></code></h4>
+<ul class="two-column">
+<li><code><a title="neuralops.attentions.experimental.YourCustomAttention.c_proj" href="#neuralops.attentions.experimental.YourCustomAttention.c_proj">c_proj</a></code></li>
+<li><code><a title="neuralops.attentions.experimental.YourCustomAttention.copy_weights" href="#neuralops.attentions.experimental.YourCustomAttention.copy_weights">copy_weights</a></code></li>
+<li><code><a title="neuralops.attentions.experimental.YourCustomAttention.dense" href="#neuralops.attentions.experimental.YourCustomAttention.dense">dense</a></code></li>
+<li><code><a title="neuralops.attentions.experimental.YourCustomAttention.is_custom_attention" href="#neuralops.attentions.experimental.YourCustomAttention.is_custom_attention">is_custom_attention</a></code></li>
+<li><code><a title="neuralops.attentions.experimental.YourCustomAttention.k_lin" href="#neuralops.attentions.experimental.YourCustomAttention.k_lin">k_lin</a></code></li>
+<li><code><a title="neuralops.attentions.experimental.YourCustomAttention.o_proj" href="#neuralops.attentions.experimental.YourCustomAttention.o_proj">o_proj</a></code></li>
+<li><code><a title="neuralops.attentions.experimental.YourCustomAttention.out_lin" href="#neuralops.attentions.experimental.YourCustomAttention.out_lin">out_lin</a></code></li>
+<li><code><a title="neuralops.attentions.experimental.YourCustomAttention.q_lin" href="#neuralops.attentions.experimental.YourCustomAttention.q_lin">q_lin</a></code></li>
+<li><code><a title="neuralops.attentions.experimental.YourCustomAttention.supports_causal" href="#neuralops.attentions.experimental.YourCustomAttention.supports_causal">supports_causal</a></code></li>
+<li><code><a title="neuralops.attentions.experimental.YourCustomAttention.supports_gqa" href="#neuralops.attentions.experimental.YourCustomAttention.supports_gqa">supports_gqa</a></code></li>
+<li><code><a title="neuralops.attentions.experimental.YourCustomAttention.v_lin" href="#neuralops.attentions.experimental.YourCustomAttention.v_lin">v_lin</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>
