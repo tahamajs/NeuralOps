@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `salt_attention`
+**Legacy Folder Name:** `salt` (standardized in v1.2.0)
+
 <!-- ═══════════════════════════════════════════════════════════════════════════
      FILE: 00_meta.md
      PURPOSE: Title, authors, abstract, keywords
