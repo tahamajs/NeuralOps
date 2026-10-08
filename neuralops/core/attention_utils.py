@@ -61,6 +61,30 @@ def softcap(scores: torch.Tensor, cap: float = 50.0) -> torch.Tensor:
     return cap * torch.tanh(scores / cap)
 
 
+_DETERMINISTIC_ATTENTION: bool = False
+
+
+def enable_deterministic_attention(enabled: bool = True) -> bool:
+    """Toggle deterministic backward pass and execution for attention operations.
+
+    Also sets torch.use_deterministic_algorithms if available.
+    Returns previous deterministic state.
+    """
+    global _DETERMINISTIC_ATTENTION
+    prev = _DETERMINISTIC_ATTENTION
+    _DETERMINISTIC_ATTENTION = enabled
+    try:
+        torch.use_deterministic_algorithms(enabled, warn_only=True)
+    except Exception:
+        pass
+    return prev
+
+
+def is_deterministic_attention() -> bool:
+    """Check whether deterministic attention is active."""
+    return _DETERMINISTIC_ATTENTION
+
+
 __all__ = [
     "inject_attention",
     "available_attention_types",
@@ -72,6 +96,8 @@ __all__ = [
     "repeat_kv",
     "softpick",
     "softcap",
+    "enable_deterministic_attention",
+    "is_deterministic_attention",
     "apply_rope_after_up_projection",
     "_find_submodule_by_regex",
     "_svd_factorize_weights",
