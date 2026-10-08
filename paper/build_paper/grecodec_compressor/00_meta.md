@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `grecodec_compressor`
+**Legacy Folder Name:** `grecodec` (standardized in v1.2.0)
+
 # Grecodec: Formal Architectural Specification and Empirical Benchmark Evaluation
 
 **Module Name**: `grecodec`  
