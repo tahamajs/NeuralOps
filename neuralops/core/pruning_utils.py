@@ -210,64 +210,6 @@ def compute_empirical_hessian(
     return H_reg, H_inv
 
 
-def compute_taylor_first_order_saliency(
-    weight: torch.Tensor,
-    activations: torch.Tensor | None = None,
-    grad: torch.Tensor | None = None,
-) -> torch.Tensor:
-    """
-    Computes 1st-order Taylor expansion parameter saliency:
-    S_ij = |W_ij * g_ij| or S_ij = |W_ij| * E[|x_j|] when gradients are unavailable.
-
-    Args:
-        weight: Weight tensor [d_out, d_in]
-        activations: Optional input activations [..., d_in]
-        grad: Optional parameter gradient tensor [d_out, d_in]
-
-    Returns:
-        saliency: Saliency tensor of same shape as weight [d_out, d_in]
-    """
-    W = weight.float()
-    if grad is not None:
-        return torch.abs(W * grad.float())
-
-    if activations is not None:
-        if activations.dim() == 3:
-            X = activations.reshape(-1, activations.shape[-1]).float()
-        elif activations.dim() == 2:
-            X = activations.float()
-        else:
-            X = activations.reshape(-1, activations.shape[-1]).float()
-        # Mean absolute activation per input feature
-        act_norm = torch.mean(torch.abs(X), dim=0, keepdim=True).to(W.device)  # [1, d_in]
-        if act_norm.shape[1] == W.shape[1]:
-            return torch.abs(W) * act_norm
-
-    # Fallback to magnitude
-    return torch.abs(W)
-
-
-def compute_hessian_saliency(
-    weight: torch.Tensor,
-    H_inv: torch.Tensor,
-) -> torch.Tensor:
-    """
-    Computes Optimal Brain Surgeon (OBS) second-order saliency:
-    S_ij = (W_ij)^2 / (2 * [H^-1]_jj)
-
-    Args:
-        weight: Weight tensor [d_out, d_in]
-        H_inv: Inverse Hessian matrix [d_in, d_in]
-
-    Returns:
-        saliency: Saliency tensor [d_out, d_in]
-    """
-    W = weight.float()
-    diag = torch.diagonal(H_inv).unsqueeze(0).to(W.device)  # [1, d_in]
-    diag = torch.clamp(diag, min=1e-8)
-    return (W**2) / (2.0 * diag)
-
-
 def apply_24_structured_mask(
     weight: torch.Tensor,
     saliency: torch.Tensor | None = None,
