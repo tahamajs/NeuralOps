@@ -2,16 +2,12 @@
 
 from __future__ import annotations
 
-import json
 import os
 import subprocess
 from typing import Any
 
-from neuralops.runners.monitor.stats import (
-    build_aggregated_stats,
-    get_module_doc_index,
-)
-from neuralops.runners.monitor.telemetry import get_live_gpu_telemetry, get_live_logs
+from neuralops.runners.monitor.stats import get_module_doc_index
+from neuralops.runners.monitor.telemetry import get_live_gpu_telemetry
 
 
 def get_loss_history(
