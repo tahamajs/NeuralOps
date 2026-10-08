@@ -1,1 +1,0 @@
-D:\SVD_linear_Attention\results\kd_runs\halo_regla\20261007_002820_bs4_seq128_lr5e-06_C
