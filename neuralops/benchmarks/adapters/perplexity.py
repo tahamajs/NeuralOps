@@ -72,13 +72,13 @@ class PerplexityAdapter:
         """Load causal LM / masked LM model, tokenizer, and tokenized dataset."""
         torch.manual_seed(self.seed)
 
-        self.model, self.tokenizer, _ = load_model_and_tokenizer(
+        self.model, self.tokenizer, model_cfg = load_model_and_tokenizer(
             self.model_name,
             device=self.device,
             dtype=self.dtype,
             task="lm",
         )
-        self.model_meta = get_model_metadata(self.model, model_name=self.model_name)
+        self.model_meta = get_model_metadata(self.model, model_cfg)
 
         # Load validation / test split
         eval_split = "validation"
