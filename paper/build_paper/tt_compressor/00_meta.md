@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `tt_compressor`
+**Legacy Folder Name:** `tt` (standardized in v1.2.0)
+
 # Tt: Formal Architectural Specification and Empirical Benchmark Evaluation
 
 **Module Name**: `tt`  
