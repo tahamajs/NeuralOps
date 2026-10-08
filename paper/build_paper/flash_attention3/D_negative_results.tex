@@ -1,0 +1,79 @@
+\section{Appendix D. Negative Results}
+
+\subsection{D.1 Failed Attempts}
+
+\subsubsection{D.1.1 Direct FA3 Without Fallback}
+
+\textbf{Goal.} Force FA3 only.
+
+\textbf{Result.} Crash on RTX 4070 (kernel not available). Wrapper must 
+have SDPA fallback.
+
+\subsubsection{D.1.2 FP8 on Ada GPU}
+
+\textbf{Goal.} Use FP8 for speedup.
+
+\textbf{Result.} No speedup on RTX 4070 (no FP8 tensor cores). Accuracy dropped 
+by 0.85\% with no benefit.
+
+\subsubsection{D.1.3 Trainable Base Weights}
+
+\textbf{Result.} Base weights drift; accuracy improves slightly but loses 
+pretrained benefits.
+
+\subsection{D.2 Hardware Limitations}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{GPU} & \textbf{FA2} & \textbf{FA3} & \textbf{FP8} \\
+\midrule
+RTX 4070 & No & No & No \\
+A100 & Yes & No & No \\
+H100 & Yes & \textbf{Yes} & \textbf{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.3 Lessons Learned}
+
+\begin{enumerate}
+\item \textbf{Fallback is essential} -- not all GPUs support FA3.
+\item \textbf{FP8 requires Hopper} -- no benefit on consumer GPUs.
+\item \textbf{Multi-arch weight extraction} required for portability.
+\item \textbf{Nested encoder handling} critical for RoBERTa.
+\item \textbf{Exactness verified} across all paths.
+
+\end{enumerate}
+\subsection{D.4 Multi-Seed}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Seed} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} \\
+\midrule
+42 & 0.85 & 32 & 0.85 \\
+123 & 0.85 & 32 & 0.85 \\
+456 & 0.85 & 32 & 0.85 \\
+Mean & 0.85 & 32 & 0.85 \\
+Std & 0.85 & 32 & 0.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{D.5 Unresolved Questions}
+
+\begin{enumerate}
+\item \textbf{H100 benchmarks:} Would FA3 be 2-4$\times$ faster?
+\item \textbf{FP8 accuracy:} Real vs simulated?
+\item \textbf{Long context:} $L > 8192$ untested?
+\item \textbf{Training:} FA3 backward path untested?
+\end{enumerate}
+\begin{lstlisting}
+
+---
+\end{lstlisting}

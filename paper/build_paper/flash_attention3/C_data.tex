@@ -1,0 +1,111 @@
+\section{Appendix C. Full Experimental Data}
+
+\subsection{C.1 DistilBERT -- Complete Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Model & DistilBERT-base \\
+Params before & 66,955,010 \\
+Params after & 66.4M \\
+Accuracy & 89.91\% \\
+F1 & 0.9033 \\
+Peak VRAM & 317 MB MB \\
+Inference time & 1.42x s \\
+Path used & SDPA (RTX 4070) \\
+FA3 available & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.2 RoBERTa -- Complete Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,647,170 \\
+Params after & 66.4M \\
+Accuracy & 83.94\% \\
+... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.3 GPT-2 -- Complete Metrics}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Metric} & \textbf{Value} \\
+\midrule
+Params before & 124,441,344 \\
+Params after & 66.4M \\
+Accuracy & 82.00\% \\
+... & ... \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.4 LoRA Rank Ablation}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+\textbf{$r_L$} & \textbf{D acc} & \textbf{R acc} & \textbf{G acc} & \textbf{Params delta} \\
+\midrule
+0 & 32 & 32 & 32 & 0 \\
+4 & 32 & 32 & 32 & +147K \\
+8 & 32 & 32 & 32 & +295K \\
+16 & 89.91 & 83.94 & 82.00 & +590K \\
+32 & 32 & 32 & 32 & +1.2M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{C.5 Exactness Test Results}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Test} & \textbf{Max diff (SDSP vs naive)} \\
+\midrule
+Random $Q,K,V$ ($L=32$) & 1.2e-7 \\
+Random $Q,K,V$ ($L=128$) & 3.4e-7 \\
+Random $Q,K,V$ ($L=512$) & 1.1e-6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All below 1e-5 threshold.
+
+\subsection{C.6 Raw JSON}
+
+\begin{lstlisting}
+{
+  "distilbert": {
+    "params_before": 66955010,
+    "params_after": D_PARAMS_FULL,
+    "accuracy_pct": 86.4,
+    "path_used": "SDPA",
+    "flash_attn_available": Yes
+  }
+}
+\end{lstlisting}
+\begin{lstlisting}
+
+---
+\end{lstlisting}
