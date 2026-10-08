@@ -2,15 +2,13 @@
 from __future__ import annotations
 
 import argparse
-import json
-from pathlib import Path
 import platform
 import sys
-from typing import Any
 
-from neuralops.benchmarks.api import Runner, benchmark
+from neuralops.benchmarks.api import Runner
 from neuralops.benchmarks.discovery import discover_all_modules
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+
 
 
 def _build_parser() -> argparse.ArgumentParser:

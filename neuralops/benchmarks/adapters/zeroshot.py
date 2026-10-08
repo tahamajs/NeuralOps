@@ -7,7 +7,7 @@ from typing import Any
 import torch
 import torch.nn as nn
 
-from neuralops.benchmarks.core.evaluation import measure_peak_memory_mb, measure_resources
+from neuralops.benchmarks.core.evaluation import measure_peak_memory_mb
 from neuralops.benchmarks.core.model_loader import (
     apply_attention_module,
     apply_compressor,
