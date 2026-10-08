@@ -6,7 +6,6 @@ import pandas as pd
 
 try:
     import optuna
-    from optuna.trial import TrialState
 
     _HAS_OPTUNA = True
 except ImportError:

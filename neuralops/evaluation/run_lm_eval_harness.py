@@ -193,7 +193,6 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
 
     try:
-        import lm_eval
         from lm_eval import simple_evaluate
         from lm_eval.models.huggingface import HFLM
 
