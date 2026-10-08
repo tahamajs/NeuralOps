@@ -1,11 +1,43 @@
-# NeuralOps Architecture Reference (v1.1.0)
+# NeuralOps Architecture & System Design
 
-NeuralOps is organized into decoupled layers:
+NeuralOps is designed around clear separation of concerns across multiple layers:
 
-1. **`core`**: Base attention/compressor abstractions, dynamic registry (`ATTENTION_REGISTRY`, `COMPRESSOR_REGISTRY`), Rotary embeddings, GQA utilities, numerical stability tools, and Triton GPU kernels with PyTorch fallback dispatch.
-2. **`attentions`**: 145 registered attention mechanism modules across families (dense, linear, sparse, modern, ssm, svd, adaptive, fast_kernels, hybrid, gated).
-3. **`compression_engine`**: 73 model compression techniques (quantization, pruning, SVD factorization, low-rank adaptations including GPTQ, AWQ, SmoothQuant, Wanda, QLoRA, DoRA).
-4. **`inference`**: Continuous batcher, paged KV cache, speculative decoder, streaming generator, and inference engine.
-5. **`integrations`**: Direct connectors for HuggingFace AutoModel, vLLM, TGI, DeepSpeed, and PyTorch dynamic compilation.
-6. **`training`**: Selective gradient checkpointing, MixedPrecisionTrainer with gradient accumulation, and Curriculum learning.
-7. **`benchmarks`**: Comprehensive speed, memory, accuracy, and scaling evaluation harnesses.
+```
+┌────────────────────────────────────────────────────────┐
+│             Pretrained Backbone (HF Models)            │
+│         BERT, RoBERTa, DistilBERT, GPT-2, LLaMA        │
+└───────────────────────────┬────────────────────────────┘
+                            │
+               ┌────────────┴────────────┐
+               ▼                         ▼
+ ┌───────────────────────────┐ ┌───────────────────────────┐
+ │    ATTENTION REGISTRY     │ │   COMPRESSION REGISTRY    │
+ │       (159 Modules)       │ │       (73 Engines)        │
+ ├───────────────────────────┤ ├───────────────────────────┤
+ │ • Linear, Kernel, Cosform │ │ • ASVD, SliceGPT, Wanda   │
+ │ • Sliding Window, GQA     │ │ • GPTQ, AWQ, SmoothQuant  │
+ │ • SVD Factorized Attention│ │ • KV Cache Compressors    │
+ └─────────────┬─────────────┘ └─────────────┬─────────────┘
+               │                             │
+               └──────────────┬──────────────┘
+                              ▼
+ ┌─────────────────────────────────────────────────────────┐
+ │               Triton Kernels & Hardware                 │
+ │ • 19 Hand-Written Triton Kernels (GPU)                  │
+ │ • 100% PyTorch CPU/MPS Fallbacks (macOS, Windows, CPU)  │
+ └────────────────────────────┬────────────────────────────┘
+                              ▼
+ ┌─────────────────────────────────────────────────────────┐
+ │             Evaluation, Benchmarks & Serving            │
+ │ • Universal Sweep CLI (speed, accuracy, memory, Pareto) │
+ │ • High-Throughput InferenceEngine & Continuous Batcher  │
+ └─────────────────────────────────────────────────────────┘
+```
+
+## Layer Separation
+
+1. **`core/`**: Dynamic module registries (`ATTENTION_REGISTRY`, `COMPRESSOR_REGISTRY`), Triton kernels, and architecture detection adapters.
+2. **`attentions/`**: Self-contained attention mechanism implementations across 11 families.
+3. **`compression_engine/`**: Post-training compression algorithms across 7 families.
+4. **`benchmarks/`**: Unified CLI harness, execution orchestration, and metric aggregations.
+5. **`inference/`**: High-concurrency autoregressive generation runtime with speculative decoding and continuous batching.

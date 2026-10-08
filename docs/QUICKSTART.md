@@ -1,18 +1,35 @@
-# Quick Start (5 minutes)
+# Quick Start
 
-## Step 1: Install
-
-```bash
-pip install neuralops
-```
-
-## Step 2: Verify
+## Installation
 
 ```bash
-python -m neuralops.benchmarks verify
+pip install neuralops[cuda]  # or [cpu], [mps], [rocm]
 ```
 
-## Step 3: Run your first benchmark
+## 1. Replace Attention in a Model
+
+```python
+from transformers import AutoModel
+from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.replace_attention import replace_attention_in_model
+
+model = AutoModel.from_pretrained("distilbert-base-uncased")
+attn_cls = ATTENTION_REGISTRY.get("svd_linear_attention")
+model = replace_attention_in_model(model, attn_cls)
+```
+
+## 2. Compress a Model
+
+```python
+from transformers import AutoModelForSequenceClassification
+from neuralops.compression_engine.svd import ASVDCompressor
+
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+compressor = ASVDCompressor(model)
+compressed = compressor.compress(target_rank=64)
+```
+
+## 3. Run a Benchmark
 
 ```bash
 python -m neuralops.benchmarks run \
@@ -22,23 +39,8 @@ python -m neuralops.benchmarks run \
     --rank 64
 ```
 
-## Step 4: Replace attention in your model
+## 4. Inspect Results
 
-```python
-import torch
-from transformers import AutoModelForSequenceClassification
-from neuralops.utils.replace_attention import replace_attention
-
-model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
-model = replace_attention(model, "svd_linear_attention", svd_rank=128)
-
-inputs = torch.randint(0, 1000, (2, 64))
-outputs = model(inputs)
-print("Logits:", outputs.logits.shape)
+```bash
+python -m neuralops.benchmarks results --latest --summary
 ```
-
-## Step 5: Explore
-
-- [API Reference](API_REFERENCE.md)
-- [Examples](EXAMPLES.md)
-- [Troubleshooting](TROUBLESHOOTING.md)
