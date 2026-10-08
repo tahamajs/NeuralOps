@@ -19,10 +19,6 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 
-# Ensure framework can be imported
-HERE = Path(__file__).resolve().parent
-CODES_DIR = HERE.parent.parent
-if str(CODES_DIR) not in sys.path:
 
 from neuralops.compression_engine.admm_compressor import (ADMMCompressor,
                                                           admm_factory)
