@@ -438,6 +438,7 @@ class CosformerAttention(BaseAttention):
             denom = s.sum(dim=-1, keepdim=True).clamp(min=1e-4)
             out[:, :, start:end] = num / denom
         return out
+    
     def forward(self, hidden_states, attention_mask=None, head_mask=None,
                 encoder_hidden_states=None, encoder_attention_mask=None,
                 position_ids=None, position_embeddings=None, *args, **kwargs):
