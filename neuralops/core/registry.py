@@ -13,6 +13,29 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+import json
+import os
+import warnings
+
+_DEPRECATED_ALIASES_PATH = os.path.join(os.path.dirname(__file__), "deprecated_aliases.json")
+if os.path.exists(_DEPRECATED_ALIASES_PATH):
+    with open(_DEPRECATED_ALIASES_PATH) as _fp:
+        _DEPRECATED_ALIASES: dict[str, str] = json.load(_fp)
+else:
+    _DEPRECATED_ALIASES = {}
+
+def _handle_deprecated(name: str) -> str:
+    k = name.lower()
+    if k in _DEPRECATED_ALIASES:
+        new_name = _DEPRECATED_ALIASES[k]
+        warnings.warn(
+            f"'{name}' is deprecated. Use '{new_name}' instead.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        return new_name
+    return name
+
 _ATTENTION_FILE_MAP: dict[str, str] = {
     "gqa": "gqa_attention",
     "galerkin": "galerkin_attention",
@@ -26,9 +49,12 @@ _ATTENTION_FILE_MAP: dict[str, str] = {
     "cosformer_inject": "cosformer",
     "hla_inject": "hla_attention",
     "kda_inject": "kda_attention",
-    "leka_v1_inject": "leka_v1",
-    "leka_v2_inject": "leka_v2",
-    "leka_v3_inject": "leka_v3",
+    "hybrid_local_kernel": "hybrid_local_kernel_attention",
+    "split_head_hybrid": "split_head_hybrid_attention",
+    "gated_hybrid_kernel": "gated_hybrid_kernel_attention",
+    "positive_kernel_linear": "positive_kernel_linear_attention",
+    "landmark_local": "landmark_local_attention",
+    "refined_landmark": "refined_landmark_attention",
     "mamba_attention": "mamba_block",
     "moba": "moba_attention",
     "nha_compressor": "nha_attention",
@@ -200,18 +226,20 @@ class Registry:
 
     def get(self, key: str) -> Callable | None:
         """Safely retrieve a registered component, or None if not found."""
-        self._try_lazy_load(key)
-        return self._dict.get(key.lower())
+        k = _handle_deprecated(key)
+        self._try_lazy_load(k)
+        return self._dict.get(k.lower())
 
     def resolve(self, key: str) -> Callable:
         """Retrieve a registered component and raise a descriptive error if missing."""
-        self._try_lazy_load(key)
-        k = key.lower()
-        if k not in self._dict:
+        k = _handle_deprecated(key)
+        self._try_lazy_load(k)
+        k_lower = k.lower()
+        if k_lower not in self._dict:
             raise KeyError(
                 f"Unknown {self.name.rstrip('s')} '{key}'. Available: {list(self._dict.keys())}"
             )
-        return self._dict[k]
+        return self._dict[k_lower]
 
     def _load_all(self) -> None:
         """Attempt to load all modules in the associated package."""

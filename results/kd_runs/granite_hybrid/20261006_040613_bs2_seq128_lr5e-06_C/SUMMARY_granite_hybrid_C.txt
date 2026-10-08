@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: granite_hybrid / C
+================================================================================
+
+MODEL INFO:
+  Total params:      124.44 M
+  Trainable params:  124.44 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        800
+  Seq len:           128
+  Total tokens:      102400
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        66.0700
+  Post-KD PPL:       49.1800
+  Stage 1 (KD) PPL:  59.5600
+  Stage 2 (Self) PPL:49.1800
+  KD Gain:           +6.51
+  Self Gain:         +10.38
+  Total Gain:        +16.89
+  Aligned w/ Teacher:YES
+  Beat Teacher:      YES
+  PPL Ratio:         0.7444
+  Recovery:          nan%
+  Peak VRAM:         4022.04 MB
+  Train time:        107.79 s (Stage 1: 68.6s, Stage 2: 39.2s)
+  s/step:            0.2156
+  Loss (final):      0.6354
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.9031
+  Repetition-3:      0.0260
+  Train PPL:         42.7000
+  Test PPL:          49.1800
+  Overfit Gap:       6.48
+  Latency (mean):    1709.41 ms
+  Latency (std):     109.02 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        2349dc6c0373
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=3.7822 | lr=2.93e-06
+  step   420 | loss=3.6944 | lr=2.55e-06
+  step   430 | loss=4.4450 | lr=2.17e-06
+  step   440 | loss=4.3594 | lr=1.79e-06
+  step   450 | loss=3.6830 | lr=1.44e-06
+  step   460 | loss=3.4233 | lr=1.11e-06
+  step   470 | loss=3.4375 | lr=8.18e-07
+  step   480 | loss=4.0442 | lr=5.68e-07
+  step   490 | loss=3.8652 | lr=3.67e-07
+  step   500 | loss=4.1223 | lr=2.20e-07

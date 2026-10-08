@@ -1,0 +1,11 @@
+{
+  "dataset_name": "Salesforce/wikitext (wikitext-2-raw-v1)",
+  "test_split": "test",
+  "num_chunks": 800,
+  "seq_len": 128,
+  "total_tokens": 102400,
+  "vocab_size": 50257,
+  "max_train_texts": 5000,
+  "eval_max_tokens": 15000,
+  "eval_stride": 128
+}

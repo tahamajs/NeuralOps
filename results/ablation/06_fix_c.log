@@ -1,0 +1,37 @@
+2026-10-05 23:42:27,097 [INFO] MambaKD: ======================================================================
+2026-10-05 23:42:27,098 [INFO] MambaKD: Multi-Module Knowledge Distillation Sweep
+2026-10-05 23:42:27,098 [INFO] MambaKD: ======================================================================
+2026-10-05 23:42:27,098 [INFO] MambaKD: Model: gpt2 | Modules: 1 to process | Methods: ['C']
+2026-10-05 23:42:27,098 [INFO] MambaKD: Device: cuda | FP16: True | Batch: 2 | Seq: 128
+2026-10-05 23:42:27,099 [INFO] MambaKD: Loading tokenizer: gpt2
+2026-10-05 23:42:27,584 [INFO] MambaKD: Loading WikiText-2 dataset...
+Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-05 23:42:27,588 [WARNING] datasets.load: Using the latest cached version of the dataset since Salesforce/wikitext couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-05 23:42:27,591 [WARNING] datasets.packaged_modules.cache.cache: Found the latest cached dataset configuration 'wikitext-2-raw-v1' at C:\Users\Hadi Schumacher\.cache\huggingface\datasets\Salesforce___wikitext\wikitext-2-raw-v1\0.0.0\b08601e04326c79dfdd32d625aee71d232d685c3 (last modified on Fri Sep 18 12:22:28 2026).
+2026-10-05 23:42:31,603 [INFO] MambaKD: Training chunks: (412, 128)
+2026-10-05 23:42:31,604 [INFO] MambaKD: Creating safe pristine student snapshot (CPU)...
+Loading weights:   0%|          | 0/148 [00:00<?, ?it/s]Loading weights: 100%|##########| 148/148 [00:00<00:00, 3168.55it/s]
+2026-10-05 23:42:31,840 [INFO] MambaKD: Loading existing teacher cache from results\kd_cache\gpt2_9b1b990ffcad. (Skipping teacher model load completely!)
+2026-10-05 23:42:31,842 [INFO] MambaKD: Using teacher baseline PPL: 66.07
+2026-10-05 23:42:31,842 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 66.07 (dataset=test, max_tokens=15000, stride=128, seq_len=128)
+2026-10-05 23:42:32,449 [INFO] MambaKD: 
+======================================================================
+2026-10-05 23:42:32,449 [INFO] MambaKD: PROCESSING MODULE 1/1: aegis_spectron_fp8
+2026-10-05 23:42:32,449 [INFO] MambaKD: ======================================================================
+2026-10-05 23:42:32,450 [INFO] MambaKD: 
+# Running method C for aegis_spectron_fp8
+2026-10-05 23:42:33,510 [INFO] neuralops.attentions.gated_delta_net: GDN: Triton scan available
+2026-10-05 23:42:33,537 [INFO] neuralops.attentions.hgrn2_layer: HGRN2: Triton scan available
+Token indices sequence length is longer than the specified maximum sequence length for this model (20822 > 1024). Running this sequence through the model will result in indexing errors
+`loss_type=None` was set in the config but it is unrecognized. Using the default loss: `ForCausalLMLoss`.
+2026-10-05 23:43:34,986 [INFO] MambaKD: Pre-KD PPL for Module aegis_spectron_fp8, Method C: 2004.71
+2026-10-05 23:43:34,987 [INFO] MambaKD: [SANITY] Teacher baseline PPL = 66.07 (dataset=test, max_tokens=15000, stride=128, seq_len=128)
+2026-10-05 23:43:34,987 [INFO] MambaKD: [SANITY] Student pre-KD PPL   = 2004.71 (same protocol)
+2026-10-05 23:43:34,987 [INFO] MambaKD: [SANITY] Delta pre-baseline   = +1938.64 (should be POSITIVE, e.g. +3 to +30)
+2026-10-05 23:43:34,991 [INFO] MambaKD: set_train_scope: matched 460 target param tensors
+2026-10-05 23:43:37,337 [INFO] MambaKD: [C] Step 1/5 | Loss: 7.3390 | LR: 1.25e-04
+2026-10-05 23:43:39,377 [INFO] MambaKD: [C] Step 2/5 | Loss: 7.0822 | LR: 2.50e-04
+2026-10-05 23:43:41,345 [INFO] MambaKD: [C] Step 3/5 | Loss: 4.2527 | LR: 1.88e-04
+2026-10-05 23:43:43,425 [INFO] MambaKD: [C] Step 4/5 | Loss: 2.9774 | LR: 6.25e-05
+2026-10-05 23:43:45,427 [INFO] MambaKD: [C] Step 5/5 | Loss: 1.6798 | LR: 2.50e-05
