@@ -6,7 +6,6 @@ import logging
 from typing import Any, Dict, Optional
 
 import torch
-from torch.utils.data import DataLoader
 
 from neuralops.benchmarks.core.data_loader import (
     get_dataset_metadata,
@@ -26,7 +25,8 @@ from neuralops.benchmarks.core.model_loader import (
     get_model_metadata,
     load_model_and_tokenizer,
 )
-from neuralops.benchmarks.result import BenchmarkResult, DatasetMetadata, ModelMetadata
+from neuralops.benchmarks.result import DatasetMetadata, ModelMetadata
+
 
 logger = logging.getLogger(__name__)
 
