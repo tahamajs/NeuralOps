@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <text x="640" y="240" font-family="Arial, sans-serif" font-size="96" font-weight="bold" fill="#4dabf7" text-anchor="middle">
+    NeuralOps
+  </text>
+  <text x="640" y="320" font-family="Arial, sans-serif" font-size="36" fill="#e0e0e0" text-anchor="middle">
+    Subquadratic Attention &amp; Model Compression
+  </text>
+  <text x="640" y="400" font-family="Arial, sans-serif" font-size="24" fill="#868e96" text-anchor="middle">
+    159 Attention · 73 Compressors · 19 Triton Kernels
+  </text>
+  <text x="640" y="500" font-family="monospace" font-size="28" fill="#51cf66" text-anchor="middle">
+    pip install neuralops
+  </text>
+</svg>
