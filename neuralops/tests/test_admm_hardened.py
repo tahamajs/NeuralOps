@@ -23,7 +23,6 @@ import torch.nn as nn
 HERE = Path(__file__).resolve().parent
 CODES_DIR = HERE.parent.parent
 if str(CODES_DIR) not in sys.path:
-    sys.path.insert(0, str(CODES_DIR))
 
 from neuralops.compression_engine.admm_compressor import (ADMMCompressor,
                                                           admm_factory)
