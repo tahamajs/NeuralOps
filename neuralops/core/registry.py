@@ -247,7 +247,8 @@ class Registry:
             return
         if self.name == "compressors":
             try:
-                pass
+                import neuralops.compression_engine  # noqa: F401
+                self._loaded = True
             except Exception as e:
                 import os
 
@@ -256,7 +257,8 @@ class Registry:
                 logger.warning("Error loading compression_engine: %s", e)
         elif self.name == "attentions":
             try:
-                pass
+                import neuralops.attentions  # noqa: F401
+                self._loaded = True
             except Exception as e:
                 import os
 
