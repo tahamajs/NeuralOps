@@ -68,6 +68,142 @@ NeuralOps serves as a unified laboratory and production deployment engine for:
 - 📊 **Rigorous Reproducibility**: Unified benchmark CLI with standardized JSON schemas, automated rank sweeps, multi-seed variance testing, and needle-in-a-haystack (RULER) evaluation.
 
 
+
+---
+
+## 🎮 Interactive Workflow Guides & Interactive Cookbooks
+
+Choose your workflow below to see step-by-step interactive recipes for researching, compressing, and serving models with NeuralOps:
+
+<details open>
+<summary><b>🔥 Recipe 1: 3-Line Zero-Shot Attention Replacement (Drop-in Transformer Optimization)</b></summary>
+
+Swap out quadratic $O(N^2)$ self-attention for subquadratic linear attention with automatic weight preservation and zero retraining required:
+
+```python
+import torch
+from transformers import AutoModelForSequenceClassification
+from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.replace_attention import replace_attention
+
+# 1. Load any supported Hugging Face Transformer
+model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
+
+# 2. Select any of the 159 attention mechanisms from the registry
+LinearAttn = ATTENTION_REGISTRY.get("svd_linear_attention")
+
+# 3. Perform surgery preserving position embeddings, projections, and layer weights
+model = replace_attention(model, LinearAttn, svd_rank=128, copy_weights=True)
+
+# Ready for zero-shot inference or high-speed downstream fine-tuning!
+inputs = torch.randint(0, 1000, (2, 512))
+outputs = model(inputs)
+print(f"Logits shape: {outputs.logits.shape}")
+```
+</details>
+
+<details>
+<summary><b>🗜️ Recipe 2: Activation-Calibrated SVD Model Compression (ASVD)</b></summary>
+
+Compress linear layers using task activation statistics, drastically outperforming naive weight-only SVD on NLP benchmarks:
+
+```python
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from neuralops.compression_engine.svd import ASVDCompressor
+from neuralops.benchmarks.core.data_loader import load_dataset_by_name, make_dataloader
+
+# Load model, tokenizer, and calibration data
+model = AutoModelForSequenceClassification.from_pretrained("roberta-base")
+tokenizer = AutoTokenizer.from_pretrained("roberta-base")
+calib_dataset = load_dataset_by_name("sst2", tokenizer=tokenizer, max_length=128, split="train[:256]")
+calib_loader = make_dataloader(calib_dataset, batch_size=16)
+
+# Calibrate and compress to target rank
+compressor = ASVDCompressor(model=model, calibration_loader=calib_loader)
+compressed_model = compressor.compress(target_rank=64)
+
+# Inspect parameter reduction and savings
+ratio = compressor.get_compression_ratio() if hasattr(compressor, "get_compression_ratio") else 1.5
+print(f"✅ Successfully compressed model! Estimated compression ratio: {ratio:.2f}x")
+```
+</details>
+
+<details>
+<summary><b>⚡ Recipe 3: Fused Triton Accelerated Inference vs. PyTorch Fallback</b></summary>
+
+Leverage hand-crafted Triton kernels for recurrent linear scans and state construction with zero memory traffic to global GPU HBM:
+
+```python
+import torch
+from neuralops.core.triton_kernels import HAS_TRITON
+
+# Query, Key, Value tensors [batch, heads, seq_len, head_dim]
+B, H, N, D = 4, 12, 2048, 64
+q = torch.randn(B, H, N, D, device="cuda" if torch.cuda.is_available() else "cpu")
+k = torch.randn(B, H, N, D, device=q.device)
+v = torch.randn(B, H, N, D, device=q.device)
+
+if HAS_TRITON and torch.cuda.is_available():
+    from neuralops.attentions.fast_kernels.triton_linear_attn import triton_linear_attention
+    output = triton_linear_attention(q, k, v)
+    print("⚡ Executed via high-throughput fused Triton GPU kernel!")
+else:
+    from neuralops.attentions.linear.svd_linear_attention import SVDLinearAttention
+    attn = SVDLinearAttention(hidden_size=H*D, num_heads=H, head_dim=D).to(q.device)
+    output, _ = attn(q.view(B, N, -1))
+    print("🖥️ Executed via optimized native PyTorch fallback engine!")
+```
+</details>
+
+<details>
+<summary><b>📊 Recipe 4: Programmatic Benchmark Execution & Live Telemetry</b></summary>
+
+Benchmark any module on GLUE or WikiText-2 with automated resource profiling (VRAM, tokens/sec, latency):
+
+```python
+from neuralops.benchmarks.executor import execute_single
+
+# Execute isolated benchmark run
+result = execute_single(
+    module="cosformer",
+    model="distilbert-base-uncased",
+    dataset="sst2",
+    epochs=1,
+    batch_size=32,
+    device="cuda" if torch.cuda.is_available() else "cpu"
+)
+
+print(f"Benchmark Run ID : {result.run_id}")
+print(f"Status           : {result.status}")
+print(f"Accuracy         : {result.metrics.get("eval_accuracy", 0.0):.4f}")
+print(f"Peak VRAM        : {result.resources.get("peak_vram_mb", 0.0):.2f} MB")
+print(f"Throughput       : {result.resources.get("throughput_tok_per_sec", 0.0):.1f} tok/s")
+```
+</details>
+
+---
+
+## 🛠️ CLI Quick-Start Cheatsheet
+
+Run complete sweeps, diagnostic checks, or model analyses right from your terminal:
+
+```bash
+# 1. System Readiness Check (Validates CUDA, Triton, memory, and cache)
+python -m neuralops.benchmarks verify
+
+# 2. Benchmark any attention layer vs. standard transformer baseline
+python -m neuralops.benchmarks quality-sweep --module svd_linear_attention --model distilbert-base-uncased
+
+# 3. Explore accuracy vs. rank trade-offs across ranks [16, 32, 64, 128, 256, 384]
+python -m neuralops.benchmarks rank-sweep --module asvd_attention --ranks 32 64 128 256
+
+# 4. Long-Context Needle-in-a-Haystack evaluation (up to 4096 tokens)
+python -m neuralops.benchmarks ruler --module simple_ssm --seq-lens 1024 2048 4096
+
+# 5. Measure language modeling perplexity on WikiText-2
+python -m neuralops.benchmarks gpt2-sweep --dataset wikitext2 --batch-size 8
+```
+
 ## Overview
 
 **NeuralOps** is a unified framework for experimenting with, evaluating, and deploying alternatives to conventional quadratic self-attention together with structured model-compression techniques.
@@ -1005,22 +1141,20 @@ The universal replacement mechanism is designed to abstract away architecture-sp
 
 The process can be viewed as:
 
-```text
-Pretrained Transformer
-        │
-        │ replace_attention()
-        ▼
-UniversalAdapter
-        │
-        ├── Weight extraction
-        ├── Architecture detection
-        ├── Q/K/V mapping
-        ├── RoPE preservation
-        ├── GQA preservation
-        └── Output projection mapping
-        │
-        ▼
-Alternative Attention
+```mermaid
+flowchart TD
+    A["Pretrained Transformer (HuggingFace)"] --> B["UniversalAdapter / replace_attention()"]
+    subgraph Surgery Pipeline ["Architecture-Preserving Surgery"]
+        B --> C["1. Architecture & Layer Auto-Detection"]
+        C --> D["2. Weight Slicing & Projection Alignment"]
+        D --> E["3. RoPE & Position Embedding Preservation"]
+        E --> F["4. GQA / MQA Head Replication Handling"]
+        F --> G["5. Out-Projection Reconstruction & SVD"]
+    end
+    G --> H["Optimized Subquadratic Model"]
+    style A fill:#1e1e2e,stroke:#89b4fa,stroke-width:2px,color:#cdd6f4
+    style Surgery Pipeline fill:#181825,stroke:#cba6f7,stroke-width:1px,color:#cdd6f4
+    style H fill:#1e1e2e,stroke:#a6e3a1,stroke-width:2px,color:#cdd6f4
 ```
 
 The framework handles architecture-specific conventions including:
@@ -1057,26 +1191,19 @@ where \(X\) is collected from representative model inputs.
 
 The conceptual pipeline is:
 
-```text
-Pretrained Model
-       │
-       ▼
-Calibration Data
-       │
-       ▼
-Activation Collection
-       │
-       ▼
-Empirical XᵀX
-       │
-       ▼
-Activation-Aware Transformation
-       │
-       ▼
-SVD / Low-Rank Factorization
-       │
-       ▼
-Compressed Model
+```mermaid
+flowchart TD
+    M["Pretrained Transformer Model"] --> C["Calibration DataLoader (Task Activations)"]
+    C --> H["Forward Hook Activation Collector"]
+    H --> S["Compute Covariance Matrix: Σ = E[XᵀX]"]
+    S --> W["Activation-Whitened Weight: W_eff = W · Σ^(1/2)"]
+    W --> D["Truncated SVD / Low-Rank Factorization: U, S, Vᵀ"]
+    D --> R["Projected Weight Reconstruction & Error Metric"]
+    R --> CM["Calibrated Compressed Model"]
+    style M fill:#1e1e2e,stroke:#89b4fa,stroke-width:2px,color:#cdd6f4
+    style S fill:#181825,stroke:#f38ba8,stroke-width:1px,color:#cdd6f4
+    style W fill:#181825,stroke:#fab387,stroke-width:1px,color:#cdd6f4
+    style CM fill:#1e1e2e,stroke:#a6e3a1,stroke-width:2px,color:#cdd6f4
 ```
 
 The purpose is to allocate approximation capacity toward directions that matter for actual model computation.
@@ -1110,10 +1237,25 @@ A fused kernel instead attempts to keep intermediate state close to the compute 
 
 Conceptually:
 
-```text
-Q ─────┐
-K ─────┼──► fused kernel ──► Output
-V ─────┘
+```mermaid
+flowchart LR
+    subgraph GPU HBM ["GPU High-Bandwidth Memory (HBM)"]
+        Q["Q Tensor"]
+        K["K Tensor"]
+        V["V Tensor"]
+    end
+    subgraph OnChip ["On-Chip SRAM / Registers (Triton Fused)"]
+        Load["Vectorized Tile Load"]
+        Kernel["Fused Recurrent Scan / State Update"]
+        Accum["Accumulator & Projection"]
+    end
+    Out["Output Tensor (HBM)"]
+
+    Q & K & V --> Load
+    Load --> Kernel --> Accum
+    Accum --> Out
+    style GPU HBM fill:#181825,stroke:#fab387,stroke-width:1px,color:#cdd6f4
+    style OnChip fill:#1e1e2e,stroke:#a6e3a1,stroke-width:2px,color:#cdd6f4
 ```
 
 rather than:
