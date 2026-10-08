@@ -57,7 +57,12 @@
 
 ---
 
-## 🌟 Key Highlights
+## 🌟 Key Highlights (v1.1.0)
+
+- **High-Performance Inference Runtime**: `NeuralOpsInferenceEngine` featuring streaming token generation, speculative decoding, beam search, and continuous dynamic batching.
+- **Production Compression Engine**: First-class support for GPTQ (inverse Hessian damping), AWQ (activation-aware channel scaling), SmoothQuant, Wanda, QLoRA, and DoRA.
+- **Modern Attention Zoo & Triton Kernels**: Native sliding window attention (Mistral), ALiBi, Attention Sinks, MQA, Cross Attention, Flash-Decoding split-KV, Paged Attention, and Fused RoPE.
+- **Full Framework Integrations**: HuggingFace `AutoNeuralOpsModel` & `patch_model_attention`, vLLM & TGI adapters, DeepSpeed ZeRO-1/2/3, and PyTorch dynamic compilation.
 
 > **Core Philosophy:** Changing the computational structure or rank of a Transformer should never require rewriting the model, retraining from scratch, rebuilding the training stack, or abandoning Hugging Face ecosystem compatibility.
 
