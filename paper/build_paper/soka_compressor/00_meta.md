@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `soka_compressor`
+**Legacy Folder Name:** `soka` (standardized in v1.2.0)
+
 # Soka: Formal Architectural Specification and Empirical Benchmark Evaluation
 
 **Module Name**: `soka`  
