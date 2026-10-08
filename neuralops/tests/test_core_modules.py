@@ -9,8 +9,10 @@ from neuralops.core.base import BaseAttention, BaseCompressor
 from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 from neuralops.core.adapters import get_adapter, BertAdapter, DistilBertAdapter, LlamaAdapter
 from neuralops.core.gqa_utils import repeat_kv
-from neuralops.core.attention_utils import create_attention_mask
+from neuralops.core.attention_utils import safe_softmax, softcap
 from neuralops.core.model_utils import count_parameters
+import neuralops.attentions  # noqa: F401 - populate ATTENTION_REGISTRY
+import neuralops.compression_engine  # noqa: F401 - populate COMPRESSOR_REGISTRY
 
 
 class DummyAttention(BaseAttention):
@@ -34,8 +36,8 @@ def test_base_attention_instantiation():
 
 def test_base_compressor_instantiation():
     """Verify BaseCompressor subclass instantiation and execution."""
-    comp = DummyCompressor()
     model = nn.Linear(10, 10)
+    comp = DummyCompressor(model)
     compressed = comp.compress(model)
     assert compressed is model
 
@@ -74,12 +76,16 @@ def test_gqa_utils_repeat_kv():
     assert out.shape == (2, 8, 8, 16)
 
 
-def test_attention_mask_creation():
-    """Verify create_attention_mask handles causal and padding masking."""
-    mask = create_attention_mask(seq_len=8, is_causal=True)
-    assert mask is not None
-    assert mask.shape[-1] == 8
-    assert mask.shape[-2] == 8
+def test_attention_numerical_utils():
+    """Verify safe_softmax and softcap utilities."""
+    x = torch.randn(2, 4, 8)
+    sm = safe_softmax(x, dim=-1)
+    assert sm.shape == x.shape
+    assert torch.allclose(sm.sum(dim=-1), torch.ones(2, 4))
+
+    sc = softcap(x, cap=10.0)
+    assert sc.shape == x.shape
+    assert (sc.abs() <= 10.0).all()
 
 
 def test_model_utils_count_parameters():
