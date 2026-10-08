@@ -370,6 +370,7 @@ class AdaptiveSparseAttention(BaseAttention):
             self.lora_alpha = getattr(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0))
         else:
             self.lora_rank = kwargs.get("lora_rank", lora_rank)
+            self.lora_alpha = kwargs.get("lora_alpha", 32.0)
         # The user requested NOT to unfreeze the base weights.
         self.freeze_base: bool = self.lora_rank > 0
 

@@ -1304,3 +1304,12 @@ def inject_split_head_hybrid(
     except Exception as e:
         logger.exception("Failed to inject AEGIS-V5: %s", e)
         return None
+
+
+# Backward-compatibility aliases for tests and external callers
+AegisAttention = SplitHeadHybridAttention
+AegisConfigV5 = SplitHeadHybridConfig
+AegisAttentionV5 = SplitHeadHybridAttention
+inject_aegis_v5 = inject_split_head_hybrid
+inject_aegis_into_distilbert = inject_split_head_hybrid
+
