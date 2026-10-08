@@ -56,42 +56,59 @@ def execute_single(
         **kwargs,
     }
 
-    # 1. Inspect module metadata from discovery
-    all_modules = discover_modules()
-    mod_info = all_modules.get(module)
+    # 1. Inspect module metadata from discovery (or handle baseline)
+    is_baseline = module is None or str(module).lower() in ("none", "baseline", "full", "dense")
+    if is_baseline:
+        module_name = "baseline"
+        module_type = "baseline"
+        mod_dict = {
+            "name": "baseline",
+            "type": "baseline",
+            "family": "dense",
+            "supports_causal": True,
+            "supports_gqa": True,
+            "supports_rope": True,
+            "requires_cuda": False,
+            "rank": rank,
+        }
+        effective_timeout = timeout_s or 1800
+    else:
+        module_name = str(module)
+        all_modules = discover_modules()
+        mod_info = all_modules.get(module_name)
 
-    if mod_info is None:
-        duration_s = time.perf_counter() - start_t
-        end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-        return BenchmarkResult(
-            run_id=run_id,
-            run_name=f"{module}_{model}_{dataset}",
-            timestamp_start=start_time_iso,
-            timestamp_end=end_time_iso,
-            module={"name": module, "type": "unknown", "rank": rank},
-            model={"name": model},
-            dataset={"name": dataset},
-            config=config_dict,
-            status="failed",
-            error=f"ModuleNotFoundError: Module '{module}' not found in ATTENTION_REGISTRY or COMPRESSOR_REGISTRY.",
-            traceback="",
-            timeout_s=timeout_s or 1800,
-            timed_out=False,
-        )
+        if mod_info is None:
+            duration_s = time.perf_counter() - start_t
+            end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            return BenchmarkResult(
+                run_id=run_id,
+                run_name=f"{module}_{model}_{dataset}",
+                timestamp_start=start_time_iso,
+                timestamp_end=end_time_iso,
+                module={"name": module, "type": "unknown", "rank": rank},
+                model={"name": model},
+                dataset={"name": dataset},
+                config=config_dict,
+                status="failed",
+                error=f"ModuleNotFoundError: Module '{module}' not found in ATTENTION_REGISTRY or COMPRESSOR_REGISTRY.",
+                traceback="",
+                timeout_s=timeout_s or 1800,
+                timed_out=False,
+            )
 
-    module_type = mod_info.type
-    mod_dict = {
-        "name": module,
-        "type": module_type,
-        "family": mod_info.family,
-        "supports_causal": mod_info.supports_causal,
-        "supports_gqa": mod_info.supports_gqa,
-        "supports_rope": mod_info.supports_rope,
-        "requires_cuda": mod_info.requires_cuda,
-        "rank": rank,
-    }
+        module_type = mod_info.type
+        mod_dict = {
+            "name": module_name,
+            "type": module_type,
+            "family": mod_info.family,
+            "supports_causal": mod_info.supports_causal,
+            "supports_gqa": mod_info.supports_gqa,
+            "supports_rope": mod_info.supports_rope,
+            "requires_cuda": mod_info.requires_cuda,
+            "rank": rank,
+        }
+        effective_timeout = timeout_s if timeout_s is not None else mod_info.timeout_s
 
-    effective_timeout = timeout_s if timeout_s is not None else mod_info.timeout_s
 
     # Check CUDA requirement
     target_device = device or ("cuda" if torch.cuda.is_available() else "cpu")
@@ -119,7 +136,7 @@ def execute_single(
     try:
         if is_lm_task:
             adapter = PerplexityAdapter(
-                module_name=module,
+                module_name=module_name,
                 module_type=module_type,
                 model_name=model,
                 dataset_name=dataset,
@@ -133,7 +150,7 @@ def execute_single(
             )
         else:
             adapter = ClassificationAdapter(
-                module_name=module,
+                module_name=module_name,
                 module_type=module_type,
                 model_name=model,
                 dataset_name=dataset,
@@ -148,6 +165,7 @@ def execute_single(
                 eval_only=eval_only,
                 **kwargs,
             )
+
 
         run_output = adapter.run()
         duration_s = time.perf_counter() - start_t
