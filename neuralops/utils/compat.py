@@ -266,10 +266,6 @@ SVD_FACTOR_KEYWORDS = (
 )
 
 
-def _is_svd_factor_param(param_id: int, svd_param_ids: set) -> bool:
-    return param_id in svd_param_ids
-
-
 def _is_protected_param(name: str) -> bool:
     n_l = name.lower()
     return any(k in n_l for k in PROTECTED_KEYWORDS)
