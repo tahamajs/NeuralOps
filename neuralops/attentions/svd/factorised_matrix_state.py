@@ -176,9 +176,6 @@ class LoRALinear(nn.Module):
 
 
 @ATTENTION_REGISTRY.register(
-    "fms", supports_causal=True, supports_bidirectional=True, supports_gqa=True
-)
-@ATTENTION_REGISTRY.register(
     "factorised_matrix_state",
     supports_causal=True,
     supports_bidirectional=True,

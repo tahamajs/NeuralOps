@@ -2,22 +2,26 @@ include LICENSE
 include README.md
 include CHANGELOG.md
 include pyproject.toml
+include neuralops/core/deprecated_aliases.json
+include neuralops/benchmarks/discovery_overrides.json
+include neuralops/py.typed
 
-recursive-include neuralops *.json
-recursive-include neuralops *.yaml
-recursive-include neuralops *.yml
 recursive-include neuralops *.pyi
-recursive-include neuralops py.typed
 
+recursive-exclude neuralops/data/glue_data *
 recursive-exclude neuralops/tests *
 recursive-exclude neuralops/benchmarks/_legacy *
 recursive-exclude neuralops/_archive *
+recursive-exclude neuralops/core/_archive *
 recursive-exclude neuralops/attentions/_legacy *
 recursive-exclude neuralops/compression_engine/_legacy *
 recursive-exclude tests *
 recursive-exclude scripts *
 recursive-exclude results *
 
+global-exclude *.arrow
+global-exclude *.parquet
+global-exclude *.h5
 global-exclude *.pyc
 global-exclude *.pyo
 global-exclude __pycache__
