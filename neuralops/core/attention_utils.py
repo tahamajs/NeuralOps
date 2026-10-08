@@ -56,6 +56,11 @@ def available_attention_types() -> list[str]:
     return sorted(list(ATTENTION_REGISTRY.keys()))
 
 
+def softcap(scores: torch.Tensor, cap: float = 50.0) -> torch.Tensor:
+    """Apply softcapping to attention scores (Gemma-2, Grok)."""
+    return cap * torch.tanh(scores / cap)
+
+
 __all__ = [
     "inject_attention",
     "available_attention_types",
@@ -66,6 +71,7 @@ __all__ = [
     "split_and_set_qkv_weights",
     "repeat_kv",
     "softpick",
+    "softcap",
     "apply_rope_after_up_projection",
     "_find_submodule_by_regex",
     "_svd_factorize_weights",
