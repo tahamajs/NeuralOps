@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.benchmarks.core.model_loader API documentation</title>
+<meta name="description" content="Model loading, metadata inspection, and attention/compression surgery for benchmarks.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.benchmarks.core.model_loader</code></h1>
+</header>
+<section id="section-intro">
+<p>Model loading, metadata inspection, and attention/compression surgery for benchmarks.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.benchmarks.core.model_loader.apply_attention_module"><code class="name flex">
+<span>def <span class="ident">apply_attention_module</span></span>(<span>model: nn.Module,<br>module_name: str,<br>rank: int = 64,<br>copy_weights: bool = True,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_attention_module(
+    model: nn.Module,
+    module_name: str,
+    rank: int = 64,
+    copy_weights: bool = True,
+    **kwargs: Any,
+) -&gt; nn.Module:
+    &#34;&#34;&#34;Inject attention module using universal attention surgery.&#34;&#34;&#34;
+    if module_name in (&#34;full&#34;, &#34;dense&#34;, &#34;baseline&#34;):
+        LOG.info(&#34;Preserving original baseline attention structure.&#34;)
+        return model
+
+    if module_name not in ATTENTION_REGISTRY:
+        raise ValueError(
+            f&#34;Module &#39;{module_name}&#39; is not in ATTENTION_REGISTRY ({len(ATTENTION_REGISTRY)} modules available).&#34;
+        )
+
+    LOG.info(&#34;Injecting attention replacement: &#39;%s&#39; (rank=%d)...&#34;, module_name, rank)
+    return inject_attention(
+        model,
+        attention_type=module_name,
+        rank=rank,
+        copy_weights=copy_weights,
+        **kwargs,
+    )</code></pre>
+</details>
+<div class="desc"><p>Inject attention module using universal attention surgery.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.core.model_loader.apply_compression"><code class="name flex">
+<span>def <span class="ident">apply_compression</span></span>(<span>model: nn.Module,<br>module_name: str,<br>rank: int = 64,<br>calibration_loader: Any = None,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_compressor(
+    model: nn.Module,
+    module_name: str,
+    rank: int = 64,
+    calibration_loader: Any = None,
+    **kwargs: Any,
+) -&gt; nn.Module:
+    &#34;&#34;&#34;Apply compression engine to model.&#34;&#34;&#34;
+    if module_name in (&#34;full&#34;, &#34;dense&#34;, &#34;baseline&#34;):
+        return model
+
+    if module_name not in COMPRESSOR_REGISTRY:
+        raise ValueError(
+            f&#34;Compressor &#39;{module_name}&#39; is not in COMPRESSOR_REGISTRY ({len(COMPRESSOR_REGISTRY)} available).&#34;
+        )
+
+    LOG.info(&#34;Applying compressor: &#39;%s&#39; (rank=%d)...&#34;, module_name, rank)
+    compressor_cls = COMPRESSOR_REGISTRY[module_name]
+
+    # Handle constructor signatures: some take (model, rank=...), some take (rank=...)
+    compressor = None
+    try:
+        compressor = compressor_cls(model=model, rank=rank, **kwargs)
+    except TypeError:
+        try:
+            compressor = compressor_cls(rank=rank, **kwargs)
+        except TypeError:
+            try:
+                compressor = compressor_cls(model, **kwargs)
+            except TypeError:
+                compressor = compressor_cls(**kwargs)
+
+    if hasattr(compressor, &#34;compress&#34;):
+        comp_kwargs = {}
+        if calibration_loader is not None and &#34;dataloader&#34; in compressor.compress.__code__.co_varnames:
+            comp_kwargs[&#34;dataloader&#34;] = calibration_loader
+
+        # Check if compress expects model argument
+        if &#34;model&#34; in compressor.compress.__code__.co_varnames:
+            res = compressor.compress(model, **comp_kwargs)
+        else:
+            res = compressor.compress(**comp_kwargs)
+
+        if isinstance(res, tuple):
+            return res[0]
+        elif isinstance(res, nn.Module):
+            return res
+
+    return model</code></pre>
+</details>
+<div class="desc"><p>Apply compression engine to model.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.core.model_loader.apply_compressor"><code class="name flex">
+<span>def <span class="ident">apply_compressor</span></span>(<span>model: nn.Module,<br>module_name: str,<br>rank: int = 64,<br>calibration_loader: Any = None,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_compressor(
+    model: nn.Module,
+    module_name: str,
+    rank: int = 64,
+    calibration_loader: Any = None,
+    **kwargs: Any,
+) -&gt; nn.Module:
+    &#34;&#34;&#34;Apply compression engine to model.&#34;&#34;&#34;
+    if module_name in (&#34;full&#34;, &#34;dense&#34;, &#34;baseline&#34;):
+        return model
+
+    if module_name not in COMPRESSOR_REGISTRY:
+        raise ValueError(
+            f&#34;Compressor &#39;{module_name}&#39; is not in COMPRESSOR_REGISTRY ({len(COMPRESSOR_REGISTRY)} available).&#34;
+        )
+
+    LOG.info(&#34;Applying compressor: &#39;%s&#39; (rank=%d)...&#34;, module_name, rank)
+    compressor_cls = COMPRESSOR_REGISTRY[module_name]
+
+    # Handle constructor signatures: some take (model, rank=...), some take (rank=...)
+    compressor = None
+    try:
+        compressor = compressor_cls(model=model, rank=rank, **kwargs)
+    except TypeError:
+        try:
+            compressor = compressor_cls(rank=rank, **kwargs)
+        except TypeError:
+            try:
+                compressor = compressor_cls(model, **kwargs)
+            except TypeError:
+                compressor = compressor_cls(**kwargs)
+
+    if hasattr(compressor, &#34;compress&#34;):
+        comp_kwargs = {}
+        if calibration_loader is not None and &#34;dataloader&#34; in compressor.compress.__code__.co_varnames:
+            comp_kwargs[&#34;dataloader&#34;] = calibration_loader
+
+        # Check if compress expects model argument
+        if &#34;model&#34; in compressor.compress.__code__.co_varnames:
+            res = compressor.compress(model, **comp_kwargs)
+        else:
+            res = compressor.compress(**comp_kwargs)
+
+        if isinstance(res, tuple):
+            return res[0]
+        elif isinstance(res, nn.Module):
+            return res
+
+    return model</code></pre>
+</details>
+<div class="desc"><p>Apply compression engine to model.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.core.model_loader.cleanup_model"><code class="name flex">
+<span>def <span class="ident">cleanup_model</span></span>(<span>model: nn.Module | None) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cleanup_model(model: nn.Module | None) -&gt; None:
+    &#34;&#34;&#34;Safely delete model and reclaim CPU/GPU VRAM.&#34;&#34;&#34;
+    if model is not None:
+        del model
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()</code></pre>
+</details>
+<div class="desc"><p>Safely delete model and reclaim CPU/GPU VRAM.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.core.model_loader.count_parameters"><code class="name flex">
+<span>def <span class="ident">count_parameters</span></span>(<span>model: nn.Module) ‑> int</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def count_parameters(model: nn.Module) -&gt; int:
+    &#34;&#34;&#34;Count total trainable and non-trainable parameters in a model.&#34;&#34;&#34;
+    return sum(p.numel() for p in model.parameters())</code></pre>
+</details>
+<div class="desc"><p>Count total trainable and non-trainable parameters in a model.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.core.model_loader.get_model_metadata"><code class="name flex">
+<span>def <span class="ident">get_model_metadata</span></span>(<span>model: nn.Module, config: Any) ‑> <a title="neuralops.benchmarks.result.ModelMetadata" href="../result.html#neuralops.benchmarks.result.ModelMetadata">ModelMetadata</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_model_metadata(model: nn.Module, config: Any) -&gt; ModelMetadata:
+    &#34;&#34;&#34;Extract standard ModelMetadata attributes from model instance and config.&#34;&#34;&#34;
+    name = getattr(config, &#34;_name_or_path&#34;, getattr(model, &#34;name&#34;, &#34;unknown_model&#34;))
+    model_type = getattr(config, &#34;model_type&#34;, &#34;unknown&#34;)
+    num_params = count_parameters(model)
+    hidden_size = getattr(config, &#34;hidden_size&#34;, getattr(config, &#34;dim&#34;, 0))
+    num_heads = getattr(config, &#34;num_attention_heads&#34;, getattr(config, &#34;n_heads&#34;, 0))
+    num_layers = getattr(config, &#34;num_hidden_layers&#34;, getattr(config, &#34;n_layers&#34;, 0))
+
+    return ModelMetadata(
+        name=name,
+        family=model_type,
+        num_params=num_params,
+        hidden_size=hidden_size,
+        num_heads=num_heads,
+        num_layers=num_layers,
+    )</code></pre>
+</details>
+<div class="desc"><p>Extract standard ModelMetadata attributes from model instance and config.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.core.model_loader.inject_attention_module"><code class="name flex">
+<span>def <span class="ident">inject_attention_module</span></span>(<span>model: nn.Module,<br>module_name: str,<br>rank: int = 64,<br>copy_weights: bool = True,<br>**kwargs: Any) ‑> torch.nn.modules.module.Module</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_attention_module(
+    model: nn.Module,
+    module_name: str,
+    rank: int = 64,
+    copy_weights: bool = True,
+    **kwargs: Any,
+) -&gt; nn.Module:
+    &#34;&#34;&#34;Inject attention module using universal attention surgery.&#34;&#34;&#34;
+    if module_name in (&#34;full&#34;, &#34;dense&#34;, &#34;baseline&#34;):
+        LOG.info(&#34;Preserving original baseline attention structure.&#34;)
+        return model
+
+    if module_name not in ATTENTION_REGISTRY:
+        raise ValueError(
+            f&#34;Module &#39;{module_name}&#39; is not in ATTENTION_REGISTRY ({len(ATTENTION_REGISTRY)} modules available).&#34;
+        )
+
+    LOG.info(&#34;Injecting attention replacement: &#39;%s&#39; (rank=%d)...&#34;, module_name, rank)
+    return inject_attention(
+        model,
+        attention_type=module_name,
+        rank=rank,
+        copy_weights=copy_weights,
+        **kwargs,
+    )</code></pre>
+</details>
+<div class="desc"><p>Inject attention module using universal attention surgery.</p></div>
+</dd>
+<dt id="neuralops.benchmarks.core.model_loader.load_model_and_tokenizer"><code class="name flex">
+<span>def <span class="ident">load_model_and_tokenizer</span></span>(<span>model_name: str,<br>device: str | torch.device = 'cpu',<br>dtype: str = 'float32',<br>num_labels: int | None = None,<br>is_causal: bool = False,<br>task: str | None = None,<br>trust_remote_code: bool = True) ‑> tuple[torch.nn.modules.module.Module, typing.Any, typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_model_and_tokenizer(
+    model_name: str,
+    device: str | torch.device = &#34;cpu&#34;,
+    dtype: str = &#34;float32&#34;,
+    num_labels: int | None = None,
+    is_causal: bool = False,
+    task: str | None = None,
+    trust_remote_code: bool = True,
+) -&gt; tuple[nn.Module, Any, Any]:
+    &#34;&#34;&#34;
+    Load HuggingFace model, tokenizer, and config with transparent device fallback.
+
+    Returns:
+        Tuple of (model, tokenizer, config)
+    &#34;&#34;&#34;
+    if task == &#34;lm&#34;:
+        is_causal = True
+    elif task == &#34;classification&#34; and num_labels is None:
+        num_labels = 2
+
+    torch_dtype = {
+        &#34;float32&#34;: torch.float32,
+        &#34;float16&#34;: torch.float16,
+        &#34;bfloat16&#34;: torch.bfloat16,
+    }.get(dtype, torch.float32)
+
+    LOG.info(&#34;Loading tokenizer for &#39;%s&#39;...&#34;, model_name)
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name,
+        trust_remote_code=trust_remote_code,
+    )
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token or tokenizer.bos_token or &#34;[PAD]&#34;
+
+    LOG.info(&#34;Loading configuration for &#39;%s&#39;...&#34;, model_name)
+    config = AutoConfig.from_pretrained(
+        model_name,
+        trust_remote_code=trust_remote_code,
+    )
+    if num_labels is not None:
+        config.num_labels = num_labels
+
+    LOG.info(&#34;Instantiating model &#39;%s&#39; (is_causal=%s, dtype=%s)...&#34;, model_name, is_causal, dtype)
+    try:
+        if is_causal:
+            model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                config=config,
+                torch_dtype=torch_dtype,
+                trust_remote_code=trust_remote_code,
+            )
+        elif num_labels is not None:
+            model = AutoModelForSequenceClassification.from_pretrained(
+                model_name,
+                config=config,
+                torch_dtype=torch_dtype,
+                trust_remote_code=trust_remote_code,
+            )
+        else:
+            model = AutoModel.from_pretrained(
+                model_name,
+                config=config,
+                torch_dtype=torch_dtype,
+                trust_remote_code=trust_remote_code,
+            )
+        model = model.to(device)
+    except torch.cuda.OutOfMemoryError as e:
+        LOG.warning(&#34;CUDA OOM loading model to %s. Falling back to CPU: %s&#34;, device, e)
+        cleanup_model(None)
+        if is_causal:
+            model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                config=config,
+                torch_dtype=torch.float32,
+                trust_remote_code=trust_remote_code,
+            )
+        elif num_labels is not None:
+            model = AutoModelForSequenceClassification.from_pretrained(
+                model_name,
+                config=config,
+                torch_dtype=torch.float32,
+                trust_remote_code=trust_remote_code,
+            )
+        else:
+            model = AutoModel.from_pretrained(
+                model_name,
+                config=config,
+                torch_dtype=torch.float32,
+                trust_remote_code=trust_remote_code,
+            )
+        model = model.to(&#34;cpu&#34;)
+
+    model.eval()
+    return model, tokenizer, config</code></pre>
+</details>
+<div class="desc"><p>Load HuggingFace model, tokenizer, and config with transparent device fallback.</p>
+<p>Returns
+-----=
+Tuple of (model, tokenizer, config)</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.benchmarks.core" href="index.html">neuralops.benchmarks.core</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.benchmarks.core.model_loader.apply_attention_module" href="#neuralops.benchmarks.core.model_loader.apply_attention_module">apply_attention_module</a></code></li>
+<li><code><a title="neuralops.benchmarks.core.model_loader.apply_compression" href="#neuralops.benchmarks.core.model_loader.apply_compression">apply_compression</a></code></li>
+<li><code><a title="neuralops.benchmarks.core.model_loader.apply_compressor" href="#neuralops.benchmarks.core.model_loader.apply_compressor">apply_compressor</a></code></li>
+<li><code><a title="neuralops.benchmarks.core.model_loader.cleanup_model" href="#neuralops.benchmarks.core.model_loader.cleanup_model">cleanup_model</a></code></li>
+<li><code><a title="neuralops.benchmarks.core.model_loader.count_parameters" href="#neuralops.benchmarks.core.model_loader.count_parameters">count_parameters</a></code></li>
+<li><code><a title="neuralops.benchmarks.core.model_loader.get_model_metadata" href="#neuralops.benchmarks.core.model_loader.get_model_metadata">get_model_metadata</a></code></li>
+<li><code><a title="neuralops.benchmarks.core.model_loader.inject_attention_module" href="#neuralops.benchmarks.core.model_loader.inject_attention_module">inject_attention_module</a></code></li>
+<li><code><a title="neuralops.benchmarks.core.model_loader.load_model_and_tokenizer" href="#neuralops.benchmarks.core.model_loader.load_model_and_tokenizer">load_model_and_tokenizer</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

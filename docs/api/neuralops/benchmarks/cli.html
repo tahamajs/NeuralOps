@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.benchmarks.cli API documentation</title>
+<meta name="description" content="Unified CLI for neuralops benchmarking suite.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.benchmarks.cli</code></h1>
+</header>
+<section id="section-intro">
+<p>Unified CLI for neuralops benchmarking suite.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.benchmarks.cli.handle_list"><code class="name flex">
+<span>def <span class="ident">handle_list</span></span>(<span>args: argparse.Namespace) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def handle_list(args: argparse.Namespace) -&gt; None:
+    modules = discover_all_modules()
+    if args.type in (&#34;attention&#34;, &#34;compressor&#34;):
+        modules = [m for m in modules if m.type == args.type]
+
+    if args.supports:
+        flag = f&#34;supports_{args.supports}&#34; if args.supports != &#34;cuda&#34; else &#34;requires_cuda&#34;
+        modules = [m for m in modules if getattr(m, flag, False)]
+
+    print(f&#34;Discovered {len(modules)} matching modules:&#34;)
+    for m in modules:
+        print(f&#34;  [{m.type:10s}] {m.name:36s} (causal={m.supports_causal}, gqa={m.supports_gqa}, rope={m.supports_rope}, cuda={m.requires_cuda})&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.cli.handle_plan"><code class="name flex">
+<span>def <span class="ident">handle_plan</span></span>(<span>args: argparse.Namespace) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def handle_plan(args: argparse.Namespace) -&gt; None:
+    # Resolve modules count
+    mod_count = 1
+    if args.all:
+        mod_count = len(ATTENTION_REGISTRY) + len(COMPRESSOR_REGISTRY)
+    elif args.all_attention:
+        mod_count = len(ATTENTION_REGISTRY)
+    elif args.all_compressors:
+        mod_count = len(COMPRESSOR_REGISTRY)
+    elif args.modules:
+        mod_count = len(args.modules.split(&#34;,&#34;))
+
+    models_count = 10 if args.all_models else (len(args.models.split(&#34;,&#34;)) if args.models else 1)
+    datasets_count = 22 if args.all_datasets else (len(args.datasets.split(&#34;,&#34;)) if args.datasets else 1)
+    ranks_count = len(args.ranks.split(&#34;,&#34;)) if args.ranks else 1
+
+    total_runs = mod_count * models_count * datasets_count * ranks_count
+    est_seconds = total_runs * 180  # Assume ~3 mins per run average on 1 GPU
+    est_hours = est_seconds / 3600.0
+
+    print(&#34;═════════════════════════════════════════════════════&#34;)
+    print(f&#34;Benchmark Plan Summary:&#34;)
+    print(f&#34;  Modules:  {mod_count}&#34;)
+    print(f&#34;  Models:   {models_count}&#34;)
+    print(f&#34;  Datasets: {datasets_count}&#34;)
+    print(f&#34;  Ranks:    {ranks_count}&#34;)
+    print(f&#34;  Total planned runs: {total_runs}&#34;)
+    print(f&#34;  Estimated duration: ~{est_hours:.1f} hours on 1 GPU&#34;)
+    print(&#34;═════════════════════════════════════════════════════&#34;)
+
+    if total_runs &gt; 500 and not args.yes:
+        print(&#34;⚠️  Grid size exceeds 500 runs. Use --yes to confirm.&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.cli.handle_results"><code class="name flex">
+<span>def <span class="ident">handle_results</span></span>(<span>args: argparse.Namespace) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def handle_results(args: argparse.Namespace) -&gt; None:
+    runner = Runner(output_dir=args.output_dir)
+    df = runner.summary()
+    if df.empty:
+        print(f&#34;No results found in {args.output_dir}&#34;)
+        return
+    print(df.to_string(index=False))</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.cli.handle_run"><code class="name flex">
+<span>def <span class="ident">handle_run</span></span>(<span>args: argparse.Namespace) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def handle_run(args: argparse.Namespace) -&gt; None:
+    mods = &#34;all&#34;
+    if args.no_compression:
+        mods = &#34;baseline&#34;
+    elif args.module:
+        mods = [args.module]
+    elif args.modules:
+        mods = [m.strip() for m in args.modules.split(&#34;,&#34;)]
+    elif args.all_attention:
+        mods = &#34;all-attention&#34;
+    elif args.all_compressors:
+        mods = &#34;all-compressors&#34;
+
+    ranks = [int(r.strip()) for r in args.ranks.split(&#34;,&#34;)] if args.ranks else args.rank
+    models = [m.strip() for m in args.models.split(&#34;,&#34;)] if args.models else args.model
+    datasets = [d.strip() for d in args.datasets.split(&#34;,&#34;)] if args.datasets else args.dataset
+
+    runner = Runner(
+        modules=mods,
+        models=models,
+        datasets=datasets,
+        ranks=ranks,
+        parallel=args.parallel,
+        output_dir=args.output_dir,
+        epochs=args.epochs,
+        batch_size=args.batch_size,
+        lr=args.lr,
+        seq_len=args.seq_len,
+        device=args.device,
+        timeout_s=args.timeout_s,
+        eval_only=args.eval_only,
+    )
+    for res in runner.stream():
+        status_symbol = &#34;✓&#34; if res.status == &#34;success&#34; else &#34;✗&#34;
+        print(f&#34;{status_symbol} [{res.status.upper()}] {res.module.get(&#39;name&#39;)} on {res.model.get(&#39;name&#39;)}/{res.dataset.get(&#39;name&#39;)}&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.cli.handle_verify"><code class="name flex">
+<span>def <span class="ident">handle_verify</span></span>(<span>args: argparse.Namespace) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def handle_verify(args: argparse.Namespace) -&gt; None:
+    import torch
+    import neuralops.attentions
+    import neuralops.compression_engine
+    print(&#34;System Environment Verification:&#34;)
+    print(f&#34;  Platform:         {platform.platform()}&#34;)
+    print(f&#34;  Python Version:   {platform.python_version()}&#34;)
+    print(f&#34;  PyTorch Version:  {torch.__version__}&#34;)
+    print(f&#34;  CUDA Available:   {torch.cuda.is_available()}&#34;)
+    if torch.cuda.is_available():
+        print(f&#34;  Device Name:      {torch.cuda.get_device_name(0)}&#34;)
+        print(f&#34;  Device Count:     {torch.cuda.device_count()}&#34;)
+    print(f&#34;  MPS Available:    {torch.backends.mps.is_available()}&#34;)
+    print(f&#34;  Attention Reg:    {len(ATTENTION_REGISTRY)} modules&#34;)
+    print(f&#34;  Compressor Reg:   {len(COMPRESSOR_REGISTRY)} modules&#34;)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.benchmarks.cli.main"><code class="name flex">
+<span>def <span class="ident">main</span></span>(<span>argv: list[str] | None = None) ‑> int</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def main(argv: list[str] | None = None) -&gt; int:
+    parser = _build_parser()
+    args = parser.parse_args(argv)
+
+    if not args.subcommand:
+        parser.print_help()
+        return 0
+
+    if args.subcommand == &#34;list&#34;:
+        handle_list(args)
+    elif args.subcommand == &#34;plan&#34;:
+        handle_plan(args)
+    elif args.subcommand == &#34;verify&#34;:
+        handle_verify(args)
+    elif args.subcommand == &#34;results&#34;:
+        handle_results(args)
+    elif args.subcommand == &#34;run&#34;:
+        handle_run(args)
+    elif args.subcommand == &#34;resume&#34;:
+        runner = Runner(output_dir=args.output_dir, resume=True)
+        runner.resume()
+
+    return 0</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.benchmarks" href="index.html">neuralops.benchmarks</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="two-column">
+<li><code><a title="neuralops.benchmarks.cli.handle_list" href="#neuralops.benchmarks.cli.handle_list">handle_list</a></code></li>
+<li><code><a title="neuralops.benchmarks.cli.handle_plan" href="#neuralops.benchmarks.cli.handle_plan">handle_plan</a></code></li>
+<li><code><a title="neuralops.benchmarks.cli.handle_results" href="#neuralops.benchmarks.cli.handle_results">handle_results</a></code></li>
+<li><code><a title="neuralops.benchmarks.cli.handle_run" href="#neuralops.benchmarks.cli.handle_run">handle_run</a></code></li>
+<li><code><a title="neuralops.benchmarks.cli.handle_verify" href="#neuralops.benchmarks.cli.handle_verify">handle_verify</a></code></li>
+<li><code><a title="neuralops.benchmarks.cli.main" href="#neuralops.benchmarks.cli.main">main</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

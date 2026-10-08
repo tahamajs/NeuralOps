@@ -167,9 +167,11 @@ Provides a single, consistent API: log_metric, log_params, log_artifact, finaliz
 
         class TrackingCallback(TrainerCallback):
             def __init__(self, tracker_instance):
+                &#34;&#34;&#34;Execute __init__ operation.&#34;&#34;&#34;
                 self.tracker = tracker_instance
 
             def on_log(self, args, state, control, logs=None, **kwargs):
+                &#34;&#34;&#34;Execute on_log operation.&#34;&#34;&#34;
                 if logs:
                     step = state.global_step if state else None
                     self.tracker.log_metrics(logs, step=step)
@@ -254,9 +256,11 @@ After calling this, the tracker should not be used again.</p></div>
 
     class TrackingCallback(TrainerCallback):
         def __init__(self, tracker_instance):
+            &#34;&#34;&#34;Execute __init__ operation.&#34;&#34;&#34;
             self.tracker = tracker_instance
 
         def on_log(self, args, state, control, logs=None, **kwargs):
+            &#34;&#34;&#34;Execute on_log operation.&#34;&#34;&#34;
             if logs:
                 step = state.global_step if state else None
                 self.tracker.log_metrics(logs, step=step)

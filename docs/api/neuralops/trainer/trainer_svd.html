@@ -90,60 +90,20 @@ el.replaceWith(d);
 <div class="desc"><p>Benchmark model.</p></div>
 </dd>
 <dt id="neuralops.trainer.trainer_svd.count_parameters"><code class="name flex">
-<span>def <span class="ident">count_parameters</span></span>(<span>model: torch.nn.modules.module.Module) ‑> int</span>
+<span>def <span class="ident">count_parameters</span></span>(<span>model: torch.nn.modules.module.Module, trainable_only: bool = True) ‑> int</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def count_parameters(model: nn.Module) -&gt; int:
+<pre><code class="python">def count_parameters(model: torch.nn.Module, trainable_only: bool = True) -&gt; int:
     &#34;&#34;&#34;Count parameters.&#34;&#34;&#34;
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)</code></pre>
+    if trainable_only:
+        return sum(p.numel() for p in model.parameters() if p.requires_grad)
+    return sum(p.numel() for p in model.parameters())</code></pre>
 </details>
 <div class="desc"><p>Count parameters.</p></div>
-</dd>
-<dt id="neuralops.trainer.trainer_svd.evaluate_model"><code class="name flex">
-<span>def <span class="ident">evaluate_model</span></span>(<span>model, data_loader, device, num_labels, is_multichoice=False) ‑> Any</span>
-</code></dt>
-<dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def evaluate_model(model, data_loader, device, num_labels, is_multichoice=False) -&gt; Any:
-    &#34;&#34;&#34;Evaluate model.&#34;&#34;&#34;
-    model.eval()
-    all_preds = []
-    all_labels = []
-    with torch.no_grad():
-        for batch in data_loader:
-            if is_multichoice:
-                input_ids = batch[&#34;input_ids&#34;].to(device)
-                attention_mask = batch[&#34;attention_mask&#34;].to(device)
-                true_labels = batch[&#34;labels&#34;]
-                batch_size, num_choices, _ = input_ids.shape
-                input_ids_flat = input_ids.view(-1, input_ids.shape[-1])
-                attention_mask_flat = attention_mask.view(-1, input_ids.shape[-1])
-                outputs = model(input_ids=input_ids_flat, attention_mask=attention_mask_flat)
-                logits = outputs[&#34;logits&#34;]
-                logits_reshaped = logits.view(batch_size, num_choices, -1)
-                avg_logits = logits_reshaped.mean(dim=1)
-                preds = torch.argmax(avg_logits, dim=-1).cpu().numpy()
-                all_preds.extend(preds)
-                all_labels.extend(true_labels.numpy())
-            else:
-                input_ids = batch[&#34;input_ids&#34;].to(device)
-                attention_mask = batch[&#34;attention_mask&#34;].to(device)
-                outputs = model(input_ids, attention_mask=attention_mask)
-                preds = torch.argmax(outputs[&#34;logits&#34;], dim=-1).cpu().numpy()
-                all_preds.extend(preds)
-                all_labels.extend(batch[&#34;labels&#34;].numpy())
-    if len(all_preds) == 0:
-        return 0.0
-    return accuracy_score(all_labels, all_preds)</code></pre>
-</details>
-<div class="desc"><p>Evaluate model.</p></div>
 </dd>
 <dt id="neuralops.trainer.trainer_svd.train_model"><code class="name flex">
 <span>def <span class="ident">train_model</span></span>(<span>model: torch.nn.modules.module.Module,<br>train_loader: torch.utils.data.dataloader.DataLoader,<br>val_loader: torch.utils.data.dataloader.DataLoader,<br>device: torch.device,<br>config,<br>num_labels: int,<br>is_multichoice: bool = False) ‑> Any</span>
@@ -221,7 +181,6 @@ el.replaceWith(d);
 <ul class="">
 <li><code><a title="neuralops.trainer.trainer_svd.benchmark_model" href="#neuralops.trainer.trainer_svd.benchmark_model">benchmark_model</a></code></li>
 <li><code><a title="neuralops.trainer.trainer_svd.count_parameters" href="#neuralops.trainer.trainer_svd.count_parameters">count_parameters</a></code></li>
-<li><code><a title="neuralops.trainer.trainer_svd.evaluate_model" href="#neuralops.trainer.trainer_svd.evaluate_model">evaluate_model</a></code></li>
 <li><code><a title="neuralops.trainer.trainer_svd.train_model" href="#neuralops.trainer.trainer_svd.train_model">train_model</a></code></li>
 </ul>
 </li>

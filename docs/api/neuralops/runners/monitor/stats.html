@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.runners.monitor.stats API documentation</title>
+<meta name="description" content="Aggregated statistical calculation and benchmark record loading for monitor server.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.runners.monitor.stats</code></h1>
+</header>
+<section id="section-intro">
+<p>Aggregated statistical calculation and benchmark record loading for monitor server.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.runners.monitor.stats.build_aggregated_stats"><code class="name flex">
+<span>def <span class="ident">build_aggregated_stats</span></span>(<span>project_dir: str,<br>harvested_json_path: str,<br>docs_dir: str,<br>is_local_gpu: bool = False) ‑> dict[str, typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def build_aggregated_stats(
+    project_dir: str,
+    harvested_json_path: str,
+    docs_dir: str,
+    is_local_gpu: bool = False,
+) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Calculate aggregated leaderboard, memory profiles, and sweep metrics.
+
+    Args:
+        project_dir: Base project root.
+        harvested_json_path: Path to harvested json.
+        docs_dir: Path to documentation dir.
+        is_local_gpu: True if local machine has GPU runner.
+
+    Returns:
+        Structured statistics payload.
+    &#34;&#34;&#34;
+    global _CACHE_DATA, _CACHE_TIME, _ALL_MODULE_RUNS_MAP
+    now = time.time()
+    if _CACHE_DATA and (now - _CACHE_TIME &lt; 2.0):
+        gpu = get_live_gpu_telemetry(project_dir, is_local_gpu)
+        _CACHE_DATA[&#34;gpu&#34;] = {
+            &#34;gpu_util&#34;: gpu[&#34;gpu_util&#34;],
+            &#34;mem_used_mb&#34;: gpu[&#34;mem_used_mb&#34;],
+            &#34;mem_total_mb&#34;: gpu[&#34;mem_total_mb&#34;],
+            &#34;mem_pct&#34;: round((gpu[&#34;mem_used_mb&#34;] / gpu[&#34;mem_total_mb&#34;]) * 100, 1),
+            &#34;power_w&#34;: gpu[&#34;power_w&#34;],
+            &#34;temp_c&#34;: gpu[&#34;temp_c&#34;],
+        }
+        _CACHE_DATA[&#34;active_module&#34;] = gpu.get(&#34;active_module&#34;, &#34;hgrn2_gated_deltanet&#34;)
+        _CACHE_DATA[&#34;logs&#34;] = gpu.get(&#34;logs&#34;, &#34;&#34;)
+        return _CACHE_DATA
+
+    gpu_data = get_live_gpu_telemetry(project_dir, is_local_gpu)
+    raw_records = load_harvested_benchmark_records(project_dir, harvested_json_path)
+
+    module_runs: dict[str, list[dict[str, Any]]] = {}
+    pass_cnt = 0
+    fail_cnt = 0
+    timeout_cnt = 0
+
+    for r in raw_records:
+        m_name = str(r.get(&#34;module_name&#34;, r.get(&#34;module&#34;, &#34;unknown&#34;))).strip().lower()
+        if not m_name or m_name in (&#34;none&#34;, &#34;nan&#34;):
+            continue
+        st = str(r.get(&#34;status&#34;, &#34;pass&#34;)).lower()
+        if &#34;pass&#34; in st:
+            pass_cnt += 1
+        elif &#34;fail&#34; in st:
+            fail_cnt += 1
+        else:
+            timeout_cnt += 1
+
+        if m_name not in module_runs:
+            module_runs[m_name] = []
+        module_runs[m_name].append(r)
+
+    _ALL_MODULE_RUNS_MAP = module_runs
+
+    leaderboard = []
+    for mod, runs in module_runs.items():
+        accs = [
+            float(x.get(&#34;accuracy&#34;, x.get(&#34;acc&#34;, 0.0)))
+            for x in runs
+            if x.get(&#34;accuracy&#34;) is not None or x.get(&#34;acc&#34;) is not None
+        ]
+        avg_acc = round(sum(accs) / max(1, len(accs)), 2) if accs else 0.0
+        leaderboard.append({&#34;module&#34;: mod, &#34;avg_accuracy&#34;: avg_acc, &#34;total_runs&#34;: len(runs)})
+
+    leaderboard.sort(key=lambda x: x[&#34;avg_accuracy&#34;], reverse=True)
+
+    _CACHE_DATA = {
+        &#34;is_running&#34;: True,
+        &#34;last_updated&#34;: time.strftime(&#34;%H:%M:%S&#34;),
+        &#34;gpu&#34;: {
+            &#34;name&#34;: gpu_data.get(&#34;gpu_name&#34;, &#34;NVIDIA GeForce RTX 4070 (8GB)&#34;),
+            &#34;gpu_name&#34;: gpu_data.get(&#34;gpu_name&#34;, &#34;NVIDIA GeForce RTX 4070 (8GB)&#34;),
+            &#34;gpu_util&#34;: gpu_data[&#34;gpu_util&#34;],
+            &#34;mem_used_mb&#34;: gpu_data[&#34;mem_used_mb&#34;],
+            &#34;mem_total_mb&#34;: gpu_data[&#34;mem_total_mb&#34;],
+            &#34;mem_pct&#34;: round((gpu_data[&#34;mem_used_mb&#34;] / gpu_data[&#34;mem_total_mb&#34;]) * 100, 1),
+            &#34;power_w&#34;: gpu_data[&#34;power_w&#34;],
+            &#34;temp_c&#34;: gpu_data[&#34;temp_c&#34;],
+        },
+        &#34;counts&#34;: {&#34;pass&#34;: pass_cnt, &#34;fail&#34;: fail_cnt, &#34;timeout&#34;: timeout_cnt},
+        &#34;analytics&#34;: {&#34;modules&#34;: leaderboard},
+        &#34;results&#34;: raw_records[:100],
+        &#34;active_module&#34;: gpu_data.get(&#34;active_module&#34;, &#34;idle&#34;),
+        &#34;logs&#34;: gpu_data.get(&#34;logs&#34;, &#34;&#34;),
+    }
+    _CACHE_TIME = now
+    return _CACHE_DATA</code></pre>
+</details>
+<div class="desc"><p>Calculate aggregated leaderboard, memory profiles, and sweep metrics.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>project_dir</code></strong></dt>
+<dd>Base project root.</dd>
+<dt><strong><code>harvested_json_path</code></strong></dt>
+<dd>Path to harvested json.</dd>
+<dt><strong><code>docs_dir</code></strong></dt>
+<dd>Path to documentation dir.</dd>
+<dt><strong><code>is_local_gpu</code></strong></dt>
+<dd>True if local machine has GPU runner.</dd>
+</dl>
+<p>Returns
+-----=
+Structured statistics payload.</p></div>
+</dd>
+<dt id="neuralops.runners.monitor.stats.get_module_doc_index"><code class="name flex">
+<span>def <span class="ident">get_module_doc_index</span></span>(<span>docs_dir: str) ‑> dict[str, str]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_module_doc_index(docs_dir: str) -&gt; dict[str, str]:
+    &#34;&#34;&#34;Build an index of available markdown documentation across docs_dir.
+
+    Args:
+        docs_dir: Directory containing Markdown documentation.
+
+    Returns:
+        Mapping of module names/aliases to file paths.
+    &#34;&#34;&#34;
+    doc_index: dict[str, str] = {}
+    if os.path.exists(docs_dir):
+        for md_file in glob.glob(os.path.join(docs_dir, &#34;**&#34;, &#34;*.md&#34;), recursive=True):
+            base_name = os.path.splitext(os.path.basename(md_file))[0].lower()
+            clean_name = (
+                base_name.replace(&#34;unified_&#34;, &#34;&#34;)
+                .replace(&#34;_attention&#34;, &#34;&#34;)
+                .replace(&#34;_compressor&#34;, &#34;&#34;)
+                .replace(&#34;-&#34;, &#34;_&#34;)
+                .strip()
+            )
+            doc_index[clean_name] = md_file
+            doc_index[base_name] = md_file
+    return doc_index</code></pre>
+</details>
+<div class="desc"><p>Build an index of available markdown documentation across docs_dir.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>docs_dir</code></strong></dt>
+<dd>Directory containing Markdown documentation.</dd>
+</dl>
+<p>Returns
+-----=
+Mapping of module names/aliases to file paths.</p></div>
+</dd>
+<dt id="neuralops.runners.monitor.stats.load_harvested_benchmark_records"><code class="name flex">
+<span>def <span class="ident">load_harvested_benchmark_records</span></span>(<span>project_dir: str, harvested_json_path: str) ‑> list[dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_harvested_benchmark_records(
+    project_dir: str, harvested_json_path: str
+) -&gt; list[dict[str, Any]]:
+    &#34;&#34;&#34;Reads all active CSV and historical benchmark records with code-accurate metrics.
+
+    Args:
+        project_dir: Base project root.
+        harvested_json_path: Path to harvested benchmark data JSON.
+
+    Returns:
+        List of benchmark record dictionaries.
+    &#34;&#34;&#34;
+    records: list[dict[str, Any]] = []
+
+    local_csvs = glob.glob(
+        os.path.join(project_dir, &#34;results&#34;, &#34;**&#34;, &#34;*summary*.csv&#34;), recursive=True
+    )
+    local_csvs.sort(key=os.path.getmtime, reverse=True)
+
+    for cf in local_csvs:
+        try:
+            mtime_dt = datetime.datetime.fromtimestamp(os.path.getmtime(cf)).strftime(
+                &#34;%Y-%m-%d %H:%M:%S&#34;
+            )
+            df = pd.read_csv(cf)
+            df.columns = [str(c).strip().lower() for c in df.columns]
+            for _, row in df.iterrows():
+                d = row.to_dict()
+                d[&#34;_source_path&#34;] = cf.replace(&#34;\\&#34;, &#34;/&#34;)
+                if not d.get(&#34;timestamp&#34;) or str(d.get(&#34;timestamp&#34;)).lower() == &#34;nan&#34;:
+                    d[&#34;timestamp&#34;] = mtime_dt
+                else:
+                    ts_str = str(d.get(&#34;timestamp&#34;)).replace(&#34;T&#34;, &#34; &#34;)[:19]
+                    d[&#34;timestamp&#34;] = ts_str
+                records.append(d)
+        except Exception:
+            continue
+
+    if os.path.exists(harvested_json_path):
+        try:
+            with open(harvested_json_path, &#34;r&#34;, encoding=&#34;utf-8&#34;) as f:
+                records.extend(json.load(f))
+        except Exception as e:
+            print(f&#34;Error loading {harvested_json_path}: {e}&#34;)
+
+    return records</code></pre>
+</details>
+<div class="desc"><p>Reads all active CSV and historical benchmark records with code-accurate metrics.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>project_dir</code></strong></dt>
+<dd>Base project root.</dd>
+<dt><strong><code>harvested_json_path</code></strong></dt>
+<dd>Path to harvested benchmark data JSON.</dd>
+</dl>
+<p>Returns
+-----=
+List of benchmark record dictionaries.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.runners.monitor" href="index.html">neuralops.runners.monitor</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.runners.monitor.stats.build_aggregated_stats" href="#neuralops.runners.monitor.stats.build_aggregated_stats">build_aggregated_stats</a></code></li>
+<li><code><a title="neuralops.runners.monitor.stats.get_module_doc_index" href="#neuralops.runners.monitor.stats.get_module_doc_index">get_module_doc_index</a></code></li>
+<li><code><a title="neuralops.runners.monitor.stats.load_harvested_benchmark_records" href="#neuralops.runners.monitor.stats.load_harvested_benchmark_records">load_harvested_benchmark_records</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 <meta name="generator" content="pdoc3 0.11.6">
 <title>neuralops.utils.checkpoint API documentation</title>
-<meta name="description" content="">
+<meta name="description" content="Module providing checkpoint implementations for NeuralOps.">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
@@ -36,6 +36,7 @@ el.replaceWith(d);
 <h1 class="title">Module <code>neuralops.utils.checkpoint</code></h1>
 </header>
 <section id="section-intro">
+<p>Module providing checkpoint implementations for NeuralOps.</p>
 </section>
 <section>
 </section>
@@ -57,6 +58,7 @@ el.replaceWith(d);
 </summary>
 <pre><code class="python">class CheckpointManager:
     def __init__(self, checkpoint_dir: str = &#34;./checkpoints&#34;) -&gt; None:
+        &#34;&#34;&#34;Execute __init__ operation.&#34;&#34;&#34;
         self.checkpoint_dir = Path(checkpoint_dir)
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
@@ -115,7 +117,7 @@ el.replaceWith(d);
         checkpoints = self.list_checkpoints()
         return max(checkpoints, key=lambda p: p.stat().st_mtime) if checkpoints else None</code></pre>
 </details>
-<div class="desc"></div>
+<div class="desc"><p>Execute <strong>init</strong> operation.</p></div>
 <h3>Methods</h3>
 <dl>
 <dt id="neuralops.utils.checkpoint.CheckpointManager.delete_checkpoint"><code class="name flex">

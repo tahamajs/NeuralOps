@@ -45,14 +45,14 @@ el.replaceWith(d);
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="neuralops.utils.logger.get_logger"><code class="name flex">
-<span>def <span class="ident">get_logger</span></span>(<span>name: str) ‑> logging.Logger</span>
+<span>def <span class="ident">get_logger</span></span>(<span>name: str = 'neuralops') ‑> logging.Logger</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_logger(name: str) -&gt; logging.Logger:
+<pre><code class="python">def get_logger(name: str = &#34;neuralops&#34;) -&gt; logging.Logger:
     &#34;&#34;&#34;Return the logger.&#34;&#34;&#34;
     return logging.getLogger(name)</code></pre>
 </details>

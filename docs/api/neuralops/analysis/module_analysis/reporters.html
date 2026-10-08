@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.analysis.module_analysis.reporters API documentation</title>
+<meta name="description" content="Report generators for module analysis outputs (CSV and Markdown).">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.analysis.module_analysis.reporters</code></h1>
+</header>
+<section id="section-intro">
+<p>Report generators for module analysis outputs (CSV and Markdown).</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.analysis.module_analysis.reporters.write_csv_report"><code class="name flex">
+<span>def <span class="ident">write_csv_report</span></span>(<span>analysis_rows: List[Dict[str, Any]],<br>output_path: Path = PosixPath('/Users/tahamajs/Documents/uni/Project/paper/_ALL_MODULES_ANALYSIS.csv')) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def write_csv_report(analysis_rows: List[Dict[str, Any]], output_path: Path = CSV_OUT) -&gt; None:
+    &#34;&#34;&#34;Write analysis rows to CSV file.
+
+    Args:
+        analysis_rows: List of module analysis record dicts.
+        output_path: Target CSV path.
+    &#34;&#34;&#34;
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, &#34;w&#34;, newline=&#34;&#34;, encoding=&#34;utf-8&#34;) as f:
+        writer = csv.DictWriter(f, fieldnames=ANALYSIS_FIELDNAMES)
+        writer.writeheader()
+        for r in analysis_rows:
+            writer.writerow(r)</code></pre>
+</details>
+<div class="desc"><p>Write analysis rows to CSV file.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>analysis_rows</code></strong></dt>
+<dd>List of module analysis record dicts.</dd>
+<dt><strong><code>output_path</code></strong></dt>
+<dd>Target CSV path.</dd>
+</dl></div>
+</dd>
+<dt id="neuralops.analysis.module_analysis.reporters.write_markdown_report"><code class="name flex">
+<span>def <span class="ident">write_markdown_report</span></span>(<span>analysis_rows: List[Dict[str, Any]],<br>output_path: Path = PosixPath('/Users/tahamajs/Documents/uni/Project/paper/_ALL_MODULES_ANALYSIS.md')) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def write_markdown_report(analysis_rows: List[Dict[str, Any]], output_path: Path = MD_OUT) -&gt; None:
+    &#34;&#34;&#34;Generate and write comprehensive Markdown summary report.
+
+    Args:
+        analysis_rows: List of module analysis record dicts.
+        output_path: Target Markdown path.
+    &#34;&#34;&#34;
+    cat_counts: Dict[str, int] = defaultdict(int)
+    prio_counts: Dict[str, int] = defaultdict(int)
+    with_paper = sum(1 for r in analysis_rows if r[&#34;paper_reference&#34;] != &#34;None&#34;)
+    with_arxiv = sum(1 for r in analysis_rows if r[&#34;paper_arxiv&#34;] != &#34;None&#34;)
+    with_sst2 = sum(1 for r in analysis_rows if r[&#34;dataset_sst2_acc&#34;] != &#34;N/A&#34;)
+    with_mnli = sum(1 for r in analysis_rows if r[&#34;dataset_mnli_acc&#34;] != &#34;N/A&#34;)
+    with_agnews = sum(1 for r in analysis_rows if r[&#34;dataset_agnews_acc&#34;] != &#34;N/A&#34;)
+    with_gpt2 = sum(1 for r in analysis_rows if r[&#34;dataset_gpt2_ppl&#34;] != &#34;N/A&#34;)
+    with_fab = sum(1 for r in analysis_rows if r[&#34;has_fabricated_tables&#34;] == &#34;YES&#34;)
+
+    for r in analysis_rows:
+        cat_counts[r[&#34;category&#34;]] += 1
+        prio_counts[r[&#34;fix_priority&#34;]] += 1
+
+    md_lines = [
+        &#34;# Comprehensive 217-Module Analysis Report\n&#34;,
+        &#34;This document provides the exhaustive audit and empirical validation across all 217 transformer compression &#34;,
+        &#34;and linear attention modules in the research framework. All metrics strictly trace to empirical benchmark CSV records.\n\n&#34;,
+        &#34;## 1. Executive Summary &amp; Category Breakdown\n\n&#34;,
+        &#34;| Category | Count | Proportion | Meaning |\n&#34;,
+        &#34;|:---|:---:|:---:|:---|\n&#34;,
+    ]
+    for cat in [&#34;VALID&#34;, &#34;FALLBACK&#34;, &#34;BROKEN&#34;, &#34;QUESTIONABLE&#34;, &#34;NO_DATA&#34;]:
+        n = cat_counts[cat]
+        pct = (100.0 * n / len(analysis_rows)) if analysis_rows else 0.0
+        md_lines.append(f&#34;| **{cat}** | {n} | {pct:.1f}% | {cat} empirical evaluation status |\n&#34;)
+
+    md_lines.extend(
+        [
+            &#34;\n## 2. Statistical Highlights\n\n&#34;,
+            f&#34;- **Total Evaluated Modules**: {len(analysis_rows)}\n&#34;,
+            f&#34;- **Modules with Academic Literature Reference**: {with_paper} ({100.0 * with_paper / max(1, len(analysis_rows)):.1f}%)\n&#34;,
+            f&#34;- **Modules with arXiv ID**: {with_arxiv} ({100.0 * with_arxiv / max(1, len(analysis_rows)):.1f}%)\n&#34;,
+            f&#34;- **Modules with Empirical SST-2 Benchmark**: {with_sst2} ({100.0 * with_sst2 / max(1, len(analysis_rows)):.1f}%)\n&#34;,
+            f&#34;- **Modules with Empirical MNLI Benchmark**: {with_mnli} ({100.0 * with_mnli / max(1, len(analysis_rows)):.1f}%)\n&#34;,
+            f&#34;- **Modules with Empirical AG News Benchmark**: {with_agnews} ({100.0 * with_agnews / max(1, len(analysis_rows)):.1f}%)\n&#34;,
+            f&#34;- **Modules with GPT-2 WikiText-2 PPL**: {with_gpt2} ({100.0 * with_gpt2 / max(1, len(analysis_rows)):.1f}%)\n&#34;,
+            f&#34;- **Modules with Quarantined Fabricated Tables**: {with_fab} ({100.0 * with_fab / max(1, len(analysis_rows)):.1f}%)\n\n&#34;,
+            &#34;## 3. Actionable Priority Fix List\n\n&#34;,
+            f&#34;- **P0 (Broken - Immediate submission blockers)**: {prio_counts[&#39;P0&#39;]} modules\n&#34;,
+            f&#34;- **P1 (Fallback Compressors - Fixable via Cholesky whitening / LoRA unfreezing)**: {prio_counts[&#39;P1&#39;]} modules\n&#34;,
+            f&#34;- **P2 (Fallback Attention - Inherent linear attention replacements, move to Related Work)**: {prio_counts[&#39;P2&#39;]} modules\n&#34;,
+            f&#34;- **P3 (No Data - Needs evaluation run)**: {prio_counts[&#39;P3&#39;]} modules\n&#34;,
+            f&#34;- **NONE (Valid - Production-hardened with genuine compression)**: {prio_counts[&#39;NONE&#39;]} modules\n\n&#34;,
+            &#34;### P0 Action Items (Immediate Fixes)\n\n&#34;,
+        ]
+    )
+
+    for r in analysis_rows:
+        if r[&#34;fix_priority&#34;] == &#34;P0&#34;:
+            md_lines.append(
+                f&#34;- `{r[&#39;module_name&#39;]}`: {r[&#39;file_path&#39;]} (Category: {r[&#39;category&#39;]}, Sub: {r[&#39;sub_category&#39;]})\n&#34;
+            )
+
+    md_lines.extend(
+        [
+            &#34;\n## 4. Complete 217-Module Master Table\n\n&#34;,
+            &#34;| Module Name | Type | Category | Sub-Category | SST-2 Acc | MNLI Acc | Comp Ratio | Priority | Source CSV |\n&#34;,
+            &#34;|:---|:---|:---:|:---|:---:|:---:|:---:|:---:|:---|\n&#34;,
+        ]
+    )
+
+    for r in analysis_rows:
+        src = r[&#34;csv_source&#34;]
+        if len(src) &gt; 35:
+            src = &#34;...&#34; + src[-32:]
+        md_lines.append(
+            f&#34;| `{r[&#39;module_name&#39;]}` | {r[&#39;module_type&#39;]} | **{r[&#39;category&#39;]}** | {r[&#39;sub_category&#39;]} | &#34;
+            f&#34;{r[&#39;dataset_sst2_acc&#39;]} | {r[&#39;dataset_mnli_acc&#39;]} | {r[&#39;compression_ratio&#39;]} | **{r[&#39;fix_priority&#39;]}** | `{src}` |\n&#34;
+        )
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, &#34;w&#34;, encoding=&#34;utf-8&#34;) as f:
+        f.writelines(md_lines)</code></pre>
+</details>
+<div class="desc"><p>Generate and write comprehensive Markdown summary report.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>analysis_rows</code></strong></dt>
+<dd>List of module analysis record dicts.</dd>
+<dt><strong><code>output_path</code></strong></dt>
+<dd>Target Markdown path.</dd>
+</dl></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.analysis.module_analysis" href="index.html">neuralops.analysis.module_analysis</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.analysis.module_analysis.reporters.write_csv_report" href="#neuralops.analysis.module_analysis.reporters.write_csv_report">write_csv_report</a></code></li>
+<li><code><a title="neuralops.analysis.module_analysis.reporters.write_markdown_report" href="#neuralops.analysis.module_analysis.reporters.write_markdown_report">write_markdown_report</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

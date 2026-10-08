@@ -289,24 +289,6 @@ quenching the gradient signal on factor V bases in low-rank factorized attention
 </details>
 <div class="desc"><p>Compute and return metrics.</p></div>
 </dd>
-<dt id="neuralops.trainer.utils.count_parameters"><code class="name flex">
-<span>def <span class="ident">count_parameters</span></span>(<span>model: nn.Module, trainable_only: bool = True) ‑> int</span>
-</code></dt>
-<dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def count_parameters(model: nn.Module, trainable_only: bool = True) -&gt; int:
-    &#34;&#34;&#34;Count trainable or total parameters.&#34;&#34;&#34;
-    return (
-        sum(p.numel() for p in model.parameters() if p.requires_grad)
-        if trainable_only
-        else sum(p.numel() for p in model.parameters())
-    )</code></pre>
-</details>
-<div class="desc"><p>Count trainable or total parameters.</p></div>
-</dd>
 <dt id="neuralops.trainer.utils.evaluate_model"><code class="name flex">
 <span>def <span class="ident">evaluate_model</span></span>(<span>model: nn.Module,<br>data_loader: DataLoader,<br>device: torch.device,<br>num_labels: int,<br>is_multichoice: bool = False,<br>compute_all_metrics: bool = False) ‑> float | dict[str, float]</span>
 </code></dt>
@@ -597,7 +579,6 @@ and adaptive factorized gradient clipping safety.</p></div>
 <li><code><a title="neuralops.trainer.utils.benchmark_model" href="#neuralops.trainer.utils.benchmark_model">benchmark_model</a></code></li>
 <li><code><a title="neuralops.trainer.utils.clip_grad_norm_factorized" href="#neuralops.trainer.utils.clip_grad_norm_factorized">clip_grad_norm_factorized</a></code></li>
 <li><code><a title="neuralops.trainer.utils.compute_metrics" href="#neuralops.trainer.utils.compute_metrics">compute_metrics</a></code></li>
-<li><code><a title="neuralops.trainer.utils.count_parameters" href="#neuralops.trainer.utils.count_parameters">count_parameters</a></code></li>
 <li><code><a title="neuralops.trainer.utils.evaluate_model" href="#neuralops.trainer.utils.evaluate_model">evaluate_model</a></code></li>
 <li><code><a title="neuralops.trainer.utils.plot_training_curves" href="#neuralops.trainer.utils.plot_training_curves">plot_training_curves</a></code></li>
 <li><code><a title="neuralops.trainer.utils.save_training_history" href="#neuralops.trainer.utils.save_training_history">save_training_history</a></code></li>

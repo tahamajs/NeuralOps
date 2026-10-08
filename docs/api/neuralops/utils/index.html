@@ -44,13 +44,21 @@ el.replaceWith(d);
 <dd>
 <div class="desc"></div>
 </dd>
-<dt><code class="name"><a title="neuralops.utils.checkpoint" href="checkpoint.html">neuralops.utils.checkpoint</a></code></dt>
+<dt><code class="name"><a title="neuralops.utils.attention_profiler" href="attention_profiler.html">neuralops.utils.attention_profiler</a></code></dt>
+<dd>
+<div class="desc"><p>Attention Memory Profiler to measure peak activation memory and time overhead.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.utils.attention_utils" href="attention_utils.html">neuralops.utils.attention_utils</a></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
-<dt><code class="name"><a title="neuralops.utils.compat" href="compat.html">neuralops.utils.compat</a></code></dt>
+<dt><code class="name"><a title="neuralops.utils.checkpoint" href="checkpoint.html">neuralops.utils.checkpoint</a></code></dt>
 <dd>
-<div class="desc"><p>Family-aware, opt-in compatibility helpers for attention modules …</p></div>
+<div class="desc"><p>Module providing checkpoint implementations for NeuralOps.</p></div>
+</dd>
+<dt><code class="name"><a title="neuralops.utils.compat" href="compat/index.html">neuralops.utils.compat</a></code></dt>
+<dd>
+<div class="desc"><p>Family-aware, opt-in compatibility helpers for attention modules.</p></div>
 </dd>
 <dt><code class="name"><a title="neuralops.utils.config" href="config.html">neuralops.utils.config</a></code></dt>
 <dd>
@@ -62,7 +70,7 @@ el.replaceWith(d);
 </dd>
 <dt><code class="name"><a title="neuralops.utils.helpers" href="helpers.html">neuralops.utils.helpers</a></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Module providing helpers implementations for NeuralOps.</p></div>
 </dd>
 <dt><code class="name"><a title="neuralops.utils.hf_git_exporter" href="hf_git_exporter.html">neuralops.utils.hf_git_exporter</a></code></dt>
 <dd>
@@ -118,10 +126,766 @@ Integrates persistence, structured markdown/json report generation, Django API �
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.utils.compute_metrics_for_task"><code class="name flex">
+<span>def <span class="ident">compute_metrics_for_task</span></span>(<span>predictions: numpy.ndarray,<br>labels: numpy.ndarray,<br>task_name: str,<br>is_regression: bool = False) ‑> dict[str, float]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_metrics_for_task(
+    predictions: np.ndarray,
+    labels: np.ndarray,
+    task_name: str,
+    is_regression: bool = False,
+) -&gt; dict[str, float]:
+    &#34;&#34;&#34;Compute and return metrics for task.&#34;&#34;&#34;
+    metrics = {}
+    if is_regression or task_name == &#34;stsb&#34;:
+        pred_flat = np.squeeze(predictions)
+        labels_flat = np.squeeze(labels)
+        metrics[&#34;pearson&#34;] = compute_pearson(pred_flat, labels_flat)
+        metrics[&#34;spearman&#34;] = compute_spearman(pred_flat, labels_flat)
+        metrics[&#34;pearson_spearman&#34;] = (metrics[&#34;pearson&#34;] + metrics[&#34;spearman&#34;]) / 2
+    else:
+        preds = np.argmax(predictions, axis=-1) if predictions.ndim &gt; 1 else predictions
+        metrics[&#34;accuracy&#34;] = compute_accuracy(preds, labels)
+        metrics[&#34;f1_macro&#34;] = compute_f1(preds, labels, average=&#34;macro&#34;)
+        metrics[&#34;f1_weighted&#34;] = compute_f1(preds, labels, average=&#34;weighted&#34;)
+        if task_name == &#34;cola&#34;:
+            metrics[&#34;matthews_correlation&#34;] = compute_matthews_corrcoef(preds, labels)
+        if task_name in (&#34;mrpc&#34;, &#34;qqp&#34;):
+            metrics[&#34;f1&#34;] = compute_f1(preds, labels, average=&#34;binary&#34;)
+    return metrics</code></pre>
+</details>
+<div class="desc"><p>Compute and return metrics for task.</p></div>
+</dd>
+<dt id="neuralops.utils.count_parameters"><code class="name flex">
+<span>def <span class="ident">count_parameters</span></span>(<span>model: torch.nn.modules.module.Module, trainable_only: bool = True) ‑> int</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def count_parameters(model: torch.nn.Module, trainable_only: bool = True) -&gt; int:
+    &#34;&#34;&#34;Count parameters.&#34;&#34;&#34;
+    if trainable_only:
+        return sum(p.numel() for p in model.parameters() if p.requires_grad)
+    return sum(p.numel() for p in model.parameters())</code></pre>
+</details>
+<div class="desc"><p>Count parameters.</p></div>
+</dd>
+<dt id="neuralops.utils.format_time"><code class="name flex">
+<span>def <span class="ident">format_time</span></span>(<span>seconds: float) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def format_time(seconds: float) -&gt; str:
+    &#34;&#34;&#34;Format time.&#34;&#34;&#34;
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    parts = []
+    if hours:
+        parts.append(f&#34;{hours}h&#34;)
+    if minutes:
+        parts.append(f&#34;{minutes}m&#34;)
+    parts.append(f&#34;{secs}s&#34;)
+    return &#34; &#34;.join(parts)</code></pre>
+</details>
+<div class="desc"><p>Format time.</p></div>
+</dd>
+<dt id="neuralops.utils.get_compression_targets"><code class="name flex">
+<span>def <span class="ident">get_compression_targets</span></span>(<span>model_name: str, include_ffn: bool = True) ‑> list[str]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_compression_targets(model_name: str, include_ffn: bool = True) -&gt; list[str]:
+    &#34;&#34;&#34;Return the compression targets.&#34;&#34;&#34;
+    arch = detect_architecture(model_name)
+    patterns = get_layer_patterns(arch)
+    if not include_ffn:
+        ffn_patterns = [&#34;ffn&#34;, &#34;intermediate&#34;, &#34;mlp&#34;, &#34;ff&#34;, &#34;feedforward&#34;]
+        patterns = [p for p in patterns if not any(fp in p for fp in ffn_patterns)]
+    return patterns</code></pre>
+</details>
+<div class="desc"><p>Return the compression targets.</p></div>
+</dd>
+<dt id="neuralops.utils.get_hidden_size"><code class="name flex">
+<span>def <span class="ident">get_hidden_size</span></span>(<span>model) ‑> int</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_hidden_size(model) -&gt; int:
+    &#34;&#34;&#34;Return the hidden size.&#34;&#34;&#34;
+    if hasattr(model, &#34;config&#34;) and hasattr(model.config, &#34;hidden_size&#34;):
+        return model.config.hidden_size
+    return 768</code></pre>
+</details>
+<div class="desc"><p>Return the hidden size.</p></div>
+</dd>
+<dt id="neuralops.utils.get_layer_count"><code class="name flex">
+<span>def <span class="ident">get_layer_count</span></span>(<span>model) ‑> int</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_layer_count(model) -&gt; int:
+    &#34;&#34;&#34;Return the layer count.&#34;&#34;&#34;
+    if hasattr(model, &#34;config&#34;) and hasattr(model.config, &#34;num_hidden_layers&#34;):
+        return model.config.num_hidden_layers
+    if hasattr(model, &#34;encoder&#34;) and hasattr(model.encoder, &#34;layer&#34;):
+        return len(model.encoder.layer)
+    if hasattr(model, &#34;transformer&#34;) and hasattr(model.transformer, &#34;layer&#34;):
+        return len(model.transformer.layer)
+    return 12</code></pre>
+</details>
+<div class="desc"><p>Return the layer count.</p></div>
+</dd>
+<dt id="neuralops.utils.get_logger"><code class="name flex">
+<span>def <span class="ident">get_logger</span></span>(<span>name: str = 'neuralops') ‑> logging.Logger</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_logger(name: str = &#34;neuralops&#34;) -&gt; logging.Logger:
+    &#34;&#34;&#34;Return the logger.&#34;&#34;&#34;
+    return logging.getLogger(name)</code></pre>
+</details>
+<div class="desc"><p>Return the logger.</p></div>
+</dd>
+<dt id="neuralops.utils.get_model_info"><code class="name flex">
+<span>def <span class="ident">get_model_info</span></span>(<span>model_name: str) ‑> dict[str, typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_model_info(model_name: str) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Return the model info.&#34;&#34;&#34;
+    arch = detect_architecture(model_name)
+    default_configs = {
+        &#34;bert&#34;: {&#34;hidden_size&#34;: 768, &#34;num_layers&#34;: 12, &#34;num_heads&#34;: 12},
+        &#34;distilbert&#34;: {&#34;hidden_size&#34;: 768, &#34;num_layers&#34;: 6, &#34;num_heads&#34;: 12},
+        &#34;roberta&#34;: {&#34;hidden_size&#34;: 768, &#34;num_layers&#34;: 12, &#34;num_heads&#34;: 12},
+        &#34;albert&#34;: {&#34;hidden_size&#34;: 768, &#34;num_layers&#34;: 12, &#34;num_heads&#34;: 12},
+        &#34;electra&#34;: {&#34;hidden_size&#34;: 768, &#34;num_layers&#34;: 12, &#34;num_heads&#34;: 12},
+        &#34;deberta&#34;: {&#34;hidden_size&#34;: 768, &#34;num_layers&#34;: 12, &#34;num_heads&#34;: 12},
+        &#34;gpt2&#34;: {&#34;hidden_size&#34;: 768, &#34;num_layers&#34;: 12, &#34;num_heads&#34;: 12},
+        &#34;xlnet&#34;: {&#34;hidden_size&#34;: 768, &#34;num_layers&#34;: 12, &#34;num_heads&#34;: 12},
+    }
+    if &#34;large&#34; in model_name.lower():
+        default_configs[&#34;bert&#34;][&#34;hidden_size&#34;] = 1024
+        default_configs[&#34;roberta&#34;][&#34;hidden_size&#34;] = 1024
+    return {
+        &#34;architecture&#34;: arch,
+        &#34;patterns&#34;: get_layer_patterns(arch),
+        &#34;estimated_config&#34;: default_configs.get(arch, default_configs[&#34;bert&#34;]),
+    }</code></pre>
+</details>
+<div class="desc"><p>Return the model info.</p></div>
+</dd>
+<dt id="neuralops.utils.init_output_scale"><code class="name flex">
+<span>def <span class="ident">init_output_scale</span></span>(<span>module: nn.Module, name: str = 'output_scale') ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def init_output_scale(module: nn.Module, name: str = &#34;output_scale&#34;) -&gt; None:
+    &#34;&#34;&#34;Register output_scale learnable parameter if not already present.
+
+    Args:
+        module: The target PyTorch module.
+        name: Parameter attribute name to register.
+    &#34;&#34;&#34;
+    if not hasattr(module, name):
+        module.register_parameter(name, nn.Parameter(torch.ones(1)))</code></pre>
+</details>
+<div class="desc"><p>Register output_scale learnable parameter if not already present.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>module</code></strong></dt>
+<dd>The target PyTorch module.</dd>
+<dt><strong><code>name</code></strong></dt>
+<dd>Parameter attribute name to register.</dd>
+</dl></div>
+</dd>
+<dt id="neuralops.utils.is_architecture_error"><code class="name flex">
+<span>def <span class="ident">is_architecture_error</span></span>(<span>exc: BaseException) ‑> bool</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_architecture_error(exc: BaseException) -&gt; bool:
+    text = str(exc).lower()
+    return any(
+        token in text
+        for token in (
+            &#34;shape&#34;,
+            &#34;size mismatch&#34;,
+            &#34;unexpected keyword&#34;,
+            &#34;unexpected argument&#34;,
+            &#34;has no attribute&#34;,
+            &#34;not enough values to unpack&#34;,
+            &#34;too many values to unpack&#34;,
+            &#34;values to unpack&#34;,
+            &#34;attention mask&#34;,
+            &#34;position_embeddings&#34;,
+            &#34;mat1 and mat2&#34;,
+            &#34;cannot be multiplied&#34;,
+            &#34;unsupported operand type&#34;,
+            &#34;tensor&#39; and &#39;tuple&#39;&#34;,
+        )
+    )</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.utils.is_qwen_attention"><code class="name flex">
+<span>def <span class="ident">is_qwen_attention</span></span>(<span>module: nn.Module) ‑> bool</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def is_qwen_attention(module: nn.Module) -&gt; bool:
+    &#34;&#34;&#34;Detect a native Qwen attention block without importing transformers.&#34;&#34;&#34;
+    cfg = getattr(module, &#34;config&#34;, None)
+    if cfg is not None and hasattr(cfg, &#34;text_config&#34;):
+        cfg = cfg.text_config
+    return str(getattr(cfg, &#34;model_type&#34;, &#34;&#34;)).lower().startswith(&#34;qwen&#34;) or (
+        hasattr(module, &#34;q_proj&#34;)
+        and hasattr(module, &#34;o_proj&#34;)
+        and (&#34;qwen&#34; in module.__class__.__name__.lower() or hasattr(module, &#34;rotary_emb&#34;))
+    )</code></pre>
+</details>
+<div class="desc"><p>Detect a native Qwen attention block without importing transformers.</p></div>
+</dd>
+<dt id="neuralops.utils.load_json"><code class="name flex">
+<span>def <span class="ident">load_json</span></span>(<span>path: pathlib.Path | str) ‑> Any</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_json(path: str | Path) -&gt; Any:
+    &#34;&#34;&#34;Load json from disk or config.&#34;&#34;&#34;
+    with open(path) as f:
+        return json.load(f)</code></pre>
+</details>
+<div class="desc"><p>Load json from disk or config.</p></div>
+</dd>
+<dt id="neuralops.utils.measure_inference_latency"><code class="name flex">
+<span>def <span class="ident">measure_inference_latency</span></span>(<span>model, dataloader, device, num_samples: int = 100, warmup: int = 10) ‑> dict[str, float]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def measure_inference_latency(
+    model, dataloader, device, num_samples: int = 100, warmup: int = 10
+) -&gt; dict[str, float]:
+    &#34;&#34;&#34;Measure inference latency.&#34;&#34;&#34;
+    model.eval()
+    model.to(device)
+    latencies = []
+    with torch.no_grad():
+        for i, batch in enumerate(dataloader):
+            if i &gt;= warmup + num_samples:
+                break
+            batch = {k: v.to(device) for k, v in batch.items() if isinstance(v, torch.Tensor)}
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
+            start = time.perf_counter()
+            _ = model(**batch)
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
+            end = time.perf_counter()
+            if i &gt;= warmup:
+                latencies.append((end - start) * 1000)
+    if not latencies:
+        return {}
+    return {
+        &#34;mean_latency_ms&#34;: np.mean(latencies),
+        &#34;std_latency_ms&#34;: np.std(latencies),
+        &#34;min_latency_ms&#34;: np.min(latencies),
+        &#34;max_latency_ms&#34;: np.max(latencies),
+        &#34;p50_latency_ms&#34;: np.percentile(latencies, 50),
+        &#34;p95_latency_ms&#34;: np.percentile(latencies, 95),
+        &#34;p99_latency_ms&#34;: np.percentile(latencies, 99),
+        &#34;samples_per_second&#34;: (1000 / np.mean(latencies) if np.mean(latencies) &gt; 0 else 0),
+    }</code></pre>
+</details>
+<div class="desc"><p>Measure inference latency.</p></div>
+</dd>
+<dt id="neuralops.utils.measure_memory_usage"><code class="name flex">
+<span>def <span class="ident">measure_memory_usage</span></span>(<span>model, dataloader, device, num_samples: int = 10) ‑> dict[str, float]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def measure_memory_usage(model, dataloader, device, num_samples: int = 10) -&gt; dict[str, float]:
+    &#34;&#34;&#34;Measure memory usage.&#34;&#34;&#34;
+    model.eval()
+    model.to(device)
+    peak_memory = []
+    with torch.no_grad():
+        for i, batch in enumerate(dataloader):
+            if i &gt;= num_samples:
+                break
+            if torch.cuda.is_available():
+                torch.cuda.reset_peak_memory_stats()
+            batch = {k: v.to(device) for k, v in batch.items() if isinstance(v, torch.Tensor)}
+            _ = model(**batch)
+            if torch.cuda.is_available():
+                peak_memory.append(torch.cuda.max_memory_allocated() / 1024 / 1024)
+    return {
+        &#34;peak_memory_mb&#34;: np.max(peak_memory) if peak_memory else 0,
+        &#34;avg_peak_memory_mb&#34;: np.mean(peak_memory) if peak_memory else 0,
+    }</code></pre>
+</details>
+<div class="desc"><p>Measure memory usage.</p></div>
+</dd>
+<dt id="neuralops.utils.merge_configs"><code class="name flex">
+<span>def <span class="ident">merge_configs</span></span>(<span>base: dict[str, typing.Any], override: dict[str, typing.Any]) ‑> dict[str, typing.Any]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def merge_configs(base: dict[str, Any], override: dict[str, Any]) -&gt; dict[str, Any]:
+    &#34;&#34;&#34;Merge configs.&#34;&#34;&#34;
+    result = base.copy()
+    return update_config(result, override)</code></pre>
+</details>
+<div class="desc"><p>Merge configs.</p></div>
+</dd>
+<dt id="neuralops.utils.profile_context"><code class="name flex">
+<span>def <span class="ident">profile_context</span></span>(<span>model,<br>profiler: <a title="neuralops.utils.profiler.ModelProfiler" href="profiler.html#neuralops.utils.profiler.ModelProfiler">ModelProfiler</a> | None = None) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@contextmanager
+def profile_context(model, profiler: ModelProfiler | None = None) -&gt; None:
+    &#34;&#34;&#34;Profile context.&#34;&#34;&#34;
+    if profiler is None:
+        profiler = ModelProfiler(model)
+    profiler.start_profiling()
+    yield profiler
+    profiler.stop_profiling()</code></pre>
+</details>
+<div class="desc"><p>Profile context.</p></div>
+</dd>
+<dt id="neuralops.utils.qwen_config_proxy"><code class="name flex">
+<span>def <span class="ident">qwen_config_proxy</span></span>(<span>model_or_config: Any) ‑> <a title="neuralops.utils.qwen_compat.QwenConfigProxy" href="qwen_compat.html#neuralops.utils.qwen_compat.QwenConfigProxy">QwenConfigProxy</a></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def qwen_config_proxy(model_or_config: Any) -&gt; QwenConfigProxy:
+    config = getattr(model_or_config, &#34;config&#34;, model_or_config)
+    if hasattr(config, &#34;text_config&#34;):
+        config = config.text_config
+    hidden = int(config.hidden_size)
+    heads = int(config.num_attention_heads)
+    return QwenConfigProxy(
+        source=config,
+        hidden_size=hidden,
+        num_attention_heads=heads,
+        head_dim=int(getattr(config, &#34;head_dim&#34;, hidden // heads)),
+        num_hidden_layers=int(getattr(config, &#34;num_hidden_layers&#34;, 0)),
+    )</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.utils.qwen_module_policy"><code class="name flex">
+<span>def <span class="ident">qwen_module_policy</span></span>(<span>module_name: str) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def qwen_module_policy(module_name: str) -&gt; str:
+    &#34;&#34;&#34;Classify modules whose semantics cannot be promised for causal RoPE Qwen.&#34;&#34;&#34;
+    name = module_name.lower()
+    explicit_incompatible = {
+        &#34;aegis_v1&#34;,
+        &#34;aegis_v3&#34;,
+        &#34;aegis_v4&#34;,
+        &#34;aegis_v5&#34;,
+        &#34;aegis_v6&#34;,
+        &#34;bam_umoe&#34;,
+        &#34;cosformer&#34;,
+        &#34;cur&#34;,
+        &#34;cur_moe&#34;,
+        &#34;cur_moe_compressor&#34;,
+        &#34;decay_linear_attn&#34;,
+        &#34;dobi&#34;,
+        &#34;dynamic_rank&#34;,
+        # These legacy replacements currently implement full-MHA, padding
+        # masks, or absolute-position assumptions.  Until their forward pass
+        # explicitly handles Qwen GQA + RoPE + causal masks, skipping is safer
+        # than reporting a numerically valid but semantically invalid result.
+        &#34;a3&#34;,
+        &#34;aasvd&#34;,
+        &#34;adaptive_svd&#34;,
+        &#34;asvd&#34;,
+        &#34;cluster&#34;,
+        &#34;cluster_attention&#34;,
+        &#34;goldfinch_ahn&#34;,
+        &#34;griffin_ssd&#34;,
+        &#34;hgrn2_layer&#34;,
+        &#34;hgrn2_outer&#34;,
+        &#34;fusion_attn&#34;,
+        &#34;aegis_v2&#34;,
+        &#34;adaptive_svd_attention&#34;,
+        &#34;huffman&#34;,
+        &#34;block_transformer_hiba&#34;,
+        &#34;chela_slay&#34;,
+        &#34;fasa&#34;,
+        &#34;gated_deltanet_block&#34;,
+        &#34;granite_hybrid&#34;,
+        &#34;hgrn2_gated_deltanet&#34;,
+    }
+    if name in explicit_incompatible:
+        return &#34;incompatible&#34;
+    incompatible = (
+        &#34;linear&#34;,
+        &#34;rnn&#34;,
+        &#34;ssm&#34;,
+        &#34;mamba&#34;,
+        &#34;performer&#34;,
+        &#34;cosformer&#34;,
+        &#34;random&#34;,
+        &#34;recurrent&#34;,
+        &#34;delta_net&#34;,
+        &#34;gated_linear&#34;,
+        &#34;span&#34;,
+    )
+    return &#34;incompatible&#34; if any(token in name for token in incompatible) else &#34;adapted&#34;</code></pre>
+</details>
+<div class="desc"><p>Classify modules whose semantics cannot be promised for causal RoPE Qwen.</p></div>
+</dd>
+<dt id="neuralops.utils.qwen_projection"><code class="name flex">
+<span>def <span class="ident">qwen_projection</span></span>(<span>module: nn.Module, legacy: str, native: str) ‑> torch.nn.modules.module.Module | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def qwen_projection(module: nn.Module, legacy: str, native: str) -&gt; nn.Module | None:
+    &#34;&#34;&#34;Return a projection under either its legacy or native spelling.&#34;&#34;&#34;
+    value = getattr(module, native, None)
+    if value is None:
+        value = getattr(module, legacy, None)
+    return value</code></pre>
+</details>
+<div class="desc"><p>Return a projection under either its legacy or native spelling.</p></div>
+</dd>
+<dt id="neuralops.utils.resolve_path"><code class="name flex">
+<span>def <span class="ident">resolve_path</span></span>(<span>relative_path: str) ‑> str</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def resolve_path(relative_path: str) -&gt; str:
+    &#34;&#34;&#34;Resolves a path relative to the project root and returns as string.&#34;&#34;&#34;
+    return str((get_project_root() / relative_path).resolve())</code></pre>
+</details>
+<div class="desc"><p>Resolves a path relative to the project root and returns as string.</p></div>
+</dd>
+<dt id="neuralops.utils.save_json"><code class="name flex">
+<span>def <span class="ident">save_json</span></span>(<span>data: Any, path: pathlib.Path | str, indent: int = 2) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def save_json(data: Any, path: str | Path, indent: int = 2) -&gt; None:
+    &#34;&#34;&#34;Persist json to disk.&#34;&#34;&#34;
+    ensure_dir(os.path.dirname(path))
+    with open(path, &#34;w&#34;) as f:
+        json.dump(data, f, indent=indent)</code></pre>
+</details>
+<div class="desc"><p>Persist json to disk.</p></div>
+</dd>
+<dt id="neuralops.utils.set_log_level"><code class="name flex">
+<span>def <span class="ident">set_log_level</span></span>(<span>logger_name: str, level: int) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_log_level(logger_name: str, level: int) -&gt; None:
+    &#34;&#34;&#34;Set the log level.&#34;&#34;&#34;
+    logging.getLogger(logger_name).setLevel(level)</code></pre>
+</details>
+<div class="desc"><p>Set the log level.</p></div>
+</dd>
+<dt id="neuralops.utils.set_seed"><code class="name flex">
+<span>def <span class="ident">set_seed</span></span>(<span>seed: int, deterministic: bool = False) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_seed(seed: int, deterministic: bool = False) -&gt; None:
+    &#34;&#34;&#34;Set the seed.&#34;&#34;&#34;
+    set_all_seeds(seed)
+    if deterministic and torch.cuda.is_available():
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False</code></pre>
+</details>
+<div class="desc"><p>Set the seed.</p></div>
+</dd>
+<dt id="neuralops.utils.unflatten_dict"><code class="name flex">
+<span>def <span class="ident">unflatten_dict</span></span>(<span>d: dict, sep: str = '.') ‑> dict</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def unflatten_dict(d: dict, sep: str = &#34;.&#34;) -&gt; dict:
+    &#34;&#34;&#34;Unflatten dict.&#34;&#34;&#34;
+    result = {}
+    for key, value in d.items():
+        parts = key.split(sep)
+        current = result
+        for part in parts[:-1]:
+            if part not in current:
+                current[part] = {}
+            current = current[part]
+        current[parts[-1]] = value
+    return result</code></pre>
+</details>
+<div class="desc"><p>Unflatten dict.</p></div>
+</dd>
+</dl>
 </section>
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
+<dt id="neuralops.utils.CheckpointManager"><code class="flex name class">
+<span>class <span class="ident">CheckpointManager</span></span>
+<span>(</span><span>checkpoint_dir: str = './checkpoints')</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class CheckpointManager:
+    def __init__(self, checkpoint_dir: str = &#34;./checkpoints&#34;) -&gt; None:
+        &#34;&#34;&#34;Execute __init__ operation.&#34;&#34;&#34;
+        self.checkpoint_dir = Path(checkpoint_dir)
+        self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+    def save_checkpoint(
+        self,
+        experiment_id: int,
+        results: list[dict],
+        checkpoint_name: str = &#34;checkpoint.json&#34;,
+        metadata: dict | None = None,
+    ) -&gt; Path:
+        &#34;&#34;&#34;Persist checkpoint to disk.&#34;&#34;&#34;
+        checkpoint_path = self.checkpoint_dir / checkpoint_name
+        data = {
+            &#34;experiment_id&#34;: experiment_id,
+            &#34;results&#34;: results,
+            &#34;timestamp&#34;: time.time(),
+            &#34;datetime&#34;: time.strftime(&#34;%Y-%m-%d %H:%M:%S&#34;),
+        }
+        if metadata:
+            data[&#34;metadata&#34;] = metadata
+        with open(checkpoint_path, &#34;w&#34;) as f:
+            json.dump(data, f, indent=2)
+        logging.info(f&#34;Checkpoint saved: {checkpoint_path}&#34;)
+        return checkpoint_path
+
+    def load_checkpoint(
+        self, checkpoint_name: str = &#34;checkpoint.json&#34;
+    ) -&gt; tuple[int, list[dict], dict | None]:
+        &#34;&#34;&#34;Load checkpoint from disk or config.&#34;&#34;&#34;
+        checkpoint_path = self.checkpoint_dir / checkpoint_name
+        if not checkpoint_path.exists():
+            logging.info(f&#34;No checkpoint found at {checkpoint_path}&#34;)
+            return 0, [], None
+        with open(checkpoint_path) as f:
+            data = json.load(f)
+        logging.info(f&#34;Checkpoint loaded: {checkpoint_path}&#34;)
+        return (
+            data.get(&#34;experiment_id&#34;, 0),
+            data.get(&#34;results&#34;, []),
+            data.get(&#34;metadata&#34;),
+        )
+
+    def delete_checkpoint(self, checkpoint_name: str = &#34;checkpoint.json&#34;) -&gt; None:
+        &#34;&#34;&#34;Delete checkpoint.&#34;&#34;&#34;
+        checkpoint_path = self.checkpoint_dir / checkpoint_name
+        if checkpoint_path.exists():
+            checkpoint_path.unlink()
+            logging.info(f&#34;Deleted checkpoint: {checkpoint_path}&#34;)
+
+    def list_checkpoints(self) -&gt; list[Path]:
+        &#34;&#34;&#34;List checkpoints.&#34;&#34;&#34;
+        return list(self.checkpoint_dir.glob(&#34;*.json&#34;))
+
+    def get_latest_checkpoint(self) -&gt; Path | None:
+        &#34;&#34;&#34;Return the latest checkpoint.&#34;&#34;&#34;
+        checkpoints = self.list_checkpoints()
+        return max(checkpoints, key=lambda p: p.stat().st_mtime) if checkpoints else None</code></pre>
+</details>
+<div class="desc"><p>Execute <strong>init</strong> operation.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.utils.CheckpointManager.delete_checkpoint"><code class="name flex">
+<span>def <span class="ident">delete_checkpoint</span></span>(<span>self, checkpoint_name: str = 'checkpoint.json') ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def delete_checkpoint(self, checkpoint_name: str = &#34;checkpoint.json&#34;) -&gt; None:
+    &#34;&#34;&#34;Delete checkpoint.&#34;&#34;&#34;
+    checkpoint_path = self.checkpoint_dir / checkpoint_name
+    if checkpoint_path.exists():
+        checkpoint_path.unlink()
+        logging.info(f&#34;Deleted checkpoint: {checkpoint_path}&#34;)</code></pre>
+</details>
+<div class="desc"><p>Delete checkpoint.</p></div>
+</dd>
+<dt id="neuralops.utils.CheckpointManager.get_latest_checkpoint"><code class="name flex">
+<span>def <span class="ident">get_latest_checkpoint</span></span>(<span>self) ‑> pathlib.Path | None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_latest_checkpoint(self) -&gt; Path | None:
+    &#34;&#34;&#34;Return the latest checkpoint.&#34;&#34;&#34;
+    checkpoints = self.list_checkpoints()
+    return max(checkpoints, key=lambda p: p.stat().st_mtime) if checkpoints else None</code></pre>
+</details>
+<div class="desc"><p>Return the latest checkpoint.</p></div>
+</dd>
+<dt id="neuralops.utils.CheckpointManager.list_checkpoints"><code class="name flex">
+<span>def <span class="ident">list_checkpoints</span></span>(<span>self) ‑> list[pathlib.Path]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def list_checkpoints(self) -&gt; list[Path]:
+    &#34;&#34;&#34;List checkpoints.&#34;&#34;&#34;
+    return list(self.checkpoint_dir.glob(&#34;*.json&#34;))</code></pre>
+</details>
+<div class="desc"><p>List checkpoints.</p></div>
+</dd>
+<dt id="neuralops.utils.CheckpointManager.load_checkpoint"><code class="name flex">
+<span>def <span class="ident">load_checkpoint</span></span>(<span>self, checkpoint_name: str = 'checkpoint.json') ‑> tuple[int, list[dict], dict | None]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_checkpoint(
+    self, checkpoint_name: str = &#34;checkpoint.json&#34;
+) -&gt; tuple[int, list[dict], dict | None]:
+    &#34;&#34;&#34;Load checkpoint from disk or config.&#34;&#34;&#34;
+    checkpoint_path = self.checkpoint_dir / checkpoint_name
+    if not checkpoint_path.exists():
+        logging.info(f&#34;No checkpoint found at {checkpoint_path}&#34;)
+        return 0, [], None
+    with open(checkpoint_path) as f:
+        data = json.load(f)
+    logging.info(f&#34;Checkpoint loaded: {checkpoint_path}&#34;)
+    return (
+        data.get(&#34;experiment_id&#34;, 0),
+        data.get(&#34;results&#34;, []),
+        data.get(&#34;metadata&#34;),
+    )</code></pre>
+</details>
+<div class="desc"><p>Load checkpoint from disk or config.</p></div>
+</dd>
+<dt id="neuralops.utils.CheckpointManager.save_checkpoint"><code class="name flex">
+<span>def <span class="ident">save_checkpoint</span></span>(<span>self,<br>experiment_id: int,<br>results: list[dict],<br>checkpoint_name: str = 'checkpoint.json',<br>metadata: dict | None = None) ‑> pathlib.Path</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def save_checkpoint(
+    self,
+    experiment_id: int,
+    results: list[dict],
+    checkpoint_name: str = &#34;checkpoint.json&#34;,
+    metadata: dict | None = None,
+) -&gt; Path:
+    &#34;&#34;&#34;Persist checkpoint to disk.&#34;&#34;&#34;
+    checkpoint_path = self.checkpoint_dir / checkpoint_name
+    data = {
+        &#34;experiment_id&#34;: experiment_id,
+        &#34;results&#34;: results,
+        &#34;timestamp&#34;: time.time(),
+        &#34;datetime&#34;: time.strftime(&#34;%Y-%m-%d %H:%M:%S&#34;),
+    }
+    if metadata:
+        data[&#34;metadata&#34;] = metadata
+    with open(checkpoint_path, &#34;w&#34;) as f:
+        json.dump(data, f, indent=2)
+    logging.info(f&#34;Checkpoint saved: {checkpoint_path}&#34;)
+    return checkpoint_path</code></pre>
+</details>
+<div class="desc"><p>Persist checkpoint to disk.</p></div>
+</dd>
+</dl>
+</dd>
 <dt id="neuralops.utils.ResultsSaver"><code class="flex name class">
 <span>class <span class="ident">ResultsSaver</span></span>
 <span>(</span><span>run_id: str,<br>base_dir: pathlib.Path,<br>config: dict[str, typing.Any] | None = None)</span>
@@ -193,7 +957,18 @@ Integrates persistence, structured markdown/json report generation, Django API �
         self._save_model_card(self.config or {}, metrics)</code></pre>
 </details>
 <div class="desc"><p>Enhanced ResultsSaver compatible with Django API, experiment runners, and CLI scripts.
-Supports structured report generation and Hugging Face Hub uploads.</p></div>
+Supports structured report generation and Hugging Face Hub uploads.</p>
+<p>Initialize ResultsSaver directory layouts and configuration.</p>
+<dl>
+<dt>Args</dt>
+<dt>-----=</dt>
+<dt><strong><code>run_id</code></strong></dt>
+<dd>Unique identifier string for this run.</dd>
+<dt><strong><code>base_dir</code></strong></dt>
+<dd>Base directory where run directory is created.</dd>
+<dt><strong><code>config</code></strong></dt>
+<dd>Optional configuration dictionary.</dd>
+</dl></div>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li><a title="neuralops.results_saver.saver.ResultsSaver" href="../results_saver/saver.html#neuralops.results_saver.saver.ResultsSaver">ResultsSaver</a></li>
@@ -346,8 +1121,10 @@ Supports structured report generation and Hugging Face Hub uploads.</p></div>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
 <li><code><a title="neuralops.utils.architecture" href="architecture.html">neuralops.utils.architecture</a></code></li>
+<li><code><a title="neuralops.utils.attention_profiler" href="attention_profiler.html">neuralops.utils.attention_profiler</a></code></li>
+<li><code><a title="neuralops.utils.attention_utils" href="attention_utils.html">neuralops.utils.attention_utils</a></code></li>
 <li><code><a title="neuralops.utils.checkpoint" href="checkpoint.html">neuralops.utils.checkpoint</a></code></li>
-<li><code><a title="neuralops.utils.compat" href="compat.html">neuralops.utils.compat</a></code></li>
+<li><code><a title="neuralops.utils.compat" href="compat/index.html">neuralops.utils.compat</a></code></li>
 <li><code><a title="neuralops.utils.config" href="config.html">neuralops.utils.config</a></code></li>
 <li><code><a title="neuralops.utils.device" href="device.html">neuralops.utils.device</a></code></li>
 <li><code><a title="neuralops.utils.helpers" href="helpers.html">neuralops.utils.helpers</a></code></li>
@@ -365,8 +1142,46 @@ Supports structured report generation and Hugging Face Hub uploads.</p></div>
 <li><code><a title="neuralops.utils.seed" href="seed.html">neuralops.utils.seed</a></code></li>
 </ul>
 </li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.utils.compute_metrics_for_task" href="#neuralops.utils.compute_metrics_for_task">compute_metrics_for_task</a></code></li>
+<li><code><a title="neuralops.utils.count_parameters" href="#neuralops.utils.count_parameters">count_parameters</a></code></li>
+<li><code><a title="neuralops.utils.format_time" href="#neuralops.utils.format_time">format_time</a></code></li>
+<li><code><a title="neuralops.utils.get_compression_targets" href="#neuralops.utils.get_compression_targets">get_compression_targets</a></code></li>
+<li><code><a title="neuralops.utils.get_hidden_size" href="#neuralops.utils.get_hidden_size">get_hidden_size</a></code></li>
+<li><code><a title="neuralops.utils.get_layer_count" href="#neuralops.utils.get_layer_count">get_layer_count</a></code></li>
+<li><code><a title="neuralops.utils.get_logger" href="#neuralops.utils.get_logger">get_logger</a></code></li>
+<li><code><a title="neuralops.utils.get_model_info" href="#neuralops.utils.get_model_info">get_model_info</a></code></li>
+<li><code><a title="neuralops.utils.init_output_scale" href="#neuralops.utils.init_output_scale">init_output_scale</a></code></li>
+<li><code><a title="neuralops.utils.is_architecture_error" href="#neuralops.utils.is_architecture_error">is_architecture_error</a></code></li>
+<li><code><a title="neuralops.utils.is_qwen_attention" href="#neuralops.utils.is_qwen_attention">is_qwen_attention</a></code></li>
+<li><code><a title="neuralops.utils.load_json" href="#neuralops.utils.load_json">load_json</a></code></li>
+<li><code><a title="neuralops.utils.measure_inference_latency" href="#neuralops.utils.measure_inference_latency">measure_inference_latency</a></code></li>
+<li><code><a title="neuralops.utils.measure_memory_usage" href="#neuralops.utils.measure_memory_usage">measure_memory_usage</a></code></li>
+<li><code><a title="neuralops.utils.merge_configs" href="#neuralops.utils.merge_configs">merge_configs</a></code></li>
+<li><code><a title="neuralops.utils.profile_context" href="#neuralops.utils.profile_context">profile_context</a></code></li>
+<li><code><a title="neuralops.utils.qwen_config_proxy" href="#neuralops.utils.qwen_config_proxy">qwen_config_proxy</a></code></li>
+<li><code><a title="neuralops.utils.qwen_module_policy" href="#neuralops.utils.qwen_module_policy">qwen_module_policy</a></code></li>
+<li><code><a title="neuralops.utils.qwen_projection" href="#neuralops.utils.qwen_projection">qwen_projection</a></code></li>
+<li><code><a title="neuralops.utils.resolve_path" href="#neuralops.utils.resolve_path">resolve_path</a></code></li>
+<li><code><a title="neuralops.utils.save_json" href="#neuralops.utils.save_json">save_json</a></code></li>
+<li><code><a title="neuralops.utils.set_log_level" href="#neuralops.utils.set_log_level">set_log_level</a></code></li>
+<li><code><a title="neuralops.utils.set_seed" href="#neuralops.utils.set_seed">set_seed</a></code></li>
+<li><code><a title="neuralops.utils.unflatten_dict" href="#neuralops.utils.unflatten_dict">unflatten_dict</a></code></li>
+</ul>
+</li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
+<li>
+<h4><code><a title="neuralops.utils.CheckpointManager" href="#neuralops.utils.CheckpointManager">CheckpointManager</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.utils.CheckpointManager.delete_checkpoint" href="#neuralops.utils.CheckpointManager.delete_checkpoint">delete_checkpoint</a></code></li>
+<li><code><a title="neuralops.utils.CheckpointManager.get_latest_checkpoint" href="#neuralops.utils.CheckpointManager.get_latest_checkpoint">get_latest_checkpoint</a></code></li>
+<li><code><a title="neuralops.utils.CheckpointManager.list_checkpoints" href="#neuralops.utils.CheckpointManager.list_checkpoints">list_checkpoints</a></code></li>
+<li><code><a title="neuralops.utils.CheckpointManager.load_checkpoint" href="#neuralops.utils.CheckpointManager.load_checkpoint">load_checkpoint</a></code></li>
+<li><code><a title="neuralops.utils.CheckpointManager.save_checkpoint" href="#neuralops.utils.CheckpointManager.save_checkpoint">save_checkpoint</a></code></li>
+</ul>
+</li>
 <li>
 <h4><code><a title="neuralops.utils.ResultsSaver" href="#neuralops.utils.ResultsSaver">ResultsSaver</a></code></h4>
 <ul class="">

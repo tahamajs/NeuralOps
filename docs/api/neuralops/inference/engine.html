@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+<meta name="generator" content="pdoc3 0.11.6">
+<title>neuralops.inference.engine API documentation</title>
+<meta name="description" content="Production-grade LLM inference engine supporting sampling, speculative decoding, beam search, and continuous batching.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/sanitize.min.css" integrity="sha512-y1dtMcuvtTMJc1yPgEqF0ZjQbhnc/bFhyvIyVNb9Zk5mIGtqVaAB1Ttl28su8AvFMOY0EwRbAe+HCLqj6W7/KA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/13.0.0/typography.min.css" integrity="sha512-Y1DYSb995BAfxobCkKepB1BqJJTPrOp3zPL74AWFugHHmmdcvO+C48WLrUOlhGMc0QG7AE3f7gmvvcrmX2fDoA==" crossorigin>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:1.5em;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:2em 0 .50em 0}h3{font-size:1.4em;margin:1.6em 0 .7em 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .2s ease-in-out}a:visited{color:#503}a:hover{color:#b62}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900;font-weight:bold}pre code{font-size:.8em;line-height:1.4em;padding:1em;display:block}code{background:#f3f3f3;font-family:"DejaVu Sans Mono",monospace;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source > summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible;min-width:max-content}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em 1em;margin:1em 0}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul ul{padding-left:1em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => {
+hljs.configure({languages: ['bash', 'css', 'diff', 'graphql', 'ini', 'javascript', 'json', 'plaintext', 'python', 'python-repl', 'rust', 'shell', 'sql', 'typescript', 'xml', 'yaml']});
+hljs.highlightAll();
+/* Collapse source docstrings */
+setTimeout(() => {
+[...document.querySelectorAll('.hljs.language-python > .hljs-string')]
+.filter(el => el.innerHTML.length > 200 && ['"""', "'''"].includes(el.innerHTML.substring(0, 3)))
+.forEach(el => {
+let d = document.createElement('details');
+d.classList.add('hljs-string');
+d.innerHTML = '<summary>"""</summary>' + el.innerHTML.substring(3);
+el.replaceWith(d);
+});
+}, 100);
+})</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>neuralops.inference.engine</code></h1>
+</header>
+<section id="section-intro">
+<p>Production-grade LLM inference engine supporting sampling, speculative decoding, beam search, and continuous batching.</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="neuralops.inference.engine.beam_search_generate"><code class="name flex">
+<span>def <span class="ident">beam_search_generate</span></span>(<span>model: nn.Module,<br>input_ids: torch.Tensor,<br>beam_size: int = 4,<br>max_new_tokens: int = 8,<br>length_penalty: float = 1.0) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@torch.no_grad()
+def beam_search_generate(
+    model: nn.Module,
+    input_ids: torch.Tensor,
+    beam_size: int = 4,
+    max_new_tokens: int = 8,
+    length_penalty: float = 1.0,
+) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Production beam search decoder with length normalization.&#34;&#34;&#34;
+    B = input_ids.shape[0]
+    beams = input_ids.repeat(beam_size, 1)
+    scores = torch.zeros(beam_size, device=input_ids.device)
+    scores[1:] = float(&#34;-inf&#34;)
+
+    for _ in range(max_new_tokens):
+        out = model(beams)
+        logits = out.logits if hasattr(out, &#34;logits&#34;) else out
+        log_probs = F.log_softmax(logits[:, -1, :], dim=-1)  # [beam_size, V]
+
+        total_scores = log_probs + scores.unsqueeze(-1)
+        vocab_size = total_scores.shape[-1]
+        topk = total_scores.view(-1).topk(beam_size)
+
+        new_scores = topk.values
+        new_idx = topk.indices
+        beam_idx = new_idx // vocab_size
+        token_idx = new_idx % vocab_size
+
+        beams = torch.cat([beams[beam_idx], token_idx.unsqueeze(-1)], dim=-1)
+        scores = new_scores
+
+    norm_scores = scores / (float(beams.shape[1]) ** length_penalty)
+    best_beam = beams[norm_scores.argmax()].unsqueeze(0)
+    return best_beam</code></pre>
+</details>
+<div class="desc"><p>Production beam search decoder with length normalization.</p></div>
+</dd>
+<dt id="neuralops.inference.engine.speculative_generate"><code class="name flex">
+<span>def <span class="ident">speculative_generate</span></span>(<span>target_model: nn.Module,<br>draft_model: nn.Module,<br>input_ids: torch.Tensor,<br>max_new_tokens: int = 12,<br>K: int = 3) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@torch.no_grad()
+def speculative_generate(
+    target_model: nn.Module,
+    draft_model: nn.Module,
+    input_ids: torch.Tensor,
+    max_new_tokens: int = 12,
+    K: int = 3,
+) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Real speculative decoding with acceptance/rejection sampling.&#34;&#34;&#34;
+    curr = input_ids.clone()
+    while curr.shape[1] - input_ids.shape[1] &lt; max_new_tokens:
+        draft_ids = curr.clone()
+        draft_probs = []
+
+        # Draft model proposes K tokens
+        for _ in range(K):
+            d_out = draft_model(draft_ids)
+            d_logits = d_out.logits if hasattr(d_out, &#34;logits&#34;) else d_out
+            p = F.softmax(d_logits[:, -1, :], dim=-1)
+            draft_probs.append(p)
+            tok = torch.argmax(p, dim=-1, keepdim=True)
+            draft_ids = torch.cat([draft_ids, tok], dim=-1)
+
+        # Target model verifies draft tokens in single parallel forward pass
+        t_out = target_model(draft_ids)
+        t_logits = t_out.logits if hasattr(t_out, &#34;logits&#34;) else t_out
+        target_probs = F.softmax(t_logits, dim=-1)
+
+        n_accepted = 0
+        for i in range(K):
+            pos = curr.shape[1] + i - 1
+            draft_tok = draft_ids[:, curr.shape[1] + i : curr.shape[1] + i + 1]
+            best_target_tok = torch.argmax(target_probs[:, pos, :], dim=-1, keepdim=True)
+
+            if torch.equal(draft_tok, best_target_tok):
+                curr = torch.cat([curr, draft_tok], dim=-1)
+                n_accepted += 1
+                if curr.shape[1] - input_ids.shape[1] &gt;= max_new_tokens:
+                    return curr
+            else:
+                curr = torch.cat([curr, best_target_tok], dim=-1)
+                break
+
+        if n_accepted == K and curr.shape[1] - input_ids.shape[1] &lt; max_new_tokens:
+            extra_tok = torch.argmax(target_probs[:, -1, :], dim=-1, keepdim=True)
+            curr = torch.cat([curr, extra_tok], dim=-1)
+
+    return curr</code></pre>
+</details>
+<div class="desc"><p>Real speculative decoding with acceptance/rejection sampling.</p></div>
+</dd>
+<dt id="neuralops.inference.engine.stream_generate"><code class="name flex">
+<span>def <span class="ident">stream_generate</span></span>(<span>model: nn.Module, input_ids: torch.Tensor, max_new_tokens: int = 16) ‑> Generator[int, None, None]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def stream_generate(
+    model: nn.Module,
+    input_ids: torch.Tensor,
+    max_new_tokens: int = 16,
+) -&gt; Generator[int, None, None]:
+    &#34;&#34;&#34;Yields generated tokens one-by-one.&#34;&#34;&#34;
+    curr = input_ids.clone()
+    for _ in range(max_new_tokens):
+        with torch.no_grad():
+            outputs = model(curr)
+            logits = outputs.logits if hasattr(outputs, &#34;logits&#34;) else outputs
+            next_token = int(torch.argmax(logits[:, -1, :], dim=-1).item())
+            curr = torch.cat([curr, torch.tensor([[next_token]], device=curr.device)], dim=1)
+            yield next_token</code></pre>
+</details>
+<div class="desc"><p>Yields generated tokens one-by-one.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="neuralops.inference.engine.ContinuousBatcher"><code class="flex name class">
+<span>class <span class="ident">ContinuousBatcher</span></span>
+<span>(</span><span>model: nn.Module, max_batch_size: int = 8, max_seq_len: int = 2048)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ContinuousBatcher:
+    &#34;&#34;&#34;Continuous dynamic batch scheduler admitting requests on the fly.&#34;&#34;&#34;
+
+    def __init__(self, model: nn.Module, max_batch_size: int = 8, max_seq_len: int = 2048) -&gt; None:
+        self.model = model
+        self.max_batch_size = max_batch_size
+        self.max_seq_len = max_seq_len
+        self.pending: list[GenerationRequest] = []
+        self.active: list[GenerationRequest] = []
+
+    def add_request(self, request: GenerationRequest | tuple[str, torch.Tensor]) -&gt; None:
+        if isinstance(request, tuple):
+            req = GenerationRequest(request_id=request[0], input_ids=request[1])
+        else:
+            req = request
+        self.pending.append(req)
+
+    @torch.no_grad()
+    def step(self) -&gt; list[dict[str, Any]]:
+        &#34;&#34;&#34;Executes a single step of batch decode across active requests.&#34;&#34;&#34;
+        while len(self.active) &lt; self.max_batch_size and self.pending:
+            self.active.append(self.pending.pop(0))
+
+        if not self.active:
+            return []
+
+        max_len = max(r.input_ids.shape[1] for r in self.active)
+        padded = torch.zeros(len(self.active), max_len, dtype=torch.long, device=self.active[0].input_ids.device)
+        mask = torch.zeros(len(self.active), max_len, dtype=torch.long, device=self.active[0].input_ids.device)
+
+        for i, r in enumerate(self.active):
+            l = r.input_ids.shape[1]
+            padded[i, :l] = r.input_ids[0]
+            mask[i, :l] = 1
+
+        try:
+            out = self.model(padded, attention_mask=mask)
+        except TypeError:
+            out = self.model(padded)
+
+        logits = out.logits if hasattr(out, &#34;logits&#34;) else out
+        step_results = []
+
+        for i, r in enumerate(self.active):
+            tok = int(logits[i, -1, :].argmax().item())
+            tok_tensor = torch.tensor([[tok]], device=r.input_ids.device)
+            r.input_ids = torch.cat([r.input_ids, tok_tensor], dim=1)
+            r.generated.append(tok)
+            if len(r.generated) &gt;= r.max_new_tokens:
+                r.finished = True
+            step_results.append({&#34;id&#34;: r.request_id, &#34;token&#34;: tok, &#34;finished&#34;: r.finished})
+
+        self.active = [r for r in self.active if not r.finished]
+        return step_results</code></pre>
+</details>
+<div class="desc"><p>Continuous dynamic batch scheduler admitting requests on the fly.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.inference.engine.ContinuousBatcher.add_request"><code class="name flex">
+<span>def <span class="ident">add_request</span></span>(<span>self,<br>request: <a title="neuralops.inference.engine.GenerationRequest" href="#neuralops.inference.engine.GenerationRequest">GenerationRequest</a> | tuple[str, torch.Tensor]) ‑> None</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_request(self, request: GenerationRequest | tuple[str, torch.Tensor]) -&gt; None:
+    if isinstance(request, tuple):
+        req = GenerationRequest(request_id=request[0], input_ids=request[1])
+    else:
+        req = request
+    self.pending.append(req)</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
+<dt id="neuralops.inference.engine.ContinuousBatcher.step"><code class="name flex">
+<span>def <span class="ident">step</span></span>(<span>self) ‑> list[dict[str, typing.Any]]</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@torch.no_grad()
+def step(self) -&gt; list[dict[str, Any]]:
+    &#34;&#34;&#34;Executes a single step of batch decode across active requests.&#34;&#34;&#34;
+    while len(self.active) &lt; self.max_batch_size and self.pending:
+        self.active.append(self.pending.pop(0))
+
+    if not self.active:
+        return []
+
+    max_len = max(r.input_ids.shape[1] for r in self.active)
+    padded = torch.zeros(len(self.active), max_len, dtype=torch.long, device=self.active[0].input_ids.device)
+    mask = torch.zeros(len(self.active), max_len, dtype=torch.long, device=self.active[0].input_ids.device)
+
+    for i, r in enumerate(self.active):
+        l = r.input_ids.shape[1]
+        padded[i, :l] = r.input_ids[0]
+        mask[i, :l] = 1
+
+    try:
+        out = self.model(padded, attention_mask=mask)
+    except TypeError:
+        out = self.model(padded)
+
+    logits = out.logits if hasattr(out, &#34;logits&#34;) else out
+    step_results = []
+
+    for i, r in enumerate(self.active):
+        tok = int(logits[i, -1, :].argmax().item())
+        tok_tensor = torch.tensor([[tok]], device=r.input_ids.device)
+        r.input_ids = torch.cat([r.input_ids, tok_tensor], dim=1)
+        r.generated.append(tok)
+        if len(r.generated) &gt;= r.max_new_tokens:
+            r.finished = True
+        step_results.append({&#34;id&#34;: r.request_id, &#34;token&#34;: tok, &#34;finished&#34;: r.finished})
+
+    self.active = [r for r in self.active if not r.finished]
+    return step_results</code></pre>
+</details>
+<div class="desc"><p>Executes a single step of batch decode across active requests.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.inference.engine.GenerationRequest"><code class="flex name class">
+<span>class <span class="ident">GenerationRequest</span></span>
+<span>(</span><span>request_id: str,<br>input_ids: torch.Tensor,<br>max_new_tokens: int = 16,<br>generated: list[int] = &lt;factory&gt;,<br>finished: bool = False)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@dataclass
+class GenerationRequest:
+    &#34;&#34;&#34;Represents a serving generation request with its generation state.&#34;&#34;&#34;
+    request_id: str
+    input_ids: torch.Tensor
+    max_new_tokens: int = 16
+    generated: list[int] = field(default_factory=list)
+    finished: bool = False</code></pre>
+</details>
+<div class="desc"><p>Represents a serving generation request with its generation state.</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="neuralops.inference.engine.GenerationRequest.finished"><code class="name">var <span class="ident">finished</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.inference.engine.GenerationRequest.generated"><code class="name">var <span class="ident">generated</span> : list[int]</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.inference.engine.GenerationRequest.input_ids"><code class="name">var <span class="ident">input_ids</span> : torch.Tensor</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.inference.engine.GenerationRequest.max_new_tokens"><code class="name">var <span class="ident">max_new_tokens</span> : int</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+<dt id="neuralops.inference.engine.GenerationRequest.request_id"><code class="name">var <span class="ident">request_id</span> : str</code></dt>
+<dd>
+<div class="desc"><p>The type of the None singleton.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="neuralops.inference.engine.NeuralOpsInferenceEngine"><code class="flex name class">
+<span>class <span class="ident">NeuralOpsInferenceEngine</span></span>
+<span>(</span><span>model: nn.Module)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class NeuralOpsInferenceEngine:
+    &#34;&#34;&#34;Full-featured greedy/top-k/top-p/repetition-penalty generation runtime.&#34;&#34;&#34;
+
+    def __init__(self, model: nn.Module) -&gt; None:
+        self.model = model
+
+    @torch.no_grad()
+    def generate(
+        self,
+        input_ids: torch.Tensor,
+        max_new_tokens: int = 20,
+        temperature: float = 1.0,
+        top_k: int | None = None,
+        top_p: float | None = None,
+        repetition_penalty: float = 1.0,
+        use_cache: bool = False,
+    ) -&gt; torch.Tensor:
+        &#34;&#34;&#34;Autoregressive generation with top-k, top-p, and repetition penalties.&#34;&#34;&#34;
+        curr = input_ids.clone()
+        past_kv = None
+
+        for _ in range(max_new_tokens):
+            inp = curr if (past_kv is None or not use_cache) else curr[:, -1:]
+            try:
+                outputs = self.model(inp, past_key_values=past_kv, use_cache=use_cache)
+                past_kv = getattr(outputs, &#34;past_key_values&#34;, None)
+                logits = outputs.logits if hasattr(outputs, &#34;logits&#34;) else outputs
+            except TypeError:
+                outputs = self.model(curr)
+                logits = outputs.logits if hasattr(outputs, &#34;logits&#34;) else outputs
+
+            next_token_logits = logits[:, -1, :].clone() / max(temperature, 1e-5)
+
+            # Repetition penalty
+            if repetition_penalty != 1.0:
+                for b in range(next_token_logits.shape[0]):
+                    for tok in curr[b].tolist():
+                        if next_token_logits[b, tok] &gt; 0:
+                            next_token_logits[b, tok] /= repetition_penalty
+                        else:
+                            next_token_logits[b, tok] *= repetition_penalty
+
+            # Top-k filtering
+            if top_k is not None and top_k &gt; 0:
+                val, _ = torch.topk(next_token_logits, min(top_k, next_token_logits.shape[-1]))
+                next_token_logits[next_token_logits &lt; val[:, -1:]] = float(&#34;-inf&#34;)
+
+            # Top-p (nucleus) filtering
+            if top_p is not None and 0.0 &lt; top_p &lt; 1.0:
+                sorted_logits, sorted_indices = torch.sort(next_token_logits, descending=True)
+                cumulative_probs = torch.cumsum(F.softmax(sorted_logits, dim=-1), dim=-1)
+                sorted_indices_to_remove = cumulative_probs &gt; top_p
+                # Shift right to keep at least one token above threshold
+                sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[..., :-1].clone()
+                sorted_indices_to_remove[..., 0] = 0
+                for b in range(next_token_logits.shape[0]):
+                    indices_to_remove = sorted_indices[b][sorted_indices_to_remove[b]]
+                    next_token_logits[b, indices_to_remove] = float(&#34;-inf&#34;)
+
+            probs = F.softmax(next_token_logits, dim=-1)
+            if temperature &gt; 0.0 and (top_k is not None or top_p is not None):
+                next_token = torch.multinomial(probs, num_samples=1)
+            else:
+                next_token = torch.argmax(next_token_logits, dim=-1, keepdim=True)
+
+            curr = torch.cat([curr, next_token], dim=-1)
+
+        return curr</code></pre>
+</details>
+<div class="desc"><p>Full-featured greedy/top-k/top-p/repetition-penalty generation runtime.</p></div>
+<h3>Methods</h3>
+<dl>
+<dt id="neuralops.inference.engine.NeuralOpsInferenceEngine.generate"><code class="name flex">
+<span>def <span class="ident">generate</span></span>(<span>self,<br>input_ids: torch.Tensor,<br>max_new_tokens: int = 20,<br>temperature: float = 1.0,<br>top_k: int | None = None,<br>top_p: float | None = None,<br>repetition_penalty: float = 1.0,<br>use_cache: bool = False) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@torch.no_grad()
+def generate(
+    self,
+    input_ids: torch.Tensor,
+    max_new_tokens: int = 20,
+    temperature: float = 1.0,
+    top_k: int | None = None,
+    top_p: float | None = None,
+    repetition_penalty: float = 1.0,
+    use_cache: bool = False,
+) -&gt; torch.Tensor:
+    &#34;&#34;&#34;Autoregressive generation with top-k, top-p, and repetition penalties.&#34;&#34;&#34;
+    curr = input_ids.clone()
+    past_kv = None
+
+    for _ in range(max_new_tokens):
+        inp = curr if (past_kv is None or not use_cache) else curr[:, -1:]
+        try:
+            outputs = self.model(inp, past_key_values=past_kv, use_cache=use_cache)
+            past_kv = getattr(outputs, &#34;past_key_values&#34;, None)
+            logits = outputs.logits if hasattr(outputs, &#34;logits&#34;) else outputs
+        except TypeError:
+            outputs = self.model(curr)
+            logits = outputs.logits if hasattr(outputs, &#34;logits&#34;) else outputs
+
+        next_token_logits = logits[:, -1, :].clone() / max(temperature, 1e-5)
+
+        # Repetition penalty
+        if repetition_penalty != 1.0:
+            for b in range(next_token_logits.shape[0]):
+                for tok in curr[b].tolist():
+                    if next_token_logits[b, tok] &gt; 0:
+                        next_token_logits[b, tok] /= repetition_penalty
+                    else:
+                        next_token_logits[b, tok] *= repetition_penalty
+
+        # Top-k filtering
+        if top_k is not None and top_k &gt; 0:
+            val, _ = torch.topk(next_token_logits, min(top_k, next_token_logits.shape[-1]))
+            next_token_logits[next_token_logits &lt; val[:, -1:]] = float(&#34;-inf&#34;)
+
+        # Top-p (nucleus) filtering
+        if top_p is not None and 0.0 &lt; top_p &lt; 1.0:
+            sorted_logits, sorted_indices = torch.sort(next_token_logits, descending=True)
+            cumulative_probs = torch.cumsum(F.softmax(sorted_logits, dim=-1), dim=-1)
+            sorted_indices_to_remove = cumulative_probs &gt; top_p
+            # Shift right to keep at least one token above threshold
+            sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[..., :-1].clone()
+            sorted_indices_to_remove[..., 0] = 0
+            for b in range(next_token_logits.shape[0]):
+                indices_to_remove = sorted_indices[b][sorted_indices_to_remove[b]]
+                next_token_logits[b, indices_to_remove] = float(&#34;-inf&#34;)
+
+        probs = F.softmax(next_token_logits, dim=-1)
+        if temperature &gt; 0.0 and (top_k is not None or top_p is not None):
+            next_token = torch.multinomial(probs, num_samples=1)
+        else:
+            next_token = torch.argmax(next_token_logits, dim=-1, keepdim=True)
+
+        curr = torch.cat([curr, next_token], dim=-1)
+
+    return curr</code></pre>
+</details>
+<div class="desc"><p>Autoregressive generation with top-k, top-p, and repetition penalties.</p></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="neuralops.inference" href="index.html">neuralops.inference</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="neuralops.inference.engine.beam_search_generate" href="#neuralops.inference.engine.beam_search_generate">beam_search_generate</a></code></li>
+<li><code><a title="neuralops.inference.engine.speculative_generate" href="#neuralops.inference.engine.speculative_generate">speculative_generate</a></code></li>
+<li><code><a title="neuralops.inference.engine.stream_generate" href="#neuralops.inference.engine.stream_generate">stream_generate</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="neuralops.inference.engine.ContinuousBatcher" href="#neuralops.inference.engine.ContinuousBatcher">ContinuousBatcher</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.inference.engine.ContinuousBatcher.add_request" href="#neuralops.inference.engine.ContinuousBatcher.add_request">add_request</a></code></li>
+<li><code><a title="neuralops.inference.engine.ContinuousBatcher.step" href="#neuralops.inference.engine.ContinuousBatcher.step">step</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.inference.engine.GenerationRequest" href="#neuralops.inference.engine.GenerationRequest">GenerationRequest</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.inference.engine.GenerationRequest.finished" href="#neuralops.inference.engine.GenerationRequest.finished">finished</a></code></li>
+<li><code><a title="neuralops.inference.engine.GenerationRequest.generated" href="#neuralops.inference.engine.GenerationRequest.generated">generated</a></code></li>
+<li><code><a title="neuralops.inference.engine.GenerationRequest.input_ids" href="#neuralops.inference.engine.GenerationRequest.input_ids">input_ids</a></code></li>
+<li><code><a title="neuralops.inference.engine.GenerationRequest.max_new_tokens" href="#neuralops.inference.engine.GenerationRequest.max_new_tokens">max_new_tokens</a></code></li>
+<li><code><a title="neuralops.inference.engine.GenerationRequest.request_id" href="#neuralops.inference.engine.GenerationRequest.request_id">request_id</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="neuralops.inference.engine.NeuralOpsInferenceEngine" href="#neuralops.inference.engine.NeuralOpsInferenceEngine">NeuralOpsInferenceEngine</a></code></h4>
+<ul class="">
+<li><code><a title="neuralops.inference.engine.NeuralOpsInferenceEngine.generate" href="#neuralops.inference.engine.NeuralOpsInferenceEngine.generate">generate</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.11.6</a>.</p>
+</footer>
+</body>
+</html>

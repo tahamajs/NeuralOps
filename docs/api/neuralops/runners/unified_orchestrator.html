@@ -89,11 +89,15 @@ el.replaceWith(d);
             sys.executable,
             str(TRAINER_SCRIPT),
             &#34;--model&#34;,
-            m[&#34;slug&#34;],
-            &#34;--module&#34;,
+            m.get(&#34;model&#34;, m[&#34;slug&#34;]),
+            &#34;--model_family&#34;,
+            m[&#34;family&#34;],
+            &#34;--modules&#34;,
             module_key,
             &#34;--output_dir&#34;,
             str(out_dir),
+            &#34;--finetune_steps&#34;,
+            &#34;350&#34;,
         ] + extra_args
         logger.info(&#34;Executing: %s&#34;, &#34; &#34;.join(cmd))
         t0 = time.time()
@@ -112,13 +116,20 @@ el.replaceWith(d);
             try:
                 with csv_path.open(encoding=&#34;utf-8&#34;) as cf:
                     for row in csv.DictReader(cf):
-                        if row.get(&#34;module_name&#34;) == module_key:
+                        if (
+                            row.get(&#34;module_name&#34;) == module_key
+                            or row.get(&#34;module&#34;) == module_key
+                            or row.get(&#34;status&#34;) == &#34;SKIP_NO_WEIGHTS&#34;
+                        ):
                             row_data = row
                             break
             except Exception as exc:
                 logger.warning(&#34;Could not parse %s: %s&#34;, csv_path, exc)
 
-        status = row_data.get(&#34;status&#34;, &#34;FAIL&#34; if proc.returncode != 0 else &#34;UNKNOWN&#34;)
+        if row_data.get(&#34;status&#34;) == &#34;SKIP_NO_WEIGHTS&#34;:
+            status = &#34;SKIP_NO_WEIGHTS&#34;
+        else:
+            status = row_data.get(&#34;status&#34;, &#34;FAIL&#34; if proc.returncode != 0 else &#34;UNKNOWN&#34;)
         try:
             acc = float(row_data.get(&#34;accuracy_pct&#34;) or 0.0)
         except (ValueError, TypeError):
@@ -198,7 +209,14 @@ el.replaceWith(d);
             w.writeheader()
             w.writerows(rows)
     with json_path.open(&#34;w&#34;, encoding=&#34;utf-8&#34;) as f:
-        json.dump([{k: v for k, v in r.items() if k != &#34;row_data&#34;} for r in results], f, indent=2)
+        dump_data = []
+        for r in results:
+            clean_r = {}
+            for k, v in r.items():
+                if k != &#34;row_data&#34;:
+                    clean_r[k] = str(v) if isinstance(v, Path) else v
+            dump_data.append(clean_r)
+        json.dump(dump_data, f, indent=2)
     logger.info(&#34;Consolidated results saved → %s&#34;, RESULTS_BASE)
 
     try:

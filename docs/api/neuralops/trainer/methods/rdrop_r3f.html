@@ -186,6 +186,7 @@ def apply_rdrop(model, config) -&gt; None:
 </summary>
 <pre><code class="python">class MethodTrainer(Trainer):
     def __init__(self, method, rdrop_alpha, r3f_epsilon, is_regression, *args, **kwargs) -&gt; None:
+        &#34;&#34;&#34;Execute __init__ operation.&#34;&#34;&#34;
         super().__init__(*args, **kwargs)
         self.method = method
         self.rdrop_alpha = rdrop_alpha
@@ -304,7 +305,8 @@ by this function will be reflected in the predictions received by <code>compute_
   overridden by subclassing &lt;code&gt;TrainingArguments&lt;/code&gt; and overriding the &lt;code&gt;place\_model\_on\_device&lt;/code&gt; property.
 - **is_in_train** -- Whether or not a model is currently running &lt;code&gt;train&lt;/code&gt; (e.g. when &lt;code&gt;evaluate&lt;/code&gt; is called while
   in &lt;code&gt;train&lt;/code&gt;)
-</code></pre></div>
+</code></pre>
+<p>Execute <strong>init</strong> operation.</p></div>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>transformers.trainer.Trainer</li>

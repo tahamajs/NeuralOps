@@ -505,7 +505,7 @@ Stream 6: Stage 6
         for future in as_completed(future_map):
             t_name = future_map[future]
             try:
-                res = future.result()
+                future.result()
             except Exception as e:
                 log(f&#34;[TASK EXCEPTION] {t_name}: {e}&#34;)
 
@@ -624,43 +624,6 @@ Stream 6: Stage 6
             active_workers_counter[0] -= 1</code></pre>
 </details>
 <div class="desc"></div>
-</dd>
-<dt id="neuralops.runners.run_autonomous_48h_pipeline.run_stream_worker"><code class="name flex">
-<span>def <span class="ident">run_stream_worker</span></span>(<span>stream_name, task_list)</span>
-</code></dt>
-<dd>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def run_stream_worker(stream_name, task_list):
-    &#34;&#34;&#34;Legacy stream worker kept for modular compatibility.&#34;&#34;&#34;
-    log(f&#34;############################################################&#34;)
-    log(f&#34;### [LAUNCH STREAM] {stream_name}: {len(task_list)} Tasks Queued&#34;)
-    log(f&#34;############################################################&#34;)
-    completed, failed = 0, 0
-    for task in task_list:
-        res = run_single_task(task)
-        if res:
-            completed += 1
-        else:
-            failed += 1
-
-        with global_lock:
-            global_completed_counter[0] += 1
-            cur_global = global_completed_counter[0]
-            if cur_global % 10 == 0:
-                auto_commit_and_push(f&#34;Global 6-Stream Checkpoint ({cur_global} tasks completed)&#34;)
-
-        log(
-            f&#34;[{stream_name} Stream Progress]: {completed}/{len(task_list)} completed ({failed} failed)&#34;
-        )
-
-    log(f&#34;### [STREAM FINISHED] {stream_name} finished all {len(task_list)} tasks.&#34;)
-    auto_commit_and_push(f&#34;{stream_name} stream complete ({completed} passed, {failed} failed)&#34;)
-    return completed, failed</code></pre>
-</details>
-<div class="desc"><p>Legacy stream worker kept for modular compatibility.</p></div>
 </dd>
 <dt id="neuralops.runners.run_autonomous_48h_pipeline.run_task_worker"><code class="name flex">
 <span>def <span class="ident">run_task_worker</span></span>(<span>task, total_pending, task_idx)</span>
@@ -782,7 +745,6 @@ Stream 6: Stage 6
 <li><code><a title="neuralops.runners.run_autonomous_48h_pipeline.log" href="#neuralops.runners.run_autonomous_48h_pipeline.log">log</a></code></li>
 <li><code><a title="neuralops.runners.run_autonomous_48h_pipeline.main" href="#neuralops.runners.run_autonomous_48h_pipeline.main">main</a></code></li>
 <li><code><a title="neuralops.runners.run_autonomous_48h_pipeline.run_single_task" href="#neuralops.runners.run_autonomous_48h_pipeline.run_single_task">run_single_task</a></code></li>
-<li><code><a title="neuralops.runners.run_autonomous_48h_pipeline.run_stream_worker" href="#neuralops.runners.run_autonomous_48h_pipeline.run_stream_worker">run_stream_worker</a></code></li>
 <li><code><a title="neuralops.runners.run_autonomous_48h_pipeline.run_task_worker" href="#neuralops.runners.run_autonomous_48h_pipeline.run_task_worker">run_task_worker</a></code></li>
 <li><code><a title="neuralops.runners.run_autonomous_48h_pipeline.vram_governor_loop" href="#neuralops.runners.run_autonomous_48h_pipeline.vram_governor_loop">vram_governor_loop</a></code></li>
 </ul>
