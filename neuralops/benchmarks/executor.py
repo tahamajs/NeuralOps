@@ -112,7 +112,8 @@ def execute_single(
 
     # Check CUDA requirement
     target_device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-    if mod_info.requires_cuda and not torch.cuda.is_available() and target_device == "cpu":
+    if mod_dict.get("requires_cuda", False) and not torch.cuda.is_available() and target_device == "cpu":
+
         duration_s = time.perf_counter() - start_t
         end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         return BenchmarkResult(
