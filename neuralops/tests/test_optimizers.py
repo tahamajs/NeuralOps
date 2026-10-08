@@ -1,53 +1,108 @@
 """Unit tests for neuralops.trainer.optimizers package."""
 
+import pytest
 import torch
 import torch.nn as nn
 from neuralops.trainer.optimizers import (
-    create_muon,
-    create_adamw,
-    create_sgd,
-    RiemannianStiefelOptimizer,
+    OPTIMIZER_REGISTRY,
     Muon,
+    RiemannianStiefelOptimizer,
+    create_adam,
+    create_adamw,
+    create_muon,
     create_muon_adamw_reg,
+    create_riemannian_stiefel,
+    create_sgd,
 )
 
 
-def test_adamw_and_sgd_factory():
-    p = nn.Parameter(torch.randn(4, 4))
-    opt_adamw = create_adamw([p], lr=1e-3)
-    assert opt_adamw is not None
+class TestOptimizerFactories:
+    """Test standard optimizer factory methods and registry registrations."""
 
-    opt_sgd = create_sgd([p], lr=1e-2)
-    assert opt_sgd is not None
+    def test_optimizer_registry_contains_core_optimizers(self):
+        registered = OPTIMIZER_REGISTRY.keys()
+        for expected in ["adamw", "sgd", "adam", "muon", "muon_adamw", "stiefel"]:
+            assert expected in registered
+
+    def test_adamw_and_sgd_factory(self):
+        p = nn.Parameter(torch.randn(4, 4))
+        opt_adamw = create_adamw([p], lr=1e-3)
+        assert opt_adamw is not None
+        assert opt_adamw.defaults["lr"] == 1e-3
+
+        opt_sgd = create_sgd([p], lr=1e-2, momentum=0.9)
+        assert opt_sgd is not None
+        assert opt_sgd.defaults["momentum"] == 0.9
+
+    def test_adam_factory(self):
+        p = nn.Parameter(torch.randn(4, 4))
+        opt_adam = create_adam([p], lr=2e-3)
+        assert opt_adam is not None
+        assert opt_adam.defaults["lr"] == 2e-3
+
+    def test_muon_optimizer_and_step(self):
+        p = nn.Parameter(torch.randn(4, 4))
+        opt = create_muon([p], lr=0.01)
+        assert isinstance(opt, Muon)
+
+        loss = (p ** 2).sum()
+        loss.backward()
+        opt.step()
+        assert p.grad is not None
+
+    def test_muon_adamw_hybrid_step(self):
+        m = nn.Sequential(nn.Linear(4, 4), nn.LayerNorm(4))
+        opt = create_muon_adamw_reg(m)
+        assert opt is not None
+
+        x = torch.randn(2, 4)
+        loss = m(x).sum()
+        loss.backward()
+        opt.step()
+
+    def test_riemannian_stiefel_optimizer(self):
+        w = nn.Parameter(torch.randn(6, 4))
+        opt = create_riemannian_stiefel([w], lr=1e-3)
+        assert isinstance(opt, RiemannianStiefelOptimizer)
+
+        loss = (w ** 2).sum()
+        loss.backward()
+        opt.step()
+        err = opt.check_orthogonality_error(w)
+        assert err is not None
 
 
-def test_muon_optimizer():
-    p = nn.Parameter(torch.randn(4, 4))
-    opt = create_muon([p], lr=0.01)
-    assert isinstance(opt, Muon)
+class TestSchedulerFactories:
+    """Test standard learning rate scheduler factory methods."""
 
-    loss = (p ** 2).sum()
-    loss.backward()
-    opt.step()
-    assert p.grad is not None
+    def test_schedulers(self):
+        from neuralops.trainer.schedulers import (
+            create_linear,
+            create_cosine,
+            create_rop,
+            create_onecycle,
+            create_cosine_warmup,
+            create_poly,
+        )
 
+        p = nn.Parameter(torch.randn(2, 2))
+        opt = torch.optim.SGD([p], lr=0.1)
 
-def test_muon_adamw_hybrid():
-    m = nn.Sequential(nn.Linear(4, 4), nn.LayerNorm(4))
-    opt = create_muon_adamw_reg(m)
-    assert opt is not None
+        s_lin = create_linear(opt, num_training_steps=100)
+        assert s_lin is not None
 
-    x = torch.randn(2, 4)
-    loss = m(x).sum()
-    loss.backward()
-    opt.step()
+        s_cos = create_cosine(opt, T_max=100)
+        assert s_cos is not None
 
+        s_rop = create_rop(opt)
+        assert s_rop is not None
 
-def test_riemannian_stiefel_optimizer():
-    w = nn.Parameter(torch.randn(6, 4))
-    opt = RiemannianStiefelOptimizer([w], lr=1e-3)
-    loss = (w ** 2).sum()
-    loss.backward()
-    opt.step()
-    err = opt.check_orthogonality_error(w)
-    assert err is not None
+        s_oc = create_onecycle(opt, max_lr=0.1, steps_per_epoch=10, epochs=2)
+        assert s_oc is not None
+
+        s_cw = create_cosine_warmup(opt, num_warmup_steps=10, num_training_steps=100)
+        assert s_cw is not None
+
+        s_poly = create_poly(opt, total_iters=100)
+        assert s_poly is not None
+

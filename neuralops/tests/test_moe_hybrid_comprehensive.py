@@ -4,7 +4,6 @@ import sys
 import torch
 import torch.nn as nn
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 

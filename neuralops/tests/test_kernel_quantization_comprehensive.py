@@ -7,7 +7,6 @@ import traceback
 
 import torch
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from neuralops.attentions.adasplash_attention import AdaSplashAttention
 from neuralops.attentions.cluster_attention import ClusterAttention

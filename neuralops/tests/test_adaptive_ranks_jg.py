@@ -19,8 +19,6 @@ import sys
 import torch
 import torch.nn as nn
 
-sys.path.insert(0, os.path.abspath("."))
-sys.path.insert(0, os.path.abspath("."))
 
 from neuralops.compression_engine.adaptive_ranks import (
     AdaptiveRanksCompressor, _detect_activation_type, _gelu_derivative_sq,
