@@ -37,6 +37,7 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     return getattr(cfg, key, default)
 
 
+@ATTENTION_REGISTRY.register("simplessm")
 @ATTENTION_REGISTRY.register("selective_ssm")
 class SelectiveSSM(BaseAttention):
     r"""
