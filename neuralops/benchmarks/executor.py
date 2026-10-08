@@ -12,12 +12,94 @@ import torch
 
 from neuralops.benchmarks.adapters.classification import ClassificationAdapter
 from neuralops.benchmarks.adapters.perplexity import PerplexityAdapter
+from neuralops.benchmarks.adapters.ruler import RulerAdapter
+from neuralops.benchmarks.adapters.zeroshot import SUPPORTED_ZEROSHOT_DATASETS, ZeroShotAdapter
 from neuralops.benchmarks.discovery import discover_modules
 from neuralops.benchmarks.result import BenchmarkResult
 
 logger = logging.getLogger(__name__)
 
 PERPLEXITY_DATASETS = {"wikitext2", "wikitext103", "ptb", "c4"}
+
+
+def _select_adapter(
+    module_name: str,
+    module_type: str,
+    model: str,
+    dataset: str,
+    rank: int | None,
+    device: str,
+    dtype: str,
+    batch_size: int,
+    max_length: int,
+    epochs: int,
+    lr: float,
+    seed: int,
+    eval_only: bool,
+    **kwargs: Any,
+) -> Any:
+    """Route benchmark to appropriate task adapter based on dataset task type."""
+    ds_lower = dataset.lower()
+    if ds_lower in PERPLEXITY_DATASETS:
+        return PerplexityAdapter(
+            module_name=module_name,
+            module_type=module_type,
+            model_name=model,
+            dataset_name=dataset,
+            rank=rank,
+            device=device,
+            dtype=dtype,
+            batch_size=batch_size,
+            max_length=max_length,
+            seed=seed,
+            **kwargs,
+        )
+    elif "ruler" in ds_lower or "niah" in ds_lower:
+        return RulerAdapter(
+            module_name=module_name,
+            module_type=module_type,
+            model_name=model,
+            dataset_name=dataset,
+            rank=rank,
+            device=device,
+            dtype=dtype,
+            context_length=max_length if max_length > 512 else 4096,
+            seed=seed,
+            **kwargs,
+        )
+    elif ds_lower in SUPPORTED_ZEROSHOT_DATASETS or any(k in ds_lower for k in ("arc", "hellaswag", "mmlu", "gsm8k")):
+        return ZeroShotAdapter(
+            module_name=module_name,
+            module_type=module_type,
+            model_name=model,
+            dataset_name=dataset,
+            rank=rank,
+            device=device,
+            dtype=dtype,
+            batch_size=batch_size,
+            max_length=max_length,
+            seed=seed,
+            **kwargs,
+        )
+    else:
+        # Default task is sequence classification (GLUE tasks)
+        return ClassificationAdapter(
+            module_name=module_name,
+            module_type=module_type,
+            model_name=model,
+            dataset_name=dataset,
+            rank=rank,
+            device=device,
+            dtype=dtype,
+            batch_size=batch_size,
+            max_length=max_length,
+            epochs=epochs,
+            lr=lr,
+            seed=seed,
+            eval_only=eval_only,
+            **kwargs,
+        )
+
 
 
 def execute_single(
@@ -142,44 +224,28 @@ def execute_single(
             timed_out=False,
         )
 
-    # 2. Select Adapter
-    is_lm_task = dataset.lower() in PERPLEXITY_DATASETS
+    # 2. Select and execute Adapter
     adapter = None
     try:
-        if is_lm_task:
-            adapter = PerplexityAdapter(
-                module_name=module_name,
-                module_type=module_type,
-                model_name=model,
-                dataset_name=dataset,
-                rank=rank,
-                device=target_device,
-                dtype=dtype,
-                batch_size=batch_size,
-                max_length=max_length,
-                seed=seed,
-                **kwargs,
-            )
-        else:
-            adapter = ClassificationAdapter(
-                module_name=module_name,
-                module_type=module_type,
-                model_name=model,
-                dataset_name=dataset,
-                rank=rank,
-                device=target_device,
-                dtype=dtype,
-                batch_size=batch_size,
-                max_length=max_length,
-                epochs=epochs,
-                lr=lr,
-                seed=seed,
-                eval_only=eval_only,
-                **kwargs,
-            )
-
+        adapter = _select_adapter(
+            module_name=module_name,
+            module_type=module_type,
+            model=model,
+            dataset=dataset,
+            rank=rank,
+            device=target_device,
+            dtype=dtype,
+            batch_size=batch_size,
+            max_length=max_length,
+            epochs=epochs,
+            lr=lr,
+            seed=seed,
+            eval_only=eval_only,
+            **kwargs,
+        )
 
         run_output = adapter.run()
+
         duration_s = time.perf_counter() - start_t
         end_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
