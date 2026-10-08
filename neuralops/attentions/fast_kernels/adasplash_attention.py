@@ -19,6 +19,7 @@ import torch.nn.functional as F
 from neuralops.core.attention_mask import apply_attention_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.rope import _rotate_half
 from neuralops.utils.compat import maybe_apply_rotary, repeat_kv
 from neuralops.utils.model_family import ModelAdapter
 
@@ -633,14 +634,6 @@ class AdaSplashAttention(BaseAttention):
             and len(position_embeddings) >= 2
         ):
             cos, sin = position_embeddings[0], position_embeddings[1]
-
-            def _rotate_half(x):
-                _d = x.shape[-1]
-                _h = _d // 2
-                _rot = torch.cat((-x[..., _h : 2 * _h], x[..., :_h]), dim=-1)
-                if _d % 2 == 1:
-                    _rot = torch.cat([_rot, x[..., -1:]], dim=-1)
-                return _rot
 
             if cos.dim() == 3:
                 cos, sin = cos.unsqueeze(1), sin.unsqueeze(1)

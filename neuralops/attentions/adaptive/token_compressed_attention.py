@@ -25,6 +25,7 @@ import torch.nn.functional as F
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.rope import _rotate_half
 
 try:
     from neuralops.core.attention_utils import repeat_kv
@@ -58,17 +59,6 @@ def _cfg_get(cfg, key, default=None):
 # ===========================================================================
 # RoPE helpers
 # ===========================================================================
-def _rotate_half(x):
-    d = x.shape[-1]
-    half = d // 2
-    x1 = x[..., :half]
-    x2 = x[..., half : 2 * half]
-    rotated = torch.cat((-x2, x1), dim=-1)
-    if d % 2 == 1:
-        rotated = torch.cat([rotated, x[..., -1:]], dim=-1)
-    return rotated
-
-
 def apply_rotary_pos_emb(q, k, cos, sin):
     if cos is None or sin is None:
         return q, k

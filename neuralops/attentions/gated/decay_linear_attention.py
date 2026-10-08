@@ -31,6 +31,7 @@ import torch.nn.functional as F
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.rope import _rotate_half
 
 try:
     from neuralops.core.triton_kernels.gla_scan import (
@@ -54,20 +55,6 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
         batch, num_kv_heads, n_rep, slen, head_dim
     )
     return hidden_states.reshape(batch, num_kv_heads * n_rep, slen, head_dim)
-
-
-def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    """Rotates half the hidden dimensions of the input tensor."""
-    d = x.shape[-1]
-    even_d = (d // 2) * 2
-    x_rot = x[..., :even_d]
-    half = even_d // 2
-    x1 = x_rot[..., :half]
-    x2 = x_rot[..., half:]
-    rotated = torch.cat((-x2, x1), dim=-1)
-    if even_d < d:
-        return torch.cat([rotated, x[..., even_d:]], dim=-1)
-    return rotated
 
 
 def apply_rotary_pos_emb(
