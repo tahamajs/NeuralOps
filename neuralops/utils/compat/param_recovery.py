@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 import torch.nn as nn
 
@@ -45,6 +44,91 @@ def _is_protected_param(name: str) -> bool:
     """Check if parameter name matches any protected recovery keyword."""
     n_l = name.lower()
     return any(k in n_l for k in PROTECTED_KEYWORDS)
+
+
+def _is_non_lora_trainable(n_low: str) -> bool:
+    """Check trainable status for models without LoRA or SVD layers."""
+    if any(tag in n_low for tag in (".inner.", "._wrapped_attention.", "swa_mamba", "kernel_linear")):
+        return True
+    if any(f".{x}." in n_low or n_low.endswith(f".{x}") for x in ("u", "v", "weight_u", "weight_v")):
+        return True
+    svd_proj_tags = (
+        ".down.", ".up.", ".u_proj", ".v_proj", ".u_matrix", ".v_matrix",
+        ".w_a", ".w_b", ".weight_u", ".weight_v", ".factor", ".factors",
+        ".comp_", ".svd_", ".cur_", ".salr", ".direct_svd", ".sparse_proj",
+        ".cores", ".centroids", ".weight_table", ".alpha", ".proj_k", ".proj_v",
+    )
+    if any(tag in n_low for tag in svd_proj_tags):
+        return True
+    if not (n_low.endswith(".weight") or n_low.endswith(".bias")) and any(
+        tag in n_low for tag in ("attention.", "self_attn.", ".attn.")
+    ):
+        return True
+    return any(tag in n_low for tag in (".gate.", ".beta.", ".input_gate.", ".forget_gate.", ".alpha_gate."))
+
+
+def _is_candidate_trainable_param(
+    name: str,
+    param: nn.Parameter,
+    layer_has_lora: bool,
+    has_lora: bool,
+    has_svd: bool,
+    svd_param_ids: set[int],
+) -> bool:
+    """Determine whether an individual parameter qualifies as trainable during recovery."""
+    n_low = name.lower()
+
+    if ".base_layer." in n_low and not any(tag in n_low for tag in ("lora_a", "lora_b", "lora_")):
+        return False
+
+    if any(
+        tag in n_low
+        for tag in (
+            "lora_a", "lora_b", "lora_", ".adapter", ".prompt", ".gate",
+            "gate.", ".alpha", ".beta", ".output_scale", ".decay",
+            "span_logits", ".span_logits",
+        )
+    ):
+        return True
+
+    if any(h in n_low for h in ("score.", "classifier.", "classification_head", "pre_classifier", "pooler")):
+        if (has_lora and any(d in n_low for d in ("classifier.", "pre_classifier.", "score."))) or not param.requires_grad:
+            return False
+        return True
+
+    if any(
+        n_low.endswith(sfx)
+        for sfx in (
+            ".weight", ".bias", ".u", ".v", ".a", ".b", ".beta", ".alpha",
+            ".gate", ".in_proj", ".out_proj", ".x_proj", ".q_proj", ".k_proj",
+            ".v_proj", ".z_proj",
+        )
+    ):
+        if not any(tag in n_low for tag in LORA_KEYWORDS):
+            if layer_has_lora or has_lora:
+                return False
+
+    if layer_has_lora and (
+        any(n_low.endswith(sfx) for sfx in (".u", ".s", ".v", ".weight_u", ".weight_v", ".bias"))
+        or ".base_layer." in n_low or ".lin1." in n_low or ".lin2." in n_low
+    ):
+        return False
+
+    if has_svd:
+        return id(param) in svd_param_ids
+
+    if has_lora:
+        if n_low.endswith(".output_gate") or ".inner.e" in n_low or ".inner.f" in n_low:
+            return True
+        if (".inner." in n_low or "._wrapped_attention." in n_low) and not (
+            n_low.endswith(".weight") or n_low.endswith(".bias")
+        ):
+            return True
+        if any(tag in n_low for tag in (".delta_mem.", ".beta_gate.", ".forget_gate.", ".input_gate.", ".output_proj.", ".mem_proj.")):
+            return True
+        return False
+
+    return _is_non_lora_trainable(n_low)
 
 
 def _collect_trainable_params(
@@ -107,194 +191,13 @@ def _collect_trainable_params(
                 trainable_params.append(param)
             continue
 
-        # Base layer inside a LoRA wrapper stays frozen unless it is a LoRA param.
-        if ".base_layer." in n_low and not any(
-            tag in n_low for tag in ("lora_a", "lora_b", "lora_")
-        ):
-            continue
-
-        # Always trainable: LoRA / gates / scales / decay / span / alpha / beta.
-        if any(
-            tag in n_low
-            for tag in (
-                "lora_a",
-                "lora_b",
-                "lora_",
-                ".adapter",
-                ".prompt",
-                ".gate",
-                "gate.",
-                ".alpha",
-                ".beta",
-                ".output_scale",
-                ".decay",
-                "span_logits",
-                ".span_logits",
-            )
-        ):
-            trainable_params.append(param)
-            continue
-
-        # Classification head handling.
-        if any(
-            h in n_low
-            for h in (
-                "score.",
-                "classifier.",
-                "classification_head",
-                "pre_classifier",
-                "pooler",
-            )
-        ):
-            if (
-                has_lora and any(d in n_low for d in ("classifier.", "pre_classifier.", "score."))
-            ) or not param.requires_grad:
-                continue
-            trainable_params.append(param)
-            continue
-
-        # Standard base weight/bias handling.
-        if any(
-            n_low.endswith(sfx)
-            for sfx in (
-                ".weight",
-                ".bias",
-                ".u",
-                ".v",
-                ".a",
-                ".b",
-                ".beta",
-                ".alpha",
-                ".gate",
-                ".in_proj",
-                ".out_proj",
-                ".x_proj",
-                ".q_proj",
-                ".k_proj",
-                ".v_proj",
-                ".z_proj",
-            )
-        ):
-            if not any(tag in n_low for tag in LORA_KEYWORDS):
-                if layer_has_lora or has_lora:
-                    continue
-
-        # If this layer has LoRA, its base weight/bias and base factors stay frozen.
-        if layer_has_lora and (
-            any(
-                n_low.endswith(sfx)
-                for sfx in (
-                    ".u",
-                    ".s",
-                    ".v",
-                    ".weight_u",
-                    ".weight_v",
-                    ".bias",
-                )
-            )
-            or ".base_layer." in n_low
-            or ".lin1." in n_low
-            or ".lin2." in n_low
-        ):
-            continue
-
-        # Factorized SVDLinear modules: only their U/V params are trainable.
-        if has_svd:
-            if id(param) in svd_param_ids:
-                trainable_params.append(param)
-            continue
-
-        # LoRA mode without SVDLinear: only LoRA params and injected attention extras.
-        if has_lora:
-            if n_low.endswith(".output_gate"):
-                trainable_params.append(param)
-                continue
-            if ".inner.e" in n_low or ".inner.f" in n_low:
-                trainable_params.append(param)
-                continue
-            if (".inner." in n_low or "._wrapped_attention." in n_low) and not (
-                n_low.endswith(".weight") or n_low.endswith(".bias")
-            ):
-                trainable_params.append(param)
-                continue
-            if any(
-                tag in n_low
-                for tag in (
-                    ".delta_mem.",
-                    ".beta_gate.",
-                    ".forget_gate.",
-                    ".input_gate.",
-                    ".output_proj.",
-                    ".mem_proj.",
-                )
-            ):
-                trainable_params.append(param)
-                continue
-            continue
-
-        # Non-LoRA / non-SVD path.
-        if (
-            (
-                any(
-                    tag in n_low
-                    for tag in (
-                        ".inner.",
-                        "._wrapped_attention.",
-                        "swa_mamba",
-                        "kernel_linear",
-                    )
-                )
-                or any(
-                    f".{x}." in n_low or n_low.endswith(f".{x}")
-                    for x in (
-                        "u",
-                        "v",
-                        "weight_u",
-                        "weight_v",
-                    )
-                )
-            )
-            or any(
-                tag in n_low
-                for tag in (
-                    ".down.",
-                    ".up.",
-                    ".u_proj",
-                    ".v_proj",
-                    ".u_matrix",
-                    ".v_matrix",
-                    ".w_a",
-                    ".w_b",
-                    ".weight_u",
-                    ".weight_v",
-                    ".factor",
-                    ".factors",
-                    ".comp_",
-                    ".svd_",
-                    ".cur_",
-                    ".salr",
-                    ".direct_svd",
-                    ".sparse_proj",
-                    ".cores",
-                    ".centroids",
-                    ".weight_table",
-                    ".alpha",
-                    ".proj_k",
-                    ".proj_v",
-                )
-            )
-            or not (n_low.endswith(".weight") or n_low.endswith(".bias"))
-            and any(tag in n_low for tag in ("attention.", "self_attn.", ".attn."))
-            or any(
-                tag in n_low
-                for tag in (
-                    ".gate.",
-                    ".beta.",
-                    ".input_gate.",
-                    ".forget_gate.",
-                    ".alpha_gate.",
-                )
-            )
+        if _is_candidate_trainable_param(
+            name=name,
+            param=param,
+            layer_has_lora=layer_has_lora,
+            has_lora=has_lora,
+            has_svd=has_svd,
+            svd_param_ids=svd_param_ids,
         ):
             trainable_params.append(param)
 

@@ -12,7 +12,7 @@ from typing import Any
 
 import torch
 
-from neuralops.core.triton_kernels._common import (
+from neuralops.core.triton_kernels._types import (
     HAS_TRITON,
     check_triton_suitability,
     gqa_pytorch_fallback,
