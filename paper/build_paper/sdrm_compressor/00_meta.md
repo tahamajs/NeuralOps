@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `sdrm_compressor`
+**Legacy Folder Name:** `sdrm` (standardized in v1.2.0)
+
 # Sdrm: Formal Architectural Specification and Empirical Benchmark Evaluation
 
 **Module Name**: `sdrm`  
