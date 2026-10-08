@@ -456,7 +456,7 @@ Contributions are welcome! Please review [CONTRIBUTING.md](CONTRIBUTING.md) and 
 ```bibtex
 @software{neuralops2026,
   title  = {NeuralOps: SVD Linear Attention & Model Compression Framework},
-  author = {Majs, Taha},
+  author = {Majlesi, Taha},
   year   = {2026},
   url    = {https://github.com/tahamajs/SVD_linear_Attention}
 }

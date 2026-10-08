@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [
-    { name = "Taha Majs", email = "tahamaj4@gmail.com" }
+    { name = "Taha Majlesi", email = "tahamaj4@gmail.com" }
 ]
 keywords = [
     "attention", "transformer", "compression", "svd",
