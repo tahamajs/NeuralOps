@@ -32,8 +32,6 @@ import torch.nn as nn
 
 # Ensure project root is in path
 _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-if _PROJECT_ROOT not in sys.path:
-
 from neuralops.compression_engine.kvtc_compressor import (
     KVTCCompressor, KVTCQuantizedLoRALinear, KVTCStore, SimpleEntropyCoder,
     kvtc_factory)
