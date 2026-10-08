@@ -1,4 +1,6 @@
-"""Direct execution entry point for neuralops.benchmarks."""
+"""Entrypoint for `python -m neuralops.benchmarks`."""
+from __future__ import annotations
+
 import sys
 from neuralops.benchmarks.cli import main
 
