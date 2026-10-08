@@ -3,8 +3,6 @@ from pathlib import Path
 
 _HERE = Path(__file__).resolve().parent
 _CODES = _HERE.parent.parent
-sys.path.insert(0, str(_CODES))
-sys.path.insert(0, str(_HERE.parent))
 
 import torch
 import torch.nn as nn
