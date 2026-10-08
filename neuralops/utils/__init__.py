@@ -89,4 +89,8 @@ __all__ += [
     "qwen_module_policy",
     "is_architecture_error",
     "compute_metrics_for_task",
+    "CheckpointManager",
 ]
+
+# Checkpoint utilities
+from .checkpoint import CheckpointManager  # noqa: E402

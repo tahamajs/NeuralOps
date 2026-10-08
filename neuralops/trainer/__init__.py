@@ -122,3 +122,22 @@ __all__ += [
     "create_onecycle",
     "create_poly",
 ]
+
+# Loss functions
+from .losses import (  # noqa: E402
+    ContrastiveLoss,
+    CrossEntropyLoss,
+    DiceLoss,
+    FocalLoss,
+    LabelSmoothingLoss,
+    PolyLoss,
+)
+
+__all__ += [
+    "CrossEntropyLoss",
+    "FocalLoss",
+    "LabelSmoothingLoss",
+    "DiceLoss",
+    "PolyLoss",
+    "ContrastiveLoss",
+]
