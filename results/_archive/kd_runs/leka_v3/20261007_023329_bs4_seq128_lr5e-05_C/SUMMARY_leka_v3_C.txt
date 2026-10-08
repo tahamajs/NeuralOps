@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: leka_v3 / C
+================================================================================
+
+MODEL INFO:
+  Total params:      102.81 M
+  Trainable params:  1.18 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        800
+  Seq len:           128
+  Total tokens:      102400
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        2161.4900
+  Post-KD PPL:       398.6800
+  Stage 1 (KD) PPL:  539.7300
+  Stage 2 (Self) PPL:398.6800
+  KD Gain:           +1621.76
+  Self Gain:         +141.05
+  Total Gain:        +1762.81
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         6.0342
+  Recovery:          84.13%
+  Peak VRAM:         2503.28 MB
+  Train time:        379.88 s (Stage 1: 222.4s, Stage 2: 157.5s)
+  s/step:            0.7598
+  Loss (final):      2.6657
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.4740
+  Repetition-3:      0.3564
+  Train PPL:         301.7900
+  Test PPL:          398.6800
+  Overfit Gap:       96.89
+  Latency (mean):    8923.12 ms
+  Latency (std):     187.76 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        db8cfbc6f4a7
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=5.4876 | lr=2.90e-05
+  step   420 | loss=5.9816 | lr=2.50e-05
+  step   430 | loss=5.7494 | lr=2.11e-05
+  step   440 | loss=5.6575 | lr=1.73e-05
+  step   450 | loss=6.0720 | lr=1.37e-05
+  step   460 | loss=5.8006 | lr=1.04e-05
+  step   470 | loss=5.8563 | lr=7.41e-06
+  step   480 | loss=5.5900 | lr=4.87e-06
+  step   490 | loss=6.1114 | lr=2.82e-06
+  step   500 | loss=5.7594 | lr=1.32e-06

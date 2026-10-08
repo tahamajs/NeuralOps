@@ -1,0 +1,61 @@
+================================================================================
+RUN SUMMARY: chela_slay / C
+================================================================================
+
+MODEL INFO:
+  Total params:      125.83 M
+  Trainable params:  29.74 M
+  Class:             GPT2LMHeadModel
+
+DATASET INFO:
+  Num chunks:        800
+  Seq len:           128
+  Total tokens:      102400
+  Vocab size:        50257
+
+RESULTS:
+  Pre-KD PPL:        3399.2100
+  Post-KD PPL:       1664.0600
+  Stage 1 (KD) PPL:  2472.1800
+  Stage 2 (Self) PPL:1664.0600
+  KD Gain:           +927.03
+  Self Gain:         +808.12
+  Total Gain:        +1735.15
+  Aligned w/ Teacher:NO
+  Beat Teacher:      NO
+  PPL Ratio:         25.1863
+  Recovery:          52.06%
+  Peak VRAM:         4535.03 MB
+  Train time:        441.83 s (Stage 1: 260.1s, Stage 2: 181.8s)
+  s/step:            0.8837
+  Loss (final):      5.0791
+  Cached:            False
+
+QUALITY EVALUATION:
+  Distinct-2:        0.5102
+  Repetition-3:      0.2240
+  Train PPL:         1931.6600
+  Test PPL:          1664.0600
+  Overfit Gap:       -267.60
+  Latency (mean):    7152.88 ms
+  Latency (std):     39.54 ms
+  Lambada Acc:       ?
+
+ENVIRONMENT:
+  Python:            3.13.5
+  Torch:             2.6.0+cu124
+  CUDA:              12.4
+  GPU:               NVIDIA GeForce RTX 4070 Laptop GPU
+  Git commit:        1a89fb7c5f42
+
+TRAINING HISTORY (last 10 steps):
+  step   410 | loss=7.5636 | lr=2.93e-06
+  step   420 | loss=7.4535 | lr=2.55e-06
+  step   430 | loss=7.5576 | lr=2.17e-06
+  step   440 | loss=7.3467 | lr=1.79e-06
+  step   450 | loss=7.8836 | lr=1.44e-06
+  step   460 | loss=7.3541 | lr=1.11e-06
+  step   470 | loss=7.3469 | lr=8.18e-07
+  step   480 | loss=7.7431 | lr=5.68e-07
+  step   490 | loss=7.5741 | lr=3.67e-07
+  step   500 | loss=7.7093 | lr=2.20e-07
