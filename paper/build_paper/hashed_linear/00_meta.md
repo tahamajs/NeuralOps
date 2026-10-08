@@ -1,5 +1,7 @@
 # Hashed Linear: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Track / Status:** Specialized Research Variant & Ablation Study (`hashed_linear`). Evaluated within unified empirical sweeps.
+
 **Module Name**: `hashed_linear`  
 **Class Name**: `HashedLinear`  
 **Base Architecture**: `nn.Module`  

@@ -1,5 +1,7 @@
 # Svd Attention: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Track / Status:** Specialized Research Variant & Ablation Study (`svd_attention`). Evaluated within unified empirical sweeps.
+
 **Module Name**: `svd_attention`  
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  

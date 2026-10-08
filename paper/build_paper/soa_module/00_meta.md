@@ -1,5 +1,7 @@
 # Soa Module: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Track / Status:** Specialized Research Variant & Ablation Study (`soa_module`). Evaluated within unified empirical sweeps.
+
 **Module Name**: `soa_module`  
 **Class Name**: `FactorizedLinear`  
 **Base Architecture**: `nn.Module`  

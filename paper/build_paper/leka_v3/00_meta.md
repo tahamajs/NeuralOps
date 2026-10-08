@@ -1,5 +1,7 @@
 # LEKAv3: Linear-Time Efficient Kernel Attention with Value-Scored Landmarks
 
+> **Note:** This is a legacy experimental version of `tpa_attention`. See [`tpa_attention`](../tpa_attention/00_meta.md) for the current canonical implementation.
+
 **Authors:**
 - [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
 - [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]

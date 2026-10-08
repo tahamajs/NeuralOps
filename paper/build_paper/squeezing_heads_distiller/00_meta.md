@@ -1,5 +1,7 @@
 # Squeezing Heads Distiller: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Architecture Type:** Composite Architecture / Ablation Benchmark Suite (Progressive Head Distillation Engine).
+
 **Module Name**: `squeezing_heads_distiller`  
 **Class Name**: `LoRALinear`  
 **Base Architecture**: `nn.Module`  

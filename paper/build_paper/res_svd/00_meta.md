@@ -1,5 +1,7 @@
 # Res-SVD Attention: Spectral Residual Low-Rank Factorization for Attention Projections
 
+> **Track / Status:** Specialized Research Variant & Ablation Study (`res_svd`). Evaluated within unified empirical sweeps.
+
 **Authors:**
 - [AUTHOR_1_NAME]¹ — [AUTHOR_1_EMAIL]
 - [AUTHOR_2_NAME]² — [AUTHOR_2_EMAIL]

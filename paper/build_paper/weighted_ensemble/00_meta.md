@@ -1,5 +1,7 @@
 # Weighted Ensemble: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Architecture Type:** Composite Architecture / Ablation Benchmark Suite (Weighted Attention Module Ensemble).
+
 **Module Name**: `weighted_ensemble`  
 **Class Name**: `TaskAwareAttention`  
 **Base Architecture**: `nn.Module`  

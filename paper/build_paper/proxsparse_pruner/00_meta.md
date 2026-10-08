@@ -1,5 +1,7 @@
 # Proxsparse Pruner: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Track / Status:** Specialized Research Variant & Ablation Study (`proxsparse_pruner`). Evaluated within unified empirical sweeps.
+
 **Module Name**: `proxsparse_pruner`  
 **Class Name**: `ProxSparsePrunedLoRALinear`  
 **Base Architecture**: `nn.Module`  

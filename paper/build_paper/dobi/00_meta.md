@@ -1,5 +1,7 @@
 # Dobi: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Track / Status:** Specialized Research Variant & Ablation Study (`dobi`). Evaluated within unified empirical sweeps.
+
 **Module Name**: `dobi`  
 **Class Name**: `DobiSVDLinearLayer`  
 **Base Architecture**: `nn.Module`  

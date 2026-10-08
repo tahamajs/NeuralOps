@@ -1,5 +1,7 @@
 # Cure: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Track / Status:** Specialized Research Variant & Ablation Study (`cure`). Evaluated within unified empirical sweeps.
+
 **Module Name**: `cure`  
 **Class Name**: `GriffinAttention`  
 **Base Architecture**: `BaseAttention`  

@@ -1,5 +1,7 @@
 # Gfws D Compressor: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Track / Status:** Specialized Research Variant & Ablation Study (`gfws_d_compressor`). Evaluated within unified empirical sweeps.
+
 **Module Name**: `gfws_d_compressor`  
 **Class Name**: `GFWSLoRALinear`  
 **Base Architecture**: `nn.Module`  

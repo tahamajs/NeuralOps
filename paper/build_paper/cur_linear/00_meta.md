@@ -1,5 +1,7 @@
 # Cur Linear: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Track / Status:** Specialized Research Variant & Ablation Study (`cur_linear`). Evaluated within unified empirical sweeps.
+
 **Module Name**: `cur_linear`  
 **Class Name**: `CURLinear`  
 **Base Architecture**: `nn.Module`  

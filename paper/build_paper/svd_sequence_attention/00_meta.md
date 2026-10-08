@@ -1,5 +1,7 @@
 # Svd Sequence Attention: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Track / Status:** Specialized Research Variant & Ablation Study (`svd_sequence_attention`). Evaluated within unified empirical sweeps.
+
 **Module Name**: `svd_sequence_attention`  
 **Class Name**: `GriffinAttention`  
 **Base Architecture**: `BaseAttention`  

@@ -1,5 +1,7 @@
 # Aegis V1: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Note:** This is a legacy experimental version of `spectron`. See [`spectron`](../spectron/00_meta.md) for the current canonical implementation.
+
 **Module Name**: `aegis_v1`  
 **Class Name**: `FactorisedLinear`  
 **Base Architecture**: `nn.Module`  

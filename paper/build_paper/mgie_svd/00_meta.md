@@ -1,5 +1,7 @@
 # Mgie Svd: Formal Architectural Specification and Empirical Benchmark Evaluation
 
+> **Track / Status:** Specialized Research Variant & Ablation Study (`mgie_svd`). Evaluated within unified empirical sweeps.
+
 **Module Name**: `mgie_svd`  
 **Class Name**: `MGIECompressor`  
 **Base Architecture**: `BaseCompressor`  

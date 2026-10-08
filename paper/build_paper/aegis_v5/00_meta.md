@@ -1,5 +1,7 @@
 # AEGIS-V5: Adaptive Enhanced Global-Local Integrated Sparse Attention with SVD-Factorized Projections
 
+> **Note:** This is a legacy experimental version of `spectron`. See [`spectron`](../spectron/00_meta.md) for the current canonical implementation.
+
 **Authors:**
 - Your Name¹ — you@university.edu
 - Advisor Name² — advisor@university.edu
