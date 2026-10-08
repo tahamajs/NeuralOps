@@ -34,9 +34,9 @@
 
 ## 📰 News
 
-- **[2026-10]** 🚀 **v1.1.1** released on PyPI — [install now](https://pypi.org/project/neuralops/)
-- **[2026-10]** 📚 Complete documentation suite published (HTML + Markdown)
-- **[2026-10]** 🧪 Full test coverage for all 232 modules
+- **[2026-10]** 🚀 **v1.2.0** released on PyPI — [install now](https://pypi.org/project/neuralops/1.2.0/)
+- **[2026-10]** 🌐 Hugging Face Hub integration guide & model card templates added
+- **[2026-10]** 📚 Cleaned and unified documentation hub with comparative benchmarks vs FLA & FlashAttention
 - **[2026-09]** ⚡ 19 Triton kernels with verified CPU fallbacks
 - **[2026-09]** 🔧 Registry cleanup — 159 canonical attention keys, 73 compressor engines
 - **[2026-08]** 📊 Master benchmark summary (16,199 results)
