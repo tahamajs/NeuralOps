@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-10-08
+
+### Added
+- **Modern Attention Architectures**: Native implementations of Sliding Window Attention (Mistral), ALiBi, Attention Sinks, Multi-Query Attention (MQA), Cross-Attention, Softcapping, and Variable-Length packed attention.
+- **Production Triton Kernels**: JIT GPU kernels with transparent PyTorch fallbacks for Sliding Window, Paged Attention, Flash-Decoding split-KV, Fused RoPE, Fused RMSNorm/LN + Attention, FP8 scaled attention, and elementwise SwiGLU.
+- **Inference & Serving Runtime**: Dedicated `NeuralOpsInferenceEngine` supporting autoregressive generation with top-p/top-k/repetition penalty, streaming tokens, speculative decoding, beam search with length normalization, and continuous dynamic batching.
+- **Advanced Model Compression Engine**: Real implementations of GPTQ (column error propagation with inverse Hessian damping), AWQ (salient channel activation protection), SmoothQuant (outlier migration), Wanda pruning, LoRA merging & SVD extraction, QLoRA, and DoRA.
+- **Ecosystem & Framework Integrations**: HuggingFace `AutoNeuralOpsModel` and dynamic `patch_model_attention`, vLLM and TGI serving adapters, DeepSpeed ZeRO-1/2/3 configuration, and PyTorch FSDP wrapping.
+- **Training Optimizations**: Complete `MixedPrecisionTrainer` with gradient accumulation and epoch training loops, `LoRATrainer`, and `CurriculumScheduler`.
+- **Benchmarking & Evaluation Harness**: Complete speed, memory, accuracy, and sequence scaling sweep generator with CSV and Markdown output tables, LM-Eval adapter, and RULER needle-in-a-haystack evaluator.
+
 ## [1.0.0] - 2026-10-08
 
 ### Added
