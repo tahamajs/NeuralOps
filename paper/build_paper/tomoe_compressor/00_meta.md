@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `tomoe_compressor`
+**Legacy Folder Name:** `tomoe` (standardized in v1.2.0)
+
 # Tomoe: Formal Architectural Specification and Empirical Benchmark Evaluation
 
 **Module Name**: `tomoe`  
