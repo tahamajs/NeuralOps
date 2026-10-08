@@ -182,7 +182,7 @@ _LAZY_EXPORTS = {
     "HuggingFaceTrainer": ("neuralops.trainer.hf_trainer", "HuggingFaceTrainer"),
     "LabelQualityDetector": ("neuralops.evaluation.label_quality", "LabelQualityDetector"),
     "LabelQualityReport": ("neuralops.evaluation.label_quality", "LabelQualityReport"),
-    "MultiModeBenchmarkRunner": ("neuralops.core.multi_mode_benchmark", "MultiModeBenchmarkRunner"),
+    "MultiModeBenchmarkRunner": ("neuralops.benchmarks.multi_mode_benchmark", "MultiModeBenchmarkRunner"),
     "ResultWriter": ("neuralops.pipeline.result_writer", "ResultWriter"),
     "ResultsSaver": ("neuralops.results_saver", "ResultsSaver"),
     "RetrainDecision": ("neuralops.evaluation.retraining", "RetrainDecision"),
