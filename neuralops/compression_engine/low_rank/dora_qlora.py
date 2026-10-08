@@ -1,68 +1,100 @@
-"""LoRA Merging, Extraction, and QLoRA / DoRA implementations."""
+"""Production LoRA Merging, SVD Extraction, QLoRA, and DoRA modules."""
 from __future__ import annotations
 import math
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 __all__ = [
     "merge_lora_into_linear",
     "extract_lora_from_diff",
+    "QuantizedLinear",
     "QLoRALinear",
     "DoRALinear",
 ]
 
 
 def merge_lora_into_linear(
-    base_linear: nn.Linear,
-    lora_a: torch.Tensor,
-    lora_b: torch.Tensor,
+    linear: nn.Linear,
+    lora_A: torch.Tensor,
+    lora_B: torch.Tensor,
     scaling: float = 1.0,
-) -> None:
-    """Merges LoRA matrices into base linear layer in-place: W = W + scaling * (B @ A)."""
-    delta = (lora_b @ lora_a) * scaling
-    base_linear.weight.data += delta.to(base_linear.weight.dtype)
+) -> nn.Linear:
+    """Merge LoRA into base linear weight in-place: W += scaling * (B @ A)."""
+    delta_W = (lora_B @ lora_A) * scaling
+    linear.weight.data += delta_W.to(linear.weight.dtype)
+    return linear
 
 
 def extract_lora_from_diff(
-    diff: torch.Tensor,
+    delta_W: torch.Tensor,
     rank: int = 16,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Extracts LoRA A and B adapters from weight delta via truncated SVD."""
-    U, S, Vh = torch.linalg.svd(diff.float(), full_matrices=False)
-    U_r = U[:, :rank]
-    S_r = S[:rank]
-    Vh_r = Vh[:rank, :]
-    # B = U_r * sqrt(S_r), A = sqrt(S_r) * Vh_r
-    sqrt_s = torch.diag(torch.sqrt(S_r))
-    B = U_r @ sqrt_s
-    A = sqrt_s @ Vh_r
-    return A, B
+    """Extract LoRA matrices (A, B) from weight delta using truncated SVD."""
+    U, S, Vt = torch.linalg.svd(delta_W.to(torch.float32), full_matrices=False)
+    r = min(rank, S.numel())
+    A = Vt[:r]  # shape: [r, in_features]
+    B = U[:, :r] * S[:r].unsqueeze(0)  # shape: [out_features, r]
+    return A.to(delta_W.dtype), B.to(delta_W.dtype)
+
+
+class QuantizedLinear(nn.Module):
+    """Linear layer simulating symmetric INT4/INT8 quantized weights with dequantization."""
+
+    def __init__(self, in_features: int, out_features: int, bits: int = 4, bias: bool = True) -> None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.bits = bits
+        self.q_max = 2 ** (bits - 1) - 1
+        self.q_min = -2 ** (bits - 1)
+
+        raw_w = torch.randn(out_features, in_features)
+        scale = raw_w.abs().amax(dim=-1, keepdim=True) / self.q_max
+        q_w = torch.clamp(torch.round(raw_w / scale), self.q_min, self.q_max)
+
+        self.weight = nn.Parameter(q_w, requires_grad=False)
+        self.scales = nn.Parameter(scale, requires_grad=False)
+        if bias:
+            self.bias = nn.Parameter(torch.zeros(out_features))
+        else:
+            self.register_parameter("bias", None)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        w_deq = self.weight * self.scales
+        return F.linear(x, w_deq, self.bias)
 
 
 class QLoRALinear(nn.Module):
-    """Linear layer simulating 4-bit NormalFloat (NF4) base weights with FP32/FP16 LoRA adapters."""
+    """Production QLoRA layer with frozen quantized base weights and trainable low-rank adapters."""
 
     def __init__(
         self,
         in_features: int,
         out_features: int,
-        rank: int = 8,
+        rank: int = 16,
+        bits: int = 4,
         lora_alpha: float = 16.0,
+        bias: bool = False,
     ) -> None:
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.rank = rank
-        self.scaling = lora_alpha / rank
+        self.scaling = lora_alpha / max(rank, 1)
 
-        # Quantized base weight representation (simulated INT8/NF4)
-        self.base_weight = nn.Parameter(torch.randn(out_features, in_features), requires_grad=False)
+        # Frozen quantized base
+        self.base = QuantizedLinear(in_features, out_features, bits=bits, bias=bias)
+        self.base.weight.requires_grad = False
+        self.base.scales.requires_grad = False
+
+        # Trainable LoRA
         self.lora_A = nn.Parameter(torch.randn(rank, in_features) * 0.01)
         self.lora_B = nn.Parameter(torch.zeros(out_features, rank))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        base_out = torch.matmul(x, self.base_weight.t())
-        lora_out = torch.matmul(torch.matmul(x, self.lora_A.t()), self.lora_B.t()) * self.scaling
+        base_out = self.base(x)
+        lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
         return base_out + lora_out
 
 
@@ -73,27 +105,27 @@ class DoRALinear(nn.Module):
         self,
         in_features: int,
         out_features: int,
-        rank: int = 8,
+        rank: int = 16,
         lora_alpha: float = 16.0,
+        bias: bool = False,
     ) -> None:
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.rank = rank
-        self.scaling = lora_alpha / rank
+        self.scaling = lora_alpha / max(rank, 1)
 
-        self.weight = nn.Parameter(torch.randn(out_features, in_features), requires_grad=False)
+        self.base = nn.Linear(in_features, out_features, bias=bias)
+        self.base.weight.requires_grad = False
+
         # Magnitude parameter m = ||W_0||_c
-        norm_0 = torch.linalg.norm(self.weight.data, dim=1, keepdim=True)
-        self.magnitude = nn.Parameter(norm_0.clone())
-
+        self.magnitude = nn.Parameter(self.base.weight.norm(dim=1, keepdim=True).clone())
         self.lora_A = nn.Parameter(torch.randn(rank, in_features) * 0.01)
         self.lora_B = nn.Parameter(torch.zeros(out_features, rank))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Full adapted directional matrix: V = W + scaling * (B @ A)
-        V = self.weight + (self.lora_B @ self.lora_A) * self.scaling
-        norm_v = torch.linalg.norm(V, dim=1, keepdim=True).clamp(min=1e-8)
-        # Decomposed weight: W' = m * (V / ||V||)
-        W_dora = self.magnitude * (V / norm_v)
-        return torch.matmul(x, W_dora.t())
+        # Effective directional weight: V = W + scaling * (B @ A)
+        W_dir = self.base.weight + (self.lora_B @ self.lora_A) * self.scaling
+        W_dir = W_dir / W_dir.norm(dim=1, keepdim=True).clamp(min=1e-6)
+        W_eff = self.magnitude * W_dir
+        return F.linear(x, W_eff, self.base.bias)
