@@ -1,7 +1,7 @@
 \section{Empirical Results and Benchmark Evaluations}
 
 \subsection{Downstream Task Performance}
-Table~\ref{tab:results\_acc\_kroneckerlinear} details empirical evaluation metrics across target backbones.
+Table~\ref{tab:results_acc_kroneckerlinear} details empirical evaluation metrics across target backbones.
 
 \begin{table*}[t]
 \centering
@@ -19,11 +19,11 @@ GPT-2 & \textbf{Kronecker Linear} & \textbf{51.26\%} & -6.65\% & PASS\_LOW & 0.6
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main\_sst2}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results\_params\_kroneckerlinear} documents parameter compression factors and adapter overhead.
+Table~\ref{tab:results_params_kroneckerlinear} documents parameter compression factors and adapter overhead.
 
 \begin{table*}[t]
 \centering
@@ -43,11 +43,11 @@ Table~\ref{tab:results\_params\_kroneckerlinear} documents parameter compression
 \bottomrule
 \end{tabular}
 \caption{Parameter scaling and recovery parameter counts for \texttt{kroneckerlinear}.}
-\label{tab:results\_params\_kroneckerlinear}
+\label{tab:results_params_kroneckerlinear}
 \end{table*}
 
 \subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results\_vram\_kroneckerlinear} presents memory profiling and execution throughput.
+Table~\ref{tab:results_vram_kroneckerlinear} presents memory profiling and execution throughput.
 
 \begin{table*}[t]
 \centering
@@ -67,7 +67,7 @@ Table~\ref{tab:results\_vram\_kroneckerlinear} presents memory profiling and exe
 \bottomrule
 \end{tabular}
 \caption{Inference throughput and VRAM footprint for \texttt{kroneckerlinear}.}
-\label{tab:results\_vram\_kroneckerlinear}
+\label{tab:results_vram_kroneckerlinear}
 \end{table*}
 
 
@@ -75,5 +75,5 @@ Table~\ref{tab:results\_vram\_kroneckerlinear} presents memory profiling and exe
 \centering
 \includegraphics[width=0.85\linewidth]{figures/kronecker\_linear\_distilbert\_radar\_metrics.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{kronecker\_linear}.}
-\label{fig:results\_kronecker\_linear}
+\label{fig:results_kronecker_linear}
 \end{figure}

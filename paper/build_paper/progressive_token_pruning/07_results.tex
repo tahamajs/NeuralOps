@@ -1,7 +1,7 @@
 \section{Empirical Results and Benchmark Evaluations}
 
 \subsection{Downstream Task Performance}
-Table~\ref{tab:results\_acc\_progressivetokenpruning} details empirical evaluation metrics across target backbones.
+Table~\ref{tab:results_acc_progressivetokenpruning} details empirical evaluation metrics across target backbones.
 
 \begin{table*}[t]
 \centering
@@ -19,11 +19,11 @@ GPT-2 & \textbf{Progressive Token Pruning} & \textbf{86.35\%} & -1.49\% & PASS &
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main\_sst2}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results\_params\_progressivetokenpruning} documents parameter compression factors and adapter overhead.
+Table~\ref{tab:results_params_progressivetokenpruning} documents parameter compression factors and adapter overhead.
 
 \begin{table*}[t]
 \centering
@@ -41,11 +41,11 @@ Table~\ref{tab:results\_params\_progressivetokenpruning} documents parameter com
 \bottomrule
 \end{tabular}
 \caption{Parameter scaling and recovery parameter counts for \texttt{progressivetokenpruning}.}
-\label{tab:results\_params\_progressivetokenpruning}
+\label{tab:results_params_progressivetokenpruning}
 \end{table*}
 
 \subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results\_vram\_progressivetokenpruning} presents memory profiling and execution throughput.
+Table~\ref{tab:results_vram_progressivetokenpruning} presents memory profiling and execution throughput.
 
 \begin{table*}[t]
 \centering
@@ -63,7 +63,7 @@ Table~\ref{tab:results\_vram\_progressivetokenpruning} presents memory profiling
 \bottomrule
 \end{tabular}
 \caption{Inference throughput and VRAM footprint for \texttt{progressivetokenpruning}.}
-\label{tab:results\_vram\_progressivetokenpruning}
+\label{tab:results_vram_progressivetokenpruning}
 \end{table*}
 
 
@@ -71,5 +71,5 @@ Table~\ref{tab:results\_vram\_progressivetokenpruning} presents memory profiling
 \centering
 \includegraphics[width=0.85\linewidth]{figures/progressive\_token\_pruning\_roberta\_loss\_convergence.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{progressive\_token\_pruning}.}
-\label{fig:results\_progressive\_token\_pruning}
+\label{fig:results_progressive_token_pruning}
 \end{figure}

@@ -1,7 +1,7 @@
 \section{Empirical Results and Benchmark Evaluations}
 
 \subsection{Downstream Task Performance}
-Table~\ref{tab:results\_acc\_adaptivesparseattention} details empirical evaluation metrics across target backbones.
+Table~\ref{tab:results_acc_adaptivesparseattention} details empirical evaluation metrics across target backbones.
 
 \begin{table*}[t]
 \centering
@@ -19,11 +19,11 @@ GPT-2 & \textbf{Adaptive Sparse Attention Attention} & \textbf{87.84\%} & +0.00\
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main\_sst2}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results\_params\_adaptivesparseattention} documents parameter compression factors and adapter overhead.
+Table~\ref{tab:results_params_adaptivesparseattention} documents parameter compression factors and adapter overhead.
 
 \begin{table*}[t]
 \centering
@@ -43,11 +43,11 @@ Table~\ref{tab:results\_params\_adaptivesparseattention} documents parameter com
 \bottomrule
 \end{tabular}
 \caption{Parameter scaling and recovery parameter counts for \texttt{adaptivesparseattention}.}
-\label{tab:results\_params\_adaptivesparseattention}
+\label{tab:results_params_adaptivesparseattention}
 \end{table*}
 
 \subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results\_vram\_adaptivesparseattention} presents memory profiling and execution throughput.
+Table~\ref{tab:results_vram_adaptivesparseattention} presents memory profiling and execution throughput.
 
 \begin{table*}[t]
 \centering
@@ -67,7 +67,7 @@ Table~\ref{tab:results\_vram\_adaptivesparseattention} presents memory profiling
 \bottomrule
 \end{tabular}
 \caption{Inference throughput and VRAM footprint for \texttt{adaptivesparseattention}.}
-\label{tab:results\_vram\_adaptivesparseattention}
+\label{tab:results_vram_adaptivesparseattention}
 \end{table*}
 
 
@@ -75,5 +75,5 @@ Table~\ref{tab:results\_vram\_adaptivesparseattention} presents memory profiling
 \centering
 \includegraphics[width=0.85\linewidth]{figures/adaptive\_sparse\_attention\_gpt2\_radar\_metrics.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{adaptive\_sparse\_attention}.}
-\label{fig:results\_adaptive\_sparse\_attention}
+\label{fig:results_adaptive_sparse_attention}
 \end{figure}

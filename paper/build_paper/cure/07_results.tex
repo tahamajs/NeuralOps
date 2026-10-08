@@ -1,7 +1,7 @@
 \section{Empirical Results and Benchmark Evaluations}
 
 \subsection{Downstream Task Performance}
-Table~\ref{tab:results\_acc\_cure} details empirical evaluation metrics across target backbones.
+Table~\ref{tab:results_acc_cure} details empirical evaluation metrics across target backbones.
 
 \begin{table*}[t]
 \centering
@@ -19,11 +19,11 @@ GPT-2 & \textbf{Cure} & \textbf{58.94\%} & -1.84\% & PASS & 0.6792 & 0 & \textbf
 \bottomrule
 \end{tabular}
 \caption{Main results on SST-2 validation across models under the production configuration ($r_{\mathrm{ceiling}}=256, \tau=0.40$).}
-\label{tab:main\_sst2}
+\label{tab:main_sst2}
 \end{table*}
 
 \subsection{Parameter Reduction and Compression Efficiency}
-Table~\ref{tab:results\_params\_cure} documents parameter compression factors and adapter overhead.
+Table~\ref{tab:results_params_cure} documents parameter compression factors and adapter overhead.
 
 \begin{table*}[t]
 \centering
@@ -43,11 +43,11 @@ Table~\ref{tab:results\_params\_cure} documents parameter compression factors an
 \bottomrule
 \end{tabular}
 \caption{Parameter scaling and recovery parameter counts for \texttt{cure}.}
-\label{tab:results\_params\_cure}
+\label{tab:results_params_cure}
 \end{table*}
 
 \subsection{Hardware Throughput and Memory Ceilings}
-Table~\ref{tab:results\_vram\_cure} presents memory profiling and execution throughput.
+Table~\ref{tab:results_vram_cure} presents memory profiling and execution throughput.
 
 \begin{table*}[t]
 \centering
@@ -67,7 +67,7 @@ Table~\ref{tab:results\_vram\_cure} presents memory profiling and execution thro
 \bottomrule
 \end{tabular}
 \caption{Inference throughput and VRAM footprint for \texttt{cure}.}
-\label{tab:results\_vram\_cure}
+\label{tab:results_vram_cure}
 \end{table*}
 
 
@@ -75,5 +75,5 @@ Table~\ref{tab:results\_vram\_cure} presents memory profiling and execution thro
 \centering
 \includegraphics[width=0.85\linewidth]{figures/cure\_roberta\_radar\_metrics.png}
 \caption{Empirical benchmark evaluation and convergence dynamics across models for \texttt{cure}.}
-\label{fig:results\_cure}
+\label{fig:results_cure}
 \end{figure}

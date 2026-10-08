@@ -129,6 +129,6 @@ where $s = \alpha / r$ is the scaling factor. The frozen $U, V$ provide the
 bulk of the computation; LoRA provides the recovery signal.
 
 \subsection{Notation Summary}
-\label{sec:notation\_summary}
+\label{sec:notation_summary}
 
-Mathematical notations, symbols, tensor dimensions, and operational parameters used throughout the theoretical formulation and experimental evaluations of A3 are consolidated in Appendix~\ref{sec:app\_notation} (Table~\ref{tab:app\_notation\_summary}). Key tensors include base weights $W \in \mathbb{R}^{d_{\mathrm{out}} \times d_{\mathrm{in}}}$, low-rank factors $U \in \mathbb{R}^{d_{\mathrm{out}} \times r}$ and $V \in \mathbb{R}^{r \times d_{\mathrm{in}}}$, empirical sensitivity vector $F \in \mathbb{R}^{d_{\mathrm{in}}}$, streaming covariance $C_X \in \mathbb{R}^{d_{\mathrm{in}} \times d_{\mathrm{in}}}$, and LayerNorm affine parameters $\gamma, \beta \in \mathbb{R}^{d_{\mathrm{model}}}$.
+Mathematical notations, symbols, tensor dimensions, and operational parameters used throughout the theoretical formulation and experimental evaluations of A3 are consolidated in Appendix~\ref{sec:app_notation} (Table~\ref{tab:app_notation_summary}). Key tensors include base weights $W \in \mathbb{R}^{d_{\mathrm{out}} \times d_{\mathrm{in}}}$, low-rank factors $U \in \mathbb{R}^{d_{\mathrm{out}} \times r}$ and $V \in \mathbb{R}^{r \times d_{\mathrm{in}}}$, empirical sensitivity vector $F \in \mathbb{R}^{d_{\mathrm{in}}}$, streaming covariance $C_X \in \mathbb{R}^{d_{\mathrm{in}} \times d_{\mathrm{in}}}$, and LayerNorm affine parameters $\gamma, \beta \in \mathbb{R}^{d_{\mathrm{model}}}$.
