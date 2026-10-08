@@ -132,6 +132,7 @@ def get_dataset_batch(
                 val_data = load_dataset("glue", ds, split="validation")
 
                 def tok_fn(ex: dict[str, Any]) -> Any:
+                    """Execute tok_fn operation."""
                     args = (ex[k1],) if k2 is None else (ex[k1], ex[k2])
                     return tokenizer(
                         *args, padding="max_length", truncation=True, max_length=seq_len

@@ -1,3 +1,5 @@
+"""Module providing checkpoint implementations for NeuralOps."""
+
 # framework/utils/checkpoint.py
 import json
 import logging
@@ -7,6 +9,7 @@ from pathlib import Path
 
 class CheckpointManager:
     def __init__(self, checkpoint_dir: str = "./checkpoints") -> None:
+        """Execute __init__ operation."""
         self.checkpoint_dir = Path(checkpoint_dir)
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
