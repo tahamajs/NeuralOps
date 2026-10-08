@@ -6,21 +6,38 @@ from pathlib import Path
 from typing import Any
 
 
-@dataclass
-class BenchmarkRunConfig:
-    """Base benchmark run configuration."""
+import logging
 
-    model: str
-    dataset: str
+LOG = logging.getLogger(__name__)
+
+
+@dataclass
+class BenchmarkConfig:
+    """Unified configuration for benchmarking single runs or grid sweeps."""
+
+    model: str = "distilbert-base-uncased"
+    dataset: str = "sst2"
     output_dir: Path = field(default_factory=lambda: Path("results"))
     device: str = "cuda"
     seed: int = 42
+    epochs: int = 3
     batch_size: int = 32
+    lr: float = 2e-5
     seq_len: int = 128
+    max_length: int = 128
     precision: str = "float32"
+    eval_only: bool = False
     verbose: bool = False
     dry_run: bool = False
+    timeout_s: int = 1800
     extra: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.eval_only:
+            LOG.warning(
+                "eval_only=True specified: evaluating with a freshly initialized "
+                "classification head without fine-tuning may yield random accuracy."
+            )
 
     def to_dict(self) -> dict[str, Any]:
         """Convert config to dictionary representation."""
@@ -29,7 +46,7 @@ class BenchmarkRunConfig:
         return data
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> BenchmarkRunConfig:
+    def from_dict(cls, data: dict[str, Any]) -> BenchmarkConfig:
         """Create config from dictionary."""
         d = dict(data)
         if "output_dir" in d and isinstance(d["output_dir"], (str, Path)):
@@ -38,11 +55,18 @@ class BenchmarkRunConfig:
 
 
 @dataclass
+class BenchmarkRunConfig(BenchmarkConfig):
+    """Base benchmark run configuration (alias for BenchmarkConfig)."""
+    pass
+
+
+@dataclass
 class QualitySweepConfig(BenchmarkRunConfig):
     """Configuration for full quality and accuracy sweep."""
 
     modules: list[str] = field(default_factory=lambda: ["all"])
     rank: int = 64
+
     recovery_steps: int = 50
     lora_rank: int = 16
     lora_alpha: float = 32.0

@@ -61,6 +61,7 @@ def load_model_and_tokenizer(
     dtype: str = "float32",
     num_labels: int | None = None,
     is_causal: bool = False,
+    task: str | None = None,
     trust_remote_code: bool = True,
 ) -> tuple[nn.Module, Any, Any]:
     """
@@ -69,6 +70,11 @@ def load_model_and_tokenizer(
     Returns:
         Tuple of (model, tokenizer, config)
     """
+    if task == "lm":
+        is_causal = True
+    elif task == "classification" and num_labels is None:
+        num_labels = 2
+
     torch_dtype = {
         "float32": torch.float32,
         "float16": torch.float16,
@@ -190,16 +196,38 @@ def apply_compressor(
 
     LOG.info("Applying compressor: '%s' (rank=%d)...", module_name, rank)
     compressor_cls = COMPRESSOR_REGISTRY[module_name]
+
+    # Handle constructor signatures: some take (model, rank=...), some take (rank=...)
+    compressor = None
     try:
-        compressor = compressor_cls(rank=rank, **kwargs)
+        compressor = compressor_cls(model=model, rank=rank, **kwargs)
     except TypeError:
-        compressor = compressor_cls(**kwargs)
+        try:
+            compressor = compressor_cls(rank=rank, **kwargs)
+        except TypeError:
+            try:
+                compressor = compressor_cls(model, **kwargs)
+            except TypeError:
+                compressor = compressor_cls(**kwargs)
 
     if hasattr(compressor, "compress"):
+        comp_kwargs = {}
         if calibration_loader is not None and "dataloader" in compressor.compress.__code__.co_varnames:
-            return compressor.compress(model, dataloader=calibration_loader)
-        return compressor.compress(model)
+            comp_kwargs["dataloader"] = calibration_loader
+
+        # Check if compress expects model argument
+        if "model" in compressor.compress.__code__.co_varnames:
+            res = compressor.compress(model, **comp_kwargs)
+        else:
+            res = compressor.compress(**comp_kwargs)
+
+        if isinstance(res, tuple):
+            return res[0]
+        elif isinstance(res, nn.Module):
+            return res
+
     return model
+
 
 
 # Backward compatibility aliases

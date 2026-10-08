@@ -111,9 +111,26 @@ def write_all(result: BenchmarkResult, base_dir: Path | str) -> Path:
     return target_path
 
 
+def save_result_json(result: BenchmarkResult, path: Path | str) -> Path:
+    """Save single BenchmarkResult to JSON file."""
+    return write_json(result, path)
+
+
+def append_result_jsonl(result: BenchmarkResult, path: Path | str) -> Path:
+    """Append single BenchmarkResult line to JSONL file."""
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with open(p, "a", encoding="utf-8") as fp:
+        fp.write(json.dumps(result.to_dict()) + "\n")
+    return p
+
+
 __all__ = [
     "write_json",
     "write_csv",
     "write_markdown",
     "write_all",
+    "save_result_json",
+    "append_result_jsonl",
 ]
+

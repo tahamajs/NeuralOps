@@ -3,8 +3,24 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
+import subprocess
 from typing import Any
 import uuid
+
+
+def _get_git_commit() -> str:
+    """Return the current HEAD git commit hash."""
+    try:
+        res = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True,
+        )
+        return res.stdout.strip()
+    except Exception:
+        return "unknown"
 
 
 @dataclass
@@ -56,7 +72,7 @@ class BenchmarkResult:
     timestamp_end: str = field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
-    git_commit: str = "unknown"
+    git_commit: str = field(default_factory=_get_git_commit)
 
     module: dict[str, Any] = field(default_factory=dict)
     model: dict[str, Any] = field(default_factory=dict)

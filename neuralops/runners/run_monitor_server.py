@@ -30,11 +30,17 @@ if os.path.join(PROJECT_DIR, "scripts") not in sys.path:
     sys.path.insert(0, os.path.join(PROJECT_DIR, "scripts"))
 
 try:
-    import gpu_live_probe
+    from neuralops.benchmarks.utils import gpu_probe as gpu_live_probe
 
     HAS_LOCAL_PROBE = True
 except Exception:
-    HAS_LOCAL_PROBE = False
+    try:
+        import gpu_live_probe
+
+        HAS_LOCAL_PROBE = True
+    except Exception:
+        HAS_LOCAL_PROBE = False
+
 
 WEB_DIR = os.path.join(PROJECT_DIR, "Docs")
 HARVESTED_JSON = os.path.join(PROJECT_DIR, "results", "harvested_benchmark_data.json")
