@@ -1,3 +1,6 @@
+**Canonical Registry Key:** `cur_moe_compressor`
+**Legacy Folder Name:** `cur_moe` (standardized in v1.2.0)
+
 # Cur Moe: Formal Architectural Specification and Empirical Benchmark Evaluation
 
 **Module Name**: `cur_moe`  
