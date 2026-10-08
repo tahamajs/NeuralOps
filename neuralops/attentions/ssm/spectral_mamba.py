@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 from neuralops.core.attention_mask import apply_attention_mask
 from neuralops.core.base import BaseAttention
+from neuralops.core.common import _cfg_get
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.rope import _rotate_half
@@ -50,14 +51,6 @@ except Exception:
             x1, x2 = self.in_proj(x).chunk(2, dim=-1)
             y = F.silu(x1) * x2
             return self.out_proj(y)
-
-
-def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
-    if cfg is None:
-        return default
-    if isinstance(cfg, dict):
-        return cfg.get(key, default)
-    return getattr(cfg, key, default)
 
 
 def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:

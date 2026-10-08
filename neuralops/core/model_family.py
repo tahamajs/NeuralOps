@@ -1,20 +1,5 @@
 """Architecture-family detection and common transformer model metadata.
 
-Bug fixes (2026-09-25):
-- Fix MF-01: Added "gpt2" (and gpt_neo, gpt_neox, llama, mistral, phi, falcon)
-  to the causal family set. Previously ModelAdapter(family="gpt2") reported
-  causal=False, causing causal masks to be dropped and recovery to fail on
-  GPT-2. This was a critical correctness bug.
-- Fix MF-02: Added GPT_FAMILIES and CAUSAL_FAMILIES frozensets to guarantee
-  consistent behavior across causal, mask_rank, and position_embedding
-  decisions.
-- Fix MF-03: "gpt2" and other GPT variants now correctly report
-  position_embedding="absolute" (learned position embeddings).
-- Fix MF-04: mask_rank for all causal families is now 4.
-- Fix MF-05: Added family alias normalization in ModelAdapter.__init__ so
-  that any of {"gpt", "gpt2", "gpt_neo", "gpt_neox", "llama", "mistral",
-  "phi", "falcon"} map to the canonical internal family "gpt", while
-  preserving the raw family name in raw_family for logging.
 """
 
 from __future__ import annotations
