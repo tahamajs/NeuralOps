@@ -1,0 +1,13 @@
+{
+  "sparsegpt": {
+    "requires_cuda": false,
+    "timeout_s": 3600
+  },
+  "triton_svd_linear_attention": {
+    "requires_cuda": false
+  },
+  "flash_attention3": {
+    "requires_cuda": true,
+    "supports_rope": true
+  }
+}
