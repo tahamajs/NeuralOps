@@ -95,31 +95,8 @@ def evaluate(model, dataset, batch_size):
     return 100.0 * correct / max(1, total)
 
 
-def train_task(
-    task: str,
-    module_name: str,
-    output_dir: str,
-    epochs: int = None,
-    max_steps: int = None,
-    batch_size: int = None,
-    seq_len: int = None,
-    lr: float = None,
-    hidden_size: int = 256,
-    num_layers: int = 6,
-    num_heads: int = 8,
-    intermediate_size: int = 1024,
-    gradient_checkpointing: bool = False,
-    warmup_ratio: float = 0.1,
-    warmup_steps: int = None,
-    precision: str = "bf16",
-):
-    cfg = TASK_CONFIG[task]
-    num_epochs = epochs if epochs is not None else cfg.get("epochs", 100)
-    current_batch_size = batch_size if batch_size is not None else cfg["batch_size"]
-    current_seq_len = seq_len if seq_len is not None else cfg["seq_len"]
-    current_lr = lr if lr is not None else cfg.get("lr", 5e-4)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+def _setup_datasets(task: str, current_seq_len: int, cfg: dict):
+    """Load or generate synthetic training and testing datasets for LRA."""
     try:
         if task == "listops":
             if ListOpsDataset is None:
@@ -142,7 +119,6 @@ def train_task(
                 super().__init__()
                 torch.manual_seed(seed)
                 self.input_ids = torch.randint(1, vocab_size, (size, seq_len))
-                # Deterministic prefix reasoning (mimicking ListOps hierarchical operations)
                 op = self.input_ids[:, 0] % 3  # 0: sum, 1: max, 2: min
                 labels = torch.zeros(size, dtype=torch.long)
                 for i in range(size):
@@ -171,6 +147,24 @@ def train_task(
             500, current_seq_len, cfg["vocab_size"], cfg["num_labels"], seed=100
         )
 
+    return train_ds, test_ds
+
+
+def _setup_model_and_optimizer(
+    module_name: str,
+    device: torch.device,
+    current_seq_len: int,
+    cfg: dict,
+    hidden_size: int,
+    num_layers: int,
+    num_heads: int,
+    intermediate_size: int,
+    gradient_checkpointing: bool,
+    current_lr: float,
+    total_steps: int,
+    actual_warmup_steps: int,
+):
+    """Instantiate model, apply module replacement, and construct optimizer/scheduler."""
     model = build_small_transformer(
         current_seq_len,
         cfg["num_labels"],
@@ -188,6 +182,90 @@ def train_task(
         model, _ = apply_module_to_model(model, module_name, device=device)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=current_lr, weight_decay=0.01)
+
+    from transformers import get_cosine_schedule_with_warmup
+
+    scheduler = get_cosine_schedule_with_warmup(
+        optimizer,
+        num_warmup_steps=actual_warmup_steps,
+        num_training_steps=total_steps,
+    )
+    return model, optimizer, scheduler
+
+
+def _train_single_epoch(
+    model,
+    train_loader,
+    optimizer,
+    scheduler,
+    device,
+    amp_dtype,
+    use_amp: bool,
+    global_step: int,
+    max_steps: int = None,
+):
+    """Execute training loop over a single epoch."""
+    model.train()
+    epoch_loss = 0.0
+    batches = 0
+    for batch in train_loader:
+        input_ids = batch["input_ids"].to(device)
+        labels = batch["labels"].to(device)
+
+        optimizer.zero_grad(set_to_none=True)
+        with torch.autocast("cuda", dtype=amp_dtype, enabled=use_amp):
+            outputs = model(input_ids, labels=labels)
+            loss = outputs.loss
+
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        optimizer.step()
+        scheduler.step()
+
+        epoch_loss += loss.item()
+        batches += 1
+        global_step += 1
+        if max_steps is not None and global_step >= max_steps:
+            break
+
+    avg_loss = epoch_loss / max(1, batches)
+    return avg_loss, global_step
+
+
+def _save_training_results(output_dir: str, metadata: dict) -> None:
+    """Save execution metadata and best evaluation accuracy to disk."""
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    with open(Path(output_dir) / "lra_result.json", "w") as f:
+        json.dump(metadata, f, indent=2)
+
+
+def train_task(
+    task: str,
+    module_name: str,
+    output_dir: str,
+    epochs: int = None,
+    max_steps: int = None,
+    batch_size: int = None,
+    seq_len: int = None,
+    lr: float = None,
+    hidden_size: int = 256,
+    num_layers: int = 6,
+    num_heads: int = 8,
+    intermediate_size: int = 1024,
+    gradient_checkpointing: bool = False,
+    warmup_ratio: float = 0.1,
+    warmup_steps: int = None,
+    precision: str = "bf16",
+):
+    """Orchestrate training of small Transformer on LRA benchmark tasks."""
+    cfg = TASK_CONFIG[task]
+    num_epochs = epochs if epochs is not None else cfg.get("epochs", 100)
+    current_batch_size = batch_size if batch_size is not None else cfg["batch_size"]
+    current_seq_len = seq_len if seq_len is not None else cfg["seq_len"]
+    current_lr = lr if lr is not None else cfg.get("lr", 5e-4)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    train_ds, test_ds = _setup_datasets(task, current_seq_len, cfg)
     train_loader = DataLoader(train_ds, batch_size=current_batch_size, shuffle=True, num_workers=0)
 
     total_steps = (
@@ -199,12 +277,19 @@ def train_task(
         warmup_steps if warmup_steps is not None else max(1, int(total_steps * warmup_ratio))
     )
 
-    from transformers import get_cosine_schedule_with_warmup
-
-    scheduler = get_cosine_schedule_with_warmup(
-        optimizer,
-        num_warmup_steps=actual_warmup_steps,
-        num_training_steps=total_steps,
+    model, optimizer, scheduler = _setup_model_and_optimizer(
+        module_name=module_name,
+        device=device,
+        current_seq_len=current_seq_len,
+        cfg=cfg,
+        hidden_size=hidden_size,
+        num_layers=num_layers,
+        num_heads=num_heads,
+        intermediate_size=intermediate_size,
+        gradient_checkpointing=gradient_checkpointing,
+        current_lr=current_lr,
+        total_steps=total_steps,
+        actual_warmup_steps=actual_warmup_steps,
     )
 
     if precision == "fp16":
@@ -225,30 +310,17 @@ def train_task(
     )
 
     for epoch in range(num_epochs):
-        model.train()
-        epoch_loss = 0.0
-        batches = 0
-        for batch in train_loader:
-            input_ids = batch["input_ids"].to(device)
-            labels = batch["labels"].to(device)
-
-            optimizer.zero_grad(set_to_none=True)
-            with torch.autocast("cuda", dtype=amp_dtype, enabled=use_amp):
-                outputs = model(input_ids, labels=labels)
-                loss = outputs.loss
-
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            optimizer.step()
-            scheduler.step()
-
-            epoch_loss += loss.item()
-            batches += 1
-            global_step += 1
-            if max_steps is not None and global_step >= max_steps:
-                break
-
-        avg_loss = epoch_loss / max(1, batches)
+        avg_loss, global_step = _train_single_epoch(
+            model=model,
+            train_loader=train_loader,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            device=device,
+            amp_dtype=amp_dtype,
+            use_amp=use_amp,
+            global_step=global_step,
+            max_steps=max_steps,
+        )
 
         # Evaluate every 5 epochs or last epoch
         if (
@@ -272,26 +344,20 @@ def train_task(
         if max_steps is not None and global_step >= max_steps:
             break
 
-    # Save result
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
-    with open(Path(output_dir) / "lra_result.json", "w") as f:
-        json.dump(
-            {
-                "task": task,
-                "module": module_name,
-                "best_accuracy": best_acc,
-                "epochs": num_epochs,
-                "seq_len": current_seq_len,
-                "batch_size": current_batch_size,
-                "lr": current_lr,
-                "hidden_size": hidden_size,
-                "num_layers": num_layers,
-                "num_heads": num_heads,
-                "intermediate_size": intermediate_size,
-            },
-            f,
-            indent=2,
-        )
+    metadata = {
+        "task": task,
+        "module": module_name,
+        "best_accuracy": best_acc,
+        "epochs": num_epochs,
+        "seq_len": current_seq_len,
+        "batch_size": current_batch_size,
+        "lr": current_lr,
+        "hidden_size": hidden_size,
+        "num_layers": num_layers,
+        "num_heads": num_heads,
+        "intermediate_size": intermediate_size,
+    }
+    _save_training_results(output_dir, metadata)
 
     del model
     if torch.cuda.is_available():
