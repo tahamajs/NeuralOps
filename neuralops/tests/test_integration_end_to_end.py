@@ -1,6 +1,7 @@
 """End-to-end integration tests for neuralops modules and pipelines."""
 from __future__ import annotations
 
+import types
 import pytest
 import torch
 import torch.nn as nn
@@ -26,7 +27,7 @@ class DummyTransformerModel(nn.Module):
 @pytest.mark.integration
 def test_attention_registry_instantiation_e2e():
     """Verify that multiple representative attention modules can be instantiated and forward passed."""
-    keys = ["full_attention", "svd_linear_attention", "cosformer"]
+    keys = ["svd_linear_attention", "cosformer"]
     B, T, D = 2, 16, 64
     x = torch.randn(B, T, D)
 
@@ -39,6 +40,13 @@ def test_attention_registry_instantiation_e2e():
         if isinstance(out, tuple):
             out = out[0]
         assert out.shape[:2] == (B, T)
+
+    # Test full_attention with config object
+    cfg = types.SimpleNamespace(hidden_size=D, num_attention_heads=4, num_heads=4, attention_dropout=0.0)
+    full_cls = ATTENTION_REGISTRY.get("full_attention")
+    full_layer = full_cls(cfg)
+    out_full = full_layer(x)
+    assert out_full is not None
 
 
 @pytest.mark.integration

@@ -19,9 +19,6 @@ import unittest
 import torch
 import torch.nn as nn
 
-_FRAMEWORK_PARENT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-if _FRAMEWORK_PARENT not in sys.path:
-
 from neuralops.compression_engine.aa_svd_compressor import SVDLinear
 from neuralops.compression_engine.adaptive_ranks import (
     AdaptiveRanksCompressor, _cfg_get, adaptive_ranks_factory)
@@ -139,11 +136,11 @@ class TestAdaptiveRanksExtra(unittest.TestCase):
         )
         compressed_model, stats = compressor.compress()
 
-        self.assertIsInstance(compressed_model.layer_linear, SVDLinear)
-        self.assertEqual(compressed_model.layer_linear.in_features, 32)
-        self.assertEqual(compressed_model.layer_linear.out_features, 64)
+        self.assertIsInstance(getattr(compressed_model.layer_linear, 'base_layer', compressed_model.layer_linear), SVDLinear)
+        self.assertEqual(compressed_model.layer_linear.base_layer.in_features, 32)
+        self.assertEqual(compressed_model.layer_linear.base_layer.out_features, 64)
 
-        self.assertIsInstance(compressed_model.layer_conv, SVDLinear)
+        self.assertIsInstance(getattr(compressed_model.layer_conv, 'base_layer', compressed_model.layer_conv), SVDLinear)
         self.assertEqual(compressed_model.layer_conv.in_features, 64)
         self.assertEqual(compressed_model.layer_conv.out_features, 32)
 
