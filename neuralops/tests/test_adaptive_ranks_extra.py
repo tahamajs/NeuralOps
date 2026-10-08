@@ -141,8 +141,8 @@ class TestAdaptiveRanksExtra(unittest.TestCase):
         self.assertEqual(compressed_model.layer_linear.base_layer.out_features, 64)
 
         self.assertIsInstance(getattr(compressed_model.layer_conv, 'base_layer', compressed_model.layer_conv), SVDLinear)
-        self.assertEqual(compressed_model.layer_conv.in_features, 64)
-        self.assertEqual(compressed_model.layer_conv.out_features, 32)
+        self.assertEqual(compressed_model.layer_conv.base_layer.in_features, 64)
+        self.assertEqual(compressed_model.layer_conv.base_layer.out_features, 32)
 
     def test_target_attention_only(self) -> None:
         """When target_attention_only=True, attention layers are compressed while MLP/FFN are skipped."""
