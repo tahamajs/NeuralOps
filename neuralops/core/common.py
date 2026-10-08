@@ -277,6 +277,50 @@ class LoRALinear(nn.Module):
                 self.weight.data.sub_(delta.to(self.weight.dtype))
             self.merged = False
 
+    @classmethod
+    def from_linear(
+        cls,
+        layer: nn.Linear,
+        base_rank: int = 32,
+        residual_rank: int = 8,
+        scaling: float = 1.0,
+        factorize_base: bool = True,
+        freeze_base: bool = True,
+    ) -> "ResSVDLinear":
+        """Instantiate ResSVDLinear decomposing an existing nn.Linear layer."""
+        w = layer.weight.data
+        b = layer.bias.data if layer.bias is not None else None
+        out_f, in_f = w.shape
+        mod = cls(
+            in_features=in_f,
+            out_features=out_f,
+            base_rank=base_rank,
+            residual_rank=residual_rank,
+            scaling=scaling,
+            factorize_base=factorize_base,
+            bias=(b is not None),
+            dtype=w.dtype,
+            device=w.device,
+        )
+        with torch.no_grad():
+            if factorize_base:
+                # Truncated SVD decomposition of base
+                U, S, Vh = torch.linalg.svd(w.float(), full_matrices=False)
+                r = min(mod.base_rank, len(S))
+                sqrt_s = torch.diag(torch.sqrt(S[:r]))
+                u_mat = (U[:, :r] @ sqrt_s).to(dtype=w.dtype)
+                v_mat = (sqrt_s @ Vh[:r, :]).to(dtype=w.dtype)
+                mod.base_U.data[:out_f, :r].copy_(u_mat)
+                mod.base_V.data[:r, :in_f].copy_(v_mat)
+                mod.base_U.requires_grad = not freeze_base
+                mod.base_V.requires_grad = not freeze_base
+            else:
+                mod.base_weight.data.copy_(w)
+                mod.base_weight.requires_grad = not freeze_base
+            if b is not None and mod.bias is not None:
+                mod.bias.data.copy_(b)
+        return mod
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.is_wrapper:
             res = self.base_layer(x)
@@ -385,6 +429,50 @@ class FactorizedLinear(nn.Module):
     @property
     def bias(self) -> torch.Tensor | None:
         return self.lin2.bias
+
+    @classmethod
+    def from_linear(
+        cls,
+        layer: nn.Linear,
+        base_rank: int = 32,
+        residual_rank: int = 8,
+        scaling: float = 1.0,
+        factorize_base: bool = True,
+        freeze_base: bool = True,
+    ) -> "ResSVDLinear":
+        """Instantiate ResSVDLinear decomposing an existing nn.Linear layer."""
+        w = layer.weight.data
+        b = layer.bias.data if layer.bias is not None else None
+        out_f, in_f = w.shape
+        mod = cls(
+            in_features=in_f,
+            out_features=out_f,
+            base_rank=base_rank,
+            residual_rank=residual_rank,
+            scaling=scaling,
+            factorize_base=factorize_base,
+            bias=(b is not None),
+            dtype=w.dtype,
+            device=w.device,
+        )
+        with torch.no_grad():
+            if factorize_base:
+                # Truncated SVD decomposition of base
+                U, S, Vh = torch.linalg.svd(w.float(), full_matrices=False)
+                r = min(mod.base_rank, len(S))
+                sqrt_s = torch.diag(torch.sqrt(S[:r]))
+                u_mat = (U[:, :r] @ sqrt_s).to(dtype=w.dtype)
+                v_mat = (sqrt_s @ Vh[:r, :]).to(dtype=w.dtype)
+                mod.base_U.data[:out_f, :r].copy_(u_mat)
+                mod.base_V.data[:r, :in_f].copy_(v_mat)
+                mod.base_U.requires_grad = not freeze_base
+                mod.base_V.requires_grad = not freeze_base
+            else:
+                mod.base_weight.data.copy_(w)
+                mod.base_weight.requires_grad = not freeze_base
+            if b is not None and mod.bias is not None:
+                mod.bias.data.copy_(b)
+        return mod
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if HAS_TRITON_COMMON and triton_dispatch is not None and x.is_cuda:
@@ -517,6 +605,50 @@ class ResSVDLinear(nn.Module):
             res = self.scaling * torch.matmul(self.lora_B, self.lora_A)
             return base + res
         return base
+
+    @classmethod
+    def from_linear(
+        cls,
+        layer: nn.Linear,
+        base_rank: int = 32,
+        residual_rank: int = 8,
+        scaling: float = 1.0,
+        factorize_base: bool = True,
+        freeze_base: bool = True,
+    ) -> "ResSVDLinear":
+        """Instantiate ResSVDLinear decomposing an existing nn.Linear layer."""
+        w = layer.weight.data
+        b = layer.bias.data if layer.bias is not None else None
+        out_f, in_f = w.shape
+        mod = cls(
+            in_features=in_f,
+            out_features=out_f,
+            base_rank=base_rank,
+            residual_rank=residual_rank,
+            scaling=scaling,
+            factorize_base=factorize_base,
+            bias=(b is not None),
+            dtype=w.dtype,
+            device=w.device,
+        )
+        with torch.no_grad():
+            if factorize_base:
+                # Truncated SVD decomposition of base
+                U, S, Vh = torch.linalg.svd(w.float(), full_matrices=False)
+                r = min(mod.base_rank, len(S))
+                sqrt_s = torch.diag(torch.sqrt(S[:r]))
+                u_mat = (U[:, :r] @ sqrt_s).to(dtype=w.dtype)
+                v_mat = (sqrt_s @ Vh[:r, :]).to(dtype=w.dtype)
+                mod.base_U.data[:out_f, :r].copy_(u_mat)
+                mod.base_V.data[:r, :in_f].copy_(v_mat)
+                mod.base_U.requires_grad = not freeze_base
+                mod.base_V.requires_grad = not freeze_base
+            else:
+                mod.base_weight.data.copy_(w)
+                mod.base_weight.requires_grad = not freeze_base
+            if b is not None and mod.bias is not None:
+                mod.bias.data.copy_(b)
+        return mod
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward execution: y = Base(x) + scaling * (x @ A^T) @ B^T + bias."""
