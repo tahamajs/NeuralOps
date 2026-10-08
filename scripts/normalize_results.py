@@ -3,7 +3,6 @@ import csv
 import json
 import re
 from pathlib import Path
-from typing import Any
 
 CANONICAL_FIELDS = [
     "source_file", "module", "model", "dataset", "rank",
@@ -17,7 +16,6 @@ def infer_metadata_from_path(path: Path) -> dict:
     meta = {"module": "", "model": "", "dataset": "", "rank": ""}
     
     from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-    import neuralops.attentions, neuralops.compression_engine
     import json as _json
     
     aliases = _json.load(open("neuralops/core/deprecated_aliases.json"))

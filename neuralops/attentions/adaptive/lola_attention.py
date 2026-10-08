@@ -20,7 +20,7 @@ from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.rope import _rotate_half, apply_rotary_pos_emb
+from neuralops.core.rope import apply_rotary_pos_emb
 from neuralops.utils.model_family import ModelAdapter
 
 logger = logging.getLogger(__name__)
