@@ -970,7 +970,7 @@ def calibrate_gamma(
     handles = []
 
     def make_hook(mod_name):
-        def hook(module, grad_in, grad_out):
+        def hook(module, _grad_in, grad_out):
             if isinstance(grad_out, tuple) and len(grad_out) > 0:
                 g = grad_out[0]
                 if g is not None:

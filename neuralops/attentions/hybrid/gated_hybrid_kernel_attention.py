@@ -382,7 +382,7 @@ class GatedHybridKernelAttention(BaseAttention):
     def __init__(
         self,
         config=None,
-        pretrained_qkv=None,
+        _pretrained_qkv=None,
         pretrained_attn=None,
         is_decoder=None,
         **kwargs,

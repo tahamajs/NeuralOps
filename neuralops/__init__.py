@@ -25,7 +25,7 @@ class _AliasLoader:
         """Execute __init__ operation."""
         self.mod = mod
 
-    def create_module(self, spec):
+    def create_module(self, _spec):
         """Execute create_module operation."""
         return self.mod
 

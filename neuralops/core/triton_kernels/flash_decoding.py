@@ -12,12 +12,12 @@ __all__ = ["flash_decoding_attention", "flash_decoding_pytorch"]
 if HAS_TRITON and tl is not None:
     @triton.jit
     def flash_decoding_stage1_kernel(
-        Q, K, V, MidOut, MidLse,
+        Q, K, V, _MidOut, _MidLse,
         stride_qb, stride_qh, stride_qd,
         stride_kb, stride_kh, stride_kn, stride_kd,
         stride_vb, stride_vh, stride_vn, stride_vd,
-        stride_mb, stride_mh, stride_mc, stride_md,
-        stride_lb, stride_lh, stride_lc,
+        _stride_mb, _stride_mh, _stride_mc, _stride_md,
+        _stride_lb, _stride_lh, _stride_lc,
         H, N_kv,
         CHUNK_SIZE: tl.constexpr,
         BLOCK_D: tl.constexpr,
