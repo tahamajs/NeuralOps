@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.rope import _rotate_half
 
 
 # ===========================================================================
@@ -32,12 +33,6 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if isinstance(cfg, dict):
         return cfg.get(key, default)
     return getattr(cfg, key, default)
-
-
-def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
 
 
 def apply_rotary_pos_emb(

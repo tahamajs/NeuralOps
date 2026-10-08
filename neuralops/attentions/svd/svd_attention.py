@@ -46,6 +46,7 @@ from neuralops.core.attention_mask import apply_attention_mask, get_token_valid_
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.rope import _rotate_half
 
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
@@ -57,18 +58,6 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
 
 
 logger = logging.getLogger(__name__)
-
-
-def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    """Rotates half the hidden dimensions of the input tensor."""
-    d = x.shape[-1]
-    rotary_dim = 2 * (d // 2)
-    x1 = x[..., : rotary_dim // 2]
-    x2 = x[..., rotary_dim // 2 : rotary_dim]
-    rotated = torch.cat((-x2, x1), dim=-1)
-    if rotary_dim < d:
-        return torch.cat((rotated, x[..., rotary_dim:]), dim=-1)
-    return rotated
 
 
 def apply_rotary_pos_emb(

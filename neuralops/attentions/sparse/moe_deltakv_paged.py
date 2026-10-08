@@ -20,6 +20,7 @@ import torch.nn.functional as F
 
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
 
@@ -125,12 +126,6 @@ def simulate_paged_delta_kv(
 # ===========================================================================
 # RoPE
 # ===========================================================================
-def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
-
-
 def apply_rotary_pos_emb(
     q: torch.Tensor,
     k: torch.Tensor,

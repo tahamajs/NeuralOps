@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 from neuralops.core.attention_utils import repeat_kv
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.rope import _rotate_half
 
 # ===========================================================================
 # FP8 simulation (SP-FIX-01, SP-FIX-14)
@@ -1153,14 +1154,6 @@ class SpectronFP8Attention(BaseAttention):
         cos: torch.Tensor,
         sin: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-            d = x.shape[-1]
-            h = d // 2
-            rot = torch.cat((-x[..., h : 2 * h], x[..., :h]), dim=-1)
-            if d % 2 == 1:
-                rot = torch.cat([rot, x[..., -1:]], dim=-1)
-            return rot
-
         if cos.dim() == 3:
             cos, sin = cos.unsqueeze(1), sin.unsqueeze(1)
         while cos.dim() < q.dim():

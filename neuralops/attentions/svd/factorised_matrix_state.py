@@ -30,6 +30,7 @@ import torch.nn.functional as F
 
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.rope import _rotate_half
 
 try:
     from neuralops.core.triton_kernels.fms_scan import MAX_REGISTER_DIM, fms_scan_triton
@@ -59,20 +60,6 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if isinstance(cfg, dict):
         return cfg.get(key, default)
     return getattr(cfg, key, default)
-
-
-def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    """Rotates half the hidden dimensions of the input tensor."""
-    d = x.shape[-1]
-    even_d = (d // 2) * 2
-    x_rot = x[..., :even_d]
-    half = even_d // 2
-    x1 = x_rot[..., :half]
-    x2 = x_rot[..., half:]
-    rotated = torch.cat((-x2, x1), dim=-1)
-    if even_d < d:
-        return torch.cat([rotated, x[..., even_d:]], dim=-1)
-    return rotated
 
 
 def apply_rotary_pos_emb(

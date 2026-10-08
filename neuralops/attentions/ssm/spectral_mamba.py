@@ -31,6 +31,7 @@ from neuralops.core.attention_mask import apply_attention_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.rope import _rotate_half
 
 try:
     from neuralops.attentions.Mamba import Mamba
@@ -76,18 +77,6 @@ def _unpack_weight_bias(module: Any) -> tuple[torch.Tensor | None, torch.Tensor 
     if b is not None:
         b = b.data.clone()
     return w, b
-
-
-def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    rotary_dim = x.shape[-1]
-    rotary_dim = rotary_dim - (rotary_dim % 2)
-    x_rot = x[..., :rotary_dim]
-    x1 = x_rot[..., : rotary_dim // 2]
-    x2 = x_rot[..., rotary_dim // 2 :]
-    rotated = torch.cat((-x2, x1), dim=-1)
-    if x.shape[-1] > rotary_dim:
-        return torch.cat([rotated, x[..., rotary_dim:]], dim=-1)
-    return rotated
 
 
 def apply_rotary_pos_emb(

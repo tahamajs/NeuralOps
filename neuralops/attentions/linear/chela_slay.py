@@ -35,10 +35,8 @@ import torch.nn.functional as F
 from neuralops.core.base import BaseAttention
 from neuralops.utils.lora import LoRALinear
 
-def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    x1, x2 = x[..., : x.shape[-1] // 2], x[..., x.shape[-1] // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.rope import _rotate_half
 
 logger = logging.getLogger(__name__)
 
@@ -132,19 +130,6 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
         return hidden_states
     b, h, s, d = hidden_states.shape
     return hidden_states[:, :, None, :, :].expand(b, h, n_rep, s, d).reshape(b, h * n_rep, s, d)
-
-
-def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    d = x.shape[-1]
-    if d % 2 != 0:
-        x_even = x[..., :-1]
-        x1 = x_even[..., : (d - 1) // 2]
-        x2 = x_even[..., (d - 1) // 2 :]
-        rot_even = torch.cat((-x2, x1), dim=-1)
-        return torch.cat((rot_even, x[..., -1:]), dim=-1)
-    x1 = x[..., : d // 2]
-    x2 = x[..., d // 2 :]
-    return torch.cat((-x2, x1), dim=-1)
 
 
 def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None):

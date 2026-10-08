@@ -16,6 +16,7 @@ import torch.nn.functional as F
 from neuralops.core.adapters import UniversalAdapter
 from neuralops.core.gqa_utils import repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.core.rope import _rotate_half
 
 try:
     from neuralops.attentions.simple_ssm import SimpleSSM
@@ -37,21 +38,6 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
     if isinstance(cfg, dict):
         return cfg.get(key, default)
     return getattr(cfg, key, default)
-
-
-def _rotate_half(x: torch.Tensor) -> torch.Tensor:
-    d = x.shape[-1]
-    rotary_dim = 2 * (d // 2)
-    if rotary_dim == 0:
-        return x
-    x_rot = x[..., :rotary_dim]
-    half = rotary_dim // 2
-    x1 = x_rot[..., :half]
-    x2 = x_rot[..., half:]
-    rotated = torch.cat((-x2, x1), dim=-1)
-    if rotary_dim < d:
-        return torch.cat((rotated, x[..., rotary_dim:]), dim=-1)
-    return rotated
 
 
 def apply_rotary_pos_emb(
