@@ -179,7 +179,8 @@ def print_summary_table(tasks_metrics: dict[str, dict[str, float]], module_name:
     print("=" * 65 + "\n")
 
 
-def main(argv: list[str] | None = None) -> int:
+def _import_dependencies() -> bool:
+    """Verify presence of lm-eval and internal framework modules."""
     global \
         torch, \
         AutoModelForCausalLM, \
@@ -190,20 +191,17 @@ def main(argv: list[str] | None = None) -> int:
         HFLM, \
         simple_evaluate, \
         _HAS_LM_EVAL
-    args = parse_args(argv)
 
     try:
-        from lm_eval import simple_evaluate
-        from lm_eval.models.huggingface import HFLM
+        from lm_eval import simple_evaluate as _simple_evaluate
+        from lm_eval.models.huggingface import HFLM as _HFLM
 
+        simple_evaluate = _simple_evaluate
+        HFLM = _HFLM
         _HAS_LM_EVAL = True
     except ImportError:
         _HAS_LM_EVAL = False
-
-    if not _HAS_LM_EVAL:
-        LOG.error("lm_eval is not installed. Please install it with: pip install lm-eval")
-        print("pip install lm-eval", file=sys.stderr)
-        return 1
+        return False
 
     try:
         import torch as _torch
@@ -222,26 +220,14 @@ def main(argv: list[str] | None = None) -> int:
         ATTENTION_REGISTRY = _ATTENTION_REGISTRY
         COMPRESSOR_REGISTRY = _COMPRESSOR_REGISTRY
         apply_module_to_model = _apply_module_to_model
+        return True
     except Exception as imp_err:
         LOG.error("Failed to import PyTorch or framework dependencies: %s", imp_err)
-        return 1
+        return False
 
-    # Smoke test parameter adjustment
-    if args.smoke_test:
-        LOG.info("Smoke test enabled: limiting tasks to ['hellaswag'] and limit=10")
-        args.tasks = ["hellaswag"]
-        args.limit = 10
 
-    if args.limit is not None and args.limit.is_integer():
-        args.limit = int(args.limit)
-
-    # Device verification
-    device_str = args.device
-    if device_str.startswith("cuda") and not torch.cuda.is_available():
-        LOG.warning("CUDA requested but not available; falling back to CPU")
-        device_str = "cpu"
-
-    # Resolve model and tokenizer path
+def _load_and_inject_model(args, device_str: str):
+    """Load model, tokenizer, and apply module injection if specified."""
     tok_src = args.model_path if os.path.exists(args.model_path) else "gpt2"
     LOG.info("Loading tokenizer and model from '%s'...", tok_src)
     tokenizer = AutoTokenizer.from_pretrained(tok_src)
@@ -250,7 +236,6 @@ def main(argv: list[str] | None = None) -> int:
 
     model = AutoModelForCausalLM.from_pretrained(tok_src)
 
-    # Inject module if requested
     injection_stats: dict[str, Any] = {}
     if not args.no_inject and args.module != "full":
         typ = "attention" if args.module in ATTENTION_REGISTRY else "compressor"
@@ -272,31 +257,17 @@ def main(argv: list[str] | None = None) -> int:
                 injection_stats = {"raw_stats": str(stats)}
         except Exception as e:
             LOG.error("Failed to inject module '%s': %s", args.module, e, exc_info=True)
-            return 2
+            return None, None, None, 2
     else:
         LOG.info("Running baseline without injection (module='%s')", args.module)
 
     model.to(device_str)
     model.eval()
+    return model, tokenizer, injection_stats, 0
 
-    # Wrap model into HFLM interface
-    LOG.info(
-        "Initializing lm-eval HFLM wrapper (batch_size=%d, device=%s)...",
-        args.batch_size,
-        device_str,
-    )
-    try:
-        lm = HFLM(
-            pretrained=model,
-            tokenizer=tokenizer,
-            batch_size=args.batch_size,
-            device=device_str,
-        )
-    except Exception as e:
-        LOG.error("Failed to initialize HFLM wrapper: %s", e, exc_info=True)
-        return 3
 
-    # Execute simple_evaluate across tasks
+def _execute_eval_tasks(lm, args) -> dict[str, Any]:
+    """Execute evaluation harness runs with fallback handling."""
     LOG.info("Starting lm_eval.simple_evaluate on tasks: %s", args.tasks)
     eval_kwargs: dict[str, Any] = {
         "model": lm,
@@ -313,7 +284,6 @@ def main(argv: list[str] | None = None) -> int:
         eval_results = eval_output.get("results", {})
     except Exception as e:
         LOG.error("lm_eval evaluation error: %s", e, exc_info=True)
-        # Attempt task-by-task fallback so partial results can be captured
         LOG.info("Attempting task-by-task execution fallback...")
         eval_results = {}
         for t in args.tasks:
@@ -326,10 +296,17 @@ def main(argv: list[str] | None = None) -> int:
                 LOG.warning("Task '%s' failed in fallback: %s", t, task_err)
                 eval_results[t] = {"error": str(task_err)}
 
-    tasks_metrics = extract_task_metrics(eval_results)
-    print_summary_table(tasks_metrics, args.module)
+    return eval_results
 
-    # Save structured results
+
+def _save_harness_results(
+    args,
+    device_str: str,
+    tasks_metrics: dict[str, dict[str, float]],
+    eval_results: dict[str, Any],
+    injection_stats: dict[str, Any],
+) -> None:
+    """Save structured lm-eval benchmark results to output directory."""
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / f"{args.module}_lmeval.json"
@@ -354,6 +331,56 @@ def main(argv: list[str] | None = None) -> int:
 
     out_file.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     LOG.info("Saved results to %s", out_file)
+
+
+def main(argv: list[str] | None = None) -> int:
+    """CLI main execution flow for lm-evaluation-harness benchmarks."""
+    args = parse_args(argv)
+
+    if not _import_dependencies():
+        if not _HAS_LM_EVAL:
+            LOG.error("lm_eval is not installed. Please install it with: pip install lm-eval")
+            print("pip install lm-eval", file=sys.stderr)
+        return 1
+
+    if args.smoke_test:
+        LOG.info("Smoke test enabled: limiting tasks to ['hellaswag'] and limit=10")
+        args.tasks = ["hellaswag"]
+        args.limit = 10
+
+    if args.limit is not None and args.limit.is_integer():
+        args.limit = int(args.limit)
+
+    device_str = args.device
+    if device_str.startswith("cuda") and not torch.cuda.is_available():
+        LOG.warning("CUDA requested but not available; falling back to CPU")
+        device_str = "cpu"
+
+    model, tokenizer, injection_stats, exit_code = _load_and_inject_model(args, device_str)
+    if exit_code != 0:
+        return exit_code
+
+    LOG.info(
+        "Initializing lm-eval HFLM wrapper (batch_size=%d, device=%s)...",
+        args.batch_size,
+        device_str,
+    )
+    try:
+        lm = HFLM(
+            pretrained=model,
+            tokenizer=tokenizer,
+            batch_size=args.batch_size,
+            device=device_str,
+        )
+    except Exception as e:
+        LOG.error("Failed to initialize HFLM wrapper: %s", e, exc_info=True)
+        return 3
+
+    eval_results = _execute_eval_tasks(lm, args)
+    tasks_metrics = extract_task_metrics(eval_results)
+    print_summary_table(tasks_metrics, args.module)
+
+    _save_harness_results(args, device_str, tasks_metrics, eval_results, injection_stats)
     return 0
 
 
