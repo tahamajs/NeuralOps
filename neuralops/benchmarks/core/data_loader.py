@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import Any
 import torch
 from torch.utils.data import DataLoader, Dataset, TensorDataset
+
 
 from neuralops.benchmarks.result import DatasetMetadata
 
